@@ -1,0 +1,27 @@
+// FILE: Sales.Api.Queries\UserQuery\GetAllUsersQuery.cs
+
+using MediatR;
+using Sales.Api.Helpers;
+using Sales.Api.Models;
+using Sales.Api.Repository;
+
+namespace Sales.Api.Queries.UserQuery;
+
+public class GetAllUsersQuery : IRequest<List<UserDto>>
+{
+    public class GetAllUsersQueryHandler : IRequestHandler<GetAllUsersQuery, List<UserDto>>
+    {
+        private readonly UserRepository _repository;
+
+        public GetAllUsersQueryHandler(UserRepository repository)
+        {
+            _repository = repository;
+        }
+
+        public async Task<List<UserDto>> Handle(GetAllUsersQuery request, CancellationToken cancellationToken)
+        {
+            var entities = await _repository.GetAllAsync();
+            return entities.Select(MapperUser.MapToUserDto).ToList();
+        }
+    }
+}

@@ -1,0 +1,35 @@
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Products.Api.Domain
+{
+    [Table("FiscalItem")]
+    public class FiscalItem
+    {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.None)]
+        public int PLU { get; set; }
+        public string Name { get; set; }
+        public string VAT { get; set; }
+
+        private FiscalItem(int plu, string name, string vat)
+        {
+            PLU = plu;
+            Name = name;
+            VAT = vat;
+        }
+
+        public FiscalItem() { }
+
+        public static FiscalItem Create(int plu, string name, string vat)
+        {
+            return new FiscalItem(plu, name, vat);
+        }
+
+        public void Update(string name, string vat)
+        {
+            Name = name;
+            VAT = vat;
+        }
+    }
+}

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Orders</title>
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+    <div class="pos-container">
+        <header class="pos-header">
+            <div class="brand">
+                <h1>Orders</h1>
+                <p id="ordersStatus">Loading�</p>
+            </div>
+            <div class="header-actions">
+                <a href="index.html" class="btn btn-secondary">Back to POS</a>
+                <button id="reloadOrdersBtn" class="btn btn-primary" type="button">Reload</button>
+            </div>
+        </header>
+
+        <div class="page-wrap">
+            <div class="toolbar">
+                <input id="orderSearch" class="search-input" placeholder="Search by id, number, payment, note�" />
+                <span class="badge" id="orderCount">0 orders</span>
+            </div>
+
+            <div id="ordersLoading" class="loading">
+                <div class="spinner"></div>
+                <p>Loading orders�</p>
+            </div>
+
+            <div id="ordersError" class="error hidden">
+                <p id="ordersErrorMessage"></p>
+                <button class="close-btn" id="ordersErrorClose" type="button">�</button>
+            </div>
+
+            <div class="table-wrap">
+                <table class="table" id="ordersTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Number</th>
+                            <th>Date</th>
+                            <th>Payment</th>
+                            <th>Tax</th>
+                            <th>Total</th>
+                            <th>Note / Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ordersBody"></tbody>
+                </table>
+            </div>
+
+            <div id="noOrders" class="no-results hidden">
+                <h3>No orders</h3>
+                <p>Save an order in the POS then reload</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API = {
+            posOrdersGetAll: 'https://localhost:7004/api/PosOrders/GetAll'
+        }
+        const DEFAULT_HEADERS = { 'Accept': 'application/json' }
+
+        let orders = []
+        let filtered = []
+
+        const $ = s => document.querySelector(s)
+        const fmtMoney = (n, code = 'USD') => `${code} ${Number(n || 0).toFixed(2)}`
+        const formatDate = iso => {
+            try { return new Date(iso).toLocaleString() } catch { return iso || '' }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            $('#reloadOrdersBtn').addEventListener('click', loadOrders)
+            $('#ordersErrorClose').addEventListener('click', () => $('#ordersError').classList.add('hidden'))
+            $('#orderSearch').addEventListener('input', filterOrders)
+            loadOrders()
+        })
+
+        async function loadOrders() {
+            $('#ordersStatus').textContent = 'Loading�'
+            toggleLoading(true)
+            try {
+                const res = await fetch(API.posOrdersGetAll, { headers: DEFAULT_HEADERS })
+                if (!res.ok) throw new Error(`GetAll ${res.status}`)
+                orders = await res.json() || []
+                filtered = [...orders]
+                renderOrders()
+                $('#ordersStatus').textContent = 'Ready'
+            } catch (err) {
+                console.error(err)
+                $('#ordersErrorMessage').textContent = `Failed to load orders: ${err.message}`
+                $('#ordersError').classList.remove('hidden')
+                $('#ordersStatus').textContent = 'Error'
+            } finally {
+                toggleLoading(false)
+            }
+        }
+
+        function filterOrders() {
+            const q = $('#orderSearch').value.trim().toLowerCase()
+            if (!q) filtered = [...orders]
+            else {
+                filtered = orders.filter(o => {
+                    const fields = [
+                        o.id, o.orderId, o.number, o.orderNumber,
+                        o.paymentMethod, o.note, o.status
+                    ].map(v => (v ?? '').toString().toLowerCase())
+                    return fields.some(f => f.includes(q))
+                })
+            }
+            renderOrders()
+        }
+
+        function renderOrders() {
+            const body = $('#ordersBody')
+            if (!filtered.length) {
+                body.innerHTML = ''
+                $('#noOrders').classList.remove('hidden')
+                $('#orderCount').textContent = '0 orders'
+                return
+            }
+            $('#noOrders').classList.add('hidden')
+            $('#orderCount').textContent = `${filtered.length} ${filtered.length === 1 ? 'order' : 'orders'}`
+            body.innerHTML = filtered.map(rowHTML).join('')
+        }
+
+        function rowHTML(o) {
+            const id = o.id ?? o.orderId ?? ''
+            const num = o.orderNumber ?? o.number ?? ''
+            const date = formatDate(o.orderDate ?? o.date)
+            const pm = o.paymentMethod ?? '�'
+            const tax = fmtMoney(o.taxAmount ?? o.tax, o.currencyCode ?? 'USD')
+            const total = fmtMoney(o.totalAmount ?? o.total, o.currencyCode ?? 'USD')
+            const note = [o.status, o.note].filter(Boolean).join(' � ')
+            return `
+            <tr>
+              <td>${id}</td>
+              <td>${num}</td>
+              <td>${date}</td>
+              <td>${pm}</td>
+              <td>${tax}</td>
+              <td>${total}</td>
+              <td>${note || ''}</td>
+            </tr>
+          `
+        }
+
+        function toggleLoading(on) {
+            document.getElementById('ordersLoading').classList.toggle('hidden', !on)
+            document.querySelector('.table-wrap').classList.toggle('hidden', on)
+        }
+    </script>
+</body>
+</html>
