@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Application.Api.Domain;
-namespace Application.Api.DataBase
+using Products.Api.Domain;
+namespace Products.Api.DataBase
 {
     public class AppDbContext : DbContext
     {

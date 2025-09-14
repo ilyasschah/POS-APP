@@ -1,6 +1,201 @@
-﻿namespace Application.Api.Domain
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Products.Api.Domain
 {
+    [Table("PosPrinterSelectionSettings")]
     public class PosPrinterSelectionSettings
     {
+        [Key]
+        public int Id { get; set; }
+
+        [Required]
+        [ForeignKey(nameof(PosPrinterSelection))]
+        public int PosPrinterSelectionId { get; set; }
+
+        public int PaperWidth { get; set; }                 // default 32
+        public string? Header { get; set; }
+        public string? Footer { get; set; }
+        public int FeedLines { get; set; }                  // default 0
+        public bool CutPaper { get; set; }                  // default 1
+        public bool PrintBitmap { get; set; }               // default 0
+        public bool OpenCashDrawer { get; set; }            // default 1
+        [MaxLength(100)]
+        public string? CashDrawerCommand { get; set; }
+        public int HeaderAlignment { get; set; }            // default 0
+        public int FooterAlignment { get; set; }            // default 0
+        public bool IsFormattingEnabled { get; set; }       // default 1
+        public int PrinterType { get; set; }                // default 0
+        public int NumberOfCopies { get; set; }             // default 1
+        public int CodePage { get; set; }                   // default -1
+        public int CharacterSet { get; set; }               // default -1
+        public int Margin { get; set; }                     // default 0
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal LeftMargin { get; set; }             // default 0
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal TopMargin { get; set; }              // default 0
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal RightMargin { get; set; }            // default 0
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal BottomMargin { get; set; }           // default 0
+
+        public bool PrintBarcode { get; set; }              // default 1
+        [MaxLength(255)]
+        public string? FontName { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal FontSizePercent { get; set; }        // default 100.00
+
+        public bool PrintLogoFullWidth { get; set; }        // default 0
+
+        // Navigation
+        public PosPrinterSelection? PosPrinterSelection { get; set; }
+
+        public PosPrinterSelectionSettings() { }
+
+        private PosPrinterSelectionSettings(
+            int posPrinterSelectionId,
+            int paperWidth,
+            string? header,
+            string? footer,
+            int feedLines,
+            bool cutPaper,
+            bool printBitmap,
+            bool openCashDrawer,
+            string? cashDrawerCommand,
+            int headerAlignment,
+            int footerAlignment,
+            bool isFormattingEnabled,
+            int printerType,
+            int numberOfCopies,
+            int codePage,
+            int characterSet,
+            int margin,
+            decimal leftMargin,
+            decimal topMargin,
+            decimal rightMargin,
+            decimal bottomMargin,
+            bool printBarcode,
+            string? fontName,
+            decimal fontSizePercent,
+            bool printLogoFullWidth)
+        {
+            PosPrinterSelectionId = posPrinterSelectionId;
+            PaperWidth = paperWidth;
+            Header = header;
+            Footer = footer;
+            FeedLines = feedLines;
+            CutPaper = cutPaper;
+            PrintBitmap = printBitmap;
+            OpenCashDrawer = openCashDrawer;
+            CashDrawerCommand = cashDrawerCommand;
+            HeaderAlignment = headerAlignment;
+            FooterAlignment = footerAlignment;
+            IsFormattingEnabled = isFormattingEnabled;
+            PrinterType = printerType;
+            NumberOfCopies = numberOfCopies;
+            CodePage = codePage;
+            CharacterSet = characterSet;
+            Margin = margin;
+            LeftMargin = leftMargin;
+            TopMargin = topMargin;
+            RightMargin = rightMargin;
+            BottomMargin = bottomMargin;
+            PrintBarcode = printBarcode;
+            FontName = fontName;
+            FontSizePercent = fontSizePercent;
+            PrintLogoFullWidth = printLogoFullWidth;
+        }
+
+        public static PosPrinterSelectionSettings Create(
+            int posPrinterSelectionId,
+            int paperWidth = 32,
+            string? header = null,
+            string? footer = null,
+            int feedLines = 0,
+            bool cutPaper = true,
+            bool printBitmap = false,
+            bool openCashDrawer = true,
+            string? cashDrawerCommand = null,
+            int headerAlignment = 0,
+            int footerAlignment = 0,
+            bool isFormattingEnabled = true,
+            int printerType = 0,
+            int numberOfCopies = 1,
+            int codePage = -1,
+            int characterSet = -1,
+            int margin = 0,
+            decimal leftMargin = 0m,
+            decimal topMargin = 0m,
+            decimal rightMargin = 0m,
+            decimal bottomMargin = 0m,
+            bool printBarcode = true,
+            string? fontName = null,
+            decimal fontSizePercent = 100m,
+            bool printLogoFullWidth = false)
+            => new(
+                posPrinterSelectionId, paperWidth, header, footer, feedLines, cutPaper, printBitmap, openCashDrawer,
+                cashDrawerCommand, headerAlignment, footerAlignment, isFormattingEnabled, printerType, numberOfCopies,
+                codePage, characterSet, margin, leftMargin, topMargin, rightMargin, bottomMargin, printBarcode,
+                fontName, fontSizePercent, printLogoFullWidth
+            );
+
+        public void Update(
+            int posPrinterSelectionId,
+            int paperWidth,
+            string? header,
+            string? footer,
+            int feedLines,
+            bool cutPaper,
+            bool printBitmap,
+            bool openCashDrawer,
+            string? cashDrawerCommand,
+            int headerAlignment,
+            int footerAlignment,
+            bool isFormattingEnabled,
+            int printerType,
+            int numberOfCopies,
+            int codePage,
+            int characterSet,
+            int margin,
+            decimal leftMargin,
+            decimal topMargin,
+            decimal rightMargin,
+            decimal bottomMargin,
+            bool printBarcode,
+            string? fontName,
+            decimal fontSizePercent,
+            bool printLogoFullWidth)
+        {
+            PosPrinterSelectionId = posPrinterSelectionId;
+            PaperWidth = paperWidth;
+            Header = header;
+            Footer = footer;
+            FeedLines = feedLines;
+            CutPaper = cutPaper;
+            PrintBitmap = printBitmap;
+            OpenCashDrawer = openCashDrawer;
+            CashDrawerCommand = cashDrawerCommand;
+            HeaderAlignment = headerAlignment;
+            FooterAlignment = footerAlignment;
+            IsFormattingEnabled = isFormattingEnabled;
+            PrinterType = printerType;
+            NumberOfCopies = numberOfCopies;
+            CodePage = codePage;
+            CharacterSet = characterSet;
+            Margin = margin;
+            LeftMargin = leftMargin;
+            TopMargin = topMargin;
+            RightMargin = rightMargin;
+            BottomMargin = bottomMargin;
+            PrintBarcode = printBarcode;
+            FontName = fontName;
+            FontSizePercent = fontSizePercent;
+            PrintLogoFullWidth = printLogoFullWidth;
+        }
     }
 }

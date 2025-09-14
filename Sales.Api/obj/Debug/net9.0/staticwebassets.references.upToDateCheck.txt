@@ -217,3 +217,5 @@ E:\Repos\Web-POS\Products.Api\obj\Debug\net9.0\staticwebassets.build.json
 E:\Repos\Web-POS\Products.Api\obj\Debug\net9.0\staticwebassets.build.json
 E:\Repos\Web-POS\Products.Api\obj\Debug\net9.0\staticwebassets.build.json
 E:\Repos\Web-POS\Products.Api\obj\Debug\net9.0\staticwebassets.build.json
+E:\Repos\Web-POS\Products.Api\obj\Debug\net9.0\staticwebassets.build.json
+E:\Repos\Web-POS\Products.Api\obj\Debug\net9.0\staticwebassets.build.json

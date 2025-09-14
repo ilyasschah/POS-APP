@@ -1,88 +1,58 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Products.Api.Commands.CurrenciesCommands.Add;
+using Products.Api.Commands.CurrencyCommands.Add;
+using Products.Api.Commands.CurrencyCommands.Delete;
+using Products.Api.Commands.CurrencyCommands.Update;
 using Products.Api.Models;
-using Products.Api.Queries.CurrenciesQuery.Get;
+using Products.Api.Queries.CurrenciesQuery;
+using Products.Api.Queries.CurrencyQuery;
 
 namespace Products.Api.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
     public class CurrenciesController(IMediator mediator) : ControllerBase
     {
-        // GET: api/Currencys
         [HttpGet("[action]")]
         public async Task<ActionResult<List<CurrencyDto>>> GetAll()
         {
-            return Ok(await mediator.Send(new GetAllCurrenciesQuery()));
+            var result = await mediator.Send(new GetAllCurrenciesQuery());
+            return Ok(result);
         }
-        [HttpPost("[action]")]
-        public async Task<ActionResult<CurrencyDto>> AddCurrencycommand([FromBody] CreateCurrencyRequest createrequest)
+
+        [HttpGet("[action]/{id:int}")]
+        public async Task<ActionResult<CurrencyDto>> GetById(int id)
         {
-            return Ok(await mediator.Send(new AddCurrencycommand(createrequest)));
+            var result = await mediator.Send(new GetCurrencyByIdQuery { Id = id });
+            return result is null ? NotFound() : Ok(result);
         }
-        // GET: api/Currencys/id
-        //[HttpGet("{id}")]
-        //public async Task<IActionResult> GetCurrency(int id)
-        //{
-        //    var currency = await _db.Currencys
-        //        .Where(cr => cr.Id == id)
-        //        .Select(cr => new Currency
-        //        {
-        //            Id = cr.Id,
-        //            Name = cr.Name,
-        //            Code = cr.Code
-        //        })
-        //        .FirstOrDefaultAsync();
-        //    if (currency == null)
-        //    {
-        //        return NotFound();
-        //    }
-        //    return Ok(currency);
-        //}
-        // POST: api/Currencys
-        //[HttpPost]
-        //public async Task<IActionResult> CreateCurrency([FromBody] Currency currency)
-        //{
-        //    if (currency == null || string.IsNullOrEmpty(currency.Name) || string.IsNullOrEmpty(currency.Code))
-        //    {
-        //        return BadRequest("Invalid currency data.");
-        //    }
-        //    _db.Currencys.Add(currency);
-        //    await _db.SaveChangesAsync();
-        //    return CreatedAtAction(nameof(GetCurrency), new { id = currency.Id }, currency);
-        //}
-        // PUT: api/Currencys/id
-        //[HttpPut("{id}")]
-        //public async Task<IActionResult> UpdateCurrency(int id, [FromBody] Currency currency)
-        //{
-        //    if (currency == null || id != currency.Id || string.IsNullOrEmpty(currency.Name) || string.IsNullOrEmpty(currency.Code))
-        //    {
-        //        return BadRequest("Invalid currency data.");
-        //    }
-        //    var existingCurrency = await _db.Currencys.FindAsync(id);
-        //    if (existingCurrency == null)
-        //    {
-        //        return NotFound();
-        //    }
-        //    existingCurrency.Name = currency.Name;
-        //    existingCurrency.Code = currency.Code;
-        //    _db.Currencys.Update(existingCurrency);
-        //    await _db.SaveChangesAsync();
-        //    return Ok(existingCurrency);
-        //}
-        // DELETE: api/Currencys/id
-        //[HttpDelete("{id}")]
-        //public async Task<IActionResult> DeleteCurrency(int id)
-        //{
-        //    var currency = await _db.Currencys.FindAsync(id);
-        //    if (currency == null)
-        //    {
-        //        return NotFound();
-        //    }
-        //    _db.Currencys.Remove(currency);
-        //    await _db.SaveChangesAsync();
-        //    return NoContent();
-        //}
+
+        [HttpGet("[action]/{name}")]
+        public async Task<ActionResult<CurrencyDto>> GetByName(string name)
+        {
+            var result = await mediator.Send(new GetCurrencyByNameQuery { Name = name });
+            return result is null ? NotFound() : Ok(result);
+        }
+
+        [HttpPost("[action]")]
+        public async Task<ActionResult<CurrencyDto>> Add([FromQuery] CreateCurrencyRequest req)
+        {
+            var result = await mediator.Send(new AddCurrencyCommand(req));
+            return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+        }
+
+        [HttpPut("[action]/{id:int}")]
+        public async Task<IActionResult> Update(int id, [FromQuery] UpdateCurrencyRequest req)
+        {
+            var ok = await mediator.Send(new UpdateCurrencyCommand(id, req));
+            return ok ? NoContent() : NotFound();
+        }
+
+        [HttpDelete("[action]/{id:int}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var ok = await mediator.Send(new DeleteCurrencyCommand(id));
+            return ok ? NoContent() : NotFound();
+        }
     }
 }

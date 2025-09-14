@@ -1,6 +1,17 @@
-﻿namespace Application.Api.Helpers
+﻿using Products.Api.Domain;
+using Products.Api.Models;
+
+namespace Products.Api.Helpers
 {
-    public class MapperApplicationProperty
+    public static class MapperApplicationProperty
     {
+        public static ApplicationPropertyDto MapToApplicationPropertyDto(ApplicationProperty entity)
+        {
+            return new ApplicationPropertyDto
+            {
+                Name = entity.Name,
+                Value = entity.Value
+            };
+        }
     }
 }

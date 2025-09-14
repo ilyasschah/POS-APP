@@ -175,3 +175,4 @@ E:\Repos\Web-POS\Sales.Api\obj\Debug\net9.0\refint\Sales.Api.dll
 E:\Repos\Web-POS\Sales.Api\obj\Debug\net9.0\Sales.Api.pdb
 E:\Repos\Web-POS\Sales.Api\obj\Debug\net9.0\Sales.Api.genruntimeconfig.cache
 E:\Repos\Web-POS\Sales.Api\obj\Debug\net9.0\ref\Sales.Api.dll
+E:\Repos\Web-POS\Sales.Api\obj\Debug\net9.0\Sales.Api.sourcelink.json

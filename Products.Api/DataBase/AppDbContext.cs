@@ -7,7 +7,7 @@ namespace Products.Api.DataBase
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
         }
-        public DbSet<Currency> Currencys { get; set; }
+        public DbSet<Currency> Currencies { get; set; }
         public DbSet<ProductGroup> ProductGroups { get; set; }
         public DbSet<Product> Products { get; set; } 
         public DbSet<Barcode> Barcodes { get; set; }

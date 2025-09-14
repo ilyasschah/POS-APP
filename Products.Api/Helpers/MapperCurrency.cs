@@ -1,16 +1,17 @@
-﻿using Products.Api.Models;
-using Products.Api.Domain;
+﻿using Products.Api.Domain;
+using Products.Api.Models;
 
 namespace Products.Api.Helpers
 {
-    public class MapperCurrency
+    public static class MapperCurrency
     {
-        public static CurrencyDto MapToCurrency(Currency currencies)
+        public static CurrencyDto MapToCurrencyDto(Currency entity)
         {
             return new CurrencyDto
             {
-                Name = currencies.Name,
-                Code = currencies.Code
+                Id = entity.Id,
+                Name = entity.Name,
+                Code = entity.Code
             };
         }
     }

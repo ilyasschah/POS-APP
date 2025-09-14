@@ -4,40 +4,54 @@ using Products.Api.Domain;
 
 namespace Products.Api.Repository
 {
-    public class CurrencyRepository(AppDbContext db)
+    public class CurrencyRepository
     {
-        public AppDbContext _db = db;
+        private readonly AppDbContext _db;
 
-        public async Task<List<Currency>> GetCurrenciesAsync()
+        public CurrencyRepository(AppDbContext db)
         {
-            return await _db.Currencys
+            _db = db;
+        }
+
+        public async Task<List<Currency>> GetAllAsync()
+        {
+            return await _db.Currencies
                 .AsNoTracking()
                 .ToListAsync();
         }
-        public async Task<Currency?> GetCurrencyById(int id)
+
+        public async Task<Currency?> GetByIdAsync(int id, bool trackEntity = false)
         {
-            return await _db.Currencys
-            .AsNoTracking()
-            .FirstOrDefaultAsync(b => b.Id == id);
+            var q = _db.Currencies.AsQueryable();
+            if (!trackEntity) q = q.AsNoTracking();
+            return await q.FirstOrDefaultAsync(c => c.Id == id);
         }
-        public async Task Add(Currency newCurrency)
+
+        public async Task<Currency?> GetByNameAsync(string name)
         {
-            _db.Currencys.Add(newCurrency);
+            return await _db.Currencies.AsNoTracking().FirstOrDefaultAsync(c => c.Name == name);
+        }
+
+        public async Task<bool> ExistsAsync(string name)
+        {
+            return await _db.Currencies.AnyAsync(c => c.Name.ToLower() == name.ToLower());
+        }
+
+        public async Task AddAsync(Currency entity)
+        {
+            _db.Currencies.Add(entity);
             await _db.SaveChangesAsync();
         }
 
-        public bool Exists(string code)
+        public async Task UpdateAsync(Currency entity)
         {
-            return _db.Currencys.Any(c => c.Code == code);
-        }
-        public async Task UpdateAsync(Currency currency)
-        {
-            _db.Currencys.Update(currency);
+            _db.Currencies.Update(entity);
             await _db.SaveChangesAsync();
         }
-        public async Task DeleteAsync(Currency currency)
+
+        public async Task DeleteAsync(Currency entity)
         {
-            _db.Currencys.Remove(currency);
+            _db.Currencies.Remove(entity);
             await _db.SaveChangesAsync();
         }
     }

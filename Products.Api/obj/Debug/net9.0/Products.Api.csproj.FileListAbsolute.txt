@@ -338,3 +338,4 @@ E:\Repos\Web-POS\Products.Api\obj\Debug\net9.0\refint\Products.Api.dll
 E:\Repos\Web-POS\Products.Api\obj\Debug\net9.0\Products.Api.pdb
 E:\Repos\Web-POS\Products.Api\obj\Debug\net9.0\Products.Api.genruntimeconfig.cache
 E:\Repos\Web-POS\Products.Api\obj\Debug\net9.0\ref\Products.Api.dll
+E:\Repos\Web-POS\Products.Api\obj\Debug\net9.0\Products.Api.sourcelink.json

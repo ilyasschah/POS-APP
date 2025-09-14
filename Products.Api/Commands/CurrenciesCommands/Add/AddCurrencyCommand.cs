@@ -1,29 +1,43 @@
-﻿using MediatR;
+﻿using FluentValidation;
+using MediatR;
+using Products.Api.Helpers;
 using Products.Api.Models;
 using Products.Api.Services;
 
-namespace Products.Api.Commands.CurrenciesCommands.Add
+namespace Products.Api.Commands.CurrencyCommands.Add
 {
-    public class AddCurrencycommand : IRequest<bool>
+    public class AddCurrencyCommand : IRequest<CurrencyDto>
     {
-        public CreateCurrencyRequest request { get; set; }
-        
-        public AddCurrencycommand(CreateCurrencyRequest createCurrencyRequest)
+        public CreateCurrencyRequest Request { get; }
+
+        public AddCurrencyCommand(CreateCurrencyRequest request)
         {
-            request = createCurrencyRequest;
+            Request = request;
         }
-        public class AddCurrencycommandHandler : IRequestHandler<AddCurrencycommand, bool>
+
+        public class AddCurrencyCommandHandler : IRequestHandler<AddCurrencyCommand, CurrencyDto>
         {
-            private readonly CurrencyService _currencyService;
-            public AddCurrencycommandHandler(CurrencyService currencyService)
+            private readonly CurrencyService _service;
+
+            public AddCurrencyCommandHandler(CurrencyService service)
             {
-                _currencyService = currencyService;
+                _service = service;
             }
-            public Task<bool> Handle(AddCurrencycommand request, CancellationToken cancellationToken)
+
+            public async Task<CurrencyDto> Handle(AddCurrencyCommand command, CancellationToken cancellationToken)
             {
-                return _currencyService.Create(request.request.Name , request.request.Code);
+                var entity = await _service.Create(command.Request);
+                return MapperCurrency.MapToCurrencyDto(entity);
+            }
+        }
+
+        public class AddCurrencyCommandValidator : AbstractValidator<AddCurrencyCommand>
+        {
+            public AddCurrencyCommandValidator()
+            {
+                RuleFor(c => c.Request.Name).NotEmpty().MaximumLength(100);
+                RuleFor(c => c.Request.Code).MaximumLength(10).When(x => x.Request.Code != null);
             }
         }
     }
 }
-    

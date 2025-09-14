@@ -120,16 +120,21 @@
   },
   {
     "ContainingType": "Products.Api.Controllers.CurrenciesController",
-    "Method": "AddCurrencycommand",
-    "RelativePath": "api/Currencies/AddCurrencycommand",
+    "Method": "Add",
+    "RelativePath": "api/Currencies/Add",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "createrequest",
-        "Type": "Products.Api.Models.CreateCurrencyRequest",
-        "IsRequired": true
+        "Name": "Name",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "Code",
+        "Type": "System.String",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
@@ -143,6 +148,22 @@
         "StatusCode": 200
       }
     ]
+  },
+  {
+    "ContainingType": "Products.Api.Controllers.CurrenciesController",
+    "Method": "Delete",
+    "RelativePath": "api/Currencies/Delete/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
   },
   {
     "ContainingType": "Products.Api.Controllers.CurrenciesController",
@@ -163,6 +184,84 @@
         "StatusCode": 200
       }
     ]
+  },
+  {
+    "ContainingType": "Products.Api.Controllers.CurrenciesController",
+    "Method": "GetById",
+    "RelativePath": "api/Currencies/GetById/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "Products.Api.Models.CurrencyDto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "Products.Api.Controllers.CurrenciesController",
+    "Method": "GetByName",
+    "RelativePath": "api/Currencies/GetByName/{name}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "name",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "Products.Api.Models.CurrencyDto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "Products.Api.Controllers.CurrenciesController",
+    "Method": "Update",
+    "RelativePath": "api/Currencies/Update/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "Name",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "Code",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
   },
   {
     "ContainingType": "Products.Api.Controllers.FiscalItemsController",

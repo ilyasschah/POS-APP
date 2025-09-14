@@ -376,3 +376,4 @@ E:\Repos\Web-POS\Documents.Api\obj\Debug\net9.0\refint\Documents.Api.dll
 E:\Repos\Web-POS\Documents.Api\obj\Debug\net9.0\Documents.Api.pdb
 E:\Repos\Web-POS\Documents.Api\obj\Debug\net9.0\Documents.Api.genruntimeconfig.cache
 E:\Repos\Web-POS\Documents.Api\obj\Debug\net9.0\ref\Documents.Api.dll
+E:\Repos\Web-POS\Documents.Api\obj\Debug\net9.0\Documents.Api.sourcelink.json

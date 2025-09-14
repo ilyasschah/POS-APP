@@ -20,25 +20,4 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.3" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Commands\ApplicationPropertyCommands\Add\" />
-    <Folder Include="Commands\ApplicationPropertyCommands\Delete\" />
-    <Folder Include="Commands\ApplicationPropertyCommands\Update\" />
-    <Folder Include="Commands\MigrationCommands\Add\" />
-    <Folder Include="Commands\MigrationCommands\Delete\" />
-    <Folder Include="Commands\MigrationCommands\Update\" />
-    <Folder Include="Commands\PosPrinterSelectionCommands\Add\" />
-    <Folder Include="Commands\PosPrinterSelectionCommands\Delete\" />
-    <Folder Include="Commands\PosPrinterSelectionCommands\Update\" />
-    <Folder Include="Commands\PosPrinterSelectionSettingsCommands\Add\" />
-    <Folder Include="Commands\PosPrinterSelectionSettingsCommands\Delete\" />
-    <Folder Include="Commands\PosPrinterSelectionSettingsCommands\Update\" />
-    <Folder Include="Commands\PosPrinterSettingsCommands\Add\" />
-    <Folder Include="Commands\PosPrinterSettingsCommands\Delete\" />
-    <Folder Include="Commands\PosPrinterSettingsCommands\Update\" />
-    <Folder Include="Commands\TemplateCommands\Add\" />
-    <Folder Include="Commands\TemplateCommands\Delete\" />
-    <Folder Include="Commands\TemplateCommands\Update\" />
-  </ItemGroup>
-
 </Project>

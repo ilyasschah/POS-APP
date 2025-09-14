@@ -33,8 +33,6 @@ builder.Services.AddScoped<DocumentItemTaxRepository>();
 builder.Services.AddScoped<DocumentItemExpirationDateRepository>();
 builder.Services.AddScoped<DocumentsCounterRepository>();
 
-
-
 // Services
 builder.Services.AddScoped<ZReportservice>();
 builder.Services.AddScoped<PaymentTypeService>();

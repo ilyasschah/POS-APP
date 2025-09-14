@@ -175,3 +175,4 @@ E:\Repos\Web-POS\Stock.Api\obj\Debug\net9.0\refint\Stocks.Api.dll
 E:\Repos\Web-POS\Stock.Api\obj\Debug\net9.0\Stocks.Api.pdb
 E:\Repos\Web-POS\Stock.Api\obj\Debug\net9.0\Stocks.Api.genruntimeconfig.cache
 E:\Repos\Web-POS\Stock.Api\obj\Debug\net9.0\ref\Stocks.Api.dll
+E:\Repos\Web-POS\Stock.Api\obj\Debug\net9.0\Stocks.Api.sourcelink.json
