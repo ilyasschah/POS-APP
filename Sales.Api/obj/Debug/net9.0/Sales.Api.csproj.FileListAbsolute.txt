@@ -168,7 +168,6 @@ E:\Repos\Web-POS\Sales.Api\obj\Debug\net9.0\staticwebassets.build.json
 E:\Repos\Web-POS\Sales.Api\obj\Debug\net9.0\staticwebassets.build.json.cache
 E:\Repos\Web-POS\Sales.Api\obj\Debug\net9.0\staticwebassets.development.json
 E:\Repos\Web-POS\Sales.Api\obj\Debug\net9.0\staticwebassets.build.endpoints.json
-E:\Repos\Web-POS\Sales.Api\obj\Debug\net9.0\staticwebassets.upToDateCheck.txt
 E:\Repos\Web-POS\Sales.Api\obj\Debug\net9.0\Sales.Api.csproj.Up2Date
 E:\Repos\Web-POS\Sales.Api\obj\Debug\net9.0\Sales.Api.dll
 E:\Repos\Web-POS\Sales.Api\obj\Debug\net9.0\refint\Sales.Api.dll
@@ -176,3 +175,4 @@ E:\Repos\Web-POS\Sales.Api\obj\Debug\net9.0\Sales.Api.pdb
 E:\Repos\Web-POS\Sales.Api\obj\Debug\net9.0\Sales.Api.genruntimeconfig.cache
 E:\Repos\Web-POS\Sales.Api\obj\Debug\net9.0\ref\Sales.Api.dll
 E:\Repos\Web-POS\Sales.Api\obj\Debug\net9.0\Sales.Api.sourcelink.json
+E:\Repos\Web-POS\Sales.Api\obj\Debug\net9.0\staticwebassets.upToDateCheck.txt

@@ -19,6 +19,6 @@ namespace Sales.Api.DataBase
         public DbSet<PosOrderItem> PosOrderItems { get;  set; }
         public DbSet<FloorPlan> FloorPlans { get; set; }
         public DbSet<FloorPlanTable> FloorPlanTables { get; set; }
-        public DbSet<StartingCash> StartingCashs { get; set; }
+        public DbSet<StartingCash> StartingCashes { get; set; }
     }
 }
