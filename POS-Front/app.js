@@ -1,6 +1,6 @@
 ﻿// ---------------------- API CONFIG ----------------------
 const API = {
-    products: 'https://localhost:7002/api/Products/GetProducts',
+    products: 'https://localhost:7002/api/Products/GetAll',
     productGroups: 'https://localhost:7002/api/ProductGroups/GetAll',
     barcodes: 'https://localhost:7002/api/Barcodes/GetAllBarCodeProductName',
     currencies: 'https://localhost:7002/api/Currencies/GetAll',

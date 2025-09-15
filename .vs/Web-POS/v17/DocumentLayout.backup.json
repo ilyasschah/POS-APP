@@ -3,32 +3,20 @@
   "WorkspaceRootPath": "E:\\Repos\\Web-POS\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{4397ED62-4BF0-4931-67A9-E0D68B263AE3}|Products.Api\\Products.Api.csproj|e:\\repos\\web-pos\\products.api\\repository\\productgrouprepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{4397ED62-4BF0-4931-67A9-E0D68B263AE3}|Products.Api\\Products.Api.csproj|solutionrelative:products.api\\repository\\productgrouprepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{5DC34C67-393A-4395-B5E8-E91A5D9C77A0}|Sales.Api\\Sales.Api.csproj|e:\\repos\\web-pos\\sales.api\\pages\\account\\login.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{5DC34C67-393A-4395-B5E8-E91A5D9C77A0}|Sales.Api\\Sales.Api.csproj|solutionrelative:sales.api\\pages\\account\\login.cshtml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4397ED62-4BF0-4931-67A9-E0D68B263AE3}|Products.Api\\Products.Api.csproj|e:\\repos\\web-pos\\products.api\\queries\\productgroupsquery\\getallproductgroupsquery.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{4397ED62-4BF0-4931-67A9-E0D68B263AE3}|Products.Api\\Products.Api.csproj|solutionrelative:products.api\\queries\\productgroupsquery\\getallproductgroupsquery.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{5DC34C67-393A-4395-B5E8-E91A5D9C77A0}|Sales.Api\\Sales.Api.csproj|e:\\repos\\web-pos\\sales.api\\pages\\account\\login.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{5DC34C67-393A-4395-B5E8-E91A5D9C77A0}|Sales.Api\\Sales.Api.csproj|solutionrelative:sales.api\\pages\\account\\login.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4397ED62-4BF0-4931-67A9-E0D68B263AE3}|Products.Api\\Products.Api.csproj|e:\\repos\\web-pos\\products.api\\controllers\\productgroupscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{4397ED62-4BF0-4931-67A9-E0D68B263AE3}|Products.Api\\Products.Api.csproj|solutionrelative:products.api\\controllers\\productgroupscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{5DC34C67-393A-4395-B5E8-E91A5D9C77A0}|Sales.Api\\Sales.Api.csproj|e:\\repos\\web-pos\\sales.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{5DC34C67-393A-4395-B5E8-E91A5D9C77A0}|Sales.Api\\Sales.Api.csproj|solutionrelative:sales.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{EAFDD8BC-FE45-B05D-A9DC-E02F71484FB8}|E:\\Repos\\Web-POS\\POS-Front|E:\\Repos\\Web-POS\\pos-front\\app.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
-      "RelativeMoniker": "D:0:0:{EAFDD8BC-FE45-B05D-A9DC-E02F71484FB8}|E:\\Repos\\Web-POS\\POS-Front|solutionrelative:pos-front\\app.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{EAFDD8BC-FE45-B05D-A9DC-E02F71484FB8}|E:\\Repos\\Web-POS\\POS-Front|E:\\Repos\\Web-POS\\pos-front\\web.config||{FA3CD31E-987B-443A-9B81-186104E8DAC1}",
-      "RelativeMoniker": "D:0:0:{EAFDD8BC-FE45-B05D-A9DC-E02F71484FB8}|E:\\Repos\\Web-POS\\POS-Front|solutionrelative:pos-front\\web.config||{FA3CD31E-987B-443A-9B81-186104E8DAC1}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{EAFDD8BC-FE45-B05D-A9DC-E02F71484FB8}|E:\\Repos\\Web-POS\\POS-Front|E:\\Repos\\Web-POS\\pos-front\\orders.html||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{EAFDD8BC-FE45-B05D-A9DC-E02F71484FB8}|E:\\Repos\\Web-POS\\POS-Front|solutionrelative:pos-front\\orders.html||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{EAFDD8BC-FE45-B05D-A9DC-E02F71484FB8}|E:\\Repos\\Web-POS\\POS-Front|E:\\Repos\\Web-POS\\pos-front\\index.html||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{EAFDD8BC-FE45-B05D-A9DC-E02F71484FB8}|E:\\Repos\\Web-POS\\POS-Front|solutionrelative:pos-front\\index.html||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+      "AbsoluteMoniker": "D:0:0:{5DC34C67-393A-4395-B5E8-E91A5D9C77A0}|Sales.Api\\Sales.Api.csproj|e:\\repos\\web-pos\\sales.api\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{5DC34C67-393A-4395-B5E8-E91A5D9C77A0}|Sales.Api\\Sales.Api.csproj|solutionrelative:sales.api\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -38,7 +26,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 214,
-          "SelectedChildIndex": 3,
+          "SelectedChildIndex": 5,
           "Children": [
             {
               "$type": "Bookmark",
@@ -54,91 +42,55 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "ProductGroupRepository.cs",
-              "DocumentMoniker": "E:\\Repos\\Web-POS\\Products.Api\\Repository\\ProductGroupRepository.cs",
-              "RelativeDocumentMoniker": "Products.Api\\Repository\\ProductGroupRepository.cs",
-              "ToolTip": "E:\\Repos\\Web-POS\\Products.Api\\Repository\\ProductGroupRepository.cs",
-              "RelativeToolTip": "Products.Api\\Repository\\ProductGroupRepository.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "DocumentIndex": 2,
+              "Title": "Program.cs",
+              "DocumentMoniker": "E:\\Repos\\Web-POS\\Sales.Api\\Program.cs",
+              "RelativeDocumentMoniker": "Sales.Api\\Program.cs",
+              "ToolTip": "E:\\Repos\\Web-POS\\Sales.Api\\Program.cs",
+              "RelativeToolTip": "Sales.Api\\Program.cs",
+              "ViewState": "AgIAAEAAAAAAAAAAAAAqwHIAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-15T14:20:23.501Z",
+              "WhenOpened": "2025-09-15T15:39:38.654Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "AuthController.cs",
+              "DocumentMoniker": "E:\\Repos\\Web-POS\\Sales.Api\\Controllers\\AuthController.cs",
+              "RelativeDocumentMoniker": "Sales.Api\\Controllers\\AuthController.cs",
+              "ToolTip": "E:\\Repos\\Web-POS\\Sales.Api\\Controllers\\AuthController.cs",
+              "RelativeToolTip": "Sales.Api\\Controllers\\AuthController.cs",
+              "ViewState": "AgIAACkAAAAAAAAAAAAswFAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-15T15:23:18.199Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Login.cshtml.cs",
+              "DocumentMoniker": "E:\\Repos\\Web-POS\\Sales.Api\\Pages\\Account\\Login.cshtml.cs",
+              "RelativeDocumentMoniker": "Sales.Api\\Pages\\Account\\Login.cshtml.cs",
+              "ToolTip": "E:\\Repos\\Web-POS\\Sales.Api\\Pages\\Account\\Login.cshtml.cs",
+              "RelativeToolTip": "Sales.Api\\Pages\\Account\\Login.cshtml.cs",
+              "ViewState": "AgIAABsAAAAAAAAAAAAwwBsAAAAwAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-15T15:19:52.524Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 1,
-              "Title": "GetAllProductGroupsQuery.cs",
-              "DocumentMoniker": "E:\\Repos\\Web-POS\\Products.Api\\Queries\\ProductGroupsQuery\\GetAllProductGroupsQuery.cs",
-              "RelativeDocumentMoniker": "Products.Api\\Queries\\ProductGroupsQuery\\GetAllProductGroupsQuery.cs",
-              "ToolTip": "E:\\Repos\\Web-POS\\Products.Api\\Queries\\ProductGroupsQuery\\GetAllProductGroupsQuery.cs",
-              "RelativeToolTip": "Products.Api\\Queries\\ProductGroupsQuery\\GetAllProductGroupsQuery.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-15T14:20:15.826Z",
+              "Title": "Login.cshtml",
+              "DocumentMoniker": "E:\\Repos\\Web-POS\\Sales.Api\\Pages\\Account\\Login.cshtml",
+              "RelativeDocumentMoniker": "Sales.Api\\Pages\\Account\\Login.cshtml",
+              "ToolTip": "E:\\Repos\\Web-POS\\Sales.Api\\Pages\\Account\\Login.cshtml",
+              "RelativeToolTip": "Sales.Api\\Pages\\Account\\Login.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAowBAAAAAYAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-09-15T15:08:07.364Z",
               "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "ProductGroupsController.cs",
-              "DocumentMoniker": "E:\\Repos\\Web-POS\\Products.Api\\Controllers\\ProductGroupsController.cs",
-              "RelativeDocumentMoniker": "Products.Api\\Controllers\\ProductGroupsController.cs",
-              "ToolTip": "E:\\Repos\\Web-POS\\Products.Api\\Controllers\\ProductGroupsController.cs",
-              "RelativeToolTip": "Products.Api\\Controllers\\ProductGroupsController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAAdAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-15T14:09:11.18Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "Web.config",
-              "DocumentMoniker": "E:\\Repos\\Web-POS\\POS-Front\\Web.config",
-              "RelativeDocumentMoniker": "POS-Front\\Web.config",
-              "ToolTip": "E:\\Repos\\Web-POS\\POS-Front\\Web.config",
-              "RelativeToolTip": "POS-Front\\Web.config",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAAQAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000601|",
-              "WhenOpened": "2025-09-15T13:54:52.824Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "orders.html",
-              "DocumentMoniker": "E:\\Repos\\Web-POS\\POS-Front\\orders.html",
-              "RelativeDocumentMoniker": "POS-Front\\orders.html",
-              "ToolTip": "E:\\Repos\\Web-POS\\POS-Front\\orders.html",
-              "RelativeToolTip": "POS-Front\\orders.html",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001512|",
-              "WhenOpened": "2025-09-15T13:54:41.084Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "index.html",
-              "DocumentMoniker": "E:\\Repos\\Web-POS\\POS-Front\\index.html",
-              "RelativeDocumentMoniker": "POS-Front\\index.html",
-              "ToolTip": "E:\\Repos\\Web-POS\\POS-Front\\index.html",
-              "RelativeToolTip": "POS-Front\\index.html",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001512|",
-              "WhenOpened": "2025-09-15T13:54:38.399Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "app.js",
-              "DocumentMoniker": "E:\\Repos\\Web-POS\\POS-Front\\app.js",
-              "RelativeDocumentMoniker": "POS-Front\\app.js",
-              "ToolTip": "E:\\Repos\\Web-POS\\POS-Front\\app.js",
-              "RelativeToolTip": "POS-Front\\app.js",
-              "ViewState": "AgIAAJUBAAAAAAAAAAAwwK4BAAAOAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
-              "WhenOpened": "2025-09-15T13:54:07.504Z"
             }
           ]
         }

@@ -69,7 +69,7 @@
         let filtered = []
 
         const $ = s => document.querySelector(s)
-        const fmtMoney = (n, code = 'USD') => `${code} ${Number(n || 0).toFixed(2)}`
+        const fmtMoney = (n, code = 'DH') => `${code} ${Number(n || 0).toFixed(2)}`
         const formatDate = iso => {
             try { return new Date(iso).toLocaleString() } catch { return iso || '' }
         }
@@ -134,8 +134,8 @@
             const num = o.orderNumber ?? o.number ?? ''
             const date = formatDate(o.orderDate ?? o.date)
             const pm = o.paymentMethod ?? '�'
-            const tax = fmtMoney(o.taxAmount ?? o.tax, o.currencyCode ?? 'USD')
-            const total = fmtMoney(o.totalAmount ?? o.total, o.currencyCode ?? 'USD')
+            const tax = fmtMoney(o.taxAmount ?? o.tax, o.currencyCode ?? 'DH')
+            const total = fmtMoney(o.totalAmount ?? o.total, o.currencyCode ?? 'DH')
             const note = [o.status, o.note].filter(Boolean).join(' � ')
             return `
             <tr>

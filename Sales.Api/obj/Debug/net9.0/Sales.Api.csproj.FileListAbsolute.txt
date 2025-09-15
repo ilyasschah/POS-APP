@@ -176,3 +176,9 @@ E:\Repos\Web-POS\Sales.Api\obj\Debug\net9.0\Sales.Api.genruntimeconfig.cache
 E:\Repos\Web-POS\Sales.Api\obj\Debug\net9.0\ref\Sales.Api.dll
 E:\Repos\Web-POS\Sales.Api\obj\Debug\net9.0\Sales.Api.sourcelink.json
 E:\Repos\Web-POS\Sales.Api\obj\Debug\net9.0\staticwebassets.upToDateCheck.txt
+E:\Repos\Web-POS\Sales.Api\bin\Debug\net9.0\Sales.Api.staticwebassets.runtime.json
+E:\Repos\Web-POS\Sales.Api\obj\Debug\net9.0\Sales.Api.RazorAssemblyInfo.cache
+E:\Repos\Web-POS\Sales.Api\obj\Debug\net9.0\Sales.Api.RazorAssemblyInfo.cs
+E:\Repos\Web-POS\Sales.Api\obj\Debug\net9.0\compressed\kavoicvzli-9epor7r1ih.gz
+E:\Repos\Web-POS\Sales.Api\obj\Debug\net9.0\compressed\05hjpj9xgv-nha1pgz38y.gz
+E:\Repos\Web-POS\Sales.Api\bin\Debug\net9.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll

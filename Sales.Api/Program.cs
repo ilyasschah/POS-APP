@@ -1,24 +1,27 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using Sales.Api.DataBase;
 using Sales.Api.Repository;
 using Sales.Api.Services;
+
 var builder = WebApplication.CreateBuilder(args);
-// Add CORS
+
+// ===== CORS =====
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowFrontend",
-        policy =>
-        {
-            policy
-                .AllowAnyOrigin() // for testing; later restrict to specific origins
-                .AllowAnyHeader()
-                .AllowAnyMethod();
-        });
+    options.AddPolicy("AllowFrontend", policy =>
+        policy.AllowAnyOrigin() // TODO: restrict in prod
+              .AllowAnyHeader()
+              .AllowAnyMethod());
 });
-// Add services to the container.
-builder.Services.AddDbContext<AppDbContext>(op => op.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-//Repo
+// ===== DB =====
+builder.Services.AddDbContext<AppDbContext>(op =>
+    op.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// ===== Repositories =====
 builder.Services.AddScoped<CountryRepository>();
 builder.Services.AddScoped<CustomerRepository>();
 builder.Services.AddScoped<CustomerDiscountRepository>();
@@ -32,13 +35,8 @@ builder.Services.AddScoped<PosOrderItemRepository>();
 builder.Services.AddScoped<FloorPlanRepository>();
 builder.Services.AddScoped<FloorPlanTableRepository>();
 builder.Services.AddScoped<StartingCashRepository>();
-//builder.Services.AddScoped<>();
-//builder.Services.AddScoped<>();
-//builder.Services.AddScoped<>();
-//builder.Services.AddScoped<>();
-//builder.Services.AddScoped<>();
-//builder.Services.AddScoped<>();
-//Services
+
+// ===== Services =====
 builder.Services.AddScoped<CountryService>();
 builder.Services.AddScoped<CustomerService>();
 builder.Services.AddScoped<CustomerDiscountService>();
@@ -52,26 +50,49 @@ builder.Services.AddScoped<PosOrderItemService>();
 builder.Services.AddScoped<FloorPlanService>();
 builder.Services.AddScoped<FloorPlanTableService>();
 builder.Services.AddScoped<StartingCashService>();
-//builder.Services.AddScoped<>();
-//builder.Services.AddScoped<>();
-//builder.Services.AddScoped<>();
-//builder.Services.AddScoped<>();
-//builder.Services.AddScoped<>();
-//builder.Services.AddScoped<>();
-//builder.Services.AddScoped<>();
-//builder.Services.AddScoped<>();
-//builder.Services.AddScoped<>();
 
+// HttpClient for the Razor login page to call /api/Auth/Login
+builder.Services.AddHttpClient();
 
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
 
+// ===== Controllers + Razor Pages (to serve /Account/Login and wwwroot) =====
 builder.Services.AddControllers();
+builder.Services.AddRazorPages();
+
+// === Authorization (add this so [Authorize] works later) ===
+builder.Services.AddAuthorization();
+
+// ===== Swagger =====
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// ===== JWT Auth (validation) =====
+var jwtSecret = builder.Configuration["Jwt:Secret"] ?? "dev-only-very-long-secret-change-me-please";
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "Sales.Api";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "Sales.Clients";
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(opt =>
+    {
+        opt.RequireHttpsMetadata = true;
+        opt.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateIssuerSigningKey = true,
+            ValidateLifetime = true,
+            ValidIssuer = jwtIssuer,
+            ValidAudience = jwtAudience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
+            ClockSkew = TimeSpan.FromSeconds(30)
+        };
+    });
+
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// ===== pipeline =====
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -79,9 +100,15 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
 app.UseCors("AllowFrontend");
+
+app.UseStaticFiles();
+
+app.UseAuthentication(); // before Authorization
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapRazorPages();
 
 app.Run();
