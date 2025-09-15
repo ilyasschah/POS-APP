@@ -1,3 +1,4 @@
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -8,159 +9,185 @@ namespace Products.Api.Domain
     {
         [Key]
         public int Id { get; set; }
-        public string Name { get; set; }
-        public string? Code { get; set; }
-        public int? PLU { get; set; }
-        public string? MeasurementUnit { get; set; }
-        public decimal Price { get; set; }
-        public bool IsTaxInclusivePrice { get; set; }
-        public bool IsPriceChangeAllowed { get; set; }
-        public bool IsService { get; set; }
-        public bool IsUsingDefaultQuantity { get; set; }
-        public bool IsEnabled { get; set; } = true;
-        [StringLength(500)]
-        public string? Description { get; set; }
-        public decimal Cost { get; set; }
-        public decimal? Markup { get; set; }
-        public byte[]? Image { get; set; } 
-        [StringLength(50)]
-        public string Color { get; set; } 
-        [StringLength(100)]
-        public int? AgeRestriction { get; set; }
-        public decimal? LastPurchasePrice { get; set; }
-        public int? Rank { get; set; }
 
-        //////////////////////////////////////////////
+        [ForeignKey(nameof(ProductGroup))]
         public int? ProductGroupId { get; set; }
-        [ForeignKey(nameof(ProductGroupId))]
-        public virtual ProductGroup ProductGroup { get; set; }
-        public int? CurrencyId { get; set; }
-        [ForeignKey(nameof(CurrencyId))]
-        public virtual Currency Currency { get; set; }
-        public DateTime DateCreated { get; set; }
-        public DateTime DateUpdated { get; set; }
 
-        private Product(
-            string name,
-            string? code,
-            int? plu,
-            string? measurementunit,
-            decimal price,
-            bool istaxinclusiveprice,
-            bool ispricechangeallowed,
-            bool isservice,
-            bool isusingdefaultquantitu,
-            bool isenabled,
-            string? description,
-            decimal cost,
-            decimal? markup,
-            byte[]? image,
-            string color,
-            int? agerestriction,
-            decimal? lastpurchaseprice,
-            int? rank,
-            int? productGroupId,
-            int? currencyId
-            )
-        {
-                Name = name;
-                Code = code;
-                PLU = plu;
-                MeasurementUnit = measurementunit;
-                Price = price;
-                IsTaxInclusivePrice = true;
-                IsPriceChangeAllowed = true;
-                IsService = false;
-                IsUsingDefaultQuantity = true;
-                IsEnabled = true;
-                Description = description;
-                Cost = cost;
-                Markup = markup;
-                Color = color;
-                AgeRestriction = agerestriction;
-                LastPurchasePrice = lastpurchaseprice;
-                Rank = rank;
-                ProductGroupId = productGroupId;
-                CurrencyId = currencyId;
-                DateCreated = DateTime.UtcNow;
-                DateUpdated = DateTime.UtcNow;
-        }
+        [Required, MaxLength(255)]
+        public string Name { get; set; } = default!;
+
+        [MaxLength(100)]
+        public string? Code { get; set; }
+
+        public int? PLU { get; set; }
+
+        [MaxLength(50)]
+        public string? MeasurementUnit { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal Price { get; set; }  // default 0
+
+        public bool IsTaxInclusivePrice { get; set; } // default 1
+
+        [ForeignKey(nameof(Currency))]
+        public int? CurrencyId { get; set; }
+
+        public bool IsPriceChangeAllowed { get; set; }   // default 0
+        public bool IsService { get; set; }              // default 0
+        public bool IsUsingDefaultQuantity { get; set; } // default 1
+        public bool IsEnabled { get; set; }              // default 1
+        public string? Description { get; set; }
+
+        public DateTime? DateCreated { get; set; }
+        public DateTime? DateUpdated { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal Cost { get; set; } // default 0
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal? Markup { get; set; } // default 0
+
+        public byte[]? Image { get; set; }
+
+        [MaxLength(50)]
+        public string Color { get; set; } = "Transparent"; // default
+
+        public int? AgeRestriction { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal? LastPurchasePrice { get; set; } // default 0
+
+        public int? Rank { get; set; } // default 0
+
+        // Navs
+        public ProductGroup? ProductGroup { get; set; }
+        public Currency? Currency { get; set; }
+
         public Product() { }
 
-        public static Product Create(
+        private Product(
+            int? productGroupId,
             string name,
             string? code,
             int? plu,
-            string? measurementunit,
+            string? measurementUnit,
             decimal price,
-            bool istaxinclusiveprice,
-            bool ispricechangeallowed,
-            bool isservice,
-            bool isusingdefaultquantity,
-            bool isenabled,
+            bool isTaxInclusivePrice,
+            int? currencyId,
+            bool isPriceChangeAllowed,
+            bool isService,
+            bool isUsingDefaultQuantity,
+            bool isEnabled,
             string? description,
+            DateTime? dateCreated,
+            DateTime? dateUpdated,
             decimal cost,
             decimal? markup,
             byte[]? image,
             string color,
-            int? agerestriction,
-            decimal? lastpurchaseprice,
-            int? rank,
+            int? ageRestriction,
+            decimal? lastPurchasePrice,
+            int? rank)
+        {
+            ProductGroupId = productGroupId;
+            Name = name;
+            Code = code;
+            PLU = plu;
+            MeasurementUnit = measurementUnit;
+            Price = price;
+            IsTaxInclusivePrice = isTaxInclusivePrice;
+            CurrencyId = currencyId;
+            IsPriceChangeAllowed = isPriceChangeAllowed;
+            IsService = isService;
+            IsUsingDefaultQuantity = isUsingDefaultQuantity;
+            IsEnabled = isEnabled;
+            Description = description;
+            DateCreated = dateCreated;
+            DateUpdated = dateUpdated;
+            Cost = cost;
+            Markup = markup;
+            Image = image;
+            Color = color;
+            AgeRestriction = ageRestriction;
+            LastPurchasePrice = lastPurchasePrice;
+            Rank = rank;
+        }
+
+        public static Product Create(
             int? productGroupId,
+            string name,
+            string? code,
+            int? plu,
+            string? measurementUnit,
+            decimal price,
+            bool isTaxInclusivePrice,
             int? currencyId,
-            DateTime? datecreated,
-            DateTime? dateupdated
-            )
+            bool isPriceChangeAllowed,
+            bool isService,
+            bool isUsingDefaultQuantity,
+            bool isEnabled,
+            string? description,
+            DateTime? dateCreated,
+            DateTime? dateUpdated,
+            decimal cost,
+            decimal? markup,
+            byte[]? image,
+            string color,
+            int? ageRestriction,
+            decimal? lastPurchasePrice,
+            int? rank)
+            => new(
+                productGroupId, name, code, plu, measurementUnit, price, isTaxInclusivePrice, currencyId,
+                isPriceChangeAllowed, isService, isUsingDefaultQuantity, isEnabled, description, dateCreated,
+                dateUpdated, cost, markup, image, color, ageRestriction, lastPurchasePrice, rank
+            );
+
+        public void Update(
+            int? productGroupId,
+            string name,
+            string? code,
+            int? plu,
+            string? measurementUnit,
+            decimal price,
+            bool isTaxInclusivePrice,
+            int? currencyId,
+            bool isPriceChangeAllowed,
+            bool isService,
+            bool isUsingDefaultQuantity,
+            bool isEnabled,
+            string? description,
+            DateTime? dateCreated,
+            DateTime? dateUpdated,
+            decimal cost,
+            decimal? markup,
+            byte[]? image,
+            string color,
+            int? ageRestriction,
+            decimal? lastPurchasePrice,
+            int? rank)
         {
-            if (string.IsNullOrWhiteSpace(name))
-                throw new ArgumentException("Product name cannot be null or empty.", nameof(name));
-
-            if (price < 0)
-                throw new ArgumentException("Product price cannot be negative.", nameof(price));
-
-            if (productGroupId <= 0)
-                throw new ArgumentException("ProductGroupId must be greater than zero.", nameof(productGroupId));
-
-            if (currencyId <= 0)
-                throw new ArgumentException("CurrencyId must be greater than zero.", nameof(currencyId));
-
-            return new Product(name, code, plu, measurementunit, price, istaxinclusiveprice, ispricechangeallowed, isservice
-                , isusingdefaultquantity, isenabled, description, cost, markup, image, color, agerestriction
-                , lastpurchaseprice, rank,
-                productGroupId, currencyId
-                );
+            ProductGroupId = productGroupId;
+            Name = name;
+            Code = code;
+            PLU = plu;
+            MeasurementUnit = measurementUnit;
+            Price = price;
+            IsTaxInclusivePrice = isTaxInclusivePrice;
+            CurrencyId = currencyId;
+            IsPriceChangeAllowed = isPriceChangeAllowed;
+            IsService = isService;
+            IsUsingDefaultQuantity = isUsingDefaultQuantity;
+            IsEnabled = isEnabled;
+            Description = description;
+            DateCreated = dateCreated;
+            DateUpdated = dateUpdated;
+            Cost = cost;
+            Markup = markup;
+            Image = image;
+            Color = color;
+            AgeRestriction = ageRestriction;
+            LastPurchasePrice = lastPurchasePrice;
+            Rank = rank;
         }
-
-        // Update methods
-        public void UpdatePrice(decimal newPrice)
-        {
-            if (newPrice < 0)
-                throw new ArgumentException("Price cannot be negative.", nameof(newPrice));
-
-            Price = newPrice;
-            DateUpdated = DateTime.UtcNow;
-        }
-
-        public void UpdateName(string newName)
-        {
-            if (string.IsNullOrWhiteSpace(newName))
-                throw new ArgumentException("Name cannot be null or empty.", nameof(newName));
-
-            Name = newName;
-            DateUpdated = DateTime.UtcNow;
-        }
-
-        public void Disable()
-        {
-            IsEnabled = false;
-            DateUpdated = DateTime.UtcNow;
-        }
-
-        public void Enable()
-        {
-            IsEnabled = true;
-            DateUpdated = DateTime.UtcNow;
-        }
-
     }
 }

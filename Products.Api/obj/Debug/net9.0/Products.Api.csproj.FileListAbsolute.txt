@@ -331,7 +331,6 @@ E:\Repos\Web-POS\Products.Api\obj\Debug\net9.0\staticwebassets.build.json
 E:\Repos\Web-POS\Products.Api\obj\Debug\net9.0\staticwebassets.build.json.cache
 E:\Repos\Web-POS\Products.Api\obj\Debug\net9.0\staticwebassets.development.json
 E:\Repos\Web-POS\Products.Api\obj\Debug\net9.0\staticwebassets.build.endpoints.json
-E:\Repos\Web-POS\Products.Api\obj\Debug\net9.0\staticwebassets.upToDateCheck.txt
 E:\Repos\Web-POS\Products.Api\obj\Debug\net9.0\Products.83E5BBC8.Up2Date
 E:\Repos\Web-POS\Products.Api\obj\Debug\net9.0\Products.Api.dll
 E:\Repos\Web-POS\Products.Api\obj\Debug\net9.0\refint\Products.Api.dll

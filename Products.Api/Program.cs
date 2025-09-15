@@ -41,7 +41,7 @@ builder.Services.AddScoped<VoidReasonRepository>();
 builder.Services.AddScoped<BarcodeService>();
 builder.Services.AddScoped<CurrencyService>();
 builder.Services.AddScoped<FiscalItemService>();
-builder.Services.AddScoped<ProductCommentsService>();
+builder.Services.AddScoped<ProductCommentService>();
 builder.Services.AddScoped<ProductGroupService>();
 builder.Services.AddScoped<ProductService>();
 builder.Services.AddScoped<ProductTaxService>();

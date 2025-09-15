@@ -3,8 +3,6 @@ using MediatR;
 using Sales.Api.Helpers;
 using Sales.Api.Models;
 using Sales.Api.Services;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Sales.Api.Commands.StartingCashCommands.Add
 {
@@ -28,8 +26,8 @@ namespace Sales.Api.Commands.StartingCashCommands.Add
 
             public async Task<StartingCashDto> Handle(AddStartingCashCommand command, CancellationToken cancellationToken)
             {
-                var newEntity = await _service.Create(command.Request);
-                return MapperStartingCash.MapToStartingCashDto(newEntity);
+                var entity = await _service.Create(command.Request);
+                return MapperStartingCash.MapToStartingCashDto(entity);
             }
         }
 
@@ -37,9 +35,8 @@ namespace Sales.Api.Commands.StartingCashCommands.Add
         {
             public AddStartingCashCommandValidator()
             {
-                RuleFor(c => c.Request.UserId).GreaterThan(0);
-                RuleFor(c => c.Request.Amount).GreaterThanOrEqualTo(0);
-                RuleFor(c => c.Request.ZReportNumber).GreaterThan(0);
+                RuleFor(x => x.Request.UserId).GreaterThan(0);
+                RuleFor(x => x.Request.Amount).GreaterThanOrEqualTo(0);
             }
         }
     }

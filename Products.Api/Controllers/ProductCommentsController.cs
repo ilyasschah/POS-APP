@@ -1,8 +1,10 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Products.Api.Commands.ProductsCommentsCommands.Add;
+using Products.Api.Commands.ProductCommentCommands.Add;
+using Products.Api.Commands.ProductCommentCommands.Delete;
+using Products.Api.Commands.ProductCommentCommands.Update;
 using Products.Api.Models;
-using Products.Api.Queries.ProductCommentsQuery.Get;
+using Products.Api.Queries.ProductCommentQuery;
 
 namespace Products.Api.Controllers
 {
@@ -11,30 +13,45 @@ namespace Products.Api.Controllers
     public class ProductCommentsController(IMediator mediator) : ControllerBase
     {
         [HttpGet("[action]")]
-        public async Task<ActionResult<List<ProductCommentDto>>> GetAllProductComments()
+        public async Task<ActionResult<List<ProductCommentDto>>> GetAll()
         {
-            return Ok(await mediator.Send(new GetAllProductCommentsQuery()));
+            var result = await mediator.Send(new GetAllProductCommentsQuery());
+            return Ok(result);
         }
-        [HttpPost("[action]")]
-        public async Task<ActionResult<ProductCommentDto>> AddProductComment([FromBody] CreateProductCommentRequest createproductcommentrequest)
-        {
-            return Ok(await mediator.Send(new AddProductCommentcommand(createproductcommentrequest)));
-        }
-        //[HttpDelete("{id}")]
-        //public async Task<ActionResult> DeleteProductComment(int id)
-        //{
-        //    try
-        //    {
-        //        var deleted = await _productCommentRepository.DeleteProductCommentAsync(id);
-        //        if (!deleted)
-        //            return NotFound($"Product comment with ID {id} not found.");
 
-        //        return NoContent();
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return StatusCode(500, $"Internal server error: {ex.Message}");
-        //    }
-        //}
+        [HttpGet("[action]/{id:int}")]
+        public async Task<ActionResult<ProductCommentDto>> GetById(int id)
+        {
+            var result = await mediator.Send(new GetProductCommentByIdQuery { Id = id });
+            return result is null ? NotFound() : Ok(result);
+        }
+
+        [HttpGet("[action]/{productId:int}")]
+        public async Task<ActionResult<List<ProductCommentDto>>> GetByProductId(int productId)
+        {
+            var result = await mediator.Send(new GetProductCommentsByProductIdQuery { ProductId = productId });
+            return Ok(result);
+        }
+
+        [HttpPost("[action]")]
+        public async Task<ActionResult<ProductCommentDto>> Add([FromQuery] CreateProductCommentRequest req)
+        {
+            var result = await mediator.Send(new AddProductCommentCommand(req));
+            return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+        }
+
+        [HttpPut("[action]/{id:int}")]
+        public async Task<IActionResult> Update(int id, [FromQuery] UpdateProductCommentRequest req)
+        {
+            var ok = await mediator.Send(new UpdateProductCommentCommand(id, req));
+            return ok ? NoContent() : NotFound();
+        }
+
+        [HttpDelete("[action]/{id:int}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var ok = await mediator.Send(new DeleteProductCommentCommand(id));
+            return ok ? NoContent() : NotFound();
+        }
     }
 }

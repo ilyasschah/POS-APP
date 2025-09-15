@@ -1,51 +1,53 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+
 namespace Products.Api.Domain
 {
-    [Table("ProductGroup")] 
+    [Table("ProductGroup")]
     public class ProductGroup
     {
         [Key]
         public int Id { get; set; }
-        [Required]
-        public string Name { get; set; }
+
+        [Required, MaxLength(255)]
+        public string Name { get; set; } = default!;
+
+        [ForeignKey(nameof(ParentGroup))]
         public int? ParentGroupId { get; set; }
-        [Required]
-        public string Color { get; set; }
+
+        [Required, MaxLength(50)]
+        public string Color { get; set; } = "Transparent"; // DB default
+
         public byte[]? Image { get; set; }
-        public int Rank { get; set; }
-        [ForeignKey("ParentGroupId")]
-        public virtual ProductGroup? ParentGroup { get; set; }
-        public virtual ICollection<ProductGroup> ChildGroups { get; set; } = new HashSet<ProductGroup>();
-        
-        private ProductGroup(string name, int? parentgroupid, string color,byte[]? image ,int rank )
+
+        public int Rank { get; set; } = 0; // DB default
+
+        // Navigation (self-reference)
+        public ProductGroup? ParentGroup { get; set; }
+        public ICollection<ProductGroup> Children { get; set; } = new List<ProductGroup>();
+
+        public ProductGroup() { }
+
+        private ProductGroup(string name, int? parentGroupId, string color, byte[]? image, int rank)
         {
             Name = name;
-            ParentGroupId = parentgroupid;
-            Color = color;
+            ParentGroupId = parentGroupId;
+            Color = string.IsNullOrWhiteSpace(color) ? "Transparent" : color;
             Image = image;
             Rank = rank;
         }
-        public ProductGroup() { }
-        public static ProductGroup Create(string name, int? parentgroupid, string color,byte[]? image, int rank)
+
+        public static ProductGroup Create(string name, int? parentGroupId = null, string color = "Transparent", byte[]? image = null, int rank = 0)
+            => new(name, parentGroupId, color, image, rank);
+
+        public void Update(string name, int? parentGroupId, string color, byte[]? image, int rank)
         {
-            if (name == null)
-            {
-                throw new ArgumentException("Please chouse a name .", nameof(name));
-            }
-            return new ProductGroup(name, parentgroupid, color, image,rank);
-        }
-        public void Update(string newName, int parentgroupid, string color, byte[] image, int rank)
-        {
-            if (string.IsNullOrWhiteSpace(newName))
-            {
-                throw new ArgumentException("Name cannot be null or whitespace.", nameof(newName));
-            }
-            Name = newName;
-            ParentGroupId = parentgroupid;
-            Color = color;
-            Rank = rank;
+            Name = name;
+            ParentGroupId = parentGroupId;
+            Color = string.IsNullOrWhiteSpace(color) ? "Transparent" : color;
             Image = image;
+            Rank = rank;
         }
     }
 }

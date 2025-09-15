@@ -1,6 +1,6 @@
 [
   {
-    "ContainingType": "Application.Api.Controllers.ApplicationPropertiesController",
+    "ContainingType": "Products.Api.Controllers.ApplicationPropertiesController",
     "Method": "Add",
     "RelativePath": "api/ApplicationProperties/Add",
     "HttpMethod": "POST",
@@ -20,7 +20,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Application.Api.Models.ApplicationPropertyDto",
+        "Type": "Products.Api.Models.ApplicationPropertyDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -31,7 +31,7 @@
     ]
   },
   {
-    "ContainingType": "Application.Api.Controllers.ApplicationPropertiesController",
+    "ContainingType": "Products.Api.Controllers.ApplicationPropertiesController",
     "Method": "Delete",
     "RelativePath": "api/ApplicationProperties/Delete/{name}",
     "HttpMethod": "DELETE",
@@ -47,7 +47,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Application.Api.Controllers.ApplicationPropertiesController",
+    "ContainingType": "Products.Api.Controllers.ApplicationPropertiesController",
     "Method": "GetAll",
     "RelativePath": "api/ApplicationProperties/GetAll",
     "HttpMethod": "GET",
@@ -56,7 +56,7 @@
     "Parameters": [],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Application.Api.Models.ApplicationPropertyDto, Application.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.ApplicationPropertyDto, Application.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -67,7 +67,7 @@
     ]
   },
   {
-    "ContainingType": "Application.Api.Controllers.ApplicationPropertiesController",
+    "ContainingType": "Products.Api.Controllers.ApplicationPropertiesController",
     "Method": "GetByName",
     "RelativePath": "api/ApplicationProperties/GetByName/{name}",
     "HttpMethod": "GET",
@@ -82,7 +82,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Application.Api.Models.ApplicationPropertyDto",
+        "Type": "Products.Api.Models.ApplicationPropertyDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -93,7 +93,7 @@
     ]
   },
   {
-    "ContainingType": "Application.Api.Controllers.ApplicationPropertiesController",
+    "ContainingType": "Products.Api.Controllers.ApplicationPropertiesController",
     "Method": "Update",
     "RelativePath": "api/ApplicationProperties/Update/{originalName}",
     "HttpMethod": "PUT",
@@ -119,7 +119,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Application.Api.Controllers.MigrationsController",
+    "ContainingType": "Products.Api.Controllers.MigrationsController",
     "Method": "Add",
     "RelativePath": "api/Migrations/Add",
     "HttpMethod": "POST",
@@ -154,7 +154,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Application.Api.Models.MigrationDto",
+        "Type": "Products.Api.Models.MigrationDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -165,7 +165,7 @@
     ]
   },
   {
-    "ContainingType": "Application.Api.Controllers.MigrationsController",
+    "ContainingType": "Products.Api.Controllers.MigrationsController",
     "Method": "Delete",
     "RelativePath": "api/Migrations/Delete/{id}",
     "HttpMethod": "DELETE",
@@ -181,7 +181,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Application.Api.Controllers.MigrationsController",
+    "ContainingType": "Products.Api.Controllers.MigrationsController",
     "Method": "GetAll",
     "RelativePath": "api/Migrations/GetAll",
     "HttpMethod": "GET",
@@ -190,7 +190,7 @@
     "Parameters": [],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Application.Api.Models.MigrationDto, Application.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.MigrationDto, Application.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -201,7 +201,7 @@
     ]
   },
   {
-    "ContainingType": "Application.Api.Controllers.MigrationsController",
+    "ContainingType": "Products.Api.Controllers.MigrationsController",
     "Method": "GetById",
     "RelativePath": "api/Migrations/GetById/{id}",
     "HttpMethod": "GET",
@@ -216,7 +216,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Application.Api.Models.MigrationDto",
+        "Type": "Products.Api.Models.MigrationDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -227,7 +227,7 @@
     ]
   },
   {
-    "ContainingType": "Application.Api.Controllers.MigrationsController",
+    "ContainingType": "Products.Api.Controllers.MigrationsController",
     "Method": "GetByVersion",
     "RelativePath": "api/Migrations/GetByVersion/{version}",
     "HttpMethod": "GET",
@@ -242,7 +242,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Application.Api.Models.MigrationDto",
+        "Type": "Products.Api.Models.MigrationDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -253,7 +253,7 @@
     ]
   },
   {
-    "ContainingType": "Application.Api.Controllers.MigrationsController",
+    "ContainingType": "Products.Api.Controllers.MigrationsController",
     "Method": "Update",
     "RelativePath": "api/Migrations/Update/{id}",
     "HttpMethod": "PUT",
@@ -294,7 +294,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Application.Api.Controllers.PosPrinterSelectionsController",
+    "ContainingType": "Products.Api.Controllers.PosPrinterSelectionsController",
     "Method": "Add",
     "RelativePath": "api/PosPrinterSelections/Add",
     "HttpMethod": "POST",
@@ -319,7 +319,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Application.Api.Models.PosPrinterSelectionDto",
+        "Type": "Products.Api.Models.PosPrinterSelectionDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -330,7 +330,7 @@
     ]
   },
   {
-    "ContainingType": "Application.Api.Controllers.PosPrinterSelectionsController",
+    "ContainingType": "Products.Api.Controllers.PosPrinterSelectionsController",
     "Method": "Delete",
     "RelativePath": "api/PosPrinterSelections/Delete/{id}",
     "HttpMethod": "DELETE",
@@ -346,7 +346,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Application.Api.Controllers.PosPrinterSelectionsController",
+    "ContainingType": "Products.Api.Controllers.PosPrinterSelectionsController",
     "Method": "GetAll",
     "RelativePath": "api/PosPrinterSelections/GetAll",
     "HttpMethod": "GET",
@@ -355,7 +355,7 @@
     "Parameters": [],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Application.Api.Models.PosPrinterSelectionDto, Application.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.PosPrinterSelectionDto, Application.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -366,7 +366,7 @@
     ]
   },
   {
-    "ContainingType": "Application.Api.Controllers.PosPrinterSelectionsController",
+    "ContainingType": "Products.Api.Controllers.PosPrinterSelectionsController",
     "Method": "GetById",
     "RelativePath": "api/PosPrinterSelections/GetById/{id}",
     "HttpMethod": "GET",
@@ -381,7 +381,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Application.Api.Models.PosPrinterSelectionDto",
+        "Type": "Products.Api.Models.PosPrinterSelectionDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -392,7 +392,7 @@
     ]
   },
   {
-    "ContainingType": "Application.Api.Controllers.PosPrinterSelectionsController",
+    "ContainingType": "Products.Api.Controllers.PosPrinterSelectionsController",
     "Method": "GetByKey",
     "RelativePath": "api/PosPrinterSelections/GetByKey/{key}",
     "HttpMethod": "GET",
@@ -407,7 +407,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Application.Api.Models.PosPrinterSelectionDto",
+        "Type": "Products.Api.Models.PosPrinterSelectionDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -418,7 +418,7 @@
     ]
   },
   {
-    "ContainingType": "Application.Api.Controllers.PosPrinterSelectionsController",
+    "ContainingType": "Products.Api.Controllers.PosPrinterSelectionsController",
     "Method": "Update",
     "RelativePath": "api/PosPrinterSelections/Update/{id}",
     "HttpMethod": "PUT",
@@ -449,7 +449,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Application.Api.Controllers.PosPrinterSelectionSettingsController",
+    "ContainingType": "Products.Api.Controllers.PosPrinterSelectionSettingsController",
     "Method": "Add",
     "RelativePath": "api/PosPrinterSelectionSettings/Add",
     "HttpMethod": "POST",
@@ -584,7 +584,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Application.Api.Models.PosPrinterSelectionSettingsDto",
+        "Type": "Products.Api.Models.PosPrinterSelectionSettingsDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -595,7 +595,7 @@
     ]
   },
   {
-    "ContainingType": "Application.Api.Controllers.PosPrinterSelectionSettingsController",
+    "ContainingType": "Products.Api.Controllers.PosPrinterSelectionSettingsController",
     "Method": "Delete",
     "RelativePath": "api/PosPrinterSelectionSettings/Delete/{id}",
     "HttpMethod": "DELETE",
@@ -611,7 +611,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Application.Api.Controllers.PosPrinterSelectionSettingsController",
+    "ContainingType": "Products.Api.Controllers.PosPrinterSelectionSettingsController",
     "Method": "GetAll",
     "RelativePath": "api/PosPrinterSelectionSettings/GetAll",
     "HttpMethod": "GET",
@@ -620,7 +620,7 @@
     "Parameters": [],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Application.Api.Models.PosPrinterSelectionSettingsDto, Application.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.PosPrinterSelectionSettingsDto, Application.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -631,7 +631,7 @@
     ]
   },
   {
-    "ContainingType": "Application.Api.Controllers.PosPrinterSelectionSettingsController",
+    "ContainingType": "Products.Api.Controllers.PosPrinterSelectionSettingsController",
     "Method": "GetById",
     "RelativePath": "api/PosPrinterSelectionSettings/GetById/{id}",
     "HttpMethod": "GET",
@@ -646,7 +646,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Application.Api.Models.PosPrinterSelectionSettingsDto",
+        "Type": "Products.Api.Models.PosPrinterSelectionSettingsDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -657,7 +657,7 @@
     ]
   },
   {
-    "ContainingType": "Application.Api.Controllers.PosPrinterSelectionSettingsController",
+    "ContainingType": "Products.Api.Controllers.PosPrinterSelectionSettingsController",
     "Method": "GetBySelectionId",
     "RelativePath": "api/PosPrinterSelectionSettings/GetBySelectionId/{posPrinterSelectionId}",
     "HttpMethod": "GET",
@@ -672,7 +672,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Application.Api.Models.PosPrinterSelectionSettingsDto, Application.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.PosPrinterSelectionSettingsDto, Application.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -683,7 +683,7 @@
     ]
   },
   {
-    "ContainingType": "Application.Api.Controllers.PosPrinterSelectionSettingsController",
+    "ContainingType": "Products.Api.Controllers.PosPrinterSelectionSettingsController",
     "Method": "Update",
     "RelativePath": "api/PosPrinterSelectionSettings/Update/{id}",
     "HttpMethod": "PUT",
@@ -824,7 +824,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Application.Api.Controllers.PosPrinterSettingsController",
+    "ContainingType": "Products.Api.Controllers.PosPrinterSettingsController",
     "Method": "Add",
     "RelativePath": "api/PosPrinterSettings/Add",
     "HttpMethod": "POST",
@@ -914,7 +914,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Application.Api.Models.PosPrinterSettingsDto",
+        "Type": "Products.Api.Models.PosPrinterSettingsDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -925,7 +925,7 @@
     ]
   },
   {
-    "ContainingType": "Application.Api.Controllers.PosPrinterSettingsController",
+    "ContainingType": "Products.Api.Controllers.PosPrinterSettingsController",
     "Method": "Delete",
     "RelativePath": "api/PosPrinterSettings/Delete/{id}",
     "HttpMethod": "DELETE",
@@ -941,7 +941,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Application.Api.Controllers.PosPrinterSettingsController",
+    "ContainingType": "Products.Api.Controllers.PosPrinterSettingsController",
     "Method": "GetAll",
     "RelativePath": "api/PosPrinterSettings/GetAll",
     "HttpMethod": "GET",
@@ -950,7 +950,7 @@
     "Parameters": [],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Application.Api.Models.PosPrinterSettingsDto, Application.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.PosPrinterSettingsDto, Application.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -961,7 +961,7 @@
     ]
   },
   {
-    "ContainingType": "Application.Api.Controllers.PosPrinterSettingsController",
+    "ContainingType": "Products.Api.Controllers.PosPrinterSettingsController",
     "Method": "GetById",
     "RelativePath": "api/PosPrinterSettings/GetById/{id}",
     "HttpMethod": "GET",
@@ -976,7 +976,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Application.Api.Models.PosPrinterSettingsDto",
+        "Type": "Products.Api.Models.PosPrinterSettingsDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -987,7 +987,7 @@
     ]
   },
   {
-    "ContainingType": "Application.Api.Controllers.PosPrinterSettingsController",
+    "ContainingType": "Products.Api.Controllers.PosPrinterSettingsController",
     "Method": "GetByPrinterName",
     "RelativePath": "api/PosPrinterSettings/GetByPrinterName/{printerName}",
     "HttpMethod": "GET",
@@ -1002,7 +1002,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Application.Api.Models.PosPrinterSettingsDto",
+        "Type": "Products.Api.Models.PosPrinterSettingsDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -1013,7 +1013,7 @@
     ]
   },
   {
-    "ContainingType": "Application.Api.Controllers.PosPrinterSettingsController",
+    "ContainingType": "Products.Api.Controllers.PosPrinterSettingsController",
     "Method": "Update",
     "RelativePath": "api/PosPrinterSettings/Update/{id}",
     "HttpMethod": "PUT",
@@ -1109,7 +1109,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Application.Api.Controllers.TemplatesController",
+    "ContainingType": "Products.Api.Controllers.TemplatesController",
     "Method": "Add",
     "RelativePath": "api/Templates/Add",
     "HttpMethod": "POST",
@@ -1129,7 +1129,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Application.Api.Models.TemplateDto",
+        "Type": "Products.Api.Models.TemplateDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -1140,7 +1140,7 @@
     ]
   },
   {
-    "ContainingType": "Application.Api.Controllers.TemplatesController",
+    "ContainingType": "Products.Api.Controllers.TemplatesController",
     "Method": "Delete",
     "RelativePath": "api/Templates/Delete/{id}",
     "HttpMethod": "DELETE",
@@ -1156,7 +1156,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Application.Api.Controllers.TemplatesController",
+    "ContainingType": "Products.Api.Controllers.TemplatesController",
     "Method": "GetAll",
     "RelativePath": "api/Templates/GetAll",
     "HttpMethod": "GET",
@@ -1165,7 +1165,7 @@
     "Parameters": [],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Application.Api.Models.TemplateDto, Application.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.TemplateDto, Application.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -1176,7 +1176,7 @@
     ]
   },
   {
-    "ContainingType": "Application.Api.Controllers.TemplatesController",
+    "ContainingType": "Products.Api.Controllers.TemplatesController",
     "Method": "GetById",
     "RelativePath": "api/Templates/GetById/{id}",
     "HttpMethod": "GET",
@@ -1191,7 +1191,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Application.Api.Models.TemplateDto",
+        "Type": "Products.Api.Models.TemplateDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -1202,7 +1202,7 @@
     ]
   },
   {
-    "ContainingType": "Application.Api.Controllers.TemplatesController",
+    "ContainingType": "Products.Api.Controllers.TemplatesController",
     "Method": "GetByName",
     "RelativePath": "api/Templates/GetByName/{name}",
     "HttpMethod": "GET",
@@ -1217,7 +1217,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Application.Api.Models.TemplateDto",
+        "Type": "Products.Api.Models.TemplateDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -1228,7 +1228,7 @@
     ]
   },
   {
-    "ContainingType": "Application.Api.Controllers.TemplatesController",
+    "ContainingType": "Products.Api.Controllers.TemplatesController",
     "Method": "Update",
     "RelativePath": "api/Templates/Update/{id}",
     "HttpMethod": "PUT",

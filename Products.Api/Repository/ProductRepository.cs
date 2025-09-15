@@ -1,70 +1,71 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Products.Api.DataBase;
 using Products.Api.Domain;
-using Products.Api.Models;
+
 namespace Products.Api.Repository
 {
     public class ProductRepository
     {
-        public AppDbContext _db;
+        private readonly AppDbContext _db;
 
         public ProductRepository(AppDbContext db)
         {
             _db = db;
         }
-        public async Task<List<Product>> GetProducts()
+
+        public async Task<List<Product>> GetAllAsync()
         {
             return await _db.Products
                 .AsNoTracking()
-                .Include(g => g.ProductGroup)
-                .Include(pg =>pg.ProductGroup.ParentGroup)
-                .Include(c => c.Currency)
+                .Include(p => p.ProductGroup)
+                .Include(p => p.Currency)
                 .ToListAsync();
         }
-        
-        //public async Task<Product?> GetProductByIdAsync(int id)
-        //{
-        //    return await _db.Products
-        //        .AsNoTracking()
-        //        .Include(p => p.ProductGroup)
-        //        .ThenInclude(pg => pg.ParentGroup)
-        //        .Include(p => p.Currency)
-        //        .FirstOrDefaultAsync(pr => pr.Id == id);
-        //}
-        public async Task<List<Product>> GetProductByName(string Name)
+
+        public async Task<Product?> GetByIdAsync(int id, bool trackEntity = false)
+        {
+            var q = _db.Products.AsQueryable();
+            if (!trackEntity) q = q.AsNoTracking();
+            return await q
+                .Include(p => p.ProductGroup)
+                .Include(p => p.Currency)
+                .FirstOrDefaultAsync(p => p.Id == id);
+        }
+
+        public async Task<Product?> GetByCodeAsync(string code)
         {
             return await _db.Products
                 .AsNoTracking()
-                .Where(pr => pr.Name.Contains(Name))
-                .ToListAsync();
+                .Include(p => p.ProductGroup)
+                .Include(p => p.Currency)
+                .FirstOrDefaultAsync(p => p.Code == code);
         }
-        public async Task<decimal> GetTotalPrice(string name)
+
+        public async Task<bool> ExistsByNameAsync(string name)
         {
-            return await _db.Products
-                .AsNoTracking()
-                .Where(pr => pr.Name.Contains(name))
-                .SumAsync(pr => pr.Price);
+            return await _db.Products.AnyAsync(p => p.Name.ToLower() == name.ToLower());
         }
-        public async Task Add(Product newproduct)
+
+        public async Task<bool> ExistsByCodeAsync(string code)
         {
-            _db.Products.Add(newproduct);
+            return await _db.Products.AnyAsync(p => p.Code != null && p.Code.ToLower() == code.ToLower());
+        }
+
+        public async Task AddAsync(Product entity)
+        {
+            _db.Products.Add(entity);
             await _db.SaveChangesAsync();
         }
-        public bool Exist(string productname)
+
+        public async Task UpdateAsync(Product entity)
         {
-            return _db.Products.Any(p => p.Name == productname);
+            _db.Products.Update(entity);
+            await _db.SaveChangesAsync();
         }
-        //public async Task<Product> UpdateProductAsync(Product product)
-        //{
-        //    if (product == null)
-        //        throw new ArgumentNullException(nameof(product));
-        //    _db.Products.Update(product);
-        //    await _db.SaveChangesAsync();
-        //    return product;
-        //}
-        public async Task DeleteProductAsync(Product product)
+
+        public async Task DeleteAsync(Product entity)
         {
-            _db.Products.Remove(product);
+            _db.Products.Remove(entity);
             await _db.SaveChangesAsync();
         }
     }

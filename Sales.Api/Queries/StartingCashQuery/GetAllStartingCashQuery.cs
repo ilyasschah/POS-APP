@@ -7,7 +7,8 @@ namespace Sales.Api.Queries.StartingCashQuery
 {
     public class GetAllStartingCashQuery : IRequest<List<StartingCashDto>>
     {
-        public class GetAllStartingCashQueryHandler : IRequestHandler<GetAllStartingCashQuery, List<StartingCashDto>>
+        public class GetAllStartingCashQueryHandler
+            : IRequestHandler<GetAllStartingCashQuery, List<StartingCashDto>>
         {
             private readonly StartingCashRepository _repository;
 
@@ -18,8 +19,8 @@ namespace Sales.Api.Queries.StartingCashQuery
 
             public async Task<List<StartingCashDto>> Handle(GetAllStartingCashQuery request, CancellationToken cancellationToken)
             {
-                var entities = await _repository.GetAllAsync();
-                return entities.Select(MapperStartingCash.MapToStartingCashDto).ToList();
+                var list = await _repository.GetAllAsync();
+                return list.Select(MapperStartingCash.MapToStartingCashDto).ToList();
             }
         }
     }

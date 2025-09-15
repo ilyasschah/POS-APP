@@ -1,14 +1,12 @@
 ﻿using Sales.Api.Domain;
 using Sales.Api.Models;
 using Sales.Api.Repository;
-using System;
-using System.Threading.Tasks;
 
 namespace Sales.Api.Services
 {
     public class StartingCashService
     {
-        public readonly StartingCashRepository _repository;
+        private readonly StartingCashRepository _repository;
 
         public StartingCashService(StartingCashRepository repository)
         {
@@ -17,27 +15,55 @@ namespace Sales.Api.Services
 
         public async Task<StartingCash> Create(CreateStartingCashRequest req)
         {
-            var newStartingCash = StartingCash.Create(
-                req.UserId,
-                req.Amount,
-                req.Description,
-                req.StartingCashType,
-                req.ZReportNumber
+            if (req.Amount < 0)
+                throw new InvalidOperationException("Amount cannot be negative.");
+
+            if (!await _repository.UserExistsAsync(req.UserId))
+                throw new InvalidOperationException($"User with Id '{req.UserId}' does not exist.");
+
+            var entity = StartingCash.Create(
+                userId: req.UserId,
+                amount: req.Amount,
+                description: string.IsNullOrWhiteSpace(req.Description) ? null : req.Description.Trim(),
+                startingCashType: req.StartingCashType ?? 0,
+                zReportNumber: req.ZReportNumber,
+                dateCreated: req.DateCreated ?? DateTime.UtcNow
             );
 
-            await _repository.AddAsync(newStartingCash);
-            return newStartingCash;
+            await _repository.AddAsync(entity);
+            return entity;
+        }
+
+        public async Task<bool> Update(int id, UpdateStartingCashRequest req)
+        {
+            var entity = await _repository.GetByIdAsync(id, trackEntity: true)
+                         ?? throw new InvalidOperationException($"StartingCash with ID '{id}' not found.");
+
+            if (req.Amount < 0)
+                throw new InvalidOperationException("Amount cannot be negative.");
+
+            if (!await _repository.UserExistsAsync(req.UserId))
+                throw new InvalidOperationException($"User with Id '{req.UserId}' does not exist.");
+
+            entity.Update(
+                userId: req.UserId,
+                amount: req.Amount,
+                description: string.IsNullOrWhiteSpace(req.Description) ? null : req.Description.Trim(),
+                startingCashType: req.StartingCashType,
+                zReportNumber: req.ZReportNumber,
+                dateCreated: req.DateCreated
+            );
+
+            await _repository.UpdateAsync(entity);
+            return true;
         }
 
         public async Task<bool> Delete(int id)
         {
-            var entityToDelete = await _repository.GetByIdAsync(id, trackEntity: true);
-            if (entityToDelete == null)
-            {
-                return false;
-            }
+            var entity = await _repository.GetByIdAsync(id, trackEntity: true);
+            if (entity == null) return false;
 
-            await _repository.DeleteAsync(entityToDelete);
+            await _repository.DeleteAsync(entity);
             return true;
         }
     }

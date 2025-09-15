@@ -1,7 +1,6 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Products.Api.Commands.TaxesCommands;
-using Products.Api.Helpers;
 using Products.Api.Models;
 using Products.Api.Queries.TaxesQuery.Get;
 
@@ -49,12 +48,6 @@ namespace Products.Api.Controllers
             // For now, we will return a placeholder response
             return Ok(new { Message = $"Tax with ID {id} deleted successfully." });
 
-        }
-        [HttpGet("test")]
-        public IActionResult TestEndpoint()
-        {
-            // This is a test endpoint to verify the controller is working
-            return Ok(new { Message = "TaxesController is working!" });
         }
     }
 }

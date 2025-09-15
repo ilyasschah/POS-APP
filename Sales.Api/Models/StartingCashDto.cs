@@ -6,11 +6,10 @@ namespace Sales.Api.Models
     {
         public int Id { get; set; }
         public int UserId { get; set; }
-        public string? UserName { get; set; }
         public decimal Amount { get; set; }
         public string? Description { get; set; }
         public int StartingCashType { get; set; }
-        public int ZReportNumber { get; set; }
+        public int? ZReportNumber { get; set; }
         public DateTime DateCreated { get; set; }
     }
 
@@ -19,7 +18,18 @@ namespace Sales.Api.Models
         public required int UserId { get; set; }
         public required decimal Amount { get; set; }
         public string? Description { get; set; }
+        public int? StartingCashType { get; set; }   // default to 0 in service if null
+        public int? ZReportNumber { get; set; }
+        public DateTime? DateCreated { get; set; }   // default to UtcNow in service if null
+    }
+
+    public class UpdateStartingCashRequest
+    {
+        public required int UserId { get; set; }
+        public required decimal Amount { get; set; }
+        public string? Description { get; set; }
         public required int StartingCashType { get; set; }
-        public required int ZReportNumber { get; set; }
+        public int? ZReportNumber { get; set; }
+        public required DateTime DateCreated { get; set; }
     }
 }

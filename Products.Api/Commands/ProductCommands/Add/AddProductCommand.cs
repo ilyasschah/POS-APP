@@ -1,43 +1,45 @@
+using FluentValidation;
 using MediatR;
+using Products.Api.Helpers;
 using Products.Api.Models;
 using Products.Api.Services;
 
 namespace Products.Api.Commands.ProductCommands.Add
 {
-    public class AddProductcommand(CreateProductRequest createproductRequest) : IRequest<bool>
+    public class AddProductCommand : IRequest<ProductDto>
     {
-        public CreateProductRequest Request { get; set; } = createproductRequest;
+        public CreateProductRequest Request { get; }
 
-        public class AddProductcommandHandler(ProductService productsService) : IRequestHandler<AddProductcommand, bool>
+        public AddProductCommand(CreateProductRequest request)
         {
-            private readonly ProductService _productService = productsService;
+            Request = request;
+        }
 
-            public Task<bool> Handle(AddProductcommand request, CancellationToken cancellationToken)
+        public class AddProductCommandHandler : IRequestHandler<AddProductCommand, ProductDto>
+        {
+            private readonly ProductService _service;
+
+            public AddProductCommandHandler(ProductService service)
             {
-                return _productService.Create(
-                    request.Request.Name,
-                    request.Request.Code,
-                    request.Request.PLU,
-                    request.Request.MeasurementUnit,
-                    request.Request.Price,
-                    request.Request.IsTaxInclusivePrice,
-                    request.Request.IsPriceChangeAllowed,
-                    request.Request.IsService,
-                    request.Request.IsUsingDefaultQuantity,
-                    request.Request.IsEnabled,
-                    request.Request.Description,
-                    request.Request.Cost,
-                    request.Request.Markup,
-                    request.Request.Image,
-                    request.Request.Color,
-                    request.Request.AgeRestriction,
-                    request.Request.LastPurchasePrice,
-                    request.Request.Rank,
-                    request.Request.ProductGroupId,
-                    request.Request.CurrencyId,
-                    request.Request.DateCreated ?? DateTime.UtcNow,
-                    request.Request.DateUpdated ?? DateTime.UtcNow
-                    );
+                _service = service;
+            }
+
+            public async Task<ProductDto> Handle(AddProductCommand command, CancellationToken cancellationToken)
+            {
+                var entity = await _service.Create(command.Request);
+                return MapperProduct.MapToProductDto(entity);
+            }
+        }
+
+        public class AddProductCommandValidator : AbstractValidator<AddProductCommand>
+        {
+            public AddProductCommandValidator()
+            {
+                RuleFor(c => c.Request.Name).NotEmpty().MaximumLength(255);
+                RuleFor(c => c.Request.Price).GreaterThanOrEqualTo(0);
+                RuleFor(c => c.Request.Code).MaximumLength(100).When(x => x.Request.Code != null);
+                RuleFor(c => c.Request.MeasurementUnit).MaximumLength(50).When(x => x.Request.MeasurementUnit != null);
+                RuleFor(c => c.Request.Color).MaximumLength(50).When(x => x.Request.Color != null);
             }
         }
     }

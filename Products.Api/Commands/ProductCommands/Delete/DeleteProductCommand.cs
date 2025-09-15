@@ -1,25 +1,30 @@
-//using MediatR;
-//using Products.Api.Repository;
+using MediatR;
+using Products.Api.Services;
 
-//namespace Products.Api.Commands.ProductCommands.Delete
-//{
-//    public class DeleteProductcommand(int id) : IRequest<bool>
-//    {
-//        public int Id { get; } = id;
+namespace Products.Api.Commands.ProductCommands.Delete
+{
+    public class DeleteProductCommand : IRequest<bool>
+    {
+        public int Id { get; }
 
-//        public class DeleteProductcommandHandler : IRequestHandler<DeleteProductcommand, bool>
-//        {
-//            private readonly ProductRepository _productRepository;
+        public DeleteProductCommand(int id)
+        {
+            Id = id;
+        }
 
-//            public DeleteProductcommandHandler(ProductRepository productRepository)
-//            {
-//                _productRepository = productRepository;
-//            }
+        public class DeleteProductCommandHandler : IRequestHandler<DeleteProductCommand, bool>
+        {
+            private readonly ProductService _service;
 
-//            public Task<bool> Handle(DeleteProductcommand request, CancellationToken cancellationToken)
-//            {
-//                return true;
-//            }
-//        }
-//    }
-//}
+            public DeleteProductCommandHandler(ProductService service)
+            {
+                _service = service;
+            }
+
+            public Task<bool> Handle(DeleteProductCommand command, System.Threading.CancellationToken cancellationToken)
+            {
+                return _service.Delete(command.Id);
+            }
+        }
+    }
+}

@@ -8,31 +8,32 @@ namespace Products.Api.Domain
     {
         [Key]
         public int Id { get; set; }
-        public string Comment { get; set; }
+
+        [Required]
+        [ForeignKey(nameof(Product))]
         public int ProductId { get; set; }
-        [ForeignKey(nameof(ProductId))]
-        public virtual Product Product { get; set; }
 
+        [Required]
+        public string Comment { get; set; } = default!;
 
-        private ProductComment(string comment, int productId)
-        {
-            Comment = comment.Trim();
-            ProductId = productId;
-        }
+        // Navigation
+        public Product? Product { get; set; }
 
         public ProductComment() { }
-        public static ProductComment Create(string comment,int productId)
+
+        private ProductComment(int productId, string comment)
         {
-            if (string.IsNullOrWhiteSpace(comment))
-                throw new ArgumentException("Comment cannot be empty", nameof(comment));
-            return new ProductComment(comment, productId);
+            ProductId = productId;
+            Comment = comment;
         }
 
-        public void UpdateComment(string newComment)
+        public static ProductComment Create(int productId, string comment)
+            => new(productId, comment);
+
+        public void Update(int productId, string comment)
         {
-            if (string.IsNullOrWhiteSpace(newComment))
-                throw new ArgumentException("Comment cannot be empty", nameof(newComment));
-            Comment = newComment.Trim();
+            ProductId = productId;
+            Comment = comment;
         }
     }
 }

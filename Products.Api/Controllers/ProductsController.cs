@@ -1,60 +1,57 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Products.Api.Commands.ProductCommands.Add;
+using Products.Api.Commands.ProductCommands.Delete;
+using Products.Api.Commands.ProductCommands.Update;
 using Products.Api.Models;
-using Products.Api.Queries.ProductsQuery.Get;
+using Products.Api.Queries.ProductsQuery;
 
 namespace Products.Api.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
     public class ProductsController(IMediator mediator) : ControllerBase
     {
         [HttpGet("[action]")]
-        public async Task<ActionResult<List<ProductDto>>> GetProducts()
+        public async Task<ActionResult<List<ProductDto>>> GetAll()
         {
-            return Ok(await mediator.Send(new GettAllProductsQuery()));
+            var result = await mediator.Send(new GetAllProductsQuery());
+            return Ok(result);
         }
+
+        [HttpGet("[action]/{id:int}")]
+        public async Task<ActionResult<ProductDto>> GetById(int id)
+        {
+            var result = await mediator.Send(new GetProductByIdQuery { Id = id });
+            return result is null ? NotFound() : Ok(result);
+        }
+
+        [HttpGet("[action]/{code}")]
+        public async Task<ActionResult<ProductDto>> GetByCode(string code)
+        {
+            var result = await mediator.Send(new GetProductByCodeQuery { Code = code });
+            return result is null ? NotFound() : Ok(result);
+        }
+
         [HttpPost("[action]")]
-        public async Task<ActionResult<CreateProductRequest>> AddProduct([FromBody] CreateProductRequest createDto)
+        public async Task<ActionResult<ProductDto>> Add([FromQuery] CreateProductRequest req)
         {
-            return Ok(await mediator.Send(new AddProductcommand(createDto)));
+            var result = await mediator.Send(new AddProductCommand(req));
+            return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
         }
-        //[HttpPut("[action]")]
-        //public async Task<ActionResult<CreateProductRequestDto>> UpdateProduct(int id, [FromBody] UpdateProductRequestDto updateDto)
-        //{
-        //    if (updateDto == null)
-        //    {
-        //        return BadRequest("Invalid product data.");
-        //    }
-        //    var command = new UpdateProductcommand(id, updateDto);
-        //    var updatedProduct = await mediator.Send(command);
-        //    return Ok(updatedProduct);
-        //}
-        //[HttpGet("{id}")]
-        //[ProducesResponseType(typeof(ProductDto), StatusCodes.Status200OK)]
-        //[ProducesResponseType(StatusCodes.Status404NotFound)]
-        //public async Task<ActionResult<ProductDto>> GetById(int id)
-        //{
-        //    var product = await _mediator.Send(new GetProductByIdQuery(id));
-        //    if (product == null)
-        //    {
-        //        return NotFound();
-        //    }
-        //    return Ok(product);
-        //}
-        //[HttpDelete("{id}")]
-        //[ProducesResponseType(StatusCodes.Status204NoContent)]
-        //[ProducesResponseType(StatusCodes.Status404NotFound)]
-        //public async Task<IActionResult> DeleteProduct(int id)
-        //{
-        //    var command = new DeleteProductcommand(id);
-        //    var result = await mediator.Send(command);
-        //    if (result)
-        //    {
-        //        return NoContent();
-        //    }
-        //    return NotFound($"Product with ID {id} not found.");
-        //}
+
+        [HttpPut("[action]/{id:int}")]
+        public async Task<IActionResult> Update(int id, [FromQuery] UpdateProductRequest req)
+        {
+            var ok = await mediator.Send(new UpdateProductCommand(id, req));
+            return ok ? NoContent() : NotFound();
+        }
+
+        [HttpDelete("[action]/{id:int}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var ok = await mediator.Send(new DeleteProductCommand(id));
+            return ok ? NoContent() : NotFound();
+        }
     }
 }

@@ -9,7 +9,8 @@ namespace Sales.Api.Queries.StartingCashQuery
     {
         public int Id { get; set; }
 
-        public class GetStartingCashByIdQueryHandler : IRequestHandler<GetStartingCashByIdQuery, StartingCashDto?>
+        public class GetStartingCashByIdQueryHandler
+            : IRequestHandler<GetStartingCashByIdQuery, StartingCashDto?>
         {
             private readonly StartingCashRepository _repository;
 

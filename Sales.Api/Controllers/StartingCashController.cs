@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Sales.Api.Commands.StartingCashCommands.Add;
 using Sales.Api.Commands.StartingCashCommands.Delete;
+using Sales.Api.Commands.StartingCashCommands.Update;
 using Sales.Api.Models;
 using Sales.Api.Queries.StartingCashQuery;
 
@@ -22,10 +23,10 @@ namespace Sales.Api.Controllers
         public async Task<ActionResult<StartingCashDto>> GetById(int id)
         {
             var result = await mediator.Send(new GetStartingCashByIdQuery { Id = id });
-            return result != null ? Ok(result) : NotFound();
+            return result is null ? NotFound() : Ok(result);
         }
 
-        [HttpGet("[action]/ByUser/{userId:int}")]
+        [HttpGet("[action]/{userId:int}")]
         public async Task<ActionResult<List<StartingCashDto>>> GetByUserId(int userId)
         {
             var result = await mediator.Send(new GetStartingCashByUserIdQuery { UserId = userId });
@@ -39,11 +40,18 @@ namespace Sales.Api.Controllers
             return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
         }
 
-        [HttpDelete("[action]/{id}")]
+        [HttpPut("[action]/{id:int}")]
+        public async Task<IActionResult> Update(int id, [FromQuery] UpdateStartingCashRequest req)
+        {
+            var ok = await mediator.Send(new UpdateStartingCashCommand(id, req));
+            return ok ? NoContent() : NotFound();
+        }
+
+        [HttpDelete("[action]/{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var result = await mediator.Send(new DeleteStartingCashCommand(id));
-            return result ? NoContent() : NotFound();
+            var ok = await mediator.Send(new DeleteStartingCashCommand(id));
+            return ok ? NoContent() : NotFound();
         }
     }
 }

@@ -1,11 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Products.Api.DataBase;
 using Products.Api.Domain;
-using Products.Api.Models;
 
 namespace Products.Api.Repository
 {
-    public class ProductCommentRepository 
+    public class ProductCommentRepository
     {
         private readonly AppDbContext _db;
 
@@ -13,40 +12,54 @@ namespace Products.Api.Repository
         {
             _db = db;
         }
-        public async Task<List<ProductComment>> GetAllProductComments()
+
+        public async Task<List<ProductComment>> GetAllAsync()
         {
             return await _db.ProductComments
-                .Include(pc => pc.Product)
                 .AsNoTracking()
+                .Include(pc => pc.Product)
                 .ToListAsync();
         }
-        public async Task<Product?> GetCommentByProductIdAsync(int productId)
+
+        public async Task<ProductComment?> GetByIdAsync(int id, bool trackEntity = false)
         {
-            return await _db.Products
+            var q = _db.ProductComments.AsQueryable();
+            if (!trackEntity) q = q.AsNoTracking();
+
+            return await q
+                .Include(pc => pc.Product)
+                .FirstOrDefaultAsync(pc => pc.Id == id);
+        }
+
+        public async Task<List<ProductComment>> GetByProductIdAsync(int productId)
+        {
+            return await _db.ProductComments
                 .AsNoTracking()
-                .FirstOrDefaultAsync(p => p.Id == productId);
+                .Where(pc => pc.ProductId == productId)
+                .Include(pc => pc.Product)
+                .ToListAsync();
         }
-        public async Task Add(ProductComment newproductComment)
+
+        public async Task<bool> ProductExistsAsync(int productId)
         {
-            _db.ProductComments.Add(newproductComment);
+            return await _db.Products.AnyAsync(p => p.Id == productId);
+        }
+
+        public async Task AddAsync(ProductComment entity)
+        {
+            _db.ProductComments.Add(entity);
             await _db.SaveChangesAsync();
         }
-        public bool Exists(string productcomment)
+
+        public async Task UpdateAsync(ProductComment entity)
         {
-            return _db.ProductComments.Any(pc => pc.Comment == productcomment);
-        }
-        public async Task<ProductComment> UpdateProductCommentAsync(ProductComment productComment)
-        {
-            _db.ProductComments.Update(productComment);
+            _db.ProductComments.Update(entity);
             await _db.SaveChangesAsync();
-            await _db.Entry(productComment)
-                .Reference(pc => pc.Product)
-                .LoadAsync();
-            return productComment;
         }
-        public async Task DeleteProductCommentAsync(ProductComment productcomment)
+
+        public async Task DeleteAsync(ProductComment entity)
         {
-            _db.ProductComments.Remove(productcomment);
+            _db.ProductComments.Remove(entity);
             await _db.SaveChangesAsync();
         }
     }

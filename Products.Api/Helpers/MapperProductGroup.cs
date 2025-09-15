@@ -1,20 +1,20 @@
-﻿using Products.Api.Models;
-using Products.Api.Domain;
+﻿using Products.Api.Domain;
+using Products.Api.Models;
 
 namespace Products.Api.Helpers
 {
-    public class MapperProductGroup
+    public static class MapperProductGroup
     {
-        public static ProductGroupDto MapToProductGroupDetail(ProductGroup productgroup)
+        public static ProductGroupDto MapToProductGroupDto(ProductGroup entity)
         {
             return new ProductGroupDto
             {
-                Name = productgroup.Name,
-                Color = productgroup.Color,
-                Image = productgroup.Image,
-                Rank = productgroup.Rank,
-                ParentGroupName = productgroup.ParentGroup?.Name,
-                ChildGroupNames = productgroup.ChildGroups.Select(child => child.Name).ToList()
+                Id = entity.Id,
+                Name = entity.Name,
+                ParentGroupId = entity.ParentGroupId,
+                Color = entity.Color,
+                Image = entity.Image,
+                Rank = entity.Rank
             };
         }
     }

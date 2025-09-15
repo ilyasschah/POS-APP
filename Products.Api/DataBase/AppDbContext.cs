@@ -25,11 +25,10 @@ namespace Products.Api.DataBase
             base.OnModelCreating(modelBuilder);
 
 
-            modelBuilder.Entity<ProductGroup>()
-                .HasOne(pg => pg.ParentGroup)
-                .WithMany(pg => pg.ChildGroups)
-                .HasForeignKey(pg => pg.ParentGroupId)
-                .OnDelete(DeleteBehavior.NoAction);
+            //modelBuilder.Entity<ProductGroup>()
+            //    .HasOne(pg => pg.ParentGroup)
+            //    .HasForeignKey(pg => pg.ParentGroupId)
+            //    .OnDelete(DeleteBehavior.NoAction);
             //modelBuilder.Entity<ProductComment>()
             //    .HasOne(pc => pc.Product)
             //  //.WithMany(p => p.Comments)

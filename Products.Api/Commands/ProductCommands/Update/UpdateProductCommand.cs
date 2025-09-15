@@ -1,44 +1,47 @@
-//using MediatR;
-//using Products.Api.Models;
-//using Products.Api.Repository;
-//using Products.Api.Helpers;
+using FluentValidation;
+using MediatR;
+using Products.Api.Models;
+using Products.Api.Services;
 
-//namespace Products.Api.Queries.ProductsQuery.Update
-//{
-//    public class UpdateProductcommand(int id, UpdateProductRequestDto request) : IRequest<UpdateProductRequestDto>
-//    {
-//        public int Id { get; } = id;
-//        public UpdateProductRequestDto Request { get; } = request ?? throw new ArgumentNullException(nameof(request));
+namespace Products.Api.Commands.ProductCommands.Update
+{
+    public class UpdateProductCommand : IRequest<bool>
+    {
+        public int Id { get; }
+        public UpdateProductRequest Request { get; }
 
-//        public class UpdateProductcommandHandler : IRequestHandler<UpdateProductcommand, UpdateProductRequestDto>
-//        {
-//            private readonly ProductRepository _productRepository;
+        public UpdateProductCommand(int id, UpdateProductRequest request)
+        {
+            Id = id;
+            Request = request;
+        }
 
-//            public UpdateProductcommandHandler(ProductRepository productRepository)
-//            {
-//                _productRepository = productRepository;
-//            }
+        public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand, bool>
+        {
+            private readonly ProductService _service;
 
-//            public async Task<UpdateProductRequestDto> Handle(UpdateProductcommand request, CancellationToken cancellationToken)
-//            {
-//                var product = await _productRepository.GetProductByIdAsync(request.Id);
-//                if (product == null)
-//                    throw new ArgumentException($"Product with ID {request.Id} not found");
+            public UpdateProductCommandHandler(ProductService service)
+            {
+                _service = service;
+            }
 
-//                // Use domain methods to update
-//                product.UpdateName(request.Request.Name);
-//                product.UpdatePrice(request.Request.Price);
-//                //product.UpdateProductGroupName(request.Request.ProductGroupName);
-//                // Update other properties
-//                product.Code = request.Request.Code;
-//                product.Cost = request.Request.Cost;
-//                product.Description = request.Request.Description;
-//                product.Color = request.Request.Color;
-//                product.DateUpdated = DateTime.UtcNow;
+            public Task<bool> Handle(UpdateProductCommand command, System.Threading.CancellationToken cancellationToken)
+            {
+                return _service.Update(command.Id, command.Request);
+            }
+        }
 
-//                await _productRepository.UpdateProductAsync(product);
-//                return MapperProduct.MapToProduct(product);
-//            }
-//        }
-//    }
-//}
+        public class UpdateProductCommandValidator : FluentValidation.AbstractValidator<UpdateProductCommand>
+        {
+            public UpdateProductCommandValidator()
+            {
+                RuleFor(c => c.Id).GreaterThan(0);
+                RuleFor(c => c.Request.Name).NotEmpty().MaximumLength(255);
+                RuleFor(c => c.Request.Price).GreaterThanOrEqualTo(0);
+                RuleFor(c => c.Request.Code).MaximumLength(100).When(x => x.Request.Code != null);
+                RuleFor(c => c.Request.MeasurementUnit).MaximumLength(50).When(x => x.Request.MeasurementUnit != null);
+                RuleFor(c => c.Request.Color).NotEmpty().MaximumLength(50);
+            }
+        }
+    }
+}

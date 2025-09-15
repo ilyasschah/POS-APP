@@ -11,7 +11,6 @@ namespace Sales.Api.Helpers
             {
                 Id = entity.Id,
                 UserId = entity.UserId,
-                UserName = entity.User?.Username,
                 Amount = entity.Amount,
                 Description = entity.Description,
                 StartingCashType = entity.StartingCashType,

@@ -6,7 +6,7 @@ namespace Sales.Api.Repository
 {
     public class StartingCashRepository
     {
-        public readonly AppDbContext _db;
+        private readonly AppDbContext _db;
 
         public StartingCashRepository(AppDbContext db)
         {
@@ -15,43 +15,53 @@ namespace Sales.Api.Repository
 
         public async Task<List<StartingCash>> GetAllAsync()
         {
-            return await _db.StartingCashs
-                .Include(sc => sc.User)
+            return await _db.StartingCashes
                 .AsNoTracking()
+                .Include(sc => sc.User)
                 .ToListAsync();
         }
 
         public async Task<StartingCash?> GetByIdAsync(int id, bool trackEntity = false)
         {
-            var query = _db.StartingCashs.AsQueryable();
-            if (!trackEntity)
-            {
-                query = query.AsNoTracking();
-            }
-            return await query
+            var q = _db.StartingCashes.AsQueryable();
+            if (!trackEntity) q = q.AsNoTracking();
+
+            return await q
                 .Include(sc => sc.User)
                 .FirstOrDefaultAsync(sc => sc.Id == id);
         }
 
         public async Task<List<StartingCash>> GetByUserIdAsync(int userId)
         {
-            return await _db.StartingCashs
+            return await _db.StartingCashes
+                .AsNoTracking()
                 .Where(sc => sc.UserId == userId)
                 .Include(sc => sc.User)
-                .AsNoTracking()
+                .OrderByDescending(sc => sc.DateCreated)
                 .ToListAsync();
         }
 
         public async Task AddAsync(StartingCash entity)
         {
-            _db.StartingCashs.Add(entity);
+            _db.StartingCashes.Add(entity);
+            await _db.SaveChangesAsync();
+        }
+
+        public async Task UpdateAsync(StartingCash entity)
+        {
+            _db.StartingCashes.Update(entity);
             await _db.SaveChangesAsync();
         }
 
         public async Task DeleteAsync(StartingCash entity)
         {
-            _db.StartingCashs.Remove(entity);
+            _db.StartingCashes.Remove(entity);
             await _db.SaveChangesAsync();
+        }
+
+        public async Task<bool> UserExistsAsync(int userId)
+        {
+            return await _db.Users.AnyAsync(u => u.Id == userId);
         }
     }
 }

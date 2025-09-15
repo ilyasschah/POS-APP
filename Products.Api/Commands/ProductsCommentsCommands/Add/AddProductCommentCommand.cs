@@ -1,31 +1,42 @@
-﻿using MediatR;
-using Products.Api.Domain;
+﻿using FluentValidation;
+using MediatR;
 using Products.Api.Helpers;
 using Products.Api.Models;
-using Products.Api.Repository;
 using Products.Api.Services;
 
-namespace Products.Api.Commands.ProductsCommentsCommands.Add
+namespace Products.Api.Commands.ProductCommentCommands.Add
 {
-    public class AddProductCommentcommand : IRequest<bool>
+    public class AddProductCommentCommand : IRequest<ProductCommentDto>
     {
-        public CreateProductCommentRequest Request { get; set; }
+        public CreateProductCommentRequest Request { get; }
 
-        public AddProductCommentcommand(CreateProductCommentRequest createproductcommentRequest)
+        public AddProductCommentCommand(CreateProductCommentRequest request)
         {
-            Request = createproductcommentRequest;
+            Request = request;
         }
-        public class AddProductCommentcommandHandler : IRequestHandler<AddProductCommentcommand, bool>
-        {
-            private readonly ProductCommentsService _productcommentsService;
 
-            public AddProductCommentcommandHandler(ProductCommentsService productcommentsService)
+        public class AddProductCommentCommandHandler : IRequestHandler<AddProductCommentCommand, ProductCommentDto>
+        {
+            private readonly ProductCommentService _service;
+
+            public AddProductCommentCommandHandler(ProductCommentService service)
             {
-                _productcommentsService = productcommentsService;
+                _service = service;
             }
-            public Task<bool> Handle(AddProductCommentcommand request, CancellationToken cancellationToken)
+
+            public async Task<ProductCommentDto> Handle(AddProductCommentCommand command, CancellationToken cancellationToken)
             {
-                return _productcommentsService.Create(request.Request.Comment, request.Request.ProductId);
+                var entity = await _service.Create(command.Request);
+                return MapperProductComment.MapToProductCommentDto(entity);
+            }
+        }
+
+        public class AddProductCommentCommandValidator : AbstractValidator<AddProductCommentCommand>
+        {
+            public AddProductCommentCommandValidator()
+            {
+                RuleFor(x => x.Request.ProductId).GreaterThan(0);
+                RuleFor(x => x.Request.Comment).NotEmpty();
             }
         }
     }

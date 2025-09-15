@@ -609,7 +609,7 @@
         }
       }
     },
-    "/api/ProductComments/GetAllProductComments": {
+    "/api/ProductComments/GetAll": {
       "get": {
         "tags": [
           "ProductComments"
@@ -647,58 +647,118 @@
         }
       }
     },
-    "/api/ProductComments/AddProductComment": {
+    "/api/ProductComments/GetById/{id}": {
+      "get": {
+        "tags": [
+          "ProductComments"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductCommentDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductCommentDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductCommentDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ProductComments/GetByProductId/{productId}": {
+      "get": {
+        "tags": [
+          "ProductComments"
+        ],
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProductCommentDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProductCommentDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProductCommentDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ProductComments/Add": {
       "post": {
         "tags": [
           "ProductComments"
         ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateProductCommentRequest"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateProductCommentRequest"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateProductCommentRequest"
-              }
+        "parameters": [
+          {
+            "name": "ProductId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "Comment",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
             }
           }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProductCommentDto"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProductCommentDto"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProductCommentDto"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/ProductGroups/GetAll": {
-      "get": {
-        "tags": [
-          "ProductGroups"
         ],
         "responses": {
           "200": {
@@ -706,26 +766,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ProductGroupDto"
-                  }
+                  "$ref": "#/components/schemas/ProductCommentDto"
                 }
               },
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ProductGroupDto"
-                  }
+                  "$ref": "#/components/schemas/ProductCommentDto"
                 }
               },
               "text/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ProductGroupDto"
-                  }
+                  "$ref": "#/components/schemas/ProductCommentDto"
                 }
               }
             }
@@ -733,55 +784,70 @@
         }
       }
     },
-    "/api/ProductGroups/CreateProductGroup": {
-      "post": {
+    "/api/ProductComments/Update/{id}": {
+      "put": {
         "tags": [
-          "ProductGroups"
+          "ProductComments"
         ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateProductGroupRequest"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateProductGroupRequest"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateProductGroupRequest"
-              }
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "ProductId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "Comment",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
             }
           }
-        },
+        ],
         "responses": {
           "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProductGroupDto"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProductGroupDto"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProductGroupDto"
-                }
-              }
-            }
+            "description": "OK"
           }
         }
       }
     },
-    "/api/Products/GetProducts": {
+    "/api/ProductComments/Delete/{id}": {
+      "delete": {
+        "tags": [
+          "ProductComments"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Products/GetAll": {
       "get": {
         "tags": [
           "Products"
@@ -819,50 +885,499 @@
         }
       }
     },
-    "/api/Products/AddProduct": {
-      "post": {
+    "/api/Products/GetById/{id}": {
+      "get": {
         "tags": [
           "Products"
         ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateProductRequest"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateProductRequest"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateProductRequest"
-              }
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
             }
           }
-        },
+        ],
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/CreateProductRequest"
+                  "$ref": "#/components/schemas/ProductDto"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CreateProductRequest"
+                  "$ref": "#/components/schemas/ProductDto"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CreateProductRequest"
+                  "$ref": "#/components/schemas/ProductDto"
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/Products/GetByCode/{code}": {
+      "get": {
+        "tags": [
+          "Products"
+        ],
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Products/Add": {
+      "post": {
+        "tags": [
+          "Products"
+        ],
+        "parameters": [
+          {
+            "name": "ProductGroupId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "Name",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Code",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "PLU",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "MeasurementUnit",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Price",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "IsTaxInclusivePrice",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "CurrencyId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "IsPriceChangeAllowed",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "IsService",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "IsUsingDefaultQuantity",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "IsEnabled",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "Description",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "DateCreated",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "DateUpdated",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "Cost",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "Markup",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "ImageBase64",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Color",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "AgeRestriction",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "LastPurchasePrice",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "Rank",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Products/Update/{id}": {
+      "put": {
+        "tags": [
+          "Products"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "ProductGroupId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "Name",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Code",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "PLU",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "MeasurementUnit",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Price",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "IsTaxInclusivePrice",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "CurrencyId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "IsPriceChangeAllowed",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "IsService",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "IsUsingDefaultQuantity",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "IsEnabled",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "Description",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "DateCreated",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "DateUpdated",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "Cost",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "Markup",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "ImageBase64",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Color",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "AgeRestriction",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "LastPurchasePrice",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "Rank",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Products/Delete/{id}": {
+      "delete": {
+        "tags": [
+          "Products"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
           }
         }
       }
@@ -1970,18 +2485,6 @@
         }
       }
     },
-    "/api/Taxes/test": {
-      "get": {
-        "tags": [
-          "Taxes"
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
     "/api/VoidReasons/GetAll": {
       "get": {
         "tags": [
@@ -2231,159 +2734,6 @@
         },
         "additionalProperties": false
       },
-      "CreateProductCommentRequest": {
-        "required": [
-          "comment",
-          "productId"
-        ],
-        "type": "object",
-        "properties": {
-          "comment": {
-            "type": "string",
-            "nullable": true
-          },
-          "productId": {
-            "type": "integer",
-            "format": "int32"
-          }
-        },
-        "additionalProperties": false
-      },
-      "CreateProductGroupRequest": {
-        "required": [
-          "name"
-        ],
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "nullable": true
-          },
-          "color": {
-            "type": "string",
-            "nullable": true
-          },
-          "image": {
-            "type": "string",
-            "format": "byte",
-            "nullable": true
-          },
-          "rank": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "parentGroupId": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "CreateProductRequest": {
-        "required": [
-          "color",
-          "cost",
-          "isEnabled",
-          "isPriceChangeAllowed",
-          "isService",
-          "isTaxInclusivePrice",
-          "isUsingDefaultQuantity",
-          "name",
-          "price"
-        ],
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "nullable": true
-          },
-          "code": {
-            "type": "string",
-            "nullable": true
-          },
-          "plu": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
-          "measurementUnit": {
-            "type": "string",
-            "nullable": true
-          },
-          "price": {
-            "type": "number",
-            "format": "double"
-          },
-          "isTaxInclusivePrice": {
-            "type": "boolean"
-          },
-          "isPriceChangeAllowed": {
-            "type": "boolean"
-          },
-          "isService": {
-            "type": "boolean"
-          },
-          "isUsingDefaultQuantity": {
-            "type": "boolean"
-          },
-          "isEnabled": {
-            "type": "boolean"
-          },
-          "description": {
-            "type": "string",
-            "nullable": true
-          },
-          "cost": {
-            "type": "number",
-            "format": "double"
-          },
-          "markup": {
-            "type": "number",
-            "format": "double"
-          },
-          "image": {
-            "type": "string",
-            "format": "byte",
-            "nullable": true
-          },
-          "color": {
-            "type": "string",
-            "nullable": true
-          },
-          "ageRestriction": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "lastPurchasePrice": {
-            "type": "number",
-            "format": "double"
-          },
-          "rank": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "productGroupId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "currencyId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "dateCreated": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
-          "dateUpdated": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
       "CreateSecurityKeyRequest": {
         "required": [
           "level",
@@ -2475,11 +2825,15 @@
       "ProductCommentDto": {
         "type": "object",
         "properties": {
-          "comment": {
-            "type": "string",
-            "nullable": true
+          "id": {
+            "type": "integer",
+            "format": "int32"
           },
-          "productName": {
+          "productId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "comment": {
             "type": "string",
             "nullable": true
           }
@@ -2489,6 +2843,15 @@
       "ProductDto": {
         "type": "object",
         "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "productGroupId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
           "name": {
             "type": "string",
             "nullable": true
@@ -2508,37 +2871,45 @@
           },
           "price": {
             "type": "number",
-            "format": "double",
-            "nullable": true
+            "format": "double"
           },
           "isTaxInclusivePrice": {
-            "type": "boolean",
+            "type": "boolean"
+          },
+          "currencyId": {
+            "type": "integer",
+            "format": "int32",
             "nullable": true
           },
           "isPriceChangeAllowed": {
-            "type": "boolean",
-            "nullable": true
+            "type": "boolean"
           },
           "isService": {
-            "type": "boolean",
-            "nullable": true
+            "type": "boolean"
           },
           "isUsingDefaultQuantity": {
-            "type": "boolean",
-            "nullable": true
+            "type": "boolean"
           },
           "isEnabled": {
-            "type": "boolean",
-            "nullable": true
+            "type": "boolean"
           },
           "description": {
             "type": "string",
             "nullable": true
           },
+          "dateCreated": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "dateUpdated": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
           "cost": {
             "type": "number",
-            "format": "double",
-            "nullable": true
+            "format": "double"
           },
           "markup": {
             "type": "number",
@@ -2567,63 +2938,6 @@
           "rank": {
             "type": "integer",
             "format": "int32",
-            "nullable": true
-          },
-          "productGroupName": {
-            "type": "string",
-            "nullable": true
-          },
-          "parentGroupName": {
-            "type": "string",
-            "nullable": true
-          },
-          "currencyCode": {
-            "type": "string",
-            "nullable": true
-          },
-          "dateCreated": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
-          "dateUpdated": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "ProductGroupDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "nullable": true
-          },
-          "color": {
-            "type": "string",
-            "nullable": true
-          },
-          "image": {
-            "type": "string",
-            "format": "byte",
-            "nullable": true
-          },
-          "rank": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
-          "parentGroupName": {
-            "type": "string",
-            "nullable": true
-          },
-          "childGroupNames": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
             "nullable": true
           }
         },
