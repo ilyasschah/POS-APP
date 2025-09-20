@@ -1,0 +1,25 @@
+using MediatR;
+using Products.Api.Helpers;
+using Products.Api.Models;
+using Products.Api.Repository;
+
+namespace Products.Api.Queries.PosOrderQuery
+{
+    public class GetAllPosOrdersQuery : IRequest<List<PosOrderDto>>
+    {
+        public class GetAllPosOrdersQueryHandler : IRequestHandler<GetAllPosOrdersQuery, List<PosOrderDto>>
+        {
+            private readonly PosOrderRepository _repository;
+
+            public GetAllPosOrdersQueryHandler(PosOrderRepository repository)
+            {
+                _repository = repository;
+            }
+            public async Task<List<PosOrderDto>> Handle(GetAllPosOrdersQuery request, CancellationToken cancellationToken)
+            {
+                var entities = await _repository.GetAllAsync();
+                return entities.Select(MapperPosOrder.MapToPosOrderDto).ToList();
+            }
+        }
+    }
+}

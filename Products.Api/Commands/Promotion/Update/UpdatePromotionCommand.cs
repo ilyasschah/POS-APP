@@ -5,7 +5,7 @@ using Products.Api.Services;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Products.Api.Commands.PromotionCommands.Update
+namespace Products.Api.Commands.Promotion.Update
 {
     public class UpdatePromotionCommand : IRequest<bool>
     {

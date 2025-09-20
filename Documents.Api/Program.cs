@@ -22,28 +22,10 @@ builder.Services.AddDbContext<AppDbContext>(op =>
     op.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Repo
-builder.Services.AddScoped<ZReportRepository>();
-builder.Services.AddScoped<PaymentTypeRepository>();
-builder.Services.AddScoped<PaymentRepository>();
-builder.Services.AddScoped<DocumentRepository>();
-builder.Services.AddScoped<DocumentCategoryRepository>();
-builder.Services.AddScoped<DocumentTypeRepository>();
-builder.Services.AddScoped<DocumentItemRepository>();
-builder.Services.AddScoped<DocumentItemTaxRepository>();
-builder.Services.AddScoped<DocumentItemExpirationDateRepository>();
-builder.Services.AddScoped<DocumentsCounterRepository>();
+
 
 // Services
-builder.Services.AddScoped<ZReportservice>();
-builder.Services.AddScoped<PaymentTypeService>();
-builder.Services.AddScoped<PaymentService>();
-builder.Services.AddScoped<DocumentService>();
-builder.Services.AddScoped<DocumentCategoryService>();
-builder.Services.AddScoped<DocumentTypeService>();
-builder.Services.AddScoped<DocumentItemService>();
-builder.Services.AddScoped<DocumentItemTaxService>();
-builder.Services.AddScoped<DocumentItemExpirationDateService>();
-builder.Services.AddScoped<DocumentsCounterService>();
+
 
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
 

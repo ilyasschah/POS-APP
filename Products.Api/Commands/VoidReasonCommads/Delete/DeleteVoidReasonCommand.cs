@@ -3,7 +3,7 @@ using Products.Api.Services;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Products.Api.Commands.VoidReasonCommands.Delete
+namespace Products.Api.Commands.VoidReasonCommads.Delete
 {
     public class DeleteVoidReasonCommand : IRequest<bool>
     {

@@ -3,7 +3,7 @@ using Products.Api.Helpers;
 using Products.Api.Models;
 using Products.Api.Repository;
 
-namespace Products.Api.Queries.ProductGroupQuery
+namespace Products.Api.Queries.ProductGroupsQuery
 {
     public class GetProductGroupByIdQuery : IRequest<ProductGroupDto?>
     {

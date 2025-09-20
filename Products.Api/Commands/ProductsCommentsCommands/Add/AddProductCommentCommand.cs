@@ -4,7 +4,7 @@ using Products.Api.Helpers;
 using Products.Api.Models;
 using Products.Api.Services;
 
-namespace Products.Api.Commands.ProductCommentCommands.Add
+namespace Products.Api.Commands.ProductsCommentsCommands.Add
 {
     public class AddProductCommentCommand : IRequest<ProductCommentDto>
     {

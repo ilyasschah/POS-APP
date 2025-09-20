@@ -5,7 +5,7 @@ using Products.Api.Services;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Products.Api.Commands.VoidReasonCommands.Update
+namespace Products.Api.Commands.VoidReasonCommads.Update
 {
     public class UpdateVoidReasonCommand : IRequest<bool>
     {

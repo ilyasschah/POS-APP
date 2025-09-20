@@ -3,7 +3,7 @@ using Products.Api.Helpers;
 using Products.Api.Models;
 using Products.Api.Repository;
 
-namespace Products.Api.Queries.ProductTaxQuery.Get
+namespace Products.Api.Queries.ProductTaxQuery
 {
     public class GetProductTaxesByProductIdQuery : IRequest<List<ProductTaxDto>>
     {

@@ -4,7 +4,7 @@ using Products.Api.Helpers;
 using Products.Api.Models;
 using Products.Api.Services;
 
-namespace Products.Api.Commands.PromotionCommands.Add
+namespace Products.Api.Commands.Promotion.Add
 {
     public class AddPromotionCommand : IRequest<PromotionDto>
     {

@@ -1,12 +1,10 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Products.Api.Commands.PromotionCommands.Add;
-using Products.Api.Commands.PromotionCommands.Delete;
-using Products.Api.Commands.PromotionCommands.Update;
+using Products.Api.Commands.Promotion.Add;
+using Products.Api.Commands.Promotion.Delete;
+using Products.Api.Commands.Promotion.Update;
 using Products.Api.Models;
 using Products.Api.Queries.PromotionQuery;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace Products.Api.Controllers
 {

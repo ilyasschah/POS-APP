@@ -3,7 +3,7 @@ using MediatR;
 using Products.Api.Models;
 using Products.Api.Services;
 
-namespace Products.Api.Commands.CurrencyCommands.Update
+namespace Products.Api.Commands.CurrenciesCommands.Update
 {
     public class UpdateCurrencyCommand : IRequest<bool>
     {

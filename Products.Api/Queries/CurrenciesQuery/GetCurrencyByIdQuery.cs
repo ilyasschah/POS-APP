@@ -3,7 +3,7 @@ using Products.Api.Helpers;
 using Products.Api.Models;
 using Products.Api.Repository;
 
-namespace Products.Api.Queries.CurrencyQuery
+namespace Products.Api.Queries.CurrenciesQuery
 {
     public class GetCurrencyByIdQuery : IRequest<CurrencyDto?>
     {

@@ -3,7 +3,7 @@ using MediatR;
 using Products.Api.Models;
 using Products.Api.Services;
 
-namespace Products.Api.Commands.ProductCommentCommands.Update
+namespace Products.Api.Commands.ProductsCommentsCommands.Update
 {
     public class UpdateProductCommentCommand : IRequest<bool>
     {

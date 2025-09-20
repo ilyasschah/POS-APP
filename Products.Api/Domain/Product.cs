@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Reflection;
 
 namespace Products.Api.Domain
 {
@@ -58,10 +59,13 @@ namespace Products.Api.Domain
         public decimal? LastPurchasePrice { get; set; } // default 0
 
         public int? Rank { get; set; } // default 0
+        public int CompanyId { get; set; }
 
         // Navs
         public ProductGroup? ProductGroup { get; set; }
         public Currency? Currency { get; set; }
+       
+        
 
         public Product() { }
 

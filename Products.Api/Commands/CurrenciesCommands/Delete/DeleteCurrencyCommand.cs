@@ -1,7 +1,7 @@
 ﻿using MediatR;
 using Products.Api.Services;
 
-namespace Products.Api.Commands.CurrencyCommands.Delete
+namespace Products.Api.Commands.CurrenciesCommands.Delete
 {
     public class DeleteCurrencyCommand : IRequest<bool>
     {

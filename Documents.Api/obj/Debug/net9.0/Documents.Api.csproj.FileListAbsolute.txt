@@ -213,6 +213,7 @@ E:\Repos\Web-POS\Documents.Api\bin\Debug\net9.0\FluentValidation.dll
 E:\Repos\Web-POS\Documents.Api\bin\Debug\net9.0\Humanizer.dll
 E:\Repos\Web-POS\Documents.Api\bin\Debug\net9.0\MediatR.dll
 E:\Repos\Web-POS\Documents.Api\bin\Debug\net9.0\MediatR.Contracts.dll
+E:\Repos\Web-POS\Documents.Api\bin\Debug\net9.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
 E:\Repos\Web-POS\Documents.Api\bin\Debug\net9.0\Microsoft.AspNetCore.JsonPatch.dll
 E:\Repos\Web-POS\Documents.Api\bin\Debug\net9.0\Microsoft.AspNetCore.OpenApi.dll
 E:\Repos\Web-POS\Documents.Api\bin\Debug\net9.0\Microsoft.Bcl.AsyncInterfaces.dll
@@ -361,6 +362,7 @@ E:\Repos\Web-POS\Documents.Api\obj\Debug\net9.0\Documents.Api.AssemblyInfo.cs
 E:\Repos\Web-POS\Documents.Api\obj\Debug\net9.0\Documents.Api.csproj.CoreCompileInputs.cache
 E:\Repos\Web-POS\Documents.Api\obj\Debug\net9.0\Documents.Api.MvcApplicationPartsAssemblyInfo.cs
 E:\Repos\Web-POS\Documents.Api\obj\Debug\net9.0\Documents.Api.MvcApplicationPartsAssemblyInfo.cache
+E:\Repos\Web-POS\Documents.Api\obj\Debug\net9.0\Documents.Api.sourcelink.json
 E:\Repos\Web-POS\Documents.Api\obj\Debug\net9.0\rjimswa.dswa.cache.json
 E:\Repos\Web-POS\Documents.Api\obj\Debug\net9.0\rjsmrazor.dswa.cache.json
 E:\Repos\Web-POS\Documents.Api\obj\Debug\net9.0\rjsmcshtml.dswa.cache.json
@@ -376,4 +378,3 @@ E:\Repos\Web-POS\Documents.Api\obj\Debug\net9.0\refint\Documents.Api.dll
 E:\Repos\Web-POS\Documents.Api\obj\Debug\net9.0\Documents.Api.pdb
 E:\Repos\Web-POS\Documents.Api\obj\Debug\net9.0\Documents.Api.genruntimeconfig.cache
 E:\Repos\Web-POS\Documents.Api\obj\Debug\net9.0\ref\Documents.Api.dll
-E:\Repos\Web-POS\Documents.Api\obj\Debug\net9.0\Documents.Api.sourcelink.json

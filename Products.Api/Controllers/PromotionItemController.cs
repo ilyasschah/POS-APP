@@ -1,8 +1,8 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Products.Api.Commands.PromotionItemCommands.Add;
-using Products.Api.Commands.PromotionItemCommands.Delete;
-using Products.Api.Commands.PromotionItemCommands.Update;
+using Products.Api.Commands.PromotionItem.Add;
+using Products.Api.Commands.PromotionItem.Delete;
+using Products.Api.Commands.PromotionItem.Update;
 using Products.Api.Models;
 using Products.Api.Queries.PromotionItemQuery;
 

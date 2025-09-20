@@ -3,7 +3,7 @@ using MediatR;
 using Products.Api.Models;
 using Products.Api.Services;
 
-namespace Products.Api.Commands.PromotionItemCommands.Update
+namespace Products.Api.Commands.PromotionItem.Update
 {
     public class UpdatePromotionItemCommand : IRequest<bool>
     {

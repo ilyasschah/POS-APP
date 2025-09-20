@@ -1,10 +1,10 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Products.Api.Commands.ProductCommentCommands.Add;
-using Products.Api.Commands.ProductCommentCommands.Delete;
-using Products.Api.Commands.ProductCommentCommands.Update;
+using Products.Api.Commands.ProductsCommentsCommands.Add;
+using Products.Api.Commands.ProductsCommentsCommands.Delete;
+using Products.Api.Commands.ProductsCommentsCommands.Update;
 using Products.Api.Models;
-using Products.Api.Queries.ProductCommentQuery;
+using Products.Api.Queries.ProductCommentsQuery;
 
 namespace Products.Api.Controllers
 {

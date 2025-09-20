@@ -4,7 +4,7 @@ using Products.Api.Helpers;
 using Products.Api.Models;
 using Products.Api.Services;
 
-namespace Products.Api.Commands.CurrencyCommands.Add
+namespace Products.Api.Commands.CurrenciesCommands.Add
 {
     public class AddCurrencyCommand : IRequest<CurrencyDto>
     {

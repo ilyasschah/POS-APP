@@ -1,0 +1,54 @@
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Products.Api.Domain
+{
+    [Table("Payment")]
+    public class Payment
+    {
+        [Key]
+        public int Id { get; set; }
+        public int DocumentId { get; set; }
+        public int PaymentTypeId { get; set; }
+        public decimal Amount { get; set; }
+        public DateTime? Date { get; set; }
+        public int UserId { get; set; }
+        public int? ZReportId { get; set; }
+        public DateTime DateCreated { get; set; }
+
+        [ForeignKey(nameof(DocumentId))]
+        public virtual Document Document { get; set; }
+
+        [ForeignKey(nameof(PaymentTypeId))]
+        public virtual PaymentType PaymentType { get; set; }
+
+        [ForeignKey(nameof(UserId))]
+        public virtual User User { get; set; }
+
+        [ForeignKey(nameof(ZReportId))]
+        public virtual ZReport? ZReport { get; set; }
+
+        private Payment(int documentId, int paymentTypeId, decimal amount, int userId)
+        {
+            DocumentId = documentId;
+            PaymentTypeId = paymentTypeId;
+            Amount = amount;
+            UserId = userId;
+            DateCreated = DateTime.UtcNow;
+            Date = DateTime.UtcNow.Date;
+        }
+
+        public Payment() { }
+
+        public static Payment Create(int documentId, int paymentTypeId, decimal amount, int userId)
+        {
+            return new Payment(documentId, paymentTypeId, amount, userId);
+        }
+
+        public void Update(decimal amount, DateTime? date)
+        {
+            Amount = amount;
+            Date = date;
+        }
+    }
+}

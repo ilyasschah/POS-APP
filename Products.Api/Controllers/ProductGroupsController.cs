@@ -4,7 +4,7 @@ using Products.Api.Commands.ProductGroupCommands.Add;
 using Products.Api.Commands.ProductGroupCommands.Delete;
 using Products.Api.Commands.ProductGroupCommands.Update;
 using Products.Api.Models;
-using Products.Api.Queries.ProductGroupQuery;
+using Products.Api.Queries.ProductGroupsQuery;
 
 namespace Products.Api.Controllers
 {

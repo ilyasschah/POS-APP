@@ -1,11 +1,10 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Products.Api.Commands.CurrencyCommands.Add;
-using Products.Api.Commands.CurrencyCommands.Delete;
-using Products.Api.Commands.CurrencyCommands.Update;
+using Products.Api.Commands.CurrenciesCommands.Add;
+using Products.Api.Commands.CurrenciesCommands.Delete;
+using Products.Api.Commands.CurrenciesCommands.Update;
 using Products.Api.Models;
 using Products.Api.Queries.CurrenciesQuery;
-using Products.Api.Queries.CurrencyQuery;
 
 namespace Products.Api.Controllers
 {

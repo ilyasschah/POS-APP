@@ -154,6 +154,7 @@ E:\Repos\Web-POS\Application.Api\obj\Debug\net9.0\Application.Api.AssemblyInfo.c
 E:\Repos\Web-POS\Application.Api\obj\Debug\net9.0\Application.Api.csproj.CoreCompileInputs.cache
 E:\Repos\Web-POS\Application.Api\obj\Debug\net9.0\Application.Api.MvcApplicationPartsAssemblyInfo.cs
 E:\Repos\Web-POS\Application.Api\obj\Debug\net9.0\Application.Api.MvcApplicationPartsAssemblyInfo.cache
+E:\Repos\Web-POS\Application.Api\obj\Debug\net9.0\Application.Api.sourcelink.json
 E:\Repos\Web-POS\Application.Api\obj\Debug\net9.0\rjimswa.dswa.cache.json
 E:\Repos\Web-POS\Application.Api\obj\Debug\net9.0\rjsmrazor.dswa.cache.json
 E:\Repos\Web-POS\Application.Api\obj\Debug\net9.0\rjsmcshtml.dswa.cache.json
@@ -169,4 +170,3 @@ E:\Repos\Web-POS\Application.Api\obj\Debug\net9.0\refint\Application.Api.dll
 E:\Repos\Web-POS\Application.Api\obj\Debug\net9.0\Application.Api.pdb
 E:\Repos\Web-POS\Application.Api\obj\Debug\net9.0\Application.Api.genruntimeconfig.cache
 E:\Repos\Web-POS\Application.Api\obj\Debug\net9.0\ref\Application.Api.dll
-E:\Repos\Web-POS\Application.Api\obj\Debug\net9.0\Application.Api.sourcelink.json

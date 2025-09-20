@@ -3,7 +3,7 @@ using Products.Api.Helpers;
 using Products.Api.Models;
 using Products.Api.Repository;
 
-namespace Products.Api.Queries.ProductCommentQuery
+namespace Products.Api.Queries.ProductCommentsQuery
 {
     public class GetProductCommentsByProductIdQuery : IRequest<List<ProductCommentDto>>
     {

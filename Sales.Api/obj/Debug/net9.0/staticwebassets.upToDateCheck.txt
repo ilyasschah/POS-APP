@@ -1,4 +1,0 @@
-wwwroot\css\login.css
-wwwroot\js\auth.js
-E:\Repos\Web-POS\Sales.Api\wwwroot\js\auth.js
-E:\Repos\Web-POS\Sales.Api\wwwroot\css\login.css

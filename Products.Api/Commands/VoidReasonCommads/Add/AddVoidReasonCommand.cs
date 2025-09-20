@@ -4,7 +4,7 @@ using Products.Api.Helpers;
 using Products.Api.Models;
 using Products.Api.Services;
 
-namespace Products.Api.Commands.VoidReasonCommands.Add
+namespace Products.Api.Commands.VoidReasonCommads.Add
 {
     public class AddVoidReasonCommand : IRequest<VoidReasonDto>
     {

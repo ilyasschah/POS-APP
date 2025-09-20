@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Products.Api.Commands.ProductTaxCommands.Add;
 using Products.Api.Commands.ProductTaxCommands.Delete;
 using Products.Api.Models;
-using Products.Api.Queries.ProductTaxQuery.Get;
+using Products.Api.Queries.ProductTaxQuery;
 
 namespace Products.Api.Controllers
 {
