@@ -6,7 +6,8 @@ using Products.Api.Repository;
 using Products.Api.Services;
 using System.Text;
 var builder = WebApplication.CreateBuilder(args);
-
+var cs = builder.Configuration.GetConnectionString("DefaultConnection");
+Console.WriteLine($"[DB CS] {cs}");
 // ===== CORS =====
 builder.Services.AddCors(options =>
 {
@@ -15,7 +16,12 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader()
               .AllowAnyMethod());
 });
-
+builder.Services.AddDbContext<AppDbContext>(opt =>
+    opt.UseSqlServer(cs, sql =>
+    {
+        sql.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(5), errorNumbersToAdd: null);
+        sql.CommandTimeout(60);
+    }));
 // Add services to the container.
 builder.Services.AddDbContext<AppDbContext>(op =>
     op.UseSqlServer(builder.Configuration

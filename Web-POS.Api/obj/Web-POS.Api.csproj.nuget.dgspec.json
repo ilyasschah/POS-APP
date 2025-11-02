@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "E:\\Repos\\Web-POS\\Web-POS.Api\\Web-POS.Api.csproj": {}
+    "D:\\repos\\Web-POS\\Web-POS.Api\\Web-POS.Api.csproj": {}
   },
   "projects": {
-    "E:\\Repos\\Web-POS\\Web-POS.Api\\Web-POS.Api.csproj": {
+    "D:\\repos\\Web-POS\\Web-POS.Api\\Web-POS.Api.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "E:\\Repos\\Web-POS\\Web-POS.Api\\Web-POS.Api.csproj",
+        "projectUniqueName": "D:\\repos\\Web-POS\\Web-POS.Api\\Web-POS.Api.csproj",
         "projectName": "Web-POS.Api",
-        "projectPath": "E:\\Repos\\Web-POS\\Web-POS.Api\\Web-POS.Api.csproj",
+        "projectPath": "D:\\repos\\Web-POS\\Web-POS.Api\\Web-POS.Api.csproj",
         "packagesPath": "C:\\Users\\ilyass\\.nuget\\packages\\",
-        "outputPath": "E:\\Repos\\Web-POS\\Web-POS.Api\\obj\\",
+        "outputPath": "D:\\repos\\Web-POS\\Web-POS.Api\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -56,27 +56,33 @@
             },
             "MediatR": {
               "target": "Package",
-              "version": "[13.0.0, )"
+              "version": "[13.1.0, )"
             },
             "Microsoft.AspNetCore.Authentication.JwtBearer": {
               "target": "Package",
-              "version": "[9.0.9, )"
+              "version": "[9.0.10, )"
             },
             "Microsoft.AspNetCore.OpenApi": {
               "target": "Package",
-              "version": "[9.0.9, )"
+              "version": "[9.0.10, )"
             },
             "Microsoft.EntityFrameworkCore": {
               "target": "Package",
-              "version": "[9.0.9, )"
+              "version": "[9.0.10, )"
             },
             "Microsoft.EntityFrameworkCore.SqlServer": {
               "target": "Package",
-              "version": "[9.0.9, )"
+              "version": "[9.0.10, )"
+            },
+            "Microsoft.EntityFrameworkCore.Tools": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[9.0.3, )"
             },
             "Swashbuckle.AspNetCore": {
               "target": "Package",
-              "version": "[9.0.4, )"
+              "version": "[9.0.6, )"
             }
           },
           "imports": [
@@ -98,7 +104,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.306/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
