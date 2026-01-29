@@ -7,13 +7,13 @@ namespace Products.Api.Domain
     public class PosOrder
     {
         [Key]
-        public int Id { get; private set; }
-        public int UserId { get; private set; }
-        public string Number { get; private set; }
-        public decimal Discount { get; private set; }
-        public int DiscountType { get; private set; }
-        public decimal? Total { get; private set; }
-        public int? CustomerId { get; private set; }
+        public int Id { get; set; }
+        public int UserId { get; set; }
+        public string Number { get; set; }
+        public decimal Discount { get; set; }
+        public int DiscountType { get; set; }
+        public decimal? Total { get; set; }
+        public int? CustomerId { get; set; }
         [ForeignKey(nameof(UserId))]
         public virtual User User { get; set; }
 

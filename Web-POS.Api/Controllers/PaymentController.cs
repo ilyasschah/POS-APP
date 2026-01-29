@@ -31,22 +31,23 @@ namespace Products.Api.Controllers
         //}
 
         [HttpPost("[action]")]
-        public async Task<ActionResult<PaymentDto>> Add([FromQuery] CreatePaymentRequest request)
+        public async Task<ActionResult<PaymentDto>> Add([FromBody] CreatePaymentRequest request)
         {
-            return Ok(await mediator.Send(new AddPaymentCommand(request)));
+            var result = await mediator.Send(new AddPaymentCommand(request));
+            return Ok(new { Id = result.Id, Message = "Payment added successfully" });
         }
 
         [HttpPost("[action]/{id}")]
-        public async Task<IActionResult> Update(int id, [FromQuery] UpdatePaymentRequest request)
+        public async Task<IActionResult> Update(int id, [FromBody] UpdatePaymentRequest request)
         {
             return Ok(await mediator.Send(new UpdatePaymentCommand(id, request)));
         }
 
-        //DELETE: api/payments/delete/5
         [HttpDelete("[action]/{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            return Ok(await mediator.Send(new DeletePaymentCommand { Id = id }));
+            var result = await mediator.Send(new DeletePaymentCommand { Id = id });
+            return Ok(new { Id = id, Message = "Payment deleted successfully" });
         }
     }
 }

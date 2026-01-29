@@ -30,7 +30,7 @@ namespace Products.Api.Controllers
         }
 
         [HttpPost("[action]")]
-        public async Task<ActionResult<DocumentItemDto>> Create([FromQuery] CreateDocumentItemRequest request)
+        public async Task<ActionResult<DocumentItemDto>> Create([FromBody] CreateDocumentItemRequest request)
         {
             return Ok(await mediator.Send(new AddDocumentItemCommand(request)));
         }

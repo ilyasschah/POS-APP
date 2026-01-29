@@ -26,5 +26,21 @@ namespace Products.Api.Helpers
                 DateCreated = entity.DateCreated
             };
         }
+        public static CreateDocumentRequest MapToDocumentCreateDto(Document entity)
+        {
+            return new CreateDocumentRequest
+            {
+                Number = entity.Number,
+                UserId = entity.UserId,
+                CustomerId = entity.CustomerId,
+                CompanyId = entity.CompanyId,
+                DocumentTypeId = entity.DocumentTypeId,
+                WarehouseId = entity.WarehouseId,
+                Date = entity.Date,
+                Total = entity.Total,
+                PaidStatus = entity.PaidStatus,
+                Note = entity.Note,
+            };
+        }
     }
 }

@@ -23,6 +23,7 @@ namespace Products.Api.Services
             var newDocument = Document.Create(
                 req.Number,
                 req.UserId,
+                req.CompanyId,
                 req.DocumentTypeId,
                 req.WarehouseId,
                 req.Total

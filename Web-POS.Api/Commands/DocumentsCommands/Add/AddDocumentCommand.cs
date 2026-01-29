@@ -35,6 +35,7 @@ namespace Products.Api.Commands.DocumentsCommands.Add
         {
             public AddDocumentCommandValidator()
             {
+                
                 RuleFor(c => c.Request.Number).NotEmpty();
                 RuleFor(c => c.Request.UserId).GreaterThan(0);
                 RuleFor(c => c.Request.DocumentTypeId).GreaterThan(0);

@@ -8,6 +8,8 @@
         public string UserName { get; set; }
         public int? CustomerId { get; set; }
         public string? CustomerName { get; set; }
+        public int CompanyId { get; set; }
+        public string? CompanyName { get; set; }
         public int DocumentTypeId { get; set; }
         public string DocumentTypeName { get; set; }
         public int WarehouseId { get; set; }
@@ -24,6 +26,7 @@
         public required string Number { get; set; }
         public required int UserId { get; set; }
         public int? CustomerId { get; set; }
+        public required int CompanyId { get; set; }
         public string? OrderNumber { get; set; }
         public DateTime? Date { get; set; }
         public DateTime? StockDate { get; set; }

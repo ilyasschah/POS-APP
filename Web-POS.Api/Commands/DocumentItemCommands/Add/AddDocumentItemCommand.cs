@@ -27,7 +27,6 @@ namespace Products.Api.Commands.DocumentItemCommands.Add
                 }
                 catch (Exception)
                 {
-
                     throw;
                 }
             }

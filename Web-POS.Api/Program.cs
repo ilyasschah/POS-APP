@@ -5,10 +5,21 @@ using Products.Api.DataBase;
 using Products.Api.Repository;
 using Products.Api.Services;
 using System.Text;
+
 var builder = WebApplication.CreateBuilder(args);
+
+// ================== LOGGING ==================
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+
+// Reduce EF Core SQL noise
+builder.Logging.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.Warning);
+builder.Logging.AddFilter("Microsoft.EntityFrameworkCore.Infrastructure", LogLevel.Warning);
+
+// ================== CONFIG ==================
 var cs = builder.Configuration.GetConnectionString("DefaultConnection");
-Console.WriteLine($"[DB CS] {cs}");
-// ===== CORS =====
+
+// ================== CORS ==================
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
@@ -16,18 +27,19 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader()
               .AllowAnyMethod());
 });
+
+// ================== DB CONTEXT ==================
 builder.Services.AddDbContext<AppDbContext>(opt =>
     opt.UseSqlServer(cs, sql =>
     {
-        sql.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(5), errorNumbersToAdd: null);
+        sql.EnableRetryOnFailure(
+            maxRetryCount: 5,
+            maxRetryDelay: TimeSpan.FromSeconds(5),
+            errorNumbersToAdd: null);
         sql.CommandTimeout(60);
     }));
-// Add services to the container.
-builder.Services.AddDbContext<AppDbContext>(op =>
-    op.UseSqlServer(builder.Configuration
-    .GetConnectionString("DefaultConnection")));
 
-//Repo
+// ================== REPOSITORIES ==================
 builder.Services.AddScoped<BarcodeRepository>();
 builder.Services.AddScoped<CurrencyRepository>();
 builder.Services.AddScoped<FiscalItemRepository>();
@@ -72,7 +84,7 @@ builder.Services.AddScoped<PosPrinterSelectionSettingsRepository>();
 builder.Services.AddScoped<PosPrinterSettingsRepository>();
 builder.Services.AddScoped<TemplateRepository>();
 
-//service
+// ================== SERVICES ==================
 builder.Services.AddScoped<BarcodeService>();
 builder.Services.AddScoped<CurrencyService>();
 builder.Services.AddScoped<FiscalItemService>();
@@ -117,13 +129,15 @@ builder.Services.AddScoped<PosPrinterSettingsService>();
 builder.Services.AddScoped<PosPrinterSelectionSettingsService>();
 builder.Services.AddScoped<TemplateService>();
 
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
-///////////////////////////////////////////////////////
+builder.Services.AddMediatR(cfg =>
+    cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
+
+// ================== MVC / SWAGGER ==================
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// ===== AuthN/AuthZ (JWT) =====
+// ================== AUTH ==================
 builder.Services.AddAuthorization();
 
 var jwtSecret = builder.Configuration["Jwt:Secret"] ?? "dev-only-very-long-secret-change-me-please";
@@ -143,14 +157,39 @@ builder.Services
             ValidateLifetime = true,
             ValidIssuer = jwtIssuer,
             ValidAudience = jwtAudience,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(jwtSecret)),
             ClockSkew = TimeSpan.FromSeconds(30)
         };
     });
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// ================== STARTUP LOGS ==================
+var logger = app.Services.GetRequiredService<ILogger<Program>>();
+
+logger.LogInformation("========================================");
+logger.LogInformation("Web POS - Products.Api starting");
+logger.LogInformation("Environment: {env}", app.Environment.EnvironmentName);
+logger.LogInformation("Content root: {root}", app.Environment.ContentRootPath);
+logger.LogInformation("========================================");
+
+// Safe DB health check (no SQL spam)
+using (var scope = app.Services.CreateScope())
+{
+    try
+    {
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var canConnect = db.Database.CanConnect();
+        logger.LogInformation("Database status: {status}", canConnect ? "OK" : "FAILED");
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Database check failed");
+    }
+}
+
+// ================== PIPELINE ==================
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -162,4 +201,5 @@ app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
 app.Run();

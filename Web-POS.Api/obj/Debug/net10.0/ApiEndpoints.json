@@ -951,89 +951,9 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "Id",
-        "Type": "System.Int32",
-        "IsRequired": false
-      },
-      {
-        "Name": "DocumentId",
-        "Type": "System.Int32",
-        "IsRequired": false
-      },
-      {
-        "Name": "ProductId",
-        "Type": "System.Int32",
-        "IsRequired": false
-      },
-      {
-        "Name": "Quantity",
-        "Type": "System.Decimal",
-        "IsRequired": false
-      },
-      {
-        "Name": "Price",
-        "Type": "System.Decimal",
-        "IsRequired": false
-      },
-      {
-        "Name": "Discount",
-        "Type": "System.Decimal",
-        "IsRequired": false
-      },
-      {
-        "Name": "DiscountType",
-        "Type": "System.Int32",
-        "IsRequired": false
-      },
-      {
-        "Name": "TaxRate",
-        "Type": "System.Decimal",
-        "IsRequired": false
-      },
-      {
-        "Name": "ProductCost",
-        "Type": "System.Decimal",
-        "IsRequired": false
-      },
-      {
-        "Name": "PriceBeforeTax",
-        "Type": "System.Decimal",
-        "IsRequired": false
-      },
-      {
-        "Name": "PriceBeforeTaxAfterDiscount",
-        "Type": "System.Decimal",
-        "IsRequired": false
-      },
-      {
-        "Name": "TotalAfterDocumentDiscount",
-        "Type": "System.Decimal",
-        "IsRequired": false
-      },
-      {
-        "Name": "PriceAfterDiscount",
-        "Type": "System.Decimal",
-        "IsRequired": false
-      },
-      {
-        "Name": "Total",
-        "Type": "System.Decimal",
-        "IsRequired": false
-      },
-      {
-        "Name": "DiscountApplyRule",
-        "Type": "System.Boolean",
-        "IsRequired": false
-      },
-      {
-        "Name": "DateCreated",
-        "Type": "System.DateTime",
-        "IsRequired": false
-      },
-      {
-        "Name": "DateUpdated",
-        "Type": "System.DateTime",
-        "IsRequired": false
+        "Name": "request",
+        "Type": "Products.Api.Models.CreateDocumentItemRequest",
+        "IsRequired": true
       }
     ],
     "ReturnTypes": [
@@ -2382,29 +2302,9 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "DocumentId",
-        "Type": "System.Int32",
-        "IsRequired": false
-      },
-      {
-        "Name": "PaymentTypeId",
-        "Type": "System.Int32",
-        "IsRequired": false
-      },
-      {
-        "Name": "Amount",
-        "Type": "System.Decimal",
-        "IsRequired": false
-      },
-      {
-        "Name": "Date",
-        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "UserId",
-        "Type": "System.Int32",
-        "IsRequired": false
+        "Name": "request",
+        "Type": "Products.Api.Models.CreatePaymentRequest",
+        "IsRequired": true
       }
     ],
     "ReturnTypes": [
@@ -2495,14 +2395,9 @@
         "IsRequired": true
       },
       {
-        "Name": "Amount",
-        "Type": "System.Decimal",
-        "IsRequired": false
-      },
-      {
-        "Name": "Date",
-        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
+        "Name": "request",
+        "Type": "Products.Api.Models.UpdatePaymentRequest",
+        "IsRequired": true
       }
     ],
     "ReturnTypes": []
@@ -2915,34 +2810,9 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "UserId",
-        "Type": "System.Int32",
-        "IsRequired": false
-      },
-      {
-        "Name": "Number",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "Discount",
-        "Type": "System.Decimal",
-        "IsRequired": false
-      },
-      {
-        "Name": "DiscountType",
-        "Type": "System.Int32",
-        "IsRequired": false
-      },
-      {
-        "Name": "Total",
-        "Type": "System.Nullable\u00601[[System.Decimal, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "CustomerId",
-        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
+        "Name": "req",
+        "Type": "Products.Api.Models.CreatePosOrderRequest",
+        "IsRequired": true
       }
     ],
     "ReturnTypes": [

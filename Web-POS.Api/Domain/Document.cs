@@ -11,6 +11,7 @@ namespace Products.Api.Domain
         public string Number { get; set; }
         public int UserId { get; set; }
         public int? CustomerId { get; set; }
+        public int CompanyId { get; set; }
         public string? OrderNumber { get; set; }
         public DateTime Date { get; set; }
         public DateTime StockDate { get; set; }
@@ -35,16 +36,20 @@ namespace Products.Api.Domain
         [ForeignKey(nameof(CustomerId))]
         public virtual Customer? Customer { get; set; }
 
+        [ForeignKey(nameof(CompanyId))]
+        public virtual Company? Company { get;set; }
+
         [ForeignKey(nameof(DocumentTypeId))]
         public virtual DocumentType DocumentType { get; set; }
 
         [ForeignKey(nameof(WarehouseId))]
         public virtual Warehouse Warehouse { get; set; }
 
-        private Document(string number, int userId, int documentTypeId, int warehouseId, decimal total)
+        private Document(string number, int userId, int companyId, int documentTypeId, int warehouseId, decimal total)
         {
             Number = number;
             UserId = userId;
+            CompanyId = companyId;
             DocumentTypeId = documentTypeId;
             WarehouseId = warehouseId;
             Total = total;
@@ -56,9 +61,9 @@ namespace Products.Api.Domain
 
         public Document() { }
 
-        public static Document Create(string number, int userId, int documentTypeId, int warehouseId, decimal total)
+        public static Document Create(string number, int userId, int companyId, int documentTypeId, int warehouseId, decimal total)
         {
-            return new Document(number, userId, documentTypeId, warehouseId, total);
+            return new Document(number, userId, companyId, documentTypeId, warehouseId, total);
         }
 
         public void Update(string number, int? customerId, decimal total, string? note, int paidStatus)

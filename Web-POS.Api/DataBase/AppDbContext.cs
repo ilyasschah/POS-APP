@@ -63,6 +63,7 @@ namespace Products.Api.DataBase
             // Document
             b.Entity<Document>(e =>
             {
+                e.ToTable(table => table.HasTrigger("Document_Insert_Trigger"));
                 e.Property(x => x.Discount).HasPrecision(18, 2);
                 e.Property(x => x.Total).HasPrecision(18, 2);
             });
@@ -70,6 +71,7 @@ namespace Products.Api.DataBase
             // DocumentItem
             b.Entity<DocumentItem>(e =>
             {
+                e.ToTable(tb => tb.HasTrigger("DocumentItem_Insert_Trigger"));
                 e.Property(x => x.Discount).HasPrecision(18, 2);
                 e.Property(x => x.ExpectedQuantity).HasPrecision(18, 4);
                 e.Property(x => x.Price).HasPrecision(18, 2);
@@ -86,10 +88,17 @@ namespace Products.Api.DataBase
             b.Entity<DocumentItemTax>(e => e.Property(x => x.Amount).HasPrecision(18, 2));
 
             // Payment
-            b.Entity<Payment>(e => e.Property(x => x.Amount).HasPrecision(18, 2));
+            b.Entity<Payment>(e =>
+            {
+                e.ToTable(tb => tb.HasTrigger("Payment_Insert_Trigger"));
+                e.Property(x => x.Amount).HasPrecision(18, 2);
+            });
 
             // PosOrder / PosOrderItem / PosVoid
-            b.Entity<PosOrder>(e => { e.Property(x => x.Discount).HasPrecision(18, 2); e.Property(x => x.Total).HasPrecision(18, 2); });
+            b.Entity<PosOrder>(e => 
+            { 
+                e.Property(x => x.Discount).HasPrecision(18, 2); e.Property(x => x.Total).HasPrecision(18, 2); 
+            });
             b.Entity<PosOrderItem>(e =>
             {
                 e.Property(x => x.Discount).HasPrecision(18, 2);

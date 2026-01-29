@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Products.Api.Models
+﻿namespace Products.Api.Models
 {
     public class PaymentDto
     {

@@ -36,7 +36,7 @@ namespace Products.Api.Controllers
             return result != null ? Ok(result) : NotFound();
         }
         [HttpPost("[action]")]
-        public async Task<ActionResult<PosOrderDto>> Add([FromQuery] CreatePosOrderRequest req)
+        public async Task<ActionResult<PosOrderDto>> Add([FromBody] CreatePosOrderRequest req)
         {
             var command = new AddPosOrderCommand(req);
             var result = await mediator.Send(command);
