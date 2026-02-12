@@ -6,6 +6,8 @@ namespace Products.Api.Queries.BarCodesQuery.Get
 {
     public class GetAllBarCodeProductNameQuery : IRequest<List<BarcodeDto>>
     {
+        public int CompanyId { get; set; }
+
         public class GetAllBarCodeProductNameQueryHandler : IRequestHandler<GetAllBarCodeProductNameQuery, List<BarcodeDto>>
         {
             private readonly BarcodeRepository _barcodeRepository;
@@ -15,8 +17,8 @@ namespace Products.Api.Queries.BarCodesQuery.Get
             }
             public async Task<List<BarcodeDto>> Handle(GetAllBarCodeProductNameQuery request, CancellationToken cancellationToken)
             {
-                var barcode = await _barcodeRepository.GetProductsNamesBarcodesAsync();
-                return barcode.Select(MapperBarcode.MapBarCodes).ToList();
+                var barcode = await _barcodeRepository.GetProductsNamesBarcodesAsync(request.CompanyId);
+                return barcode.Select(MapperBarcode_ProductName.MapBarCodes).ToList();
             }
         }
     }

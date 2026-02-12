@@ -13,9 +13,10 @@ namespace Products.Api.Controllers
     public class PosOrderItemsController(IMediator mediator) : ControllerBase
     {
         [HttpGet("[action]")]
-        public async Task<ActionResult<List<PosOrderItemDto>>> GetAll()
+        public async Task<ActionResult<List<PosOrderItemDto>>> GetAll([FromQuery] int companyId)
         {
-            return Ok(await mediator.Send(new GetAllPosOrderItemsQuery()));
+            if (companyId == 0) return BadRequest("Company ID is required");
+            return Ok(await mediator.Send(new GetAllPosOrderItemsQuery { CompanyId = companyId }));
         }
 
         [HttpGet("[action]/{id}")]

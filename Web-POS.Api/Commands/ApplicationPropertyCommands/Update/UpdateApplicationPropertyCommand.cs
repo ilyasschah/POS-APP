@@ -5,19 +5,19 @@ using MediatR;
 
 namespace Products.Api.Commands.ApplicationPropertyCommands.Update
 {
-    public class UpdateApplicationPropertyCommand : IRequest<bool>
+    public class UpdateApplicationPropertyCommand : IRequest<ApplicationPropertyDto>
     {
-        public string OriginalName { get; }
         public UpdateApplicationPropertyRequest Request { get; }
+        public int CompanyId { get; }
 
-        public UpdateApplicationPropertyCommand(string originalName, UpdateApplicationPropertyRequest request)
+        public UpdateApplicationPropertyCommand(UpdateApplicationPropertyRequest request, int companyId)
         {
-            OriginalName = originalName;
             Request = request;
+            CompanyId = companyId;
         }
 
         public class UpdateApplicationPropertyCommandHandler
-            : IRequestHandler<UpdateApplicationPropertyCommand, bool>
+            : IRequestHandler<UpdateApplicationPropertyCommand, ApplicationPropertyDto>
         {
             private readonly ApplicationPropertyService _service;
 
@@ -26,9 +26,9 @@ namespace Products.Api.Commands.ApplicationPropertyCommands.Update
                 _service = service;
             }
 
-            public Task<bool> Handle(UpdateApplicationPropertyCommand command, CancellationToken cancellationToken)
+            public Task<ApplicationPropertyDto> Handle(UpdateApplicationPropertyCommand command, CancellationToken cancellationToken)
             {
-                return _service.Update(command.OriginalName, command.Request);
+                return _service.UpdateValue(command.Request, command.CompanyId);
             }
         }
 
@@ -36,8 +36,10 @@ namespace Products.Api.Commands.ApplicationPropertyCommands.Update
         {
             public UpdateApplicationPropertyCommandValidator()
             {
-                RuleFor(c => c.OriginalName).NotEmpty().MaximumLength(255);
-                RuleFor(c => c.Request.Name).NotEmpty().MaximumLength(255);
+                RuleFor(cmd => cmd.Request.NewValue)
+                    .NotNull()
+                    .NotEmpty()
+                    .WithMessage("New value must not be null or empty.");
             }
         }
     }

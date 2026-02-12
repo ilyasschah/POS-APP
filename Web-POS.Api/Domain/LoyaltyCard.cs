@@ -10,6 +10,7 @@ public class LoyaltyCard
 {
     [Key]
     public int Id { get; private set; }
+    public int CompanyId { get; set; }
     public int CustomerId { get; private set; }
     public string? CardNumber { get; private set; }
 

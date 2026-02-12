@@ -1,5 +1,3 @@
-// FILE: Products.Api.Models\UserDto.cs
-
 namespace Products.Api.Models;
 
 public class UserDto
@@ -11,6 +9,7 @@ public class UserDto
     public int AccessLevel { get; set; }
     public bool IsEnabled { get; set; }
     public string? Email { get; set; }
+    public int CompanyId { get; set; }
 }
 
 public class CreateUserRequest
@@ -22,6 +21,7 @@ public class CreateUserRequest
     public int AccessLevel { get; set; } = 0;
     public bool IsEnabled { get; set; } = true;
     public string? Email { get; set; }
+    public int CompanyId { get; set; }
 }
 
 public class UpdateUserRequest
@@ -33,4 +33,5 @@ public class UpdateUserRequest
     public int AccessLevel { get; set; }
     public bool IsEnabled { get; set; }
     public string? Email { get; set; }
+    public int CompanyId { get; set; }
 }

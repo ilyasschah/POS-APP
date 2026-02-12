@@ -1,0 +1,32 @@
+﻿using MediatR;
+using Products.Api.Models;
+using Products.Api.Services;
+
+namespace Products.Api.Commands.StockCommands.Add
+{
+    public class AddStockcommand : IRequest<bool>
+    {
+        public CreateStockRequest Request { get; set; }
+        public int CompanyId { get; }
+
+        public AddStockcommand(CreateStockRequest createStockRequest, int companyId)
+        {
+            Request = createStockRequest;
+            CompanyId = companyId;
+        }
+
+        public class AddStockcommandHandler : IRequestHandler<AddStockcommand, bool>
+        {
+            private readonly StockService _stockService;
+            public AddStockcommandHandler(StockService stockService)
+            {
+                _stockService = stockService;
+            }
+            public Task<bool> Handle(AddStockcommand request, CancellationToken cancellationToken)
+            {
+                return _stockService.Create(request.Request.Quantity, request.Request.WarehouseId, request.Request.ProductId, request.CompanyId);
+            }
+        }
+    }
+}
+

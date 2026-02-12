@@ -10,7 +10,8 @@ namespace Products.Api.Helpers
             return new ApplicationPropertyDto
             {
                 Name = entity.Name,
-                Value = entity.Value
+                Value = entity.Value,
+                CompanyId = entity.CompanyId
             };
         }
     }

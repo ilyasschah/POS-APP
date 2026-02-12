@@ -8,33 +8,38 @@ namespace Products.Api.Repository
     {
         public AppDbContext _db = db;
 
-        public async Task<List<Barcode>> GetProductsNamesBarcodesAsync()
+        public async Task<List<Barcode>> GetProductsNamesBarcodesAsync(int companyId)
         {
             return await _db.Barcodes
                 .AsNoTracking()
+                .Where(b => b.CompanyId == companyId)
                 .Include(BarCode => BarCode.Product)
+                .Include(BarCode => BarCode.Company)
                 .ToListAsync();
         }
-        public async Task<Barcode?> GetBarCodeByIdQuery(int id)
+        public async Task<Barcode?> GetBarCodeByIdQuery(int id, int companyId)
         {
             return await _db.Barcodes
-            .AsNoTracking()
-            .Include(b => b.Product)
-            .FirstOrDefaultAsync(b => b.Id == id);
+                .AsNoTracking()
+                .Where(s => s.CompanyId == companyId)
+                .Include(b => b.Product)
+                .Include(b => b.Company)
+                .FirstOrDefaultAsync(b => b.Id == id && b.CompanyId == companyId);
         }
-        public async Task<Barcode?> GetByValueAsync(string value)
+        public async Task<Barcode?> GetByValueAsync(string value, int companyId)
         {
             return await _db.Barcodes
-                .FirstOrDefaultAsync(b => b.Value == value);
+                .AsNoTracking()
+                .Where(s => s.CompanyId == companyId) 
+                .Include(b => b.Product)
+                .Include(b => b.Company)
+                .FirstOrDefaultAsync(b => b.Value == value && b.CompanyId == companyId);
         }
-        public bool Exists(string valeu)
-        {
-            return _db.Barcodes.Any(c => c.Value == valeu);
-        }
-        public bool ExistsById(int id)
+        public bool Existsbyvalue(string value, int companyId)
         {
             return _db.Barcodes
-                .Any(bcid => bcid.Id == id);
+                .Where(c => c.CompanyId == companyId)
+                .Any(c => c.Value == value && c.CompanyId == companyId);
         }
         public async Task Add(Barcode newBarcode)
         {

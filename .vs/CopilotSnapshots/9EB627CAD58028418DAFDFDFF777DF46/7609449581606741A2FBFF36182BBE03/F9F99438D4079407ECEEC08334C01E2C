@@ -1,0 +1,26 @@
+﻿using MediatR;
+using Products.Api.Helpers;
+using Products.Api.Models;
+using Products.Api.Repository;
+
+namespace Products.Api.Queries.PaymentTypeQuery
+{
+    public class GetAllPaymentTypesQuery : IRequest<List<PaymentTypeDto>>
+    {
+        public class GetAllPaymentTypesQueryHandler : IRequestHandler<GetAllPaymentTypesQuery, List<PaymentTypeDto>>
+        {
+            private readonly PaymentTypeRepository _repository;
+
+            public GetAllPaymentTypesQueryHandler(PaymentTypeRepository repository)
+            {
+                _repository = repository;
+            }
+
+            public async Task<List<PaymentTypeDto>> Handle(GetAllPaymentTypesQuery request, CancellationToken cancellationToken)
+            {
+                var entities = await _repository.GetAllAsync();
+                return entities.Select(MapperPaymentType.MapToPaymentTypeDto).ToList();
+            }
+        }
+    }
+}

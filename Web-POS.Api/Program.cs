@@ -190,11 +190,12 @@ using (var scope = app.Services.CreateScope())
 }
 
 // ================== PIPELINE ==================
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+
+app.UseSwagger();
+app.UseSwaggerUI(c => {
+    c.SwaggerEndpoint("./v1/swagger.json", "My API V1"); // Use relative path for IIS
+    c.RoutePrefix = "swagger";
+});
 
 app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");

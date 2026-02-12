@@ -1,6 +1,4 @@
-﻿using System;
-using System.Text;
-using Products.Api.Domain;
+﻿using Products.Api.Domain;
 using Products.Api.Models;
 using Products.Api.Repository;
 
@@ -22,12 +20,13 @@ namespace Products.Api.Services
             catch { return null; }
         }
 
-        public async Task<Product> Create(CreateProductRequest req)
+
+        public async Task<Product> Create(CreateProductRequest req, int companyId)
         {
-            if (await _repository.ExistsByNameAsync(req.Name))
+            if (await _repository.ExistsByNameAsync(req.Name, companyId))
                 throw new InvalidOperationException($"A product with the name '{req.Name}' already exists.");
 
-            if (!string.IsNullOrWhiteSpace(req.Code) && await _repository.ExistsByCodeAsync(req.Code))
+            if (!string.IsNullOrWhiteSpace(req.Code) && await _repository.ExistsByCodeAsync(req.Code, companyId))
                 throw new InvalidOperationException($"A product with the code '{req.Code}' already exists.");
 
             var entity = Product.Create(
@@ -54,19 +53,21 @@ namespace Products.Api.Services
                 lastPurchasePrice: req.LastPurchasePrice ?? 0m,
                 rank: req.Rank ?? 0
             );
+            entity.CompanyId = companyId;
 
             await _repository.AddAsync(entity);
             return entity;
         }
 
-        public async Task<bool> Update(int id, UpdateProductRequest req)
+        public async Task<bool> Update(int id, UpdateProductRequest req, int companyId)
         {
-            var entity = await _repository.GetByIdAsync(id, trackEntity: true)
-                         ?? throw new InvalidOperationException($"Product with ID '{id}' not found.");
+            var entity = await _repository.GetByIdAsync(id, companyId, trackEntity: true);
+
+            if (entity == null) return false;
 
             if (!string.IsNullOrWhiteSpace(req.Code))
             {
-                var existsCode = await _repository.GetByCodeAsync(req.Code);
+                var existsCode = await _repository.GetByCodeAsync(req.Code, companyId);
                 if (existsCode != null && existsCode.Id != id)
                     throw new InvalidOperationException($"Another product with the code '{req.Code}' already exists.");
             }
@@ -102,9 +103,10 @@ namespace Products.Api.Services
             return true;
         }
 
-        public async Task<bool> Delete(int id)
+        public async Task<bool> Delete(int id, int companyId)
         {
-            var entity = await _repository.GetByIdAsync(id, trackEntity: true);
+            var entity = await _repository.GetByIdAsync(id, companyId, trackEntity: true);
+
             if (entity == null) return false;
 
             await _repository.DeleteAsync(entity);

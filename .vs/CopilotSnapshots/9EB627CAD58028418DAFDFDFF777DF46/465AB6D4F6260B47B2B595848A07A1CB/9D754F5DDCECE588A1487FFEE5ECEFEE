@@ -1,0 +1,39 @@
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Products.Api.Domain
+{
+    [Table("ProductComment")]
+    public class ProductComment
+    {
+        [Key]
+        public int Id { get; set; }
+
+        [Required]
+        [ForeignKey(nameof(Product))]
+        public int ProductId { get; set; }
+
+        [Required]
+        public string Comment { get; set; } = default!;
+
+        // Navigation
+        public Product? Product { get; set; }
+
+        public ProductComment() { }
+
+        private ProductComment(int productId, string comment)
+        {
+            ProductId = productId;
+            Comment = comment;
+        }
+
+        public static ProductComment Create(int productId, string comment)
+            => new(productId, comment);
+
+        public void Update(int productId, string comment)
+        {
+            ProductId = productId;
+            Comment = comment;
+        }
+    }
+}

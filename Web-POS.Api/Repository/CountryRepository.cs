@@ -8,22 +8,46 @@ namespace Products.Api.Repository
     {
         public AppDbContext _db = db;
 
+        public async Task<List<Country>> GetAllCountries(int companyId)
+        {
+            return await _db.Countries
+                .AsNoTracking()
+                .Where(c => c.CompanyId == companyId)
+                .ToListAsync();
+        }
+
+        // Backwards-compatible non-scoped overload
         public async Task<List<Country>> GetAllCountries()
         {
             return await _db.Countries
                 .AsNoTracking()
                 .ToListAsync();
         }
+
+        public async Task<Country?> GetCountryId_byCompanyQuery(int id, int companyId)
+        {
+            return await _db.Countries
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == id && c.CompanyId == companyId);
+        }
+
         public async Task<Country?> GetCountryIdQuery(int id)
         {
             return await _db.Countries
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == id);
         }
+
+        public bool Exists(string name, int companyId)
+        {
+            return _db.Countries.Any(c => c.Name == name && c.CompanyId == companyId);
+        }
+
         public bool Exists(string name)
         {
             return _db.Countries.Any(c => c.Name == name);
         }
+
         public async Task Add(Country newCountry)
         {
             _db.Countries.Add(newCountry);

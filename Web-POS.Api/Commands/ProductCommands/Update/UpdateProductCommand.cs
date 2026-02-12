@@ -9,11 +9,13 @@ namespace Products.Api.Commands.ProductCommands.Update
     {
         public int Id { get; }
         public UpdateProductRequest Request { get; }
+        public int CompanyId { get; }
 
-        public UpdateProductCommand(int id, UpdateProductRequest request)
+        public UpdateProductCommand(int id, UpdateProductRequest request, int companyId)
         {
             Id = id;
             Request = request;
+            CompanyId = companyId;
         }
 
         public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand, bool>
@@ -25,13 +27,13 @@ namespace Products.Api.Commands.ProductCommands.Update
                 _service = service;
             }
 
-            public Task<bool> Handle(UpdateProductCommand command, System.Threading.CancellationToken cancellationToken)
+            public Task<bool> Handle(UpdateProductCommand command, CancellationToken cancellationToken)
             {
-                return _service.Update(command.Id, command.Request);
+                return _service.Update(command.Id, command.Request, command.CompanyId);
             }
         }
 
-        public class UpdateProductCommandValidator : FluentValidation.AbstractValidator<UpdateProductCommand>
+        public class UpdateProductCommandValidator : AbstractValidator<UpdateProductCommand>
         {
             public UpdateProductCommandValidator()
             {

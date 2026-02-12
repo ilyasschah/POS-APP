@@ -16,6 +16,11 @@
         "Name": "Value",
         "Type": "System.String",
         "IsRequired": false
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
@@ -32,28 +37,18 @@
   },
   {
     "ContainingType": "Products.Api.Controllers.ApplicationPropertiesController",
-    "Method": "Delete",
-    "RelativePath": "api/ApplicationProperties/Delete/{name}",
-    "HttpMethod": "DELETE",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "name",
-        "Type": "System.String",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "Products.Api.Controllers.ApplicationPropertiesController",
     "Method": "GetAll",
     "RelativePath": "api/ApplicationProperties/GetAll",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
+    "Parameters": [
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
     "ReturnTypes": [
       {
         "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.ApplicationPropertyDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
@@ -78,6 +73,11 @@
         "Name": "name",
         "Type": "System.String",
         "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
@@ -95,28 +95,38 @@
   {
     "ContainingType": "Products.Api.Controllers.ApplicationPropertiesController",
     "Method": "Update",
-    "RelativePath": "api/ApplicationProperties/Update/{originalName}",
+    "RelativePath": "api/ApplicationProperties/Update",
     "HttpMethod": "PUT",
     "IsController": true,
     "Order": 0,
     "Parameters": [
-      {
-        "Name": "originalName",
-        "Type": "System.String",
-        "IsRequired": true
-      },
       {
         "Name": "Name",
         "Type": "System.String",
         "IsRequired": false
       },
       {
-        "Name": "Value",
+        "Name": "NewValue",
         "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
         "IsRequired": false
       }
     ],
-    "ReturnTypes": []
+    "ReturnTypes": [
+      {
+        "Type": "Products.Api.Models.ApplicationPropertyDto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
   },
   {
     "ContainingType": "Products.Api.Controllers.AuthController",
@@ -153,12 +163,12 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "Value",
-        "Type": "System.String",
-        "IsRequired": false
+        "Name": "createrequest",
+        "Type": "Products.Api.Models.CreateBarcodeRequest",
+        "IsRequired": true
       },
       {
-        "Name": "ProductId",
+        "Name": "companyId",
         "Type": "System.Int32",
         "IsRequired": false
       }
@@ -178,23 +188,33 @@
   {
     "ContainingType": "Products.Api.Controllers.BarcodesController",
     "Method": "Delete",
-    "RelativePath": "api/Barcodes/Delete/{id}",
+    "RelativePath": "api/Barcodes/Delete",
     "HttpMethod": "DELETE",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "id",
-        "Type": "System.Int32",
-        "IsRequired": false
+        "Name": "deleterequest",
+        "Type": "Products.Api.Models.DeleteBarcodeRequest",
+        "IsRequired": true
       },
       {
-        "Name": "id",
-        "Type": "",
-        "IsRequired": true
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
-    "ReturnTypes": []
+    "ReturnTypes": [
+      {
+        "Type": "System.Boolean",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
   },
   {
     "ContainingType": "Products.Api.Controllers.BarcodesController",
@@ -203,7 +223,13 @@
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
+    "Parameters": [
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
     "ReturnTypes": [
       {
         "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.BarcodeDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
@@ -219,13 +245,18 @@
   {
     "ContainingType": "Products.Api.Controllers.BarcodesController",
     "Method": "GetById",
-    "RelativePath": "api/Barcodes/GetById",
+    "RelativePath": "api/Barcodes/GetById/{id}",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
         "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "companyId",
         "Type": "System.Int32",
         "IsRequired": false
       }
@@ -246,43 +277,63 @@
     "ContainingType": "Products.Api.Controllers.BarcodesController",
     "Method": "Update",
     "RelativePath": "api/Barcodes/Update",
-    "HttpMethod": "POST",
+    "HttpMethod": "PATCH",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "Id",
-        "Type": "System.Int32",
-        "IsRequired": false
+        "Name": "updaterequest",
+        "Type": "Products.Api.Models.UpdateBarcodeRequest",
+        "IsRequired": true
       },
       {
-        "Name": "NewBarcodeValue",
-        "Type": "System.String",
+        "Name": "companyId",
+        "Type": "System.Int32",
         "IsRequired": false
       }
     ],
-    "ReturnTypes": []
+    "ReturnTypes": [
+      {
+        "Type": "Products.Api.Models.BarcodeDto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
   },
   {
     "ContainingType": "Products.Api.Controllers.CompaniesController",
-    "Method": "Add",
-    "RelativePath": "api/Companies/Add",
+    "Method": "Create",
+    "RelativePath": "api/Companies/Create",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "createRequest",
+        "Name": "request",
         "Type": "Products.Api.Models.CreateCompanyRequest",
         "IsRequired": true
       }
     ],
-    "ReturnTypes": []
+    "ReturnTypes": [
+      {
+        "Type": "Products.Api.Models.CompanyDto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
   },
   {
     "ContainingType": "Products.Api.Controllers.CompaniesController",
     "Method": "Delete",
-    "RelativePath": "api/Companies/delete/{id}",
+    "RelativePath": "api/Companies/Delete",
     "HttpMethod": "DELETE",
     "IsController": true,
     "Order": 0,
@@ -290,7 +341,7 @@
       {
         "Name": "id",
         "Type": "System.Int32",
-        "IsRequired": true
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
@@ -317,104 +368,76 @@
   },
   {
     "ContainingType": "Products.Api.Controllers.CompaniesController",
-    "Method": "Update",
-    "RelativePath": "api/Companies/Update",
+    "Method": "GetById",
+    "RelativePath": "api/Companies/GetById",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "Products.Api.Models.CompanyDto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "Products.Api.Controllers.CompaniesController",
+    "Method": "UpdateDetails",
+    "RelativePath": "api/Companies/UpdateDetails",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "Products.Api.Models.UpdateCompanyRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "Products.Api.Models.CompanyDto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "Products.Api.Controllers.CompaniesController",
+    "Method": "UpdateLogo",
+    "RelativePath": "api/Companies/UpdateLogo",
     "HttpMethod": "PUT",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "Id",
-        "Type": "System.Int32",
-        "IsRequired": false
-      },
-      {
-        "Name": "Name",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "CountryId",
-        "Type": "System.Int32",
-        "IsRequired": false
-      },
-      {
-        "Name": "Address",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "PostalCode",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "City",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "TaxNumber",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "Email",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "PhoneNumber",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "BankAccountNumber",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "BankDetails",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "StreetName",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "AdditionalStreetName",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "BuildingNumber",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "PlotIdentification",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "CitySubdivisionName",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "CountrySubentity",
-        "Type": "System.String",
-        "IsRequired": false
+        "Name": "request",
+        "Type": "Products.Api.Models.UpdateCompanyLogoRequest",
+        "IsRequired": true
       }
     ],
     "ReturnTypes": []
   },
   {
     "ContainingType": "Products.Api.Controllers.CountryController",
-    "Method": "AddBarcodecommand",
-    "RelativePath": "api/Country/AddBarcodecommand",
+    "Method": "Add",
+    "RelativePath": "api/Country/Add",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
@@ -423,6 +446,11 @@
         "Name": "createrequest",
         "Type": "Products.Api.Models.CreateCountryRequest",
         "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
@@ -439,12 +467,39 @@
   },
   {
     "ContainingType": "Products.Api.Controllers.CountryController",
+    "Method": "Delete",
+    "RelativePath": "api/Country/Delete/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Products.Api.Controllers.CountryController",
     "Method": "GetAllCountries",
     "RelativePath": "api/Country/GetAllCountries",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
+    "Parameters": [
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
     "ReturnTypes": [
       {
         "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.CountryDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
@@ -456,6 +511,63 @@
         "StatusCode": 200
       }
     ]
+  },
+  {
+    "ContainingType": "Products.Api.Controllers.CountryController",
+    "Method": "GetById",
+    "RelativePath": "api/Country/GetById/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "Products.Api.Models.CountryDto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "Products.Api.Controllers.CountryController",
+    "Method": "Update",
+    "RelativePath": "api/Country/Update/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "req",
+        "Type": "Products.Api.Models.UpdateCountryRequest",
+        "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
   },
   {
     "ContainingType": "Products.Api.Controllers.CurrenciesController",
@@ -614,6 +726,11 @@
         "Name": "createrequest",
         "Type": "Products.Api.Models.CreateCustomerRequest",
         "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
@@ -635,7 +752,13 @@
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
+    "Parameters": [
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
     "ReturnTypes": [
       {
         "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.CustomerDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
@@ -706,6 +829,11 @@
         "Name": "req",
         "Type": "Products.Api.Models.CreateDocumentRequest",
         "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
@@ -732,6 +860,11 @@
         "Name": "id",
         "Type": "System.Int32",
         "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
@@ -743,7 +876,13 @@
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
+    "Parameters": [
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
     "ReturnTypes": [
       {
         "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.DocumentDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
@@ -768,6 +907,11 @@
         "Name": "id",
         "Type": "System.Int32",
         "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
@@ -784,8 +928,8 @@
   },
   {
     "ContainingType": "Products.Api.Controllers.DocumentController",
-    "Method": "GetByNumberAsync",
-    "RelativePath": "api/Document/GetByNumber",
+    "Method": "GetByNumber",
+    "RelativePath": "api/Document/GetByNumber/{number}",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -794,11 +938,16 @@
         "Name": "number",
         "Type": "System.String",
         "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.DocumentDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "Products.Api.Models.DocumentDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -811,38 +960,23 @@
   {
     "ContainingType": "Products.Api.Controllers.DocumentController",
     "Method": "Update",
-    "RelativePath": "api/Document/Update",
-    "HttpMethod": "POST",
+    "RelativePath": "api/Document/Update/{id}",
+    "HttpMethod": "PUT",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "Id",
+        "Name": "id",
         "Type": "System.Int32",
-        "IsRequired": false
+        "IsRequired": true
       },
       {
-        "Name": "Number",
-        "Type": "System.String",
-        "IsRequired": false
+        "Name": "req",
+        "Type": "Products.Api.Models.UpdateDocumentRequest",
+        "IsRequired": true
       },
       {
-        "Name": "CustomerId",
-        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "Total",
-        "Type": "System.Decimal",
-        "IsRequired": false
-      },
-      {
-        "Name": "Note",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "PaidStatus",
+        "Name": "companyId",
         "Type": "System.Int32",
         "IsRequired": false
       }
@@ -908,6 +1042,11 @@
         "Name": "id",
         "Type": "System.Int32",
         "IsRequired": false
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
@@ -929,7 +1068,13 @@
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
+    "Parameters": [
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
     "ReturnTypes": [
       {
         "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.DocumentCategoryDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
@@ -1461,7 +1606,13 @@
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
+    "Parameters": [
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
     "ReturnTypes": [
       {
         "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.DocumentTypeDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
@@ -1484,6 +1635,11 @@
     "Parameters": [
       {
         "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "companyId",
         "Type": "System.Int32",
         "IsRequired": false
       }
@@ -2305,6 +2461,11 @@
         "Name": "request",
         "Type": "Products.Api.Models.CreatePaymentRequest",
         "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
@@ -2331,6 +2492,11 @@
         "Name": "id",
         "Type": "System.Int32",
         "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
@@ -2342,7 +2508,13 @@
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
+    "Parameters": [
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
     "ReturnTypes": [
       {
         "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.PaymentDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
@@ -2367,6 +2539,11 @@
         "Name": "id",
         "Type": "System.Int32",
         "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
@@ -2385,7 +2562,7 @@
     "ContainingType": "Products.Api.Controllers.PaymentsController",
     "Method": "Update",
     "RelativePath": "api/Payments/Update/{id}",
-    "HttpMethod": "POST",
+    "HttpMethod": "PUT",
     "IsController": true,
     "Order": 0,
     "Parameters": [
@@ -2398,6 +2575,11 @@
         "Name": "request",
         "Type": "Products.Api.Models.UpdatePaymentRequest",
         "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
@@ -2411,63 +2593,13 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "Name",
-        "Type": "System.String",
-        "IsRequired": false
+        "Name": "req",
+        "Type": "Products.Api.Models.CreatePaymentTypeRequest",
+        "IsRequired": true
       },
       {
-        "Name": "Code",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "IsCustomerRequired",
-        "Type": "System.Nullable\u00601[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "IsFiscal",
-        "Type": "System.Nullable\u00601[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "IsSlipRequired",
-        "Type": "System.Nullable\u00601[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "IsChangeAllowed",
-        "Type": "System.Nullable\u00601[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "Ordinal",
-        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "IsEnabled",
-        "Type": "System.Nullable\u00601[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "IsQuickPayment",
-        "Type": "System.Nullable\u00601[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "OpenCashDrawer",
-        "Type": "System.Nullable\u00601[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "ShortcutKey",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "MarkAsPaid",
-        "Type": "System.Nullable\u00601[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "Name": "companyId",
+        "Type": "System.Int32",
         "IsRequired": false
       }
     ],
@@ -2495,19 +2627,14 @@
         "Name": "id",
         "Type": "System.Int32",
         "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
-    "ReturnTypes": [
-      {
-        "Type": "System.Boolean",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
+    "ReturnTypes": []
   },
   {
     "ContainingType": "Products.Api.Controllers.PaymentTypesController",
@@ -2516,7 +2643,13 @@
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
+    "Parameters": [
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
     "ReturnTypes": [
       {
         "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.PaymentTypeDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
@@ -2541,6 +2674,11 @@
         "Name": "id",
         "Type": "System.Int32",
         "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
@@ -2567,6 +2705,11 @@
         "Name": "name",
         "Type": "System.String",
         "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
@@ -2585,7 +2728,7 @@
     "ContainingType": "Products.Api.Controllers.PaymentTypesController",
     "Method": "Update",
     "RelativePath": "api/PaymentTypes/Update/{id}",
-    "HttpMethod": "POST",
+    "HttpMethod": "PATCH",
     "IsController": true,
     "Order": 0,
     "Parameters": [
@@ -2595,63 +2738,13 @@
         "IsRequired": true
       },
       {
-        "Name": "Name",
-        "Type": "System.String",
-        "IsRequired": false
+        "Name": "req",
+        "Type": "Products.Api.Models.UpdatePaymentTypeRequest",
+        "IsRequired": true
       },
       {
-        "Name": "Code",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "IsCustomerRequired",
-        "Type": "System.Boolean",
-        "IsRequired": false
-      },
-      {
-        "Name": "IsFiscal",
-        "Type": "System.Boolean",
-        "IsRequired": false
-      },
-      {
-        "Name": "IsSlipRequired",
-        "Type": "System.Boolean",
-        "IsRequired": false
-      },
-      {
-        "Name": "IsChangeAllowed",
-        "Type": "System.Boolean",
-        "IsRequired": false
-      },
-      {
-        "Name": "Ordinal",
+        "Name": "companyId",
         "Type": "System.Int32",
-        "IsRequired": false
-      },
-      {
-        "Name": "IsEnabled",
-        "Type": "System.Boolean",
-        "IsRequired": false
-      },
-      {
-        "Name": "IsQuickPayment",
-        "Type": "System.Boolean",
-        "IsRequired": false
-      },
-      {
-        "Name": "OpenCashDrawer",
-        "Type": "System.Boolean",
-        "IsRequired": false
-      },
-      {
-        "Name": "ShortcutKey",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "MarkAsPaid",
-        "Type": "System.Boolean",
         "IsRequired": false
       }
     ],
@@ -2736,7 +2829,13 @@
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
+    "Parameters": [
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
     "ReturnTypes": [
       {
         "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.PosOrderItemDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
@@ -2850,7 +2949,13 @@
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
+    "Parameters": [
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
     "ReturnTypes": [
       {
         "Type": "System.Collections.Generic.IEnumerable\u00601[[Products.Api.Models.PosOrderDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
@@ -2875,6 +2980,11 @@
         "Name": "id",
         "Type": "System.Int32",
         "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
@@ -2901,6 +3011,11 @@
         "Name": "number",
         "Type": "System.String",
         "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
@@ -3890,7 +4005,13 @@
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
+    "Parameters": [
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
     "ReturnTypes": [
       {
         "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.PosVoidDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
@@ -3913,6 +4034,11 @@
     "Parameters": [
       {
         "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "companyId",
         "Type": "System.Int32",
         "IsRequired": false
       }
@@ -3940,6 +4066,11 @@
       {
         "Name": "orderNumber",
         "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
         "IsRequired": false
       }
     ],
@@ -4361,113 +4492,13 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "ProductGroupId",
-        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
+        "Name": "req",
+        "Type": "Products.Api.Models.CreateProductRequest",
+        "IsRequired": true
       },
       {
-        "Name": "Name",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "Code",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "PLU",
-        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "MeasurementUnit",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "Price",
-        "Type": "System.Decimal",
-        "IsRequired": false
-      },
-      {
-        "Name": "IsTaxInclusivePrice",
-        "Type": "System.Nullable\u00601[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "CurrencyId",
-        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "IsPriceChangeAllowed",
-        "Type": "System.Nullable\u00601[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "IsService",
-        "Type": "System.Nullable\u00601[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "IsUsingDefaultQuantity",
-        "Type": "System.Nullable\u00601[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "IsEnabled",
-        "Type": "System.Nullable\u00601[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "Description",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "DateCreated",
-        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "DateUpdated",
-        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "Cost",
-        "Type": "System.Nullable\u00601[[System.Decimal, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "Markup",
-        "Type": "System.Nullable\u00601[[System.Decimal, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "ImageBase64",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "Color",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "AgeRestriction",
-        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "LastPurchasePrice",
-        "Type": "System.Nullable\u00601[[System.Decimal, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "Rank",
-        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "Name": "companyId",
+        "Type": "System.Int32",
         "IsRequired": false
       }
     ],
@@ -4495,6 +4526,11 @@
         "Name": "id",
         "Type": "System.Int32",
         "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
@@ -4506,7 +4542,13 @@
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
+    "Parameters": [
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
     "ReturnTypes": [
       {
         "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.ProductDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
@@ -4531,6 +4573,11 @@
         "Name": "code",
         "Type": "System.String",
         "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
@@ -4557,6 +4604,11 @@
         "Name": "id",
         "Type": "System.Int32",
         "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
@@ -4585,113 +4637,13 @@
         "IsRequired": true
       },
       {
-        "Name": "ProductGroupId",
-        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
+        "Name": "req",
+        "Type": "Products.Api.Models.UpdateProductRequest",
+        "IsRequired": true
       },
       {
-        "Name": "Name",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "Code",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "PLU",
-        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "MeasurementUnit",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "Price",
-        "Type": "System.Decimal",
-        "IsRequired": false
-      },
-      {
-        "Name": "IsTaxInclusivePrice",
-        "Type": "System.Boolean",
-        "IsRequired": false
-      },
-      {
-        "Name": "CurrencyId",
-        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "IsPriceChangeAllowed",
-        "Type": "System.Boolean",
-        "IsRequired": false
-      },
-      {
-        "Name": "IsService",
-        "Type": "System.Boolean",
-        "IsRequired": false
-      },
-      {
-        "Name": "IsUsingDefaultQuantity",
-        "Type": "System.Boolean",
-        "IsRequired": false
-      },
-      {
-        "Name": "IsEnabled",
-        "Type": "System.Boolean",
-        "IsRequired": false
-      },
-      {
-        "Name": "Description",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "DateCreated",
-        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "DateUpdated",
-        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "Cost",
-        "Type": "System.Decimal",
-        "IsRequired": false
-      },
-      {
-        "Name": "Markup",
-        "Type": "System.Nullable\u00601[[System.Decimal, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "ImageBase64",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "Color",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "AgeRestriction",
-        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "LastPurchasePrice",
-        "Type": "System.Nullable\u00601[[System.Decimal, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "Rank",
-        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "Name": "companyId",
+        "Type": "System.Int32",
         "IsRequired": false
       }
     ],
@@ -5100,7 +5052,13 @@
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
+    "Parameters": [
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
     "ReturnTypes": [
       {
         "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.PromotionDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
@@ -5125,6 +5083,11 @@
         "Name": "id",
         "Type": "System.Int32",
         "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
@@ -5151,6 +5114,11 @@
         "Name": "name",
         "Type": "System.String",
         "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
@@ -5577,8 +5545,8 @@
   },
   {
     "ContainingType": "Products.Api.Controllers.StocksController",
-    "Method": "AddStock",
-    "RelativePath": "api/Stocks/AddStock",
+    "Method": "Add",
+    "RelativePath": "api/Stocks/Add",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
@@ -5587,6 +5555,11 @@
         "Name": "stockrequest",
         "Type": "Products.Api.Models.CreateStockRequest",
         "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
@@ -5603,15 +5576,109 @@
   },
   {
     "ContainingType": "Products.Api.Controllers.StocksController",
+    "Method": "Delete",
+    "RelativePath": "api/Stocks/Delete/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Products.Api.Controllers.StocksController",
     "Method": "GetAllStocks",
     "RelativePath": "api/Stocks/GetAllStocks",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
+    "Parameters": [
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
     "ReturnTypes": [
       {
         "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.StockDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "Products.Api.Controllers.StocksController",
+    "Method": "GetById",
+    "RelativePath": "api/Stocks/GetById/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "Products.Api.Models.StockDto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "Products.Api.Controllers.StocksController",
+    "Method": "Update",
+    "RelativePath": "api/Stocks/Update/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "stockrequest",
+        "Type": "Products.Api.Models.UpdateStockRequest",
+        "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "id",
+        "Type": "",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Boolean",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -5868,44 +5935,55 @@
   {
     "ContainingType": "Products.Api.Controllers.UsersController",
     "Method": "Add",
-    "RelativePath": "api/Users/Add",
+    "RelativePath": "api/Users/Add/{id}",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "Username",
-        "Type": "System.String",
-        "IsRequired": false
+        "Name": "request",
+        "Type": "Products.Api.Models.CreateUserRequest",
+        "IsRequired": true
       },
       {
-        "Name": "Password",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "FirstName",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "LastName",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "AccessLevel",
+        "Name": "companyId",
         "Type": "System.Int32",
         "IsRequired": false
       },
       {
-        "Name": "IsEnabled",
-        "Type": "System.Boolean",
-        "IsRequired": false
+        "Name": "id",
+        "Type": "",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "Products.Api.Models.UserDto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "Products.Api.Controllers.UsersController",
+    "Method": "Delete",
+    "RelativePath": "api/Users/Delete/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
       },
       {
-        "Name": "Email",
-        "Type": "System.String",
+        "Name": "companyId",
+        "Type": "System.Int32",
         "IsRequired": false
       }
     ],
@@ -5918,7 +5996,13 @@
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
+    "Parameters": [
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
     "ReturnTypes": [
       {
         "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.UserDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
@@ -5943,6 +6027,11 @@
         "Name": "id",
         "Type": "System.Int32",
         "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
@@ -5960,7 +6049,7 @@
   {
     "ContainingType": "Products.Api.Controllers.UsersController",
     "Method": "GetByUsername",
-    "RelativePath": "api/Users/GetByUsername/{username}",
+    "RelativePath": "api/Users/GetByUsername/{username}/{companyId}",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -5968,6 +6057,16 @@
       {
         "Name": "username",
         "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "companyId",
+        "Type": "",
         "IsRequired": true
       }
     ],
@@ -5986,44 +6085,24 @@
   {
     "ContainingType": "Products.Api.Controllers.UsersController",
     "Method": "Update",
-    "RelativePath": "api/Users/Update",
+    "RelativePath": "api/Users/Update/{id}",
     "HttpMethod": "PUT",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "Id",
+        "Name": "id",
         "Type": "System.Int32",
-        "IsRequired": false
+        "IsRequired": true
       },
       {
-        "Name": "Username",
-        "Type": "System.String",
-        "IsRequired": false
+        "Name": "updateRequest",
+        "Type": "Products.Api.Models.UpdateUserRequest",
+        "IsRequired": true
       },
       {
-        "Name": "FirstName",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "LastName",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "AccessLevel",
+        "Name": "companyId",
         "Type": "System.Int32",
-        "IsRequired": false
-      },
-      {
-        "Name": "IsEnabled",
-        "Type": "System.Boolean",
-        "IsRequired": false
-      },
-      {
-        "Name": "Email",
-        "Type": "System.String",
         "IsRequired": false
       }
     ],
@@ -6176,16 +6255,21 @@
   },
   {
     "ContainingType": "Products.Api.Controllers.WarehousesController",
-    "Method": "AddWarehouse",
-    "RelativePath": "api/Warehouses/AddWarehouse",
+    "Method": "Add",
+    "RelativePath": "api/Warehouses/Add",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "createWarehouseRequest",
+        "Name": "request",
         "Type": "Products.Api.Models.CreateWarehouseRequest",
         "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
@@ -6202,15 +6286,52 @@
   },
   {
     "ContainingType": "Products.Api.Controllers.WarehousesController",
-    "Method": "GetAllWarehouses",
-    "RelativePath": "api/Warehouses/GetAllWarehouses",
+    "Method": "GetAll",
+    "RelativePath": "api/Warehouses/GetAll",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
+    "Parameters": [
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
     "ReturnTypes": [
       {
         "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.WarehouseDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "Products.Api.Controllers.WarehousesController",
+    "Method": "GetById",
+    "RelativePath": "api/Warehouses/GetById/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "Products.Api.Models.WarehouseDto",
         "MediaTypes": [
           "text/plain",
           "application/json",

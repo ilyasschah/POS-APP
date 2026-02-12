@@ -10,6 +10,7 @@ namespace Products.Api.Domain
     {
         [Key]
         public int Id { get; set; }
+        public int CompanyId { get; set; }
 
         [ForeignKey(nameof(ProductGroup))]
         public int? ProductGroupId { get; set; }
@@ -63,8 +64,6 @@ namespace Products.Api.Domain
         // Navs
         public ProductGroup? ProductGroup { get; set; }
         public Currency? Currency { get; set; }
-       
-        
 
         public Product() { }
 

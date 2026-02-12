@@ -8,6 +8,7 @@ namespace Products.Api.Domain
     {
         [Key]
         public int Id { get; private set; }
+        public int CompanyId { get; set; }
         public int PosOrderId { get; private set; }
         public int ProductId { get; private set; }
         public int RoundNumber { get; private set; }
@@ -85,5 +86,6 @@ namespace Products.Api.Domain
         }
     }
 }
+
 
 

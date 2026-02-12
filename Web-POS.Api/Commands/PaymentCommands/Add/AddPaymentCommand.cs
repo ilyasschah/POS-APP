@@ -9,9 +9,11 @@ namespace Products.Api.Commands.PaymentCommands.Add
     public class AddPaymentCommand : IRequest<PaymentDto>
     {
         public CreatePaymentRequest Request { get; set; }
-        public AddPaymentCommand(CreatePaymentRequest request) // <-- Add this constructor
+        public int CompanyId { get; set; }
+        public AddPaymentCommand(CreatePaymentRequest request, int companyId) // <-- Add this constructor
         {
             Request = request;
+            CompanyId = companyId;
         }
         public class AddPaymentCommandHandler : IRequestHandler<AddPaymentCommand, PaymentDto>
         {
@@ -24,7 +26,7 @@ namespace Products.Api.Commands.PaymentCommands.Add
 
             public async Task<PaymentDto> Handle(AddPaymentCommand command, CancellationToken cancellationToken)
             {
-                var newEntity = await _service.Create(command.Request);
+                var newEntity = await _service.Create(command.Request, command.CompanyId);
                 return MapperPayment.MapToPaymentDto(newEntity);
             }
         }
@@ -37,6 +39,7 @@ namespace Products.Api.Commands.PaymentCommands.Add
                 RuleFor(c => c.Request.PaymentTypeId).GreaterThan(0);
                 RuleFor(c => c.Request.UserId).GreaterThan(0);
                 RuleFor(c => c.Request.Amount).GreaterThan(0);
+                RuleFor(c => c.CompanyId).GreaterThan(0);
             }
         }
     }

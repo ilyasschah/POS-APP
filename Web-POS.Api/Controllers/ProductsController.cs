@@ -12,45 +12,57 @@ namespace Products.Api.Controllers
     [Route("api/[controller]")]
     public class ProductsController(IMediator mediator) : ControllerBase
     {
+
         [HttpGet("[action]")]
-        public async Task<ActionResult<List<ProductDto>>> GetAll()
+        public async Task<ActionResult<List<ProductDto>>> GetAll([FromQuery] int companyId)
         {
-            var result = await mediator.Send(new GetAllProductsQuery());
+            if (companyId <= 0) return BadRequest("Company ID is required");
+            var result = await mediator.Send(new GetAllProductsQuery { CompanyId = companyId });
             return Ok(result);
         }
 
         [HttpGet("[action]/{id:int}")]
-        public async Task<ActionResult<ProductDto>> GetById(int id)
+        public async Task<ActionResult<ProductDto>>GetById(int id, [FromQuery] int companyId)
         {
-            var result = await mediator.Send(new GetProductByIdQuery { Id = id });
+            if (companyId <= 0) return BadRequest("Company ID is required");
+            var result = await mediator.Send(new GetProductByIdQuery { Id = id, CompanyId = companyId });
             return result is null ? NotFound() : Ok(result);
         }
 
         [HttpGet("[action]/{code}")]
-        public async Task<ActionResult<ProductDto>> GetByCode(string code)
+        public async Task<ActionResult<ProductDto>> GetByCode(string code, [FromQuery] int companyId)
         {
-            var result = await mediator.Send(new GetProductByCodeQuery { Code = code });
+            if (companyId <= 0) return BadRequest("Company ID is required");
+            var result = await mediator.Send(new GetProductByCodeQuery { Code = code, CompanyId = companyId });
             return result is null ? NotFound() : Ok(result);
         }
 
+
         [HttpPost("[action]")]
-        public async Task<ActionResult<ProductDto>> Add([FromQuery] CreateProductRequest req)
+        public async Task<ActionResult<ProductDto>> Add([FromBody] CreateProductRequest req,[FromQuery] int companyId)           
         {
-            var result = await mediator.Send(new AddProductCommand(req));
-            return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+            if (companyId <= 0) return BadRequest("Company ID is required");
+
+            var command = new AddProductCommand(req, companyId);
+            command.Request.CompanyId = companyId;
+
+            var result = await mediator.Send(command);
+            return CreatedAtAction(nameof(GetById), new { id = result.Id, companyId }, result);
         }
 
         [HttpPut("[action]/{id:int}")]
-        public async Task<IActionResult> Update(int id, [FromQuery] UpdateProductRequest req)
+        public async Task<IActionResult> Update(int id,[FromBody] UpdateProductRequest req,[FromQuery] int companyId)          
         {
-            var ok = await mediator.Send(new UpdateProductCommand(id, req));
+            if (companyId == 0) return BadRequest("Company ID is required");
+            var ok = await mediator.Send(new UpdateProductCommand(id, req, companyId));
             return ok ? NoContent() : NotFound();
         }
 
         [HttpDelete("[action]/{id:int}")]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> Delete(int id,[FromQuery] int companyId)
         {
-            var ok = await mediator.Send(new DeleteProductCommand(id));
+            if (companyId == 0) return BadRequest("Company ID is required");
+            var ok = await mediator.Send(new DeleteProductCommand(id, companyId));
             return ok ? NoContent() : NotFound();
         }
     }

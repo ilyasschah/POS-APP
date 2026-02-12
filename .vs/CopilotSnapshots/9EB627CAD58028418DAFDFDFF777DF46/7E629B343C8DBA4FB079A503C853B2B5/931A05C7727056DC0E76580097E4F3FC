@@ -1,0 +1,25 @@
+﻿using MediatR;
+using Products.Api.Repository;
+using Products.Api.Models;
+using Products.Api.Helpers;
+
+namespace Products.Api.Queries.ZReportQuery
+{
+    public class GetAllZReportsQuery : IRequest<List<ZReportDto>>
+    {
+    }
+    public class GetAllZReportsQueryHandler : IRequestHandler<GetAllZReportsQuery, List<ZReportDto>>
+    {
+        private readonly ZReportRepository _ZReportRepository;
+
+        public GetAllZReportsQueryHandler(ZReportRepository inventoryRepository)
+        {
+            _ZReportRepository = inventoryRepository;
+        }
+        public async Task<List<ZReportDto>> Handle(GetAllZReportsQuery request, CancellationToken cancellationToken)
+        {
+            var ZReportEntities = await _ZReportRepository.GetAllZReportAsync();
+            return ZReportEntities.Select(MapperZReport.MapToZReport).ToList();
+        }
+    }
+}

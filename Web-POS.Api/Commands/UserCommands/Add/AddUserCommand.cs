@@ -1,20 +1,23 @@
 using FluentValidation;
 using MediatR;
+using Products.Api.Helpers;
 using Products.Api.Models;
 using Products.Api.Services;
 
 namespace Products.Api.Commands.UserCommands.Add;
 
-public class AddUserCommand : IRequest<bool>
+public class AddUserCommand : IRequest<UserDto>
 {
     public CreateUserRequest Request { get; set; }
+    public int CompanyId { get; }
 
-    public AddUserCommand(CreateUserRequest request)
+    public AddUserCommand(CreateUserRequest request, int companyId)
     {
         Request = request;
+        CompanyId = companyId;
     }
 
-    public class AddUserCommandHandler : IRequestHandler<AddUserCommand, bool>
+    public class AddUserCommandHandler : IRequestHandler<AddUserCommand, UserDto>
     {
         private readonly UserService _service;
 
@@ -23,9 +26,10 @@ public class AddUserCommand : IRequest<bool>
             _service = service;
         }
 
-        public Task<bool> Handle(AddUserCommand request, CancellationToken cancellationToken)
+        public async Task<UserDto> Handle(AddUserCommand request, CancellationToken cancellationToken)
         {
-            return _service.Create(request.Request);
+            var entity = await _service.Create(request.Request, request.CompanyId);
+            return MapperUser.MapToUserDto(entity);
         }
     }
 

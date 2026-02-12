@@ -12,6 +12,7 @@ namespace Products.Api.Queries.PosOrderQuery
     public class GetPosOrderByIdQuery : IRequest<PosOrderDto?>
     {
         public int Id { get; set; }
+        public int CompanyId { get; set; }
 
         // Nested Handler
         public class GetPosOrderByIdQueryHandler : IRequestHandler<GetPosOrderByIdQuery, PosOrderDto?>
@@ -25,7 +26,7 @@ namespace Products.Api.Queries.PosOrderQuery
 
             public async Task<PosOrderDto?> Handle(GetPosOrderByIdQuery request, CancellationToken cancellationToken)
             {
-                var entity = await _repository.GetByIdAsync(request.Id);
+                var entity = await _repository.GetByIdAsync(request.Id, request.CompanyId);
                 return entity == null ? null : MapperPosOrder.MapToPosOrderDto(entity);
             }
         }

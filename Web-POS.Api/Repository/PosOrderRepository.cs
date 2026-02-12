@@ -11,6 +11,17 @@ public class PosOrderRepository
      _db = db;
 
     }
+    public async Task<List<PosOrder>> GetAllAsync(int companyId)
+    {
+        return await _db.PosOrders
+        .Where(p => p.CompanyId == companyId)
+        .AsNoTracking()
+        .Include(o => o.User)
+        .Include(o => o.Customer)
+        .ToListAsync();
+    }
+
+    // Backwards-compatible non-scoped overload
     public async Task<List<PosOrder>> GetAllAsync()
     {
         return await _db.PosOrders
@@ -18,7 +29,6 @@ public class PosOrderRepository
         .Include(o => o.User)
         .Include(o => o.Customer)
         .ToListAsync();
-    
     }
     public async Task<PosOrder?> GetByNumberAsync(string number)
     {
@@ -28,6 +38,13 @@ public class PosOrderRepository
             .Include(o => o.Customer)
             .FirstOrDefaultAsync(o => o.Number == number);
     }
+    public async Task<PosOrder?> GetByIdAsync(int id, int companyId, bool trackEntity = false)
+    {
+        return await _db.PosOrders
+            .AsNoTracking()
+            .FirstOrDefaultAsync(o => o.Id == id && o.CompanyId == companyId);
+    }
+    
     public async Task<PosOrder?> GetByIdAsync(int id, bool trackEntity = false)
     {
         return await _db.PosOrders

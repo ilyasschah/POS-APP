@@ -6,37 +6,33 @@ using Products.Api.Services;
 
 namespace Products.Api.Commands.BarcodesCommands.Add
 {
-    public class AddBarcodecommand: IRequest<bool>
+    public class AddBarcodecommand: IRequest<BarcodeDto>
     {
         public CreateBarcodeRequest Request { get; set; }
-        public AddBarcodecommand(CreateBarcodeRequest createBarcodeRequest)
+        public int CompanyId { get; }
+        public AddBarcodecommand(CreateBarcodeRequest createBarcodeRequest, int companyId)
         {
             Request = createBarcodeRequest;
+            CompanyId = companyId;
         }
-        public class AddBarcodecommandHandler : IRequestHandler<AddBarcodecommand, bool>
+        public class AddBarcodecommandHandler : IRequestHandler<AddBarcodecommand, BarcodeDto>
         {
             private readonly BarcodeService _barcodeService;
             public AddBarcodecommandHandler(BarcodeService barcodeService)
             {
                 _barcodeService = barcodeService;
             }
-            public Task<bool> Handle(AddBarcodecommand request, CancellationToken cancellationToken)
+            public async Task<BarcodeDto> Handle(AddBarcodecommand request, CancellationToken cancellationToken)
             {
-                try
-                {
-                    return _barcodeService.Create(request.Request.Value, request.Request.ProductId);
-                }
-                catch (Exception)
-                {
-                    throw;
-                }
+                var newEntity = await _barcodeService.Create(request.Request , request.CompanyId);
+                return newEntity;
             }
             public class AddBarcodecommandValidator : AbstractValidator<AddBarcodecommand>
             {
                 public AddBarcodecommandValidator()
                 {
-                    RuleFor(o => o.Request.Value).NotNull().NotEmpty().WithMessage("mut not be null.");
-                    RuleFor(pid => pid.Request.ProductId).NotNull().NotEmpty().WithMessage("product ID must be entred ");
+                    RuleFor(o => o.Request.Value).NotNull().NotEmpty().WithMessage("Barcode must not be null.");
+                    RuleFor(pid => pid.Request.ProductId).NotNull().NotEmpty().WithMessage("product ID must be entered.");
                 }
             }
         }

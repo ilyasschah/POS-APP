@@ -5,7 +5,7 @@ using Products.Api.Services;
 
 namespace Products.Api.Commands.CompanyCommands.Add;
 
-public class AddCompanyCommand : IRequest<bool>
+public class AddCompanyCommand : IRequest<CompanyDto>
 {
     public CreateCompanyRequest Request { get; set; }
 
@@ -13,8 +13,7 @@ public class AddCompanyCommand : IRequest<bool>
     {
         Request = request;
     }
-
-    public class AddCompanyCommandHandler : IRequestHandler<AddCompanyCommand, bool>
+    public class AddCompanyCommandHandler : IRequestHandler<AddCompanyCommand, CompanyDto>
     {
         private readonly CompanyService _service;
 
@@ -23,9 +22,10 @@ public class AddCompanyCommand : IRequest<bool>
             _service = service;
         }
 
-        public Task<bool> Handle(AddCompanyCommand request, CancellationToken cancellationToken)
+        public async Task<CompanyDto> Handle(AddCompanyCommand request, CancellationToken cancellationToken)
         {
-            return _service.Create(request.Request);
+            var newEntity = await _service.Create(request.Request);
+            return newEntity;
         }
     }
 

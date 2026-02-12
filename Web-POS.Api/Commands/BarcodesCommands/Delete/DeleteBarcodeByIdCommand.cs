@@ -1,14 +1,18 @@
-﻿using MediatR;
+﻿using FluentValidation;
+using MediatR;
+using Products.Api.Models;
 using Products.Api.Services;
 
 namespace Products.Api.Commands.BarcodesCommands.Delete
 {
     public class DeleteBarcodeByIdCommand : IRequest<bool>
     {
-        public int Id { get; }
-        public DeleteBarcodeByIdCommand(int id)
+        public DeleteBarcodeRequest Request { get; set; }
+        public int CompanyId { get; }
+        public DeleteBarcodeByIdCommand(DeleteBarcodeRequest request, int companyId)
         {
-            Id = id;
+            Request = request;
+            CompanyId = companyId;
         }
         public class DeleteBarcodeByIdCommandHandler : IRequestHandler<DeleteBarcodeByIdCommand, bool>
         {
@@ -19,13 +23,14 @@ namespace Products.Api.Commands.BarcodesCommands.Delete
             }
             public async Task<bool> Handle(DeleteBarcodeByIdCommand request, CancellationToken cancellationToken)
             {
-                try
+                var result = await _barcodeService.Delete(request.Request, request.CompanyId);
+                return result;
+            }
+            public class DeleteBarcodeByIdCommandValidator : AbstractValidator<DeleteBarcodeByIdCommand>
+            {
+                public DeleteBarcodeByIdCommandValidator()
                 {
-                    return await _barcodeService.Delete(request.Id);
-                }
-                catch (Exception)
-                {
-                    throw;
+                    RuleFor(bcv => bcv.Request.Value).NotNull().NotEmpty().WithMessage("Barcode must not be null.");
                 }
             }
         }

@@ -8,6 +8,7 @@ namespace Products.Api.Domain
     {
         [Key]
         public int Id { get; set; }
+        public int CompanyId { get; set; }
         public int UserId { get; set; }
         public string Number { get; set; }
         public decimal Discount { get; set; }

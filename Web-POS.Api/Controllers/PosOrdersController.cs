@@ -14,24 +14,27 @@ namespace Products.Api.Controllers
     {
 
         [HttpGet("[action]")]
-        public async Task<ActionResult<IEnumerable<PosOrderDto>>> GetAll()
+        public async Task<ActionResult<IEnumerable<PosOrderDto>>> GetAll([FromQuery] int companyId)
         {
-            var query = new GetAllPosOrdersQuery();
+            if (companyId == 0) return BadRequest("Company ID is required");
+            var query = new GetAllPosOrdersQuery { CompanyId = companyId };
             var result = await mediator.Send(query);
             return Ok(result);
         }
 
         [HttpGet("[action]/{id:int}")]
-        public async Task<ActionResult<PosOrderDto>> GetById(int id)
+        public async Task<ActionResult<PosOrderDto>> GetById(int id, [FromQuery] int companyId)
         {
-            var query = new GetPosOrderByIdQuery { Id = id };
+            if (companyId == 0) return BadRequest("Company ID is required");
+            var query = new GetPosOrderByIdQuery { Id = id, CompanyId = companyId };
             var result = await mediator.Send(query);
             return result != null ? Ok(result) : NotFound();
         }
         [HttpGet("[action]/{number}")]
-        public async Task<ActionResult<PosOrderDto>> GetByNumber(string number)
+        public async Task<ActionResult<PosOrderDto>> GetByNumber(string number, [FromQuery] int companyId)
         {
-            var query = new GetPosOrderByNumberQuery(number);
+            if (companyId == 0) return BadRequest("Company ID is required");
+            var query = new GetPosOrderByNumberQuery(number) { CompanyId = companyId };
             var result = await mediator.Send(query);
             return result != null ? Ok(result) : NotFound();
         }

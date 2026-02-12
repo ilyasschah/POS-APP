@@ -1,5 +1,3 @@
-// FILE: Products.Api.Repository\UserRepository.cs
-
 using Microsoft.EntityFrameworkCore;
 using Products.Api.Domain;
 using Products.Api.DataBase;
@@ -15,11 +13,20 @@ public class UserRepository
         _db = db;
     }
 
-    public async Task<List<User>> GetAllAsync()
+    public async Task<List<User>> GetAllAsync(int companyId)
     {
         return await _db.Users
             .AsNoTracking()
+            .Where(u => u.CompanyId == companyId)
             .ToListAsync();
+    }
+
+    public async Task<User?> GetByIdAsync(int id, int companyId, bool trackEntity = false)
+    {
+        var q = _db.Users.AsQueryable();
+        if (!trackEntity) q = q.AsNoTracking();
+        return await q
+            .FirstOrDefaultAsync(u => u.Id == id && u.CompanyId == companyId);
     }
 
     public async Task<User?> GetByIdAsync(int id)
@@ -28,17 +35,18 @@ public class UserRepository
             .FirstOrDefaultAsync(u => u.Id == id);
     }
 
-    public async Task<User?> GetByUsernameAsync(string username)
+    public async Task<User?> GetByUsernameAsync(string username, int companyId)
     {
         return await _db.Users
             .AsNoTracking()
-            .FirstOrDefaultAsync(u => u.Username == username);
+            .FirstOrDefaultAsync(u => u.Username == username && u.CompanyId == companyId);
     }
 
-    public bool Exists(string username)
+    public async Task<bool> ExistsAsync(string username, int companyId)
     {
-        return _db.Users.Any(u => u.Username == username);
+        return await _db.Users.AnyAsync(u => u.Username == username && u.CompanyId == companyId);
     }
+
 
     public async Task AddAsync(User entity)
     {

@@ -12,39 +12,49 @@ namespace Products.Api.Services
         {
             _repository = repository;
         }
-
-        public async Task<bool> Create(CreateUserRequest req)
+        
+        public async Task<User> Create(CreateUserRequest req, int companyId)
         {
-            if (_repository.Exists(req.Username))
+            if (await _repository.ExistsAsync(req.Username, companyId))
                 throw new InvalidOperationException($"A User with the username '{req.Username}' already exists.");
-
-            // TODO: Implement password hashing here (e.g., using BCrypt.Net)
-            var hashedPassword = req.Password; // Replace this line with a real hashing call
-
-            var newEntity = User.Create(req.Username, hashedPassword);
-            newEntity.Update(req.FirstName, req.LastName, req.Username, req.AccessLevel, req.IsEnabled, req.Email);
-
-            await _repository.AddAsync(newEntity);
-            return true;
+            var entity = User.Create(
+                username: req.Username,
+                password: req.Password,
+                companyId: companyId
+            );
+            entity.CompanyId = companyId;
+            await _repository.AddAsync(entity);
+            return entity;
         }
 
-        public async Task<bool> Update(UpdateUserRequest req)
+        public async Task<bool> Update(int id, UpdateUserRequest req, int companyId)
         {
-            var entity = await _repository.GetByIdAsync(req.Id);
-            if (entity == null)
-                throw new InvalidOperationException($"A User with the ID '{req.Id}' does not exist.");
-
-            entity.Update(req.FirstName, req.LastName, req.Username, req.AccessLevel, req.IsEnabled, req.Email);
+            var entity = await _repository.GetByIdAsync(id, companyId, trackEntity: true);
+            if (entity == null) return false;
+            if (!string.IsNullOrWhiteSpace(req.Username))
+            {
+                var existsUsername = await _repository.GetByUsernameAsync(req.Username, companyId);
+                if (existsUsername != null && existsUsername.Id != id)
+                    throw new InvalidOperationException($"Another User with the username '{req.Username}' already exists.");
+            }
+            entity.Update(
+                companyId: companyId,
+                username: req.Username,
+                firstName: req.FirstName,
+                lastName: req.LastName,
+                accessLevel: req.AccessLevel,
+                isEnabled: req.IsEnabled,
+                email: req.Email
+            );
 
             await _repository.UpdateAsync(entity);
             return true;
         }
 
-        public async Task<bool> Delete(int id)
+        public async Task<bool> Delete(int id, int companyId)
         {
-            var entity = await _repository.GetByIdAsync(id);
-            if (entity == null)
-                return false;
+            var entity = await _repository.GetByIdAsync(id, companyId);
+            if (entity == null) return false;
 
             await _repository.DeleteAsync(entity);
             return true;

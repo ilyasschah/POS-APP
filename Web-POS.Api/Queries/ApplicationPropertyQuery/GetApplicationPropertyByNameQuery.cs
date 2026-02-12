@@ -7,9 +7,16 @@ namespace Products.Api.Queries.ApplicationPropertyQuery
 {
     public class GetApplicationPropertyByNameQuery : IRequest<ApplicationPropertyDto?>
     {
-        public string Name { get; set; } = default!;
+        public string? Name { get; set; }
+        public int CompanyId { get; set; }
 
-        public class GetApplicationPropertyByNameQueryHandler
+        public GetApplicationPropertyByNameQuery(string? name, int companyId)
+        {
+            Name = name;
+            CompanyId = companyId;
+        }
+    }
+    public class GetApplicationPropertyByNameQueryHandler
             : IRequestHandler<GetApplicationPropertyByNameQuery, ApplicationPropertyDto?>
         {
             private readonly ApplicationPropertyRepository _repository;
@@ -21,9 +28,16 @@ namespace Products.Api.Queries.ApplicationPropertyQuery
 
             public async Task<ApplicationPropertyDto?> Handle(GetApplicationPropertyByNameQuery request, CancellationToken cancellationToken)
             {
-                var entity = await _repository.GetByNameAsync(request.Name);
-                return entity == null ? null : MapperApplicationProperty.MapToApplicationPropertyDto(entity);
+                var entity = await _repository.GetByNameAsync(request.Name, request.CompanyId);
+                if (entity == null) {
+                    return null;
+                }
+                return new ApplicationPropertyDto
+                {
+                    Name = entity.Name,
+                    Value = entity.Value,
+                    CompanyId = entity.CompanyId,
+                };
             }
         }
     }
-}

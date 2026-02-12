@@ -8,6 +8,7 @@ public class StockControl
 {
     [Key]
     public int Id { get; private set; }
+    public int CompanyId { get; set; }
     public int ProductId { get; private set; }
     public int? CustomerId { get; private set; }
     public decimal ReorderPoint { get; private set; }
@@ -21,14 +22,13 @@ public class StockControl
     [ForeignKey(nameof(CustomerId))]
     public virtual Customer Customer { get; private set; }
 
-    // Private constructor for the static Create method
     private StockControl(int productId)
     {
         ProductId = productId;
-        IsLowStockWarningEnabled = true; // Default value
+        IsLowStockWarningEnabled = true;
     }
     
-    // Public parameterless constructor for EF Core
+
     public StockControl() { }
 
     public static StockControl Create(int productId)

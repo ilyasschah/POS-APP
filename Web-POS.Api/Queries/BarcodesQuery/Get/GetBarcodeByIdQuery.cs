@@ -6,10 +6,12 @@ namespace Products.Api.Queries.BarCodesQuery.Get
     public class GetBarcodeByIdQuery : IRequest<BarcodeDto?>
     {
         public int Id { get; set; }
+        public int CompanyId { get; set; }
 
-        public GetBarcodeByIdQuery(int id)
+        public GetBarcodeByIdQuery(int id, int companyId)
         {
             Id = id;
+            CompanyId = companyId;
         }
     }
     public class GetBarcodeByIdQueryHandler : IRequestHandler<GetBarcodeByIdQuery, BarcodeDto?>
@@ -22,17 +24,20 @@ namespace Products.Api.Queries.BarCodesQuery.Get
          }
          public async Task<BarcodeDto?> Handle(GetBarcodeByIdQuery request, CancellationToken cancellationToken)
          {
-            var barcode = await _barcodeRepository.GetBarCodeByIdQuery(request.Id);
+            var barcode = await _barcodeRepository.GetBarCodeByIdQuery(request.Id, request.CompanyId);
             if (barcode is null)
             {
                 return null;
             }
             return new BarcodeDto
             {
+                Id = barcode.Id,
                 Value = barcode.Value,
-                ProductName = barcode.Product.Name
+                ProductId = barcode.ProductId,
+                ProductName = barcode.Product.Name,
+                CompanyId = barcode.CompanyId,
+                CompanyName = barcode.Company.Name
             };
-
          }
     }
 }

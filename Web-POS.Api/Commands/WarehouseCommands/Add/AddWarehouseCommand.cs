@@ -1,4 +1,6 @@
-﻿using MediatR;
+﻿using FluentValidation;
+using MediatR;
+using Products.Api.Helpers;
 using Products.Api.Models;
 using Products.Api.Services;
 
@@ -7,9 +9,11 @@ namespace Products.Api.Commands.WarehouseCommands.Add
     public class AddWarehousecommand : IRequest<bool>
     {
         public CreateWarehouseRequest Request { get; set; }
-        public AddWarehousecommand(CreateWarehouseRequest request)
+        public int CompanyId { get; set; }
+        public AddWarehousecommand(CreateWarehouseRequest request, int companyId)
         {
             Request = request ;
+            CompanyId = companyId;
         }
         public class AddWarehousecommandHandler : IRequestHandler<AddWarehousecommand, bool>
         {
@@ -20,7 +24,21 @@ namespace Products.Api.Commands.WarehouseCommands.Add
             }
             public async Task<bool> Handle(AddWarehousecommand request, CancellationToken cancellationToken)
             {
-                return await _warehouseService.Create(request.Request.Name);
+               try
+                    {
+                      return await _warehouseService.Create(request.Request.Name, request.CompanyId);
+                }
+                catch (Exception)
+                {
+                     throw;
+                }
+            }
+        }
+        public class AddWarehousecommandValidator : AbstractValidator<AddWarehousecommand>
+        {
+            public AddWarehousecommandValidator()
+            {
+                RuleFor(c => c.Request.Name).NotNull().NotEmpty().WithMessage("Warehouse name is required.");
             }
         }
     }

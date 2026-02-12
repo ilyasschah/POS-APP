@@ -13,21 +13,49 @@ public class PosVoidRepository
         _db = db;
     }
 
+    public async Task<List<PosVoid>> GetAllAsync(int companyId)
+    {
+        return await _db.PosVoids
+            .Where(pv => pv.CompanyId == companyId)
+            .AsNoTracking()
+            .ToListAsync();
+    }
+
+    // Backwards-compatible non-scoped overload
     public async Task<List<PosVoid>> GetAllAsync()
     {
         return await _db.PosVoids
             .AsNoTracking()
             .ToListAsync();
     }
+    public async Task<PosVoid?> GetByIdAsync(int id, int companyId)
+    {
+        return await _db.PosVoids
+            .FirstOrDefaultAsync(pv => pv.Id == id && pv.CompanyId == companyId);
+    }
     public async Task<PosVoid?> GetByIdAsync(int id)
     {
         return await _db.PosVoids
             .FirstOrDefaultAsync(pv => pv.Id == id);
     }
+    public async Task<PosVoid?> GetByReasonAsync(string reason, int companyId)
+    {
+        return await _db.PosVoids
+            .FirstOrDefaultAsync(pv => pv.Reason == reason && pv.CompanyId == companyId);
+    }
+
     public async Task<PosVoid?> GetByReasonAsync(string reason)
     {
         return await _db.PosVoids
             .FirstOrDefaultAsync(pv => pv.Reason == reason);
+    }
+
+    public async Task<List<PosVoid>> GetByOrderNumberAsync(string orderNumber, int companyId)
+    {
+        return await _db.PosVoids
+            .AsNoTracking()
+            .Where(pv => pv.OrderNumber == orderNumber && pv.CompanyId == companyId)
+            .ToListAsync();
     }
 
     public async Task<List<PosVoid>> GetByOrderNumberAsync(string orderNumber)

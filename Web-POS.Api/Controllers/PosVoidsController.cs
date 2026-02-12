@@ -14,21 +14,24 @@ namespace Products.Api.Controllers
     public class PosVoidsController(IMediator mediator) : ControllerBase
     {
         [HttpGet("[action]")]
-        public async Task<ActionResult<List<PosVoidDto>>> GetAll()
+        public async Task<ActionResult<List<PosVoidDto>>> GetAll([FromQuery] int companyId)
         {
-            return Ok(await mediator.Send(new GetAllPosVoidsQuery()));
+            if (companyId == 0) return BadRequest("Company ID is required");
+            return Ok(await mediator.Send(new GetAllPosVoidsQuery { CompanyId = companyId }));
         }
 
         [HttpGet("[action]")]
-        public async Task<ActionResult<PosVoidDto?>> GetById(int id)
+        public async Task<ActionResult<PosVoidDto?>> GetById(int id, [FromQuery] int companyId)
         {
-            return Ok(await mediator.Send(new GetPosVoidByIdQuery { Id = id }));
+            if (companyId == 0) return BadRequest("Company ID is required");
+            return Ok(await mediator.Send(new GetPosVoidByIdQuery { Id = id, CompanyId = companyId }));
         }
 
         [HttpGet("[action]")]
-        public async Task<ActionResult<List<PosVoidDto>>> GetByOrderNumber(string orderNumber)
+        public async Task<ActionResult<List<PosVoidDto>>> GetByOrderNumber(string orderNumber, [FromQuery] int companyId)
         {
-            return Ok(await mediator.Send(new GetPosVoidsByOrderNumberQuery { OrderNumber = orderNumber }));
+            if (companyId == 0) return BadRequest("Company ID is required");
+            return Ok(await mediator.Send(new GetPosVoidsByOrderNumberQuery(orderNumber) { CompanyId = companyId }));
         }
 
         [HttpPost("[action]")]

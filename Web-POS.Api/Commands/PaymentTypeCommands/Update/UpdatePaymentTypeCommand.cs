@@ -1,9 +1,7 @@
 ﻿using FluentValidation;
 using MediatR;
-using System.Threading;
-using System.Threading.Tasks;
-using Products.Api.Services;
 using Products.Api.Models;
+using Products.Api.Services;
 
 namespace Products.Api.Commands.PaymentTypeCommands.Update
 {
@@ -11,11 +9,13 @@ namespace Products.Api.Commands.PaymentTypeCommands.Update
     {
         public int Id { get; }
         public UpdatePaymentTypeRequest Request { get; }
+        public int CompanyId { get; }
 
-        public UpdatePaymentTypeCommand(int id, UpdatePaymentTypeRequest request)
+        public UpdatePaymentTypeCommand(int id, UpdatePaymentTypeRequest request, int companyId)
         {
             Id = id;
             Request = request;
+            CompanyId = companyId;
         }
 
         public class UpdatePaymentTypeCommandHandler : IRequestHandler<UpdatePaymentTypeCommand, bool>
@@ -26,13 +26,18 @@ namespace Products.Api.Commands.PaymentTypeCommands.Update
             {
                 _service = service;
             }
-
             public Task<bool> Handle(UpdatePaymentTypeCommand command, CancellationToken cancellationToken)
             {
-                return _service.Update(command.Id, command.Request);
+                try
+                {
+                    return _service.Update(command.Id, command.Request, command.CompanyId);
+                }
+                catch (Exception)
+                {
+                    throw;
+                }
             }
         }
-
         public class UpdatePaymentTypeCommandValidator : AbstractValidator<UpdatePaymentTypeCommand>
         {
             public UpdatePaymentTypeCommandValidator()

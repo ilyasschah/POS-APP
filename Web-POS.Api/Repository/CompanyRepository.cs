@@ -34,9 +34,10 @@ public class CompanyRepository
             .FirstOrDefaultAsync(c => c.Name == name);
     }
 
-    public bool Exists(string name)
+    public bool Exists(string name , string email)
     {
-        return _db.Companies.Any(c => c.Name == name);
+        return _db.Companies
+            .Any(c => c.Name == name || c.Email == email);
     }
 
     public async Task AddAsync(Company entity)

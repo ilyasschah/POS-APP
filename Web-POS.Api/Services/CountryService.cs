@@ -10,13 +10,31 @@ namespace Products.Api.Services
         {
             _countryRepository = countryRepository;
         }
-        public async Task<bool> Create(string name, string code)
+        public async Task<bool> Create(string name, string code, int companyId)
         {
-            var cexists = _countryRepository.Exists(name);
+            var cexists = _countryRepository.Exists(name, companyId);
             if (cexists == true)
                 throw new ArgumentException("Country already exists.", nameof(name));
             var newcurreency = Country.Create(name, code);
+            newcurreency.CompanyId = companyId;
             await _countryRepository.Add(newcurreency);
+            return true;
+        }
+
+        public async Task<bool> Update(int id, string newName, int companyId)
+        {
+            var entity = await _countryRepository.GetCountryId_byCompanyQuery(id, companyId);
+            if (entity == null) return false;
+            entity.UpdateName(newName);
+            await _countryRepository.Update(entity);
+            return true;
+        }
+
+        public async Task<bool> Delete(int id, int companyId)
+        {
+            var entity = await _countryRepository.GetCountryId_byCompanyQuery(id, companyId);
+            if (entity == null) return false;
+            await _countryRepository.DeleteAsync(entity);
             return true;
         }
     }

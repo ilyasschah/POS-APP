@@ -8,6 +8,7 @@ namespace Products.Api.Domain
     {
         [Key]
         public int Id { get; set; }
+        public int CompanyId { get; set; }
         public string Name { get; set; }
         public string? Code { get; set; }
         public bool IsCustomerRequired { get; set; }
@@ -21,23 +22,43 @@ namespace Products.Api.Domain
         public string? ShortcutKey { get; set; }
         public bool MarkAsPaid { get; set; }
 
-        private PaymentType(string name)
-        {
-            Name = name;
-            IsFiscal = true;
-            IsChangeAllowed = true;
-            IsEnabled = true;
-            IsQuickPayment = true;
-            OpenCashDrawer = true;
-            MarkAsPaid = true;
-        }
 
         public PaymentType() { }
-
-        public static PaymentType Create(string name)
+        private PaymentType(string name, string? code, 
+            bool iscustomerrequired, bool isfiscal, 
+            bool issliprequired, bool ischnageallowed, 
+            int ordinal, bool isenabled, 
+            bool isquickpayment, bool opencashdrawer, 
+            string? shortcutkey, bool markaspaid)
         {
-            return new PaymentType(name);
+            Name = name;
+            Code = code;
+            IsCustomerRequired = iscustomerrequired;
+            IsFiscal = isfiscal;
+            IsSlipRequired = issliprequired;
+            IsChangeAllowed = ischnageallowed;
+            Ordinal = ordinal;
+            IsEnabled = isenabled;
+            IsQuickPayment = isquickpayment;
+            OpenCashDrawer = opencashdrawer;
+            ShortcutKey = shortcutkey;
+            MarkAsPaid = markaspaid;
         }
+        public static PaymentType Create(
+            string name, 
+            string? code,
+            bool iscustomerrequired, 
+            bool isfiscal, 
+            bool issliprequired, 
+            bool ischnageallowed, 
+            int ordinal, 
+            bool isenabled, 
+            bool isquickpayment, 
+            bool opencashdrawer, 
+            string? shortcutkey, 
+            bool markaspaid)
+            => new(name, code, iscustomerrequired, isfiscal, issliprequired, ischnageallowed, 
+                ordinal, isenabled, isquickpayment, opencashdrawer, shortcutkey, markaspaid);
 
         public void Update(
             string name, string? code, bool isCustomerRequired, bool isFiscal,

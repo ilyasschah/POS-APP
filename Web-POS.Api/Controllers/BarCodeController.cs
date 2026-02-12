@@ -13,33 +13,45 @@ namespace Products.Api.Controllers
     public class BarcodesController(IMediator mediator) : ControllerBase
     {
         [HttpGet("[action]")]
-        public async Task<ActionResult<List<BarcodeDto>>> GetAllBarCodeProductName()
+        public async Task<ActionResult<List<BarcodeDto>>> GetAllBarCodeProductName([FromQuery] int companyId)
         {
-            return Ok(await mediator.Send(new GetAllBarCodeProductNameQuery()));
-
+            if (companyId <= 0) return BadRequest("Company ID is required");
+            return Ok(await mediator.Send(new GetAllBarCodeProductNameQuery { CompanyId = companyId }));
         }
-        // GET: api/barcodes/id
-        [HttpGet("[action]")]
-        public async Task<ActionResult<BarcodeDto>> GetById(int id)
+        [HttpGet("[action]/{id:int}")]
+        public async Task<ActionResult<BarcodeDto>> GetById(int id, [FromQuery] int companyId)
         {
-            return Ok(await mediator.Send(new GetBarcodeByIdQuery(id)));
-        }
-        //POST: api/barcodes
-        [HttpPost("[action]")]
-        public async Task<ActionResult<BarcodeDto>> Add([FromQuery] CreateBarcodeRequest createrequest)
-        {
-            return Ok(await mediator.Send(new AddBarcodecommand(createrequest)));
+            if (companyId <= 0) return BadRequest("Company ID is required");
+            return Ok(await mediator.Send(new GetBarcodeByIdQuery(id, companyId)));
         }
         [HttpPost("[action]")]
-        public async Task<ActionResult> Update([FromQuery] UpdateBarcodeByIdRequest updaterequest)
+        public async Task<ActionResult<BarcodeDto>> Add([FromBody] CreateBarcodeRequest createrequest, [FromQuery] int companyId)
         {
-            return Ok(await mediator.Send(new UpdateBarcodecommand(updaterequest)));
+            if (companyId == 0) return BadRequest("Company ID is required");
+            var command = new AddBarcodecommand(createrequest, companyId);
+            var result = await mediator.Send(command);
+            return Ok(new
+            {
+                message = $"The barcode {result.Value} has been assigned to product name {result.ProductName}"
+            });
         }
-
-        [HttpDelete("Delete/{id}")]
-        public async Task<ActionResult> Delete([FromQuery] int id)
+        [HttpPatch("[action]")]
+        public async Task<ActionResult<BarcodeDto>> Update([FromBody] UpdateBarcodeRequest updaterequest, [FromQuery] int companyId)
         {
-            return Ok(await mediator.Send(new DeleteBarcodeByIdCommand(id)));
+            if (companyId <= 0) return BadRequest("Company ID is required");
+            var command = new UpdateBarcodecommand(updaterequest, companyId);
+            var result = await mediator.Send(command);
+            return Ok(new
+            { message = $"The barcode {result.Value} has been updated to product name {result.ProductName}" }
+            );
+        }
+        [HttpDelete("[action]")]
+        public async Task<ActionResult<bool>> Delete(DeleteBarcodeRequest deleterequest,[FromQuery] int companyId)
+        {
+            if (companyId <= 0) return BadRequest("Company ID is required");
+            var command = new DeleteBarcodeByIdCommand(deleterequest, companyId);
+            var result = await mediator.Send(command);
+            return result;
         }
     }
 }

@@ -1,4 +1,6 @@
+using FluentValidation;
 using MediatR;
+using Products.Api.Commands.BarcodesCommands.Delete;
 using Products.Api.Services;
 
 namespace Products.Api.Commands.CompanyCommands.Delete;
@@ -11,7 +13,6 @@ public class DeleteCompanyCommand : IRequest<bool>
     {
         Id = id;
     }
-
     public class DeleteCompanyCommandHandler : IRequestHandler<DeleteCompanyCommand, bool>
     {
         private readonly CompanyService _service;
@@ -20,10 +21,17 @@ public class DeleteCompanyCommand : IRequest<bool>
         {
             _service = service;
         }
-
-        public Task<bool> Handle(DeleteCompanyCommand request, CancellationToken cancellationToken)
+        public async Task<bool> Handle(DeleteCompanyCommand request, CancellationToken cancellationToken)
         {
-            return _service.Delete(request.Id);
+            var result = await _service.DeleteAsync(request.Id);
+            return result;
+        }
+        public class DeleteCompanyCommandValidator : AbstractValidator<DeleteCompanyCommand>
+        {
+            public DeleteCompanyCommandValidator()
+            {
+                RuleFor(bcv => bcv.Id).NotNull().NotEmpty().WithMessage("Id must not be null.");
+            }
         }
     }
 }

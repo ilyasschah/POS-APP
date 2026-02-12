@@ -15,19 +15,22 @@ namespace Products.Api.Domain
         public int ProductId { get; set; }
         [ForeignKey("ProductId")]
         public virtual Product Product { get; set; }
-        public int CompanyId { get; private set; }
+        public int CompanyId { get; set; }
 
-        private Stock(decimal quantity, int warehouseid, int productid)
+        private Stock(decimal quantity, 
+            int warehouseid, 
+            int productid)
         {
             Quantity = quantity;
             WarehouseId = warehouseid;
             ProductId = productid;
         }
         public Stock() { }
-        public static Stock Create(decimal quantity, int warehouseid, int productid)
+        public static Stock Create(
+            decimal quantity, 
+            int warehouseid, 
+            int productid)
         {
-            if (quantity < 0)
-                throw new ArgumentException("Quantity cannot be negative", nameof(quantity));
             if (warehouseid < 0)
                 throw new ArgumentException("WarehouseId must be greater than zero", nameof(warehouseid));
             return new Stock(quantity, warehouseid, productid);

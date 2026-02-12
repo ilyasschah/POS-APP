@@ -3,40 +3,35 @@ using MediatR;
 using Products.Api.Models;
 using Products.Api.Services;
 
+
 namespace Products.Api.Commands.BarcodesCommands.Update
 {
-    public class UpdateBarcodecommand : IRequest<bool>
+    public class UpdateBarcodecommand : IRequest<BarcodeDto>
     {
-        public UpdateBarcodeByIdRequest Request { get; set; }
-        public UpdateBarcodecommand(UpdateBarcodeByIdRequest updatebarcodebyidRequest)
+        public UpdateBarcodeRequest Request { get; set; }
+        public int CompanyId { get; }
+        public UpdateBarcodecommand(UpdateBarcodeRequest request, int companyId)
         {
-            Request = updatebarcodebyidRequest;
+            Request = request;
+            CompanyId = companyId;
         }
-        public class UpdateBarcodeByProductNamecommandHandler : IRequestHandler<UpdateBarcodecommand, bool>
+        public class UpdateBarcodeByProductNamecommandHandler : IRequestHandler<UpdateBarcodecommand, BarcodeDto>
         {
             private readonly BarcodeService _barcodeservice;
             public UpdateBarcodeByProductNamecommandHandler(BarcodeService barcodeservice)
             {
                 _barcodeservice = barcodeservice;
             }
-            public async Task<bool> Handle(UpdateBarcodecommand request, CancellationToken cancellationToken)
+            public async Task<BarcodeDto> Handle(UpdateBarcodecommand request, CancellationToken cancellationToken)
             {
-                try
-                {
-                    return await _barcodeservice.Update(request.Request.Id, request.Request.NewBarcodeValue);
-                }
-                catch (Exception)
-                {
-
-                    throw;
-                }
+                var updatedEntity = await _barcodeservice.Update(request.Request, request.CompanyId);
+                return updatedEntity;
             }
             public class UpdateBarcodecommandValidator : AbstractValidator<UpdateBarcodecommand>
             {
                 public UpdateBarcodecommandValidator()
                 {
-                    RuleFor(bcv => bcv.Request.NewBarcodeValue).NotNull().NotEmpty().WithMessage("mut not be null.");
-                    RuleFor(bcid => bcid.Request.Id).NotNull().NotEmpty().WithMessage("product ID must be entred ");
+                    RuleFor(bcv => bcv.Request.NewBarcodeValue).NotNull().NotEmpty().WithMessage("Barcode must not be null.");
                 }
             }
         }

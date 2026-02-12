@@ -7,6 +7,8 @@ namespace Products.Api.Queries.PosOrderQuery
 {
     public class GetAllPosOrdersQuery : IRequest<List<PosOrderDto>>
     {
+        public int CompanyId { get; set; }
+
         public class GetAllPosOrdersQueryHandler : IRequestHandler<GetAllPosOrdersQuery, List<PosOrderDto>>
         {
             private readonly PosOrderRepository _repository;
@@ -17,7 +19,7 @@ namespace Products.Api.Queries.PosOrderQuery
             }
             public async Task<List<PosOrderDto>> Handle(GetAllPosOrdersQuery request, CancellationToken cancellationToken)
             {
-                var entities = await _repository.GetAllAsync();
+                var entities = await _repository.GetAllAsync(request.CompanyId);
                 return entities.Select(MapperPosOrder.MapToPosOrderDto).ToList();
             }
         }

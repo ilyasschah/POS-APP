@@ -13,42 +13,42 @@ namespace Products.Api.Repository
             _db = db;
         }
 
-        public async Task<List<Product>> GetAllAsync()
+        public async Task<List<Product>> GetAllAsync(int companyId)
         {
             return await _db.Products
                 .AsNoTracking()
+                .Where(p => p.CompanyId == companyId)
                 .Include(p => p.ProductGroup)
                 .Include(p => p.Currency)
                 .ToListAsync();
         }
-
-        public async Task<Product?> GetByIdAsync(int id, bool trackEntity = false)
+        public async Task<Product?> GetByIdAsync(int id, int companyId, bool trackEntity = false)
         {
             var q = _db.Products.AsQueryable();
             if (!trackEntity) q = q.AsNoTracking();
             return await q
                 .Include(p => p.ProductGroup)
                 .Include(p => p.Currency)
-                .FirstOrDefaultAsync(p => p.Id == id);
+                .FirstOrDefaultAsync(p => p.Id == id && p.CompanyId == companyId);
         }
 
-        public async Task<Product?> GetByCodeAsync(string code)
+        public async Task<Product?> GetByCodeAsync(string code, int companyId)
         {
             return await _db.Products
                 .AsNoTracking()
                 .Include(p => p.ProductGroup)
                 .Include(p => p.Currency)
-                .FirstOrDefaultAsync(p => p.Code == code);
+                .FirstOrDefaultAsync(p => p.Code == code && p.CompanyId == companyId);
         }
 
-        public async Task<bool> ExistsByNameAsync(string name)
+        public async Task<bool> ExistsByNameAsync(string name, int companyId)
         {
-            return await _db.Products.AnyAsync(p => p.Name.ToLower() == name.ToLower());
+            return await _db.Products.AnyAsync(p => p.Name == name && p.CompanyId == companyId);
         }
 
-        public async Task<bool> ExistsByCodeAsync(string code)
+        public async Task<bool> ExistsByCodeAsync(string code, int companyId)
         {
-            return await _db.Products.AnyAsync(p => p.Code != null && p.Code.ToLower() == code.ToLower());
+            return await _db.Products.AnyAsync(p => p.Code == code && p.CompanyId == companyId);
         }
 
         public async Task AddAsync(Product entity)

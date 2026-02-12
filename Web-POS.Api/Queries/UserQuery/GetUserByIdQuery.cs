@@ -9,8 +9,8 @@ namespace Products.Api.Queries.UserQuery;
 
 public class GetUserByIdQuery : IRequest<UserDto?>
 {
-    public int Id { get; }
-    public GetUserByIdQuery(int id) { Id = id; }
+    public int Id { get; set; }
+    public int CompanyId { get; set; }
 
     public class GetUserByIdQueryHandler : IRequestHandler<GetUserByIdQuery, UserDto?>
     {
@@ -23,7 +23,7 @@ public class GetUserByIdQuery : IRequest<UserDto?>
 
         public async Task<UserDto?> Handle(GetUserByIdQuery request, CancellationToken cancellationToken)
         {
-            var entity = await _repository.GetByIdAsync(request.Id);
+            var entity = await _repository.GetByIdAsync(request.Id, request.CompanyId);
             return entity == null ? null : MapperUser.MapToUserDto(entity);
         }
     }

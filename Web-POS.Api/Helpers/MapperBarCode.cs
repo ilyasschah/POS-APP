@@ -3,14 +3,18 @@ using Products.Api.Models;
 
 namespace Products.Api.Helpers
 {
-    public class MapperBarcode
+    public class MapperBarcode_ProductName
     {
         public static BarcodeDto MapBarCodes(Barcode barcodes)
         {
             return new BarcodeDto
             {
+                Id = barcodes.Id,
                 Value = barcodes.Value,
-                ProductName = barcodes.Product.Name
+                ProductId = barcodes.ProductId,
+                ProductName = barcodes.Product.Name,
+                CompanyId = barcodes.CompanyId,
+                CompanyName = barcodes.Company.Name
             };
         }
     }

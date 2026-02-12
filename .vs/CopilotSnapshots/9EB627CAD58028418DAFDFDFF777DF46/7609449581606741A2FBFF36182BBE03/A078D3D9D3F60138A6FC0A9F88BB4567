@@ -1,0 +1,220 @@
+﻿using Microsoft.EntityFrameworkCore;
+using Products.Api.Domain;
+using System.Reflection.Emit;
+namespace Products.Api.DataBase
+{
+    public class AppDbContext : DbContext
+    {
+        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
+        {
+        }
+        public DbSet<Currency> Currencies { get; set; }
+        public DbSet<ProductGroup> ProductGroups { get; set; }
+        public DbSet<Product> Products { get; set; } 
+        public DbSet<Barcode> Barcodes { get; set; }
+        public DbSet<SecurityKey> SecurityKeys { get; set; }
+        public DbSet<ProductComment> ProductComments { get; set; }
+        public DbSet<Tax> Taxes { get; set; }
+        public DbSet<ProductTax> ProductsTaxes { get; set; }
+        public DbSet<VoidReason> VoidReasons { get; internal set; }
+        public DbSet<FiscalItem> FiscalItems { get; internal set; }
+        public DbSet<Promotion> Promotions { get; internal set; }
+        public DbSet<PromotionItem> PromotionItems { get; internal set; }
+        public DbSet<Customer> Customers { get; set; }
+        public DbSet<Country> Countries { get; set; }
+        public DbSet<CustomerDiscount> CustomerDiscounts { get; set; }
+        public DbSet<Company> Companies { get; set; }
+        public DbSet<StockControl> StockControls { get; set; }
+        public DbSet<LoyaltyCard> LoyaltyCards { get; set; }
+        public DbSet<User> Users { get; set; }
+        public DbSet<PosOrder> PosOrders { get; set; }
+        public DbSet<PosVoid> PosVoids { get; set; }
+        public DbSet<PosOrderItem> PosOrderItems { get; set; }
+        public DbSet<FloorPlan> FloorPlans { get; set; }
+        public DbSet<FloorPlanTable> FloorPlanTables { get; set; }
+        public DbSet<StartingCash> StartingCashes { get; set; }
+        public DbSet<Warehouse> Warehouses { get; set; }
+        public DbSet<Stock> Stocks { get; set; }
+        public DbSet<ApplicationProperty> ApplicationProperties { get; set; }
+        public DbSet<Migration> Migrations { get; set; }
+        public DbSet<PosPrinterSelection> PosPrinterSelections { get; set; }
+        public DbSet<PosPrinterSettings> PosPrinterSettings { get; set; }
+        public DbSet<PosPrinterSelectionSettings> PosPrinterSelectionSettings { get; set; }
+        public DbSet<Template> Templates { get; set; }
+        public DbSet<ZReport> ZReports { get; set; }
+        public DbSet<PaymentType> PaymentTypes { get; set; }
+        public DbSet<Payment> Payments { get; set; }
+        public DbSet<Document> Documents { get; set; }
+        public DbSet<DocumentCategory> DocumentCategories { get; set; }
+        public DbSet<DocumentType> DocumentTypes { get; set; }
+        public DbSet<DocumentItem> DocumentItems { get; set; }
+        public DbSet<DocumentItemTax> DocumentItemTaxes { get; set; }
+        public DbSet<DocumentItemExpirationDate> DocumentItemExpirationDates { get; set; }
+        public DbSet<DocumentsCounter> DocumentsCounter { get; set; }
+        protected override void ConfigureConventions(ModelConfigurationBuilder cfg)
+        {
+            cfg.Properties<decimal>().HavePrecision(18, 2); // sensible default
+        }
+        protected override void OnModelCreating(ModelBuilder b)
+        {
+
+            base.OnModelCreating(b);
+
+            // Document
+            b.Entity<Document>(e =>
+            {
+                e.ToTable(table => table.HasTrigger("Document_Insert_Trigger"));
+                e.Property(x => x.Discount).HasPrecision(18, 2);
+                e.Property(x => x.Total).HasPrecision(18, 2);
+            });
+
+            // DocumentItem
+            b.Entity<DocumentItem>(e =>
+            {
+                e.ToTable(tb => tb.HasTrigger("DocumentItem_Insert_Trigger"));
+                e.Property(x => x.Discount).HasPrecision(18, 2);
+                e.Property(x => x.ExpectedQuantity).HasPrecision(18, 4);
+                e.Property(x => x.Price).HasPrecision(18, 2);
+                e.Property(x => x.PriceAfterDiscount).HasPrecision(18, 2);
+                e.Property(x => x.PriceBeforeTax).HasPrecision(18, 2);
+                e.Property(x => x.PriceBeforeTaxAfterDiscount).HasPrecision(18, 2);
+                e.Property(x => x.ProductCost).HasPrecision(18, 2);
+                e.Property(x => x.Quantity).HasPrecision(18, 4);
+                e.Property(x => x.Total).HasPrecision(18, 2);
+                e.Property(x => x.TotalAfterDocumentDiscount).HasPrecision(18, 2);
+            });
+
+            // DocumentItemTax
+            b.Entity<DocumentItemTax>(e => e.Property(x => x.Amount).HasPrecision(18, 2));
+
+            // Payment
+            b.Entity<Payment>(e =>
+            {
+                e.ToTable(tb => tb.HasTrigger("Payment_Insert_Trigger"));
+                e.Property(x => x.Amount).HasPrecision(18, 2);
+            });
+
+            // PosOrder / PosOrderItem / PosVoid
+            b.Entity<PosOrder>(e => 
+            { 
+                e.Property(x => x.Discount).HasPrecision(18, 2); e.Property(x => x.Total).HasPrecision(18, 2); 
+            });
+            b.Entity<PosOrderItem>(e =>
+            {
+                e.Property(x => x.Discount).HasPrecision(18, 2);
+                e.Property(x => x.Price).HasPrecision(18, 2);
+                e.Property(x => x.Quantity).HasPrecision(18, 4);
+            });
+            b.Entity<PosVoid>(e =>
+            {
+                e.Property(x => x.Discount).HasPrecision(18, 2);
+                e.Property(x => x.Price).HasPrecision(18, 2);
+                e.Property(x => x.Quantity).HasPrecision(18, 4);
+                e.Property(x => x.Total).HasPrecision(18, 2);
+            });
+
+            // PromotionItem
+            b.Entity<PromotionItem>(e =>
+            {
+                e.Property(x => x.Quantity).HasPrecision(18, 4);
+                e.Property(x => x.QuantityLimit).HasPrecision(18, 4);
+                e.Property(x => x.Value).HasPrecision(18, 2);
+            });
+
+            // Stock / StockControl
+            b.Entity<Stock>(e => e.Property(x => x.Quantity).HasPrecision(18, 4));
+            b.Entity<StockControl>(e =>
+            {
+                e.Property(x => x.LowStockWarningQuantity).HasPrecision(18, 4);
+                e.Property(x => x.PreferredQuantity).HasPrecision(18, 4);
+                e.Property(x => x.ReorderPoint).HasPrecision(18, 4);
+            });
+
+            // Tax
+            b.Entity<Tax>(e => e.Property(x => x.Rate).HasPrecision(9, 4));
+
+            // CustomerDiscount
+            b.Entity<CustomerDiscount>(e => e.Property(x => x.Value).HasPrecision(18, 2));
+            b.Entity<ProductTax>()
+                .HasNoKey();
+            b.Entity<WarehouseCompany>()
+                .HasNoKey();
+
+
+            b.Entity<Warehouse>(e =>
+            {
+                e.HasKey(x => x.Id);
+                e.Property(x => x.Name).HasMaxLength(255).IsRequired();
+            });
+
+            b.Entity<WarehouseCompany>(e =>
+            {
+                // Composite key used by Stock (CompanyId, WarehouseId)
+                e.HasKey(x => new { x.CompanyId, x.WarehouseId });
+
+                // Make WarehouseId unique to support 1:1 with Warehouse
+                e.HasIndex(x => x.WarehouseId).IsUnique();
+
+                // FK to Company
+                e.HasOne(x => x.Company)
+                 .WithMany()
+                 .HasForeignKey(x => x.CompanyId)
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                // 1:1: WarehouseCompany.WarehouseId -> Warehouse.Id
+                e.HasOne(x => x.Warehouse)
+                 .WithOne(w => w.Mapping)
+                 .HasForeignKey<WarehouseCompany>(x => x.WarehouseId)
+                 .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // Explicit company relationships for multi-tenant tables
+            // Prevent deleting a Company when it still has related data
+            b.Entity<User>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
+            b.Entity<Product>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
+            b.Entity<ProductGroup>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
+            b.Entity<Barcode>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
+            b.Entity<ProductComment>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
+            b.Entity<Tax>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
+            b.Entity<Currency>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
+
+            b.Entity<Customer>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
+            b.Entity<CustomerDiscount>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
+
+            b.Entity<Promotion>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
+            b.Entity<PromotionItem>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
+            b.Entity<LoyaltyCard>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
+
+            b.Entity<Stock>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
+            b.Entity<StockControl>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
+
+            b.Entity<StartingCash>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
+            b.Entity<Template>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
+
+            b.Entity<PosOrder>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
+            b.Entity<PosOrderItem>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
+            b.Entity<PosVoid>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
+
+            b.Entity<ZReport>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
+
+            b.Entity<PosPrinterSelection>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
+            b.Entity<PosPrinterSettings>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
+            b.Entity<PosPrinterSelectionSettings>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
+
+            b.Entity<Payment>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
+            b.Entity<PaymentType>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
+
+            // Documents and related
+            b.Entity<Document>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
+            b.Entity<DocumentItem>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
+            b.Entity<DocumentType>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
+            b.Entity<DocumentCategory>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
+
+            b.Entity<VoidReason>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
+            b.Entity<FiscalItem>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
+
+            // Note: keyless/junction tables such as ProductTax, DocumentItemTax and DocumentItemExpirationDate
+            // are intentionally left out because they don't own a CompanyId column directly.
+        }
+    }
+}

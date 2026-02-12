@@ -10,6 +10,7 @@ namespace Products.Api.Queries.UserQuery;
 public class GetUserByUsernameQuery : IRequest<UserDto?>
 {
     public string Username { get; }
+    public int CompanyId { get; set; }
     public GetUserByUsernameQuery(string username) { Username = username; }
 
     public class GetUserByUsernameQueryHandler : IRequestHandler<GetUserByUsernameQuery, UserDto?>
@@ -23,7 +24,7 @@ public class GetUserByUsernameQuery : IRequest<UserDto?>
 
         public async Task<UserDto?> Handle(GetUserByUsernameQuery request, CancellationToken cancellationToken)
         {
-            var entity = await _repository.GetByUsernameAsync(request.Username);
+            var entity = await _repository.GetByUsernameAsync(request.Username, request.CompanyId);
             return entity == null ? null : MapperUser.MapToUserDto(entity);
         }
     }

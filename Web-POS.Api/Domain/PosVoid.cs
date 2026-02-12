@@ -10,6 +10,7 @@ namespace Products.Api.Domain
     {
         [Key]
         public int Id { get; set; }
+        public int CompanyId { get; set; }
         public string OrderNumber { get; set; }
         public int? UserId { get; set; }
         public string UserName { get; set; }

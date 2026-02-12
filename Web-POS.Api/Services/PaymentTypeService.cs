@@ -13,64 +13,68 @@ namespace Products.Api.Services
             _repository = repository;
         }
 
-        public async Task<PaymentType> Create(CreatePaymentTypeRequest req)
+        public async Task<PaymentType> Create(CreatePaymentTypeRequest req, int companyId)
         {
-            if (await _repository.ExistsAsync(req.Name))
+            if (await _repository.ExistsbyNameAsync(req.Name, companyId))
             {
                 throw new InvalidOperationException($"A payment type with the name '{req.Name}' already exists.");
             }
 
-            var newPaymentType = PaymentType.Create(req.Name);
+            var entity = PaymentType.Create(
+                name: req.Name,
+                code:req.Code,
+                iscustomerrequired: req.IsCustomerRequired, 
+                isfiscal:req.IsFiscal,
+                issliprequired:req.IsSlipRequired,
+                ischnageallowed: req.IsChangeAllowed, 
+                ordinal:req.Ordinal,
+                isenabled:req.IsEnabled, 
+                isquickpayment:req.IsQuickPayment, 
+                opencashdrawer:req.OpenCashDrawer,
+                shortcutkey:req.ShortcutKey, 
+                markaspaid:req.MarkAsPaid
+            );
+            entity.CompanyId = companyId;
 
-            newPaymentType.Code = req.Code;
-            newPaymentType.IsCustomerRequired = req.IsCustomerRequired ?? false;
-            newPaymentType.IsFiscal = req.IsFiscal ?? true;
-            newPaymentType.IsSlipRequired = req.IsSlipRequired ?? false;
-            newPaymentType.IsChangeAllowed = req.IsChangeAllowed ?? true;
-            newPaymentType.Ordinal = req.Ordinal ?? 0;
-            newPaymentType.IsEnabled = req.IsEnabled ?? true;
-            newPaymentType.IsQuickPayment = req.IsQuickPayment ?? true;
-            newPaymentType.OpenCashDrawer = req.OpenCashDrawer ?? true;
-            newPaymentType.ShortcutKey = req.ShortcutKey;
-            newPaymentType.MarkAsPaid = req.MarkAsPaid ?? true;
-
-            await _repository.AddAsync(newPaymentType);
-            return newPaymentType;
+            await _repository.AddAsync(entity);
+            return entity;
         }
 
-        public async Task<bool> Update(int id, UpdatePaymentTypeRequest req)
+        public async Task<bool> Update(int id, UpdatePaymentTypeRequest req, int companyId)
         {
-            var entityToUpdate = await _repository.GetByIdAsync(id, trackEntity: true);
-            if (entityToUpdate == null)
+            var entity = await _repository.GetByIdAsync(id, companyId, trackEntity: true);
+            if (entity == null)
             {
-                throw new InvalidOperationException($"A payment type with the ID '{id}' was not found.");
+                return false;
             }
-
-            var existingByName = await _repository.GetByNameAsync(req.Name);
+            var existingByName = await _repository.GetByNameAsync(req.Name, companyId);
             if (existingByName != null && existingByName.Id != id)
             {
                 throw new InvalidOperationException($"Another payment type with the name '{req.Name}' already exists.");
             }
+            if (req.Name != null) entity.Name = req.Name;
+            if (req.Code != null) entity.Code = req.Code;
+            if (req.ShortcutKey != null) entity.ShortcutKey = req.ShortcutKey;
 
-            entityToUpdate.Update(
-                req.Name, req.Code, req.IsCustomerRequired, req.IsFiscal,
-                req.IsSlipRequired, req.IsChangeAllowed, req.Ordinal,
-                req.IsEnabled, req.IsQuickPayment, req.OpenCashDrawer,
-                req.ShortcutKey, req.MarkAsPaid
-            );
+            entity.IsCustomerRequired = req.IsCustomerRequired;
+            entity.IsFiscal = req.IsFiscal;
+            entity.IsSlipRequired = req.IsSlipRequired;
+            entity.IsChangeAllowed = req.IsChangeAllowed;
+            entity.Ordinal = req.Ordinal;
+            entity.IsEnabled = req.IsEnabled;
+            entity.IsQuickPayment = req.IsQuickPayment;
+            entity.OpenCashDrawer = req.OpenCashDrawer;
+            entity.MarkAsPaid = req.MarkAsPaid;
 
-            await _repository.UpdateAsync(entityToUpdate);
+            await _repository.UpdateAsync(entity);
             return true;
         }
 
-        public async Task<bool> Delete(int id)
+        public async Task<bool> Delete(int id, int companyId)
         {
-            var entityToDelete = await _repository.GetByIdAsync(id, trackEntity: true);
+            var entityToDelete = await _repository.GetByIdAsync(id, companyId, trackEntity: true);
             if (entityToDelete == null)
-            {
                 return false;
-            }
-
             await _repository.DeleteAsync(entityToDelete);
             return true;
         }

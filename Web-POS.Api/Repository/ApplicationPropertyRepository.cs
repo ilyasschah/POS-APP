@@ -4,51 +4,40 @@ using Products.Api.Domain;
 
 namespace Products.Api.Repository
 {
-    public class ApplicationPropertyRepository
+    public class ApplicationPropertyRepository(AppDbContext db)
     {
-        private readonly AppDbContext _db;
+        private readonly AppDbContext _db = db;
 
-        public ApplicationPropertyRepository(AppDbContext db)
-        {
-            _db = db;
-        }
-
-        public async Task<List<ApplicationProperty>> GetAllAsync()
+        public async Task<List<ApplicationProperty>> GetAllAsync(int companyId)
         {
             return await _db.ApplicationProperties
                 .AsNoTracking()
-                .OrderBy(p => p.Name)
+                .Where(p => p.CompanyId == companyId)
                 .ToListAsync();
         }
-
-        public async Task<ApplicationProperty?> GetByNameAsync(string name, bool trackEntity = false)
+        public async Task<ApplicationProperty?> GetByNameAsync(string name, int companyId)
         {
-            var q = _db.ApplicationProperties.AsQueryable();
-            if (!trackEntity) q = q.AsNoTracking();
-            return await q.FirstOrDefaultAsync(p => p.Name == name);
+            return await _db.ApplicationProperties
+                .AsNoTracking()
+                .Where(p => p.CompanyId == companyId)
+                .FirstOrDefaultAsync(p => p.Name == name && p.CompanyId == companyId);
         }
-
-        public async Task<bool> ExistsAsync(string name)
+        public async Task<bool> ExistsAsync(string name, int companyId)
         {
-            return await _db.ApplicationProperties.AnyAsync(p => p.Name.ToLower() == name.ToLower());
+            return await _db.ApplicationProperties
+                .Where(p => p.CompanyId == companyId)
+                .AnyAsync(p => p.Name.ToLower() == name.ToLower() && p.CompanyId == companyId);
         }
-
         public async Task AddAsync(ApplicationProperty entity)
         {
             _db.ApplicationProperties.Add(entity);
             await _db.SaveChangesAsync();
         }
-
-        public async Task UpdateAsync(ApplicationProperty entity, string originalName)
+        public async Task UpdateAsync(ApplicationProperty entity)
         {
-            // handle potential rename of PK (Name)
-            var tracked = await _db.ApplicationProperties.FirstOrDefaultAsync(p => p.Name == originalName);
-            if (tracked == null) return;
-            tracked.Name = entity.Name;
-            tracked.Value = entity.Value;
+            _db.ApplicationProperties.Update(entity);
             await _db.SaveChangesAsync();
         }
-
         public async Task DeleteAsync(ApplicationProperty entity)
         {
             _db.ApplicationProperties.Remove(entity);

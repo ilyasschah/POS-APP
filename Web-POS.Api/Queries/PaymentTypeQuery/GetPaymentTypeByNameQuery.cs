@@ -8,6 +8,7 @@ namespace Products.Api.Queries.PaymentTypeQuery
     public class GetPaymentTypeByNameQuery : IRequest<PaymentTypeDto?>
     {
         public string Name { get; set; }
+        public int CompanyId { get; set; }
 
         public class GetPaymentTypeByNameQueryHandler : IRequestHandler<GetPaymentTypeByNameQuery, PaymentTypeDto?>
         {
@@ -20,7 +21,7 @@ namespace Products.Api.Queries.PaymentTypeQuery
 
             public async Task<PaymentTypeDto?> Handle(GetPaymentTypeByNameQuery request, CancellationToken cancellationToken)
             {
-                var entity = await _repository.GetByNameAsync(request.Name);
+                var entity = await _repository.GetByNameAsync(request.Name, request.CompanyId);
                 return entity == null ? null : MapperPaymentType.MapToPaymentTypeDto(entity);
             }
         }

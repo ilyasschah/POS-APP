@@ -13,29 +13,33 @@ namespace Products.Api.Repository
             _db = db;
         }
 
-        public async Task<List<PaymentType>> GetAllAsync()
+        public async Task<List<PaymentType>> GetAllAsync(int companyId)
         {
-            return await _db.PaymentTypes.AsNoTracking().ToListAsync();
+            return await _db.PaymentTypes
+                .AsNoTracking()
+                .Where(pt => pt.CompanyId == companyId)
+                .ToListAsync();
         }
 
-        public async Task<PaymentType?> GetByIdAsync(int id, bool trackEntity = false)
+        public async Task<PaymentType?> GetByIdAsync(int id, int companyId, bool trackEntity = false)
         {
             var query = _db.PaymentTypes.AsQueryable();
             if (!trackEntity)
             {
                 query = query.AsNoTracking();
             }
-            return await query.FirstOrDefaultAsync(pt => pt.Id == id);
+            return await query.FirstOrDefaultAsync(pt => pt.Id == id && pt.CompanyId == companyId);
         }
 
-        public async Task<PaymentType?> GetByNameAsync(string name)
+
+        public async Task<PaymentType?> GetByNameAsync(string name, int companyId)
         {
-            return await _db.PaymentTypes.AsNoTracking().FirstOrDefaultAsync(pt => pt.Name == name);
+            return await _db.PaymentTypes.AsNoTracking().FirstOrDefaultAsync(pt => pt.Name == name && pt.CompanyId == companyId);
         }
 
-        public async Task<bool> ExistsAsync(string name)
+        public async Task<bool> ExistsbyNameAsync(string name, int companyId)
         {
-            return await _db.PaymentTypes.AnyAsync(pt => pt.Name.ToLower() == name.ToLower());
+            return await _db.PaymentTypes.AnyAsync(pt => pt.Name.ToLower() == name.ToLower() && pt.CompanyId == companyId);
         }
 
         public async Task AddAsync(PaymentType entity)
@@ -49,8 +53,6 @@ namespace Products.Api.Repository
             _db.PaymentTypes.Update(entity);
             await _db.SaveChangesAsync();
         }
-
-
 
         public async Task DeleteAsync(PaymentType entity)
         {

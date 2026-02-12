@@ -9,10 +9,12 @@ namespace Products.Api.Commands.ProductCommands.Add
     public class AddProductCommand : IRequest<ProductDto>
     {
         public CreateProductRequest Request { get; }
+        public int CompanyId { get; }
 
-        public AddProductCommand(CreateProductRequest request)
+        public AddProductCommand(CreateProductRequest request, int companyId)
         {
             Request = request;
+            CompanyId = companyId;
         }
 
         public class AddProductCommandHandler : IRequestHandler<AddProductCommand, ProductDto>
@@ -26,7 +28,7 @@ namespace Products.Api.Commands.ProductCommands.Add
 
             public async Task<ProductDto> Handle(AddProductCommand command, CancellationToken cancellationToken)
             {
-                var entity = await _service.Create(command.Request);
+                var entity = await _service.Create(command.Request, command.CompanyId);
                 return MapperProduct.MapToProductDto(entity);
             }
         }

@@ -15,6 +15,17 @@ public class StockControlRepository
         _db = db;
     }
 
+    public async Task<List<StockControl>> GetAllAsync(int companyId)
+    {
+        return await _db.StockControls
+            .Where(sc => sc.CompanyId == companyId)
+            .AsNoTracking()
+            .Include(sc => sc.Product)
+            .Include(sc => sc.Customer)
+            .ToListAsync();
+    }
+
+    // Backwards-compatible non-scoped overload
     public async Task<List<StockControl>> GetAllAsync()
     {
         return await _db.StockControls

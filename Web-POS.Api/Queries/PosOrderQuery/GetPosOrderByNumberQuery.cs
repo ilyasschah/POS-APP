@@ -12,6 +12,7 @@ namespace Products.Api.Queries.PosOrderQuery
     public class GetPosOrderByNumberQuery : IRequest<PosOrderDto?>
     {
         public string Number { get; }
+        public int CompanyId { get; set; }
 
         public GetPosOrderByNumberQuery(string number)
         {

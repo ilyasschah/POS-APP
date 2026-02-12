@@ -10,12 +10,14 @@ namespace Products.Api.Commands.PaymentCommands.Update
     public class UpdatePaymentCommand : IRequest<bool>
     {
         public int Id { get; set; }
+        public int CompanyId { get; set; }
         public UpdatePaymentRequest Request { get; }
 
-        public UpdatePaymentCommand(int id, UpdatePaymentRequest request) // <-- Add this constructor
+        public UpdatePaymentCommand(int id, UpdatePaymentRequest request, int companyId) // <-- Add this constructor
         {
             Id = id;
             Request = request;
+            CompanyId = companyId;
         }
 
         public class UpdatePaymentCommandHandler : IRequestHandler<UpdatePaymentCommand, bool>
@@ -29,7 +31,7 @@ namespace Products.Api.Commands.PaymentCommands.Update
 
             public Task<bool> Handle(UpdatePaymentCommand command, CancellationToken cancellationToken)
             {
-                return _service.Update(command.Id, command.Request);
+                return _service.Update(command.Id, command.Request, command.CompanyId);
             }
         }
 
@@ -39,6 +41,7 @@ namespace Products.Api.Commands.PaymentCommands.Update
             {
                 RuleFor(c => c.Id).GreaterThan(0);
                 RuleFor(c => c.Request.Amount).GreaterThanOrEqualTo(0);
+                RuleFor(c => c.CompanyId).GreaterThan(0);
             }
         }
     }

@@ -8,24 +8,25 @@ namespace Products.Api.Domain
     {
         [Key]
         [MaxLength(255)]
-        public string Name { get; set; } = default!;
-
-        public string? Value { get; set; }
-
+        public string Name { get; set; }
+        public string Value { get; set; }
+        public int CompanyId { get; set; }
+        [ForeignKey(nameof(CompanyId))]
+        public virtual Company Company { get; set; }
         public ApplicationProperty() { }
 
-        private ApplicationProperty(string name, string? value)
+        private ApplicationProperty(string name, string value, int companyId)
         {
             Name = name;
             Value = value;
+            CompanyId = companyId;
         }
-
-        public static ApplicationProperty Create(string name, string? value)
-            => new(name, value);
-
-        public void Update(string name, string? value)
+        public static ApplicationProperty Create(string name,string value, int companyId)
         {
-            Name = name;
+            return new ApplicationProperty(name, value, companyId);
+        }   
+        public void Update(string value)
+        {
             Value = value;
         }
     }

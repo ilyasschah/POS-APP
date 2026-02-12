@@ -9,6 +9,8 @@ namespace Products.Api.Queries.UserQuery;
 
 public class GetAllUsersQuery : IRequest<List<UserDto>>
 {
+    public int CompanyId { get; set; }
+
     public class GetAllUsersQueryHandler : IRequestHandler<GetAllUsersQuery, List<UserDto>>
     {
         private readonly UserRepository _repository;
@@ -20,7 +22,7 @@ public class GetAllUsersQuery : IRequest<List<UserDto>>
 
         public async Task<List<UserDto>> Handle(GetAllUsersQuery request, CancellationToken cancellationToken)
         {
-            var entities = await _repository.GetAllAsync();
+            var entities = await _repository.GetAllAsync(request.CompanyId);
             return entities.Select(MapperUser.MapToUserDto).ToList();
         }
     }

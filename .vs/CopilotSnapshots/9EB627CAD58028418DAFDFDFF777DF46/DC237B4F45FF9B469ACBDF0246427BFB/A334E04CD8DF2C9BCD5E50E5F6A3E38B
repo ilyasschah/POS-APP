@@ -1,0 +1,80 @@
+﻿// FILE: Products.Api.Repository\UserRepository.cs
+
+using Microsoft.EntityFrameworkCore;
+using Products.Api.Domain;
+using Products.Api.DataBase;
+
+namespace Products.Api.Repository;
+
+public class UserRepository
+{
+    public readonly AppDbContext _db;
+
+    public UserRepository(AppDbContext db)
+    {
+        _db = db;
+    }
+
+    public async Task<List<User>> GetAllAsync(int companyId)
+    {
+        return await _db.Users
+            .AsNoTracking()
+            .Where(u => u.CompanyId == companyId)
+            .ToListAsync();
+    }
+
+    public async Task<User?> GetByIdAsync(int id, int companyId)
+    {
+        return await _db.Users
+            .FirstOrDefaultAsync(u => u.Id == id && u.CompanyId == companyId);
+    }
+
+    // Backwards-compatible non-scoped overloads
+    public async Task<User?> GetByIdAsync(int id)
+    {
+        return await _db.Users
+            .FirstOrDefaultAsync(u => u.Id == id);
+    }
+
+    public async Task<User?> GetByUsernameAsync(string username, int companyId)
+    {
+        return await _db.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Username == username && u.CompanyId == companyId);
+    }
+
+    public async Task<User?> GetByUsernameAsync(string username)
+    {
+        return await _db.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Username == username);
+    }
+
+    public bool Exists(string username, int companyId)
+    {
+        return _db.Users.Any(u => u.Username == username && u.CompanyId == companyId);
+    }
+
+    public bool Exists(string username)
+    {
+        return _db.Users.Any(u => u.Username == username);
+    }
+
+    public async Task AddAsync(User entity)
+    {
+        _db.Users.Add(entity);
+        await _db.SaveChangesAsync();
+    }
+
+    public async Task UpdateAsync(User entity)
+    {
+        _db.Users.Update(entity);
+        await _db.SaveChangesAsync();
+    }
+
+    public async Task DeleteAsync(User entity)
+    {
+        _db.Users.Remove(entity);
+        await _db.SaveChangesAsync();
+    }
+}

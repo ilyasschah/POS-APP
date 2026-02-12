@@ -1,5 +1,3 @@
-// FILE: Products.Api.Domain\Company.cs
-
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -29,9 +27,8 @@ public class Company
     public string? CountrySubentity { get; private set; }
 
     [ForeignKey(nameof(CountryId))]
-    public virtual Country Country { get; private set; }
+    public virtual Country Country { get; set; }
 
-    // Private constructor for the static Create method
     private Company(string name, int countryId)
     {
         Name = name;

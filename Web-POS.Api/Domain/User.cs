@@ -1,7 +1,6 @@
-// FILE: Products.Api.Domain\User.cs
-
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Runtime.CompilerServices;
 
 namespace Products.Api.Domain;
 
@@ -10,6 +9,7 @@ public class User
 {
     [Key]
     public int Id { get; private set; }
+    public int CompanyId { get; set; }
     public string? FirstName { get; private set; }
     public string? LastName { get; private set; }
     public string? Username { get; private set; }
@@ -18,32 +18,26 @@ public class User
     public bool IsEnabled { get; private set; }
     public string? Email { get; private set; }
 
-    // Private constructor for the static Create method
-    private User(string username, string password)
+    public User() { }
+
+    private User(string username, string password, int companyId)
     {
         Username = username;
         Password = password;
         IsEnabled = true;
-        AccessLevel = 0;
+        AccessLevel = 1;
+        CompanyId = companyId;
     }
 
-    // Public parameterless constructor for EF Core
-    public User() { }
-
-    public static User Create(string username, string password)
+    public static User Create(string username, string password, int companyId)
     {
-        if (string.IsNullOrWhiteSpace(username))
-            throw new ArgumentException("Username is required.", nameof(username));
-        if (string.IsNullOrWhiteSpace(password))
-            throw new ArgumentException("Password is required.", nameof(password));
-
-        return new User(username, password);
+        return new User(username, password, companyId);
     }
 
-    public void Update(string? firstName, string? lastName, string? username, int accessLevel, bool isEnabled, string? email)
+    public void Update(string? firstName, string? lastName, string? username, int accessLevel, bool isEnabled, string? email, int companyId)
     {
-        if (string.IsNullOrWhiteSpace(username))
-            throw new ArgumentException("Username is required.", nameof(username));
+        if (int.IsNegative(companyId))
+            throw new ArgumentException("Username is required.", nameof(companyId));
 
         FirstName = firstName;
         LastName = lastName;
@@ -51,13 +45,15 @@ public class User
         AccessLevel = accessLevel;
         IsEnabled = isEnabled;
         Email = email;
+        CompanyId = companyId;
     }
 
-    public void ChangePassword(string newPassword)
+    public void ChangePassword(string newPassword, int companyId)
     {
         if (string.IsNullOrWhiteSpace(newPassword))
             throw new ArgumentException("New password is required.", nameof(newPassword));
 
         Password = newPassword;
+        CompanyId = companyId;
     }
 }

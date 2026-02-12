@@ -1,5 +1,3 @@
-// FILE: Products.Api.Commands\CompanyCommands\Update\UpdateCompanyCommand.cs
-
 using FluentValidation;
 using MediatR;
 using Products.Api.Models;
@@ -7,7 +5,7 @@ using Products.Api.Services;
 
 namespace Products.Api.Commands.CompanyCommands.Update;
 
-public class UpdateCompanyCommand : IRequest<bool>
+public class UpdateCompanyCommand : IRequest<CompanyDto>
 {
     public UpdateCompanyRequest Request { get; set; }
 
@@ -15,8 +13,7 @@ public class UpdateCompanyCommand : IRequest<bool>
     {
         Request = request;
     }
-
-    public class UpdateCompanyCommandHandler : IRequestHandler<UpdateCompanyCommand, bool>
+    public class UpdateCompanyCommandHandler : IRequestHandler<UpdateCompanyCommand, CompanyDto>
     {
         private readonly CompanyService _service;
 
@@ -24,13 +21,12 @@ public class UpdateCompanyCommand : IRequest<bool>
         {
             _service = service;
         }
-
-        public Task<bool> Handle(UpdateCompanyCommand request, CancellationToken cancellationToken)
+        public async Task<CompanyDto> Handle(UpdateCompanyCommand request, CancellationToken cancellationToken)
         {
-            return _service.Update(request.Request);
+            var updatedEntity = await _service.Update_DetailsAsync(request.Request);
+            return updatedEntity;
         }
     }
-
     public class UpdateCompanyCommandValidator : AbstractValidator<UpdateCompanyCommand>
     {
         public UpdateCompanyCommandValidator()

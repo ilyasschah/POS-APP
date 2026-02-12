@@ -1,5 +1,3 @@
-// FILE: Products.Api.Commands\UserCommands\Update\UpdateUserCommand.cs
-
 using FluentValidation;
 using MediatR;
 using Products.Api.Models;
@@ -9,11 +7,15 @@ namespace Products.Api.Commands.UserCommands.Update;
 
 public class UpdateUserCommand : IRequest<bool>
 {
+    public int Id { get; }
     public UpdateUserRequest Request { get; set; }
+    public int CompanyId { get; }
 
-    public UpdateUserCommand(UpdateUserRequest request)
+    public UpdateUserCommand(int id, UpdateUserRequest request, int companyId)
     {
+        Id = id;
         Request = request;
+        CompanyId = companyId;
     }
 
     public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, bool>
@@ -27,7 +29,7 @@ public class UpdateUserCommand : IRequest<bool>
 
         public Task<bool> Handle(UpdateUserCommand request, CancellationToken cancellationToken)
         {
-            return _service.Update(request.Request);
+            return _service.Update(request.Id, request.Request, request.CompanyId);
         }
     }
 

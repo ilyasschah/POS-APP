@@ -17,7 +17,8 @@ public static class MapperUser
             Username = entity.Username,
             AccessLevel = entity.AccessLevel,
             IsEnabled = entity.IsEnabled,
-            Email = entity.Email
+            Email = entity.Email,
+            CompanyId = entity.CompanyId
         };
     }
 }

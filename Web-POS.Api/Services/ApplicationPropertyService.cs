@@ -13,37 +13,40 @@ namespace Products.Api.Services
             _repository = repository;
         }
 
-        public async Task<ApplicationProperty> Create(CreateApplicationPropertyRequest req)
+        public async Task<ApplicationPropertyDto> Create(CreateApplicationPropertyRequest req, int companyId)
         {
-            if (await _repository.ExistsAsync(req.Name))
-                throw new InvalidOperationException($"A property with name '{req.Name}' already exists.");
-
-            var entity = ApplicationProperty.Create(req.Name, req.Value);
-            await _repository.AddAsync(entity);
-            return entity;
+            var exists = await _repository.ExistsAsync(req.Name, companyId);
+            if (exists == true)
+            {
+                throw new InvalidOperationException($"Property with name '{req.Name}' already exists.");
+            }
+            var newapplicationProperty = ApplicationProperty.Create(
+                name: req.Name,
+                value: req.Value,
+                companyId: companyId
+            );
+            await _repository.AddAsync(newapplicationProperty);
+            return new ApplicationPropertyDto
+            {
+                Name = newapplicationProperty.Name,
+                Value = newapplicationProperty.Value,
+                CompanyId = newapplicationProperty.CompanyId
+            };
         }
-
-        public async Task<bool> Update(string originalName, UpdateApplicationPropertyRequest req)
+        public async Task<ApplicationPropertyDto> UpdateValue(UpdateApplicationPropertyRequest req,int companyId)
         {
-            var existing = await _repository.GetByNameAsync(originalName, trackEntity: true)
-                           ?? throw new InvalidOperationException($"Property '{originalName}' not found.");
-
-            if (!string.Equals(originalName, req.Name, StringComparison.OrdinalIgnoreCase)
-                && await _repository.ExistsAsync(req.Name))
-                throw new InvalidOperationException($"Another property with name '{req.Name}' already exists.");
-
-            var updated = ApplicationProperty.Create(req.Name, req.Value);
-            await _repository.UpdateAsync(updated, originalName);
-            return true;
-        }
-
-        public async Task<bool> Delete(string name)
-        {
-            var existing = await _repository.GetByNameAsync(name, trackEntity: true);
-            if (existing == null) return false;
-
-            await _repository.DeleteAsync(existing);
-            return true;
+            var entityToUpdate = await _repository.GetByNameAsync(req.Name, companyId);
+            if (entityToUpdate == null)
+                throw new InvalidOperationException("Application Property not found.");
+            
+            entityToUpdate.Update(req.NewValue);
+            await _repository.UpdateAsync(entityToUpdate);
+            return new ApplicationPropertyDto
+            {
+                Name = entityToUpdate.Name,
+                Value = entityToUpdate.Value,
+                CompanyId = entityToUpdate.CompanyId
+            };
         }
     }
 }

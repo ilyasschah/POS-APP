@@ -13,40 +13,40 @@ namespace Products.Api.Controllers
     public class PaymentsController(IMediator mediator) : ControllerBase
     {
         [HttpGet("[action]")]
-        public async Task<ActionResult<List<PaymentDto>>> GetAll()
+        public async Task<ActionResult<List<PaymentDto>>> GetAll([FromQuery] int companyId)
         {
-            return Ok(await mediator.Send(new GetAllPaymentsQuery()));
+            if (companyId == 0) return BadRequest("Company ID is required");
+            return Ok(await mediator.Send(new GetAllPaymentsQuery { CompanyId = companyId }));
         }
-
         [HttpGet("[action]/{id:int}")]
-        public async Task<ActionResult<PaymentDto>> GetById(int id)
+        public async Task<ActionResult<PaymentDto>> GetById(int id, [FromQuery] int companyId)
         {
-            return Ok(await mediator.Send(new GetPaymentByIdQuery { Id = id }));
+            if (companyId == 0) return BadRequest("Company ID is required");
+            return Ok(await mediator.Send(new GetPaymentByIdQuery { Id = id, CompanyId = companyId }));
         }
-
-        //[HttpGet("[action]/ByDocument/{documentId:int}")]
-        //public async Task<ActionResult<List<PaymentDto>>> GetByDocumentId(int documentId)
-        //{                                                                                             rkia
-        //    return Ok(await mediator.Send(new GetPaymentsByDocumentIdQuery (documentId)));
-        //}
-
         [HttpPost("[action]")]
-        public async Task<ActionResult<PaymentDto>> Add([FromBody] CreatePaymentRequest request)
+        public async Task<ActionResult<PaymentDto>> Add([FromBody] CreatePaymentRequest request, [FromQuery] int companyId)
         {
-            var result = await mediator.Send(new AddPaymentCommand(request));
-            return Ok(new { Id = result.Id, Message = "Payment added successfully" });
-        }
+            if (companyId == 0) return BadRequest("Company ID is required");
 
-        [HttpPost("[action]/{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] UpdatePaymentRequest request)
+            var command = new AddPaymentCommand(request, companyId);
+
+            var result = await mediator.Send(command);
+            return CreatedAtAction(nameof(GetById), new { id = result.Id, companyId }, result);
+        }
+        [HttpPut("[action]/{id}")]
+        public async Task<IActionResult> Update(int id, [FromBody] UpdatePaymentRequest request, [FromQuery] int companyId)
         {
-            return Ok(await mediator.Send(new UpdatePaymentCommand(id, request)));
-        }
+            if (companyId == 0) return BadRequest("Company ID is required");
 
+            return Ok(await mediator.Send(new UpdatePaymentCommand(id, request, companyId)));
+        }
         [HttpDelete("[action]/{id}")]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> Delete(int id, [FromQuery] int companyId)
         {
-            var result = await mediator.Send(new DeletePaymentCommand { Id = id });
+            if (companyId == 0) return BadRequest("Company ID is required");
+
+            var result = await mediator.Send(new DeletePaymentCommand { Id = id, CompanyId = companyId });
             return Ok(new { Id = id, Message = "Payment deleted successfully" });
         }
     }

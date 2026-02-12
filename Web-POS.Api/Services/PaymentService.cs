@@ -13,7 +13,7 @@ namespace Products.Api.Services
             _repository = repository;
         }
 
-        public async Task<Payment> Create(CreatePaymentRequest req)
+        public async Task<Payment> Create(CreatePaymentRequest req, int companyId)
         {
             var newPayment = Payment.Create(
                 req.DocumentId,
@@ -28,7 +28,7 @@ namespace Products.Api.Services
             return newPayment;
         }
 
-        public async Task<bool> Update(int id, UpdatePaymentRequest req)
+        public async Task<bool> Update(int id, UpdatePaymentRequest req, int companyId)
         {
             var entityToUpdate = await _repository.GetByIdAsync(id, trackEntity: true);
             if (entityToUpdate == null)
@@ -41,7 +41,7 @@ namespace Products.Api.Services
             return true;
         }
 
-        public async Task<bool> Delete(int id)
+        public async Task<bool> Delete(int id, int companyId)
         {
             var entityToDelete = await _repository.GetByIdAsync(id, trackEntity: true);
             if (entityToDelete == null)

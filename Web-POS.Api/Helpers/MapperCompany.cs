@@ -1,5 +1,3 @@
-// FILE: Products.Api.Helpers\MapperCompany.cs
-
 using Products.Api.Domain;
 using Products.Api.Models;
 
@@ -13,15 +11,21 @@ public static class MapperCompany
         {
             Id = entity.Id,
             Name = entity.Name,
+            CountryName = entity.Country.Name,
             Address = entity.Address,
             PostalCode = entity.PostalCode,
             City = entity.City,
-            CountryId = entity.CountryId,
-            CountryName = entity.Country?.Name ?? "N/A",
             TaxNumber = entity.TaxNumber,
             Email = entity.Email,
             PhoneNumber = entity.PhoneNumber,
-            BankAccountNumber = entity.BankAccountNumber
+            BankAccountNumber = entity.BankAccountNumber,
+            BankDetails = entity.BankDetails,
+            StreetName = entity.StreetName,
+            AdditionalStreetName = entity.AdditionalStreetName,
+            BuildingNumber = entity.BuildingNumber,
+            PlotIdentification = entity.PlotIdentification,
+            CitySubdivisionName = entity.CitySubdivisionName,
+            CountrySubentity = entity.CountrySubentity,
         };
     }
 }

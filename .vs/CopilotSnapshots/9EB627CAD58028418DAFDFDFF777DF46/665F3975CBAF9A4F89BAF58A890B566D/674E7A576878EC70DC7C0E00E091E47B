@@ -1,0 +1,56 @@
+﻿using MediatR;
+using Microsoft.AspNetCore.Mvc;
+using Products.Api.Commands.BarcodesCommands.Add;
+using Products.Api.Commands.BarcodesCommands.Delete;
+using Products.Api.Commands.BarcodesCommands.Update;
+using Products.Api.Models;
+using Products.Api.Queries.BarCodesQuery.Get;
+
+namespace Products.Api.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class BarcodesController(IMediator mediator) : ControllerBase
+    {
+        [HttpGet("[action]")]
+        public async Task<ActionResult<List<BarcodeDto>>> GetAllBarCodeProductName([FromQuery] int companyId)
+        {
+            if (companyId <= 0) return BadRequest("Company ID is required");
+            return Ok(await mediator.Send(new GetAllBarCodeProductNameQuery { CompanyId = companyId }));
+
+        }
+        // GET: api/barcodes/id
+        [HttpGet("[action]/{id:int}")]
+        public async Task<ActionResult<BarcodeDto>> GetById(int id, [FromQuery] int companyId)
+        {
+            if (companyId <= 0) return BadRequest("Company ID is required");
+            return Ok(await mediator.Send(new GetBarcodeByIdQuery(id) { CompanyId = companyId }));
+        }
+        //POST: api/barcodes
+        [HttpPost("[action]")]
+        public async Task<ActionResult<BarcodeDto>> Add([FromBody] CreateBarcodeRequest createrequest, [FromQuery] int companyId)
+        {
+            if (companyId <= 0) return BadRequest("Company ID is required");
+            var command = new AddBarcodecommand(createrequest, companyId);
+            var result = await mediator.Send(command);
+            return CreatedAtAction(nameof(GetById), new { id = createrequest.ProductId, companyId }, result);
+        }
+        [HttpPut("[action]/{id:int}")]
+        public async Task<ActionResult> Update(int id, [FromBody] UpdateBarcodeByIdRequest updaterequest, [FromQuery] int companyId)
+        {
+            if (companyId <= 0) return BadRequest("Company ID is required");
+            var command = new UpdateBarcodecommand(updaterequest, companyId);
+            var ok = await mediator.Send(command);
+            return ok ? NoContent() : NotFound();
+        }
+
+        [HttpDelete("[action]/{id:int}")]
+        public async Task<ActionResult> Delete(int id, [FromQuery] int companyId)
+        {
+            if (companyId <= 0) return BadRequest("Company ID is required");
+            var command = new DeleteBarcodeByIdCommand(id, companyId);
+            var ok = await mediator.Send(command);
+            return ok ? NoContent() : NotFound();
+        }
+    }
+}

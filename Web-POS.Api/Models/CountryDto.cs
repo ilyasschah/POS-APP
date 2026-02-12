@@ -10,9 +10,9 @@ namespace Products.Api.Models
         public required string Name { get; set; }
         public required string Code { get; set; }
     }
-    public class UpdateCountryrequest
+    public class UpdateCountryRequest
     {
-        public required string BarcodeValue { get; set; }
-        public required string NewBarcodeValue { get; set; }
+        public required string Name { get; set; }
+        public required string Code { get; set; }
     }
 }
