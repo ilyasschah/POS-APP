@@ -19,14 +19,14 @@ namespace Products.Api.Controllers
             return Ok(await mediator.Send(new GetAllPaymentTypesQuery { CompanyId = companyId }));
         }
 
-        [HttpGet("[action]/{id:int}")]
-        public async Task<ActionResult<PaymentTypeDto>> GetById(int id, [FromQuery] int companyId)
+        [HttpGet("[action]")]
+        public async Task<ActionResult<PaymentTypeDto>> GetById([FromQuery] int id, [FromQuery] int companyId)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
             return Ok(await mediator.Send(new GetPaymentTypeByIdQuery { Id = id, CompanyId = companyId }));
         }
 
-        [HttpGet("[action]/{name}")]
+        [HttpGet("[action]")]
         public async Task<ActionResult<PaymentTypeDto>> GetByName(string name, [FromQuery] int companyId)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
@@ -44,16 +44,17 @@ namespace Products.Api.Controllers
             return CreatedAtAction(nameof(GetById), new { id = result.Id, companyId }, result);
         }
 
-        [HttpPatch("[action]/{id:int}")]
-        public async Task<IActionResult> Update(int id, [FromBody] UpdatePaymentTypeRequest req, [FromQuery] int companyId)
+        [HttpPatch("[action]")]
+        public async Task<ActionResult<PaymentTypeDto>> Update([FromBody] UpdatePaymentTypeRequest req, [FromQuery] int companyId)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
-            var ok = await mediator.Send(new UpdatePaymentTypeCommand(id, req, companyId));
-            return ok ? NoContent() : NotFound();
+            var command = new UpdatePaymentTypeCommand(req, companyId);
+            var result = await mediator.Send(command);
+            return Ok(new { Id = req.Id, Message = "Payment type updated" });
         }
 
-        [HttpDelete("[action]/{id}")]
-        public async Task<IActionResult> Delete(int id, [FromQuery] int companyId)
+        [HttpDelete("[action]")]
+        public async Task<ActionResult<PaymentTypeDto>> Delete([FromBody] int id, [FromQuery] int companyId)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
             var result = await mediator.Send(new DeletePaymentTypeCommand(id, companyId));

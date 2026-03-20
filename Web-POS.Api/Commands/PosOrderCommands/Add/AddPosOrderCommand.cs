@@ -13,8 +13,6 @@ namespace Products.Api.Commands.PosOrderCommands.Add
         {
             Request = request;
         }
-
-        // Nested Handler
         public class AddPosOrderCommandHandler : IRequestHandler<AddPosOrderCommand, PosOrderDto>
         {
             private readonly PosOrderService _service;
@@ -35,13 +33,11 @@ namespace Products.Api.Commands.PosOrderCommands.Add
                     Discount = newEntity.Discount,
                     DiscountType = newEntity.DiscountType,
                     Total = newEntity.Total,
-                    CustomerId = newEntity.CustomerId
-                    // UserName and CustomerName will be null here as they are not loaded on creation
+                    CustomerId = newEntity.CustomerId,
+                    ServiceType = newEntity.ServiceType
                 };
             }
         }
-
-        // Nested Validator
         public class AddPosOrderCommandValidator : AbstractValidator<AddPosOrderCommand>
         {
             public AddPosOrderCommandValidator()

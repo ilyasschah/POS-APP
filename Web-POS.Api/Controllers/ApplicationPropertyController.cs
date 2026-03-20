@@ -1,7 +1,6 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Products.Api.Commands.ApplicationPropertyCommands.Add;
-//using Products.Api.Commands.ApplicationPropertyCommands.Delete;
 using Products.Api.Commands.ApplicationPropertyCommands.Update;
 using Products.Api.Models;
 using Products.Api.Queries.ApplicationPropertyQuery;
@@ -20,40 +19,39 @@ namespace Products.Api.Controllers
             return Ok(result);
         }
 
-        [HttpGet("[action]/{name}")]
-        public async Task<ActionResult<ApplicationPropertyDto>> GetByName(string name, [FromQuery] int companyId)
+        [HttpGet("[action]/{id:int}")]
+        public async Task<ActionResult<ApplicationPropertyDto>> GetById(int id, [FromQuery] int companyId)
         {
             if (companyId <= 0) return BadRequest("Company ID is required");
-            return Ok(await mediator.Send(new GetApplicationPropertyByNameQuery(name, companyId)));
+            var result = await mediator.Send(new GetApplicationPropertyByIdQuery { Id = id, CompanyId = companyId });
+            if (result == null) return NotFound($"Application property with ID '{id}' not found");
+            return Ok(result);
+        }
+
+        [HttpGet("[action]")]
+        public async Task<ActionResult<ApplicationPropertyDto>> GetByName([FromQuery] string name, [FromQuery] int companyId)
+        {
+            if (companyId <= 0) return BadRequest("Company ID is required");
+            var result = await mediator.Send(new GetApplicationPropertyByNameQuery { Name = name, CompanyId = companyId });
+            if (result == null) return NotFound($"Application property with name '{name}' not found");
+            return Ok(result);
         }
 
         [HttpPost("[action]")]
-        public async Task<ActionResult<ApplicationPropertyDto>> Add([FromQuery] CreateApplicationPropertyRequest req, [FromQuery] int companyId)
+        public async Task<ActionResult<ApplicationPropertyDto>> Add([FromBody] CreateApplicationPropertyRequest request, [FromQuery] int companyId)
         {
             if (companyId <= 0) return BadRequest("Company ID is required");
-            var command = new AddApplicationPropertyCommand(req, companyId);
+            var command = new AddApplicationPropertyCommand(request, companyId);
             var result = await mediator.Send(command);
-            return Ok(new
-            { 
-                message = $"Application property {result.Name} added successfully",
-            });
+            return CreatedAtAction(nameof(GetById), new { id = result.Id, companyId = companyId }, result);
         }
 
         [HttpPut("[action]")]
-        public async Task<ActionResult<ApplicationPropertyDto>> Update([FromQuery] UpdateApplicationPropertyRequest req, [FromQuery] int companyId)
+        public async Task<ActionResult<bool>> Update([FromBody] UpdateApplicationPropertyRequest request, [FromQuery] int companyId)
         {
             if (companyId <= 0) return BadRequest("Company ID is required");
-            var result = await mediator.Send(new UpdateApplicationPropertyCommand(req, companyId));
-            return Ok(new
-            {
-                message = $"Application property {result.Name} updated successfully",
-            });
+            var result = await mediator.Send(new UpdateApplicationPropertyCommand(request, companyId));
+            return Ok(result);
         }
-
-        //[HttpDelete("[action]/{name}")]
-        //public async Task<IActionResult> Delete(string name, [FromQuery] int companyId)
-        
-        //    var ok = await mediator.Send(new DeleteApplicationPropertyCommand(name, companyId));
-        //    return ok ? NoContent() : NotFound();
     }
 }

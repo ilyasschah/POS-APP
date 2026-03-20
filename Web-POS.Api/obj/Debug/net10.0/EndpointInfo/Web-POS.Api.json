@@ -53,7 +53,55 @@
         }
       }
     },
-    "/api/ApplicationProperties/GetByName/{name}": {
+    "/api/ApplicationProperties/GetById/{id}": {
+      "get": {
+        "tags": [
+          "ApplicationProperties"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "companyId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPropertyDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPropertyDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPropertyDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ApplicationProperties/GetByName": {
       "get": {
         "tags": [
           "ApplicationProperties"
@@ -61,8 +109,7 @@
         "parameters": [
           {
             "name": "name",
-            "in": "path",
-            "required": true,
+            "in": "query",
             "schema": {
               "type": "string"
             }
@@ -107,21 +154,6 @@
         ],
         "parameters": [
           {
-            "name": "Name",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "Value",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "companyId",
             "in": "query",
             "schema": {
@@ -130,6 +162,25 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateApplicationPropertyRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateApplicationPropertyRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateApplicationPropertyRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "OK",
@@ -161,21 +212,6 @@
         ],
         "parameters": [
           {
-            "name": "Name",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "NewValue",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "companyId",
             "in": "query",
             "schema": {
@@ -184,23 +220,42 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateApplicationPropertyRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateApplicationPropertyRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateApplicationPropertyRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApplicationPropertyDto"
+                  "type": "boolean"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApplicationPropertyDto"
+                  "type": "boolean"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApplicationPropertyDto"
+                  "type": "boolean"
                 }
               }
             }
@@ -651,7 +706,7 @@
         }
       }
     },
-    "/api/Companies/UpdateDetails": {
+    "/api/Companies/Update": {
       "patch": {
         "tags": [
           "Companies"
@@ -4304,7 +4359,7 @@
         }
       }
     },
-    "/api/PaymentTypes/GetById/{id}": {
+    "/api/PaymentTypes/GetById": {
       "get": {
         "tags": [
           "PaymentTypes"
@@ -4312,8 +4367,7 @@
         "parameters": [
           {
             "name": "id",
-            "in": "path",
-            "required": true,
+            "in": "query",
             "schema": {
               "type": "integer",
               "format": "int32"
@@ -4352,7 +4406,7 @@
         }
       }
     },
-    "/api/PaymentTypes/GetByName/{name}": {
+    "/api/PaymentTypes/GetByName": {
       "get": {
         "tags": [
           "PaymentTypes"
@@ -4360,8 +4414,7 @@
         "parameters": [
           {
             "name": "name",
-            "in": "path",
-            "required": true,
+            "in": "query",
             "schema": {
               "type": "string"
             }
@@ -4457,21 +4510,12 @@
         }
       }
     },
-    "/api/PaymentTypes/Update/{id}": {
+    "/api/PaymentTypes/Update": {
       "patch": {
         "tags": [
           "PaymentTypes"
         ],
         "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
           {
             "name": "companyId",
             "in": "query",
@@ -4502,26 +4546,34 @@
         },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentTypeDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentTypeDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentTypeDto"
+                }
+              }
+            }
           }
         }
       }
     },
-    "/api/PaymentTypes/Delete/{id}": {
+    "/api/PaymentTypes/Delete": {
       "delete": {
         "tags": [
           "PaymentTypes"
         ],
         "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
           {
             "name": "companyId",
             "in": "query",
@@ -4531,9 +4583,48 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentTypeDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentTypeDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentTypeDto"
+                }
+              }
+            }
           }
         }
       }
@@ -5025,6 +5116,14 @@
           },
           {
             "name": "CustomerId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "ServiceType",
             "in": "query",
             "schema": {
               "type": "integer",
@@ -9326,6 +9425,16 @@
         "tags": [
           "Taxes"
         ],
+        "parameters": [
+          {
+            "name": "companyId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -9359,7 +9468,7 @@
         }
       }
     },
-    "/api/Taxes/{id}": {
+    "/api/Taxes/GetTaxById": {
       "get": {
         "tags": [
           "Taxes"
@@ -9367,63 +9476,15 @@
         "parameters": [
           {
             "name": "id",
-            "in": "path",
-            "required": true,
+            "in": "query",
             "schema": {
               "type": "integer",
               "format": "int32"
             }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "Taxes"
-        ],
-        "parameters": [
+          },
           {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": { }
-            },
-            "text/json": {
-              "schema": { }
-            },
-            "application/*+json": {
-              "schema": { }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Taxes"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
+            "name": "companyId",
+            "in": "query",
             "schema": {
               "type": "integer",
               "format": "int32"
@@ -9432,7 +9493,24 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxDto"
+                }
+              }
+            }
           }
         }
       }
@@ -9442,6 +9520,16 @@
         "tags": [
           "Taxes"
         ],
+        "parameters": [
+          {
+            "name": "companyId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -9478,6 +9566,111 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/TaxDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Taxes/UpdateTax": {
+      "put": {
+        "tags": [
+          "Taxes"
+        ],
+        "parameters": [
+          {
+            "name": "companyId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTaxRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTaxRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTaxRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Taxes/DeleteTax": {
+      "delete": {
+        "tags": [
+          "Taxes"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "companyId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "boolean"
                 }
               }
             }
@@ -9711,7 +9904,7 @@
         }
       }
     },
-    "/api/Users/GetAll": {
+    "/api/Users/GetAllUsers": {
       "get": {
         "tags": [
           "Users"
@@ -9759,7 +9952,7 @@
         }
       }
     },
-    "/api/Users/GetById/{id}": {
+    "/api/Users/GetUserById": {
       "get": {
         "tags": [
           "Users"
@@ -9767,8 +9960,7 @@
         "parameters": [
           {
             "name": "id",
-            "in": "path",
-            "required": true,
+            "in": "query",
             "schema": {
               "type": "integer",
               "format": "int32"
@@ -9807,7 +9999,7 @@
         }
       }
     },
-    "/api/Users/GetByUsername/{username}/{companyId}": {
+    "/api/Users/GetByUsername": {
       "get": {
         "tags": [
           "Users"
@@ -9815,8 +10007,7 @@
         "parameters": [
           {
             "name": "username",
-            "in": "path",
-            "required": true,
+            "in": "query",
             "schema": {
               "type": "string"
             }
@@ -9827,14 +10018,6 @@
             "schema": {
               "type": "integer",
               "format": "int32"
-            }
-          },
-          {
-            "name": "companyId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
             }
           }
         ],
@@ -9862,7 +10045,7 @@
         }
       }
     },
-    "/api/Users/Add/{id}": {
+    "/api/Users/Add": {
       "post": {
         "tags": [
           "Users"
@@ -9875,14 +10058,6 @@
               "type": "integer",
               "format": "int32"
             }
-          },
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
           }
         ],
         "requestBody": {
@@ -9928,21 +10103,12 @@
         }
       }
     },
-    "/api/Users/Update/{id}": {
-      "put": {
+    "/api/Users/UpdateUser": {
+      "patch": {
         "tags": [
           "Users"
         ],
         "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
           {
             "name": "companyId",
             "in": "query",
@@ -9973,12 +10139,29 @@
         },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              }
+            }
           }
         }
       }
     },
-    "/api/Users/Delete/{id}": {
+    "/api/Users/Delete": {
       "delete": {
         "tags": [
           "Users"
@@ -9986,8 +10169,7 @@
         "parameters": [
           {
             "name": "id",
-            "in": "path",
-            "required": true,
+            "in": "query",
             "schema": {
               "type": "integer",
               "format": "int32"
@@ -10004,7 +10186,24 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
           }
         }
       }
@@ -10285,7 +10484,7 @@
         }
       }
     },
-    "/api/Warehouses/GetById/{id}": {
+    "/api/Warehouses/GetById": {
       "get": {
         "tags": [
           "Warehouses"
@@ -10293,8 +10492,7 @@
         "parameters": [
           {
             "name": "id",
-            "in": "path",
-            "required": true,
+            "in": "query",
             "schema": {
               "type": "integer",
               "format": "int32"
@@ -10384,6 +10582,125 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/WarehouseDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Warehouses/Update": {
+      "put": {
+        "tags": [
+          "Warehouses"
+        ],
+        "parameters": [
+          {
+            "name": "companyId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWarehouseRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWarehouseRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWarehouseRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/WarehouseDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WarehouseDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WarehouseDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Warehouses/Delete": {
+      "delete": {
+        "tags": [
+          "Warehouses"
+        ],
+        "parameters": [
+          {
+            "name": "companyId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "boolean"
                 }
               }
             }
@@ -10523,6 +10840,10 @@
       "ApplicationPropertyDto": {
         "type": "object",
         "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
           "name": {
             "type": "string",
             "nullable": true
@@ -10531,9 +10852,9 @@
             "type": "string",
             "nullable": true
           },
-          "companyId": {
-            "type": "integer",
-            "format": "int32"
+          "companyName": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -10578,6 +10899,10 @@
           "name": {
             "type": "string",
             "nullable": true
+          },
+          "countryId": {
+            "type": "integer",
+            "format": "int32"
           },
           "countryName": {
             "type": "string",
@@ -10645,11 +10970,33 @@
       "CountryDto": {
         "type": "object",
         "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
           "name": {
             "type": "string",
             "nullable": true
           },
           "code": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateApplicationPropertyRequest": {
+        "required": [
+          "name",
+          "value"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "value": {
             "type": "string",
             "nullable": true
           }
@@ -11204,6 +11551,10 @@
             "type": "integer",
             "format": "int32",
             "nullable": true
+          },
+          "serviceType": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -11428,10 +11779,6 @@
           "email": {
             "type": "string",
             "nullable": true
-          },
-          "companyId": {
-            "type": "integer",
-            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -11445,10 +11792,6 @@
           "name": {
             "type": "string",
             "nullable": true
-          },
-          "companyId": {
-            "type": "integer",
-            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -12133,6 +12476,10 @@
             "type": "integer",
             "format": "int32"
           },
+          "companyName": {
+            "type": "string",
+            "nullable": true
+          },
           "name": {
             "type": "string",
             "nullable": true
@@ -12216,6 +12563,10 @@
           "customerName": {
             "type": "string",
             "nullable": true
+          },
+          "serviceType": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -12936,6 +13287,10 @@
       "TaxDto": {
         "type": "object",
         "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
           "name": {
             "type": "string",
             "nullable": true
@@ -12960,6 +13315,10 @@
           "isEnabled": {
             "type": "boolean",
             "nullable": true
+          },
+          "companyName": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -12976,6 +13335,24 @@
             "nullable": true
           },
           "value": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateApplicationPropertyRequest": {
+        "required": [
+          "id",
+          "newValue"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "newValue": {
             "type": "string",
             "nullable": true
           }
@@ -13174,6 +13551,10 @@
       "UpdatePaymentTypeRequest": {
         "type": "object",
         "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
           "name": {
             "type": "string",
             "nullable": true
@@ -13182,37 +13563,46 @@
             "type": "string",
             "nullable": true
           },
-          "isCustomerRequired": {
-            "type": "boolean"
-          },
-          "isFiscal": {
-            "type": "boolean"
-          },
-          "isSlipRequired": {
-            "type": "boolean"
-          },
-          "isChangeAllowed": {
-            "type": "boolean"
-          },
-          "ordinal": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "isEnabled": {
-            "type": "boolean"
-          },
-          "isQuickPayment": {
-            "type": "boolean"
-          },
-          "openCashDrawer": {
-            "type": "boolean"
-          },
           "shortcutKey": {
             "type": "string",
             "nullable": true
           },
+          "isCustomerRequired": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "isFiscal": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "isSlipRequired": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "isChangeAllowed": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "ordinal": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "isEnabled": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "isQuickPayment": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "openCashDrawer": {
+            "type": "boolean",
+            "nullable": true
+          },
           "markAsPaid": {
-            "type": "boolean"
+            "type": "boolean",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -13344,10 +13734,44 @@
         },
         "additionalProperties": false
       },
-      "UpdateUserRequest": {
+      "UpdateTaxRequestDto": {
         "required": [
           "id",
-          "username"
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "rate": {
+            "type": "number",
+            "format": "double"
+          },
+          "code": {
+            "type": "string",
+            "nullable": true
+          },
+          "isFixed": {
+            "type": "boolean"
+          },
+          "isTaxOnTotal": {
+            "type": "boolean"
+          },
+          "isEnabled": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateUserRequest": {
+        "required": [
+          "id"
         ],
         "type": "object",
         "properties": {
@@ -13369,18 +13793,34 @@
           },
           "accessLevel": {
             "type": "integer",
-            "format": "int32"
+            "format": "int32",
+            "nullable": true
           },
           "isEnabled": {
-            "type": "boolean"
+            "type": "boolean",
+            "nullable": true
           },
           "email": {
             "type": "string",
             "nullable": true
-          },
-          "companyId": {
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateWarehouseRequest": {
+        "required": [
+          "id",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
             "type": "integer",
             "format": "int32"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -13414,10 +13854,6 @@
           "email": {
             "type": "string",
             "nullable": true
-          },
-          "companyId": {
-            "type": "integer",
-            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -13447,13 +13883,17 @@
       "WarehouseDto": {
         "type": "object",
         "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
           "name": {
             "type": "string",
             "nullable": true
           },
-          "companyId": {
-            "type": "integer",
-            "format": "int32"
+          "companyName": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

@@ -11,15 +11,12 @@ namespace Products.Api.Controllers
     public class CustomerController(IMediator mediator) : ControllerBase
     {
         [HttpGet("[action]")]
-        public async Task<ActionResult<List<CustomerDto>>> GetAllCustomers([FromQuery] int companyId)
+        public async Task<ActionResult<List<CustomerDto>>> GetAllCustomers(int companyId)
         {
-            if (companyId == 0)
-                return BadRequest("Company ID is required");
-
+            if (companyId == 0)return BadRequest("Company ID is required");
             return Ok (await mediator.Send(new GetAllCustomersQuery { CompanyId = companyId }));
             
         }
-        //POST: api/barcodes
         [HttpPost("[action]")]
         public async Task<ActionResult<CustomerDto>> AddCustomercommand([FromBody] CreateCustomerRequest createrequest, [FromQuery] int companyId)
         {

@@ -15,6 +15,8 @@ namespace Products.Api.Domain
         public int DiscountType { get; set; }
         public decimal? Total { get; set; }
         public int? CustomerId { get; set; }
+        public int ServiceType { get; set; }
+
         [ForeignKey(nameof(UserId))]
         public virtual User User { get; set; }
 
@@ -22,7 +24,8 @@ namespace Products.Api.Domain
         public virtual Customer? Customer { get; set; }
 
         public PosOrder() { }
-        private PosOrder(int userId, string number, decimal discount, int discountType, decimal? total, int? customerId)
+
+        private PosOrder(int userId, string number, decimal discount, int discountType, decimal? total, int? customerId, int serviceType)
         {
             UserId = userId;
             Number = number;
@@ -30,15 +33,16 @@ namespace Products.Api.Domain
             DiscountType = discountType;
             Total = total;
             CustomerId = customerId;
+            ServiceType = serviceType;
         }
-        public static PosOrder Create(int userId, string number, decimal discount, int discountType, decimal? total, int? customerId)
+        public static PosOrder Create(int userId, string number, decimal discount, int discountType, decimal? total, int? customerId, int serviceType)
         {
             if (userId <= 0) throw new ArgumentException("User ID must be valid.", nameof(userId));
             if (string.IsNullOrWhiteSpace(number)) throw new ArgumentException("Order number cannot be empty.", nameof(number));
-            return new PosOrder(userId, number, discount, discountType, total, customerId);
-        }
 
-        public void Update(int userId, string number, decimal discount, int discountType, decimal? total, int? customerId)
+            return new PosOrder(userId, number, discount, discountType, total, customerId, serviceType);
+        }
+        public void Update(int userId, string number, decimal discount, int discountType, decimal? total, int? customerId, int serviceType)
         {
             if (userId <= 0) throw new ArgumentException("User ID must be valid.", nameof(userId));
             if (string.IsNullOrWhiteSpace(number)) throw new ArgumentException("Order number cannot be empty.", nameof(number));
@@ -49,6 +53,7 @@ namespace Products.Api.Domain
             DiscountType = discountType;
             Total = total;
             CustomerId = customerId;
+            ServiceType = serviceType;
         }
     }
 }

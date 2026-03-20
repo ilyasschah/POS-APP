@@ -25,4 +25,10 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Commands\ApplicationPropertyCommands\Delete\" />
+    <Folder Include="Commands\TaxesCommands\NewFolder1\" />
+    <Folder Include="Commands\TaxesCommands\NewFolder\" />
+  </ItemGroup>
+
 </Project>

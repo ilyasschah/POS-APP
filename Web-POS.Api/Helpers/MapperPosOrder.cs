@@ -17,7 +17,8 @@ namespace Products.Api.Helpers
                 Total = entity.Total,
                 CustomerId = entity.CustomerId,
                 UserName = entity.User?.Username ?? "N/A",
-                CustomerName = entity.Customer?.Name ?? "N/A"
+                CustomerName = entity.Customer?.Name ?? "N/A",
+                ServiceType = entity.ServiceType
             };
         }
     }

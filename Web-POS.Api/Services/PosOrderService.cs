@@ -17,7 +17,7 @@ namespace Products.Api.Services
             if (await _repository.ExistsAsync(req.Number))
                 throw new InvalidOperationException($"An order with number '{req.Number}' already exists.");
 
-            var newEntity = PosOrder.Create(req.UserId, req.Number, req.Discount, req.DiscountType, req.Total, req.CustomerId);
+            var newEntity = PosOrder.Create(req.UserId, req.Number, req.Discount, req.DiscountType, req.Total, req.CustomerId, req.ServiceType);
 
             await _repository.AddAsync(newEntity);
             return newEntity;
@@ -29,7 +29,7 @@ namespace Products.Api.Services
             if (entity == null)
                 throw new InvalidOperationException($"A PosOrder with the ID '{id}' does not exist.");
 
-            entity.Update(req.UserId, req.Number, req.Discount, req.DiscountType, req.Total, req.CustomerId);
+            entity.Update(req.UserId, req.Number, req.Discount, req.DiscountType, req.Total, req.CustomerId, req.ServiceType);
 
             await _repository.UpdateAsync(entity);
             return true;

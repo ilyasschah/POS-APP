@@ -1,15 +1,14 @@
-﻿using Products.Api.Helpers;
+﻿using FluentValidation;
+using MediatR;
 using Products.Api.Models;
 using Products.Api.Services;
-using FluentValidation;
-using MediatR;
 
 namespace Products.Api.Commands.ApplicationPropertyCommands.Add
 {
     public class AddApplicationPropertyCommand : IRequest<ApplicationPropertyDto>
     {
-        public CreateApplicationPropertyRequest Request { get; }
-        public int CompanyId { get; }
+        public CreateApplicationPropertyRequest Request { get; set; }
+        public int CompanyId { get; set; }
 
         public AddApplicationPropertyCommand(CreateApplicationPropertyRequest request, int companyId)
         {
@@ -28,16 +27,17 @@ namespace Products.Api.Commands.ApplicationPropertyCommands.Add
 
             public async Task<ApplicationPropertyDto> Handle(AddApplicationPropertyCommand command, CancellationToken cancellationToken)
             {
-                var newentity = await _service.Create(command.Request, command.CompanyId);
-                return newentity;
+                return await _service.CreateAsync(command.Request, command.CompanyId);
             }
         }
+
         public class AddApplicationPropertyCommandValidator : AbstractValidator<AddApplicationPropertyCommand>
         {
             public AddApplicationPropertyCommandValidator()
             {
-                RuleFor(o => o.Request.Name).NotNull().NotEmpty().WithMessage("Property Name must not be null.");
-                RuleFor(o => o.Request.Value).NotNull().NotEmpty().WithMessage("Property Value must not be null.");
+                RuleFor(o => o.Request.Name).NotNull().NotEmpty().WithMessage("Property Name must not be empty.");
+                RuleFor(o => o.Request.Value).NotNull().NotEmpty().WithMessage("Property Value must not be empty.");
+                RuleFor(o => o.CompanyId).GreaterThan(0).WithMessage("Company ID must be valid.");
             }
         }
     }

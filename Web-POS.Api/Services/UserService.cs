@@ -6,57 +6,69 @@ namespace Products.Api.Services
 {
     public class UserService
     {
-        public readonly UserRepository _repository;
+        public readonly UserRepository _userrepository;
+        public readonly CompanyRepository _companyRepository;
 
-        public UserService(UserRepository repository)
+        public UserService(UserRepository Userrepository, CompanyRepository companyRepository)
         {
-            _repository = repository;
+            _userrepository = Userrepository;
+            _companyRepository = companyRepository;
         }
         
-        public async Task<User> Create(CreateUserRequest req, int companyId)
+        public async Task<UserDto> CreateAsync(CreateUserRequest req, int companyId)
         {
-            if (await _repository.ExistsAsync(req.Username, companyId))
+            if (await _userrepository.ExistsAsync(req.Username, companyId))
                 throw new InvalidOperationException($"A User with the username '{req.Username}' already exists.");
             var entity = User.Create(
-                username: req.Username,
-                password: req.Password,
-                companyId: companyId
+                companyId,
+                req.FirstName,
+                req.LastName,
+                req.Username,
+                req.Password,
+                req.AccessLevel,
+                req.IsEnabled,
+                req.Email
             );
-            entity.CompanyId = companyId;
-            await _repository.AddAsync(entity);
-            return entity;
+            await _userrepository.AddAsync(entity);
+            return new UserDto
+            {
+                Id = entity.Id,
+                FirstName = entity.FirstName,
+                LastName = entity.LastName,
+                Username = entity.Username,
+                AccessLevel = entity.AccessLevel,
+                IsEnabled = entity.IsEnabled,
+                Email = entity.Email
+            };
         }
 
-        public async Task<bool> Update(int id, UpdateUserRequest req, int companyId)
+        public async Task<bool> Update(UpdateUserRequest req, int companyId)
         {
-            var entity = await _repository.GetByIdAsync(id, companyId, trackEntity: true);
+            var entity = await _userrepository.GetByIdAsync(req.Id, companyId);
             if (entity == null) return false;
-            if (!string.IsNullOrWhiteSpace(req.Username))
+            if (!string.IsNullOrWhiteSpace(req.Username) && req.Username != entity.Username)
             {
-                var existsUsername = await _repository.GetByUsernameAsync(req.Username, companyId);
-                if (existsUsername != null && existsUsername.Id != id)
-                    throw new InvalidOperationException($"Another User with the username '{req.Username}' already exists.");
+                var existsUsername = await _userrepository.GetByUsernameAsync(req.Username, companyId);
+                if (existsUsername != null && existsUsername.Id != req.Id)
+                        throw new InvalidOperationException($"Another User with the username '{req.Username}' already exists.");
             }
-            entity.Update(
-                companyId: companyId,
-                username: req.Username,
-                firstName: req.FirstName,
-                lastName: req.LastName,
-                accessLevel: req.AccessLevel,
-                isEnabled: req.IsEnabled,
-                email: req.Email
-            );
+            entity.Username = req.Username ?? entity.Username;
+            entity.FirstName = req.FirstName ?? entity.FirstName;
+            entity.LastName = req.LastName ?? entity.LastName;
+            entity.AccessLevel = req.AccessLevel ?? entity.AccessLevel;
+            entity.IsEnabled = req.IsEnabled ?? entity.IsEnabled;
+            entity.Email = req.Email ?? entity.Email;
 
-            await _repository.UpdateAsync(entity);
+            await _userrepository.UpdateAsync(entity);
+
             return true;
         }
 
         public async Task<bool> Delete(int id, int companyId)
         {
-            var entity = await _repository.GetByIdAsync(id, companyId);
+            var entity = await _userrepository.GetByIdAsync(id, companyId);
             if (entity == null) return false;
-
-            await _repository.DeleteAsync(entity);
+            await _userrepository.DeleteAsync(entity.Id, companyId);
             return true;
         }
     }

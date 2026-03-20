@@ -1,6 +1,5 @@
 namespace Products.Api.Models
 {
-    
     public class PosOrderDto
     {
         public int Id { get; set; }
@@ -12,6 +11,7 @@ namespace Products.Api.Models
         public decimal? Total { get; set; }
         public int? CustomerId { get; set; }
         public string? CustomerName { get; set; }
+        public int ServiceType { get; set; }
     }
 
     public class CreatePosOrderRequest
@@ -22,6 +22,7 @@ namespace Products.Api.Models
         public int DiscountType { get; set; }
         public decimal? Total { get; set; }
         public int? CustomerId { get; set; }
+        public int ServiceType { get; set; }
     }
 
     public class UpdatePosOrderRequest
@@ -32,5 +33,6 @@ namespace Products.Api.Models
         public int DiscountType { get; set; }
         public decimal? Total { get; set; }
         public int? CustomerId { get; set; }
+        public int ServiceType { get; set; }
     }
 }

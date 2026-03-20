@@ -22,15 +22,26 @@ namespace Products.Api.Domain
         public string? ShortcutKey { get; set; }
         public bool MarkAsPaid { get; set; }
 
+        [ForeignKey(nameof(CompanyId))]
+        public virtual Company Company { get; private set; }
 
-        public PaymentType() { }
-        private PaymentType(string name, string? code, 
-            bool iscustomerrequired, bool isfiscal, 
-            bool issliprequired, bool ischnageallowed, 
-            int ordinal, bool isenabled, 
-            bool isquickpayment, bool opencashdrawer, 
-            string? shortcutkey, bool markaspaid)
+        
+        private PaymentType(
+            int companyId,
+            string name, 
+            string? code, 
+            bool iscustomerrequired, 
+            bool isfiscal, 
+            bool issliprequired, 
+            bool ischnageallowed, 
+            int ordinal, 
+            bool isenabled, 
+            bool isquickpayment, 
+            bool opencashdrawer, 
+            string? shortcutkey, 
+            bool markaspaid)
         {
+            CompanyId = companyId;
             Name = name;
             Code = code;
             IsCustomerRequired = iscustomerrequired;
@@ -44,7 +55,9 @@ namespace Products.Api.Domain
             ShortcutKey = shortcutkey;
             MarkAsPaid = markaspaid;
         }
+        public PaymentType() { }
         public static PaymentType Create(
+            int companyId,
             string name, 
             string? code,
             bool iscustomerrequired, 
@@ -57,7 +70,7 @@ namespace Products.Api.Domain
             bool opencashdrawer, 
             string? shortcutkey, 
             bool markaspaid)
-            => new(name, code, iscustomerrequired, isfiscal, issliprequired, ischnageallowed, 
+            => new(companyId,name, code, iscustomerrequired, isfiscal, issliprequired, ischnageallowed, 
                 ordinal, isenabled, isquickpayment, opencashdrawer, shortcutkey, markaspaid);
 
         public void Update(

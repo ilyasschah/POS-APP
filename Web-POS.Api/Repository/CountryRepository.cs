@@ -16,14 +16,6 @@ namespace Products.Api.Repository
                 .ToListAsync();
         }
 
-        // Backwards-compatible non-scoped overload
-        public async Task<List<Country>> GetAllCountries()
-        {
-            return await _db.Countries
-                .AsNoTracking()
-                .ToListAsync();
-        }
-
         public async Task<Country?> GetCountryId_byCompanyQuery(int id, int companyId)
         {
             return await _db.Countries
@@ -41,11 +33,6 @@ namespace Products.Api.Repository
         public bool Exists(string name, int companyId)
         {
             return _db.Countries.Any(c => c.Name == name && c.CompanyId == companyId);
-        }
-
-        public bool Exists(string name)
-        {
-            return _db.Countries.Any(c => c.Name == name);
         }
 
         public async Task Add(Country newCountry)

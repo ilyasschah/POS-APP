@@ -1,5 +1,4 @@
-// FILE: Products.Api.Queries\UserQuery\GetUserByUsernameQuery.cs
-
+using FluentValidation;
 using MediatR;
 using Products.Api.Helpers;
 using Products.Api.Models;
@@ -26,6 +25,14 @@ public class GetUserByUsernameQuery : IRequest<UserDto?>
         {
             var entity = await _repository.GetByUsernameAsync(request.Username, request.CompanyId);
             return entity == null ? null : MapperUser.MapToUserDto(entity);
+        }
+    }
+    public class GetUserByUsernameQueryValidator : AbstractValidator<GetUserByUsernameQuery>
+    {
+        public GetUserByUsernameQueryValidator()
+        {
+            RuleFor(x => x.Username).NotEmpty().WithMessage("Username must not be empty.");
+            RuleFor(x => x.CompanyId).GreaterThan(0).WithMessage("Company ID must be valid.");
         }
     }
 }

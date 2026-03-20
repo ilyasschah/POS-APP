@@ -1,5 +1,4 @@
-// FILE: Products.Api.Queries\UserQuery\GetAllUsersQuery.cs
-
+using FluentValidation;
 using MediatR;
 using Products.Api.Helpers;
 using Products.Api.Models;
@@ -24,6 +23,13 @@ public class GetAllUsersQuery : IRequest<List<UserDto>>
         {
             var entities = await _repository.GetAllAsync(request.CompanyId);
             return entities.Select(MapperUser.MapToUserDto).ToList();
+        }
+    }
+    public class GetAllUsersQueryValidator : AbstractValidator<GetAllUsersQuery>
+    {
+        public GetAllUsersQueryValidator()
+        {
+            RuleFor(x => x.CompanyId).GreaterThan(0).WithMessage("Company ID must be valid.");
         }
     }
 }

@@ -10,6 +10,7 @@ namespace Products.Api.Helpers
             return new PaymentTypeDto
             {
                 Id = entity.Id,
+                CompanyName = entity.Company?.Name,
                 Name = entity.Name,
                 Code = entity.Code,
                 IsCustomerRequired = entity.IsCustomerRequired,

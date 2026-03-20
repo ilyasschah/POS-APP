@@ -1,3 +1,4 @@
+using FluentValidation;
 using MediatR;
 using Products.Api.Services;
 
@@ -23,9 +24,17 @@ public class DeleteUserCommand : IRequest<bool>
             _service = service;
         }
 
-        public Task<bool> Handle(DeleteUserCommand request, CancellationToken cancellationToken)
+        public async Task<bool> Handle(DeleteUserCommand request, CancellationToken cancellationToken)
         {
-            return _service.Delete(request.Id, request.CompanyId);
+            return await _service.Delete(request.Id, request.CompanyId);
+        }
+    }
+    public class DeleteUserCommandValidator : AbstractValidator<DeleteUserCommand>
+    {
+        public DeleteUserCommandValidator()
+        {
+            RuleFor(c => c.Id).GreaterThan(0).WithMessage("Id must be valid.");
+            RuleFor(c => c.CompanyId).GreaterThan(0).WithMessage("CompanyId must be valid.");
         }
     }
 }

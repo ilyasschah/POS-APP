@@ -15,9 +15,8 @@ namespace Products.Api.Services
             var cexists = _countryRepository.Exists(name, companyId);
             if (cexists == true)
                 throw new ArgumentException("Country already exists.", nameof(name));
-            var newcurreency = Country.Create(name, code);
-            newcurreency.CompanyId = companyId;
-            await _countryRepository.Add(newcurreency);
+            var newcountry = Country.Create(companyId, name, code);
+            await _countryRepository.Add(newcountry);
             return true;
         }
 

@@ -20,8 +20,6 @@ public class PosOrderRepository
         .Include(o => o.Customer)
         .ToListAsync();
     }
-
-    // Backwards-compatible non-scoped overload
     public async Task<List<PosOrder>> GetAllAsync()
     {
         return await _db.PosOrders

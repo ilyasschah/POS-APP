@@ -3,37 +3,36 @@ using MediatR;
 using Products.Api.Models;
 using Products.Api.Services;
 
-namespace Products.Api.Commands.CompanyCommands.Update;
-
-public class UpdateCompanyCommand : IRequest<CompanyDto>
+namespace Products.Api.Commands.CompanyCommands.Update
 {
-    public UpdateCompanyRequest Request { get; set; }
+    public class UpdateCompanyCommand : IRequest<CompanyDto>
+    {
+        public UpdateCompanyRequest Request { get; }
 
-    public UpdateCompanyCommand(UpdateCompanyRequest request)
-    {
-        Request = request;
-    }
-    public class UpdateCompanyCommandHandler : IRequestHandler<UpdateCompanyCommand, CompanyDto>
-    {
-        private readonly CompanyService _service;
+        public UpdateCompanyCommand(UpdateCompanyRequest request)
+        {
+            Request = request;
+        }
 
-        public UpdateCompanyCommandHandler(CompanyService service)
+        public class UpdateCompanyCommandHandler : IRequestHandler<UpdateCompanyCommand, CompanyDto>
         {
-            _service = service;
+            private readonly CompanyService _service;
+
+            public UpdateCompanyCommandHandler(CompanyService service) => _service = service;
+
+            public Task<CompanyDto> Handle(UpdateCompanyCommand command, CancellationToken cancellationToken)
+            {
+                return _service.Update_DetailsAsync(command.Request);
+            }
         }
-        public async Task<CompanyDto> Handle(UpdateCompanyCommand request, CancellationToken cancellationToken)
+        public class UpdateCompanyCommandValidator : AbstractValidator<UpdateCompanyCommand>
         {
-            var updatedEntity = await _service.Update_DetailsAsync(request.Request);
-            return updatedEntity;
-        }
-    }
-    public class UpdateCompanyCommandValidator : AbstractValidator<UpdateCompanyCommand>
-    {
-        public UpdateCompanyCommandValidator()
-        {
-            RuleFor(c => c.Request.Id).NotNull().NotEmpty().WithMessage("Id must not be empty.");
-            RuleFor(c => c.Request.Name).NotNull().NotEmpty().WithMessage("Name must not be empty.");
-            RuleFor(c => c.Request.CountryId).NotNull().NotEmpty().WithMessage("CountryId must not be empty.");
+            public UpdateCompanyCommandValidator()
+            {
+                RuleFor(c => c.Request.Id).GreaterThan(0).WithMessage("Company ID must be valid.");
+                RuleFor(c => c.Request.Name).NotEmpty().WithMessage("Company Name cannot be empty.");
+                RuleFor(c => c.Request.CountryId).GreaterThan(0).WithMessage("Country ID must be valid.");
+            }
         }
     }
 }

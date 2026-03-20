@@ -1,37 +1,50 @@
 using Products.Api.Domain;
-using Products.Api.Helpers;
 using Products.Api.Models;
 using Products.Api.Repository;
-using System.Net;
 
 namespace Products.Api.Services;
 
 public class CompanyService
 {
-    public readonly CompanyRepository _repository;
+    public readonly CompanyRepository _companyRepository;
     public readonly CountryRepository _countryRepository;
 
-    public CompanyService(CompanyRepository repository, CountryRepository countryRepository)
+    public CompanyService(CompanyRepository companyRepository, CountryRepository countryRepository)
     {
-        _repository = repository;
+        _companyRepository = companyRepository;
         _countryRepository = countryRepository;
     }
 
     public async Task<CompanyDto> Create(CreateCompanyRequest req)
     {
-        if (await _repository.GetByNameAsync(req.Name) != null)
+        if (await _companyRepository.GetByNameAsync(req.Name) != null)
             throw new InvalidOperationException($"A Company with the name '{req.Name}' already exists.");
-        
+
         var newEntity = Company.Create(
             req.Name,
-            req.CountryId
+            req.CountryId,
+            req.Address,
+            req.PostalCode,
+            req.City,
+            req.TaxNumber,
+            req.Email,
+            req.PhoneNumber,
+            req.BankAccountNumber,
+            req.BankDetails,
+            req.StreetName,
+            req.AdditionalStreetName,
+            req.BuildingNumber,
+            req.PlotIdentification,
+            req.CitySubdivisionName,
+            req.CountrySubentity
         );
-        await _repository.AddAsync(newEntity);
-        return new CompanyDto
+
+        await _companyRepository.AddAsync(newEntity);
+        return  new CompanyDto
         {
             Id = newEntity.Id,
             Name = newEntity.Name,
-            CountryName = newEntity.Country.Name,
+            CountryName = (await _countryRepository.GetCountryIdQuery(newEntity.CountryId))?.Name,
             Address = newEntity.Address,
             PostalCode = newEntity.PostalCode,
             City = newEntity.City,
@@ -51,35 +64,38 @@ public class CompanyService
 
     public async Task<CompanyDto> Update_DetailsAsync(UpdateCompanyRequest req)
     {
-        var entityToUpdate = await _repository.GetByIdAsync(req.Id);
+        var entityToUpdate = await _companyRepository.GetByIdAsync(req.Id);
         if (entityToUpdate == null)
             throw new InvalidOperationException($"A Company with the ID '{req.Id}' does not exist.");
-        if (await _repository.GetByNameAsync(req.Name) != null)
+        var existingName = await _companyRepository.GetByNameAsync(req.Name);
+        if (existingName != null && existingName.Id != req.Id)
             throw new InvalidOperationException($"A Company with the name '{req.Name}' already exists.");
         entityToUpdate.UpdateDetails(
-            req.Name,
+            req.Name, 
             req.CountryId,
-            req.Address,
-            req.PostalCode,
-            req.City,
-            req.TaxNumber,
-            req.Email,
-            req.PhoneNumber,
-            req.BankAccountNumber,
-            req.BankDetails,
-            req.StreetName,
-            req.AdditionalStreetName,
-            req.BuildingNumber,
-            req.PlotIdentification,
-            req.CitySubdivisionName,
-            req.CountrySubentity);
+            req.Address ?? entityToUpdate.Address,
+            req.PostalCode ?? entityToUpdate.PostalCode,
+            req.City ?? entityToUpdate.City,
+            req.TaxNumber ?? entityToUpdate.TaxNumber,
+            req.Email ?? entityToUpdate.Email,
+            req.PhoneNumber ?? entityToUpdate.PhoneNumber,
+            req.BankAccountNumber ?? entityToUpdate.BankAccountNumber,
+            req.BankDetails ?? entityToUpdate.BankDetails,
+            req.StreetName ?? entityToUpdate.StreetName,
+            req.AdditionalStreetName ?? entityToUpdate.AdditionalStreetName,
+            req.BuildingNumber ?? entityToUpdate.BuildingNumber,
+            req.PlotIdentification ?? entityToUpdate.PlotIdentification,
+            req.CitySubdivisionName ?? entityToUpdate.CitySubdivisionName,
+            req.CountrySubentity ?? entityToUpdate.CountrySubentity
+        );
 
-        await _repository.UpdateAsync(entityToUpdate);
+        await _companyRepository.UpdateAsync(entityToUpdate);
+
         return new CompanyDto
         {
             Id = entityToUpdate.Id,
             Name = entityToUpdate.Name,
-            CountryName = entityToUpdate.Country.Name,
+            CountryName = (await _countryRepository.GetCountryIdQuery(entityToUpdate.CountryId))?.Name,
             Address = entityToUpdate.Address,
             PostalCode = entityToUpdate.PostalCode,
             City = entityToUpdate.City,
@@ -98,21 +114,21 @@ public class CompanyService
     }
     public async Task<bool> Update_LogoAsync(UpdateCompanyLogoRequest req)
     {
-        var entityToUpdate = await _repository.GetByIdAsync(req.Id);
+        var entityToUpdate = await _companyRepository.GetByIdAsync(req.Id);
         if (entityToUpdate == null)
             throw new InvalidOperationException($"A Company with the ID '{req.Id}' does not exist.");
         entityToUpdate.UpdateLogo(req.Logo);
-        await _repository.UpdateAsync(entityToUpdate);
+        await _companyRepository.UpdateAsync(entityToUpdate);
         return true;
     }
 
     public async Task<bool> DeleteAsync(int id)
     {
-        var entityToDelete = await _repository.GetByIdAsync(id);
+        var entityToDelete = await _companyRepository.GetByIdAsync(id);
         if (entityToDelete == null)
             throw new InvalidOperationException($"A Company with the ID '{id}' does not exist.");
 
-        await _repository.DeleteAsync(entityToDelete);
+        await _companyRepository.DeleteAsync(entityToDelete);
         return true;
     }
 }

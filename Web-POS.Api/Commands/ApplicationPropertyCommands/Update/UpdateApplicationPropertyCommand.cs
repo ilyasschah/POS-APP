@@ -1,14 +1,14 @@
-﻿using Products.Api.Models;
-using Products.Api.Services;
-using FluentValidation;
+﻿using FluentValidation;
 using MediatR;
+using Products.Api.Models;
+using Products.Api.Services;
 
 namespace Products.Api.Commands.ApplicationPropertyCommands.Update
 {
-    public class UpdateApplicationPropertyCommand : IRequest<ApplicationPropertyDto>
+    public class UpdateApplicationPropertyCommand : IRequest<bool>
     {
-        public UpdateApplicationPropertyRequest Request { get; }
-        public int CompanyId { get; }
+        public UpdateApplicationPropertyRequest Request { get; set; }
+        public int CompanyId { get; set; }
 
         public UpdateApplicationPropertyCommand(UpdateApplicationPropertyRequest request, int companyId)
         {
@@ -16,8 +16,7 @@ namespace Products.Api.Commands.ApplicationPropertyCommands.Update
             CompanyId = companyId;
         }
 
-        public class UpdateApplicationPropertyCommandHandler
-            : IRequestHandler<UpdateApplicationPropertyCommand, ApplicationPropertyDto>
+        public class UpdateApplicationPropertyCommandHandler : IRequestHandler<UpdateApplicationPropertyCommand, bool>
         {
             private readonly ApplicationPropertyService _service;
 
@@ -26,9 +25,9 @@ namespace Products.Api.Commands.ApplicationPropertyCommands.Update
                 _service = service;
             }
 
-            public Task<ApplicationPropertyDto> Handle(UpdateApplicationPropertyCommand command, CancellationToken cancellationToken)
+            public async Task<bool> Handle(UpdateApplicationPropertyCommand command, CancellationToken cancellationToken)
             {
-                return _service.UpdateValue(command.Request, command.CompanyId);
+                return await _service.UpdateValueAsync(command.Request, command.CompanyId);
             }
         }
 
@@ -36,10 +35,9 @@ namespace Products.Api.Commands.ApplicationPropertyCommands.Update
         {
             public UpdateApplicationPropertyCommandValidator()
             {
-                RuleFor(cmd => cmd.Request.NewValue)
-                    .NotNull()
-                    .NotEmpty()
-                    .WithMessage("New value must not be null or empty.");
+                RuleFor(cmd => cmd.Request.Id).GreaterThan(0).WithMessage("Property ID must be valid.");
+                RuleFor(cmd => cmd.Request.NewValue).NotNull().NotEmpty().WithMessage("New value must not be empty.");
+                RuleFor(cmd => cmd.CompanyId).GreaterThan(0).WithMessage("Company ID must be valid.");
             }
         }
     }

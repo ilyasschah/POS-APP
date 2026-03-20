@@ -1,6 +1,5 @@
 using FluentValidation;
 using MediatR;
-using Products.Api.Helpers;
 using Products.Api.Models;
 using Products.Api.Services;
 
@@ -28,8 +27,7 @@ public class AddUserCommand : IRequest<UserDto>
 
         public async Task<UserDto> Handle(AddUserCommand request, CancellationToken cancellationToken)
         {
-            var entity = await _service.Create(request.Request, request.CompanyId);
-            return MapperUser.MapToUserDto(entity);
+            return await _service.CreateAsync(request.Request, request.CompanyId);
         }
     }
 

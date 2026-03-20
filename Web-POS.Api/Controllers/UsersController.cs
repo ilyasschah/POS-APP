@@ -1,10 +1,11 @@
 using MediatR;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
-using Products.Api.Models;
 using Products.Api.Commands.UserCommands.Add;
-using Products.Api.Commands.UserCommands.Update;
-using Products.Api.Queries.UserQuery;
 using Products.Api.Commands.UserCommands.Delete;
+using Products.Api.Commands.UserCommands.Update;
+using Products.Api.Models;
+using Products.Api.Queries.UserQuery;
 
 namespace Products.Api.Controllers;
 
@@ -13,24 +14,23 @@ namespace Products.Api.Controllers;
 public class UsersController(IMediator mediator) : ControllerBase
 {
     [HttpGet("[action]")]
-    public async Task<ActionResult<List<UserDto>>> GetAll([FromQuery] int companyId)
+    public async Task<ActionResult<List<UserDto>>> GetAllUsers([FromQuery] int companyId)
     {
-        if (companyId == 0)
-            return BadRequest("Company ID is required");
-
+        if (companyId == 0) return BadRequest("Company ID is required");
         return Ok(await mediator.Send(new GetAllUsersQuery { CompanyId = companyId }));
     }
 
-    [HttpGet("[action]/{id}")]
-    public async Task<ActionResult<UserDto>> GetById(int id ,[FromQuery] int companyId)
+    [HttpGet("[action]")]
+    public async Task<ActionResult<UserDto>> GetUserById([FromQuery] int id , [FromQuery] int companyId)
     {
         if (companyId == 0) return BadRequest("Company ID is required");
         var result = await mediator.Send(new GetUserByIdQuery{Id = id, CompanyId = companyId });
-        return result is null ? NotFound() : Ok(result);
+        if (result == null) return NotFound($"User with ID {id} not found.");
+        return Ok(result);
     }
 
-    [HttpGet("[action]/{username}/{companyId}")]
-    public async Task<ActionResult<UserDto>> GetByUsername(string username, [FromQuery] int companyId)
+    [HttpGet("[action]")]
+    public async Task<ActionResult<UserDto>> GetByUsername([FromQuery] string username, [FromQuery] int companyId)
     {
         if (companyId == 0)
             return BadRequest("Company ID is required");
@@ -38,34 +38,32 @@ public class UsersController(IMediator mediator) : ControllerBase
         return Ok(await mediator.Send(new GetUserByUsernameQuery(username) { CompanyId = companyId }));
     }
 
-    [HttpPost("[action]/{id:int}")]
-    public async Task<ActionResult<UserDto>> Add([FromBody] CreateUserRequest request, [FromQuery] int companyId)
+    [HttpPost("[action]")]
+    public async Task<ActionResult<UserDto>> Add( CreateUserRequest request, [FromQuery] int companyId)
     {
         if (companyId == 0) return BadRequest("Company ID is required");
 
         var command = new AddUserCommand(request, companyId);
-        command.Request.CompanyId = companyId;
-
         var result = await mediator.Send(command);
-        return CreatedAtAction(nameof(GetById), new { id = result.Id, companyId }, result);
+        return Ok(result);
     }
 
-    [HttpPut("[action]/{id:int}")]
-    public async Task<IActionResult> Update(int id,[FromBody] UpdateUserRequest updateRequest, [FromQuery] int companyId)
+    [HttpPatch("[action]")]
+    public async Task<ActionResult<UserDto>> UpdateUser([FromBody] UpdateUserRequest updateRequest, [FromQuery] int companyId)
     {
         if (companyId == 0) return BadRequest("Company ID is required");
-
-        var ok = await mediator.Send(new UpdateUserCommand(id,updateRequest, companyId));
-        return ok ? NoContent() : NotFound();
+        var command = new UpdateUserCommand(updateRequest, companyId);
+        var updatedUser = await mediator.Send(command);
+        return Ok(new {Id=updateRequest.Id, Message = updatedUser ? "User updated successfully" : "User update failed"});
     }
 
-
-    [HttpDelete("[action]/{id:int}")]
-    public async Task<IActionResult> Delete(int id, [FromQuery] int companyId)
+    [HttpDelete("[action]")]
+    public async Task<ActionResult<bool>> Delete([FromQuery] int id, [FromQuery] int companyId)
     {
         if (companyId == 0) return BadRequest("Company ID is required");
-        var ok = await mediator.Send(new DeleteUserCommand (id, companyId));
-        return ok ? NoContent() : NotFound();
+        var command = new DeleteUserCommand(id, companyId);
+        var result = await mediator.Send(command);
+        return Ok(result);
     }
 }
         

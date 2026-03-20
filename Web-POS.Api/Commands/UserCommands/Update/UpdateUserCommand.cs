@@ -7,13 +7,11 @@ namespace Products.Api.Commands.UserCommands.Update;
 
 public class UpdateUserCommand : IRequest<bool>
 {
-    public int Id { get; }
     public UpdateUserRequest Request { get; set; }
     public int CompanyId { get; }
 
-    public UpdateUserCommand(int id, UpdateUserRequest request, int companyId)
+    public UpdateUserCommand(UpdateUserRequest request, int companyId)
     {
-        Id = id;
         Request = request;
         CompanyId = companyId;
     }
@@ -29,7 +27,7 @@ public class UpdateUserCommand : IRequest<bool>
 
         public Task<bool> Handle(UpdateUserCommand request, CancellationToken cancellationToken)
         {
-            return _service.Update(request.Id, request.Request, request.CompanyId);
+            return _service.Update(request.Request, request.CompanyId);
         }
     }
 

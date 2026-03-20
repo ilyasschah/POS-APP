@@ -1,9 +1,9 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Products.Api.Models;
 using Products.Api.Commands.WarehouseCommands.Add;
-//using Products.Api.Commands.WarehouseCommands.Delete;
-//using Products.Api.Commands.WarehouseCommands.Update;
+using Products.Api.Models;
+using Products.Api.Commands.WarehouseCommands.Delete;
+using Products.Api.Commands.WarehouseCommands.Update;
 using Products.Api.Queries.WarehousesQuery;
 
 namespace Products.Api.Controllers;
@@ -19,36 +19,39 @@ public class WarehousesController(IMediator mediator) : ControllerBase
         return Ok(await mediator.Send(new GetAllWarehousesQuery { CompanyId = companyId }));
     }
 
-    [HttpGet("[action]/{id}")]
+    [HttpGet("[action]")]
     public async Task<ActionResult<WarehouseDto>> GetById(int id, [FromQuery] int companyId)
     {
         if (companyId == 0) return BadRequest("Company ID is required");
-        var result = await mediator.Send(new GetWarehouseByIdQuery (id){ CompanyId = companyId });
-        return result is null ? NotFound() : Ok(result);
+        var result = await mediator.Send(new GetWarehouseByIdQuery { Id = id, CompanyId = companyId });
+        if (result == null) return NotFound($"Warehouse with ID {id} not found.");
+        return Ok(result);
     }
 
     [HttpPost("[action]")]
-    public async Task<ActionResult<WarehouseDto>> Add([FromBody] CreateWarehouseRequest request, [FromQuery] int companyId)
+    public async Task<ActionResult<WarehouseDto>> Add([FromBody] CreateWarehouseRequest request,[FromQuery] int companyId)
     {
         if (companyId == 0) return BadRequest("Company ID is required");
-        var command = new AddWarehousecommand(request, companyId);
+        var command = new AddWarehouseCommand(request, companyId);
         var result = await mediator.Send(command);
-        return CreatedAtAction(nameof(GetById), new { id = request.Name, companyId }, result);
+        return CreatedAtAction(nameof(GetById), new { id = result.Id, companyId = companyId }, result);
     }
 
-    //[HttpPut("[action]/{id:int}")]
-    //public async Task<IActionResult> Update(int id, [FromBody] UpdateWarehouseRequest request, [FromQuery] int companyId)
-    //{
-    //    if (companyId == 0) return BadRequest("Company ID is required");
-    //    var ok = await mediator.Send(new UpdateWarehouseCommand(id, request, companyId));
-    //    return ok ? NoContent() : NotFound();
-    //}
+    [HttpPut("[action]")]
+    public async Task<ActionResult<WarehouseDto>> Update([FromBody] UpdateWarehouseRequest request,[FromQuery] int companyId)
+    {
+        if (companyId <= 0) return BadRequest("Company ID is required");
+        var command = new UpdateWarehouseCommand(request, companyId);
+        var result = await mediator.Send(command);
+        return Ok(result);
+    }
 
-    //[HttpDelete("[action]/{id:int}")]
-    //public async Task<IActionResult> Delete(int id, [FromQuery] int companyId)
-    //{
-    //    if (companyId == 0) return BadRequest("Company ID is required");
-    //    var ok = await mediator.Send(new DeleteWarehouseCommand(id, companyId));
-    //    return ok ? NoContent() : NotFound();
-    //}
+    [HttpDelete("[action]")]
+    public async Task<ActionResult<bool>> Delete([FromBody] int id, [FromQuery] int companyId)
+    {
+        if (companyId == 0) return BadRequest("Company ID is required");
+        var command = new DeleteWarehouseCommand(id, companyId);
+        var result = await mediator.Send(command);
+        return Ok(result);
+    }
 }

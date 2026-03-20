@@ -11,8 +11,6 @@ namespace Products.Api.Commands.PosOrderCommands.Update
         {
             Id = id;
         }
-
-        // Nested Handler
         public class DeletePosOrderCommandHandler : IRequestHandler<DeletePosOrderCommand, bool>
         {
             private readonly PosOrderService _service;
@@ -21,7 +19,6 @@ namespace Products.Api.Commands.PosOrderCommands.Update
             {
                 _service = service;
             }
-
             public Task<bool> Handle(DeletePosOrderCommand command, CancellationToken cancellationToken)
             {
                 return _service.Delete(command.Id);

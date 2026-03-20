@@ -11,21 +11,22 @@ namespace Products.Api.Domain
         public int CompanyId { get; set; }
         public string? Name { get; set; }
         public string? Code { get; set; }
-        private Country(string name, string? code)
+        private Country(int companyId, string name, string? code)
         {
+            CompanyId = companyId;
             Name = name;
             Code = code;
         }
 
         public Country() { }
 
-        public static Country Create(string name, string? code)
+        public static Country Create(int companyId, string name, string? code)
         {
             if (string.IsNullOrWhiteSpace(name))
             {
                 throw new ArgumentException("Name cannot be null or whitespace.", nameof(name));
             }
-            return new Country(name, code);
+            return new Country(companyId, name, code);
         }
         public void UpdateName(string newName)
         {

@@ -35,14 +35,12 @@ namespace Products.Api.Controllers
             });
         }
         [HttpPatch("[action]")]
-        public async Task<ActionResult<CompanyDto>> UpdateDetails([FromBody] UpdateCompanyRequest request)
+        public async Task<ActionResult<CompanyDto>> Update([FromBody] UpdateCompanyRequest req)
         {
-            var command = new UpdateCompanyCommand(request);
-            var updatedCompany = await mediator.Send(command);
-            return Ok(new
-            {
-                message = $"Company '{updatedCompany.Name}' updated successfully.",
-            });
+            var command = new UpdateCompanyCommand(req);
+            var result = await mediator.Send(command);
+
+            return Ok(result);
         }
         [HttpPut("[action]")]
         public async Task<ActionResult> UpdateLogo([FromBody] UpdateCompanyLogoRequest request)
@@ -66,6 +64,3 @@ namespace Products.Api.Controllers
         }
     }
 }
-
-
-

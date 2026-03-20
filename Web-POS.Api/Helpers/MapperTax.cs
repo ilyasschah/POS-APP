@@ -9,6 +9,7 @@ namespace Products.Api.Helpers
         {
             return new TaxDto
             {
+                Id = tax.Id,
                 Name = tax.Name,
                 Rate = tax.Rate,
                 Code = tax.Code,
@@ -17,36 +18,22 @@ namespace Products.Api.Helpers
                 IsEnabled = tax.IsEnabled
             };
         }
-        public static Tax MapToTax(CreateTaxRequestDto createDto)
+
+        public static Tax MapToTax(CreateTaxRequestDto createDto, int companyId)
         {
             if (createDto == null)
             {
                 throw new ArgumentNullException(nameof(createDto));
             }
-
-            return new Tax
-            {
-                Name = createDto.Name,
-                Rate = createDto.Rate,
-                Code = createDto.Code,
-                IsFixed = createDto.IsFixed,
-                IsTaxOnTotal = createDto.IsTaxOnTotal,
-                IsEnabled = createDto.IsEnabled
-            };
-        }
-        public static Tax MapToTax(UpdateTaxRequestDto updateDto)
-        {
-            if (updateDto == null)
-                throw new ArgumentNullException(nameof(updateDto));
-            return new Tax
-            {
-                Name = updateDto.Name,
-                Rate = updateDto.Rate,
-                Code = updateDto.Code,
-                IsFixed = updateDto.IsFixed,
-                IsTaxOnTotal = updateDto.IsTaxOnTotal,
-                IsEnabled = updateDto.IsEnabled
-            };
+            return Tax.Create(
+                companyId,
+                createDto.Name,
+                createDto.Rate,
+                createDto.Code,
+                createDto.IsFixed,
+                createDto.IsTaxOnTotal,
+                createDto.IsEnabled
+            );
         }
     }
 }

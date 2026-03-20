@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Products.Api.Repository;
 using Products.Api.Models;
 using Products.Api.Helpers;
+using FluentValidation;
 
 namespace Products.Api.Queries.PaymentTypeQuery
 {
@@ -26,6 +27,14 @@ namespace Products.Api.Queries.PaymentTypeQuery
                 var entity = await _repository.GetByIdAsync(request.Id, request.CompanyId);
                 return entity == null ? null : MapperPaymentType.MapToPaymentTypeDto(entity);
             }
+        }
+    }
+    public class GetPaymentTypeByIdQueryValidator : AbstractValidator<GetPaymentTypeByIdQuery>
+    {
+        public GetPaymentTypeByIdQueryValidator()
+        {
+            RuleFor(x => x.Id).GreaterThan(0).WithMessage("Payment Type ID must be valid.");
+            RuleFor(x => x.CompanyId).GreaterThan(0).WithMessage("Company ID must be valid.");
         }
     }
 }

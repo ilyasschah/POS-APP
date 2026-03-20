@@ -3,13 +3,17 @@ using Products.Api.Models;
 
 namespace Products.Api.Helpers
 {
-    public class MapperWarehouse
+    public static class MapperWarehouse
     {
-        public static WarehouseDto MapToWarehouses(Warehouse warehouses)
+        public static WarehouseDto MapToWarehouseDto(Warehouse entity)
         {
+            if (entity == null) return null;
+
             return new WarehouseDto
             {
-                Name = warehouses.Name
+                Id = entity.Id,
+                Name = entity.Name,
+                CompanyName = entity.Company?.Name
             };
         }
     }

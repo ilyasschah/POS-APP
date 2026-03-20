@@ -7,13 +7,11 @@ namespace Products.Api.Commands.PaymentTypeCommands.Update
 {
     public class UpdatePaymentTypeCommand : IRequest<bool>
     {
-        public int Id { get; }
         public UpdatePaymentTypeRequest Request { get; }
         public int CompanyId { get; }
 
-        public UpdatePaymentTypeCommand(int id, UpdatePaymentTypeRequest request, int companyId)
+        public UpdatePaymentTypeCommand(UpdatePaymentTypeRequest request, int companyId)
         {
-            Id = id;
             Request = request;
             CompanyId = companyId;
         }
@@ -28,22 +26,17 @@ namespace Products.Api.Commands.PaymentTypeCommands.Update
             }
             public Task<bool> Handle(UpdatePaymentTypeCommand command, CancellationToken cancellationToken)
             {
-                try
-                {
-                    return _service.Update(command.Id, command.Request, command.CompanyId);
-                }
-                catch (Exception)
-                {
-                    throw;
-                }
+                return _service.Update(command.Request, command.CompanyId);
+
             }
         }
         public class UpdatePaymentTypeCommandValidator : AbstractValidator<UpdatePaymentTypeCommand>
         {
             public UpdatePaymentTypeCommandValidator()
             {
-                RuleFor(c => c.Id).GreaterThan(0);
-                RuleFor(c => c.Request.Name).NotEmpty();
+                RuleFor(c => c.Request.Id).GreaterThan(0).WithMessage("Id must be valid.");
+                RuleFor(c => c.Request.Name).NotNull().NotEmpty().WithMessage("Payment Type name is required.");
+                RuleFor(c => c.CompanyId).GreaterThan(0).WithMessage("Company ID must be valid.");
             }
         }
     }

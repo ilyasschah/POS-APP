@@ -6,32 +6,61 @@ namespace Products.Api.Services
 {
     public class WarehouseService
     {
-        public WarehouseRepository _warehouseRepository;
-        public WarehouseService (WarehouseRepository warehouseRepository)
+        private readonly WarehouseRepository _warehouseRepository;
+        private readonly CompanyRepository _companyRepository;
+
+        public WarehouseService(WarehouseRepository warehouseRepository, CompanyRepository companyRepository)
         {
             _warehouseRepository = warehouseRepository;
+            _companyRepository = companyRepository;
         }
-        public async Task<bool> Create(string name, int companyId)
+
+        public async Task<WarehouseDto> CreateAsync(CreateWarehouseRequest request, int companyId)
         {
-            if (_warehouseRepository.Exists(name, companyId))
-                throw new InvalidOperationException($"A warehouse with the Name '{name}' already exists.");
-            var newwarehouse = Warehouse.Create(name);
-            await _warehouseRepository.Add(newwarehouse);
-            return true;
+            var exists = await _warehouseRepository.ExistsAsync(request.Name, companyId);
+            if (exists)
+                throw new InvalidOperationException($"A warehouse with the name '{request.Name}' already exists.");
+
+            var newWarehouse = Warehouse.Create(
+                companyId, 
+                request.Name
+            );
+
+            await _warehouseRepository.AddAsync(newWarehouse);
+
+            var company = await _companyRepository.GetByIdAsync(companyId);
+
+            return new WarehouseDto
+            {
+                Id = newWarehouse.Id,
+                Name = newWarehouse.Name,
+                CompanyName = company?.Name
+            };
         }
-        public async Task<bool> Update(int id, string name, int companyId)
+
+        public async Task<bool> UpdateAsync(UpdateWarehouseRequest request, int companyId)
         {
-            var entity = await _warehouseRepository.GetwarehouseByIdAsync(id, companyId);
+            var entity = await _warehouseRepository.GetByIdAsync(request.Id, companyId);
             if (entity == null) return false;
-            entity.UpdateName(name);
+
+            if (!string.IsNullOrWhiteSpace(request.Name) && request.Name != entity.Name)
+            {
+                var exists = await _warehouseRepository.ExistsAsync(request.Name, companyId);
+                if (exists)
+                    throw new InvalidOperationException($"Another warehouse with the name '{request.Name}' already exists.");
+
+                entity.UpdateName(request.Name);
+            }
+
             await _warehouseRepository.UpdateAsync(entity);
             return true;
         }
-        public async Task<bool> Delete(int id, int companyId)
+
+        public async Task<bool> DeleteAsync(int id, int companyId)
         {
-            var entity = await _warehouseRepository.GetwarehouseByIdAsync(id, companyId);
+            var entity = await _warehouseRepository.GetByIdAsync(id, companyId);
             if (entity == null) return false;
-            await _warehouseRepository.DeleteAsync(entity);
+            await _warehouseRepository.DeleteAsync(id, companyId);
             return true;
         }
     }

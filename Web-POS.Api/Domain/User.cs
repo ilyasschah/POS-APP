@@ -1,6 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Runtime.CompilerServices;
 
 namespace Products.Api.Domain;
 
@@ -8,51 +7,56 @@ namespace Products.Api.Domain;
 public class User
 {
     [Key]
-    public int Id { get; private set; }
+    public int Id { get;  set; }
     public int CompanyId { get; set; }
-    public string? FirstName { get; private set; }
-    public string? LastName { get; private set; }
-    public string? Username { get; private set; }
-    public string Password { get; private set; }
-    public int AccessLevel { get; private set; }
-    public bool IsEnabled { get; private set; }
-    public string? Email { get; private set; }
+    public string? FirstName { get;  set; }
+    public string? LastName { get;  set; }
+    public string? Username { get;  set; }
+    [Required]
+    public string Password { get;  set; }
+    public int AccessLevel { get;  set; }
+    public bool IsEnabled { get;  set; }
+    public string? Email { get;  set; }
+    [ForeignKey(nameof(CompanyId))]
+    public virtual Company Company { get; private set; }
 
-    public User() { }
-
-    private User(string username, string password, int companyId)
+    private User( int companyId,string? firstName, string? lastName, string? username, string password,int accessLevel, bool isEnabled, string? email)
     {
-        Username = username;
-        Password = password;
-        IsEnabled = true;
-        AccessLevel = 1;
+        if (companyId <= 0)
+            throw new ArgumentException("Invalid CompanyId", nameof(companyId));
+        if (string.IsNullOrWhiteSpace(username))
+            throw new ArgumentException("Username cannot be empty", nameof(username));
+        if (string.IsNullOrWhiteSpace(password))
+            throw new ArgumentException("Password cannot be empty", nameof(password));
         CompanyId = companyId;
-    }
-
-    public static User Create(string username, string password, int companyId)
-    {
-        return new User(username, password, companyId);
-    }
-
-    public void Update(string? firstName, string? lastName, string? username, int accessLevel, bool isEnabled, string? email, int companyId)
-    {
-        if (int.IsNegative(companyId))
-            throw new ArgumentException("Username is required.", nameof(companyId));
-
         FirstName = firstName;
         LastName = lastName;
         Username = username;
+        Password = password;
         AccessLevel = accessLevel;
         IsEnabled = isEnabled;
         Email = email;
-        CompanyId = companyId;
+    }
+    public User() { }
+    public static User Create(int companyId, string? firstName, string? lastName, string? username, string password, int accessLevel, bool isEnabled, string? email)
+    {
+        return new User(companyId, firstName, lastName, username, password, accessLevel, isEnabled, email);
+    }
+
+    public void Update(string? firstName, string? lastName, string? username, int accessLevel, bool isEnabled, string? email)
+    {
+        Username = username;
+        FirstName = firstName;
+        LastName = lastName;
+        AccessLevel = accessLevel;
+        IsEnabled = isEnabled;
+        Email = email;
     }
 
     public void ChangePassword(string newPassword, int companyId)
     {
         if (string.IsNullOrWhiteSpace(newPassword))
             throw new ArgumentException("New password is required.", nameof(newPassword));
-
         Password = newPassword;
         CompanyId = companyId;
     }

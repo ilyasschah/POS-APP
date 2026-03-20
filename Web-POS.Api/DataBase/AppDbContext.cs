@@ -132,7 +132,8 @@ namespace Products.Api.DataBase
                 e.Property(x => x.ReorderPoint).HasPrecision(18, 4);
             });
 
-            b.Entity<Tax>(e => e.Property(x => x.Rate).HasPrecision(9, 4));
+            b.Entity<Tax>(e => 
+                e.Property(x => x.Rate).HasPrecision(9, 4));
 
             b.Entity<CustomerDiscount>(e => 
                 e.Property(x => x.Value).HasPrecision(18, 2)
@@ -147,76 +148,11 @@ namespace Products.Api.DataBase
             });
 
 
-        //    // Explicit company relationships for multi-tenant tables
-        //    // Prevent deleting a Company when it still has related data
-        //    b.Entity<User>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<Product>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<ProductGroup>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<Barcode>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<ProductComment>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<Tax>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<Currency>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<Customer>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<CustomerDiscount>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<Promotion>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<PromotionItem>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<LoyaltyCard>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<Stock>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<StockControl>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<StartingCash>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<Template>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<PosOrder>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<PosOrderItem>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<PosVoid>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<ZReport>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<PosPrinterSelection>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<PosPrinterSettings>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<PosPrinterSelectionSettings>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<Payment>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<PaymentType>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<Document>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<DocumentItem>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<DocumentType>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<DocumentCategory>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<VoidReason>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<FiscalItem>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<Currency>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<ProductGroup>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<Product>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<SecurityKey>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<ProductComment>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<Tax>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<VoidReason>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<FiscalItem>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<Promotion>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<PromotionItem>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<Customer>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<Country>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<CustomerDiscount>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<StockControl>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<LoyaltyCard>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<User>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<PosOrder>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<PosVoid>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<PosOrderItem>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<FloorPlan>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<FloorPlanTable>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<StartingCash>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<Warehouse>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<Stock>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<ApplicationProperty>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<PosPrinterSelection>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<PosPrinterSettings>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<PosPrinterSelectionSettings>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<Template>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<ZReport>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<PaymentType>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<Payment>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<Document>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<DocumentCategory>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<DocumentType>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<DocumentItem>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
-        //    b.Entity<DocumentsCounter>().HasOne<Company>().WithMany().HasForeignKey("CompanyId").OnDelete(DeleteBehavior.Restrict);
+            //b.Entity<ApplicationProperty>()
+            //    .HasOne<Company>()
+            //    .WithMany()
+            //    .HasForeignKey("CompanyId")
+            //    .OnDelete(DeleteBehavior.Restrict); mat9dch tmsa7 company 7it id dyal company kayn f table dyal AP
         }
     }
 }

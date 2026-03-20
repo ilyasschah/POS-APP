@@ -18,28 +18,32 @@ namespace Products.Api.Repository
             return await _db.PaymentTypes
                 .AsNoTracking()
                 .Where(pt => pt.CompanyId == companyId)
+                .Include(w => w.Company)
                 .ToListAsync();
         }
 
-        public async Task<PaymentType?> GetByIdAsync(int id, int companyId, bool trackEntity = false)
+        public async Task<PaymentType?> GetByIdAsync(int id, int companyId)
         {
-            var query = _db.PaymentTypes.AsQueryable();
-            if (!trackEntity)
-            {
-                query = query.AsNoTracking();
-            }
-            return await query.FirstOrDefaultAsync(pt => pt.Id == id && pt.CompanyId == companyId);
+            return await _db.PaymentTypes
+                .Include(w => w.Company)
+                .AsQueryable()
+                .FirstOrDefaultAsync(pt => pt.Id == id && pt.CompanyId == companyId);
         }
 
 
         public async Task<PaymentType?> GetByNameAsync(string name, int companyId)
         {
-            return await _db.PaymentTypes.AsNoTracking().FirstOrDefaultAsync(pt => pt.Name == name && pt.CompanyId == companyId);
+            return await _db.PaymentTypes
+                .AsNoTracking()
+                .Include(w => w.Company)
+                .FirstOrDefaultAsync(pt => pt.Name == name && pt.CompanyId == companyId);
         }
 
         public async Task<bool> ExistsbyNameAsync(string name, int companyId)
         {
-            return await _db.PaymentTypes.AnyAsync(pt => pt.Name.ToLower() == name.ToLower() && pt.CompanyId == companyId);
+            return await _db.PaymentTypes
+                .Include(w => w.Company)
+                .AnyAsync(pt => pt.Name.ToLower() == name.ToLower() && pt.CompanyId == companyId);
         }
 
         public async Task AddAsync(PaymentType entity)
@@ -48,16 +52,24 @@ namespace Products.Api.Repository
             await _db.SaveChangesAsync();
         }
 
-        public async Task UpdateAsync(PaymentType entity)
+        public async Task<bool> UpdateAsync(PaymentType entity)
         {
             _db.PaymentTypes.Update(entity);
             await _db.SaveChangesAsync();
+            return true;
         }
 
-        public async Task DeleteAsync(PaymentType entity)
+        public async Task<bool> DeleteAsync(int id, int companyId)
         {
+            var entity = await GetByIdAsync(id, companyId);
+            if (entity == null)
+            {
+                throw new InvalidOperationException("Payment type not found or you do not have permission to delete it.");
+            }
+
             _db.PaymentTypes.Remove(entity);
             await _db.SaveChangesAsync();
+            return true;
         }
     }
 }

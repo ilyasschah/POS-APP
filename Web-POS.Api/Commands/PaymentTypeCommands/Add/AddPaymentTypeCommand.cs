@@ -30,17 +30,17 @@ namespace Products.Api.Commands.PaymentTypeCommands.Add
 
             public async Task<PaymentTypeDto> Handle(AddPaymentTypeCommand command, CancellationToken cancellationToken)
             {
-                var newEntity = await _service.Create(command.Request, command.CompanyId);
-                return MapperPaymentType.MapToPaymentTypeDto(newEntity);
+                return await _service.CreateAsync(command.Request, command.CompanyId);
             }
         }
-
         public class AddPaymentTypeCommandValidator : AbstractValidator<AddPaymentTypeCommand>
         {
             public AddPaymentTypeCommandValidator()
             {
-                RuleFor(c => c.Request.Name).NotEmpty();
+                RuleFor(c => c.Request.Name).NotNull().NotEmpty().WithMessage("Payment Type name is required.");
+                RuleFor(c => c.CompanyId).GreaterThan(0).WithMessage("Company ID must be valid.");
             }
         }
     }
+    
 }

@@ -9,6 +9,7 @@ namespace Products.Api.Helpers
         {
             return new CountryDto
             {
+                Id = country.Id,
                 Name = country.Name,
                 Code = country.Code
             };

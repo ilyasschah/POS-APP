@@ -1,4 +1,5 @@
-﻿using MediatR;
+﻿using FluentValidation;
+using MediatR;
 using Products.Api.Services;
 
 namespace Products.Api.Commands.PaymentTypeCommands.Delete
@@ -25,8 +26,15 @@ namespace Products.Api.Commands.PaymentTypeCommands.Delete
 
             public Task<bool> Handle(DeletePaymentTypeCommand request, CancellationToken cancellationToken)
             {
-                return _service.Delete(request.Id, request.CompanyId);
+                return _service.DeleteAsync(request.Id, request.CompanyId);
             }
         }
-    }
+        public class DeletePaymentTypeCommandValidator : AbstractValidator<DeletePaymentTypeCommand>
+        {
+            public DeletePaymentTypeCommandValidator()
+            {
+                RuleFor(c => c.Id).GreaterThan(0).WithMessage("Id must be valid.");
+                RuleFor(c => c.CompanyId).GreaterThan(0).WithMessage("CompanyId must be valid.");
+            }
+    }  }
 }

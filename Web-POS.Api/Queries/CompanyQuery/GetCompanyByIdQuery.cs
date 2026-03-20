@@ -14,16 +14,16 @@ public class GetCompanyByIdQuery : IRequest<CompanyDto>
     }
     public class GetCompanyByIdQueryHandler : IRequestHandler<GetCompanyByIdQuery, CompanyDto>
     {
-        private readonly CompanyRepository _repository;
+        private readonly CompanyRepository _companyRepository;
 
-        public GetCompanyByIdQueryHandler(CompanyRepository repository)
+        public GetCompanyByIdQueryHandler(CompanyRepository companyRepository)
         {
-            _repository = repository;
+            _companyRepository = companyRepository;
         }
 
         public async Task<CompanyDto> Handle(GetCompanyByIdQuery request, CancellationToken cancellationToken)
         {
-            var entity = await _repository.GetByIdAsync(request.Id);
+            var entity = await _companyRepository.GetByIdAsync(request.Id);
             if (entity == null) {
                 throw new KeyNotFoundException($"Company with ID {request.Id} not found.");
             }

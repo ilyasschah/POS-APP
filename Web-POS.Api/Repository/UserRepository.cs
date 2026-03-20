@@ -21,18 +21,11 @@ public class UserRepository
             .ToListAsync();
     }
 
-    public async Task<User?> GetByIdAsync(int id, int companyId, bool trackEntity = false)
-    {
-        var q = _db.Users.AsQueryable();
-        if (!trackEntity) q = q.AsNoTracking();
-        return await q
-            .FirstOrDefaultAsync(u => u.Id == id && u.CompanyId == companyId);
-    }
-
-    public async Task<User?> GetByIdAsync(int id)
+    public async Task<User?> GetByIdAsync(int id, int companyId)
     {
         return await _db.Users
-            .FirstOrDefaultAsync(u => u.Id == id);
+            .AsQueryable()
+            .FirstOrDefaultAsync(u => u.Id == id && u.CompanyId == companyId);
     }
 
     public async Task<User?> GetByUsernameAsync(string username, int companyId)
@@ -47,22 +40,32 @@ public class UserRepository
         return await _db.Users.AnyAsync(u => u.Username == username && u.CompanyId == companyId);
     }
 
-
     public async Task AddAsync(User entity)
     {
         _db.Users.Add(entity);
         await _db.SaveChangesAsync();
     }
 
-    public async Task UpdateAsync(User entity)
+    public async Task<bool> UpdateAsync(User entity)
     {
         _db.Users.Update(entity);
         await _db.SaveChangesAsync();
+        return true;
     }
 
-    public async Task DeleteAsync(User entity)
+    public async Task<bool> DeleteAsync(int id, int companyId)
     {
+        var entity = await GetByIdAsync(id, companyId);
+        if (entity == null)
+        {
+            throw new InvalidOperationException("User not found.");
+        }
+        if (entity.CompanyId != companyId)
+        {
+            throw new UnauthorizedAccessException("You do not have permission to delete this user.");
+        }
         _db.Users.Remove(entity);
         await _db.SaveChangesAsync();
+        return true;
     }
 }

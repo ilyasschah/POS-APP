@@ -1,5 +1,4 @@
-// FILE: Products.Api.Queries\UserQuery\GetUserByIdQuery.cs
-
+using FluentValidation;
 using MediatR;
 using Products.Api.Helpers;
 using Products.Api.Models;
@@ -20,11 +19,18 @@ public class GetUserByIdQuery : IRequest<UserDto?>
         {
             _repository = repository;
         }
-
         public async Task<UserDto?> Handle(GetUserByIdQuery request, CancellationToken cancellationToken)
         {
             var entity = await _repository.GetByIdAsync(request.Id, request.CompanyId);
             return entity == null ? null : MapperUser.MapToUserDto(entity);
+        }
+    }
+    public class GetUserByIdQueryValidator : AbstractValidator<GetUserByIdQuery>
+    {
+        public GetUserByIdQueryValidator()
+        {
+            RuleFor(x => x.Id).GreaterThan(0).WithMessage("User ID must be valid.");
+            RuleFor(x => x.CompanyId).GreaterThan(0).WithMessage("Company ID must be valid.");
         }
     }
 }

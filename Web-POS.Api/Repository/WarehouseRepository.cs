@@ -1,45 +1,63 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Products.Api.Domain;
 using Products.Api.DataBase;
+using Products.Api.Domain;
 
 namespace Products.Api.Repository
 {
-    public class WarehouseRepository(AppDbContext db)
+    public class WarehouseRepository
     {
-        public AppDbContext _db = db;
+        private readonly AppDbContext _db;
 
-        public async Task<List<Warehouse>> GetAllWarehousesAsync(int companyId)
+        public WarehouseRepository(AppDbContext db)
+        {
+            _db = db;
+        }
+
+        public async Task<List<Warehouse>> GetAllAsync(int companyId)
         {
             return await _db.Warehouses
                 .Where(w => w.CompanyId == companyId)
+                .Include(w => w.Company)
                 .AsNoTracking()
                 .ToListAsync();
         }
 
-        public async Task Add(Warehouse newWarehouse)
-        {
-            _db.Warehouses.Add(newWarehouse);
-            await _db.SaveChangesAsync();
-        }
-        public bool Exists(string name, int companyId)
-        {
-            return _db.Warehouses.Any(w => w.Name == name);
-        }
-        public async Task<Warehouse?> GetwarehouseByIdAsync(int id, int companyId, bool trackEntity = false)
+        public async Task<Warehouse?> GetByIdAsync(int id, int companyId)
         {
             return await _db.Warehouses
-                .AsNoTracking()
-                .FirstOrDefaultAsync(w => w.Id == id);
+                .Include(w => w.Company)
+                .FirstOrDefaultAsync(w => w.Id == id && w.CompanyId == companyId);
         }
-        public async Task UpdateAsync(Warehouse warehouse)
+
+        public async Task<bool> ExistsAsync(string name, int companyId)
+        {
+            return await _db.Warehouses
+                .AnyAsync(w => w.Name.ToLower() == name.ToLower() && w.CompanyId == companyId);
+        }
+        public async Task AddAsync(Warehouse entity)
+        {
+            _db.Warehouses.Add(entity);
+            await _db.SaveChangesAsync();
+        }
+        public async Task<bool> UpdateAsync(Warehouse warehouse)
         {
             _db.Warehouses.Update(warehouse);
             await _db.SaveChangesAsync();
+            return true;
         }
-        public async Task DeleteAsync(Warehouse warehouse)
+
+        public async Task<bool> DeleteAsync(int id, int companyId)
         {
+            var warehouse = await GetByIdAsync(id, companyId);
+
+            if (warehouse == null)
+            {
+                throw new InvalidOperationException("Warehouse not found or you do not have permission to delete it.");
+            }
+
             _db.Warehouses.Remove(warehouse);
             await _db.SaveChangesAsync();
+            return true;
         }
     }
 }

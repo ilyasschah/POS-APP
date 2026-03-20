@@ -7,49 +7,37 @@ namespace Products.Api.Domain
     public class Tax
     {
         [Key]
-        public int Id { get; set; }
-        public int CompanyId { get; set; }
+        public int Id { get; private set; }
+        public int CompanyId { get; private set; }
         [Required]
-        public string Name { get; set; }
-        [Required]
-        public decimal Rate { get; set; }
-        public string? Code { get; set; }
-        [Required]
-        public bool IsFixed { get; set; }
-        [Required]
-        public bool IsTaxOnTotal { get; set; }
-        [Required]
-        public bool IsEnabled { get; set; }
+        public string Name { get; private set; }
 
+        [Required]
+        public decimal Rate { get; private set; }
 
-        private Tax(string name, decimal rate, string code ,bool isfixed, bool istaxontotal, bool isenabled)
-        {
-            if (string.IsNullOrWhiteSpace(name))
-                throw new ArgumentException("Name cannot be empty", nameof(name));
+        public string? Code { get; private set; } = null;
 
-            if (rate <= 0)
-                throw new ArgumentException("tax rate cannot be empty", nameof(rate));
+        [Required]
+        public bool IsFixed { get; private set; }
 
-            Name = name.Trim();
-            Rate = rate;
-            Code = code.Trim();
-            IsFixed = isfixed;
-            IsTaxOnTotal = istaxontotal;
-            IsEnabled = isenabled;
-        }
+        [Required]
+        public bool IsTaxOnTotal { get; private set; }
+
+        [Required]
+        public bool IsEnabled { get; private set; }
 
         public Tax() { }
-        public static Tax Create(string name, decimal rate, string code, bool isfixed, bool istaxontotal, bool isenabled)
-        {
-            return new Tax(name, rate,code,isfixed,istaxontotal,isenabled);
-        }
 
-        public void UpdateComment(string name, decimal rate, string code, bool isfixed, bool istaxontotal, bool isenabled)
+        private Tax(int companyId, string name, decimal rate, string? code, bool isfixed, bool istaxontotal, bool isenabled)
         {
+            if (companyId <= 0)
+                throw new ArgumentException("Invalid CompanyId", nameof(companyId));
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentException("Name cannot be empty", nameof(name));
             if (rate <= 0)
-                throw new ArgumentException("tax rate cannot be empty", nameof(rate));
+                throw new ArgumentException("Tax rate must be greater than zero", nameof(rate));
+
+            CompanyId = companyId;
             Name = name.Trim();
             Rate = rate;
             Code = code?.Trim();
@@ -57,6 +45,24 @@ namespace Products.Api.Domain
             IsTaxOnTotal = istaxontotal;
             IsEnabled = isenabled;
         }
-        
+
+        public static Tax Create(int companyId, string name, decimal rate, string? code, bool isfixed, bool istaxontotal, bool isenabled)
+        {
+            return new Tax(companyId, name, rate, code, isfixed, istaxontotal, isenabled);
+        }
+        public void UpdateDetails(string name, decimal rate, string? code, bool isfixed, bool istaxontotal, bool isenabled)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("Name cannot be empty", nameof(name));
+            if (rate <= 0)
+                throw new ArgumentException("Tax rate must be greater than zero", nameof(rate));
+
+            Name = name.Trim();
+            Rate = rate;
+            Code = code?.Trim();
+            IsFixed = isfixed;
+            IsTaxOnTotal = istaxontotal;
+            IsEnabled = isenabled;
+        }
     }
 }

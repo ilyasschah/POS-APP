@@ -1,4 +1,5 @@
-﻿using MediatR;
+﻿using FluentValidation;
+using MediatR;
 using Products.Api.Helpers;
 using Products.Api.Models;
 using Products.Api.Repository;
@@ -24,6 +25,14 @@ namespace Products.Api.Queries.PaymentTypeQuery
                 var entity = await _repository.GetByNameAsync(request.Name, request.CompanyId);
                 return entity == null ? null : MapperPaymentType.MapToPaymentTypeDto(entity);
             }
+        }
+    }
+    public class GetPaymentTypeByNameQueryValidator : AbstractValidator<GetPaymentTypeByNameQuery>
+    {
+        public GetPaymentTypeByNameQueryValidator()
+        {
+            RuleFor(x => x.Name).NotEmpty().WithMessage("Payment Type Name must be provided.");
+            RuleFor(x => x.CompanyId).GreaterThan(0).WithMessage("Company ID must be valid.");
         }
     }
 }
