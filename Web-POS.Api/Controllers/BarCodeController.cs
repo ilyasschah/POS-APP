@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Api.Commands.BarcodesCommands.Add;
 using Api.Commands.BarcodesCommands.Delete;
 using Api.Commands.BarcodesCommands.Update;
-using Api.Queries.BarCodesQuery.Get;
+using Api.Queries.BarcodesQuery.Get;
 using Api.Models;
 
 namespace Api.Controllers
