@@ -1,10 +1,10 @@
 using FluentValidation;
 using MediatR;
-using Products.Api.Models;
-using Products.Api.Services;
-using Products.Api.Helpers;
+using Api.Helpers;
+using Api.Models;
+using Api.Services;
 
-namespace Products.Api.Commands.PosOrderItemCommands.Add
+namespace Api.Commands.PosOrderItemCommands.Add
 {
     public class AddPosOrderItemCommand : IRequest<PosOrderItemDto>
     {

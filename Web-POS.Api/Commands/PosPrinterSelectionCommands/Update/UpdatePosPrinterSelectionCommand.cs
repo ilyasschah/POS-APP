@@ -1,9 +1,8 @@
 ﻿using FluentValidation;
 using MediatR;
-using Products.Api.Models;
-using Products.Api.Services;
+using Api.Models;
 
-namespace Products.Api.Commands.PosPrinterSelectionCommands.Update
+namespace Api.Commands.PosPrinterSelectionCommands.Update
 {
     public class UpdatePosPrinterSelectionCommand : IRequest<bool>
     {
@@ -19,9 +18,9 @@ namespace Products.Api.Commands.PosPrinterSelectionCommands.Update
         public class UpdatePosPrinterSelectionCommandHandler
             : IRequestHandler<UpdatePosPrinterSelectionCommand, bool>
         {
-            private readonly Products.Api.Services.PosPrinterSelectionService _service;
+            private readonly Services.PosPrinterSelectionService _service;
 
-            public UpdatePosPrinterSelectionCommandHandler(Products.Api.Services.PosPrinterSelectionService service)
+            public UpdatePosPrinterSelectionCommandHandler(Services.PosPrinterSelectionService service)
             {
                 _service = service;
             }

@@ -1,11 +1,11 @@
 ﻿using FluentValidation;
 using MediatR;
-using Products.Api.Models;
-using Products.Api.Services;
 using System.Threading;
 using System.Threading.Tasks;
+using Api.Models;
+using Api.Services;
 
-namespace Products.Api.Commands.VoidReasonCommads.Update
+namespace Api.Commands.VoidReasonCommads.Update
 {
     public class UpdateVoidReasonCommand : IRequest<bool>
     {

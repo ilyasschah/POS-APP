@@ -1,8 +1,8 @@
-using Products.Api.Domain;
-using Products.Api.Repository;
-using Products.Api.Models;
+using Api.Models;
+using Api.Domain;
+using Api.Repository;
 
-namespace Products.Api.Services
+namespace Api.Services
 {
     public class PosVoidService
     {

@@ -1,9 +1,9 @@
 ﻿using FluentValidation;
 using MediatR;
-using Products.Api.Models;
-using Products.Api.Services;
+using Api.Models;
+using Api.Services;
 
-namespace Products.Api.Commands.FiscalItemCommands.Update
+namespace Api.Commands.FiscalItemCommands.Update
 {
     public class UpdateFiscalItemCommand : IRequest<bool>
     {

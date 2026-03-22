@@ -1,9 +1,9 @@
 ﻿using MediatR;
-using Products.Api.Repository;
-using Products.Api.Models;
-using Products.Api.Helpers;
+using Api.Helpers;
+using Api.Repository;
+using Api.Models;
 
-namespace Products.Api.Queries.ZReportQuery
+namespace Api.Queries.ZReportQuery
 {
     public class GetAllZReportsQuery : IRequest<List<ZReportDto>>
     {

@@ -1,9 +1,9 @@
 ﻿using FluentValidation;
 using MediatR;
-using Products.Api.Models;
-using Products.Api.Services;
+using Api.Models;
+using Api.Services;
 
-namespace Products.Api.Commands.DocumentItemExpirationDateCommands.Add
+namespace Api.Commands.DocumentItemExpirationDateCommands.Add
 {
     public class CreateExpirationDateByDocumentItemIdCommand : IRequest<bool>
     {

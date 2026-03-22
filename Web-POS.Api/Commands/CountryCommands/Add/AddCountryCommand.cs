@@ -1,8 +1,8 @@
 ﻿using MediatR;
-using Products.Api.Models;
-using Products.Api.Services;
+using Api.Services;
+using Api.Models;
 
-namespace Products.Api.Commands.CountryCommands.Add
+namespace Api.Commands.CountryCommands.Add
 {
     public class AddCountryCommand : IRequest<bool>
     {

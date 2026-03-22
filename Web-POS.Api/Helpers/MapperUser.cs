@@ -1,7 +1,7 @@
-using Products.Api.Domain;
-using Products.Api.Models;
+using Api.Domain;
+using Api.Models;
 
-namespace Products.Api.Helpers
+namespace Api.Helpers
 {
     public static class MapperUser
     {
@@ -15,7 +15,8 @@ namespace Products.Api.Helpers
                 Username = entity.Username,
                 AccessLevel = entity.AccessLevel,
                 IsEnabled = entity.IsEnabled,
-                Email = entity.Email 
+                Email = entity.Email,
+                CompanyId = entity.CompanyId,
             };
         }
     }

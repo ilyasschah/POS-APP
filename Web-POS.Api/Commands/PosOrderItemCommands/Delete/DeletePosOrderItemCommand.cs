@@ -1,7 +1,7 @@
 using MediatR;
-using Products.Api.Services;
+using Api.Services;
 
-namespace Products.Api.Commands.PosOrderItemCommands.Delete
+namespace Api.Commands.PosOrderItemCommands.Delete
 {
     public class DeletePosOrderItemCommand : IRequest<bool>
     {

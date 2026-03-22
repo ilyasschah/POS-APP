@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Products.Api.Domain
+namespace Api.Domain
 {
     [Keyless]
     [Table("DocumentItemExpirationDate")]

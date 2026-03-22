@@ -1,7 +1,7 @@
-﻿using Products.Api.Domain;
-using Products.Api.Models;
+﻿using Api.Domain;
+using Api.Models;
 
-namespace Products.Api.Helpers
+namespace Api.Helpers
 {
     public class MapperStock_P_Name_W_Name
     {
@@ -11,23 +11,12 @@ namespace Products.Api.Helpers
             {
                 Id = stock.Id,
                 Quantity = stock.Quantity,
-                ProductName = stock.Product.Name,
-                WarehouseName = stock.Warehouse.Name,
-                CompanyId = stock.CompanyId
-            };
-        }
-    }
-    public class MapperStock
-    {
-        public static StockDto MapToStock(Stock stock)
-        {
-            return new StockDto
-            {
-                Id = stock.Id,
-                Quantity = stock.Quantity,
-                ProductName = stock.Product.Name,
-                WarehouseName = stock.Warehouse.Name,
-                CompanyId = stock.CompanyId
+                ProductId = stock.ProductId,
+                ProductName = stock.Product?.Name,
+                WarehouseId = stock.WarehouseId,
+                WarehouseName = stock.Warehouse?.Name,
+                CompanyId = stock.CompanyId,
+                CompanyName = stock.Company?.Name
             };
         }
     }

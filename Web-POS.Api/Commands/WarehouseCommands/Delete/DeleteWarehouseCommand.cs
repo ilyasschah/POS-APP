@@ -1,8 +1,8 @@
 ﻿using FluentValidation;
 using MediatR;
-using Products.Api.Services;
+using Api.Services;
 
-namespace Products.Api.Commands.WarehouseCommands.Delete
+namespace Api.Commands.WarehouseCommands.Delete
 {
     public class DeleteWarehouseCommand : IRequest<bool>
     {

@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Products.Api.DataBase;
-using Products.Api.Domain;
-namespace Products.Api.Repository
+using Api.Domain;
+using Api.DataBase;
+namespace Api.Repository
 {
     public class SecurityKeyRepository
     {

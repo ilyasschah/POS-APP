@@ -1,10 +1,10 @@
-﻿using Products.Api.Helpers;
-using Products.Api.Models;
-using Products.Api.Services;
-using FluentValidation;
+﻿using FluentValidation;
 using MediatR;
+using Api.Helpers;
+using Api.Models;
+using Api.Services;
 
-namespace Products.Api.Commands.PosPrinterSettingsCommands.Add
+namespace Api.Commands.PosPrinterSettingsCommands.Add
 {
     public class AddPosPrinterSettingsCommand : IRequest<PosPrinterSettingsDto>
     {

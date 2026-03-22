@@ -1,10 +1,11 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Products.Api.DataBase;
-using Products.Api.Repository;
-using Products.Api.Services;
 using System.Text;
+using Api.Repository;
+using Api.Services;
+using Api.Attributes;
+using Api.DataBase;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -135,7 +136,25 @@ builder.Services.AddMediatR(cfg =>
 // ================== MVC / SWAGGER ==================
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.DocInclusionPredicate((docName, apiDesc) =>
+    {
+        var actionDescriptor =
+            apiDesc.ActionDescriptor as
+            Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor;
+
+        if (actionDescriptor == null)
+            return false;
+
+        var hasAttribute =
+            actionDescriptor.ControllerTypeInfo
+            .GetCustomAttributes(typeof(SwaggerVisibleAttribute), true)
+            .Any();
+
+        return hasAttribute;
+    });
+});
 
 // ================== AUTH ==================
 builder.Services.AddAuthorization();

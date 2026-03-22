@@ -1,7 +1,7 @@
-﻿using Products.Api.Domain;
-using Products.Api.Models;
+﻿using Api.Domain;
+using Api.Models;
 
-namespace Products.Api.Helpers
+namespace Api.Helpers
 {
     public class MapperCustomer
     {
@@ -10,13 +10,13 @@ namespace Products.Api.Helpers
             return new CustomerDto
             {   
                 Id = customer.Id,
+                CountryId = customer.CountryId,
                 Code = customer.Code,
                 Name = customer.Name,
                 TaxNumber = customer.TaxNumber,
                 Address = customer.Address,
                 PostalCode = customer.PostalCode,
                 City = customer.City,
-                CountryName = customer.Country?.Name,
                 DateCreated = customer.DateCreated,
                 DateUpdated = customer.DateUpdated,
                 Email = customer.Email,
@@ -30,7 +30,6 @@ namespace Products.Api.Helpers
                 BuildingNumber = customer.BuildingNumber,
                 PlotIdentification = customer.PlotIdentification,
                 CitySubdivisionName = customer.CitySubdivisionName,
-                CountrySubentity = customer.CountrySubentity,
                 IsTaxExempt = customer.IsTaxExempt
             };
         }

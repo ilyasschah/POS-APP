@@ -1,8 +1,9 @@
-﻿using MediatR;
-using Products.Api.Models;
-using Products.Api.Services;
+﻿using FluentValidation;
+using MediatR;
+using Api.Models;
+using Api.Services;
 
-namespace Products.Api.Commands.StockCommands.Delete
+namespace Api.Commands.StockCommands.Delete
 {
     public class DeleteStockCommand : IRequest<bool>
     {
@@ -24,8 +25,16 @@ namespace Products.Api.Commands.StockCommands.Delete
             }
             public Task<bool> Handle(DeleteStockCommand request, CancellationToken cancellationToken)
             {
-                return _stockService.Delete(request.Id,request.CompanyId);
+                return _stockService.Delete(request.Id, request.CompanyId);
             }
+        }
+    }
+    public class DeleteStockCommandValidator : AbstractValidator<DeleteStockCommand>
+    {
+        public DeleteStockCommandValidator()
+        {
+            RuleFor(sid => sid.Id).GreaterThan(0).WithMessage("Stock ID must be valid.");
+            RuleFor(cid => cid.CompanyId).GreaterThan(0).WithMessage("Company ID must be valid.");
         }
     }
 }

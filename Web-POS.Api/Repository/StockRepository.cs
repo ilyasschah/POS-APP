@@ -1,49 +1,59 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Products.Api.DataBase;
-using Products.Api.Domain;
+using System.ComponentModel.Design;
+using Api.Domain;
+using Api.DataBase;
 
-namespace Products.Api.Repository
+namespace Api.Repository
 {
     public class StockRepository(AppDbContext db)
     {
         private readonly AppDbContext _db = db;
 
-        public async Task<List<Stock>> GetAllProducts_warehouse_StocksAsync(int companyId)
+        public async Task<List<Stock>> GetAllStocksAsync(int companyId)
         {
             return await _db.Stocks
-                .AsNoTracking()
                 .Where(s => s.CompanyId == companyId)
-                .Include(wn => wn.Warehouse)
-                .Include(pn => pn.Product)
+                .Include(s => s.Warehouse)
+                .Include(s => s.Product)
+                .Include(s => s.Company)
+                .AsNoTracking()
                 .ToListAsync();
         }
-        public async Task<Stock?> GetStockByIdQuery(int id, int companyId)
+        public async Task<Stock?> GetStockByIdAsync(int id, int companyId)
         {
             return await _db.Stocks
-            .AsNoTracking()
-            .Where(s => s.CompanyId == companyId)
-            .Include(s => s.Product)
-            .Include(s => s.Warehouse)
-            .FirstOrDefaultAsync(s => s.Id == id && s.CompanyId == companyId);
+                .Where(s => s.CompanyId == companyId)
+                .Include(s => s.Warehouse)
+                .Include(s => s.Product)
+                .Include(s => s.Company)
+                .FirstOrDefaultAsync(s => s.Id == id && s.CompanyId == companyId);
+        }
+
+        public async Task<bool> Existby_P_id_W_id(int productid, int warehouseid, int companyid)
+        {
+            return await _db.Stocks
+                .AnyAsync(s => s.ProductId == productid && s.WarehouseId == warehouseid && s.CompanyId == companyid);
         }
         public async Task Add(Stock newstock)
         {
             _db.Stocks.Add(newstock);
             await _db.SaveChangesAsync();
         }
-        public bool Existby_P_id_W_id(int productid, int warehouseid, int companyid)
+        public async Task<bool> UpdateQuantityAsync(Stock entity)
         {
-            return _db.Stocks.Any(s => s.Product.Id == productid && s.Warehouse.Id == warehouseid && s.CompanyId == companyid);
-        }
-        public async Task UpdateQuantityAsync(Stock stock)
-        {
-            _db.Stocks.Update(stock);
             await _db.SaveChangesAsync();
+            return true;
         }
-        public async Task DeleteQuantityAsync(Stock stock)
+        public async Task<bool> DeleteQuantityAsync(int id , int companyId)
         {
-            _db.Stocks.Remove(stock);
+            var entity = await GetStockByIdAsync(id, companyId);
+            if (entity == null)
+            {
+                throw new KeyNotFoundException($"Stock with id {id} not found for company {companyId}");
+            }
+            _db.Stocks.Remove(entity);
             await _db.SaveChangesAsync();
+            return true;
         }
         
     }

@@ -1,12 +1,12 @@
-﻿using Products.Api.Commands.PaymentCommands.Add;
-using Products.Api.Commands.PaymentCommands.Delete;
-using Products.Api.Commands.PaymentCommands.Update;
-using Products.Api.Queries.PaymentQuery;
+﻿using Api.Commands.PaymentCommands.Add;
+using Api.Commands.PaymentCommands.Delete;
+using Api.Commands.PaymentCommands.Update;
+using Api.Queries.PaymentQuery;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Products.Api.Models;
+using Api.Models;
 
-namespace Products.Api.Controllers
+namespace Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]

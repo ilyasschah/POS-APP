@@ -1,12 +1,12 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Products.Api.Models;
-using Products.Api.Commands.PosOrderCommands.Add;
-using Products.Api.Commands.PosOrderCommands.Delete;
-using Products.Api.Commands.PosOrderCommands.Update;
-using Products.Api.Queries.PosOrderQuery;
+using Api.Commands.PosOrderCommands.Add;
+using Api.Commands.PosOrderCommands.Delete;
+using Api.Commands.PosOrderCommands.Update;
+using Api.Queries.PosOrderQuery;
+using Api.Models;
 
-namespace Products.Api.Controllers
+namespace Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]

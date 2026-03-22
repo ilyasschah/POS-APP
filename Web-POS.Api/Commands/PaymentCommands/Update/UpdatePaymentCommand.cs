@@ -2,10 +2,10 @@
 using MediatR;
 using System.Threading;
 using System.Threading.Tasks;
-using Products.Api.Services;
-using Products.Api.Models;
+using Api.Services;
+using Api.Models;
 
-namespace Products.Api.Commands.PaymentCommands.Update
+namespace Api.Commands.PaymentCommands.Update
 {
     public class UpdatePaymentCommand : IRequest<bool>
     {

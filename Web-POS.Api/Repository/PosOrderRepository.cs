@@ -1,7 +1,7 @@
-using Products.Api.DataBase;
 using Microsoft.EntityFrameworkCore;
-using Products.Api.Domain;
-namespace Products.Api.Repository;
+using Api.DataBase;
+using Api.Domain;
+namespace Api.Repository;
 public class PosOrderRepository 
 {   
     public readonly AppDbContext _db;

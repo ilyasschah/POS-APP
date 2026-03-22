@@ -1,9 +1,9 @@
-using Products.Api.Domain;
-using Products.Api.Models;
-using Products.Api.Repository;
+using Api.Domain;
+using Api.Models;
+using Api.Repository;
 using System.Reflection.Metadata;
 
-namespace Products.Api.Services
+namespace Api.Services
 {
     public class PosOrderItemService 
     {

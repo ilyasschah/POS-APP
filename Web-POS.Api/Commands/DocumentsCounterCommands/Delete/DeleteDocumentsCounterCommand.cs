@@ -1,9 +1,9 @@
 ﻿using MediatR;
 using System.Threading;
 using System.Threading.Tasks;
-using Products.Api.Services;
+using Api.Services;
 
-namespace Products.Api.Commands.DocumentsCounterCommands.Delete
+namespace Api.Commands.DocumentsCounterCommands.Delete
 {
     public class DeleteDocumentsCounterCommand : IRequest<bool>
     {

@@ -1,9 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Products.Api.Domain;
-using Products.Api.DataBase;
-using Products.Api.Models;
+using Api.Models;
+using Api.Domain;
+using Api.DataBase;
 
-namespace Products.Api.Repository
+namespace Api.Repository
 {
     public class CustomerRepository(AppDbContext db)
     {
@@ -17,44 +17,41 @@ namespace Products.Api.Repository
                 .Include(cn => cn.Country)
                 .ToListAsync();
         }
-        public async Task<Customer?> GetCustomerByNameQuery(string name, int companyId)
+        public async Task<Customer?> GetCustomerByIdAsync(int id, int companyId)
         {
             return await _db.Customers
             .AsNoTracking()
             .Include(b => b.Country)
-            .FirstOrDefaultAsync(b => b.Name == name && b.CompanyId == companyId);
+            .FirstOrDefaultAsync(b => b.Id == id && b.CompanyId == companyId);
         }
-
-        public async Task<Customer?> GetCustomerByNameQuery(string name)
+        public async Task<Customer?> GetCustomerByNameAsync(string name, int companyId)
         {
             return await _db.Customers
-            .AsNoTracking()
-            .Include(b => b.Country)
-            .FirstOrDefaultAsync(b => b.Name == name);
-        }
-        public bool Exists(string name, int companyId)
-        {
-            return _db.Customers.Any(c => c.Name == name && c.CompanyId == companyId);
+                .AsNoTracking()
+                .Include(b => b.Country)
+                .FirstOrDefaultAsync(b => b.Name == name && b.CompanyId == companyId);
         }
 
-        public bool Exists(string name)
+        public Task<bool> ExistsByNameAsync(string name, int companyId)
         {
-            return _db.Customers.Any(c => c.Name == name);
+            return _db.Customers.AnyAsync(c => c.Name == name && c.CompanyId == companyId);
         }
-        public async Task Add(Customer newCustomer)
+        public async Task AddCustomerAsync(Customer newCustomer)
         {
             _db.Customers.Add(newCustomer);
             await _db.SaveChangesAsync();
         }        
-        public async Task UpdateAsync(Customer customer)
+        public async Task<bool> UpdateCustomerAsync(Customer customer)
         {
             _db.Customers.Update(customer);
             await _db.SaveChangesAsync();
+            return true;
         }
-        public async Task DeleteAsync(Customer customer)
+        public async Task<bool> DeleteAsync(Customer customer)
         {
             _db.Customers.Remove(customer);
             await _db.SaveChangesAsync();
+            return true;
         }
     }
 }

@@ -1,8 +1,8 @@
 ﻿using FluentValidation;
 using MediatR;
-using Products.Api.Services;
+using Api.Services;
 
-namespace Products.Api.Commands.PaymentTypeCommands.Delete
+namespace Api.Commands.PaymentTypeCommands.Delete
 {
     public class DeletePaymentTypeCommand : IRequest<bool>
     {

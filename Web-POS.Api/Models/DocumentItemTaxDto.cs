@@ -1,4 +1,4 @@
-﻿namespace Products.Api.Models
+﻿namespace Api.Models
 {
     public class DocumentItemTaxDto
     {

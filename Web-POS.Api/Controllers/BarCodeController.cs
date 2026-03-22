@@ -1,12 +1,12 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Products.Api.Commands.BarcodesCommands.Add;
-using Products.Api.Commands.BarcodesCommands.Delete;
-using Products.Api.Commands.BarcodesCommands.Update;
-using Products.Api.Models;
-using Products.Api.Queries.BarCodesQuery.Get;
+using Api.Commands.BarcodesCommands.Add;
+using Api.Commands.BarcodesCommands.Delete;
+using Api.Commands.BarcodesCommands.Update;
+using Api.Queries.BarCodesQuery.Get;
+using Api.Models;
 
-namespace Products.Api.Controllers
+namespace Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]

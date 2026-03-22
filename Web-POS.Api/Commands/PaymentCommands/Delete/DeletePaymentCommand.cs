@@ -1,7 +1,7 @@
 ﻿using MediatR;
-using Products.Api.Services;
+using Api.Services;
 
-namespace Products.Api.Commands.PaymentCommands.Delete
+namespace Api.Commands.PaymentCommands.Delete
 {
     public class DeletePaymentCommand : IRequest<bool>
     {

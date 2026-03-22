@@ -1,16 +1,16 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Products.Api.Commands.CompanyCommands.Add;
-using Products.Api.Commands.CompanyCommands.Delete;
-using Products.Api.Commands.CompanyCommands.Update;
-using Products.Api.Models;
-using Products.Api.Queries.CompanyQuery;
+using Api.Commands.CompanyCommands.Add;
+using Api.Commands.CompanyCommands.Delete;
+using Api.Commands.CompanyCommands.Update;
+using Api.Queries.CompanyQuery;
+using Api.Models;
 
-namespace Products.Api.Controllers
+namespace Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class CompaniesController(IMediator mediator) : ControllerBase
+    public class CompanyController(IMediator mediator) : ControllerBase
     {
         [HttpGet("[action]")]
         public async Task<ActionResult<List<CompanyDto>>> GetAll()

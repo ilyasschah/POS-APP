@@ -1,10 +1,10 @@
 ﻿using FluentValidation;
 using MediatR;
-using Products.Api.Helpers;
-using Products.Api.Models;
-using Products.Api.Repository;
+using Api.Repository;
+using Api.Helpers;
+using Api.Models;
 
-namespace Products.Api.Queries.CustomerQuery.Get
+namespace Api.Queries.CustomerQuery.Get
 {
     public class GetAllCustomersQuery : IRequest<List<CustomerDto>>
     {

@@ -1,9 +1,9 @@
-﻿namespace Products.Api.Models
+﻿namespace Api.Models
 {
     public class PaymentTypeDto
     {
         public int Id { get; set; }
-        public string? CompanyName { get; set; }
+        public int? CompanyId { get; set; }
         public string Name { get; set; }
         public string? Code { get; set; }
         public bool IsCustomerRequired { get; set; }

@@ -1,9 +1,9 @@
 using FluentValidation;
 using MediatR;
-using Products.Api.Models;
-using Products.Api.Services;
+using Api.Services;
+using Api.Models;
 
-namespace Products.Api.Commands.FloorPlanCommands.Update
+namespace Api.Commands.FloorPlanCommands.Update
 {
     public class UpdateFloorPlanCommand : IRequest<bool>
     {

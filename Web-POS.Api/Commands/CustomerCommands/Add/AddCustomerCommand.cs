@@ -1,8 +1,9 @@
-﻿using MediatR;
-using Products.Api.Models;
-using Products.Api.Services;
+﻿using FluentValidation;
+using MediatR;
+using Api.Services;
+using Api.Models;
 
-namespace Products.Api.Commands.CustomerCommands.Add
+namespace Api.Commands.CustomerCommands.Add
 {
     public class AddCustomerCommand : IRequest<bool>
     {
@@ -14,7 +15,6 @@ namespace Products.Api.Commands.CustomerCommands.Add
             Request = createCustomerRequest;
             CompanyId = companyId;
         }
-
         public class AddCustomerCommandHandler : IRequestHandler<AddCustomerCommand, bool>
         {
             private readonly CustomerService _customerService;
@@ -22,33 +22,17 @@ namespace Products.Api.Commands.CustomerCommands.Add
             {
                 _customerService = customerService;
             }
-            public Task<bool> Handle(AddCustomerCommand request, CancellationToken cancellationToken)
+            public async Task<bool> Handle(AddCustomerCommand request, CancellationToken cancellationToken)
             {
-                return _customerService.Create(
-                    request.Request.Code,
-                    request.Request.Name,
-                    request.Request.TaxNumber,
-                    request.Request.Address,
-                    request.Request.PostalCode,
-                    request.Request.City,
-                    request.Request.CountryId,
-                    request.Request.DateCreated,
-                    request.Request.DateUpdated,
-                    request.Request.Email,
-                    request.Request.PhoneNumber,
-                    request.Request.IsEnabled,
-                    request.Request.IsCustomer,
-                    request.Request.IsSupplier,
-                    request.Request.DueDatePeriod,
-                    request.Request.StreetName,
-                    request.Request.AdditionalStreetName,
-                    request.Request.BuildingNumber,
-                    request.Request.PlotIdentification,
-                    request.Request.CitySubdivisionName,
-                    request.Request.CountrySubentity,
-                    request.Request.IsTaxExempt,
-                    request.CompanyId
-                );
+                return await _customerService.CreateAsync(request.Request, request.CompanyId);
+            }
+        }
+        public class AddCustomerCommandValidator : AbstractValidator<AddCustomerCommand>
+        {
+            public AddCustomerCommandValidator()
+            {
+                RuleFor(c => c.Request.Name).NotNull().NotEmpty().WithMessage("Customer name is required.");
+                RuleFor(c => c.CompanyId).GreaterThan(0).WithMessage("Company ID must be valid.");
             }
         }
     }

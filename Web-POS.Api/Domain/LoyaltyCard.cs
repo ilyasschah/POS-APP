@@ -3,7 +3,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Products.Api.Domain;
+namespace Api.Domain;
 
 [Table("LoyaltyCard")]
 public class LoyaltyCard

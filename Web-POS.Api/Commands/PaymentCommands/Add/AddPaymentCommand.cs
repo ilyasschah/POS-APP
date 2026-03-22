@@ -1,10 +1,10 @@
 ﻿using FluentValidation;
 using MediatR;
-using Products.Api.Helpers;
-using Products.Api.Models;
-using Products.Api.Services;
+using Api.Helpers;
+using Api.Services;
+using Api.Models;
 
-namespace Products.Api.Commands.PaymentCommands.Add
+namespace Api.Commands.PaymentCommands.Add
 {
     public class AddPaymentCommand : IRequest<PaymentDto>
     {

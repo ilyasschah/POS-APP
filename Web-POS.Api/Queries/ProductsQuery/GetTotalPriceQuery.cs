@@ -1,6 +1,6 @@
-﻿//using Products.Api.Repository;
+﻿//using Api.Repository;
 
-//namespace Products.Api.Queries.ProductsQuery.Get
+//namespace Api.Queries.ProductsQuery.Get
 //{
 //    public class GetTotalPriceQuery
 //    {

@@ -1,8 +1,8 @@
 ﻿using MediatR;
-using Products.Api.Services;
-using Products.Api.Models;
+using Api.Services;
+using Api.Models;
 
-namespace Products.Api.Commands.ZReportCommands.Add
+namespace Api.Commands.ZReportCommands.Add
 {
     public class AddZReportCommand(CreateZReportRequest createZReportRequest) : IRequest<bool>
     {

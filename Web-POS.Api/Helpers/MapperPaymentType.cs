@@ -1,7 +1,7 @@
-﻿using Products.Api.Domain;
-using Products.Api.Models;
+﻿using Api.Domain;
+using Api.Models;
 
-namespace Products.Api.Helpers
+namespace Api.Helpers
 {
     public static class MapperPaymentType
     {
@@ -10,7 +10,7 @@ namespace Products.Api.Helpers
             return new PaymentTypeDto
             {
                 Id = entity.Id,
-                CompanyName = entity.Company?.Name,
+                CompanyId = entity.CompanyId,
                 Name = entity.Name,
                 Code = entity.Code,
                 IsCustomerRequired = entity.IsCustomerRequired,

@@ -1,9 +1,9 @@
 ﻿using MediatR;
-using Products.Api.Services;
 using System.Threading;
 using System.Threading.Tasks;
+using Api.Services;
 
-namespace Products.Api.Commands.StartingCashCommands.Delete
+namespace Api.Commands.StartingCashCommands.Delete
 {
     public class DeleteStartingCashCommand : IRequest<bool>
     {

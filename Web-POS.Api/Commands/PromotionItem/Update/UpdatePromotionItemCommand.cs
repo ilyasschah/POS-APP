@@ -1,9 +1,9 @@
 ﻿using FluentValidation;
 using MediatR;
-using Products.Api.Models;
-using Products.Api.Services;
+using Api.Services;
+using Api.Models;
 
-namespace Products.Api.Commands.PromotionItem.Update
+namespace Api.Commands.PromotionItem.Update
 {
     public class UpdatePromotionItemCommand : IRequest<bool>
     {

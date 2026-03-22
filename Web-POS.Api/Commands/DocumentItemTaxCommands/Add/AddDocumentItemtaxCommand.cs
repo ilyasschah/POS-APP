@@ -1,10 +1,10 @@
-﻿using Products.Api.Commands.DocumentItemCommands.Add;
+﻿using Api.Commands.DocumentItemCommands.Add;
 using FluentValidation;
 using MediatR;
-using Products.Api.Models;
-using Products.Api.Services;
+using Api.Models;
+using Api.Services;
 
-namespace Products.Api.Commands.DocumentItemTaxCommands.Add
+namespace Api.Commands.DocumentItemTaxCommands.Add
 {
     public class AddDocumentItemtaxCommand : IRequest<bool>
     {

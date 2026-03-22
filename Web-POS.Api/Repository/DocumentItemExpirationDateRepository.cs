@@ -1,9 +1,9 @@
-﻿using Products.Api.DataBase;
-using Microsoft.EntityFrameworkCore;
-using Products.Api.Domain;
+﻿using Microsoft.EntityFrameworkCore;
 using System.Reflection.Metadata;
+using Api.Domain;
+using Api.DataBase;
 
-namespace Products.Api.Repository
+namespace Api.Repository
 {
     public class DocumentItemExpirationDateRepository(AppDbContext db)
     {

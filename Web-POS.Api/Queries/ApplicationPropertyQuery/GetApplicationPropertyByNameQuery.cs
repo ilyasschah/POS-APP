@@ -1,10 +1,10 @@
-﻿using Products.Api.Helpers;
-using Products.Api.Models;
-using Products.Api.Repository;
-using MediatR;
+﻿using MediatR;
 using FluentValidation;
+using Api.Helpers;
+using Api.Repository;
+using Api.Models;
 
-namespace Products.Api.Queries.ApplicationPropertyQuery
+namespace Api.Queries.ApplicationPropertyQuery
 {
     public class GetApplicationPropertyByNameQuery : IRequest<ApplicationPropertyDto?>
     {

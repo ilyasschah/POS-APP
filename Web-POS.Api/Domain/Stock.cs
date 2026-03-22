@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Products.Api.Domain
+namespace Api.Domain
 {
     [Table("Stock")]
     public class Stock
@@ -10,40 +10,54 @@ namespace Products.Api.Domain
         public int Id { get; set; }
         public decimal Quantity { get; set; }
         public int WarehouseId { get; set; }
-        [ForeignKey(nameof(WarehouseId))]
+
+        [ForeignKey("WarehouseId")]
         public virtual Warehouse Warehouse { get; set; }
         public int ProductId { get; set; }
         [ForeignKey("ProductId")]
         public virtual Product Product { get; set; }
         public int CompanyId { get; set; }
-
-        private Stock(decimal quantity, 
+        [ForeignKey("CompanyId")]
+        public virtual Company Company { get; set; }
+        private Stock(
+            decimal quantity, 
             int warehouseid, 
-            int productid)
+            int productid,
+            int companyid)
         {
             Quantity = quantity;
             WarehouseId = warehouseid;
             ProductId = productid;
+            CompanyId = companyid;
         }
         public Stock() { }
         public static Stock Create(
             decimal quantity, 
             int warehouseid, 
-            int productid)
+            int productid,
+            int companyid)
+        
+            => new Stock(
+                quantity, 
+                warehouseid, 
+                productid, 
+                companyid);
+
+        public void UpdateDetails(decimal quantity, int warehouseId, int productId)
         {
-            if (warehouseid < 0)
-                throw new ArgumentException("WarehouseId must be greater than zero", nameof(warehouseid));
-            return new Stock(quantity, warehouseid, productid);
-        }
-        public void Update(decimal newQuantity, int newWarehouseId, int newProductid)
-        {
-            if (newQuantity < 0)
-                throw new ArgumentException("Quantity cannot be negative", nameof(newQuantity));
-            if (newWarehouseId <= 0)
-                throw new ArgumentException("WarehouseId must be greater than zero", nameof(newWarehouseId));
-            Quantity = newQuantity;
-            WarehouseId = newWarehouseId;
-            ProductId = newProductid;
+            Quantity = quantity;
+
+            if (WarehouseId != warehouseId)
+            {
+                WarehouseId = warehouseId;
+                Warehouse = null;
+            }
+
+            if (ProductId != productId)
+            {
+                ProductId = productId;
+                Product = null;
+            }
         }
     }
 }

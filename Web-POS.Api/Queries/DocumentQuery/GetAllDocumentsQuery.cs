@@ -1,9 +1,9 @@
 ﻿using MediatR;
-using Products.Api.Helpers;
-using Products.Api.Models;
-using Products.Api.Repository;
+using Api.Helpers;
+using Api.Repository;
+using Api.Models;
 
-namespace Products.Api.Queries.DocumentQuery
+namespace Api.Queries.DocumentQuery
 {
     public class GetAllDocumentsQuery : IRequest<List<DocumentDto>>
     {

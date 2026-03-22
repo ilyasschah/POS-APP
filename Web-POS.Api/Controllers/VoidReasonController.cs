@@ -1,14 +1,14 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Products.Api.Commands.VoidReasonCommads.Add;
-using Products.Api.Commands.VoidReasonCommads.Delete;
-using Products.Api.Commands.VoidReasonCommads.Update;
-using Products.Api.Models;
-using Products.Api.Queries.VoidReasonQuery;
+using Api.Commands.VoidReasonCommads.Add;
+using Api.Commands.VoidReasonCommads.Delete;
+using Api.Commands.VoidReasonCommads.Update;
+using Api.Queries.VoidReasonQuery;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Api.Models;
 
-namespace Products.Api.Controllers
+namespace Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]

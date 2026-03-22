@@ -1,10 +1,10 @@
 ﻿using FluentValidation;
 using MediatR;
-using Products.Api.Commands.BarcodesCommands.Update;
-using Products.Api.Models;
-using Products.Api.Services;
+using Api.Commands.BarcodesCommands.Update;
+using Api.Models;
+using Api.Services;
 
-namespace Products.Api.Commands.DocumentItemExpirationDateCommands.Update
+namespace Api.Commands.DocumentItemExpirationDateCommands.Update
 {
     public class UpdateDocumentItemExpirationDateCommand : IRequest<bool>
     {

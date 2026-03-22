@@ -1,9 +1,9 @@
 ﻿using FluentValidation;
 using MediatR;
-using Products.Api.Helpers;
-using Products.Api.Models;
+using Api.Helpers;
+using Api.Models;
 
-namespace Products.Api.Commands.PosPrinterSelectionCommands.Add
+namespace Api.Commands.PosPrinterSelectionCommands.Add
 {
     public class AddPosPrinterSelectionCommand : IRequest<PosPrinterSelectionDto>
     {
@@ -17,9 +17,9 @@ namespace Products.Api.Commands.PosPrinterSelectionCommands.Add
         public class AddPosPrinterSelectionCommandHandler
             : IRequestHandler<AddPosPrinterSelectionCommand, PosPrinterSelectionDto>
         {
-            private readonly Products.Api.Services.PosPrinterSelectionService _service;
+            private readonly Services.PosPrinterSelectionService _service;
 
-            public AddPosPrinterSelectionCommandHandler(Products.Api.Services.PosPrinterSelectionService service)
+            public AddPosPrinterSelectionCommandHandler(Services.PosPrinterSelectionService service)
             {
                 _service = service;
             }

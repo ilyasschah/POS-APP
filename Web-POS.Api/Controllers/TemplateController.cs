@@ -1,12 +1,12 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Products.Api.Commands.TemplateCommands.Add;
-using Products.Api.Commands.TemplateCommands.Delete;
-using Products.Api.Commands.TemplateCommands.Update;
-using Products.Api.Models;
-using Products.Api.Queries.TemplateQuery;
+using Api.Commands.TemplateCommands.Add;
+using Api.Commands.TemplateCommands.Delete;
+using Api.Commands.TemplateCommands.Update;
+using Api.Queries.TemplateQuery;
+using Api.Models;
 
-namespace Products.Api.Controllers
+namespace Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]

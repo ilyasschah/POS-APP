@@ -1,6 +1,6 @@
 // FILE: Products.Api.Models\LoyaltyCardDto.cs
 
-namespace Products.Api.Models;
+namespace Api.Models;
 
 public class LoyaltyCardDto
 {

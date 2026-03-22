@@ -1,8 +1,8 @@
-﻿using Products.Api.Domain;
-using Products.Api.Models;
-using Products.Api.Repository; 
+﻿using Api.Domain;
+using Api.Models;
+using Api.Repository;
 
-namespace Products.Api.Services
+namespace Api.Services
 {
     public class TaxService
     {
@@ -41,30 +41,27 @@ namespace Products.Api.Services
                 IsFixed = newTax.IsFixed,
                 IsTaxOnTotal = newTax.IsTaxOnTotal,
                 IsEnabled = newTax.IsEnabled,
-                CompanyName = (await _companyRepository.GetByIdAsync(companyId))?.Name
+                CompanyId = companyId
 
             };
         }
 
         public async Task<bool> UpdateAsync(UpdateTaxRequestDto req, int companyId)
         {
-            var taxToUpdate = await _repository.GetTaxByIdAsync(req.Id, companyId);
-            if (taxToUpdate == null)
+            var entity = await _repository.GetTaxByIdAsync(req.Id, companyId);
+            if (entity == null)
                 throw new InvalidOperationException($"Tax with ID '{req.Id}' not found.");
             var conflict = await _repository.GetByNameAsync(req.Name, companyId);
             if (conflict != null && conflict.Id != req.Id)
                 throw new InvalidOperationException($"Another Tax with the name '{req.Name}' already exists.");
-            taxToUpdate.UpdateDetails(
-                req.Name,
-                req.Rate,
-                req.Code,
-                req.IsFixed,
-                req.IsTaxOnTotal,
-                req.IsEnabled
-            );
+            entity.Name = req.Name ?? entity.Name;
+            entity.Rate = req.Rate ?? entity.Rate;
+            entity.Code = req.Code ?? entity.Code;
+            entity.IsFixed = req.IsFixed ?? entity.IsFixed;
+            entity.IsTaxOnTotal = req.IsTaxOnTotal ?? entity.IsTaxOnTotal;
+            entity.IsEnabled = req.IsEnabled ?? entity.IsEnabled;
 
-            await _repository.UpdateTaxAsync(taxToUpdate);
-
+            await _repository.UpdateTaxAsync(entity);
             return true;
         }
 

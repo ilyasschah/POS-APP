@@ -1,10 +1,10 @@
 ﻿using FluentValidation;
 using MediatR;
-using Products.Api.Helpers;
-using Products.Api.Models;
-using Products.Api.Repository;
+using Api.Repository;
+using Api.Helpers;
+using Api.Models;
 
-namespace Products.Api.Queries.TaxesQuery.Get
+namespace Api.Queries.TaxesQuery.Get
 {
     public class GetTaxByIdQuery : IRequest<TaxDto?>
     {
@@ -23,7 +23,7 @@ namespace Products.Api.Queries.TaxesQuery.Get
             public async Task<TaxDto?> Handle(GetTaxByIdQuery request, CancellationToken cancellationToken)
             {
                 var tax = await _repository.GetTaxByIdAsync(request.Id, request.CompanyId);
-                return tax == null ? null : MapperTax.MapToTax(tax);
+                return tax == null ? null : MapperTax.MapToTaxDto(tax);
             }
         }
 

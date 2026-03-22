@@ -1,7 +1,7 @@
 ﻿using MediatR;
-using Products.Api.Services;
+using Api.Services;
 
-namespace Products.Api.Commands.PosPrinterSelectionCommands.Delete
+namespace Api.Commands.PosPrinterSelectionCommands.Delete
 {
     public class DeletePosPrinterSelectionCommand : IRequest<bool>
     {
@@ -15,9 +15,9 @@ namespace Products.Api.Commands.PosPrinterSelectionCommands.Delete
         public class DeletePosPrinterSelectionCommandHandler
             : IRequestHandler<DeletePosPrinterSelectionCommand, bool>
         {
-            private readonly Products.Api.Services.PosPrinterSelectionService _service;
+            private readonly Services.PosPrinterSelectionService _service;
 
-            public DeletePosPrinterSelectionCommandHandler(Products.Api.Services.PosPrinterSelectionService service)
+            public DeletePosPrinterSelectionCommandHandler(Services.PosPrinterSelectionService service)
             {
                 _service = service;
             }

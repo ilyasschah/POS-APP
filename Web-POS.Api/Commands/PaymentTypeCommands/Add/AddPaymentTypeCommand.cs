@@ -1,12 +1,9 @@
 ﻿using FluentValidation;
 using MediatR;
-using System.Threading;
-using System.Threading.Tasks;
-using Products.Api.Services;
-using Products.Api.Models;
-using Products.Api.Helpers;
+using Api.Services;
+using Api.Models;
 
-namespace Products.Api.Commands.PaymentTypeCommands.Add
+namespace Api.Commands.PaymentTypeCommands.Add
 {
     public class AddPaymentTypeCommand : IRequest<PaymentTypeDto>
     {

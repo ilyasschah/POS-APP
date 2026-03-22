@@ -1,8 +1,8 @@
 ﻿using MediatR;
-using Products.Api.Models;
-using Products.Api.Repository;
+using Api.Repository;
+using Api.Models;
 
-namespace Products.Api.Queries.DocumentTypeQuery
+namespace Api.Queries.DocumentTypeQuery
 {
     public class GetDocumentTypeByIdQuery(int id) : IRequest<DocumentTypeDto?>
     {

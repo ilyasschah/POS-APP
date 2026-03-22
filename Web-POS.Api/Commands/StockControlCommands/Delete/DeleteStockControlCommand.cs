@@ -1,9 +1,9 @@
 // FILE: Products.Api.Commands\StockControlCommands\Delete\DeleteStockControlCommand.cs
 
 using MediatR;
-using Products.Api.Services;
+using Api.Services;
 
-namespace Products.Api.Commands.StockControlCommands.Delete;
+namespace Api.Commands.StockControlCommands.Delete;
 
 public class DeleteStockControlCommand : IRequest<bool>
 {

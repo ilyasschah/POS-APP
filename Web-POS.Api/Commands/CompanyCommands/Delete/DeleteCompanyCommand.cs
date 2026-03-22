@@ -1,9 +1,9 @@
 using FluentValidation;
 using MediatR;
-using Products.Api.Commands.BarcodesCommands.Delete;
-using Products.Api.Services;
+using Api.Commands.BarcodesCommands.Delete;
+using Api.Services;
 
-namespace Products.Api.Commands.CompanyCommands.Delete;
+namespace Api.Commands.CompanyCommands.Delete;
 
 public class DeleteCompanyCommand : IRequest<bool>
 {

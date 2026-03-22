@@ -1,10 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Products.Api.DataBase;
-using Products.Api.Domain;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Api.Domain;
+using Api.DataBase;
 
-namespace Products.Api.Repository
+namespace Api.Repository
 {
     public class FiscalItemRepository
     {

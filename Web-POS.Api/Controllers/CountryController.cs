@@ -1,12 +1,12 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Products.Api.Models;
-using Products.Api.Commands.CountryCommands.Add;
-using Products.Api.Commands.CountryCommands.Update;
-using Products.Api.Commands.CountryCommands.Delete;
-using Products.Api.Queries.CountryQuery.Get;
+using Api.Commands.CountryCommands.Add;
+using Api.Commands.CountryCommands.Update;
+using Api.Commands.CountryCommands.Delete;
+using Api.Queries.CountryQuery.Get;
+using Api.Models;
 
-namespace Products.Api.Controllers
+namespace Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]

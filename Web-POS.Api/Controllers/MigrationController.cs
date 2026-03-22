@@ -1,12 +1,12 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Products.Api.Commands.MigrationCommands.Add;
-using Products.Api.Commands.MigrationCommands.Delete;
-using Products.Api.Commands.MigrationCommands.Update;
-using Products.Api.Models;
-using Products.Api.Queries.MigrationQuery;
+using Api.Commands.MigrationCommands.Add;
+using Api.Commands.MigrationCommands.Delete;
+using Api.Commands.MigrationCommands.Update;
+using Api.Queries.MigrationQuery;
+using Api.Models;
 
-namespace Products.Api.Controllers
+namespace Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]

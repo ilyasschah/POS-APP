@@ -1,15 +1,17 @@
-﻿using Products.Api.Commands.PaymentTypeCommands.Add;
-using Products.Api.Commands.PaymentTypeCommands.Delete;
-using Products.Api.Commands.PaymentTypeCommands.Update;
-using Products.Api.Queries.PaymentTypeQuery;
+﻿using Api.Commands.PaymentTypeCommands.Add;
+using Api.Commands.PaymentTypeCommands.Delete;
+using Api.Commands.PaymentTypeCommands.Update;
+using Api.Queries.PaymentTypeQuery;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Products.Api.Models;
+using Api.Attributes;
+using Api.Models;
 
-namespace Products.Api.Controllers
+namespace Api.Controllers
 {
-    [Route("api/[controller]")]
+    //[SwaggerVisible]
     [ApiController]
+    [Route("api/[controller]")]
     public class PaymentTypesController(IMediator mediator) : ControllerBase
     {
         [HttpGet("[action]")]
@@ -38,9 +40,7 @@ namespace Products.Api.Controllers
         public async Task<ActionResult<PaymentTypeDto>> Add([FromBody] CreatePaymentTypeRequest req, [FromQuery] int companyId)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
-            var command = new AddPaymentTypeCommand(req, companyId);
-
-            var result = await mediator.Send(command);
+            var result = await mediator.Send(new AddPaymentTypeCommand(req, companyId));
             return CreatedAtAction(nameof(GetById), new { id = result.Id, companyId }, result);
         }
 
@@ -48,17 +48,16 @@ namespace Products.Api.Controllers
         public async Task<ActionResult<PaymentTypeDto>> Update([FromBody] UpdatePaymentTypeRequest req, [FromQuery] int companyId)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
-            var command = new UpdatePaymentTypeCommand(req, companyId);
-            var result = await mediator.Send(command);
-            return Ok(new { Id = req.Id, Message = "Payment type updated" });
+            var result = await mediator.Send(new UpdatePaymentTypeCommand(req, companyId));
+            return Ok(new { Message = result ? "Payment type updated successfully" : "Failed to update payment type" });
         }
 
         [HttpDelete("[action]")]
-        public async Task<ActionResult<PaymentTypeDto>> Delete([FromBody] int id, [FromQuery] int companyId)
+        public async Task<ActionResult<PaymentTypeDto>> Delete([FromQuery] int id, [FromQuery] int companyId)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
             var result = await mediator.Send(new DeletePaymentTypeCommand(id, companyId));
-            return Ok(new { Id = id, Message = "Payment type deleted" });
+            return Ok(new { Message = result ? "Payment type deleted successfully" : "Failed to delete payment type" });
         }
     }
 }

@@ -1,19 +1,19 @@
 ﻿using FluentValidation;
 using MediatR;
-using Products.Api.Helpers;
-using Products.Api.Models;
-using Products.Api.Services;
+using Api.Helpers;
+using Api.Services;
+using Api.Models;
 
-namespace Products.Api.Commands.StockCommands.Add
+namespace Api.Commands.StockCommands.Add
 {
     public class AddStockCommand : IRequest<StockDto>
     {
         public CreateStockRequest Request { get; set; }
         public int CompanyId { get; }
 
-        public AddStockCommand(CreateStockRequest createStockRequest, int companyId)
+        public AddStockCommand(CreateStockRequest request, int companyId)
         {
-            Request = createStockRequest;
+            Request = request;
             CompanyId = companyId;
         }
         public class AddStockCommandHandler : IRequestHandler<AddStockCommand, StockDto>
@@ -25,8 +25,7 @@ namespace Products.Api.Commands.StockCommands.Add
             }
             public async Task<StockDto> Handle(AddStockCommand request, CancellationToken cancellationToken)
             {
-                var newEntity = await _stockService.CreateStockAsync(request.Request, request.CompanyId);
-                return MapperStock_P_Name_W_Name.MapToStockDetails(newEntity);
+                return await _stockService.CreateStockAsync(request.Request, request.CompanyId);
             }
             public class AddStockCommandValidator : AbstractValidator<AddStockCommand>
             {

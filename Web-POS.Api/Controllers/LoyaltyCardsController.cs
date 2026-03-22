@@ -2,13 +2,13 @@
 
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Products.Api.Commands.LoyaltyCardCommands.Add;
-using Products.Api.Commands.LoyaltyCardCommands.Update;
-using Products.Api.Commands.LoyaltyCardCommands.Delete;
-using Products.Api.Queries.LoyaltyCardQuery;
-using Products.Api.Models;
+using Api.Commands.LoyaltyCardCommands.Add;
+using Api.Commands.LoyaltyCardCommands.Update;
+using Api.Commands.LoyaltyCardCommands.Delete;
+using Api.Queries.LoyaltyCardQuery;
+using Api.Models;
 
-namespace Products.Api.Controllers;
+namespace Api.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]

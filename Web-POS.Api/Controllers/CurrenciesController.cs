@@ -1,12 +1,12 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Products.Api.Commands.CurrenciesCommands.Add;
-using Products.Api.Commands.CurrenciesCommands.Delete;
-using Products.Api.Commands.CurrenciesCommands.Update;
-using Products.Api.Models;
-using Products.Api.Queries.CurrenciesQuery;
+using Api.Commands.CurrenciesCommands.Add;
+using Api.Commands.CurrenciesCommands.Delete;
+using Api.Commands.CurrenciesCommands.Update;
+using Api.Queries.CurrenciesQuery;
+using Api.Models;
 
-namespace Products.Api.Controllers
+namespace Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]

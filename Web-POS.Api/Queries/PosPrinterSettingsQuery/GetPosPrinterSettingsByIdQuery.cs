@@ -1,8 +1,8 @@
-﻿using Products.Api.Helpers;
-using Products.Api.Models;
-using Products.Api.Repository;
-using MediatR;
-namespace Products.Api.Queries.PosPrinterSettingsQuery
+﻿using MediatR;
+using Api.Helpers;
+using Api.Models;
+using Api.Repository;
+namespace Api.Queries.PosPrinterSettingsQuery
 {
     public class GetPosPrinterSettingsByIdQuery : IRequest<PosPrinterSettingsDto?>
     {

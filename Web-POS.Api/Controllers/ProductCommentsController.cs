@@ -1,12 +1,12 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Products.Api.Commands.ProductsCommentsCommands.Add;
-using Products.Api.Commands.ProductsCommentsCommands.Delete;
-using Products.Api.Commands.ProductsCommentsCommands.Update;
-using Products.Api.Models;
-using Products.Api.Queries.ProductCommentsQuery;
+using Api.Commands.ProductsCommentsCommands.Add;
+using Api.Commands.ProductsCommentsCommands.Delete;
+using Api.Commands.ProductsCommentsCommands.Update;
+using Api.Queries.ProductCommentsQuery;
+using Api.Models;
 
-namespace Products.Api.Controllers
+namespace Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]

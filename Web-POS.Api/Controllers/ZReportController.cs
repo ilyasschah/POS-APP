@@ -1,11 +1,11 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Products.Api.Commands.ZReportCommands.Add;
-using Products.Api.Commands.ZReportCommands.Delete;
-using Products.Api.Queries.ZReportQuery;
-using Products.Api.Models;
+using Api.Commands.ZReportCommands.Add;
+using Api.Commands.ZReportCommands.Delete;
+using Api.Queries.ZReportQuery;
+using Api.Models;
 
-namespace Products.Api.Controllers
+namespace Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]

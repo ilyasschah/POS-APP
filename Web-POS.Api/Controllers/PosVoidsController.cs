@@ -1,13 +1,13 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Products.Api.Models;
-using Products.Api.Commands.PosVoidCommands.Add;
-using Products.Api.Commands.PosVoidCommands.Delete;
-using Products.Api.Commands.PosVoidCommands.Update;
-using Products.Api.Queries.PosVoidQuery;
+using Api.Commands.PosVoidCommands.Add;
+using Api.Commands.PosVoidCommands.Delete;
+using Api.Commands.PosVoidCommands.Update;
+using Api.Queries.PosVoidQuery;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
+using Api.Models;
 
-namespace Products.Api.Controllers
+namespace Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]

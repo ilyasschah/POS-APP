@@ -1,7 +1,7 @@
 using MediatR;
-using Products.Api.Services;
+using Api.Services;
 
-namespace Products.Api.Commands.CountryCommands.Delete
+namespace Api.Commands.CountryCommands.Delete
 {
     public class DeleteCountryCommand : IRequest<bool>
     {

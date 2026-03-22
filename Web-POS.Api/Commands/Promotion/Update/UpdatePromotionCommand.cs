@@ -1,11 +1,11 @@
 ﻿using FluentValidation;
 using MediatR;
-using Products.Api.Models;
-using Products.Api.Services;
 using System.Threading;
 using System.Threading.Tasks;
+using Api.Services;
+using Api.Models;
 
-namespace Products.Api.Commands.Promotion.Update
+namespace Api.Commands.Promotion.Update
 {
     public class UpdatePromotionCommand : IRequest<bool>
     {

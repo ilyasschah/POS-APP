@@ -2,10 +2,10 @@
 using MediatR;
 using System.Threading;
 using System.Threading.Tasks;
-using Products.Api.Services;
-using Products.Api.Models;
+using Api.Models;
+using Api.Services;
 
-namespace Products.Api.Commands.DocumentsCounterCommands.Update
+namespace Api.Commands.DocumentsCounterCommands.Update
 {
     public class UpdateDocumentsCounterCommand : IRequest<bool>
     {

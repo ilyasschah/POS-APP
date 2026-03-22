@@ -1,11 +1,11 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Products.Api.Commands.ApplicationPropertyCommands.Add;
-using Products.Api.Commands.ApplicationPropertyCommands.Update;
-using Products.Api.Models;
-using Products.Api.Queries.ApplicationPropertyQuery;
+using Api.Commands.ApplicationPropertyCommands.Add;
+using Api.Commands.ApplicationPropertyCommands.Update;
+using Api.Queries.ApplicationPropertyQuery;
+using Api.Models;
 
-namespace Products.Api.Controllers
+namespace Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]

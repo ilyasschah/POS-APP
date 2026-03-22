@@ -1,9 +1,9 @@
 ﻿using MediatR;
-using Products.Api.Services;
 using System.Threading;
 using System.Threading.Tasks;
+using Api.Services;
 
-namespace Products.Api.Commands.Promotion.Delete
+namespace Api.Commands.Promotion.Delete
 {
     public class DeletePromotionCommand : IRequest<bool>
     {

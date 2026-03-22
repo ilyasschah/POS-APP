@@ -1,12 +1,12 @@
-﻿using Products.Api.Commands.DocumentsCounterCommands.Add;
-using Products.Api.Commands.DocumentsCounterCommands.Delete;
-using Products.Api.Commands.DocumentsCounterCommands.Update;
-using Products.Api.Queries.DocumentsCounterQuery;
+﻿using Api.Commands.DocumentsCounterCommands.Add;
+using Api.Commands.DocumentsCounterCommands.Delete;
+using Api.Commands.DocumentsCounterCommands.Update;
+using Api.Queries.DocumentsCounterQuery;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Products.Api.Models;
+using Api.Models;
 
-namespace Products.Api.Controllers
+namespace Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]

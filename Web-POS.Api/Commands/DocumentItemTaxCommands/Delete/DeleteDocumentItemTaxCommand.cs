@@ -1,8 +1,8 @@
 ﻿using FluentValidation;
 using MediatR;
-using Products.Api.Services;
+using Api.Services;
 
-namespace Products.Api.Commands.DocumentItemTaxCommands.Delete
+namespace Api.Commands.DocumentItemTaxCommands.Delete
 {
     public class DeleteDocumentItemTaxCommand : IRequest<bool>
     {

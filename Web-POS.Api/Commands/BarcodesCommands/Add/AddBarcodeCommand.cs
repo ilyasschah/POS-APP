@@ -1,10 +1,10 @@
 ﻿using FluentValidation;
 using MediatR;
-using Products.Api.Models;
-using Products.Api.Services;
+using Api.Models;
+using Api.Services;
 
 
-namespace Products.Api.Commands.BarcodesCommands.Add
+namespace Api.Commands.BarcodesCommands.Add
 {
     public class AddBarcodecommand: IRequest<BarcodeDto>
     {

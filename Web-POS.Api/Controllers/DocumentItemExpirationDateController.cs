@@ -1,12 +1,12 @@
-﻿using Products.Api.Commands.DocumentItemExpirationDateCommands.Add;
-using Products.Api.Commands.DocumentItemExpirationDateCommands.Delete;
-using Products.Api.Commands.DocumentItemExpirationDateCommands.Update;
-using Products.Api.Queries.DocumentItemExpirationDateQuery;
+﻿using Api.Commands.DocumentItemExpirationDateCommands.Add;
+using Api.Commands.DocumentItemExpirationDateCommands.Delete;
+using Api.Commands.DocumentItemExpirationDateCommands.Update;
+using Api.Queries.DocumentItemExpirationDateQuery;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Products.Api.Models;
+using Api.Models;
 
-namespace Products.Api.Controllers
+namespace Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]

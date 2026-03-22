@@ -1,7 +1,7 @@
 ﻿using MediatR;
-using Products.Api.Services;
+using Api.Services;
 
-namespace Products.Api.Commands.MigrationCommands.Delete
+namespace Api.Commands.MigrationCommands.Delete
 {
     public class DeleteMigrationCommand : IRequest<bool>
     {

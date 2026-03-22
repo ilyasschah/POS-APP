@@ -1,10 +1,10 @@
 ﻿using FluentValidation;
 using MediatR;
-using Products.Api.Helpers;
-using Products.Api.Models;
-using Products.Api.Repository;
+using Api.Repository;
+using Api.Helpers;
+using Api.Models;
 
-namespace Products.Api.Queries.PaymentTypeQuery
+namespace Api.Queries.PaymentTypeQuery
 {
     public class GetPaymentTypeByNameQuery : IRequest<PaymentTypeDto?>
     {

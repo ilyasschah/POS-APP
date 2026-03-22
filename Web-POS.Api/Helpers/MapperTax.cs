@@ -1,11 +1,11 @@
-﻿using Products.Api.Domain;
-using Products.Api.Models;
+﻿using Api.Domain;
+using Api.Models;
 
-namespace Products.Api.Helpers
+namespace Api.Helpers
 {
     public class MapperTax
     {
-        public static TaxDto MapToTax(Tax tax)
+        public static TaxDto MapToTaxDto(Tax tax)
         {
             return new TaxDto
             {
@@ -15,25 +15,9 @@ namespace Products.Api.Helpers
                 Code = tax.Code,
                 IsFixed = tax.IsFixed,
                 IsTaxOnTotal = tax.IsTaxOnTotal,
-                IsEnabled = tax.IsEnabled
+                IsEnabled = tax.IsEnabled,
+                CompanyId = tax.CompanyId
             };
-        }
-
-        public static Tax MapToTax(CreateTaxRequestDto createDto, int companyId)
-        {
-            if (createDto == null)
-            {
-                throw new ArgumentNullException(nameof(createDto));
-            }
-            return Tax.Create(
-                companyId,
-                createDto.Name,
-                createDto.Rate,
-                createDto.Code,
-                createDto.IsFixed,
-                createDto.IsTaxOnTotal,
-                createDto.IsEnabled
-            );
         }
     }
 }

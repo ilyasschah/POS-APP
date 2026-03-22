@@ -1,8 +1,8 @@
 using FluentValidation;
 using MediatR;
-using Products.Api.Services;
+using Api.Services;
 
-namespace Products.Api.Commands.UserCommands.Delete;
+namespace Api.Commands.UserCommands.Delete;
 
 public class DeleteUserCommand : IRequest<bool>
 {

@@ -1,10 +1,10 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Products.Api.Commands.SecurityKeyCommands.Add;
-using Products.Api.Models;
-using Products.Api.Queries.SecurityKeysQuery.Gett;
+using Api.Commands.SecurityKeyCommands.Add;
+using Api.Queries.SecurityKeysQuery.Gett;
+using Api.Models;
 
-namespace Products.Api.Controllers
+namespace Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]

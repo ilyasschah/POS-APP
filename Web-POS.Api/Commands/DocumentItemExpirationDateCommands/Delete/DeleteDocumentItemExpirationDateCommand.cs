@@ -1,7 +1,7 @@
 ﻿using MediatR;
-using Products.Api.Services;
+using Api.Services;
 
-namespace Products.Api.Commands.DocumentItemExpirationDateCommands.Delete
+namespace Api.Commands.DocumentItemExpirationDateCommands.Delete
 {
     public class DeleteDocumentItemExpirationDateCommand : IRequest<bool>
     {

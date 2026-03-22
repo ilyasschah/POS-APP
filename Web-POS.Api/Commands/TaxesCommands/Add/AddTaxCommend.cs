@@ -1,9 +1,9 @@
 ﻿using FluentValidation;
 using MediatR;
-using Products.Api.Models;
-using Products.Api.Services; 
+using Api.Models;
+using Api.Services;
 
-namespace Products.Api.Commands.TaxesCommands.Add
+namespace Api.Commands.TaxesCommands.Add
 {
     public class AddTaxCommand : IRequest<TaxDto>
     {

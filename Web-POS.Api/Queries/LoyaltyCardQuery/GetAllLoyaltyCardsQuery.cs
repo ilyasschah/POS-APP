@@ -1,11 +1,11 @@
 // FILE: Products.Api.Queries\LoyaltyCardQuery\GetAllLoyaltyCardsQuery.cs
 
 using MediatR;
-using Products.Api.Helpers;
-using Products.Api.Models;
-using Products.Api.Repository;
+using Api.Helpers;
+using Api.Repository;
+using Api.Models;
 
-namespace Products.Api.Queries.LoyaltyCardQuery;
+namespace Api.Queries.LoyaltyCardQuery;
 
 public class GetAllLoyaltyCardsQuery : IRequest<List<LoyaltyCardDto>>
 {

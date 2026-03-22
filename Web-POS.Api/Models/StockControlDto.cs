@@ -1,6 +1,6 @@
 // FILE: Products.Api.Models\StockControlDto.cs
 
-namespace Products.Api.Models;
+namespace Api.Models;
 
 public class StockControlDto
 {

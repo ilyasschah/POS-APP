@@ -1,7 +1,7 @@
-﻿using Products.Api.Domain;
-using Products.Api.Models;
-using Products.Api.Repository;
-namespace Products.Api.Services
+﻿using Api.Domain;
+using Api.Models;
+using Api.Repository;
+namespace Api.Services
 {
     public class DocumentItemService
     {

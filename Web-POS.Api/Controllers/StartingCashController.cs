@@ -1,12 +1,12 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Products.Api.Models;
-using Products.Api.Commands.StartingCashCommands.Add;
-using Products.Api.Commands.StartingCashCommands.Delete;
-using Products.Api.Commands.StartingCashCommands.Update;
-using Products.Api.Queries.StartingCashQuery;
+using Api.Commands.StartingCashCommands.Add;
+using Api.Commands.StartingCashCommands.Delete;
+using Api.Commands.StartingCashCommands.Update;
+using Api.Queries.StartingCashQuery;
+using Api.Models;
 
-namespace Products.Api.Controllers
+namespace Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]

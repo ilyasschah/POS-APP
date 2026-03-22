@@ -1,7 +1,7 @@
 //using MediatR;
-//using Products.Api.Repository;
+//using Api.Repository;
 
-//namespace Products.Api.Commands.CountryCommands.Update
+//namespace Api.Commands.CountryCommands.Update
 //{
 //    public class UpdateBarcodeByValuecommand : IRequest<bool>
 //    {

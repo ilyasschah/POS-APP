@@ -1,12 +1,12 @@
-﻿using Products.Api.Commands.DocumentItemTaxCommands.Add;
-using Products.Api.Commands.DocumentItemTaxCommands.Delete;
-using Products.Api.Commands.DocumentItemTaxCommands.Update;
-using Products.Api.Queries.DocumentItemTaxQuery;
+﻿using Api.Commands.DocumentItemTaxCommands.Add;
+using Api.Commands.DocumentItemTaxCommands.Delete;
+using Api.Commands.DocumentItemTaxCommands.Update;
+using Api.Queries.DocumentItemTaxQuery;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Products.Api.Models;
+using Api.Models;
 
-namespace Products.Api.Controllers
+namespace Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]

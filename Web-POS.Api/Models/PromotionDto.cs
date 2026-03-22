@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Products.Api.Models
+namespace Api.Models
 {
     public class PromotionDto
     {

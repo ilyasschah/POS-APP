@@ -1,7 +1,7 @@
 ﻿//using MediatR;
-//using Products.Api.Models;
-//using Products.Api.Repository;
-//namespace Products.Api.Queries.CountryQuery.Get
+//using Api.Models;
+//using Api.Repository;
+//namespace Api.Queries.CountryQuery.Get
 //{
 //    public class GetBarcodeByIdQuery : IRequest<CustomerDto?>
 //    {

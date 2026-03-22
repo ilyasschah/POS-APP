@@ -1,8 +1,8 @@
 ﻿using MediatR;
-using Products.Api.Models;
-using Products.Api.Repository;
+using Api.Repository;
+using Api.Models;
 
-namespace Products.Api.Queries.DocumentItemTaxQuery
+namespace Api.Queries.DocumentItemTaxQuery
 {
     public class GetByDocumentitemTaxByIdQuery(int id) : IRequest<DocumentItemTaxDto?>
     {

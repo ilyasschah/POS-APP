@@ -1,12 +1,12 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Products.Api.Models;
-using Products.Api.Commands.FloorPlanCommands.Add;
-using Products.Api.Commands.FloorPlanCommands.Delete;
-using Products.Api.Commands.FloorPlanCommands.Update;
-using Products.Api.Queries.FloorPlanQuery.Get;
+using Api.Commands.FloorPlanCommands.Add;
+using Api.Commands.FloorPlanCommands.Delete;
+using Api.Commands.FloorPlanCommands.Update;
+using Api.Queries.FloorPlanQuery.Get;
+using Api.Models;
 
-namespace Products.Api.Controllers
+namespace Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]

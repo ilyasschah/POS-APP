@@ -1,11 +1,11 @@
 // File: Queries/PosVoidQuery/GetAllPosVoidsQuery.cs
 
 using MediatR;
-using Products.Api.Helpers;
-using Products.Api.Models;
-using Products.Api.Repository;
+using Api.Repository;
+using Api.Helpers;
+using Api.Models;
 
-namespace Products.Api.Queries.PosVoidQuery;
+namespace Api.Queries.PosVoidQuery;
 
 public class GetAllPosVoidsQuery : IRequest<List<PosVoidDto>>
 {

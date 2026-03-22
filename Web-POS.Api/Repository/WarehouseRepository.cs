@@ -1,8 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Products.Api.DataBase;
-using Products.Api.Domain;
+using Api.Domain;
+using Api.DataBase;
 
-namespace Products.Api.Repository
+namespace Api.Repository
 {
     public class WarehouseRepository
     {
@@ -28,7 +28,13 @@ namespace Products.Api.Repository
                 .Include(w => w.Company)
                 .FirstOrDefaultAsync(w => w.Id == id && w.CompanyId == companyId);
         }
-
+        public async Task<Warehouse?> GetByNameAsync(string name, int companyId)
+        {
+            return await _db.Warehouses
+                .AsNoTracking()
+                .Include(w => w.Company)
+                .FirstOrDefaultAsync(w => w.Name == name && w.CompanyId == companyId);
+        }
         public async Task<bool> ExistsAsync(string name, int companyId)
         {
             return await _db.Warehouses

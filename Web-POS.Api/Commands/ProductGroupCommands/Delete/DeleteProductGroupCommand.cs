@@ -1,7 +1,7 @@
 ﻿using MediatR;
-using Products.Api.Services;
+using Api.Services;
 
-namespace Products.Api.Commands.ProductGroupCommands.Delete
+namespace Api.Commands.ProductGroupCommands.Delete
 {
     public class DeleteProductGroupCommand : IRequest<bool>
     {

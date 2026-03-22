@@ -1,12 +1,12 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Products.Api.Commands.PosPrinterSelectionSettingsCommands.Add;
-using Products.Api.Commands.PosPrinterSelectionSettingsCommands.Delete;
-using Products.Api.Commands.PosPrinterSelectionSettingsCommands.Update;
-using Products.Api.Models;
-using Products.Api.Queries.PosPrinterSelectionSettingsQuery;
+using Api.Commands.PosPrinterSelectionSettingsCommands.Add;
+using Api.Commands.PosPrinterSelectionSettingsCommands.Delete;
+using Api.Commands.PosPrinterSelectionSettingsCommands.Update;
+using Api.Queries.PosPrinterSelectionSettingsQuery;
+using Api.Models;
 
-namespace Products.Api.Controllers
+namespace Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]

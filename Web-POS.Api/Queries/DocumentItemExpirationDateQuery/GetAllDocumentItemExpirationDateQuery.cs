@@ -1,8 +1,8 @@
 ﻿using MediatR;
-using Products.Api.Helpers;
-using Products.Api.Models;
-using Products.Api.Repository;
-namespace Products.Api.Queries.DocumentItemExpirationDateQuery
+using Api.Repository;
+using Api.Helpers;
+using Api.Models;
+namespace Api.Queries.DocumentItemExpirationDateQuery
 {
     public class GetAllDocumentItemExpirationDateQuery : IRequest<List<DocumentItemExpirationDateDto>>
     {

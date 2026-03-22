@@ -1,9 +1,9 @@
 ﻿using FluentValidation;
 using MediatR;
-using Products.Api.Models;
-using Products.Api.Services;
+using Api.Services;
+using Api.Models;
 
-namespace Products.Api.Commands.PaymentTypeCommands.Update
+namespace Api.Commands.PaymentTypeCommands.Update
 {
     public class UpdatePaymentTypeCommand : IRequest<bool>
     {
@@ -27,7 +27,6 @@ namespace Products.Api.Commands.PaymentTypeCommands.Update
             public Task<bool> Handle(UpdatePaymentTypeCommand command, CancellationToken cancellationToken)
             {
                 return _service.Update(command.Request, command.CompanyId);
-
             }
         }
         public class UpdatePaymentTypeCommandValidator : AbstractValidator<UpdatePaymentTypeCommand>

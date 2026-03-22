@@ -1,7 +1,7 @@
-﻿using Products.Api.Services;
-using MediatR;
+﻿using MediatR;
+using Api.Services;
 
-namespace Products.Api.Commands.PosPrinterSettingsCommands.Delete
+namespace Api.Commands.PosPrinterSettingsCommands.Delete
 {
     public class DeletePosPrinterSettingsCommand : IRequest<bool>
     {

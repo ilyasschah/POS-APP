@@ -1,6 +1,6 @@
 [
   {
-    "ContainingType": "Products.Api.Controllers.ApplicationPropertiesController",
+    "ContainingType": "Api.Controllers.ApplicationPropertiesController",
     "Method": "Add",
     "RelativePath": "api/ApplicationProperties/Add",
     "HttpMethod": "POST",
@@ -9,7 +9,7 @@
     "Parameters": [
       {
         "Name": "request",
-        "Type": "Products.Api.Models.CreateApplicationPropertyRequest",
+        "Type": "Api.Models.CreateApplicationPropertyRequest",
         "IsRequired": true
       },
       {
@@ -20,7 +20,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.ApplicationPropertyDto",
+        "Type": "Api.Models.ApplicationPropertyDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -31,7 +31,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.ApplicationPropertiesController",
+    "ContainingType": "Api.Controllers.ApplicationPropertiesController",
     "Method": "GetAll",
     "RelativePath": "api/ApplicationProperties/GetAll",
     "HttpMethod": "GET",
@@ -46,7 +46,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.ApplicationPropertyDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.ApplicationPropertyDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -57,7 +57,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.ApplicationPropertiesController",
+    "ContainingType": "Api.Controllers.ApplicationPropertiesController",
     "Method": "GetById",
     "RelativePath": "api/ApplicationProperties/GetById/{id}",
     "HttpMethod": "GET",
@@ -77,7 +77,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.ApplicationPropertyDto",
+        "Type": "Api.Models.ApplicationPropertyDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -88,7 +88,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.ApplicationPropertiesController",
+    "ContainingType": "Api.Controllers.ApplicationPropertiesController",
     "Method": "GetByName",
     "RelativePath": "api/ApplicationProperties/GetByName",
     "HttpMethod": "GET",
@@ -108,7 +108,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.ApplicationPropertyDto",
+        "Type": "Api.Models.ApplicationPropertyDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -119,7 +119,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.ApplicationPropertiesController",
+    "ContainingType": "Api.Controllers.ApplicationPropertiesController",
     "Method": "Update",
     "RelativePath": "api/ApplicationProperties/Update",
     "HttpMethod": "PUT",
@@ -128,7 +128,7 @@
     "Parameters": [
       {
         "Name": "request",
-        "Type": "Products.Api.Models.UpdateApplicationPropertyRequest",
+        "Type": "Api.Models.UpdateApplicationPropertyRequest",
         "IsRequired": true
       },
       {
@@ -150,7 +150,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.AuthController",
+    "ContainingType": "Api.Controllers.AuthController",
     "Method": "Login",
     "RelativePath": "api/Auth/Login",
     "HttpMethod": "POST",
@@ -159,13 +159,13 @@
     "Parameters": [
       {
         "Name": "body",
-        "Type": "Products.Api.Controllers.AuthController\u002BLoginRequest",
+        "Type": "Api.Controllers.AuthController\u002BLoginRequest",
         "IsRequired": true
       }
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Controllers.AuthController\u002BLoginResponse",
+        "Type": "Api.Controllers.AuthController\u002BLoginResponse",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -176,7 +176,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.BarcodesController",
+    "ContainingType": "Api.Controllers.BarcodesController",
     "Method": "Add",
     "RelativePath": "api/Barcodes/Add",
     "HttpMethod": "POST",
@@ -185,7 +185,7 @@
     "Parameters": [
       {
         "Name": "createrequest",
-        "Type": "Products.Api.Models.CreateBarcodeRequest",
+        "Type": "Api.Models.CreateBarcodeRequest",
         "IsRequired": true
       },
       {
@@ -196,7 +196,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.BarcodeDto",
+        "Type": "Api.Models.BarcodeDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -207,7 +207,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.BarcodesController",
+    "ContainingType": "Api.Controllers.BarcodesController",
     "Method": "Delete",
     "RelativePath": "api/Barcodes/Delete",
     "HttpMethod": "DELETE",
@@ -216,7 +216,7 @@
     "Parameters": [
       {
         "Name": "deleterequest",
-        "Type": "Products.Api.Models.DeleteBarcodeRequest",
+        "Type": "Api.Models.DeleteBarcodeRequest",
         "IsRequired": true
       },
       {
@@ -238,7 +238,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.BarcodesController",
+    "ContainingType": "Api.Controllers.BarcodesController",
     "Method": "GetAllBarCodeProductName",
     "RelativePath": "api/Barcodes/GetAllBarCodeProductName",
     "HttpMethod": "GET",
@@ -253,7 +253,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.BarcodeDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.BarcodeDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -264,7 +264,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.BarcodesController",
+    "ContainingType": "Api.Controllers.BarcodesController",
     "Method": "GetById",
     "RelativePath": "api/Barcodes/GetById/{id}",
     "HttpMethod": "GET",
@@ -284,7 +284,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.BarcodeDto",
+        "Type": "Api.Models.BarcodeDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -295,7 +295,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.BarcodesController",
+    "ContainingType": "Api.Controllers.BarcodesController",
     "Method": "Update",
     "RelativePath": "api/Barcodes/Update",
     "HttpMethod": "PATCH",
@@ -304,7 +304,7 @@
     "Parameters": [
       {
         "Name": "updaterequest",
-        "Type": "Products.Api.Models.UpdateBarcodeRequest",
+        "Type": "Api.Models.UpdateBarcodeRequest",
         "IsRequired": true
       },
       {
@@ -315,7 +315,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.BarcodeDto",
+        "Type": "Api.Models.BarcodeDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -326,22 +326,22 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.CompaniesController",
+    "ContainingType": "Api.Controllers.CompanyController",
     "Method": "Create",
-    "RelativePath": "api/Companies/Create",
+    "RelativePath": "api/Company/Create",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
         "Name": "request",
-        "Type": "Products.Api.Models.CreateCompanyRequest",
+        "Type": "Api.Models.CreateCompanyRequest",
         "IsRequired": true
       }
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.CompanyDto",
+        "Type": "Api.Models.CompanyDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -352,9 +352,9 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.CompaniesController",
+    "ContainingType": "Api.Controllers.CompanyController",
     "Method": "Delete",
-    "RelativePath": "api/Companies/Delete",
+    "RelativePath": "api/Company/Delete",
     "HttpMethod": "DELETE",
     "IsController": true,
     "Order": 0,
@@ -368,16 +368,16 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.CompaniesController",
+    "ContainingType": "Api.Controllers.CompanyController",
     "Method": "GetAll",
-    "RelativePath": "api/Companies/GetAll",
+    "RelativePath": "api/Company/GetAll",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
     "Parameters": [],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.CompanyDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.CompanyDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -388,9 +388,9 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.CompaniesController",
+    "ContainingType": "Api.Controllers.CompanyController",
     "Method": "GetById",
-    "RelativePath": "api/Companies/GetById",
+    "RelativePath": "api/Company/GetById",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -403,7 +403,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.CompanyDto",
+        "Type": "Api.Models.CompanyDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -414,22 +414,22 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.CompaniesController",
+    "ContainingType": "Api.Controllers.CompanyController",
     "Method": "Update",
-    "RelativePath": "api/Companies/Update",
+    "RelativePath": "api/Company/Update",
     "HttpMethod": "PATCH",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
         "Name": "req",
-        "Type": "Products.Api.Models.UpdateCompanyRequest",
+        "Type": "Api.Models.UpdateCompanyRequest",
         "IsRequired": true
       }
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.CompanyDto",
+        "Type": "Api.Models.CompanyDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -440,23 +440,23 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.CompaniesController",
+    "ContainingType": "Api.Controllers.CompanyController",
     "Method": "UpdateLogo",
-    "RelativePath": "api/Companies/UpdateLogo",
+    "RelativePath": "api/Company/UpdateLogo",
     "HttpMethod": "PUT",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
         "Name": "request",
-        "Type": "Products.Api.Models.UpdateCompanyLogoRequest",
+        "Type": "Api.Models.UpdateCompanyLogoRequest",
         "IsRequired": true
       }
     ],
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.CountryController",
+    "ContainingType": "Api.Controllers.CountryController",
     "Method": "Add",
     "RelativePath": "api/Country/Add",
     "HttpMethod": "POST",
@@ -465,7 +465,7 @@
     "Parameters": [
       {
         "Name": "createrequest",
-        "Type": "Products.Api.Models.CreateCountryRequest",
+        "Type": "Api.Models.CreateCountryRequest",
         "IsRequired": true
       },
       {
@@ -476,7 +476,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.CountryDto",
+        "Type": "Api.Models.CountryDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -487,7 +487,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.CountryController",
+    "ContainingType": "Api.Controllers.CountryController",
     "Method": "Delete",
     "RelativePath": "api/Country/Delete/{id}",
     "HttpMethod": "DELETE",
@@ -508,7 +508,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.CountryController",
+    "ContainingType": "Api.Controllers.CountryController",
     "Method": "GetAllCountries",
     "RelativePath": "api/Country/GetAllCountries",
     "HttpMethod": "GET",
@@ -523,7 +523,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.CountryDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.CountryDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -534,7 +534,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.CountryController",
+    "ContainingType": "Api.Controllers.CountryController",
     "Method": "GetById",
     "RelativePath": "api/Country/GetById/{id}",
     "HttpMethod": "GET",
@@ -554,7 +554,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.CountryDto",
+        "Type": "Api.Models.CountryDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -565,7 +565,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.CountryController",
+    "ContainingType": "Api.Controllers.CountryController",
     "Method": "Update",
     "RelativePath": "api/Country/Update/{id}",
     "HttpMethod": "PUT",
@@ -579,7 +579,7 @@
       },
       {
         "Name": "req",
-        "Type": "Products.Api.Models.UpdateCountryRequest",
+        "Type": "Api.Models.UpdateCountryRequest",
         "IsRequired": true
       },
       {
@@ -591,7 +591,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.CurrenciesController",
+    "ContainingType": "Api.Controllers.CurrenciesController",
     "Method": "Add",
     "RelativePath": "api/Currencies/Add",
     "HttpMethod": "POST",
@@ -611,7 +611,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.CurrencyDto",
+        "Type": "Api.Models.CurrencyDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -622,7 +622,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.CurrenciesController",
+    "ContainingType": "Api.Controllers.CurrenciesController",
     "Method": "Delete",
     "RelativePath": "api/Currencies/Delete/{id}",
     "HttpMethod": "DELETE",
@@ -638,7 +638,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.CurrenciesController",
+    "ContainingType": "Api.Controllers.CurrenciesController",
     "Method": "GetAll",
     "RelativePath": "api/Currencies/GetAll",
     "HttpMethod": "GET",
@@ -647,7 +647,7 @@
     "Parameters": [],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.CurrencyDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.CurrencyDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -658,7 +658,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.CurrenciesController",
+    "ContainingType": "Api.Controllers.CurrenciesController",
     "Method": "GetById",
     "RelativePath": "api/Currencies/GetById/{id}",
     "HttpMethod": "GET",
@@ -673,7 +673,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.CurrencyDto",
+        "Type": "Api.Models.CurrencyDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -684,7 +684,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.CurrenciesController",
+    "ContainingType": "Api.Controllers.CurrenciesController",
     "Method": "GetByName",
     "RelativePath": "api/Currencies/GetByName/{name}",
     "HttpMethod": "GET",
@@ -699,7 +699,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.CurrencyDto",
+        "Type": "Api.Models.CurrencyDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -710,7 +710,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.CurrenciesController",
+    "ContainingType": "Api.Controllers.CurrenciesController",
     "Method": "Update",
     "RelativePath": "api/Currencies/Update/{id}",
     "HttpMethod": "PUT",
@@ -736,7 +736,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.CustomerController",
+    "ContainingType": "Api.Controllers.CustomerController",
     "Method": "AddCustomercommand",
     "RelativePath": "api/Customer/AddCustomercommand",
     "HttpMethod": "POST",
@@ -745,7 +745,7 @@
     "Parameters": [
       {
         "Name": "createrequest",
-        "Type": "Products.Api.Models.CreateCustomerRequest",
+        "Type": "Api.Models.CreateCustomerRequest",
         "IsRequired": true
       },
       {
@@ -756,7 +756,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.CustomerDto",
+        "Type": "Api.Models.CustomerDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -767,7 +767,28 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.CustomerController",
+    "ContainingType": "Api.Controllers.CustomerController",
+    "Method": "DeleteCustomercommand",
+    "RelativePath": "api/Customer/DeleteCustomercommand",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Api.Controllers.CustomerController",
     "Method": "GetAllCustomers",
     "RelativePath": "api/Customer/GetAllCustomers",
     "HttpMethod": "GET",
@@ -782,7 +803,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.CustomerDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.CustomerDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -793,22 +814,27 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.CustomerDiscountController",
-    "Method": "AddCustomerDiscount",
-    "RelativePath": "api/CustomerDiscount/AddCustomerDiscount",
-    "HttpMethod": "POST",
+    "ContainingType": "Api.Controllers.CustomerController",
+    "Method": "GetCustomerById",
+    "RelativePath": "api/Customer/GetCustomerById",
+    "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "createcustomerdiscountRequest",
-        "Type": "Products.Api.Models.CreateCustomerDiscountRequest",
-        "IsRequired": true
+        "Name": "Id",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.CustomerDiscountDto",
+        "Type": "Api.Models.CustomerDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -819,36 +845,47 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.CustomerDiscountController",
-    "Method": "GetAllCustomerDiscounts",
-    "RelativePath": "api/CustomerDiscount/GetAllCustomerDiscounts",
+    "ContainingType": "Api.Controllers.CustomerController",
+    "Method": "GetCustomerByName",
+    "RelativePath": "api/Customer/GetCustomerByName",
     "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [],
-    "ReturnTypes": [
-      {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.CustomerDiscountDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
-  },
-  {
-    "ContainingType": "Products.Api.Controllers.DocumentController",
-    "Method": "Add",
-    "RelativePath": "api/Document/Add",
-    "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "req",
-        "Type": "Products.Api.Models.CreateDocumentRequest",
+        "Name": "name",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "Api.Models.CustomerDto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "Api.Controllers.CustomerController",
+    "Method": "UpdateCustomercommand",
+    "RelativePath": "api/Customer/UpdateCustomercommand",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "updaterequest",
+        "Type": "Api.Models.UpdateCustomerRequest",
         "IsRequired": true
       },
       {
@@ -859,7 +896,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.DocumentDto",
+        "Type": "Api.Models.CustomerDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -870,7 +907,84 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.DocumentController",
+    "ContainingType": "Api.Controllers.CustomerDiscountController",
+    "Method": "AddCustomerDiscount",
+    "RelativePath": "api/CustomerDiscount/AddCustomerDiscount",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "createcustomerdiscountRequest",
+        "Type": "Api.Models.CreateCustomerDiscountRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "Api.Models.CustomerDiscountDto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "Api.Controllers.CustomerDiscountController",
+    "Method": "GetAllCustomerDiscounts",
+    "RelativePath": "api/CustomerDiscount/GetAllCustomerDiscounts",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.CustomerDiscountDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "Api.Controllers.DocumentController",
+    "Method": "Add",
+    "RelativePath": "api/Document/Add",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "req",
+        "Type": "Api.Models.CreateDocumentRequest",
+        "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "Api.Models.DocumentDto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "Api.Controllers.DocumentController",
     "Method": "Delete",
     "RelativePath": "api/Document/Delete/{id}",
     "HttpMethod": "DELETE",
@@ -891,7 +1005,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.DocumentController",
+    "ContainingType": "Api.Controllers.DocumentController",
     "Method": "GetAll",
     "RelativePath": "api/Document/GetAll",
     "HttpMethod": "GET",
@@ -906,7 +1020,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.DocumentDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.DocumentDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -917,7 +1031,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.DocumentController",
+    "ContainingType": "Api.Controllers.DocumentController",
     "Method": "GetById",
     "RelativePath": "api/Document/GetById/{id}",
     "HttpMethod": "GET",
@@ -937,7 +1051,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.DocumentDto",
+        "Type": "Api.Models.DocumentDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -948,7 +1062,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.DocumentController",
+    "ContainingType": "Api.Controllers.DocumentController",
     "Method": "GetByNumber",
     "RelativePath": "api/Document/GetByNumber/{number}",
     "HttpMethod": "GET",
@@ -968,7 +1082,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.DocumentDto",
+        "Type": "Api.Models.DocumentDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -979,7 +1093,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.DocumentController",
+    "ContainingType": "Api.Controllers.DocumentController",
     "Method": "Update",
     "RelativePath": "api/Document/Update/{id}",
     "HttpMethod": "PUT",
@@ -993,7 +1107,7 @@
       },
       {
         "Name": "req",
-        "Type": "Products.Api.Models.UpdateDocumentRequest",
+        "Type": "Api.Models.UpdateDocumentRequest",
         "IsRequired": true
       },
       {
@@ -1005,7 +1119,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.DocumentCategoryController",
+    "ContainingType": "Api.Controllers.DocumentCategoryController",
     "Method": "Create",
     "RelativePath": "api/DocumentCategory/Create",
     "HttpMethod": "POST",
@@ -1025,7 +1139,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.DocumentCategoryDto",
+        "Type": "Api.Models.DocumentCategoryDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -1036,7 +1150,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.DocumentCategoryController",
+    "ContainingType": "Api.Controllers.DocumentCategoryController",
     "Method": "Delete",
     "RelativePath": "api/DocumentCategory/Delete/{id}",
     "HttpMethod": "DELETE",
@@ -1052,7 +1166,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.DocumentCategoryController",
+    "ContainingType": "Api.Controllers.DocumentCategoryController",
     "Method": "GetById",
     "RelativePath": "api/DocumentCategory/GetById",
     "HttpMethod": "GET",
@@ -1072,7 +1186,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.DocumentCategoryDto",
+        "Type": "Api.Models.DocumentCategoryDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -1083,7 +1197,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.DocumentCategoryController",
+    "ContainingType": "Api.Controllers.DocumentCategoryController",
     "Method": "GettAll",
     "RelativePath": "api/DocumentCategory/GettAll",
     "HttpMethod": "GET",
@@ -1098,7 +1212,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.DocumentCategoryDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.DocumentCategoryDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -1109,7 +1223,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.DocumentItemController",
+    "ContainingType": "Api.Controllers.DocumentItemController",
     "Method": "Create",
     "RelativePath": "api/DocumentItem/Create",
     "HttpMethod": "POST",
@@ -1118,13 +1232,13 @@
     "Parameters": [
       {
         "Name": "request",
-        "Type": "Products.Api.Models.CreateDocumentItemRequest",
+        "Type": "Api.Models.CreateDocumentItemRequest",
         "IsRequired": true
       }
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.DocumentItemDto",
+        "Type": "Api.Models.DocumentItemDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -1135,7 +1249,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.DocumentItemController",
+    "ContainingType": "Api.Controllers.DocumentItemController",
     "Method": "Delete",
     "RelativePath": "api/DocumentItem/Delete/{id}",
     "HttpMethod": "DELETE",
@@ -1151,7 +1265,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.DocumentItemController",
+    "ContainingType": "Api.Controllers.DocumentItemController",
     "Method": "GetAll",
     "RelativePath": "api/DocumentItem/GetAll",
     "HttpMethod": "GET",
@@ -1160,7 +1274,7 @@
     "Parameters": [],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.DocumentItemDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.DocumentItemDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -1171,7 +1285,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.DocumentItemController",
+    "ContainingType": "Api.Controllers.DocumentItemController",
     "Method": "GetById",
     "RelativePath": "api/DocumentItem/GetById",
     "HttpMethod": "GET",
@@ -1186,7 +1300,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.DocumentItemDto",
+        "Type": "Api.Models.DocumentItemDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -1197,7 +1311,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.DocumentItemController",
+    "ContainingType": "Api.Controllers.DocumentItemController",
     "Method": "GetGetDocumentItemsByDocumentId",
     "RelativePath": "api/DocumentItem/GetGetDocumentItemsByDocumentId",
     "HttpMethod": "GET",
@@ -1206,7 +1320,7 @@
     "Parameters": [],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.DocumentItemDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.DocumentItemDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -1217,7 +1331,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.DocumentItemExpirationDateController",
+    "ContainingType": "Api.Controllers.DocumentItemExpirationDateController",
     "Method": "Add",
     "RelativePath": "api/DocumentItemExpirationDate/Add",
     "HttpMethod": "POST",
@@ -1237,7 +1351,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.DocumentItemExpirationDateDto",
+        "Type": "Api.Models.DocumentItemExpirationDateDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -1248,7 +1362,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.DocumentItemExpirationDateController",
+    "ContainingType": "Api.Controllers.DocumentItemExpirationDateController",
     "Method": "Delete",
     "RelativePath": "api/DocumentItemExpirationDate/Delete/{id}",
     "HttpMethod": "DELETE",
@@ -1269,7 +1383,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.DocumentItemExpirationDateController",
+    "ContainingType": "Api.Controllers.DocumentItemExpirationDateController",
     "Method": "GetAll",
     "RelativePath": "api/DocumentItemExpirationDate/GetAll",
     "HttpMethod": "GET",
@@ -1278,7 +1392,7 @@
     "Parameters": [],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.DocumentItemExpirationDateDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.DocumentItemExpirationDateDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -1289,7 +1403,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.DocumentItemExpirationDateController",
+    "ContainingType": "Api.Controllers.DocumentItemExpirationDateController",
     "Method": "GetById",
     "RelativePath": "api/DocumentItemExpirationDate/GetById",
     "HttpMethod": "GET",
@@ -1304,7 +1418,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.DocumentItemExpirationDateDto",
+        "Type": "Api.Models.DocumentItemExpirationDateDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -1315,7 +1429,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.DocumentItemExpirationDateController",
+    "ContainingType": "Api.Controllers.DocumentItemExpirationDateController",
     "Method": "Update",
     "RelativePath": "api/DocumentItemExpirationDate/Update",
     "HttpMethod": "POST",
@@ -1336,7 +1450,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.DocumentItemTaxController",
+    "ContainingType": "Api.Controllers.DocumentItemTaxController",
     "Method": "Add",
     "RelativePath": "api/DocumentItemTax/Add",
     "HttpMethod": "POST",
@@ -1345,13 +1459,13 @@
     "Parameters": [
       {
         "Name": "req",
-        "Type": "Products.Api.Models.CreateDocumentItemTaxRequest",
+        "Type": "Api.Models.CreateDocumentItemTaxRequest",
         "IsRequired": true
       }
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.DocumentItemTaxDto",
+        "Type": "Api.Models.DocumentItemTaxDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -1362,7 +1476,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.DocumentItemTaxController",
+    "ContainingType": "Api.Controllers.DocumentItemTaxController",
     "Method": "Delete",
     "RelativePath": "api/DocumentItemTax/Delete/{id}",
     "HttpMethod": "DELETE",
@@ -1378,7 +1492,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.DocumentItemTaxController",
+    "ContainingType": "Api.Controllers.DocumentItemTaxController",
     "Method": "GetByDocumentItemId",
     "RelativePath": "api/DocumentItemTax/GetByDocumentItemId/{documentitemid}",
     "HttpMethod": "GET",
@@ -1393,7 +1507,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.DocumentItemTaxDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.DocumentItemTaxDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -1404,7 +1518,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.DocumentItemTaxController",
+    "ContainingType": "Api.Controllers.DocumentItemTaxController",
     "Method": "Update",
     "RelativePath": "api/DocumentItemTax/Update",
     "HttpMethod": "POST",
@@ -1425,7 +1539,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.DocumentsCountersController",
+    "ContainingType": "Api.Controllers.DocumentsCountersController",
     "Method": "Add",
     "RelativePath": "api/DocumentsCounters/Add",
     "HttpMethod": "POST",
@@ -1445,7 +1559,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.DocumentsCounterDto",
+        "Type": "Api.Models.DocumentsCounterDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -1456,7 +1570,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.DocumentsCountersController",
+    "ContainingType": "Api.Controllers.DocumentsCountersController",
     "Method": "Delete",
     "RelativePath": "api/DocumentsCounters/Delete/{name}",
     "HttpMethod": "DELETE",
@@ -1472,7 +1586,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.DocumentsCountersController",
+    "ContainingType": "Api.Controllers.DocumentsCountersController",
     "Method": "GetAll",
     "RelativePath": "api/DocumentsCounters/GetAll",
     "HttpMethod": "GET",
@@ -1481,7 +1595,7 @@
     "Parameters": [],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.DocumentsCounterDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.DocumentsCounterDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -1492,7 +1606,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.DocumentsCountersController",
+    "ContainingType": "Api.Controllers.DocumentsCountersController",
     "Method": "GetByName",
     "RelativePath": "api/DocumentsCounters/GetByName/{name}",
     "HttpMethod": "GET",
@@ -1507,7 +1621,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.DocumentsCounterDto",
+        "Type": "Api.Models.DocumentsCounterDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -1518,7 +1632,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.DocumentsCountersController",
+    "ContainingType": "Api.Controllers.DocumentsCountersController",
     "Method": "Update",
     "RelativePath": "api/DocumentsCounters/Update/{name}",
     "HttpMethod": "PUT",
@@ -1539,7 +1653,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.DocumentTypeController",
+    "ContainingType": "Api.Controllers.DocumentTypeController",
     "Method": "Create",
     "RelativePath": "api/DocumentType/Create",
     "HttpMethod": "POST",
@@ -1605,7 +1719,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.DocumentTypeController",
+    "ContainingType": "Api.Controllers.DocumentTypeController",
     "Method": "Delete",
     "RelativePath": "api/DocumentType/Delete/{id}",
     "HttpMethod": "DELETE",
@@ -1621,7 +1735,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.DocumentTypeController",
+    "ContainingType": "Api.Controllers.DocumentTypeController",
     "Method": "GetAll",
     "RelativePath": "api/DocumentType/GetAll",
     "HttpMethod": "GET",
@@ -1636,7 +1750,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.DocumentTypeDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.DocumentTypeDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -1647,7 +1761,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.DocumentTypeController",
+    "ContainingType": "Api.Controllers.DocumentTypeController",
     "Method": "GetById",
     "RelativePath": "api/DocumentType/GetById",
     "HttpMethod": "GET",
@@ -1667,7 +1781,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.DocumentTypeDto",
+        "Type": "Api.Models.DocumentTypeDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -1678,7 +1792,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.DocumentTypeController",
+    "ContainingType": "Api.Controllers.DocumentTypeController",
     "Method": "Update",
     "RelativePath": "api/DocumentType/Update",
     "HttpMethod": "PUT",
@@ -1749,7 +1863,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.FiscalItemsController",
+    "ContainingType": "Api.Controllers.FiscalItemsController",
     "Method": "Add",
     "RelativePath": "api/FiscalItems/Add",
     "HttpMethod": "POST",
@@ -1774,7 +1888,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.FiscalItemDto",
+        "Type": "Api.Models.FiscalItemDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -1785,7 +1899,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.FiscalItemsController",
+    "ContainingType": "Api.Controllers.FiscalItemsController",
     "Method": "Delete",
     "RelativePath": "api/FiscalItems/Delete/{plu}",
     "HttpMethod": "DELETE",
@@ -1801,7 +1915,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.FiscalItemsController",
+    "ContainingType": "Api.Controllers.FiscalItemsController",
     "Method": "GetAll",
     "RelativePath": "api/FiscalItems/GetAll",
     "HttpMethod": "GET",
@@ -1810,7 +1924,7 @@
     "Parameters": [],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.FiscalItemDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.FiscalItemDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -1821,7 +1935,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.FiscalItemsController",
+    "ContainingType": "Api.Controllers.FiscalItemsController",
     "Method": "GetByPlu",
     "RelativePath": "api/FiscalItems/GetByPlu/{plu}",
     "HttpMethod": "GET",
@@ -1836,7 +1950,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.FiscalItemDto",
+        "Type": "Api.Models.FiscalItemDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -1847,7 +1961,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.FiscalItemsController",
+    "ContainingType": "Api.Controllers.FiscalItemsController",
     "Method": "Update",
     "RelativePath": "api/FiscalItems/Update/{plu}",
     "HttpMethod": "PUT",
@@ -1873,7 +1987,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.FloorPlansController",
+    "ContainingType": "Api.Controllers.FloorPlansController",
     "Method": "Add",
     "RelativePath": "api/FloorPlans/Add",
     "HttpMethod": "POST",
@@ -1893,7 +2007,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.FloorPlanDto",
+        "Type": "Api.Models.FloorPlanDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -1904,7 +2018,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.FloorPlansController",
+    "ContainingType": "Api.Controllers.FloorPlansController",
     "Method": "Delete",
     "RelativePath": "api/FloorPlans/Delete/{id}",
     "HttpMethod": "DELETE",
@@ -1920,7 +2034,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.FloorPlansController",
+    "ContainingType": "Api.Controllers.FloorPlansController",
     "Method": "GetAll",
     "RelativePath": "api/FloorPlans/GetAll",
     "HttpMethod": "GET",
@@ -1929,7 +2043,7 @@
     "Parameters": [],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.FloorPlanDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.FloorPlanDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -1940,7 +2054,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.FloorPlansController",
+    "ContainingType": "Api.Controllers.FloorPlansController",
     "Method": "GetById",
     "RelativePath": "api/FloorPlans/GetById/{id}",
     "HttpMethod": "GET",
@@ -1955,7 +2069,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.FloorPlanDto",
+        "Type": "Api.Models.FloorPlanDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -1966,7 +2080,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.FloorPlansController",
+    "ContainingType": "Api.Controllers.FloorPlansController",
     "Method": "GetByName",
     "RelativePath": "api/FloorPlans/GetByName/{name}",
     "HttpMethod": "GET",
@@ -1981,7 +2095,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.FloorPlanDto",
+        "Type": "Api.Models.FloorPlanDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -1992,7 +2106,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.FloorPlansController",
+    "ContainingType": "Api.Controllers.FloorPlansController",
     "Method": "Update",
     "RelativePath": "api/FloorPlans/Update/{id}",
     "HttpMethod": "PUT",
@@ -2018,7 +2132,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.FloorPlanTablesController",
+    "ContainingType": "Api.Controllers.FloorPlanTablesController",
     "Method": "Add",
     "RelativePath": "api/FloorPlanTables/Add",
     "HttpMethod": "POST",
@@ -2063,7 +2177,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.FloorPlanTableDto",
+        "Type": "Api.Models.FloorPlanTableDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -2074,7 +2188,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.FloorPlanTablesController",
+    "ContainingType": "Api.Controllers.FloorPlanTablesController",
     "Method": "Delete",
     "RelativePath": "api/FloorPlanTables/Delete/{id}",
     "HttpMethod": "DELETE",
@@ -2090,7 +2204,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.FloorPlanTablesController",
+    "ContainingType": "Api.Controllers.FloorPlanTablesController",
     "Method": "GetAll",
     "RelativePath": "api/FloorPlanTables/GetAll",
     "HttpMethod": "GET",
@@ -2099,7 +2213,7 @@
     "Parameters": [],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.FloorPlanTableDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.FloorPlanTableDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -2110,7 +2224,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.FloorPlanTablesController",
+    "ContainingType": "Api.Controllers.FloorPlanTablesController",
     "Method": "GetByFloorPlanId",
     "RelativePath": "api/FloorPlanTables/GetByFloorPlanId/ByFloorPlan/{floorPlanId}",
     "HttpMethod": "GET",
@@ -2125,7 +2239,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.FloorPlanTableDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.FloorPlanTableDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -2136,7 +2250,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.FloorPlanTablesController",
+    "ContainingType": "Api.Controllers.FloorPlanTablesController",
     "Method": "GetById",
     "RelativePath": "api/FloorPlanTables/GetById/{id}",
     "HttpMethod": "GET",
@@ -2151,7 +2265,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.FloorPlanTableDto",
+        "Type": "Api.Models.FloorPlanTableDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -2162,7 +2276,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.FloorPlanTablesController",
+    "ContainingType": "Api.Controllers.FloorPlanTablesController",
     "Method": "Update",
     "RelativePath": "api/FloorPlanTables/Update/{id}",
     "HttpMethod": "PUT",
@@ -2208,7 +2322,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.LoyaltyCardsController",
+    "ContainingType": "Api.Controllers.LoyaltyCardsController",
     "Method": "Add",
     "RelativePath": "api/LoyaltyCards/Add",
     "HttpMethod": "POST",
@@ -2229,7 +2343,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.LoyaltyCardsController",
+    "ContainingType": "Api.Controllers.LoyaltyCardsController",
     "Method": "GetAll",
     "RelativePath": "api/LoyaltyCards/GetAll",
     "HttpMethod": "GET",
@@ -2238,7 +2352,7 @@
     "Parameters": [],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.LoyaltyCardDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.LoyaltyCardDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -2249,7 +2363,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.LoyaltyCardsController",
+    "ContainingType": "Api.Controllers.LoyaltyCardsController",
     "Method": "GetById",
     "RelativePath": "api/LoyaltyCards/GetById/{id}",
     "HttpMethod": "GET",
@@ -2264,7 +2378,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.LoyaltyCardDto",
+        "Type": "Api.Models.LoyaltyCardDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -2275,7 +2389,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.LoyaltyCardsController",
+    "ContainingType": "Api.Controllers.LoyaltyCardsController",
     "Method": "Update",
     "RelativePath": "api/LoyaltyCards/Update",
     "HttpMethod": "PUT",
@@ -2296,7 +2410,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.MigrationsController",
+    "ContainingType": "Api.Controllers.MigrationsController",
     "Method": "Add",
     "RelativePath": "api/Migrations/Add",
     "HttpMethod": "POST",
@@ -2331,7 +2445,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.MigrationDto",
+        "Type": "Api.Models.MigrationDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -2342,7 +2456,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.MigrationsController",
+    "ContainingType": "Api.Controllers.MigrationsController",
     "Method": "Delete",
     "RelativePath": "api/Migrations/Delete/{id}",
     "HttpMethod": "DELETE",
@@ -2358,7 +2472,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.MigrationsController",
+    "ContainingType": "Api.Controllers.MigrationsController",
     "Method": "GetAll",
     "RelativePath": "api/Migrations/GetAll",
     "HttpMethod": "GET",
@@ -2367,7 +2481,7 @@
     "Parameters": [],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.MigrationDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.MigrationDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -2378,7 +2492,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.MigrationsController",
+    "ContainingType": "Api.Controllers.MigrationsController",
     "Method": "GetById",
     "RelativePath": "api/Migrations/GetById/{id}",
     "HttpMethod": "GET",
@@ -2393,7 +2507,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.MigrationDto",
+        "Type": "Api.Models.MigrationDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -2404,7 +2518,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.MigrationsController",
+    "ContainingType": "Api.Controllers.MigrationsController",
     "Method": "GetByVersion",
     "RelativePath": "api/Migrations/GetByVersion/{version}",
     "HttpMethod": "GET",
@@ -2419,7 +2533,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.MigrationDto",
+        "Type": "Api.Models.MigrationDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -2430,7 +2544,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.MigrationsController",
+    "ContainingType": "Api.Controllers.MigrationsController",
     "Method": "Update",
     "RelativePath": "api/Migrations/Update/{id}",
     "HttpMethod": "PUT",
@@ -2471,7 +2585,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.PaymentsController",
+    "ContainingType": "Api.Controllers.PaymentsController",
     "Method": "Add",
     "RelativePath": "api/Payments/Add",
     "HttpMethod": "POST",
@@ -2480,7 +2594,7 @@
     "Parameters": [
       {
         "Name": "request",
-        "Type": "Products.Api.Models.CreatePaymentRequest",
+        "Type": "Api.Models.CreatePaymentRequest",
         "IsRequired": true
       },
       {
@@ -2491,7 +2605,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.PaymentDto",
+        "Type": "Api.Models.PaymentDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -2502,7 +2616,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.PaymentsController",
+    "ContainingType": "Api.Controllers.PaymentsController",
     "Method": "Delete",
     "RelativePath": "api/Payments/Delete/{id}",
     "HttpMethod": "DELETE",
@@ -2523,7 +2637,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.PaymentsController",
+    "ContainingType": "Api.Controllers.PaymentsController",
     "Method": "GetAll",
     "RelativePath": "api/Payments/GetAll",
     "HttpMethod": "GET",
@@ -2538,7 +2652,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.PaymentDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.PaymentDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -2549,7 +2663,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.PaymentsController",
+    "ContainingType": "Api.Controllers.PaymentsController",
     "Method": "GetById",
     "RelativePath": "api/Payments/GetById/{id}",
     "HttpMethod": "GET",
@@ -2569,7 +2683,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.PaymentDto",
+        "Type": "Api.Models.PaymentDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -2580,7 +2694,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.PaymentsController",
+    "ContainingType": "Api.Controllers.PaymentsController",
     "Method": "Update",
     "RelativePath": "api/Payments/Update/{id}",
     "HttpMethod": "PUT",
@@ -2594,7 +2708,7 @@
       },
       {
         "Name": "request",
-        "Type": "Products.Api.Models.UpdatePaymentRequest",
+        "Type": "Api.Models.UpdatePaymentRequest",
         "IsRequired": true
       },
       {
@@ -2606,7 +2720,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.PaymentTypesController",
+    "ContainingType": "Api.Controllers.PaymentTypesController",
     "Method": "Add",
     "RelativePath": "api/PaymentTypes/Add",
     "HttpMethod": "POST",
@@ -2615,7 +2729,7 @@
     "Parameters": [
       {
         "Name": "req",
-        "Type": "Products.Api.Models.CreatePaymentTypeRequest",
+        "Type": "Api.Models.CreatePaymentTypeRequest",
         "IsRequired": true
       },
       {
@@ -2626,7 +2740,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.PaymentTypeDto",
+        "Type": "Api.Models.PaymentTypeDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -2637,7 +2751,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.PaymentTypesController",
+    "ContainingType": "Api.Controllers.PaymentTypesController",
     "Method": "Delete",
     "RelativePath": "api/PaymentTypes/Delete",
     "HttpMethod": "DELETE",
@@ -2647,7 +2761,7 @@
       {
         "Name": "id",
         "Type": "System.Int32",
-        "IsRequired": true
+        "IsRequired": false
       },
       {
         "Name": "companyId",
@@ -2657,7 +2771,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.PaymentTypeDto",
+        "Type": "Api.Models.PaymentTypeDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -2668,7 +2782,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.PaymentTypesController",
+    "ContainingType": "Api.Controllers.PaymentTypesController",
     "Method": "GetAll",
     "RelativePath": "api/PaymentTypes/GetAll",
     "HttpMethod": "GET",
@@ -2683,7 +2797,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.PaymentTypeDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.PaymentTypeDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -2694,7 +2808,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.PaymentTypesController",
+    "ContainingType": "Api.Controllers.PaymentTypesController",
     "Method": "GetById",
     "RelativePath": "api/PaymentTypes/GetById",
     "HttpMethod": "GET",
@@ -2714,7 +2828,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.PaymentTypeDto",
+        "Type": "Api.Models.PaymentTypeDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -2725,7 +2839,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.PaymentTypesController",
+    "ContainingType": "Api.Controllers.PaymentTypesController",
     "Method": "GetByName",
     "RelativePath": "api/PaymentTypes/GetByName",
     "HttpMethod": "GET",
@@ -2745,7 +2859,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.PaymentTypeDto",
+        "Type": "Api.Models.PaymentTypeDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -2756,7 +2870,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.PaymentTypesController",
+    "ContainingType": "Api.Controllers.PaymentTypesController",
     "Method": "Update",
     "RelativePath": "api/PaymentTypes/Update",
     "HttpMethod": "PATCH",
@@ -2765,7 +2879,7 @@
     "Parameters": [
       {
         "Name": "req",
-        "Type": "Products.Api.Models.UpdatePaymentTypeRequest",
+        "Type": "Api.Models.UpdatePaymentTypeRequest",
         "IsRequired": true
       },
       {
@@ -2776,7 +2890,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.PaymentTypeDto",
+        "Type": "Api.Models.PaymentTypeDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -2787,7 +2901,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.PosOrderItemsController",
+    "ContainingType": "Api.Controllers.PosOrderItemsController",
     "Method": "Add",
     "RelativePath": "api/PosOrderItems/Add",
     "HttpMethod": "POST",
@@ -2843,7 +2957,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.PosOrderItemsController",
+    "ContainingType": "Api.Controllers.PosOrderItemsController",
     "Method": "Delete",
     "RelativePath": "api/PosOrderItems/Delete/{id}",
     "HttpMethod": "DELETE",
@@ -2859,7 +2973,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.PosOrderItemsController",
+    "ContainingType": "Api.Controllers.PosOrderItemsController",
     "Method": "GetAll",
     "RelativePath": "api/PosOrderItems/GetAll",
     "HttpMethod": "GET",
@@ -2874,7 +2988,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.PosOrderItemDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.PosOrderItemDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -2885,7 +2999,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.PosOrderItemsController",
+    "ContainingType": "Api.Controllers.PosOrderItemsController",
     "Method": "GetById",
     "RelativePath": "api/PosOrderItems/GetById/{id}",
     "HttpMethod": "GET",
@@ -2901,7 +3015,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.PosOrderItemsController",
+    "ContainingType": "Api.Controllers.PosOrderItemsController",
     "Method": "Update",
     "RelativePath": "api/PosOrderItems/Update",
     "HttpMethod": "PUT",
@@ -2937,7 +3051,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.PosOrdersController",
+    "ContainingType": "Api.Controllers.PosOrdersController",
     "Method": "Add",
     "RelativePath": "api/PosOrders/Add",
     "HttpMethod": "POST",
@@ -2946,13 +3060,13 @@
     "Parameters": [
       {
         "Name": "req",
-        "Type": "Products.Api.Models.CreatePosOrderRequest",
+        "Type": "Api.Models.CreatePosOrderRequest",
         "IsRequired": true
       }
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.PosOrderDto",
+        "Type": "Api.Models.PosOrderDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -2963,7 +3077,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.PosOrdersController",
+    "ContainingType": "Api.Controllers.PosOrdersController",
     "Method": "Delete",
     "RelativePath": "api/PosOrders/Delete/{id}",
     "HttpMethod": "DELETE",
@@ -2979,7 +3093,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.PosOrdersController",
+    "ContainingType": "Api.Controllers.PosOrdersController",
     "Method": "GetAll",
     "RelativePath": "api/PosOrders/GetAll",
     "HttpMethod": "GET",
@@ -2994,7 +3108,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.IEnumerable\u00601[[Products.Api.Models.PosOrderDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[Api.Models.PosOrderDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -3005,7 +3119,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.PosOrdersController",
+    "ContainingType": "Api.Controllers.PosOrdersController",
     "Method": "GetById",
     "RelativePath": "api/PosOrders/GetById/{id}",
     "HttpMethod": "GET",
@@ -3025,7 +3139,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.PosOrderDto",
+        "Type": "Api.Models.PosOrderDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -3036,7 +3150,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.PosOrdersController",
+    "ContainingType": "Api.Controllers.PosOrdersController",
     "Method": "GetByNumber",
     "RelativePath": "api/PosOrders/GetByNumber/{number}",
     "HttpMethod": "GET",
@@ -3056,7 +3170,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.PosOrderDto",
+        "Type": "Api.Models.PosOrderDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -3067,7 +3181,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.PosOrdersController",
+    "ContainingType": "Api.Controllers.PosOrdersController",
     "Method": "Update",
     "RelativePath": "api/PosOrders/Update/{id}",
     "HttpMethod": "PUT",
@@ -3118,7 +3232,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.PosPrinterSelectionsController",
+    "ContainingType": "Api.Controllers.PosPrinterSelectionsController",
     "Method": "Add",
     "RelativePath": "api/PosPrinterSelections/Add",
     "HttpMethod": "POST",
@@ -3143,7 +3257,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.PosPrinterSelectionDto",
+        "Type": "Api.Models.PosPrinterSelectionDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -3154,7 +3268,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.PosPrinterSelectionsController",
+    "ContainingType": "Api.Controllers.PosPrinterSelectionsController",
     "Method": "Delete",
     "RelativePath": "api/PosPrinterSelections/Delete/{id}",
     "HttpMethod": "DELETE",
@@ -3170,7 +3284,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.PosPrinterSelectionsController",
+    "ContainingType": "Api.Controllers.PosPrinterSelectionsController",
     "Method": "GetAll",
     "RelativePath": "api/PosPrinterSelections/GetAll",
     "HttpMethod": "GET",
@@ -3179,7 +3293,7 @@
     "Parameters": [],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.PosPrinterSelectionDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.PosPrinterSelectionDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -3190,7 +3304,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.PosPrinterSelectionsController",
+    "ContainingType": "Api.Controllers.PosPrinterSelectionsController",
     "Method": "GetById",
     "RelativePath": "api/PosPrinterSelections/GetById/{id}",
     "HttpMethod": "GET",
@@ -3205,7 +3319,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.PosPrinterSelectionDto",
+        "Type": "Api.Models.PosPrinterSelectionDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -3216,7 +3330,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.PosPrinterSelectionsController",
+    "ContainingType": "Api.Controllers.PosPrinterSelectionsController",
     "Method": "GetByKey",
     "RelativePath": "api/PosPrinterSelections/GetByKey/{key}",
     "HttpMethod": "GET",
@@ -3231,7 +3345,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.PosPrinterSelectionDto",
+        "Type": "Api.Models.PosPrinterSelectionDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -3242,7 +3356,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.PosPrinterSelectionsController",
+    "ContainingType": "Api.Controllers.PosPrinterSelectionsController",
     "Method": "Update",
     "RelativePath": "api/PosPrinterSelections/Update/{id}",
     "HttpMethod": "PUT",
@@ -3273,7 +3387,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.PosPrinterSelectionSettingsController",
+    "ContainingType": "Api.Controllers.PosPrinterSelectionSettingsController",
     "Method": "Add",
     "RelativePath": "api/PosPrinterSelectionSettings/Add",
     "HttpMethod": "POST",
@@ -3408,7 +3522,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.PosPrinterSelectionSettingsDto",
+        "Type": "Api.Models.PosPrinterSelectionSettingsDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -3419,7 +3533,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.PosPrinterSelectionSettingsController",
+    "ContainingType": "Api.Controllers.PosPrinterSelectionSettingsController",
     "Method": "Delete",
     "RelativePath": "api/PosPrinterSelectionSettings/Delete/{id}",
     "HttpMethod": "DELETE",
@@ -3435,7 +3549,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.PosPrinterSelectionSettingsController",
+    "ContainingType": "Api.Controllers.PosPrinterSelectionSettingsController",
     "Method": "GetAll",
     "RelativePath": "api/PosPrinterSelectionSettings/GetAll",
     "HttpMethod": "GET",
@@ -3444,7 +3558,7 @@
     "Parameters": [],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.PosPrinterSelectionSettingsDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.PosPrinterSelectionSettingsDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -3455,7 +3569,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.PosPrinterSelectionSettingsController",
+    "ContainingType": "Api.Controllers.PosPrinterSelectionSettingsController",
     "Method": "GetById",
     "RelativePath": "api/PosPrinterSelectionSettings/GetById/{id}",
     "HttpMethod": "GET",
@@ -3470,7 +3584,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.PosPrinterSelectionSettingsDto",
+        "Type": "Api.Models.PosPrinterSelectionSettingsDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -3481,7 +3595,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.PosPrinterSelectionSettingsController",
+    "ContainingType": "Api.Controllers.PosPrinterSelectionSettingsController",
     "Method": "GetBySelectionId",
     "RelativePath": "api/PosPrinterSelectionSettings/GetBySelectionId/{posPrinterSelectionId}",
     "HttpMethod": "GET",
@@ -3496,7 +3610,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.PosPrinterSelectionSettingsDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.PosPrinterSelectionSettingsDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -3507,7 +3621,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.PosPrinterSelectionSettingsController",
+    "ContainingType": "Api.Controllers.PosPrinterSelectionSettingsController",
     "Method": "Update",
     "RelativePath": "api/PosPrinterSelectionSettings/Update/{id}",
     "HttpMethod": "PUT",
@@ -3648,7 +3762,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.PosPrinterSettingsController",
+    "ContainingType": "Api.Controllers.PosPrinterSettingsController",
     "Method": "Add",
     "RelativePath": "api/PosPrinterSettings/Add",
     "HttpMethod": "POST",
@@ -3738,7 +3852,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.PosPrinterSettingsDto",
+        "Type": "Api.Models.PosPrinterSettingsDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -3749,7 +3863,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.PosPrinterSettingsController",
+    "ContainingType": "Api.Controllers.PosPrinterSettingsController",
     "Method": "Delete",
     "RelativePath": "api/PosPrinterSettings/Delete/{id}",
     "HttpMethod": "DELETE",
@@ -3765,7 +3879,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.PosPrinterSettingsController",
+    "ContainingType": "Api.Controllers.PosPrinterSettingsController",
     "Method": "GetAll",
     "RelativePath": "api/PosPrinterSettings/GetAll",
     "HttpMethod": "GET",
@@ -3774,7 +3888,7 @@
     "Parameters": [],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.PosPrinterSettingsDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.PosPrinterSettingsDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -3785,7 +3899,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.PosPrinterSettingsController",
+    "ContainingType": "Api.Controllers.PosPrinterSettingsController",
     "Method": "GetById",
     "RelativePath": "api/PosPrinterSettings/GetById/{id}",
     "HttpMethod": "GET",
@@ -3800,7 +3914,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.PosPrinterSettingsDto",
+        "Type": "Api.Models.PosPrinterSettingsDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -3811,7 +3925,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.PosPrinterSettingsController",
+    "ContainingType": "Api.Controllers.PosPrinterSettingsController",
     "Method": "GetByPrinterName",
     "RelativePath": "api/PosPrinterSettings/GetByPrinterName/{printerName}",
     "HttpMethod": "GET",
@@ -3826,7 +3940,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.PosPrinterSettingsDto",
+        "Type": "Api.Models.PosPrinterSettingsDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -3837,7 +3951,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.PosPrinterSettingsController",
+    "ContainingType": "Api.Controllers.PosPrinterSettingsController",
     "Method": "Update",
     "RelativePath": "api/PosPrinterSettings/Update/{id}",
     "HttpMethod": "PUT",
@@ -3933,7 +4047,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.PosVoidsController",
+    "ContainingType": "Api.Controllers.PosVoidsController",
     "Method": "Add",
     "RelativePath": "api/PosVoids/Add",
     "HttpMethod": "POST",
@@ -4008,7 +4122,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.PosVoidDto",
+        "Type": "Api.Models.PosVoidDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -4019,7 +4133,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.PosVoidsController",
+    "ContainingType": "Api.Controllers.PosVoidsController",
     "Method": "Delete",
     "RelativePath": "api/PosVoids/Delete/{id}",
     "HttpMethod": "DELETE",
@@ -4040,7 +4154,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.PosVoidsController",
+    "ContainingType": "Api.Controllers.PosVoidsController",
     "Method": "GetAll",
     "RelativePath": "api/PosVoids/GetAll",
     "HttpMethod": "GET",
@@ -4055,7 +4169,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.PosVoidDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.PosVoidDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -4066,7 +4180,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.PosVoidsController",
+    "ContainingType": "Api.Controllers.PosVoidsController",
     "Method": "GetById",
     "RelativePath": "api/PosVoids/GetById",
     "HttpMethod": "GET",
@@ -4086,7 +4200,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.PosVoidDto",
+        "Type": "Api.Models.PosVoidDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -4097,7 +4211,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.PosVoidsController",
+    "ContainingType": "Api.Controllers.PosVoidsController",
     "Method": "GetByOrderNumber",
     "RelativePath": "api/PosVoids/GetByOrderNumber",
     "HttpMethod": "GET",
@@ -4117,7 +4231,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.PosVoidDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.PosVoidDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -4128,7 +4242,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.PosVoidsController",
+    "ContainingType": "Api.Controllers.PosVoidsController",
     "Method": "Update",
     "RelativePath": "api/PosVoids/Update",
     "HttpMethod": "POST",
@@ -4159,7 +4273,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.ProductCommentsController",
+    "ContainingType": "Api.Controllers.ProductCommentsController",
     "Method": "Add",
     "RelativePath": "api/ProductComments/Add",
     "HttpMethod": "POST",
@@ -4179,7 +4293,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.ProductCommentDto",
+        "Type": "Api.Models.ProductCommentDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -4190,7 +4304,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.ProductCommentsController",
+    "ContainingType": "Api.Controllers.ProductCommentsController",
     "Method": "Delete",
     "RelativePath": "api/ProductComments/Delete/{id}",
     "HttpMethod": "DELETE",
@@ -4206,7 +4320,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.ProductCommentsController",
+    "ContainingType": "Api.Controllers.ProductCommentsController",
     "Method": "GetAll",
     "RelativePath": "api/ProductComments/GetAll",
     "HttpMethod": "GET",
@@ -4215,7 +4329,7 @@
     "Parameters": [],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.ProductCommentDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.ProductCommentDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -4226,7 +4340,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.ProductCommentsController",
+    "ContainingType": "Api.Controllers.ProductCommentsController",
     "Method": "GetById",
     "RelativePath": "api/ProductComments/GetById/{id}",
     "HttpMethod": "GET",
@@ -4241,7 +4355,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.ProductCommentDto",
+        "Type": "Api.Models.ProductCommentDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -4252,7 +4366,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.ProductCommentsController",
+    "ContainingType": "Api.Controllers.ProductCommentsController",
     "Method": "GetByProductId",
     "RelativePath": "api/ProductComments/GetByProductId/{productId}",
     "HttpMethod": "GET",
@@ -4267,7 +4381,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.ProductCommentDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.ProductCommentDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -4278,7 +4392,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.ProductCommentsController",
+    "ContainingType": "Api.Controllers.ProductCommentsController",
     "Method": "Update",
     "RelativePath": "api/ProductComments/Update/{id}",
     "HttpMethod": "PUT",
@@ -4304,7 +4418,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.ProductGroupsController",
+    "ContainingType": "Api.Controllers.ProductGroupsController",
     "Method": "Add",
     "RelativePath": "api/ProductGroups/Add",
     "HttpMethod": "POST",
@@ -4339,7 +4453,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.ProductGroupDto",
+        "Type": "Api.Models.ProductGroupDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -4350,7 +4464,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.ProductGroupsController",
+    "ContainingType": "Api.Controllers.ProductGroupsController",
     "Method": "Delete",
     "RelativePath": "api/ProductGroups/Delete/{id}",
     "HttpMethod": "DELETE",
@@ -4366,7 +4480,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.ProductGroupsController",
+    "ContainingType": "Api.Controllers.ProductGroupsController",
     "Method": "GetAll",
     "RelativePath": "api/ProductGroups/GetAll",
     "HttpMethod": "GET",
@@ -4375,7 +4489,7 @@
     "Parameters": [],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.ProductGroupDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.ProductGroupDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -4386,7 +4500,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.ProductGroupsController",
+    "ContainingType": "Api.Controllers.ProductGroupsController",
     "Method": "GetById",
     "RelativePath": "api/ProductGroups/GetById/{id}",
     "HttpMethod": "GET",
@@ -4401,7 +4515,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.ProductGroupDto",
+        "Type": "Api.Models.ProductGroupDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -4412,7 +4526,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.ProductGroupsController",
+    "ContainingType": "Api.Controllers.ProductGroupsController",
     "Method": "GetByName",
     "RelativePath": "api/ProductGroups/GetByName/{name}",
     "HttpMethod": "GET",
@@ -4427,7 +4541,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.ProductGroupDto",
+        "Type": "Api.Models.ProductGroupDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -4438,7 +4552,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.ProductGroupsController",
+    "ContainingType": "Api.Controllers.ProductGroupsController",
     "Method": "GetChildrenByParentId",
     "RelativePath": "api/ProductGroups/GetChildrenByParentId/{parentGroupId}",
     "HttpMethod": "GET",
@@ -4453,7 +4567,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.ProductGroupDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.ProductGroupDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -4464,7 +4578,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.ProductGroupsController",
+    "ContainingType": "Api.Controllers.ProductGroupsController",
     "Method": "GetRoots",
     "RelativePath": "api/ProductGroups/GetRoots",
     "HttpMethod": "GET",
@@ -4473,7 +4587,7 @@
     "Parameters": [],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.ProductGroupDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.ProductGroupDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -4484,7 +4598,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.ProductGroupsController",
+    "ContainingType": "Api.Controllers.ProductGroupsController",
     "Method": "Update",
     "RelativePath": "api/ProductGroups/Update/{id}",
     "HttpMethod": "PUT",
@@ -4525,7 +4639,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.ProductsController",
+    "ContainingType": "Api.Controllers.ProductsController",
     "Method": "Add",
     "RelativePath": "api/Products/Add",
     "HttpMethod": "POST",
@@ -4534,7 +4648,7 @@
     "Parameters": [
       {
         "Name": "req",
-        "Type": "Products.Api.Models.CreateProductRequest",
+        "Type": "Api.Models.CreateProductRequest",
         "IsRequired": true
       },
       {
@@ -4545,7 +4659,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.ProductDto",
+        "Type": "Api.Models.ProductDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -4556,9 +4670,9 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.ProductsController",
+    "ContainingType": "Api.Controllers.ProductsController",
     "Method": "Delete",
-    "RelativePath": "api/Products/Delete/{id}",
+    "RelativePath": "api/Products/Delete",
     "HttpMethod": "DELETE",
     "IsController": true,
     "Order": 0,
@@ -4566,7 +4680,7 @@
       {
         "Name": "id",
         "Type": "System.Int32",
-        "IsRequired": true
+        "IsRequired": false
       },
       {
         "Name": "companyId",
@@ -4577,7 +4691,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.ProductsController",
+    "ContainingType": "Api.Controllers.ProductsController",
     "Method": "GetAll",
     "RelativePath": "api/Products/GetAll",
     "HttpMethod": "GET",
@@ -4592,7 +4706,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.ProductDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.ProductDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -4603,9 +4717,9 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.ProductsController",
+    "ContainingType": "Api.Controllers.ProductsController",
     "Method": "GetByCode",
-    "RelativePath": "api/Products/GetByCode/{code}",
+    "RelativePath": "api/Products/GetByCode",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -4613,7 +4727,7 @@
       {
         "Name": "code",
         "Type": "System.String",
-        "IsRequired": true
+        "IsRequired": false
       },
       {
         "Name": "companyId",
@@ -4623,7 +4737,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.ProductDto",
+        "Type": "Api.Models.ProductDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -4634,9 +4748,9 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.ProductsController",
+    "ContainingType": "Api.Controllers.ProductsController",
     "Method": "GetById",
-    "RelativePath": "api/Products/GetById/{id}",
+    "RelativePath": "api/Products/GetById",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -4644,7 +4758,7 @@
       {
         "Name": "id",
         "Type": "System.Int32",
-        "IsRequired": true
+        "IsRequired": false
       },
       {
         "Name": "companyId",
@@ -4654,7 +4768,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.ProductDto",
+        "Type": "Api.Models.ProductDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -4665,9 +4779,9 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.ProductsController",
+    "ContainingType": "Api.Controllers.ProductsController",
     "Method": "Update",
-    "RelativePath": "api/Products/Update/{id}",
+    "RelativePath": "api/Products/Update",
     "HttpMethod": "PUT",
     "IsController": true,
     "Order": 0,
@@ -4675,11 +4789,11 @@
       {
         "Name": "id",
         "Type": "System.Int32",
-        "IsRequired": true
+        "IsRequired": false
       },
       {
         "Name": "req",
-        "Type": "Products.Api.Models.UpdateProductRequest",
+        "Type": "Api.Models.UpdateProductRequest",
         "IsRequired": true
       },
       {
@@ -4691,7 +4805,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.ProductTaxesController",
+    "ContainingType": "Api.Controllers.ProductTaxesController",
     "Method": "Add",
     "RelativePath": "api/ProductTaxes/Add",
     "HttpMethod": "POST",
@@ -4712,7 +4826,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.ProductTaxesController",
+    "ContainingType": "Api.Controllers.ProductTaxesController",
     "Method": "Delete",
     "RelativePath": "api/ProductTaxes/Delete",
     "HttpMethod": "DELETE",
@@ -4733,7 +4847,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.ProductTaxesController",
+    "ContainingType": "Api.Controllers.ProductTaxesController",
     "Method": "GetAll",
     "RelativePath": "api/ProductTaxes/GetAll",
     "HttpMethod": "GET",
@@ -4742,7 +4856,7 @@
     "Parameters": [],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.ProductTaxDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.ProductTaxDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -4753,7 +4867,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.ProductTaxesController",
+    "ContainingType": "Api.Controllers.ProductTaxesController",
     "Method": "GetByProductId",
     "RelativePath": "api/ProductTaxes/GetByProductId/ByProduct/{productId}",
     "HttpMethod": "GET",
@@ -4768,7 +4882,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.ProductTaxDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.ProductTaxDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -4779,7 +4893,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.ProductTaxesController",
+    "ContainingType": "Api.Controllers.ProductTaxesController",
     "Method": "GetByTaxId",
     "RelativePath": "api/ProductTaxes/GetByTaxId/ByTax/{taxId}",
     "HttpMethod": "GET",
@@ -4794,7 +4908,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.ProductTaxDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.ProductTaxDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -4805,7 +4919,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.PromotionItemsController",
+    "ContainingType": "Api.Controllers.PromotionItemsController",
     "Method": "Add",
     "RelativePath": "api/PromotionItems/Add",
     "HttpMethod": "POST",
@@ -4860,7 +4974,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.PromotionItemDto",
+        "Type": "Api.Models.PromotionItemDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -4871,7 +4985,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.PromotionItemsController",
+    "ContainingType": "Api.Controllers.PromotionItemsController",
     "Method": "Delete",
     "RelativePath": "api/PromotionItems/Delete/{id}",
     "HttpMethod": "DELETE",
@@ -4887,7 +5001,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.PromotionItemsController",
+    "ContainingType": "Api.Controllers.PromotionItemsController",
     "Method": "GetAll",
     "RelativePath": "api/PromotionItems/GetAll",
     "HttpMethod": "GET",
@@ -4896,7 +5010,7 @@
     "Parameters": [],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.PromotionItemDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.PromotionItemDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -4907,7 +5021,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.PromotionItemsController",
+    "ContainingType": "Api.Controllers.PromotionItemsController",
     "Method": "GetById",
     "RelativePath": "api/PromotionItems/GetById/{id}",
     "HttpMethod": "GET",
@@ -4922,7 +5036,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.PromotionItemDto",
+        "Type": "Api.Models.PromotionItemDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -4933,7 +5047,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.PromotionItemsController",
+    "ContainingType": "Api.Controllers.PromotionItemsController",
     "Method": "GetByPromotionId",
     "RelativePath": "api/PromotionItems/GetByPromotionId/ByPromotion/{promotionId}",
     "HttpMethod": "GET",
@@ -4948,7 +5062,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.PromotionItemDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.PromotionItemDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -4959,7 +5073,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.PromotionItemsController",
+    "ContainingType": "Api.Controllers.PromotionItemsController",
     "Method": "Update",
     "RelativePath": "api/PromotionItems/Update/{id}",
     "HttpMethod": "PUT",
@@ -5015,7 +5129,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.PromotionsController",
+    "ContainingType": "Api.Controllers.PromotionsController",
     "Method": "Add",
     "RelativePath": "api/Promotions/Add",
     "HttpMethod": "POST",
@@ -5060,7 +5174,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.PromotionDto",
+        "Type": "Api.Models.PromotionDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -5071,7 +5185,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.PromotionsController",
+    "ContainingType": "Api.Controllers.PromotionsController",
     "Method": "Delete",
     "RelativePath": "api/Promotions/Delete/{id}",
     "HttpMethod": "DELETE",
@@ -5087,7 +5201,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.PromotionsController",
+    "ContainingType": "Api.Controllers.PromotionsController",
     "Method": "GetAll",
     "RelativePath": "api/Promotions/GetAll",
     "HttpMethod": "GET",
@@ -5102,7 +5216,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.PromotionDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.PromotionDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -5113,7 +5227,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.PromotionsController",
+    "ContainingType": "Api.Controllers.PromotionsController",
     "Method": "GetById",
     "RelativePath": "api/Promotions/GetById/{id}",
     "HttpMethod": "GET",
@@ -5133,7 +5247,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.PromotionDto",
+        "Type": "Api.Models.PromotionDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -5144,7 +5258,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.PromotionsController",
+    "ContainingType": "Api.Controllers.PromotionsController",
     "Method": "GetByName",
     "RelativePath": "api/Promotions/GetByName/{name}",
     "HttpMethod": "GET",
@@ -5164,7 +5278,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.PromotionDto",
+        "Type": "Api.Models.PromotionDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -5175,7 +5289,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.PromotionsController",
+    "ContainingType": "Api.Controllers.PromotionsController",
     "Method": "Update",
     "RelativePath": "api/Promotions/Update/{id}",
     "HttpMethod": "PUT",
@@ -5226,7 +5340,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.SecurityKeyController",
+    "ContainingType": "Api.Controllers.SecurityKeyController",
     "Method": "AddSecurityKey",
     "RelativePath": "api/SecurityKey/AddSecurityKey",
     "HttpMethod": "POST",
@@ -5235,13 +5349,13 @@
     "Parameters": [
       {
         "Name": "securityKeyRequest",
-        "Type": "Products.Api.Models.CreateSecurityKeyRequest",
+        "Type": "Api.Models.CreateSecurityKeyRequest",
         "IsRequired": true
       }
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.SecurityKeyDto",
+        "Type": "Api.Models.SecurityKeyDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -5252,7 +5366,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.SecurityKeyController",
+    "ContainingType": "Api.Controllers.SecurityKeyController",
     "Method": "GetAll",
     "RelativePath": "api/SecurityKey/GetAll",
     "HttpMethod": "GET",
@@ -5261,7 +5375,7 @@
     "Parameters": [],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.SecurityKeyDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.SecurityKeyDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -5272,7 +5386,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.StartingCashController",
+    "ContainingType": "Api.Controllers.StartingCashController",
     "Method": "Add",
     "RelativePath": "api/StartingCash/Add",
     "HttpMethod": "POST",
@@ -5312,7 +5426,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.StartingCashDto",
+        "Type": "Api.Models.StartingCashDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -5323,7 +5437,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.StartingCashController",
+    "ContainingType": "Api.Controllers.StartingCashController",
     "Method": "Delete",
     "RelativePath": "api/StartingCash/Delete/{id}",
     "HttpMethod": "DELETE",
@@ -5339,7 +5453,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.StartingCashController",
+    "ContainingType": "Api.Controllers.StartingCashController",
     "Method": "GetAll",
     "RelativePath": "api/StartingCash/GetAll",
     "HttpMethod": "GET",
@@ -5348,7 +5462,7 @@
     "Parameters": [],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.StartingCashDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.StartingCashDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -5359,7 +5473,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.StartingCashController",
+    "ContainingType": "Api.Controllers.StartingCashController",
     "Method": "GetById",
     "RelativePath": "api/StartingCash/GetById/{id}",
     "HttpMethod": "GET",
@@ -5374,7 +5488,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.StartingCashDto",
+        "Type": "Api.Models.StartingCashDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -5385,7 +5499,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.StartingCashController",
+    "ContainingType": "Api.Controllers.StartingCashController",
     "Method": "GetByUserId",
     "RelativePath": "api/StartingCash/GetByUserId/{userId}",
     "HttpMethod": "GET",
@@ -5400,7 +5514,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.StartingCashDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.StartingCashDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -5411,7 +5525,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.StartingCashController",
+    "ContainingType": "Api.Controllers.StartingCashController",
     "Method": "Update",
     "RelativePath": "api/StartingCash/Update/{id}",
     "HttpMethod": "PUT",
@@ -5457,7 +5571,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.StockControlsController",
+    "ContainingType": "Api.Controllers.StockControlsController",
     "Method": "Add",
     "RelativePath": "api/StockControls/Add",
     "HttpMethod": "POST",
@@ -5498,7 +5612,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.StockControlsController",
+    "ContainingType": "Api.Controllers.StockControlsController",
     "Method": "GetAll",
     "RelativePath": "api/StockControls/GetAll",
     "HttpMethod": "GET",
@@ -5507,7 +5621,7 @@
     "Parameters": [],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.StockControlDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.StockControlDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -5518,7 +5632,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.StockControlsController",
+    "ContainingType": "Api.Controllers.StockControlsController",
     "Method": "GetById",
     "RelativePath": "api/StockControls/GetById/{id}",
     "HttpMethod": "GET",
@@ -5533,7 +5647,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.StockControlDto",
+        "Type": "Api.Models.StockControlDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -5544,7 +5658,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.StockControlsController",
+    "ContainingType": "Api.Controllers.StockControlsController",
     "Method": "Update",
     "RelativePath": "api/StockControls/Update",
     "HttpMethod": "PUT",
@@ -5585,7 +5699,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.StocksController",
+    "ContainingType": "Api.Controllers.StocksController",
     "Method": "Add",
     "RelativePath": "api/Stocks/Add",
     "HttpMethod": "POST",
@@ -5594,7 +5708,7 @@
     "Parameters": [
       {
         "Name": "stockrequest",
-        "Type": "Products.Api.Models.CreateStockRequest",
+        "Type": "Api.Models.CreateStockRequest",
         "IsRequired": true
       },
       {
@@ -5605,7 +5719,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.StockDto",
+        "Type": "Api.Models.StockDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -5616,9 +5730,9 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.StocksController",
+    "ContainingType": "Api.Controllers.StocksController",
     "Method": "Delete",
-    "RelativePath": "api/Stocks/Delete/{id}",
+    "RelativePath": "api/Stocks/Delete",
     "HttpMethod": "DELETE",
     "IsController": true,
     "Order": 0,
@@ -5626,7 +5740,7 @@
       {
         "Name": "id",
         "Type": "System.Int32",
-        "IsRequired": true
+        "IsRequired": false
       },
       {
         "Name": "companyId",
@@ -5637,7 +5751,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.StocksController",
+    "ContainingType": "Api.Controllers.StocksController",
     "Method": "GetAllStocks",
     "RelativePath": "api/Stocks/GetAllStocks",
     "HttpMethod": "GET",
@@ -5652,7 +5766,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.StockDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.StockDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -5663,9 +5777,9 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.StocksController",
+    "ContainingType": "Api.Controllers.StocksController",
     "Method": "GetById",
-    "RelativePath": "api/Stocks/GetById/{id}",
+    "RelativePath": "api/Stocks/GetById",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -5673,7 +5787,7 @@
       {
         "Name": "id",
         "Type": "System.Int32",
-        "IsRequired": true
+        "IsRequired": false
       },
       {
         "Name": "companyId",
@@ -5683,7 +5797,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.StockDto",
+        "Type": "Api.Models.StockDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -5694,43 +5808,28 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.StocksController",
+    "ContainingType": "Api.Controllers.StocksController",
     "Method": "Update",
-    "RelativePath": "api/Stocks/Update/{id}",
-    "HttpMethod": "PUT",
+    "RelativePath": "api/Stocks/Update",
+    "HttpMethod": "PATCH",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
         "Name": "stockrequest",
-        "Type": "Products.Api.Models.UpdateStockRequest",
+        "Type": "Api.Models.UpdateStockRequest",
         "IsRequired": true
       },
       {
         "Name": "companyId",
         "Type": "System.Int32",
         "IsRequired": false
-      },
-      {
-        "Name": "id",
-        "Type": "",
-        "IsRequired": true
       }
     ],
-    "ReturnTypes": [
-      {
-        "Type": "System.Boolean",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
+    "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.TaxesController",
+    "ContainingType": "Api.Controllers.TaxesController",
     "Method": "AddTax",
     "RelativePath": "api/Taxes/AddTax",
     "HttpMethod": "POST",
@@ -5739,7 +5838,7 @@
     "Parameters": [
       {
         "Name": "createDto",
-        "Type": "Products.Api.Models.CreateTaxRequestDto",
+        "Type": "Api.Models.CreateTaxRequestDto",
         "IsRequired": true
       },
       {
@@ -5750,7 +5849,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.TaxDto",
+        "Type": "Api.Models.TaxDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -5761,7 +5860,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.TaxesController",
+    "ContainingType": "Api.Controllers.TaxesController",
     "Method": "DeleteTax",
     "RelativePath": "api/Taxes/DeleteTax",
     "HttpMethod": "DELETE",
@@ -5781,7 +5880,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "System.Boolean",
+        "Type": "Api.Models.TaxDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -5792,7 +5891,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.TaxesController",
+    "ContainingType": "Api.Controllers.TaxesController",
     "Method": "GetAllTaxes",
     "RelativePath": "api/Taxes/GetAllTaxes",
     "HttpMethod": "GET",
@@ -5807,7 +5906,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.TaxDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.TaxDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -5818,7 +5917,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.TaxesController",
+    "ContainingType": "Api.Controllers.TaxesController",
     "Method": "GetTaxById",
     "RelativePath": "api/Taxes/GetTaxById",
     "HttpMethod": "GET",
@@ -5838,7 +5937,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.TaxDto",
+        "Type": "Api.Models.TaxDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -5849,16 +5948,47 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.TaxesController",
+    "ContainingType": "Api.Controllers.TaxesController",
+    "Method": "GetTaxByName",
+    "RelativePath": "api/Taxes/GetTaxByName",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "name",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "Api.Models.TaxDto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "Api.Controllers.TaxesController",
     "Method": "UpdateTax",
     "RelativePath": "api/Taxes/UpdateTax",
-    "HttpMethod": "PUT",
+    "HttpMethod": "PATCH",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
         "Name": "req",
-        "Type": "Products.Api.Models.UpdateTaxRequestDto",
+        "Type": "Api.Models.UpdateTaxRequestDto",
         "IsRequired": true
       },
       {
@@ -5869,7 +5999,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.TaxDto",
+        "Type": "Api.Models.TaxDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -5880,7 +6010,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.TemplatesController",
+    "ContainingType": "Api.Controllers.TemplatesController",
     "Method": "Add",
     "RelativePath": "api/Templates/Add",
     "HttpMethod": "POST",
@@ -5900,7 +6030,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.TemplateDto",
+        "Type": "Api.Models.TemplateDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -5911,7 +6041,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.TemplatesController",
+    "ContainingType": "Api.Controllers.TemplatesController",
     "Method": "Delete",
     "RelativePath": "api/Templates/Delete/{id}",
     "HttpMethod": "DELETE",
@@ -5927,7 +6057,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.TemplatesController",
+    "ContainingType": "Api.Controllers.TemplatesController",
     "Method": "GetAll",
     "RelativePath": "api/Templates/GetAll",
     "HttpMethod": "GET",
@@ -5936,7 +6066,7 @@
     "Parameters": [],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.TemplateDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.TemplateDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -5947,7 +6077,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.TemplatesController",
+    "ContainingType": "Api.Controllers.TemplatesController",
     "Method": "GetById",
     "RelativePath": "api/Templates/GetById/{id}",
     "HttpMethod": "GET",
@@ -5962,7 +6092,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.TemplateDto",
+        "Type": "Api.Models.TemplateDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -5973,7 +6103,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.TemplatesController",
+    "ContainingType": "Api.Controllers.TemplatesController",
     "Method": "GetByName",
     "RelativePath": "api/Templates/GetByName/{name}",
     "HttpMethod": "GET",
@@ -5988,7 +6118,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.TemplateDto",
+        "Type": "Api.Models.TemplateDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -5999,7 +6129,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.TemplatesController",
+    "ContainingType": "Api.Controllers.TemplatesController",
     "Method": "Update",
     "RelativePath": "api/Templates/Update/{id}",
     "HttpMethod": "PUT",
@@ -6025,7 +6155,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.UsersController",
+    "ContainingType": "Api.Controllers.UsersController",
     "Method": "Add",
     "RelativePath": "api/Users/Add",
     "HttpMethod": "POST",
@@ -6034,7 +6164,7 @@
     "Parameters": [
       {
         "Name": "request",
-        "Type": "Products.Api.Models.CreateUserRequest",
+        "Type": "Api.Models.CreateUserRequest",
         "IsRequired": true
       },
       {
@@ -6045,7 +6175,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.UserDto",
+        "Type": "Api.Models.UserDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -6056,7 +6186,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.UsersController",
+    "ContainingType": "Api.Controllers.UsersController",
     "Method": "Delete",
     "RelativePath": "api/Users/Delete",
     "HttpMethod": "DELETE",
@@ -6087,7 +6217,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.UsersController",
+    "ContainingType": "Api.Controllers.UsersController",
     "Method": "GetAllUsers",
     "RelativePath": "api/Users/GetAllUsers",
     "HttpMethod": "GET",
@@ -6102,7 +6232,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.UserDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.UserDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -6113,7 +6243,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.UsersController",
+    "ContainingType": "Api.Controllers.UsersController",
     "Method": "GetByUsername",
     "RelativePath": "api/Users/GetByUsername",
     "HttpMethod": "GET",
@@ -6133,7 +6263,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.UserDto",
+        "Type": "Api.Models.UserDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -6144,7 +6274,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.UsersController",
+    "ContainingType": "Api.Controllers.UsersController",
     "Method": "GetUserById",
     "RelativePath": "api/Users/GetUserById",
     "HttpMethod": "GET",
@@ -6164,7 +6294,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.UserDto",
+        "Type": "Api.Models.UserDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -6175,7 +6305,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.UsersController",
+    "ContainingType": "Api.Controllers.UsersController",
     "Method": "UpdateUser",
     "RelativePath": "api/Users/UpdateUser",
     "HttpMethod": "PATCH",
@@ -6184,7 +6314,7 @@
     "Parameters": [
       {
         "Name": "updateRequest",
-        "Type": "Products.Api.Models.UpdateUserRequest",
+        "Type": "Api.Models.UpdateUserRequest",
         "IsRequired": true
       },
       {
@@ -6195,7 +6325,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.UserDto",
+        "Type": "Api.Models.UserDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -6206,7 +6336,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.VoidReasonsController",
+    "ContainingType": "Api.Controllers.VoidReasonsController",
     "Method": "Add",
     "RelativePath": "api/VoidReasons/Add",
     "HttpMethod": "POST",
@@ -6226,7 +6356,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.VoidReasonDto",
+        "Type": "Api.Models.VoidReasonDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -6237,7 +6367,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.VoidReasonsController",
+    "ContainingType": "Api.Controllers.VoidReasonsController",
     "Method": "Delete",
     "RelativePath": "api/VoidReasons/Delete/{id}",
     "HttpMethod": "DELETE",
@@ -6253,7 +6383,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.VoidReasonsController",
+    "ContainingType": "Api.Controllers.VoidReasonsController",
     "Method": "GetAll",
     "RelativePath": "api/VoidReasons/GetAll",
     "HttpMethod": "GET",
@@ -6262,7 +6392,7 @@
     "Parameters": [],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.VoidReasonDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.VoidReasonDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -6273,7 +6403,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.VoidReasonsController",
+    "ContainingType": "Api.Controllers.VoidReasonsController",
     "Method": "GetById",
     "RelativePath": "api/VoidReasons/GetById/{id}",
     "HttpMethod": "GET",
@@ -6288,7 +6418,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.VoidReasonDto",
+        "Type": "Api.Models.VoidReasonDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -6299,7 +6429,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.VoidReasonsController",
+    "ContainingType": "Api.Controllers.VoidReasonsController",
     "Method": "GetByName",
     "RelativePath": "api/VoidReasons/GetByName/{name}",
     "HttpMethod": "GET",
@@ -6314,7 +6444,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.VoidReasonDto",
+        "Type": "Api.Models.VoidReasonDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -6325,7 +6455,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.VoidReasonsController",
+    "ContainingType": "Api.Controllers.VoidReasonsController",
     "Method": "Update",
     "RelativePath": "api/VoidReasons/Update/{id}",
     "HttpMethod": "PUT",
@@ -6351,7 +6481,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Products.Api.Controllers.WarehousesController",
+    "ContainingType": "Api.Controllers.WarehousesController",
     "Method": "Add",
     "RelativePath": "api/Warehouses/Add",
     "HttpMethod": "POST",
@@ -6360,7 +6490,7 @@
     "Parameters": [
       {
         "Name": "request",
-        "Type": "Products.Api.Models.CreateWarehouseRequest",
+        "Type": "Api.Models.CreateWarehouseRequest",
         "IsRequired": true
       },
       {
@@ -6371,7 +6501,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.WarehouseDto",
+        "Type": "Api.Models.WarehouseDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -6382,7 +6512,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.WarehousesController",
+    "ContainingType": "Api.Controllers.WarehousesController",
     "Method": "Delete",
     "RelativePath": "api/Warehouses/Delete",
     "HttpMethod": "DELETE",
@@ -6392,7 +6522,7 @@
       {
         "Name": "id",
         "Type": "System.Int32",
-        "IsRequired": true
+        "IsRequired": false
       },
       {
         "Name": "companyId",
@@ -6413,7 +6543,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.WarehousesController",
+    "ContainingType": "Api.Controllers.WarehousesController",
     "Method": "GetAll",
     "RelativePath": "api/Warehouses/GetAll",
     "HttpMethod": "GET",
@@ -6428,7 +6558,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.WarehouseDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.WarehouseDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -6439,7 +6569,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.WarehousesController",
+    "ContainingType": "Api.Controllers.WarehousesController",
     "Method": "GetById",
     "RelativePath": "api/Warehouses/GetById",
     "HttpMethod": "GET",
@@ -6459,7 +6589,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.WarehouseDto",
+        "Type": "Api.Models.WarehouseDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -6470,16 +6600,16 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.WarehousesController",
+    "ContainingType": "Api.Controllers.WarehousesController",
     "Method": "Update",
     "RelativePath": "api/Warehouses/Update",
-    "HttpMethod": "PUT",
+    "HttpMethod": "PATCH",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
         "Name": "request",
-        "Type": "Products.Api.Models.UpdateWarehouseRequest",
+        "Type": "Api.Models.UpdateWarehouseRequest",
         "IsRequired": true
       },
       {
@@ -6490,7 +6620,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "Products.Api.Models.WarehouseDto",
+        "Type": "Api.Models.WarehouseDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -6501,7 +6631,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.ZReportController",
+    "ContainingType": "Api.Controllers.ZReportController",
     "Method": "Add",
     "RelativePath": "api/ZReport/Add",
     "HttpMethod": "POST",
@@ -6510,7 +6640,7 @@
     "Parameters": [
       {
         "Name": "zReportRequest",
-        "Type": "Products.Api.Models.CreateZReportRequest",
+        "Type": "Api.Models.CreateZReportRequest",
         "IsRequired": true
       }
     ],
@@ -6527,7 +6657,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.ZReportController",
+    "ContainingType": "Api.Controllers.ZReportController",
     "Method": "Delete",
     "RelativePath": "api/ZReport/delete/{id}",
     "HttpMethod": "DELETE",
@@ -6553,7 +6683,7 @@
     ]
   },
   {
-    "ContainingType": "Products.Api.Controllers.ZReportController",
+    "ContainingType": "Api.Controllers.ZReportController",
     "Method": "GetAll",
     "RelativePath": "api/ZReport/GetAll",
     "HttpMethod": "GET",
@@ -6562,7 +6692,7 @@
     "Parameters": [],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Products.Api.Models.ZReportDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.ZReportDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",

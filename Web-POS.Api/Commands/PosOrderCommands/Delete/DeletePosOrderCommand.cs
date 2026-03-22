@@ -2,12 +2,12 @@
 
 using FluentValidation;
 using MediatR;
-using Products.Api.Models;
-using Products.Api.Services;
 using System.Threading;
 using System.Threading.Tasks;
+using Api.Services;
+using Api.Models;
 
-namespace Products.Api.Commands.PosOrderCommands.Delete
+namespace Api.Commands.PosOrderCommands.Delete
 {
     public class UpdatePosOrderCommand : IRequest<bool>
     {

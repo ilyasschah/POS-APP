@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Products.Api.Domain;
 using System.Reflection.Emit;
-namespace Products.Api.DataBase
+using Api.Domain;
+namespace Api.DataBase
 {
     public class AppDbContext : DbContext
     {

@@ -1,9 +1,9 @@
 // FILE: Products.Api.Helpers\MapperPosVoid.cs
 
-using Products.Api.Domain;
-using Products.Api.Models;
+using Api.Domain;
+using Api.Models;
 
-namespace Products.Api.Helpers;
+namespace Api.Helpers;
 
 public static class MapperPosVoid
 {

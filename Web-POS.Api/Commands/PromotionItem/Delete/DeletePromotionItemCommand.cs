@@ -1,7 +1,7 @@
 ﻿using MediatR;
-using Products.Api.Services;
+using Api.Services;
 
-namespace Products.Api.Commands.PromotionItem.Delete
+namespace Api.Commands.PromotionItem.Delete
 {
     public class DeletePromotionItemCommand : IRequest<bool>
     {

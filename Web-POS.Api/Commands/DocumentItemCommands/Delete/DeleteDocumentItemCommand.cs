@@ -1,9 +1,9 @@
-﻿using Products.Api.Commands.DocumentItemCommands.Add;
+﻿using Api.Commands.DocumentItemCommands.Add;
 using FluentValidation;
 using MediatR;
-using Products.Api.Services;
+using Api.Services;
 
-namespace Products.Api.Commands.DocumentItemCommands.Delete
+namespace Api.Commands.DocumentItemCommands.Delete
 {
     public class DeleteDocumentItemCommand : IRequest<bool>
     {

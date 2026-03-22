@@ -1,9 +1,9 @@
-﻿using Products.Api.Models;
-using Products.Api.Services;
-using FluentValidation;
+﻿using FluentValidation;
 using MediatR;
+using Api.Models;
+using Api.Services;
 
-namespace Products.Api.Commands.PosPrinterSettingsCommands.Update
+namespace Api.Commands.PosPrinterSettingsCommands.Update
 {
     public class UpdatePosPrinterSettingsCommand : IRequest<bool>
     {

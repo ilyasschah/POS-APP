@@ -1,6 +1,6 @@
-﻿using Products.Api.Domain;
-using Products.Api.Models;
-namespace Products.Api.Helpers
+﻿using Api.Domain;
+using Api.Models;
+namespace Api.Helpers
 {
     public class MapperDocumentItemExpirationDate
     {

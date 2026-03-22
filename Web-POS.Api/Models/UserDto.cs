@@ -1,8 +1,9 @@
-namespace Products.Api.Models;
+namespace Api.Models;
 
 public class UserDto
 {
     public int Id { get; set; }
+    public int CompanyId { get; set; }
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
     public string? Username { get; set; }

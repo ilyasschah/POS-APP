@@ -1,12 +1,12 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Products.Api.Commands.Promotion.Add;
-using Products.Api.Commands.Promotion.Delete;
-using Products.Api.Commands.Promotion.Update;
-using Products.Api.Models;
-using Products.Api.Queries.PromotionQuery;
+using Api.Commands.Promotion.Add;
+using Api.Commands.Promotion.Delete;
+using Api.Commands.Promotion.Update;
+using Api.Queries.PromotionQuery;
+using Api.Models;
 
-namespace Products.Api.Controllers
+namespace Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]

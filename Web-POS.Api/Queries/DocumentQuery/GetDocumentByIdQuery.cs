@@ -1,9 +1,9 @@
-﻿using Products.Api.Helpers;
+﻿using Api.Helpers;
 using MediatR;
-using Products.Api.Models;
-using Products.Api.Repository;
+using Api.Repository;
+using Api.Models;
 
-namespace Products.Api.Queries.DocumentQuery
+namespace Api.Queries.DocumentQuery
 {
     public class GetDocumentByIdQuery(int id) : IRequest<DocumentDto?>
     {

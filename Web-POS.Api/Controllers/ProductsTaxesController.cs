@@ -1,11 +1,11 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Products.Api.Commands.ProductTaxCommands.Add;
-using Products.Api.Commands.ProductTaxCommands.Delete;
-using Products.Api.Models;
-using Products.Api.Queries.ProductTaxQuery;
+using Api.Commands.ProductTaxCommands.Add;
+using Api.Commands.ProductTaxCommands.Delete;
+using Api.Queries.ProductTaxQuery;
+using Api.Models;
 
-namespace Products.Api.Controllers
+namespace Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]

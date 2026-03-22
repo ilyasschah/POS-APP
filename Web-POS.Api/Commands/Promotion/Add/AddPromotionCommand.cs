@@ -1,10 +1,10 @@
 ﻿using FluentValidation;
 using MediatR;
-using Products.Api.Helpers;
-using Products.Api.Models;
-using Products.Api.Services;
+using Api.Helpers;
+using Api.Services;
+using Api.Models;
 
-namespace Products.Api.Commands.Promotion.Add
+namespace Api.Commands.Promotion.Add
 {
     public class AddPromotionCommand : IRequest<PromotionDto>
     {

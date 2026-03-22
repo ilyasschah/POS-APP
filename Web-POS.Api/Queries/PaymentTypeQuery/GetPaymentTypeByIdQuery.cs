@@ -1,12 +1,10 @@
-﻿using MediatR;
-using System.Threading;
-using System.Threading.Tasks;
-using Products.Api.Repository;
-using Products.Api.Models;
-using Products.Api.Helpers;
-using FluentValidation;
+﻿using FluentValidation;
+using MediatR;
+using Api.Repository;
+using Api.Helpers;
+using Api.Models;
 
-namespace Products.Api.Queries.PaymentTypeQuery
+namespace Api.Queries.PaymentTypeQuery
 {
     public class GetPaymentTypeByIdQuery : IRequest<PaymentTypeDto?>
     {

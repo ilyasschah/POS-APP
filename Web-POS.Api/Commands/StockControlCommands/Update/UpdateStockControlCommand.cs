@@ -2,10 +2,10 @@
 
 using FluentValidation;
 using MediatR;
-using Products.Api.Models;
-using Products.Api.Services;
+using Api.Services;
+using Api.Models;
 
-namespace Products.Api.Commands.StockControlCommands.Update;
+namespace Api.Commands.StockControlCommands.Update;
 
 public class UpdateStockControlCommand : IRequest<bool>
 {

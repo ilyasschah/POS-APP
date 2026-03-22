@@ -1,11 +1,11 @@
 using MediatR;
-using Products.Api.Helpers;
-using Products.Api.Models;
-using Products.Api.Repository;
 using System.Threading;
 using System.Threading.Tasks;
+using Api.Helpers;
+using Api.Repository;
+using Api.Models;
 
-namespace Products.Api.Queries.FloorPlanTableQuery.Get
+namespace Api.Queries.FloorPlanTableQuery.Get
 {
     public class GetFloorPlanTableByNameQuery : IRequest<FloorPlanTableDto?>
     {

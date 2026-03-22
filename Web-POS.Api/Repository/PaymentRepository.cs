@@ -1,11 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Products.Api.DataBase;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Products.Api.Domain;
+using Api.Domain;
+using Api.DataBase;
 
-namespace Products.Api.Repository
+namespace Api.Repository
 {
     public class PaymentRepository
     {

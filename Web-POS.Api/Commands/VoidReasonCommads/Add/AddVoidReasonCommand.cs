@@ -1,10 +1,10 @@
 ﻿using FluentValidation;
 using MediatR;
-using Products.Api.Helpers;
-using Products.Api.Models;
-using Products.Api.Services;
+using Api.Helpers;
+using Api.Models;
+using Api.Services;
 
-namespace Products.Api.Commands.VoidReasonCommads.Add
+namespace Api.Commands.VoidReasonCommads.Add
 {
     public class AddVoidReasonCommand : IRequest<VoidReasonDto>
     {

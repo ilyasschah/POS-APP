@@ -1,10 +1,10 @@
-﻿namespace Products.Api.Models
+﻿namespace Api.Models
 {
     public class WarehouseDto
     {
         public int Id { get; set; }
         public string Name { get; set; }
-        public string? CompanyName { get; set; }
+        public int CompanyId { get; set; }
     }
 
     public class CreateWarehouseRequest
@@ -14,7 +14,7 @@
 
     public class UpdateWarehouseRequest
     {
-        public required int Id { get; set; }
+        public  int Id { get; set; }
         public required string Name { get; set; }
     }
 }

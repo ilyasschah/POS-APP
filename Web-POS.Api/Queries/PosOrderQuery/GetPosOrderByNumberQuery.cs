@@ -1,13 +1,13 @@
 // File: Queries/PosOrderQuery/GetPosOrderByNumberQuery.cs
 
 using MediatR;
-using Products.Api.Helpers;
-using Products.Api.Models;
-using Products.Api.Repository;
 using System.Threading;
 using System.Threading.Tasks;
+using Api.Repository;
+using Api.Helpers;
+using Api.Models;
 
-namespace Products.Api.Queries.PosOrderQuery
+namespace Api.Queries.PosOrderQuery
 {
     public class GetPosOrderByNumberQuery : IRequest<PosOrderDto?>
     {

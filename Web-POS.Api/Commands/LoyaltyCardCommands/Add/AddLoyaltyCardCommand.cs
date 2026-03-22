@@ -2,10 +2,10 @@
 
 using FluentValidation;
 using MediatR;
-using Products.Api.Models;
-using Products.Api.Services;
+using Api.Services;
+using Api.Models;
 
-namespace Products.Api.Commands.LoyaltyCardCommands.Add;
+namespace Api.Commands.LoyaltyCardCommands.Add;
 
 public class AddLoyaltyCardCommand : IRequest<bool>
 {

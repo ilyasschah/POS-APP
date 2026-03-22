@@ -1,10 +1,10 @@
 // FILE: Products.Api.Repository\LoyaltyCardRepository.cs
 
 using Microsoft.EntityFrameworkCore;
-using Products.Api.Domain;
-using Products.Api.DataBase;
+using Api.Domain;
+using Api.DataBase;
 
-namespace Products.Api.Repository;
+namespace Api.Repository;
 
 public class LoyaltyCardRepository
 {

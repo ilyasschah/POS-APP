@@ -1,9 +1,9 @@
 ﻿using FluentValidation;
 using MediatR;
-using Products.Api.Models;
-using Products.Api.Services;
+using Api.Models;
+using Api.Services;
 
-namespace Products.Api.Commands.DocumentTypeCommands.Add
+namespace Api.Commands.DocumentTypeCommands.Add
 {
     public class AddDocumentTypeCommand(CreateDocumentTypeRequest createdocumenttypeRequest) : IRequest<bool>
     {

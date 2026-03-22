@@ -1,8 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Products.Api.DataBase;
-using Products.Api.Domain;
+using Api.Domain;
+using Api.DataBase;
 
-namespace Products.Api.Repository
+namespace Api.Repository
 {
     public class FloorPlanTableRepository
     {

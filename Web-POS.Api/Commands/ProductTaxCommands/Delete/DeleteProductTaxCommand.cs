@@ -1,8 +1,8 @@
 using FluentValidation;
 using MediatR;
-using Products.Api.Services;
+using Api.Services;
 
-namespace Products.Api.Commands.ProductTaxCommands.Delete
+namespace Api.Commands.ProductTaxCommands.Delete
 {
     public class DeleteProductTaxCommand : IRequest<bool>
     {

@@ -1,9 +1,9 @@
 ﻿using FluentValidation;
 using MediatR;
-using Products.Api.Models;
-using Products.Api.Services;
+using Api.Models;
+using Api.Services;
 
-namespace Products.Api.Commands.TemplateCommands.Update
+namespace Api.Commands.TemplateCommands.Update
 {
     public class UpdateTemplateCommand : IRequest<bool>
     {

@@ -1,7 +1,7 @@
 ﻿using MediatR;
-using Products.Api.Services;
+using Api.Services;
 
-namespace Products.Api.Commands.FiscalItemCommands.Delete
+namespace Api.Commands.FiscalItemCommands.Delete
 {
     public class DeleteFiscalItemCommand : IRequest<bool>
     {

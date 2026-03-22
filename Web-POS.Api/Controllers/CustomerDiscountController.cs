@@ -1,10 +1,10 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Products.Api.Models;
-using Products.Api.Commands.CustomerCommands.Add;
-using Products.Api.Queries.CustomerQuery.Get;
+using Api.Commands.CustomerCommands.Add;
+using Api.Queries.CustomerQuery.Get;
+using Api.Models;
 
-namespace Products.Api.Controllers
+namespace Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]

@@ -1,10 +1,10 @@
 using FluentValidation;
 using MediatR;
-using Products.Api.Helpers;
-using Products.Api.Models;
-using Products.Api.Services;
+using Api.Helpers;
+using Api.Models;
+using Api.Services;
 
-namespace Products.Api.Commands.ProductCommands.Add
+namespace Api.Commands.ProductCommands.Add
 {
     public class AddProductCommand : IRequest<ProductDto>
     {

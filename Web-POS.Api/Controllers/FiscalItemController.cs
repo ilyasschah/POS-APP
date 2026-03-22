@@ -1,14 +1,14 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Products.Api.Commands.FiscalItemCommands.Add;
-using Products.Api.Commands.FiscalItemCommands.Delete;
-using Products.Api.Commands.FiscalItemCommands.Update;
-using Products.Api.Models;
-using Products.Api.Queries.FiscalItemQuery;
+using Api.Commands.FiscalItemCommands.Add;
+using Api.Commands.FiscalItemCommands.Delete;
+using Api.Commands.FiscalItemCommands.Update;
+using Api.Queries.FiscalItemQuery;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Api.Models;
 
-namespace Products.Api.Controllers
+namespace Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]

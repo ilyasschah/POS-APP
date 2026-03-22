@@ -1,9 +1,10 @@
-﻿using MediatR;
-using Products.Api.Helpers;
-using Products.Api.Models;
-using Products.Api.Repository;
+﻿using FluentValidation;
+using MediatR;
+using Api.Repository;
+using Api.Helpers;
+using Api.Models;
 
-namespace Products.Api.Queries.StockQuery
+namespace Api.Queries.StockQuery
 {
     public class GetAllStockQuery : IRequest<List<StockDto>>
     {
@@ -19,8 +20,15 @@ namespace Products.Api.Queries.StockQuery
         }
         public async Task<List<StockDto>> Handle(GetAllStockQuery request, CancellationToken cancellationToken)
         {
-            var stockEntities = await _stockRepository.GetAllProducts_warehouse_StocksAsync(request.CompanyId);
+            var stockEntities = await _stockRepository.GetAllStocksAsync(request.CompanyId);
             return stockEntities.Select(MapperStock_P_Name_W_Name.MapToStockDetails).ToList();
+        }
+    }
+    public class GetAllStockQueryValidator : AbstractValidator<GetAllStockQuery>
+    {
+        public GetAllStockQueryValidator()
+        {
+            RuleFor(x => x.CompanyId).GreaterThan(0).WithMessage("Company ID must be valid.");
         }
     }
 }

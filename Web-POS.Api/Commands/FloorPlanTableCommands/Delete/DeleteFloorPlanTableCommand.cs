@@ -1,9 +1,9 @@
 ﻿using MediatR;
-using Products.Api.Services;
 using System.Threading;
 using System.Threading.Tasks;
+using Api.Services;
 
-namespace Products.Api.Commands.FloorPlanTableCommands.Delete
+namespace Api.Commands.FloorPlanTableCommands.Delete
 {
     public class DeleteFloorPlanTableCommand : IRequest<bool>
     {

@@ -1,12 +1,12 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Products.Api.Commands.StockControlCommands.Add;
-using Products.Api.Commands.StockControlCommands.Update;
-using Products.Api.Commands.StockControlCommands.Delete;
-using Products.Api.Queries.StockControlQuery;
-using Products.Api.Models;
+using Api.Commands.StockControlCommands.Add;
+using Api.Commands.StockControlCommands.Update;
+using Api.Commands.StockControlCommands.Delete;
+using Api.Queries.StockControlQuery;
+using Api.Models;
 
-namespace Products.Api.Controllers;
+namespace Api.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]

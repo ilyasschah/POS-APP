@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Reflection;
 
-namespace Products.Api.Domain
+namespace Api.Domain
 {
     [Table("Product")]
     public class Product

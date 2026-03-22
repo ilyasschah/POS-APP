@@ -1,12 +1,12 @@
-﻿using Products.Api.Models;
-using Products.Api.Queries.PosPrinterSettingsQuery;
+﻿using Api.Queries.PosPrinterSettingsQuery;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Products.Api.Commands.PosPrinterSettingsCommands.Add;
-using Products.Api.Commands.PosPrinterSettingsCommands.Delete;
-using Products.Api.Commands.PosPrinterSettingsCommands.Update;
+using Api.Commands.PosPrinterSettingsCommands.Add;
+using Api.Commands.PosPrinterSettingsCommands.Delete;
+using Api.Commands.PosPrinterSettingsCommands.Update;
+using Api.Models;
 
-namespace Products.Api.Controllers
+namespace Api.Controllers
 {
 
     [ApiController]

@@ -1,13 +1,12 @@
 ﻿using FluentValidation;
 using MediatR;
-using Products.Api.Models;
-using Products.Api.Services;
+using Api.Services;
+using Api.Models;
 
-namespace Products.Api.Commands.StockCommands.Update
+namespace Api.Commands.StockCommands.Update
 {
     public class UpdateStockCommand : IRequest<bool>
     {
-        public int Id { get; set; }
         public UpdateStockRequest Request { get; set; }
         public int CompanyId { get; }
 
@@ -26,15 +25,7 @@ namespace Products.Api.Commands.StockCommands.Update
             }
             public Task<bool> Handle(UpdateStockCommand request, CancellationToken cancellationToken)
             {
-                try
-                {
-                    return _stockService.Update(request.Id, request.Request, request.CompanyId);
-
-                }
-                catch (Exception)
-                {
-                    throw;
-                }
+                    return _stockService.UpdateAsync(request.Request, request.CompanyId);
             }
             public class UpdateStockCommandValidator : AbstractValidator<UpdateStockCommand>
             {
@@ -42,7 +33,7 @@ namespace Products.Api.Commands.StockCommands.Update
                 {
                     RuleFor(sv => sv.Request.newQuantity).NotNull().WithMessage("Stock value must not be null.");
                     RuleFor(wid => wid.Request.newWarehouseId).NotNull().WithMessage("Warehouse ID must be provided.");
-                    RuleFor(sid => sid.Id).NotNull().WithMessage("Stock ID must be provided.");
+                    RuleFor(sid => sid.Request.Id).NotNull().WithMessage("Stock ID must be provided.");
                 }
             }
         }

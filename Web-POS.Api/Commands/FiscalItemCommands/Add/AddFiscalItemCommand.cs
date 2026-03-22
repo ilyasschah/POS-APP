@@ -1,10 +1,10 @@
 ﻿using FluentValidation;
 using MediatR;
-using Products.Api.Helpers;
-using Products.Api.Models;
-using Products.Api.Services;
+using Api.Helpers;
+using Api.Models;
+using Api.Services;
 
-namespace Products.Api.Commands.FiscalItemCommands.Add
+namespace Api.Commands.FiscalItemCommands.Add
 {
     public class AddFiscalItemCommand : IRequest<FiscalItemDto>
     {

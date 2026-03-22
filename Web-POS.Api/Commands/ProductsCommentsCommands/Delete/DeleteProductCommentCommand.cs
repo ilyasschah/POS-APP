@@ -1,7 +1,7 @@
 ﻿using MediatR;
-using Products.Api.Services;
+using Api.Services;
 
-namespace Products.Api.Commands.ProductsCommentsCommands.Delete
+namespace Api.Commands.ProductsCommentsCommands.Delete
 {
     public class DeleteProductCommentCommand : IRequest<bool>
     {

@@ -1,24 +1,22 @@
-﻿using Products.Api.Domain;
-using Products.Api.Models;
-using Products.Api.Repository;
+﻿using Api.Domain;
+using Api.Models;
+using Api.Repository;
 
-namespace Products.Api.Services
+namespace Api.Services
 {
     public class PaymentTypeService
     {
         public readonly PaymentTypeRepository _repository;
 
-        private readonly CompanyRepository _companyRepository;
-
-        public PaymentTypeService(PaymentTypeRepository repository, CompanyRepository companyRepository)
+        public PaymentTypeService(PaymentTypeRepository repository)
         {
             _repository = repository;
-            _companyRepository = companyRepository;
         }
 
         public async Task<PaymentTypeDto> CreateAsync(CreatePaymentTypeRequest req, int companyId)
         {
-            if (await _repository.ExistsbyNameAsync(req.Name, companyId))
+            var existingByName = await _repository.GetByNameAsync(req.Name, companyId);
+            if (existingByName != null)
             {
                 throw new InvalidOperationException($"A payment type with the name '{req.Name}' already exists.");
             }
@@ -40,11 +38,10 @@ namespace Products.Api.Services
             );
 
             await _repository.AddAsync(newpaymentType);
-            var company = await _companyRepository.GetByIdAsync(companyId);
             return new PaymentTypeDto
             {
                 Id = newpaymentType.Id,
-                CompanyName = company?.Name,
+                CompanyId = companyId,
                 Name = newpaymentType.Name,
                 Code = newpaymentType.Code,
                 IsCustomerRequired = newpaymentType.IsCustomerRequired,
@@ -75,7 +72,6 @@ namespace Products.Api.Services
             entity.Name = req.Name ?? entity.Name;
             entity.Code = req.Code ?? entity.Code;
             entity.ShortcutKey = req.ShortcutKey ?? entity.ShortcutKey;
-
             entity.IsCustomerRequired = req.IsCustomerRequired ?? entity.IsCustomerRequired;
             entity.IsFiscal = req.IsFiscal ?? entity.IsFiscal;
             entity.IsSlipRequired = req.IsSlipRequired ?? entity.IsSlipRequired;

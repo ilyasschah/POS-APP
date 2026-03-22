@@ -1,9 +1,9 @@
-using Products.Api.Domain;
-using Products.Api.Repository;
+using Api.Domain;
+using Api.Repository;
 using System;
 using System.Threading.Tasks;
 
-namespace Products.Api.Services
+namespace Api.Services
 {
     public class ProductTaxService
     {

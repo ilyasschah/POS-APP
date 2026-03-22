@@ -1,7 +1,7 @@
 ﻿using MediatR;
-using Products.Api.Services;
+using Api.Services;
 
-namespace Products.Api.Commands.DocumentsCommands.Delete
+namespace Api.Commands.DocumentsCommands.Delete
 {
     public class DeleteDocumentCommand : IRequest<bool>
     {

@@ -1,8 +1,8 @@
-﻿using Products.Api.DataBase;
-using Microsoft.EntityFrameworkCore;
-using Products.Api.Domain;
+﻿using Microsoft.EntityFrameworkCore;
+using Api.DataBase;
+using Api.Domain;
 
-namespace Products.Api.Repository
+namespace Api.Repository
 {
     public class DocumentItemTaxRepository(AppDbContext db)
     {

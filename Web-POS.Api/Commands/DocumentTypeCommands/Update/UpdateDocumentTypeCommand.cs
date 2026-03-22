@@ -1,9 +1,9 @@
 ﻿using MediatR;
 using FluentValidation;
-using Products.Api.Services;
-using Products.Api.Models;
+using Api.Models;
+using Api.Services;
 
-namespace Products.Api.Commands.DocumentTypeCommands.Update
+namespace Api.Commands.DocumentTypeCommands.Update
 {
     public record UpdateDocumentTypeCommand(int Id, UpdateDocumentTypeRequest Request) : IRequest<bool>;
 

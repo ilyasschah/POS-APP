@@ -1,10 +1,10 @@
 ﻿using FluentValidation;
 using MediatR;
-using Products.Api.Models;
-using Products.Api.Services;
 using System.Windows.Input;
+using Api.Services;
+using Api.Models;
 
-namespace Products.Api.Commands.PosVoidCommands.Update
+namespace Api.Commands.PosVoidCommands.Update
 {
     public class UpdatePosVoidCommand : IRequest<bool>
     {

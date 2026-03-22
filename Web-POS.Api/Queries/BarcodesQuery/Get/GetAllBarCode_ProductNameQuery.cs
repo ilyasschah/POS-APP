@@ -1,8 +1,8 @@
 ﻿using MediatR;
-using Products.Api.Helpers;
-using Products.Api.Models;
-using Products.Api.Repository;
-namespace Products.Api.Queries.BarCodesQuery.Get
+using Api.Helpers;
+using Api.Repository;
+using Api.Models;
+namespace Api.Queries.BarcodesQuery.Get
 {
     public class GetAllBarCodeProductNameQuery : IRequest<List<BarcodeDto>>
     {

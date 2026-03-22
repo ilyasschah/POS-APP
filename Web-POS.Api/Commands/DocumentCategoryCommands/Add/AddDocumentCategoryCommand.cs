@@ -1,9 +1,9 @@
 ﻿using FluentValidation;
 using MediatR;
-using Products.Api.Models;
-using Products.Api.Services;
+using Api.Models;
+using Api.Services;
 
-namespace Products.Api.Commands.DocumentCategoryCommands.Add
+namespace Api.Commands.DocumentCategoryCommands.Add
 {
     public class AddDocumentCategoryCommand(CreateDocumentCategoryRequest createDocumentCategoryRequest) : IRequest<bool>
     {

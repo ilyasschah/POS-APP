@@ -1,9 +1,9 @@
 using FluentValidation;
 using MediatR;
-using Products.Api.Models;
-using Products.Api.Services;
+using Api.Models;
+using Api.Services;
 
-namespace Products.Api.Commands.ProductCommands.Update
+namespace Api.Commands.ProductCommands.Update
 {
     public class UpdateProductCommand : IRequest<bool>
     {

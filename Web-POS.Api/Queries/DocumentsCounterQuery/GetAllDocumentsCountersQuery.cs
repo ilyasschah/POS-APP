@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Products.Api.Repository;
-using Products.Api.Helpers;
-using Products.Api.Models;
+using Api.Helpers;
+using Api.Repository;
+using Api.Models;
 
-namespace Products.Api.Queries.DocumentsCounterQuery
+namespace Api.Queries.DocumentsCounterQuery
 {
     public class GetAllDocumentsCountersQuery : IRequest<List<DocumentsCounterDto>>
     {

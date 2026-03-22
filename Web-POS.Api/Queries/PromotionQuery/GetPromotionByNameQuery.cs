@@ -1,9 +1,9 @@
 ﻿using MediatR;
-using Products.Api.Helpers;
-using Products.Api.Models;
-using Products.Api.Repository;
+using Api.Repository;
+using Api.Helpers;
+using Api.Models;
 
-namespace Products.Api.Queries.PromotionQuery
+namespace Api.Queries.PromotionQuery
 {
     public class GetPromotionByNameQuery : IRequest<PromotionDto?>
     {

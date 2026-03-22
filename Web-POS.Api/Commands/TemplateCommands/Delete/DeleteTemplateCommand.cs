@@ -1,7 +1,7 @@
 ﻿using MediatR;
-using Products.Api.Services;
+using Api.Services;
 
-namespace Products.Api.Commands.TemplateCommands.Delete
+namespace Api.Commands.TemplateCommands.Delete
 {
     public class DeleteTemplateCommand : IRequest<bool>
     {

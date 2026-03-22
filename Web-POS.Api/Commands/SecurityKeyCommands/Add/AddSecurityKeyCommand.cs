@@ -1,8 +1,8 @@
 ﻿using MediatR;
-using Products.Api.Models;
-using Products.Api.Services;
+using Api.Models;
+using Api.Services;
 
-namespace Products.Api.Commands.SecurityKeyCommands.Add
+namespace Api.Commands.SecurityKeyCommands.Add
 {
     public class AddSecurityKeyCommand(CreateSecurityKeyRequest createSecurityKeyRequest) : IRequest<bool>
     {

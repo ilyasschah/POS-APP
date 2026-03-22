@@ -1,8 +1,8 @@
 ﻿using MediatR;
-using Products.Api.Models;
-using Products.Api.Repository;
+using Api.Repository;
+using Api.Models;
 
-namespace Products.Api.Queries.PosVoidQuery;
+namespace Api.Queries.PosVoidQuery;
 
     public class GetPosVoidByIdQuery : IRequest<PosVoidDto?>
     {

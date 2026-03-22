@@ -1,9 +1,9 @@
 // FILE: Products.Api.Commands\LoyaltyCardCommands\Delete\DeleteLoyaltyCardCommand.cs
 
 using MediatR;
-using Products.Api.Services;
+using Api.Services;
 
-namespace Products.Api.Commands.LoyaltyCardCommands.Delete;
+namespace Api.Commands.LoyaltyCardCommands.Delete;
 
 public class DeleteLoyaltyCardCommand : IRequest<bool>
 {

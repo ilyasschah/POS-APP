@@ -1,8 +1,8 @@
 ﻿using MediatR;
-using Products.Api.Models;
-using Products.Api.Services;
+using Api.Models;
+using Api.Services;
 
-namespace Products.Api.Commands.CustomerCommands.Add
+namespace Api.Commands.CustomerCommands.Add
 {
     public class AddCustomerDiscountCommand(CreateCustomerDiscountRequest createcustomerdiscountRequest) : IRequest<bool>
     {

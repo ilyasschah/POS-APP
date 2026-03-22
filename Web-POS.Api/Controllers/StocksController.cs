@@ -1,50 +1,64 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Products.Api.Commands.StockCommands.Add;
-using Products.Api.Models;
-using Products.Api.Queries.StockQuery;
-using Products.Api.Commands.StockCommands.Update;
-using Products.Api.Commands.StockCommands.Delete;
+using Api.Commands.StockCommands.Add;
+using Api.Queries.StockQuery;
+using Api.Commands.StockCommands.Update;
+using Api.Commands.StockCommands.Delete;
+using Api.Attributes;
+using Api.Models;
 
-namespace Products.Api.Controllers
+namespace Api.Controllers
 {
+    [SwaggerVisible]
     [Route("api/[controller]")]
     [ApiController]
-    public class StocksController (IMediator mediator): ControllerBase
+    public class StocksController : ControllerBase
     {
+        private readonly IMediator _mediator;
+
+        public StocksController(IMediator mediator)
+        {
+            _mediator = mediator;
+        }
+
         [HttpGet("[action]")]
         public async Task<ActionResult<List<StockDto>>> GetAllStocks([FromQuery] int companyId)
         {
-            if (companyId == 0) return BadRequest("Company ID is required");
-            return Ok (await mediator.Send(new GetAllStockQuery { CompanyId = companyId }));
+            if (companyId <= 0) return BadRequest("Company ID is required");
+            return Ok(await _mediator.Send(new GetAllStockQuery { CompanyId = companyId }));
         }
-        [HttpGet("[action]/{id:int}")]
-        public async Task<ActionResult<StockDto>> GetById(int id, [FromQuery] int companyId)
+
+        [HttpGet("[action]")]
+        public async Task<ActionResult<StockDto>> GetById([FromQuery] int id, [FromQuery] int companyId)
         {
             if (companyId <= 0) return BadRequest("Company ID is required");
-            return Ok(await mediator.Send(new GetStockByIdQuery(id, companyId)));
+            return Ok(await _mediator.Send(new GetStockByIdQuery { Id = id, CompanyId = companyId }));
         }
+
         [HttpPost("[action]")]
         public async Task<ActionResult<StockDto>> Add([FromBody] CreateStockRequest stockrequest, [FromQuery] int companyId)
         {
-            if (companyId == 0) return BadRequest("Company ID is required");
-            var command = new AddStockCommand(stockrequest, companyId);
-            var result = await mediator.Send(command);
-            return CreatedAtAction(nameof(GetById), new { id = result }, result);
+            if (companyId <= 0) return BadRequest("Company ID is required");
+            var result = await _mediator.Send(new AddStockCommand(stockrequest, companyId));
+            return CreatedAtAction(nameof(GetById), new { id = result.Id, companyId }, result);
         }
-        [HttpPut("[action]/{id:int}")]
-        public async Task<ActionResult<bool>> Update([FromBody] UpdateStockRequest stockrequest, [FromQuery] int companyId)
+
+        [HttpPatch("[action]")]
+        public async Task<IActionResult> Update([FromBody] UpdateStockRequest stockrequest, [FromQuery] int companyId)
         {
-            if (companyId == 0) return BadRequest("Company ID is required");
-            return Ok(await mediator.Send(new UpdateStockCommand(stockrequest, companyId)));
+            if (companyId <= 0) return BadRequest("Company ID is required");
+
+            var result = await _mediator.Send(new UpdateStockCommand(stockrequest, companyId));
+            return Ok(new { Success = result });
         }
-        [HttpDelete("[action]/{id:int}")]
-        public async Task<ActionResult> Delete(int id, [FromQuery] int companyId)
+
+        [HttpDelete("[action]")]
+        public async Task<IActionResult> Delete([FromQuery] int id, [FromQuery] int companyId)
         {
-            if (companyId == 0) return BadRequest("Company ID is required");
-            var command = new DeleteStockCommand(id, companyId);
-            var ok = await mediator.Send(command);
-            return Ok(ok);
+            if (companyId <= 0) return BadRequest("Company ID is required");
+
+            var result = await _mediator.Send(new DeleteStockCommand(id, companyId));
+            return Ok(new { Message = result ? "Stock deleted successfully" : "Failed to delete stock" });
         }
     }
 }

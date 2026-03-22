@@ -1,9 +1,9 @@
 ﻿using MediatR;
-using Products.Api.Services;
 using System.Threading;
 using System.Threading.Tasks;
+using Api.Services;
 
-namespace Products.Api.Commands.VoidReasonCommads.Delete
+namespace Api.Commands.VoidReasonCommads.Delete
 {
     public class DeleteVoidReasonCommand : IRequest<bool>
     {

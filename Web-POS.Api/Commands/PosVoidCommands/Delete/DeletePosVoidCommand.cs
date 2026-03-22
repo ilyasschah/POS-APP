@@ -1,9 +1,9 @@
 ﻿using MediatR;
-using Products.Api.Services;
 using System.Threading;
 using System.Threading.Tasks;
+using Api.Services;
 
-namespace Products.Api.Commands.PosVoidCommands.Delete;
+namespace Api.Commands.PosVoidCommands.Delete;
 
 public class DeletePosVoidCommand : IRequest<bool>
 {

@@ -1,8 +1,8 @@
-﻿using Products.Api.Models;
-using Products.Api.Repository;
-using Products.Api.Domain;
+﻿using Api.Repository;
+using Api.Domain;
+using Api.Models;
 
-namespace Products.Api.Services
+namespace Api.Services
 {
     public class PosPrinterSettingsService
     {

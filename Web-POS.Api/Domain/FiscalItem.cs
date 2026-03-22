@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Products.Api.Domain
+namespace Api.Domain
 {
     [Table("FiscalItem")]
     public class FiscalItem

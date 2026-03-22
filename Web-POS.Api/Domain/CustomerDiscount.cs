@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Products.Api.Domain
+namespace Api.Domain
 {
     [Table("CustomerDiscount")]
     public class CustomerDiscount
