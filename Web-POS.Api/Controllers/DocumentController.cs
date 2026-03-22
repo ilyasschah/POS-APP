@@ -5,9 +5,11 @@ using Api.Queries.DocumentQuery;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Api.Models;
+using Api.Attributes;
 
 namespace Api.Controllers
 {
+    [SwaggerVisible]
     [Route("api/[controller]")]
     [ApiController]
     public class DocumentController (IMediator mediator) : ControllerBase

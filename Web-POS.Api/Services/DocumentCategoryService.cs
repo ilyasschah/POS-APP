@@ -11,18 +11,18 @@ namespace Api.Services
         {
             _documentCategoryRepository = documentCategoryRepository;
         }
-        public async Task<bool> Create(CreateDocumentCategoryRequest request) // rkia why some times i dont use this beause i cant create and send the id 
+        public async Task<bool> Create(CreateDocumentCategoryRequest request, int companyId) 
         {
-            var dcexists = _documentCategoryRepository.ExistsById(request.Name);
+            var dcexists = await _documentCategoryRepository.ExistsByName(request.Name, companyId);
             if (dcexists)
                 throw new InvalidOperationException($"A Document Category with the Name '{request.Name}' already exists.");
-            var newDocumentCategory = DocumentCategory.Create(request.Name , request.LanguageKey);
+            var newDocumentCategory = DocumentCategory.Create(request.Name , request.LanguageKey, companyId);
             await _documentCategoryRepository.AddAsync(newDocumentCategory);
             return true;
         }
-        public async Task<bool> Delete(int id)
+        public async Task<bool> Delete(int id, int companyId)
         {
-            var documentCategory = await _documentCategoryRepository.GetByIdAsync(id);
+            var documentCategory = await _documentCategoryRepository.GetByIdAsync(id, companyId);
             if (documentCategory == null)
                 throw new InvalidOperationException($"A Document Category with the ID '{id}' Dont Exists.");
             await _documentCategoryRepository.DeleteAsync(documentCategory);

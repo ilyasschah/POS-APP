@@ -5,14 +5,15 @@ using Api.Queries.DocumentQuery;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Api.Models;
+using Api.Attributes;
 
 namespace Api.Controllers
 {
+    [SwaggerVisible]
     [Route("api/[controller]")]
     [ApiController]
     public class DocumentItemController(IMediator mediator) : ControllerBase
     {
-        //GetAllDocumentCatogory
         [HttpGet("[action]")]
         public async Task<ActionResult<List<DocumentItemDto>>> GetAll()
         {
@@ -34,8 +35,7 @@ namespace Api.Controllers
         {
             return Ok(await mediator.Send(new AddDocumentItemCommand(request)));
         }
-        //DELETE: api/DocumentItem/delete/5
-        [HttpDelete("[action]/{id}")]
+        [HttpDelete("[action]")]
         public async Task<IActionResult> Delete(int id)
         {
             return Ok(await mediator.Send(new DeleteDocumentItemCommand(id)));

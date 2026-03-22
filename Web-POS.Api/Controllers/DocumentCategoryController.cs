@@ -1,18 +1,18 @@
-﻿using Api.Commands.DocumentCategoryCommands.Add;
+﻿using Api.Attributes;
+using Api.Commands.DocumentCategoryCommands.Add;
 using Api.Commands.DocumentCategoryCommands.Delete;
+using Api.Models;
 using Api.Queries.DocumentCategoryQuery;
-using Api.Queries.DocumentQuery;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Api.Models;
 
 namespace Api.Controllers
 {
+    [SwaggerVisible]
     [Route("api/[controller]")]
     [ApiController]
     public class DocumentCategoryController(IMediator mediator) : ControllerBase
     {
-        //GetAllDocumentCatogory
         [HttpGet("[action]")]
         public async Task<ActionResult<List<DocumentCategoryDto>>> GettAll([FromQuery] int companyId)
         {
@@ -20,22 +20,22 @@ namespace Api.Controllers
             return Ok(await mediator.Send(new GetAllDocumentCategoryQuery { CompanyId = companyId }));
         }
         [HttpGet("[action]")]
-        public async Task<ActionResult<DocumentCategoryDto>> GetById(int id, [FromQuery] int companyId)
+        public async Task<ActionResult<DocumentCategoryDto>> GetById([FromQuery] int id, [FromQuery] int companyId)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
-            return Ok(await mediator.Send(new GetDocumentByIdQuery(id) { CompanyId = companyId }));
+            return Ok(await mediator.Send(new GetDCByIdQuery(id, companyId)));
         }
 
         [HttpPost("[action]")]
-        public async Task<ActionResult<DocumentCategoryDto>> Create([FromQuery] CreateDocumentCategoryRequest request)
+        public async Task<ActionResult<DocumentCategoryDto>> Create([FromBody] CreateDocumentCategoryRequest request, [FromQuery] int companyId)
         {
-            return Ok(await mediator.Send(new AddDocumentCategoryCommand(request)));
+            return Ok(await mediator.Send(new AddDocumentCategoryCommand(request, companyId)));
         }
-        //DELETE: api/DocumentCategory/delete/5
-        [HttpDelete("[action]/{id}")]
-        public async Task<IActionResult> Delete(int id)
+
+        [HttpDelete("[action]")]
+        public async Task<IActionResult> Delete([FromQuery] int id, [FromQuery] int companyId)
         {
-            return Ok(await mediator.Send(new DeleteDocumentCategoryCommand(id)));
+            return Ok(await mediator.Send(new DeleteDocumentCategoryCommand(id, companyId)));
         }
     }
 }

@@ -1,6 +1,8 @@
 using Api.Domain;
 using Api.Models;
 using Api.Repository;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 
 namespace Api.Services
 {
@@ -67,9 +69,21 @@ namespace Api.Services
         public async Task<bool> Delete(int id, int companyId)
         {
             var entity = await _userrepository.GetByIdAsync(id, companyId);
-            if (entity == null) return false;
-            await _userrepository.DeleteAsync(entity.Id, companyId);
-            return true;
+            if (entity == null)
+            {
+                throw new KeyNotFoundException($"User with ID {id} not found.");
+            }
+
+            try
+            {
+                await _userrepository.DeleteAsync(id, companyId);
+                return true;
+            }
+            catch (DbUpdateException ex) when (ex.InnerException is SqlException sqlEx && sqlEx.Number == 547)
+            {
+                // SQL Error 547 specifically means a Foreign Key constraint violation
+                throw new InvalidOperationException("This user has a document related to their name, so you cannot delete it.");
+            }
         }
     }
 }

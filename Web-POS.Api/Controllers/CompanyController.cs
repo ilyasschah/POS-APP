@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Api.Attributes;
 using Api.Commands.CompanyCommands.Add;
 using Api.Commands.CompanyCommands.Delete;
 using Api.Commands.CompanyCommands.Update;
@@ -8,6 +9,7 @@ using Api.Models;
 
 namespace Api.Controllers
 {
+    //[SwaggerVisible]
     [Route("api/[controller]")]
     [ApiController]
     public class CompanyController(IMediator mediator) : ControllerBase

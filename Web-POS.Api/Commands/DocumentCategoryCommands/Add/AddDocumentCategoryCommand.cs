@@ -5,9 +5,15 @@ using Api.Services;
 
 namespace Api.Commands.DocumentCategoryCommands.Add
 {
-    public class AddDocumentCategoryCommand(CreateDocumentCategoryRequest createDocumentCategoryRequest) : IRequest<bool>
+    public class AddDocumentCategoryCommand : IRequest<bool>
     {
-        public CreateDocumentCategoryRequest Request { get; set; } = createDocumentCategoryRequest;
+        public CreateDocumentCategoryRequest Request { get; set; }
+        public int CompanyId { get; set; }
+        public AddDocumentCategoryCommand(CreateDocumentCategoryRequest request, int companyId)
+        {
+            Request = request;
+            CompanyId = companyId;
+        }
 
         public class AddDocumentCategoryCommandHandler(DocumentCategoryService service) : IRequestHandler<AddDocumentCategoryCommand, bool>
         {
@@ -17,7 +23,7 @@ namespace Api.Commands.DocumentCategoryCommands.Add
             {
                 try
                 {
-                    return _service.Create(request.Request);
+                    return _service.Create(request.Request, request.CompanyId);
                 }
                 catch (Exception)
                 {

@@ -1127,13 +1127,13 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "Name",
-        "Type": "System.String",
-        "IsRequired": false
+        "Name": "request",
+        "Type": "Api.Models.CreateDocumentCategoryRequest",
+        "IsRequired": true
       },
       {
-        "Name": "LanguageKey",
-        "Type": "System.String",
+        "Name": "companyId",
+        "Type": "System.Int32",
         "IsRequired": false
       }
     ],
@@ -1152,7 +1152,7 @@
   {
     "ContainingType": "Api.Controllers.DocumentCategoryController",
     "Method": "Delete",
-    "RelativePath": "api/DocumentCategory/Delete/{id}",
+    "RelativePath": "api/DocumentCategory/Delete",
     "HttpMethod": "DELETE",
     "IsController": true,
     "Order": 0,
@@ -1160,7 +1160,12 @@
       {
         "Name": "id",
         "Type": "System.Int32",
-        "IsRequired": true
+        "IsRequired": false
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
@@ -1251,7 +1256,7 @@
   {
     "ContainingType": "Api.Controllers.DocumentItemController",
     "Method": "Delete",
-    "RelativePath": "api/DocumentItem/Delete/{id}",
+    "RelativePath": "api/DocumentItem/Delete",
     "HttpMethod": "DELETE",
     "IsController": true,
     "Order": 0,
@@ -1259,7 +1264,7 @@
       {
         "Name": "id",
         "Type": "System.Int32",
-        "IsRequired": true
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []

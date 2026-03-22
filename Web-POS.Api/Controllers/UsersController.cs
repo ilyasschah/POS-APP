@@ -6,9 +6,12 @@ using Api.Commands.UserCommands.Delete;
 using Api.Commands.UserCommands.Update;
 using Api.Queries.UserQuery;
 using Api.Models;
+using Api.Attributes;
 
 namespace Api.Controllers;
 
+
+//[SwaggerVisible]
 [Route("api/[controller]")]
 [ApiController]
 public class UsersController(IMediator mediator) : ControllerBase

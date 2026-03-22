@@ -9,21 +9,21 @@ namespace Api.Domain
         [Key]
         public int Id { get; set; }
         public int CompanyId { get; set; }
-        [Required]
         public string Name { get; set; }
         public string? LanguageKey  { get; set; }
 
-        public DocumentCategory (string name , string languagekey)
+        public DocumentCategory (string name , string languagekey, int companyId)
         {
             Name = name;
             LanguageKey = languagekey;
+            CompanyId = companyId;
         }
         public DocumentCategory()
         {
         }
-        public static DocumentCategory Create(string name , string languagekey)
+        public static DocumentCategory Create(string name , string languagekey, int companyId)
         {
-            return new DocumentCategory(name, languagekey);
+            return new DocumentCategory(name, languagekey, companyId);
         }
 
     }
