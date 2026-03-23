@@ -51,7 +51,7 @@ namespace Api.Controllers
             if (updaterequest.Id == null) return BadRequest("Customer ID is required");
             var command = new UpdateCustomerCommand(updaterequest, companyId);
             var result = await mediator.Send(command);
-            return Ok(new { Id = updaterequest.Id, Message = "Customer updated" });
+            return Ok(new { Message = "Customer updated" });
         }
         [HttpDelete("[action]")]
         public async Task<ActionResult> DeleteCustomercommand([FromQuery] int id, [FromQuery] int companyId)

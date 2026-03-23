@@ -7,6 +7,10 @@
       "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\repository\\documentrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\controllers\\customercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\controllers\\customercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\domain\\document.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\domain\\document.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -25,10 +29,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\models\\documentdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\models\\documentdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\controllers\\customercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\controllers\\customercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\commands\\customercommands\\add\\addcustomercommand.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -58,60 +58,8 @@
       "DocumentGroups": [
         {
           "DockedWidth": 235,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 4,
           "Children": [
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "DocumentRepository.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Repository\\DocumentRepository.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Repository\\DocumentRepository.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Repository\\DocumentRepository.cs",
-              "RelativeToolTip": "Web-POS.Api\\Repository\\DocumentRepository.cs",
-              "ViewState": "AgIAAA8AAAAAAAAAAAA5wBoAAAAJAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-23T18:52:11.095Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "AddDocumentCommand.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Commands\\DocumentsCommands\\Add\\AddDocumentCommand.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Commands\\DocumentsCommands\\Add\\AddDocumentCommand.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Commands\\DocumentsCommands\\Add\\AddDocumentCommand.cs",
-              "RelativeToolTip": "Web-POS.Api\\Commands\\DocumentsCommands\\Add\\AddDocumentCommand.cs",
-              "ViewState": "AgIAAAIAAAAAAAAAAAAiwB0AAAAmAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-23T18:51:46.28Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "DocumentDto.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Models\\DocumentDto.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Models\\DocumentDto.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Models\\DocumentDto.cs",
-              "RelativeToolTip": "Web-POS.Api\\Models\\DocumentDto.cs",
-              "ViewState": "AgIAAC0AAAAAAAAAAAAlwEEAAAAiAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-23T18:31:36.203Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "DocumentService.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Services\\DocumentService.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Services\\DocumentService.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Services\\DocumentService.cs",
-              "RelativeToolTip": "Web-POS.Api\\Services\\DocumentService.cs",
-              "ViewState": "AgIAAAQAAAAAAAAAAAAkwAoAAAArAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-23T18:30:58.725Z",
-              "EditorCaption": ""
-            },
             {
               "$type": "Bookmark",
               "Name": "ST:128:0:{75188d03-9892-4ae2-abf1-207126247ce5}"
@@ -130,7 +78,56 @@
             },
             {
               "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "DocumentRepository.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Repository\\DocumentRepository.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Repository\\DocumentRepository.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Repository\\DocumentRepository.cs",
+              "RelativeToolTip": "Web-POS.Api\\Repository\\DocumentRepository.cs",
+              "ViewState": "AgIAABAAAAAAAAAAAAAgwBoAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-23T18:52:11.095Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "AddDocumentCommand.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Commands\\DocumentsCommands\\Add\\AddDocumentCommand.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Commands\\DocumentsCommands\\Add\\AddDocumentCommand.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Commands\\DocumentsCommands\\Add\\AddDocumentCommand.cs",
+              "RelativeToolTip": "Web-POS.Api\\Commands\\DocumentsCommands\\Add\\AddDocumentCommand.cs",
+              "ViewState": "AgIAAAIAAAAAAAAAAAAiwB0AAAAmAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-23T18:51:46.28Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "DocumentDto.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Models\\DocumentDto.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Models\\DocumentDto.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Models\\DocumentDto.cs",
+              "RelativeToolTip": "Web-POS.Api\\Models\\DocumentDto.cs",
+              "ViewState": "AgIAAC0AAAAAAAAAAAAlwEEAAAAiAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-23T18:31:36.203Z"
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 3,
+              "Title": "DocumentService.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Services\\DocumentService.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Services\\DocumentService.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Services\\DocumentService.cs",
+              "RelativeToolTip": "Web-POS.Api\\Services\\DocumentService.cs",
+              "ViewState": "AgIAAAQAAAAAAAAAAAAkwAoAAAArAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-23T18:30:58.725Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
               "Title": "DocumentController.cs",
               "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\DocumentController.cs",
               "RelativeDocumentMoniker": "Web-POS.Api\\Controllers\\DocumentController.cs",
@@ -138,8 +135,7 @@
               "RelativeToolTip": "Web-POS.Api\\Controllers\\DocumentController.cs",
               "ViewState": "AgIAABkAAAAAAAAAAAAgwDkAAABGAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-23T17:25:00.981Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-23T17:25:00.981Z"
             }
           ]
         },
@@ -149,13 +145,13 @@
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 2,
               "Title": "Document.cs",
               "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Domain\\Document.cs",
               "RelativeDocumentMoniker": "Web-POS.Api\\Domain\\Document.cs",
               "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Domain\\Document.cs",
               "RelativeToolTip": "Web-POS.Api\\Domain\\Document.cs",
-              "ViewState": "AgIAAA4AAAAAAAAAAAAvwBYAAAAjAAAAAAAAAA==",
+              "ViewState": "AgIAAA4AAAAAAAAAAIA8wBYAAAAjAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-03-23T18:30:03.177Z",
               "EditorCaption": ""
@@ -174,7 +170,7 @@
         "Y": 0,
         "Width": 1022,
         "Height": 1062,
-        "WindowState": 0
+        "WindowState": 2
       },
       "DocumentGroups": [
         {
@@ -183,7 +179,7 @@
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 1,
               "Title": "CustomerController.cs",
               "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\CustomerController.cs",
               "RelativeDocumentMoniker": "Web-POS.Api\\Controllers\\CustomerController.cs",
