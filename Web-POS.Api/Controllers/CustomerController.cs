@@ -17,7 +17,6 @@ namespace Api.Controllers
         {
             if (companyId == 0) return BadRequest("Company ID is required");
             return Ok(await mediator.Send(new GetAllCustomersQuery { CompanyId = companyId }));
-
         }
         [HttpGet("[action]")]
         public async Task<ActionResult<CustomerDto>> GetCustomerById([FromQuery] int Id, [FromQuery] int companyId)
@@ -41,9 +40,7 @@ namespace Api.Controllers
         public async Task<ActionResult<CustomerDto>> AddCustomercommand([FromBody] CreateCustomerRequest createrequest, [FromQuery] int companyId)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
-
             var command = new AddCustomerCommand(createrequest, companyId);
-
             var result = await mediator.Send(command);
             return CreatedAtAction(nameof(GetAllCustomers), new { companyId }, result);
         }

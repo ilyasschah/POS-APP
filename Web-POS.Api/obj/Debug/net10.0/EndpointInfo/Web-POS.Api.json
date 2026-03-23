@@ -258,7 +258,7 @@
         }
       }
     },
-    "/api/DocumentCategory/GettAll": {
+    "/api/DocumentCategory/GetAll": {
       "get": {
         "tags": [
           "DocumentCategory"

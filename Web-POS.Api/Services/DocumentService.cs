@@ -56,6 +56,7 @@ namespace Api.Services
                 request.Number ?? document.Number,
                 request.ReferenceDocumentNumber ?? document.ReferenceDocumentNumber,
                 request.CustomerId ?? document.CustomerId,
+                request.Total ?? document.Total,
                 request.PaidStatus ?? document.PaidStatus,
                 request.Date ?? document.Date,
                 request.DueDate ?? document.DueDate,
@@ -65,6 +66,8 @@ namespace Api.Services
                 request.InternalNote ?? document.InternalNote,
                 request.Note ?? document.Note,
                 request.DiscountApplyRule ?? document.DiscountApplyRule
+                
+
             );
 
             await _documentRepository.UpdateAsync(document);

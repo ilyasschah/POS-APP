@@ -1157,6 +1157,32 @@
   },
   {
     "ContainingType": "Api.Controllers.DocumentCategoryController",
+    "Method": "GetAll",
+    "RelativePath": "api/DocumentCategory/GetAll",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.DocumentCategoryDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "Api.Controllers.DocumentCategoryController",
     "Method": "GetById",
     "RelativePath": "api/DocumentCategory/GetById",
     "HttpMethod": "GET",
@@ -1177,32 +1203,6 @@
     "ReturnTypes": [
       {
         "Type": "Api.Models.DocumentCategoryDto",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
-  },
-  {
-    "ContainingType": "Api.Controllers.DocumentCategoryController",
-    "Method": "GettAll",
-    "RelativePath": "api/DocumentCategory/GettAll",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "companyId",
-        "Type": "System.Int32",
-        "IsRequired": false
-      }
-    ],
-    "ReturnTypes": [
-      {
-        "Type": "System.Collections.Generic.List\u00601[[Api.Models.DocumentCategoryDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",

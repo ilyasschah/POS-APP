@@ -128,6 +128,7 @@ namespace Api.Domain
             string number,
             string? referenceDocumentNumber,
             int? customerId,
+            decimal total,
             int paidStatus,
             DateTime? date,
             DateTime? dueDate,
@@ -149,7 +150,7 @@ namespace Api.Domain
             Note = note;
             DiscountApplyRule = discountApplyRule;
             DateUpdated = DateTime.UtcNow;
-
+            Total = total;
             if (CustomerId != customerId)
             {
                 CustomerId = customerId;
