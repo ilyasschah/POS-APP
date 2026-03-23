@@ -4,53 +4,58 @@ using Api.Domain;
 
 namespace Api.Repository
 {
-    public class DocumentItemRepository(AppDbContext db)
+    public class DocumentItemRepository
     {
-        public AppDbContext _db = db;
-        public async Task<List<DocumentItem>> GetDocumentItemsAsync()
+        private readonly AppDbContext _db;
+
+        public DocumentItemRepository(AppDbContext db)
         {
-            return await _db.DocumentItems
-                .AsNoTracking()
-                .Include(Document => Document.Document)
-                .Include(Product => Product.Product)
-                .ToListAsync();
+            _db = db;
         }
-        public async Task<List<DocumentItem>> GetDocumentItemsByDocumentIdAsync(int documentId)
+
+        public async Task<List<DocumentItem>> GetAllAsync(int companyId)
         {
             return await _db.DocumentItems
-                .Where(di => di.DocumentId == documentId)
-                .Include(Document => Document.Document)
-                .Include(Product => Product.Product)
+                .Where(d => d.CompanyId == companyId)
+                .Include(d => d.Product)
+                .Include(d => d.Document)
                 .AsNoTracking()
                 .ToListAsync();
         }
-        public async Task<DocumentItem?> GetDocumentItemByIdAsync(int id)
+
+        public async Task<DocumentItem?> GetByIdAsync(int id, int companyId)
         {
             return await _db.DocumentItems
+                .Include(d => d.Product)
+                .Include(d => d.Document)
+                .FirstOrDefaultAsync(d => d.Id == id && d.CompanyId == companyId);
+        }
+        public async Task<List<DocumentItem>> GetByDocumentIdAsync(int documentId, int companyId)
+        { 
+            return await _db.DocumentItems
+                .Where(d => d.DocumentId == documentId && d.CompanyId == companyId)
+                .Include(d => d.Product)
+                .Include(d => d.Document)
                 .AsNoTracking()
-                .Include(Document => Document.Document)
-                .Include(Product => Product.Product)
-                .FirstOrDefaultAsync(di => di.Id == id);
+                .ToListAsync();
         }
-        //public bool ExistsById(int documentid)
-        //{
-        //    return _db.DocumentItems
-        //        .Any(di => di.DocumentId == documentid);
-        //}
-        public async Task Add(DocumentItem newDocumentItem)
+        public async Task AddAsync(DocumentItem entity)
         {
-            _db.DocumentItems.Add(newDocumentItem);
+            _db.DocumentItems.Add(entity);
             await _db.SaveChangesAsync();
         }
-        public async Task UpdateAsync(DocumentItem documentItem)
+
+        public async Task<bool> UpdateAsync(DocumentItem entity)
         {
-            _db.DocumentItems.Update(documentItem);
             await _db.SaveChangesAsync();
+            return true;
         }
-        public async Task DeleteAsync(DocumentItem documentItem)
+
+        public async Task<bool> DeleteAsync(DocumentItem entity)
         {
-            _db.DocumentItems.Remove(documentItem);
+            _db.DocumentItems.Remove(entity);
             await _db.SaveChangesAsync();
+            return true;
         }
     }
 }

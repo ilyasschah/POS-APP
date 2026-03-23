@@ -1,42 +1,32 @@
-﻿using FluentValidation;
-using MediatR;
+﻿using MediatR;
 using Api.Models;
 using Api.Services;
 
 namespace Api.Commands.DocumentItemCommands.Add
 {
-    public class AddDocumentItemCommand : IRequest<bool>
+    public class AddDocumentItemCommand : IRequest<DocumentItemDto>
     {
         public CreateDocumentItemRequest Request { get; set; }
-        public AddDocumentItemCommand (CreateDocumentItemRequest createDocumentItemRequest)
+        public int CompanyId { get; set; }
+
+        public AddDocumentItemCommand(CreateDocumentItemRequest request, int companyId)
         {
-            Request = createDocumentItemRequest;
+            Request = request;
+            CompanyId = companyId;
         }
-        public class AddDocumentItemCommandHandler : IRequestHandler<AddDocumentItemCommand,bool>
+
+        public class AddDocumentItemCommandHandler : IRequestHandler<AddDocumentItemCommand, DocumentItemDto>
         {
             private readonly DocumentItemService _documentItemService;
+
             public AddDocumentItemCommandHandler(DocumentItemService documentItemService)
             {
                 _documentItemService = documentItemService;
             }
-            public Task<bool> Handle (AddDocumentItemCommand request, CancellationToken cancellationToken)
+
+            public async Task<DocumentItemDto> Handle(AddDocumentItemCommand request, CancellationToken cancellationToken)
             {
-                try
-                {
-                    return _documentItemService.Create(request.Request);
-                }
-                catch (Exception)
-                {
-                    throw;
-                }
-            }
-            public class AddDocumentItemCommandValidator : AbstractValidator<AddDocumentItemCommand>
-            {
-                public AddDocumentItemCommandValidator()
-                {
-                    RuleFor(o => o.Request.DocumentId).NotNull().NotEmpty().WithMessage("document ID must not be null.");
-                    RuleFor(pid => pid.Request.ProductId).NotNull().NotEmpty().WithMessage("product IDmust not be null");
-                }
+                return await _documentItemService.CreateAsync(request.Request, request.CompanyId);
             }
         }
     }

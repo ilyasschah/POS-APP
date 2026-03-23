@@ -14,7 +14,7 @@ namespace Api.Controllers
     public class DocumentCategoryController(IMediator mediator) : ControllerBase
     {
         [HttpGet("[action]")]
-        public async Task<ActionResult<List<DocumentCategoryDto>>> GettAll([FromQuery] int companyId)
+        public async Task<ActionResult<List<DocumentCategoryDto>>> GetAll([FromQuery] int companyId)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
             return Ok(await mediator.Send(new GetAllDocumentCategoryQuery { CompanyId = companyId }));
