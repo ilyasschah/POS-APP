@@ -7,7 +7,6 @@ namespace Api.Queries.DocumentTypeQuery
 {
     public class GetAllDocumentTypesQuery : IRequest<List<DocumentTypeDto>>
     {
-        public int CompanyId { get; set; }
     }
 
     public class GetAllDocumentTypesHandler : IRequestHandler<GetAllDocumentTypesQuery, List<DocumentTypeDto>>
@@ -18,7 +17,7 @@ namespace Api.Queries.DocumentTypeQuery
 
         public async Task<List<DocumentTypeDto>> Handle(GetAllDocumentTypesQuery request, CancellationToken cancellationToken)
         {
-            var entities = await _repository.GetAllAsync(request.CompanyId);
+            var entities = await _repository.GetAllAsync();
             return entities.Select(MapperDocumentType.MapToDocumentTypeDto).ToList();
         }
     }

@@ -8,7 +8,6 @@ namespace Api.Domain
     {
         [Key]
         public int Id { get; set; }
-        public int CompanyId { get; set; }
 
         [Required]
         [MaxLength(255)]
@@ -37,10 +36,8 @@ namespace Api.Domain
         [MaxLength(100)]
         public string? LanguageKey { get; private set; }
 
-        // EF Core requires a public parameterless constructor
         public DocumentType() { }
 
-        // Private constructor to enforce use of the Create method
         private DocumentType(
             string name,
             string code,
@@ -63,7 +60,6 @@ namespace Api.Domain
             LanguageKey = languageKey;
         }
 
-        // Static factory method
         public static DocumentType Create(
             string name,
             string code,
@@ -99,35 +95,35 @@ namespace Api.Domain
                 languageKey
             );
         }
-        // Method to update existing entity
-        public void Update(
-            string name,
-            string code,
-            int documentCategoryId,
-            int warehouseId,
-            int stockDirection,
-            int editorType,
-            string? printTemplate,
-            int priceType,
-            string? languageKey)
-        {
-            if (string.IsNullOrWhiteSpace(name))
-                throw new ArgumentException("Name is required.", nameof(name));
-            if (string.IsNullOrWhiteSpace(code))
-                throw new ArgumentException("Code is required.", nameof(code));
-            if (documentCategoryId <= 0)
-                throw new ArgumentException("DocumentCategoryId must be greater than zero.", nameof(documentCategoryId));
-            if (warehouseId <= 0)
-                throw new ArgumentException("WarehouseId must be greater than zero.", nameof(warehouseId));
-            Name = name;
-            Code = code;
-            DocumentCategoryId = documentCategoryId;
-            WarehouseId = warehouseId;
-            StockDirection = stockDirection;
-            EditorType = editorType;
-            PrintTemplate = printTemplate;
-            PriceType = priceType;
-            LanguageKey = languageKey;
-        }
+
+        //public void Update(
+        //    string name,
+        //    string code,
+        //    int documentCategoryId,
+        //    int warehouseId,
+        //    int stockDirection,
+        //    int editorType,
+        //    string? printTemplate,
+        //    int priceType,
+        //    string? languageKey)
+        //{
+        //    if (string.IsNullOrWhiteSpace(name))
+        //        throw new ArgumentException("Name is required.", nameof(name));
+        //    if (string.IsNullOrWhiteSpace(code))
+        //        throw new ArgumentException("Code is required.", nameof(code));
+        //    if (documentCategoryId <= 0)
+        //        throw new ArgumentException("DocumentCategoryId must be greater than zero.", nameof(documentCategoryId));
+        //    if (warehouseId <= 0)
+        //        throw new ArgumentException("WarehouseId must be greater than zero.", nameof(warehouseId));
+        //    Name = name;
+        //    Code = code;
+        //    DocumentCategoryId = documentCategoryId;
+        //    WarehouseId = warehouseId;
+        //    StockDirection = stockDirection;
+        //    EditorType = editorType;
+        //    PrintTemplate = printTemplate;
+        //    PriceType = priceType;
+        //    LanguageKey = languageKey;
+        //}
     }
 }

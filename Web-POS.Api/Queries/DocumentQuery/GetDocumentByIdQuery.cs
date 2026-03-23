@@ -1,13 +1,14 @@
-﻿using Api.Helpers;
-using MediatR;
+﻿using MediatR;
+using FluentValidation;
+using Api.Helpers;
 using Api.Repository;
 using Api.Models;
 
 namespace Api.Queries.DocumentQuery
 {
-    public class GetDocumentByIdQuery(int id) : IRequest<DocumentDto?>
+    public class GetDocumentByIdQuery : IRequest<DocumentDto?>
     {
-        public int Id { get; set; } = id;
+        public int Id { get; set; }
         public int CompanyId { get; set; }
 
         public class GetDocumentByIdQueryHandler : IRequestHandler<GetDocumentByIdQuery, DocumentDto?>
@@ -21,22 +22,19 @@ namespace Api.Queries.DocumentQuery
 
             public async Task<DocumentDto?> Handle(GetDocumentByIdQuery request, CancellationToken cancellationToken)
             {
-                var entity = await _repository.GetByIdAsync(request.Id, request.CompanyId);
-                if (entity == null || entity.Id == 0)
-                {
-                    return null;
-                }
-                return new DocumentDto
-                {
-                    Id = entity.Id,
-                    Number = entity.Number,
-                    Date = entity.Date,
-                    UserId = entity.UserId,
-                    DocumentTypeId = entity.DocumentTypeId,
-                    WarehouseId = entity.WarehouseId,
-                    Total = entity.Total
-                };
+                var document = await _repository.GetByIdAsync(request.Id, request.CompanyId);
+
+                return document == null ? null : MapperDocument.MapToDocumentDto(document);
             }
+        }
+    }
+
+    public class GetDocumentByIdQueryValidator : AbstractValidator<GetDocumentByIdQuery>
+    {
+        public GetDocumentByIdQueryValidator()
+        {
+            RuleFor(x => x.Id).GreaterThan(0).WithMessage("Document ID must be valid.");
+            RuleFor(x => x.CompanyId).GreaterThan(0).WithMessage("Company ID must be valid.");
         }
     }
 }

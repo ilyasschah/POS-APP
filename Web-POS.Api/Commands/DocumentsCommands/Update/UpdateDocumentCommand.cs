@@ -15,6 +15,7 @@ namespace Api.Commands.DocumentsCommands.Update
             Request = request;
             CompanyId = companyId;
         }
+
         public class UpdateDocumentCommandHandler : IRequestHandler<UpdateDocumentCommand, bool>
         {
             private readonly DocumentService _service;
@@ -23,9 +24,10 @@ namespace Api.Commands.DocumentsCommands.Update
             {
                 _service = service;
             }
-            public Task<bool> Handle(UpdateDocumentCommand command, CancellationToken cancellationToken)
+
+            public async Task<bool> Handle(UpdateDocumentCommand command, CancellationToken cancellationToken)
             {
-                return _service.Update(command.Request.Id, command.Request, command.CompanyId);
+                return await _service.UpdateAsync(command.Request, command.CompanyId);
             }
         }
 
@@ -33,9 +35,19 @@ namespace Api.Commands.DocumentsCommands.Update
         {
             public UpdateDocumentCommandValidator()
             {
-                //RuleFor(c => c.Id).GreaterThan(0); rkia
-                RuleFor(c => c.Request.Number).NotEmpty();
-                RuleFor(c => c.Request.Total).GreaterThanOrEqualTo(0);
+                RuleFor(c => c.CompanyId)
+                    .GreaterThan(0).WithMessage("Company ID must be valid.");
+
+                RuleFor(c => c.Request.Id)
+                    .GreaterThan(0).WithMessage("Document ID is required to perform an update.");
+
+                RuleFor(c => c.Request.Number)
+                    .NotEmpty().WithMessage("Document Number cannot be empty if provided.")
+                    .When(c => c.Request.Number != null);
+
+                RuleFor(c => c.Request.Total)
+                    .GreaterThanOrEqualTo(0).WithMessage("Total cannot be negative.")
+                    .When(c => c.Request.Total.HasValue);
             }
         }
     }

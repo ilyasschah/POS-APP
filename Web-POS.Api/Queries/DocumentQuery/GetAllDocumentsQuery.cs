@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using FluentValidation;
 using Api.Helpers;
 using Api.Repository;
 using Api.Models;
@@ -23,6 +24,14 @@ namespace Api.Queries.DocumentQuery
                 var entities = await _repository.GetAllAsync(request.CompanyId);
                 return entities.Select(MapperDocument.MapToDocumentDto).ToList();
             }
+        }
+    }
+
+    public class GetAllDocumentsQueryValidator : AbstractValidator<GetAllDocumentsQuery>
+    {
+        public GetAllDocumentsQueryValidator()
+        {
+            RuleFor(x => x.CompanyId).GreaterThan(0).WithMessage("Company ID must be valid.");
         }
     }
 }

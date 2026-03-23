@@ -1,88 +1,93 @@
 ﻿using Api.Domain;
 using Api.Models;
 using Api.Repository;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Data.SqlClient;
 
 namespace Api.Services
 {
     public class DocumentService
     {
-        public readonly DocumentRepository _repository;
+        private readonly DocumentRepository _documentRepository;
 
-        public DocumentService(DocumentRepository repository)
+        public DocumentService(DocumentRepository documentRepository)
         {
-            _repository = repository;
+            _documentRepository = documentRepository;
         }
 
-        public async Task<Document> Create(CreateDocumentRequest req, int companyId)
+        public async Task<bool> CreateAsync(CreateDocumentRequest request, int companyId)
         {
-            if (await _repository.ExistsAsync(req.Number, companyId))
-            {
-                throw new InvalidOperationException($"A document with the number '{req.Number}' already exists.");
-            }
-
-            var newDocument = Document.Create(
-                req.Number,
-                req.UserId,
+            var document = Document.Create(
+                request.Number,
+                request.UserId,
                 companyId,
-                req.DocumentTypeId,
-                req.WarehouseId,
-                req.Total
+                request.DocumentTypeId,
+                request.WarehouseId,
+                request.Total,
+                request.CustomerId,
+                request.OrderNumber,
+                request.Date,
+                request.StockDate,
+                request.IsClockedOut ?? false,
+                request.ReferenceDocumentNumber,
+                request.InternalNote,
+                request.Note,
+                request.DueDate,
+                request.Discount ?? 0,
+                request.DiscountType ?? 0,
+                request.PaidStatus ?? 0,
+                request.DiscountApplyRule ?? false,
+                request.ServiceType ?? 0
             );
 
-            newDocument.CustomerId = req.CustomerId;
-            newDocument.OrderNumber = req.OrderNumber;
-            newDocument.Date = req.Date ?? DateTime.UtcNow.Date;
-            newDocument.StockDate = req.StockDate ?? DateTime.UtcNow;
-            newDocument.IsClockedOut = req.IsClockedOut ?? false;
-            newDocument.ReferenceDocumentNumber = req.ReferenceDocumentNumber;
-            newDocument.InternalNote = req.InternalNote;
-            newDocument.Note = req.Note;
-            newDocument.DueDate = req.DueDate;
-            newDocument.Discount = req.Discount ?? 0;
-            newDocument.DiscountType = req.DiscountType ?? 0;
-            newDocument.PaidStatus = req.PaidStatus ?? 0;
-            newDocument.DiscountApplyRule = req.DiscountApplyRule ?? false;
-
-            await _repository.AddAsync(newDocument);
-            return newDocument;
-        }
-
-        public async Task<bool> Update(int id, UpdateDocumentRequest req, int companyId)
-        {
-            var entityToUpdate = await _repository.GetByIdAsync(id, companyId, trackEntity: true);
-            if (entityToUpdate == null)
-            {
-                return false;
-            }
-
-            var existingByNumber = await _repository.GetByNumberAsync(req.Number, companyId);
-            if (existingByNumber != null && existingByNumber.Id != id)
-            {
-                throw new InvalidOperationException($"Another document with the number '{req.Number}' already exists.");
-            }
-
-            entityToUpdate.Update(
-                req.Number,
-                req.CustomerId,
-                req.Total,
-                req.Note,
-                req.PaidStatus
-            );
-
-            await _repository.UpdateAsync(entityToUpdate);
+            await _documentRepository.AddAsync(document);
             return true;
         }
 
-        public async Task<bool> Delete(int id, int companyId)
+        public async Task<bool> UpdateAsync(UpdateDocumentRequest request, int companyId)
         {
-            var entityToDelete = await _repository.GetByIdAsync(id, companyId, trackEntity: true);
-            if (entityToDelete == null)
+            if (request.Id <= 0)
+                throw new ArgumentException("Document ID is required.");
+
+            var document = await _documentRepository.GetByIdAsync(request.Id, companyId);
+            if (document == null)
+                throw new KeyNotFoundException($"Document with ID {request.Id} not found.");
+             document.UpdateDetails(
+                request.Number ?? document.Number,
+                request.ReferenceDocumentNumber ?? document.ReferenceDocumentNumber,
+                request.CustomerId ?? document.CustomerId,
+                request.PaidStatus ?? document.PaidStatus,
+                request.Date ?? document.Date,
+                request.DueDate ?? document.DueDate,
+                request.StockDate ?? document.StockDate,
+                request.Discount ?? document.Discount,
+                request.WarehouseId ?? document.WarehouseId,
+                request.InternalNote ?? document.InternalNote,
+                request.Note ?? document.Note,
+                request.DiscountApplyRule ?? document.DiscountApplyRule
+            );
+
+            await _documentRepository.UpdateAsync(document);
+            return true;
+        }
+
+        public async Task<bool> DeleteAsync(int id, int companyId)
+        {
+            var document = await _documentRepository.GetByIdAsync(id, companyId);
+            if (document == null)
             {
-                return false;
+                throw new KeyNotFoundException($"Document with ID {id} not found.");
             }
 
-            await _repository.DeleteAsync(entityToDelete);
-            return true;
+            try
+            {
+                await _documentRepository.DeleteAsync(document);
+                return true;
+            }
+            catch (DbUpdateException ex) when (ex.InnerException is SqlException sqlEx && sqlEx.Number == 547)
+            {
+                throw new InvalidOperationException("This document has related records tied to it, so you cannot delete it.");
+            }
         }
     }
 }

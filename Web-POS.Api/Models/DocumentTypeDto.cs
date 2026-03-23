@@ -12,8 +12,6 @@
         public string? PrintTemplate { get; set; }
         public int PriceType { get; set; }
         public string? LanguageKey { get; set; }
-
-        // Flattened props from navs
         public string DocumentCategoryName { get; set; } = string.Empty;
         public string WarehouseName { get; set; } = string.Empty;
     }
@@ -31,16 +29,16 @@
         public string? LanguageKey { get; set; }
     }
 
-    public class UpdateDocumentTypeRequest
-    {
-        public required string Name { get; set; }
-        public required string Code { get; set; }
-        public required int DocumentCategoryId { get; set; }
-        public required int WarehouseId { get; set; }
-        public int StockDirection { get; set; }
-        public int EditorType { get; set; }
-        public string? PrintTemplate { get; set; }
-        public int PriceType { get; set; }
-        public string? LanguageKey { get; set; }
-    }
+    //public class UpdateDocumentTypeRequest
+    //{
+    //    public required string Name { get; set; }
+    //    public required string Code { get; set; }
+    //    public required int DocumentCategoryId { get; set; }
+    //    public required int WarehouseId { get; set; }
+    //    public int StockDirection { get; set; }
+    //    public int EditorType { get; set; }
+    //    public string? PrintTemplate { get; set; }
+    //    public int PriceType { get; set; }
+    //    public string? LanguageKey { get; set; }
+    //}
 }

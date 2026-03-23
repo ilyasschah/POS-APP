@@ -16,15 +16,8 @@ namespace Api.Commands.DocumentTypeCommands.Add
 
             public Task<bool> Handle(AddDocumentTypeCommand command, CancellationToken cancellationToken)
             {
-                try
-                {
-                    return _service.Create(command.Request);
-                }
-                catch (Exception)
-                {
+                return _service.Create(command.Request);
 
-                    throw;
-                }
             }
         }
 
@@ -39,5 +32,4 @@ namespace Api.Commands.DocumentTypeCommands.Add
             }
         }
     }
-    
 }

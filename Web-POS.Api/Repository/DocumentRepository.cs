@@ -16,76 +16,44 @@ namespace Api.Repository
         public async Task<List<Document>> GetAllAsync(int companyId)
         {
             return await _db.Documents
+                .AsNoTracking()
                 .Where(d => d.CompanyId == companyId)
                 .Include(d => d.User)
                 .Include(d => d.Customer)
                 .Include(d => d.DocumentType)
                 .Include(d => d.Warehouse)
-                .AsNoTracking()
+                .Include(d => d.Company)
                 .ToListAsync();
         }
 
-        public async Task<Document?> GetByIdAsync(int id, int companyId, bool trackEntity = false)
+        public async Task<Document?> GetByIdAsync(int id, int companyId)
         {
-            var query = _db.Documents.AsQueryable();
-            if (!trackEntity)
-            {
-                query = query.AsNoTracking();
-            }
-            return await query
+            return await _db.Documents
+                .AsNoTracking()
                 .Include(d => d.User)
                 .Include(d => d.Customer)
                 .Include(d => d.DocumentType)
                 .Include(d => d.Warehouse)
+                .Include(d => d.Company)
                 .FirstOrDefaultAsync(d => d.Id == id && d.CompanyId == companyId);
         }
 
         public async Task<Document?> GetByNumberAsync(string number, int companyId)
         {
             return await _db.Documents
+                .AsNoTracking()
                 .Include(d => d.User)
                 .Include(d => d.Customer)
                 .Include(d => d.DocumentType)
                 .Include(d => d.Warehouse)
-                .AsNoTracking()
+                .Include(d => d.Company)
                 .FirstOrDefaultAsync(d => d.Number.ToLower() == number.ToLower() && d.CompanyId == companyId);
-        }
-
-        // Backwards-compatible non-scoped overloads
-        public async Task<Document?> GetByIdAsync(int id, bool trackEntity = false)
-        {
-            var query = _db.Documents.AsQueryable();
-            if (!trackEntity)
-            {
-                query = query.AsNoTracking();
-            }
-            return await query
-                .Include(d => d.User)
-                .Include(d => d.Customer)
-                .Include(d => d.DocumentType)
-                .Include(d => d.Warehouse)
-                .FirstOrDefaultAsync(d => d.Id == id);
-        }
-
-        public async Task<Document?> GetByNumberAsync(string number)
-        {
-            return await _db.Documents
-                .Include(d => d.User)
-                .Include(d => d.Customer)
-                .Include(d => d.DocumentType)
-                .Include(d => d.Warehouse)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(d => d.Number.ToLower() == number.ToLower());
-        }
-
-        public async Task<bool> ExistsAsync(string number)
-        {
-            return await _db.Documents.AnyAsync(d => d.Number.ToLower() == number.ToLower());
         }
 
         public async Task<bool> ExistsAsync(string number, int companyId)
         {
-            return await _db.Documents.AnyAsync(d => d.Number.ToLower() == number.ToLower() && d.CompanyId == companyId);
+            return await _db.Documents
+                .AnyAsync(d => d.Number.ToLower() == number.ToLower() && d.CompanyId == companyId);
         }
 
         public async Task AddAsync(Document entity)
@@ -94,16 +62,18 @@ namespace Api.Repository
             await _db.SaveChangesAsync();
         }
 
-        public async Task UpdateAsync(Document entity)
+        public async Task<bool> UpdateAsync(Document entity)
         {
             _db.Documents.Update(entity);
             await _db.SaveChangesAsync();
+            return true;
         }
 
-        public async Task DeleteAsync(Document entity)
+        public async Task<bool> DeleteAsync(Document entity)
         {
             _db.Documents.Remove(entity);
             await _db.SaveChangesAsync();
+            return true;
         }
     }
 }

@@ -1,12 +1,11 @@
 ﻿using FluentValidation;
 using MediatR;
-using Api.Helpers;
 using Api.Models;
 using Api.Services;
 
 namespace Api.Commands.DocumentsCommands.Add
 {
-    public class AddDocumentCommand : IRequest<DocumentDto>
+    public class AddDocumentCommand : IRequest<bool>
     {
         public CreateDocumentRequest Request { get; }
         public int CompanyId { get; }
@@ -17,7 +16,7 @@ namespace Api.Commands.DocumentsCommands.Add
             CompanyId = companyId;
         }
 
-        public class AddDocumentCommandHandler : IRequestHandler<AddDocumentCommand, DocumentDto>
+        public class AddDocumentCommandHandler : IRequestHandler<AddDocumentCommand, bool>
         {
             private readonly DocumentService _service;
 
@@ -26,10 +25,9 @@ namespace Api.Commands.DocumentsCommands.Add
                 _service = service;
             }
 
-            public async Task<DocumentDto> Handle(AddDocumentCommand command, CancellationToken cancellationToken)
+            public async Task<bool> Handle(AddDocumentCommand command, CancellationToken cancellationToken)
             {
-                var newEntity = await _service.Create(command.Request, command.CompanyId);
-                return MapperDocument.MapToDocumentDto(newEntity);
+                return await _service.CreateAsync(command.Request, command.CompanyId);
             }
         }
 
@@ -37,12 +35,23 @@ namespace Api.Commands.DocumentsCommands.Add
         {
             public AddDocumentCommandValidator()
             {
-                
-                RuleFor(c => c.Request.Number).NotEmpty();
-                RuleFor(c => c.Request.UserId).GreaterThan(0);
-                RuleFor(c => c.Request.DocumentTypeId).GreaterThan(0);
-                RuleFor(c => c.Request.WarehouseId).GreaterThan(0);
-                RuleFor(c => c.Request.Total).GreaterThanOrEqualTo(0);
+                RuleFor(c => c.CompanyId)
+                    .GreaterThan(0).WithMessage("Company ID must be valid.");
+
+                RuleFor(c => c.Request.Number)
+                    .NotEmpty().WithMessage("Document Number is required.");
+
+                RuleFor(c => c.Request.UserId)
+                    .GreaterThan(0).WithMessage("User ID must be valid.");
+
+                RuleFor(c => c.Request.DocumentTypeId)
+                    .GreaterThan(0).WithMessage("Document Type ID must be valid.");
+
+                RuleFor(c => c.Request.WarehouseId)
+                    .GreaterThan(0).WithMessage("Warehouse ID must be valid.");
+
+                RuleFor(c => c.Request.Total)
+                    .GreaterThanOrEqualTo(0).WithMessage("Total cannot be negative.");
             }
         }
     }

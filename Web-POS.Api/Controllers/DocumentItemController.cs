@@ -24,11 +24,13 @@ namespace Api.Controllers
         {
             return Ok(await mediator.Send(new GetDocumentItemsByDocumentIdQuery()));
         }
-        [HttpGet("[action]")]
-        public async Task<ActionResult<DocumentItemDto>> GetById(int id)
-        {
-            return Ok(await mediator.Send(new GetDocumentByIdQuery(id)));
-        }
+        //[HttpGet("[action]")]
+        //public async Task<ActionResult<DocumentItemDto>> GetById([FromQuery] int id, [FromQuery] int companyId)
+        //{
+        //    if (companyId <= 0) return BadRequest("Company ID is required");
+
+        //    return Ok(await mediator.Send(new GetDocumentByIdQuery(id, companyId)));
+        //}
 
         [HttpPost("[action]")]
         public async Task<ActionResult<DocumentItemDto>> Create([FromBody] CreateDocumentItemRequest request)

@@ -9,7 +9,7 @@ using Api.Models;
 
 namespace Api.Controllers
 {
-    [SwaggerVisible]
+    //[SwaggerVisible]
     [ApiController]
     [Route("api/[controller]")]
     public class ProductsController(IMediator mediator) : ControllerBase

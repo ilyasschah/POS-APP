@@ -1,6 +1,7 @@
-﻿using MediatR;
-using Api.Repository;
+﻿using Api.Helpers;
 using Api.Models;
+using Api.Repository;
+using MediatR;
 
 namespace Api.Queries.DocumentTypeQuery
 {
@@ -16,24 +17,12 @@ namespace Api.Queries.DocumentTypeQuery
 
             public async Task<DocumentTypeDto?> Handle(GetDocumentTypeByIdQuery request, CancellationToken cancellationToken)
             {
-                var entity = await _repository.GetByIdAsync(request.Id, request.CompanyId);
+                var entity = await _repository.GetByIdAsync(request.Id);
                 if (entity == null || entity.Id == 0)
                 {
-                    return null;
+                   return  null;
                 }
-                return new DocumentTypeDto
-                {
-                    Id = entity.Id,
-                    Name = entity.Name,
-                    Code = entity.Code,
-                    DocumentCategoryId = entity.DocumentCategoryId,
-                    WarehouseId = entity.WarehouseId,
-                    StockDirection = entity.StockDirection,
-                    EditorType = entity.EditorType,
-                    PrintTemplate = entity.PrintTemplate,
-                    PriceType = entity.PriceType,
-                    LanguageKey = entity.LanguageKey
-                };
+                return MapperDocumentType.MapToDocumentTypeDto(entity);
             }
         }
     }

@@ -971,22 +971,12 @@
         "IsRequired": false
       }
     ],
-    "ReturnTypes": [
-      {
-        "Type": "Api.Models.DocumentDto",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
+    "ReturnTypes": []
   },
   {
     "ContainingType": "Api.Controllers.DocumentController",
     "Method": "Delete",
-    "RelativePath": "api/Document/Delete/{id}",
+    "RelativePath": "api/Document/Delete",
     "HttpMethod": "DELETE",
     "IsController": true,
     "Order": 0,
@@ -994,7 +984,7 @@
       {
         "Name": "id",
         "Type": "System.Int32",
-        "IsRequired": true
+        "IsRequired": false
       },
       {
         "Name": "companyId",
@@ -1033,7 +1023,7 @@
   {
     "ContainingType": "Api.Controllers.DocumentController",
     "Method": "GetById",
-    "RelativePath": "api/Document/GetById/{id}",
+    "RelativePath": "api/Document/GetById",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -1041,7 +1031,7 @@
       {
         "Name": "id",
         "Type": "System.Int32",
-        "IsRequired": true
+        "IsRequired": false
       },
       {
         "Name": "companyId",
@@ -1064,7 +1054,7 @@
   {
     "ContainingType": "Api.Controllers.DocumentController",
     "Method": "GetByNumber",
-    "RelativePath": "api/Document/GetByNumber/{number}",
+    "RelativePath": "api/Document/GetByNumber",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -1072,7 +1062,7 @@
       {
         "Name": "number",
         "Type": "System.String",
-        "IsRequired": true
+        "IsRequired": false
       },
       {
         "Name": "companyId",
@@ -1095,16 +1085,11 @@
   {
     "ContainingType": "Api.Controllers.DocumentController",
     "Method": "Update",
-    "RelativePath": "api/Document/Update/{id}",
-    "HttpMethod": "PUT",
+    "RelativePath": "api/Document/Update",
+    "HttpMethod": "PATCH",
     "IsController": true,
     "Order": 0,
     "Parameters": [
-      {
-        "Name": "id",
-        "Type": "System.Int32",
-        "IsRequired": true
-      },
       {
         "Name": "req",
         "Type": "Api.Models.UpdateDocumentRequest",
@@ -1280,32 +1265,6 @@
     "ReturnTypes": [
       {
         "Type": "System.Collections.Generic.List\u00601[[Api.Models.DocumentItemDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
-  },
-  {
-    "ContainingType": "Api.Controllers.DocumentItemController",
-    "Method": "GetById",
-    "RelativePath": "api/DocumentItem/GetById",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "id",
-        "Type": "System.Int32",
-        "IsRequired": false
-      }
-    ],
-    "ReturnTypes": [
-      {
-        "Type": "Api.Models.DocumentItemDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -1666,49 +1625,9 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "Name",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "Code",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "DocumentCategoryId",
-        "Type": "System.Int32",
-        "IsRequired": false
-      },
-      {
-        "Name": "WarehouseId",
-        "Type": "System.Int32",
-        "IsRequired": false
-      },
-      {
-        "Name": "StockDirection",
-        "Type": "System.Int32",
-        "IsRequired": false
-      },
-      {
-        "Name": "EditorType",
-        "Type": "System.Int32",
-        "IsRequired": false
-      },
-      {
-        "Name": "PrintTemplate",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "PriceType",
-        "Type": "System.Int32",
-        "IsRequired": false
-      },
-      {
-        "Name": "LanguageKey",
-        "Type": "System.String",
-        "IsRequired": false
+        "Name": "request",
+        "Type": "Api.Models.CreateDocumentTypeRequest",
+        "IsRequired": true
       }
     ],
     "ReturnTypes": [
@@ -1725,34 +1644,12 @@
   },
   {
     "ContainingType": "Api.Controllers.DocumentTypeController",
-    "Method": "Delete",
-    "RelativePath": "api/DocumentType/Delete/{id}",
-    "HttpMethod": "DELETE",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "id",
-        "Type": "System.Int32",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "Api.Controllers.DocumentTypeController",
     "Method": "GetAll",
     "RelativePath": "api/DocumentType/GetAll",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
-    "Parameters": [
-      {
-        "Name": "companyId",
-        "Type": "System.Int32",
-        "IsRequired": false
-      }
-    ],
+    "Parameters": [],
     "ReturnTypes": [
       {
         "Type": "System.Collections.Generic.List\u00601[[Api.Models.DocumentTypeDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
@@ -1777,87 +1674,11 @@
         "Name": "id",
         "Type": "System.Int32",
         "IsRequired": false
-      },
-      {
-        "Name": "companyId",
-        "Type": "System.Int32",
-        "IsRequired": false
       }
     ],
     "ReturnTypes": [
       {
         "Type": "Api.Models.DocumentTypeDto",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
-  },
-  {
-    "ContainingType": "Api.Controllers.DocumentTypeController",
-    "Method": "Update",
-    "RelativePath": "api/DocumentType/Update",
-    "HttpMethod": "PUT",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "id",
-        "Type": "System.Int32",
-        "IsRequired": false
-      },
-      {
-        "Name": "Name",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "Code",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "DocumentCategoryId",
-        "Type": "System.Int32",
-        "IsRequired": false
-      },
-      {
-        "Name": "WarehouseId",
-        "Type": "System.Int32",
-        "IsRequired": false
-      },
-      {
-        "Name": "StockDirection",
-        "Type": "System.Int32",
-        "IsRequired": false
-      },
-      {
-        "Name": "EditorType",
-        "Type": "System.Int32",
-        "IsRequired": false
-      },
-      {
-        "Name": "PrintTemplate",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "PriceType",
-        "Type": "System.Int32",
-        "IsRequired": false
-      },
-      {
-        "Name": "LanguageKey",
-        "Type": "System.String",
-        "IsRequired": false
-      }
-    ],
-    "ReturnTypes": [
-      {
-        "Type": "System.Boolean",
         "MediaTypes": [
           "text/plain",
           "application/json",

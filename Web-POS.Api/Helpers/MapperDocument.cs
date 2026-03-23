@@ -5,41 +5,37 @@ namespace Api.Helpers
 {
     public static class MapperDocument
     {
-        public static DocumentDto MapToDocumentDto(Document entity)
+        public static DocumentDto MapToDocumentDto(Document document)
         {
             return new DocumentDto
             {
-                Id = entity.Id,
-                Number = entity.Number,
-                UserId = entity.UserId,
-                UserName = entity.User?.Username ?? "N/A",
-                CustomerId = entity.CustomerId,
-                CustomerName = entity.Customer?.Name,
-                DocumentTypeId = entity.DocumentTypeId,
-                DocumentTypeName = entity.DocumentType?.Name ?? "N/A",
-                WarehouseId = entity.WarehouseId,
-                WarehouseName = entity.Warehouse?.Name ?? "N/A",
-                Date = entity.Date,
-                Total = entity.Total,
-                PaidStatus = entity.PaidStatus,
-                Note = entity.Note,
-                DateCreated = entity.DateCreated
-            };
-        }
-        public static CreateDocumentRequest MapToDocumentCreateDto(Document entity)
-        {
-            return new CreateDocumentRequest
-            {
-                Number = entity.Number,
-                UserId = entity.UserId,
-                CustomerId = entity.CustomerId,
-                CompanyId = entity.CompanyId,
-                DocumentTypeId = entity.DocumentTypeId,
-                WarehouseId = entity.WarehouseId,
-                Date = entity.Date,
-                Total = entity.Total,
-                PaidStatus = entity.PaidStatus,
-                Note = entity.Note,
+                Id = document.Id,
+                Number = document.Number,
+                UserId = document.UserId,
+                UserName = document.User?.Username ?? "N/A",
+                CustomerId = document.CustomerId,
+                CustomerName = document.Customer?.Name,
+                CompanyId = document.CompanyId,
+                CompanyName = document.Company?.Name ?? "N/A",
+                DocumentTypeId = document.DocumentTypeId,
+                DocumentTypeName = document.DocumentType?.Name ?? "N/A",
+                WarehouseId = document.WarehouseId,
+                WarehouseName = document.Warehouse?.Name ?? "N/A",
+                Date = document.Date,
+                Total = document.Total,
+                PaidStatus = document.PaidStatus,
+                OrderNumber = document.OrderNumber,
+                Note = document.Note,
+                DateCreated = document.DateCreated,
+                DateUpdated = document.DateUpdated,
+                ServiceType = document.ServiceType,
+                Discount = document.Discount,
+                DiscountType = document.DiscountType,
+                DiscountApplyRule = document.DiscountApplyRule,
+                ReferenceDocumentNumber = document.ReferenceDocumentNumber,
+                DueDate = document.DueDate,
+                StockDate = document.StockDate,
+                InternalNote = document.InternalNote
             };
         }
     }

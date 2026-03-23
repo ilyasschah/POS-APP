@@ -12,8 +12,15 @@ namespace Api.Helpers
                 Id = entity.Id,
                 Name = entity.Name,
                 Code = entity.Code,
-                DocumentCategoryName = entity.DocumentCategory?.Name,
-                WarehouseName = entity.Warehouse?.Name
+                DocumentCategoryId = entity.DocumentCategoryId,
+                DocumentCategoryName = entity.DocumentCategory.Name,
+                WarehouseId = entity.WarehouseId,
+                WarehouseName = entity.Warehouse.Name,
+                StockDirection = entity.StockDirection,
+                EditorType = entity.EditorType,
+                PrintTemplate = entity.PrintTemplate,
+                PriceType = entity.PriceType,
+                LanguageKey = entity.LanguageKey
             };
         }
     }

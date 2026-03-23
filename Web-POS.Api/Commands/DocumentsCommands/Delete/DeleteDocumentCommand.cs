@@ -1,4 +1,5 @@
-﻿using MediatR;
+﻿using FluentValidation;
+using MediatR;
 using Api.Services;
 
 namespace Api.Commands.DocumentsCommands.Delete
@@ -13,6 +14,7 @@ namespace Api.Commands.DocumentsCommands.Delete
             Id = id;
             CompanyId = companyId;
         }
+
         public class DeleteDocumentCommandHandler : IRequestHandler<DeleteDocumentCommand, bool>
         {
             private readonly DocumentService _service;
@@ -22,9 +24,21 @@ namespace Api.Commands.DocumentsCommands.Delete
                 _service = service;
             }
 
-            public Task<bool> Handle(DeleteDocumentCommand command, CancellationToken cancellationToken)
+            public async Task<bool> Handle(DeleteDocumentCommand command, CancellationToken cancellationToken)
             {
-                return _service.Delete(command.Id, command.CompanyId);
+                return await _service.DeleteAsync(command.Id, command.CompanyId);
+            }
+        }
+
+        public class DeleteDocumentCommandValidator : AbstractValidator<DeleteDocumentCommand>
+        {
+            public DeleteDocumentCommandValidator()
+            {
+                RuleFor(c => c.Id)
+                    .GreaterThan(0).WithMessage("Document ID must be valid to delete.");
+
+                RuleFor(c => c.CompanyId)
+                    .GreaterThan(0).WithMessage("Company ID must be valid.");
             }
         }
     }

@@ -13,32 +13,6 @@ namespace Api.Repository
             _context = context;
         }
 
-        // Company-scoped methods
-        public async Task<List<DocumentType>> GetAllAsync(int companyId)
-        {
-            return await _context.DocumentTypes
-                .Where(dt => dt.CompanyId == companyId)
-                .AsNoTracking()
-                .Include(dt => dt.DocumentCategory)
-                .Include(dt => dt.Warehouse)
-                .ToListAsync();
-        }
-
-        public async Task<DocumentType?> GetByIdAsync(int id, int companyId)
-        {
-            return await _context.DocumentTypes
-                .AsNoTracking()
-                .Include(dt => dt.DocumentCategory)
-                .Include(dt => dt.Warehouse)
-                .FirstOrDefaultAsync(x => x.Id == id && x.CompanyId == companyId);
-        }
-
-        public async Task<bool> ExistsAsync(string code, int companyId)
-        {
-            return await _context.DocumentTypes.AnyAsync(x => x.Code == code && x.CompanyId == companyId);
-        }
-
-        // Existing non-scoped methods kept for compatibility
         public async Task<List<DocumentType>> GetAllAsync()
         {
             return await _context.DocumentTypes
@@ -56,28 +30,22 @@ namespace Api.Repository
                 .Include(dt => dt.Warehouse)
                 .FirstOrDefaultAsync(x => x.Id == id);
         }
-
         public async Task AddAsync(DocumentType entity)
         {
             await _context.DocumentTypes.AddAsync(entity);
             await _context.SaveChangesAsync();
         }
 
-        public async Task UpdateAsync(DocumentType entity)
-        {
-            _context.DocumentTypes.Update(entity);
-            await _context.SaveChangesAsync();
-        }
+        //public async Task UpdateAsync(DocumentType entity)
+        //{
+        //    _context.DocumentTypes.Update(entity);
+        //    await _context.SaveChangesAsync();
+        //}
 
-        public async Task DeleteAsync(DocumentType entity)
-        {
-            _context.DocumentTypes.Remove(entity);
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task<bool> ExistsAsync(string code)
-        {
-            return await _context.DocumentTypes.AnyAsync(x => x.Code == code);
-        }
+        //public async Task DeleteAsync(DocumentType entity)
+        //{
+        //    _context.DocumentTypes.Remove(entity);
+        //    await _context.SaveChangesAsync();
+        //}
     }
 }
