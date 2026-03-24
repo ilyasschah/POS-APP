@@ -4331,28 +4331,13 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "Name",
-        "Type": "System.String",
-        "IsRequired": false
+        "Name": "request",
+        "Type": "Api.Models.CreateProductGroupRequest",
+        "IsRequired": true
       },
       {
-        "Name": "ParentGroupId",
-        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "Color",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "ImageBase64",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "Rank",
-        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "Name": "companyId",
+        "Type": "System.Int32",
         "IsRequired": false
       }
     ],
@@ -4371,7 +4356,7 @@
   {
     "ContainingType": "Api.Controllers.ProductGroupsController",
     "Method": "Delete",
-    "RelativePath": "api/ProductGroups/Delete/{id}",
+    "RelativePath": "api/ProductGroups/Delete",
     "HttpMethod": "DELETE",
     "IsController": true,
     "Order": 0,
@@ -4379,7 +4364,12 @@
       {
         "Name": "id",
         "Type": "System.Int32",
-        "IsRequired": true
+        "IsRequired": false
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
@@ -4391,7 +4381,13 @@
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
+    "Parameters": [
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
     "ReturnTypes": [
       {
         "Type": "System.Collections.Generic.List\u00601[[Api.Models.ProductGroupDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
@@ -4407,7 +4403,7 @@
   {
     "ContainingType": "Api.Controllers.ProductGroupsController",
     "Method": "GetById",
-    "RelativePath": "api/ProductGroups/GetById/{id}",
+    "RelativePath": "api/ProductGroups/GetById",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -4415,64 +4411,17 @@
       {
         "Name": "id",
         "Type": "System.Int32",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": [
+        "IsRequired": false
+      },
       {
-        "Type": "Api.Models.ProductGroupDto",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
-  },
-  {
-    "ContainingType": "Api.Controllers.ProductGroupsController",
-    "Method": "GetByName",
-    "RelativePath": "api/ProductGroups/GetByName/{name}",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "name",
-        "Type": "System.String",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": [
-      {
-        "Type": "Api.Models.ProductGroupDto",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
-  },
-  {
-    "ContainingType": "Api.Controllers.ProductGroupsController",
-    "Method": "GetChildrenByParentId",
-    "RelativePath": "api/ProductGroups/GetChildrenByParentId/{parentGroupId}",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "parentGroupId",
+        "Name": "companyId",
         "Type": "System.Int32",
-        "IsRequired": true
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Api.Models.ProductGroupDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "Api.Models.ProductGroupDto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -4484,12 +4433,23 @@
   },
   {
     "ContainingType": "Api.Controllers.ProductGroupsController",
-    "Method": "GetRoots",
-    "RelativePath": "api/ProductGroups/GetRoots",
+    "Method": "GetChildren",
+    "RelativePath": "api/ProductGroups/GetChildren",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
+    "Parameters": [
+      {
+        "Name": "parentId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
     "ReturnTypes": [
       {
         "Type": "System.Collections.Generic.List\u00601[[Api.Models.ProductGroupDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
@@ -4505,38 +4465,18 @@
   {
     "ContainingType": "Api.Controllers.ProductGroupsController",
     "Method": "Update",
-    "RelativePath": "api/ProductGroups/Update/{id}",
-    "HttpMethod": "PUT",
+    "RelativePath": "api/ProductGroups/Update",
+    "HttpMethod": "PATCH",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "id",
-        "Type": "System.Int32",
+        "Name": "request",
+        "Type": "Api.Models.UpdateProductGroupRequest",
         "IsRequired": true
       },
       {
-        "Name": "Name",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "ParentGroupId",
-        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "Color",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "ImageBase64",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "Rank",
+        "Name": "companyId",
         "Type": "System.Int32",
         "IsRequired": false
       }
@@ -4623,15 +4563,15 @@
   },
   {
     "ContainingType": "Api.Controllers.ProductsController",
-    "Method": "GetByCode",
-    "RelativePath": "api/Products/GetByCode",
+    "Method": "GetById",
+    "RelativePath": "api/Products/GetById",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "code",
-        "Type": "System.String",
+        "Name": "id",
+        "Type": "System.Int32",
         "IsRequired": false
       },
       {
@@ -4654,14 +4594,14 @@
   },
   {
     "ContainingType": "Api.Controllers.ProductsController",
-    "Method": "GetById",
-    "RelativePath": "api/Products/GetById",
+    "Method": "GetByProductGroup",
+    "RelativePath": "api/Products/GetByProductGroup",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "id",
+        "Name": "productGroupId",
         "Type": "System.Int32",
         "IsRequired": false
       },

@@ -32,6 +32,13 @@ namespace Api.Repository
                 .FirstOrDefaultAsync(p => p.Id == id && p.CompanyId == companyId);
         }
 
+        public async Task<Product?> GetByProductGroupAsync(int productGroupId, int companyId)
+        {
+            return await _db.Products
+                .AsNoTracking()
+                .Include(p => p.ProductGroup)
+                .FirstOrDefaultAsync(p => p.ProductGroupId == productGroupId && p.CompanyId == companyId);
+        }
         public async Task<Product?> GetByCodeAsync(string code, int companyId)
         {
             return await _db.Products

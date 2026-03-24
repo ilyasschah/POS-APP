@@ -1,71 +1,70 @@
-﻿using MediatR;
-using Microsoft.AspNetCore.Mvc;
+﻿using Api.Attributes;
 using Api.Commands.ProductGroupCommands.Add;
 using Api.Commands.ProductGroupCommands.Delete;
 using Api.Commands.ProductGroupCommands.Update;
-using Api.Queries.ProductGroupsQuery;
 using Api.Models;
+using Api.Queries.ProductGroupQuery;
+using Api.Queries.ProductGroupsQuery;
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers
 {
-    [ApiController]
+    [SwaggerVisible]
     [Route("api/[controller]")]
-    public class ProductGroupsController(IMediator mediator) : ControllerBase
+    [ApiController]
+    public class ProductGroupsController : ControllerBase
     {
-        [HttpGet("[action]")]
-        public async Task<ActionResult<List<ProductGroupDto>>> GetAll()
-        {
-            var result = await mediator.Send(new GetAllProductGroupsQuery());
-            return Ok(result);
-        }
+        private readonly IMediator _mediator;
 
-        [HttpGet("[action]/{id:int}")]
-        public async Task<ActionResult<ProductGroupDto>> GetById(int id)
+        public ProductGroupsController(IMediator mediator)
         {
-            var result = await mediator.Send(new GetProductGroupByIdQuery { Id = id });
-            return result is null ? NotFound() : Ok(result);
-        }
-
-        [HttpGet("[action]/{name}")]
-        public async Task<ActionResult<ProductGroupDto>> GetByName(string name)
-        {
-            var result = await mediator.Send(new GetProductGroupByNameQuery { Name = name });
-            return result is null ? NotFound() : Ok(result);
-        }
-
-        [HttpGet("[action]/{parentGroupId:int}")]
-        public async Task<ActionResult<List<ProductGroupDto>>> GetChildrenByParentId(int parentGroupId)
-        {
-            var result = await mediator.Send(new GetChildrenByParentIdQuery { ParentGroupId = parentGroupId });
-            return Ok(result);
+            _mediator = mediator;
         }
 
         [HttpGet("[action]")]
-        public async Task<ActionResult<List<ProductGroupDto>>> GetRoots()
+        public async Task<ActionResult<List<ProductGroupDto>>> GetAll([FromQuery] int companyId)
         {
-            var result = await mediator.Send(new GetRootProductGroupsQuery());
-            return Ok(result);
+            if (companyId <= 0) return BadRequest("Company ID is required");
+            return Ok(await _mediator.Send(new GetAllProductGroupsQuery { CompanyId = companyId }));
         }
 
+        [HttpGet("[action]")]
+        public async Task<ActionResult<ProductGroupDto>> GetById([FromQuery] int id, [FromQuery] int companyId)
+        {
+            if (companyId <= 0) return BadRequest("Company ID is required");
+            return Ok(await _mediator.Send(new GetProductGroupByIdQuery { Id = id, CompanyId = companyId }));
+        }
+        [HttpGet("[action]")]
+        public async Task<ActionResult<List<ProductGroupDto>>> GetChildren([FromQuery] int parentId, [FromQuery] int companyId)
+        {
+            if (companyId <= 0) return BadRequest("Company ID is required");
+            if (parentId <= 0) return BadRequest("Parent ID is required");
+
+            return Ok(await _mediator.Send(new GetProductGroupChildrenQuery { ParentId = parentId, CompanyId = companyId }));
+        }
         [HttpPost("[action]")]
-        public async Task<ActionResult<ProductGroupDto>> Add([FromQuery] CreateProductGroupRequest req)
+        public async Task<ActionResult<ProductGroupDto>> Add([FromBody] CreateProductGroupRequest request, [FromQuery] int companyId)
         {
-            var result = await mediator.Send(new AddProductGroupCommand(req));
-            return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+            if (companyId <= 0) return BadRequest("Company ID is required");
+            var result = await _mediator.Send(new AddProductGroupCommand(request, companyId));
+            return Ok(result);
         }
 
-        [HttpPut("[action]/{id:int}")]
-        public async Task<IActionResult> Update(int id, [FromQuery] UpdateProductGroupRequest req)
+        [HttpPatch("[action]")]
+        public async Task<IActionResult> Update([FromBody] UpdateProductGroupRequest request, [FromQuery] int companyId)
         {
-            var ok = await mediator.Send(new UpdateProductGroupCommand(id, req));
-            return ok ? NoContent() : NotFound();
+            if (companyId <= 0) return BadRequest("Company ID is required");
+            var result = await _mediator.Send(new UpdateProductGroupCommand(request,companyId ));
+            return Ok(new { Success = result });
         }
 
-        [HttpDelete("[action]/{id:int}")]
-        public async Task<IActionResult> Delete(int id)
+        [HttpDelete("[action]")]
+        public async Task<IActionResult> Delete([FromQuery] int id, [FromQuery] int companyId)
         {
-            var ok = await mediator.Send(new DeleteProductGroupCommand(id));
-            return ok ? NoContent() : NotFound();
+            if (companyId <= 0) return BadRequest("Company ID is required");
+            var result = await _mediator.Send(new DeleteProductGroupCommand(id, companyId));
+            return Ok(new { Message = result ? "Product Group deleted successfully" : "Failed to delete group" });
         }
     }
 }

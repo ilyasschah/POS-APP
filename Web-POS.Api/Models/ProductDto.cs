@@ -6,6 +6,7 @@ namespace Api.Models
     {
         public int Id { get; set; }
         public int? ProductGroupId { get; set; }
+        public string ProductGroupName { get; set; }
         public string Name { get; set; } = default!;
         public string? Code { get; set; }
         public int? PLU { get; set; }

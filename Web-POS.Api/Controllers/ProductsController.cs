@@ -9,7 +9,7 @@ using Api.Models;
 
 namespace Api.Controllers
 {
-    //[SwaggerVisible]
+    [SwaggerVisible]
     [ApiController]
     [Route("api/[controller]")]
     public class ProductsController(IMediator mediator) : ControllerBase
@@ -32,10 +32,10 @@ namespace Api.Controllers
         }
 
         [HttpGet("[action]")]
-        public async Task<ActionResult<ProductDto>> GetByCode([FromQuery] string code, [FromQuery] int companyId)
+        public async Task<ActionResult<ProductDto>> GetByProductGroup([FromQuery] int productGroupId, [FromQuery] int companyId)
         {
             if (companyId <= 0) return BadRequest("Company ID is required");
-            var result = await mediator.Send(new GetProductByCodeQuery { Code = code, CompanyId = companyId });
+            var result = await mediator.Send(new GetProductByProductGroupQuery { ProductGroup = productGroupId, CompanyId = companyId });
             return result is null ? NotFound() : Ok(result);
         }
 

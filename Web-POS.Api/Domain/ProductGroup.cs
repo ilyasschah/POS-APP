@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Api.Domain
@@ -8,47 +7,65 @@ namespace Api.Domain
     public class ProductGroup
     {
         [Key]
-        public int Id { get; set; }
-        public int CompanyId { get; set; }
+        public int Id { get; private set; }
+        public int CompanyId { get; private set; }
 
         [Required, MaxLength(255)]
-        public string Name { get; set; } = default!;
+        public string Name { get; private set; } = default!;
 
-        [ForeignKey(nameof(ParentGroup))]
-        public int? ParentGroupId { get; set; }
+        public int? ParentGroupId { get; private set; }
 
         [Required, MaxLength(50)]
-        public string Color { get; set; } = "Transparent"; // DB default
+        public string Color { get; private set; } = "Transparent";
 
-        public byte[]? Image { get; set; }
+        public byte[]? Image { get; private set; }
 
-        public int Rank { get; set; } = 0; // DB default
+        public int Rank { get; private set; }
 
-        // Navigation (self-reference)
-        public ProductGroup? ParentGroup { get; set; }
-        public ICollection<ProductGroup> Children { get; set; } = new List<ProductGroup>();
+        [ForeignKey(nameof(CompanyId))]
+        public virtual Company? Company { get; private set; }
+
+        [ForeignKey(nameof(ParentGroupId))]
+        public virtual ProductGroup? ParentGroup { get; private set; }
+
+        public virtual ICollection<ProductGroup> Children { get; private set; } = new List<ProductGroup>();
 
         public ProductGroup() { }
 
-        private ProductGroup(string name, int? parentGroupId, string color, byte[]? image, int rank)
+        private ProductGroup(string name, int? parentGroupId, string color, byte[]? image, int rank, int companyId)
         {
             Name = name;
             ParentGroupId = parentGroupId;
             Color = string.IsNullOrWhiteSpace(color) ? "Transparent" : color;
             Image = image;
             Rank = rank;
+            CompanyId = companyId;
         }
 
-        public static ProductGroup Create(string name, int? parentGroupId = null, string color = "Transparent", byte[]? image = null, int rank = 0)
-            => new(name, parentGroupId, color, image, rank);
+        public static ProductGroup Create(string name, int? parentGroupId, string color, byte[]? image, int rank, int companyId)
+        {
+            return new ProductGroup(name, parentGroupId, color, image, rank, companyId);
+        }
 
-        public void Update(string name, int? parentGroupId, string color, byte[]? image, int rank)
+        public void Update(string name, int? parentGroupId, string color, byte[]? image, int rank, int companyId)
         {
             Name = name;
             ParentGroupId = parentGroupId;
             Color = string.IsNullOrWhiteSpace(color) ? "Transparent" : color;
             Image = image;
             Rank = rank;
+
+            // Safety check: A group cannot be its own parent
+            if (ParentGroupId == Id)
+            {
+                ParentGroupId = null;
+            }
+
+            if (CompanyId != companyId)
+            {
+                CompanyId = companyId;
+                Company = null;
+            }
         }
     }
 }

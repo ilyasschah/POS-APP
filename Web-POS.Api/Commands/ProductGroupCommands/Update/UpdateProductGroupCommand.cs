@@ -7,13 +7,14 @@ namespace Api.Commands.ProductGroupCommands.Update
 {
     public class UpdateProductGroupCommand : IRequest<bool>
     {
-        public int Id { get; }
+        
         public UpdateProductGroupRequest Request { get; }
+        public int CompanyId { get; }
 
-        public UpdateProductGroupCommand(int id, UpdateProductGroupRequest request)
+        public UpdateProductGroupCommand(UpdateProductGroupRequest request,int companyId)
         {
-            Id = id;
             Request = request;
+            CompanyId = companyId;
         }
 
         public class UpdateProductGroupCommandHandler : IRequestHandler<UpdateProductGroupCommand, bool>
@@ -25,17 +26,17 @@ namespace Api.Commands.ProductGroupCommands.Update
                 _service = service;
             }
 
-            public Task<bool> Handle(UpdateProductGroupCommand command, CancellationToken cancellationToken)
+            public async Task<bool> Handle(UpdateProductGroupCommand command, CancellationToken cancellationToken)
             {
-                return _service.Update(command.Id, command.Request);
+                return await _service.UpdateAsync( command.Request,command.CompanyId);
             }
         }
-
         public class UpdateProductGroupCommandValidator : AbstractValidator<UpdateProductGroupCommand>
         {
             public UpdateProductGroupCommandValidator()
             {
-                RuleFor(x => x.Id).GreaterThan(0);
+                RuleFor(x => x.CompanyId).GreaterThan(0);
+                RuleFor(x => x.Request.Id).GreaterThan(0);
                 RuleFor(x => x.Request.Name).NotEmpty().MaximumLength(255);
                 RuleFor(x => x.Request.Color).NotEmpty().MaximumLength(50);
                 RuleFor(x => x.Request.Rank).GreaterThanOrEqualTo(0);

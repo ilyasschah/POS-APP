@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Api.Domain;
 using Api.DataBase;
+using Api.Domain;
 
 namespace Api.Repository
 {
@@ -13,57 +13,39 @@ namespace Api.Repository
             _db = db;
         }
 
-        public async Task<List<ProductGroup>> GetAllAsync()
+        public async Task<List<ProductGroup>> GetAllAsync(int companyId)
         {
             return await _db.ProductGroups
+                .Where(p => p.CompanyId == companyId)
+                .Include(p => p.ParentGroup)
+                .OrderBy(p => p.Rank)
                 .AsNoTracking()
-                .Include(g => g.ParentGroup)
-                .Include(g => g.Children)
                 .ToListAsync();
         }
 
-        public async Task<ProductGroup?> GetByIdAsync(int id, bool trackEntity = false)
-        {
-            var q = _db.ProductGroups.AsQueryable();
-            if (!trackEntity) q = q.AsNoTracking();
-
-            return await q
-                .Include(g => g.ParentGroup)
-                .Include(g => g.Children)
-                .FirstOrDefaultAsync(g => g.Id == id);
-        }
-
-        public async Task<ProductGroup?> GetByNameAsync(string name)
+        public async Task<ProductGroup?> GetByIdAsync(int id, int companyId)
         {
             return await _db.ProductGroups
+                .Include(p => p.ParentGroup)
+                .FirstOrDefaultAsync(p => p.Id == id && p.CompanyId == companyId);
+        }
+        public async Task<List<ProductGroup>> GetChildrenAsync(int parentId, int companyId)
+        {
+            return await _db.ProductGroups
+                .Where(p => p.ParentGroupId == parentId && p.CompanyId == companyId)
+                .Include(p => p.ParentGroup)
+                .OrderBy(p => p.Rank)
                 .AsNoTracking()
-                .Include(g => g.ParentGroup)
-                .Include(g => g.Children)
-                .FirstOrDefaultAsync(g => g.Name == name);
-        }
-
-        public async Task<bool> ExistsByNameAsync(string name)
-        {
-            return await _db.ProductGroups
-                .AnyAsync(g => g.Name.ToLower() == name.ToLower());
-        }
-
-        public async Task<List<ProductGroup>> GetChildrenAsync(int parentGroupId)
-        {
-            return await _db.ProductGroups
-                .AsNoTracking()
-                .Where(g => g.ParentGroupId == parentGroupId)
-                .Include(g => g.Children)
                 .ToListAsync();
         }
-
-        public async Task<List<ProductGroup>> GetRootsAsync()
+        public async Task<bool> IsNameUniqueAsync(string name, int companyId, int? excludeId = null)
         {
-            return await _db.ProductGroups
-                .AsNoTracking()
-                .Where(g => g.ParentGroupId == null)
-                .Include(g => g.Children)
-                .ToListAsync();
+            var query = _db.ProductGroups.Where(p => p.CompanyId == companyId && p.Name.ToLower() == name.ToLower());
+            if (excludeId.HasValue)
+            {
+                query = query.Where(p => p.Id != excludeId.Value);
+            }
+            return !await query.AnyAsync();
         }
 
         public async Task AddAsync(ProductGroup entity)
@@ -72,16 +54,24 @@ namespace Api.Repository
             await _db.SaveChangesAsync();
         }
 
-        public async Task UpdateAsync(ProductGroup entity)
+        public async Task<bool> UpdateAsync(ProductGroup entity)
         {
-            _db.ProductGroups.Update(entity);
             await _db.SaveChangesAsync();
+            return true;
         }
 
-        public async Task DeleteAsync(ProductGroup entity)
+        public async Task<bool> DeleteAsync(ProductGroup entity)
         {
-            _db.ProductGroups.Remove(entity);
-            await _db.SaveChangesAsync();
+            try
+            {
+                _db.ProductGroups.Remove(entity);
+                await _db.SaveChangesAsync();
+                return true;
+            }
+            catch (DbUpdateException ex) when (ex.InnerException is Microsoft.Data.SqlClient.SqlException sqlEx && sqlEx.Number == 547)
+            {
+                throw new InvalidOperationException("Cannot delete this product group because it is being used by products or sub-groups.");
+            }
         }
     }
 }

@@ -1,29 +1,38 @@
 ﻿using MediatR;
-using Api.Helpers;
-using Api.Repository;
 using Api.Models;
+using Api.Repository;
+using Api.Helpers;
+using FluentValidation;
 
-namespace Api.Queries.ProductGroupsQuery
+namespace Api.Queries.ProductGroupQuery
 {
-    public class GetChildrenByParentIdQuery : IRequest<List<ProductGroupDto>>
+    public class GetProductGroupChildrenQuery : IRequest<List<ProductGroupDto>>
     {
-        public int ParentGroupId { get; set; }
+        public int ParentId { get; set; }
+        public int CompanyId { get; set; }
 
-        public class GetChildrenByParentIdQueryHandler
-            : IRequestHandler<GetChildrenByParentIdQuery, List<ProductGroupDto>>
+        public class GetProductGroupChildrenHandler : IRequestHandler<GetProductGroupChildrenQuery, List<ProductGroupDto>>
         {
             private readonly ProductGroupRepository _repository;
 
-            public GetChildrenByParentIdQueryHandler(ProductGroupRepository repository)
+            public GetProductGroupChildrenHandler(ProductGroupRepository repository)
             {
                 _repository = repository;
             }
 
-            public async Task<List<ProductGroupDto>> Handle(GetChildrenByParentIdQuery request, CancellationToken cancellationToken)
+            public async Task<List<ProductGroupDto>> Handle(GetProductGroupChildrenQuery request, CancellationToken cancellationToken)
             {
-                var list = await _repository.GetChildrenAsync(request.ParentGroupId);
-                return list.Select(MapperProductGroup.MapToProductGroupDto).ToList();
+                var children = await _repository.GetChildrenAsync(request.ParentId, request.CompanyId);
+                return children.Select(MapperProductGroup.MapToDto).ToList();
             }
+        }
+    }
+    public class GetProductGroupChildrenQueryValidator : AbstractValidator<GetProductGroupChildrenQuery>
+    {
+        public GetProductGroupChildrenQueryValidator()
+        {
+            RuleFor(x => x.ParentId).GreaterThan(0).WithMessage("Parent ID must be valid.");
+            RuleFor(x => x.CompanyId).GreaterThan(0).WithMessage("Company ID must be valid.");
         }
     }
 }

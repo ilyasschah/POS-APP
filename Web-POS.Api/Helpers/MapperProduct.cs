@@ -34,5 +34,16 @@ namespace Api.Helpers
                 Rank = entity.Rank
             };
         }
+        public static ProductDto MapToProductDtoPG(Product entity)
+        {
+            return new ProductDto
+            {
+                Id = entity.Id,
+                ProductGroupId = entity.ProductGroupId,
+                ProductGroupName = entity.ProductGroup != null ? entity.ProductGroup.Name : null,
+                Name = entity.Name,
+                
+            };
+        }
     }
 }

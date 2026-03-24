@@ -8,11 +8,13 @@ namespace Api.Commands.ProductGroupCommands.Add
 {
     public class AddProductGroupCommand : IRequest<ProductGroupDto>
     {
-        public CreateProductGroupRequest Request { get; }
+        public CreateProductGroupRequest Request { get; set; }
+        public int CompanyId { get; set; }
 
-        public AddProductGroupCommand(CreateProductGroupRequest request)
+        public AddProductGroupCommand(CreateProductGroupRequest request, int companyid)
         {
             Request = request;
+            CompanyId = companyid;
         }
 
         public class AddProductGroupCommandHandler : IRequestHandler<AddProductGroupCommand, ProductGroupDto>
@@ -26,20 +28,16 @@ namespace Api.Commands.ProductGroupCommands.Add
 
             public async Task<ProductGroupDto> Handle(AddProductGroupCommand command, CancellationToken cancellationToken)
             {
-                var entity = await _service.Create(command.Request);
-                return MapperProductGroup.MapToProductGroupDto(entity);
+                return await _service.CreateAsync(command.Request, command.CompanyId);
             }
         }
-
-        public class AddProductGroupCommandValidator : AbstractValidator<AddProductGroupCommand>
+    }
+    public class AddProductGroupCommandValidator : AbstractValidator<AddProductGroupCommand>
+    {
+        public AddProductGroupCommandValidator()
         {
-            public AddProductGroupCommandValidator()
-            {
-                RuleFor(x => x.Request.Name).NotEmpty().MaximumLength(255);
-                RuleFor(x => x.Request.Color).MaximumLength(50).When(x => x.Request.Color != null);
-                RuleFor(x => x.Request.Rank).GreaterThanOrEqualTo(0).When(x => x.Request.Rank.HasValue);
-                RuleFor(x => x.Request.ParentGroupId).GreaterThan(0).When(x => x.Request.ParentGroupId.HasValue);
-            }
+            RuleFor(c => c.Request.Name).NotNull().NotEmpty().WithMessage("Product Group name is required.");
+            RuleFor(c => c.CompanyId).GreaterThan(0).WithMessage("Company ID must be valid.");
         }
     }
 }

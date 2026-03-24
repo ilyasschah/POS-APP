@@ -5,14 +5,18 @@ namespace Api.Helpers
 {
     public static class MapperProductGroup
     {
-        public static ProductGroupDto MapToProductGroupDto(ProductGroup entity)
+        public static ProductGroupDto MapToDto(ProductGroup entity)
         {
+            if (entity == null) return null;
+
             return new ProductGroupDto
             {
                 Id = entity.Id,
+                CompanyId = entity.CompanyId,
                 Name = entity.Name,
                 ParentGroupId = entity.ParentGroupId,
-                Color = entity.Color,
+                ParentGroupName = entity.ParentGroup?.Name,
+                Color = entity.Color ?? "Transparent",
                 Image = entity.Image,
                 Rank = entity.Rank
             };
