@@ -10,7 +10,9 @@ namespace Api.Helpers
             return new ProductDto
             {
                 Id = entity.Id,
+                CompanyId = entity.CompanyId,
                 ProductGroupId = entity.ProductGroupId,
+                ProductGroupName = entity.ProductGroup != null ? entity.ProductGroup.Name : null,
                 Name = entity.Name,
                 Code = entity.Code,
                 PLU = entity.PLU,
@@ -34,16 +36,16 @@ namespace Api.Helpers
                 Rank = entity.Rank
             };
         }
-        public static ProductDto MapToProductDtoPG(Product entity)
+        public static List<ProductDto?> MapToProductDtoPG(List<Product> entities)
         {
-            return new ProductDto
+            return entities.Select(entity => new ProductDto
             {
                 Id = entity.Id,
                 ProductGroupId = entity.ProductGroupId,
                 ProductGroupName = entity.ProductGroup != null ? entity.ProductGroup.Name : null,
                 Name = entity.Name,
                 
-            };
+            }).ToList();
         }
     }
 }

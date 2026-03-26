@@ -29,6 +29,7 @@ namespace Api.Repository
                 .Include(p => p.ParentGroup)
                 .FirstOrDefaultAsync(p => p.Id == id && p.CompanyId == companyId);
         }
+
         public async Task<List<ProductGroup>> GetChildrenAsync(int parentId, int companyId)
         {
             return await _db.ProductGroups
@@ -38,6 +39,7 @@ namespace Api.Repository
                 .AsNoTracking()
                 .ToListAsync();
         }
+
         public async Task<bool> IsNameUniqueAsync(string name, int companyId, int? excludeId = null)
         {
             var query = _db.ProductGroups.Where(p => p.CompanyId == companyId && p.Name.ToLower() == name.ToLower());
@@ -48,14 +50,51 @@ namespace Api.Repository
             return !await query.AnyAsync();
         }
 
+        // --- NEW LOOP PREVENTION LOGIC ---
+        public async Task<bool> IsValidParentAsync(int currentGroupId, int? proposedParentId, int companyId)
+        {
+            // 1. Safe if it has no parent
+            if (!proposedParentId.HasValue) return true;
+
+            // 2. A group cannot be its own parent
+            if (proposedParentId.Value == currentGroupId) return false;
+
+            // 3. Walk up the tree to check if the proposed parent is actually a child of the current group
+            int? currentCheckId = proposedParentId;
+            while (currentCheckId.HasValue)
+            {
+                // Loop found! The parent we are checking is actually the group we are trying to save
+                if (currentCheckId.Value == currentGroupId) return false;
+
+                var node = await _db.ProductGroups
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(p => p.Id == currentCheckId.Value && p.CompanyId == companyId);
+
+                // Move up to the next parent in the chain
+                currentCheckId = node?.ParentGroupId;
+            }
+
+            return true;
+        }
+
         public async Task AddAsync(ProductGroup entity)
         {
+            if (!await IsValidParentAsync(entity.Id, entity.ParentGroupId, entity.CompanyId))
+            {
+                throw new InvalidOperationException("Circular reference detected: Invalid parent folder.");
+            }
+
             _db.ProductGroups.Add(entity);
             await _db.SaveChangesAsync();
         }
 
         public async Task<bool> UpdateAsync(ProductGroup entity)
         {
+            if (!await IsValidParentAsync(entity.Id, entity.ParentGroupId, entity.CompanyId))
+            {
+                throw new InvalidOperationException("Action denied: You cannot place a folder inside itself, or inside one of its own sub-folders.");
+            }
+
             await _db.SaveChangesAsync();
             return true;
         }

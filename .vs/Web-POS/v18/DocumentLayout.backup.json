@@ -3,48 +3,36 @@
   "WorkspaceRootPath": "D:\\repos\\Web-POS\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\commands\\currenciescommands\\add\\addcurrencycommand.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\commands\\currenciescommands\\add\\addcurrencycommand.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\controllers\\productscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\controllers\\productscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\models\\currencydto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\models\\currencydto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\repository\\productrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\repository\\productrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\domain\\currency.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\domain\\currency.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\services\\productservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\services\\productservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\services\\currencyservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\services\\currencyservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\helpers\\mapperproduct.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\helpers\\mapperproduct.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\repository\\currencyrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\repository\\currencyrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\models\\productdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\models\\productdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\controllers\\currenciescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\controllers\\currenciescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\repository\\productgrouprepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\repository\\productgrouprepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\controllers\\productgroupscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\controllers\\productgroupscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\domain\\product.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\domain\\product.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\commands\\currenciescommands\\update\\updatecurrencycommand.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\commands\\currenciescommands\\update\\updatecurrencycommand.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\commands\\currenciescommands\\delete\\deletecurrencycommand.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\commands\\currenciescommands\\delete\\deletecurrencycommand.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\queries\\currenciesquery\\getallcurrenciesquery.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\queries\\currenciesquery\\getallcurrenciesquery.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\helpers\\mappercurrency.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\helpers\\mappercurrency.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\queries\\productsquery\\getproductgroupidquery.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\queries\\productsquery\\getproductgroupidquery.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\helpers\\mappercustomer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -94,136 +82,110 @@
       "DocumentGroups": [
         {
           "DockedWidth": 235,
-          "SelectedChildIndex": 5,
+          "SelectedChildIndex": 7,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "CurrencyService.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Services\\CurrencyService.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Services\\CurrencyService.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Services\\CurrencyService.cs",
-              "RelativeToolTip": "Web-POS.Api\\Services\\CurrencyService.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABQAAAAoAAAAAAAAAA==",
+              "DocumentIndex": 5,
+              "Title": "ProductGroupRepository.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Repository\\ProductGroupRepository.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Repository\\ProductGroupRepository.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Repository\\ProductGroupRepository.cs",
+              "RelativeToolTip": "Web-POS.Api\\Repository\\ProductGroupRepository.cs",
+              "ViewState": "AgIAADsAAAAAAAAAAADwv1sAAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-26T17:39:41.767Z",
+              "WhenOpened": "2026-03-26T20:00:01.249Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 6,
-              "Title": "ProductGroupsController.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\ProductGroupsController.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Controllers\\ProductGroupsController.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\ProductGroupsController.cs",
-              "RelativeToolTip": "Web-POS.Api\\Controllers\\ProductGroupsController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAfAAAAAAAAAA==",
+              "Title": "Product.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Domain\\Product.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Domain\\Product.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Domain\\Product.cs",
+              "RelativeToolTip": "Web-POS.Api\\Domain\\Product.cs",
+              "ViewState": "AgIAAI0AAAAAAAAAAADgv7UAAAAmAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-26T17:39:29.252Z",
+              "WhenOpened": "2026-03-26T18:57:51.576Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "CurrenciesController.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\CurrenciesController.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Controllers\\CurrenciesController.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\CurrenciesController.cs",
-              "RelativeToolTip": "Web-POS.Api\\Controllers\\CurrenciesController.cs",
-              "ViewState": "AgIAABMAAAAAAAAAAAAkwDEAAAAAAAAAAAAAAA==",
+              "DocumentIndex": 2,
+              "Title": "ProductService.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Services\\ProductService.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Services\\ProductService.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Services\\ProductService.cs",
+              "RelativeToolTip": "Web-POS.Api\\Services\\ProductService.cs",
+              "ViewState": "AgIAAEsAAAAAAAAAAAArwGgAAAAfAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-26T17:36:58Z",
+              "WhenOpened": "2026-03-26T18:57:37.778Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
-              "Title": "DeleteCurrencyCommand.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Commands\\CurrenciesCommands\\Delete\\DeleteCurrencyCommand.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Commands\\CurrenciesCommands\\Delete\\DeleteCurrencyCommand.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Commands\\CurrenciesCommands\\Delete\\DeleteCurrencyCommand.cs",
-              "RelativeToolTip": "Web-POS.Api\\Commands\\CurrenciesCommands\\Delete\\DeleteCurrencyCommand.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAB8AAAANAAAAAAAAAA==",
+              "DocumentIndex": 3,
+              "Title": "MapperProduct.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Helpers\\MapperProduct.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Helpers\\MapperProduct.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Helpers\\MapperProduct.cs",
+              "RelativeToolTip": "Web-POS.Api\\Helpers\\MapperProduct.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAANAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-26T17:36:36.838Z",
+              "WhenOpened": "2026-03-26T18:20:06.925Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 7,
-              "Title": "UpdateCurrencyCommand.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Commands\\CurrenciesCommands\\Update\\UpdateCurrencyCommand.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Commands\\CurrenciesCommands\\Update\\UpdateCurrencyCommand.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Commands\\CurrenciesCommands\\Update\\UpdateCurrencyCommand.cs",
-              "RelativeToolTip": "Web-POS.Api\\Commands\\CurrenciesCommands\\Update\\UpdateCurrencyCommand.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAqwAcAAAA3AAAAAAAAAA==",
+              "Title": "GetProductGroupidQuery.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Queries\\ProductsQuery\\GetProductGroupidQuery.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Queries\\ProductsQuery\\GetProductGroupidQuery.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Queries\\ProductsQuery\\GetProductGroupidQuery.cs",
+              "RelativeToolTip": "Web-POS.Api\\Queries\\ProductsQuery\\GetProductGroupidQuery.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAqwAoAAAAqAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-26T17:36:15.284Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "AddCurrencyCommand.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Commands\\CurrenciesCommands\\Add\\AddCurrencyCommand.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Commands\\CurrenciesCommands\\Add\\AddCurrencyCommand.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Commands\\CurrenciesCommands\\Add\\AddCurrencyCommand.cs",
-              "RelativeToolTip": "Web-POS.Api\\Commands\\CurrenciesCommands\\Add\\AddCurrencyCommand.cs",
-              "ViewState": "AgIAAAMAAAAAAAAAAAAuwA0AAAA3AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-26T17:35:53.322Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 9,
-              "Title": "GetAllCurrenciesQuery.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Queries\\CurrenciesQuery\\GetAllCurrenciesQuery.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Queries\\CurrenciesQuery\\GetAllCurrenciesQuery.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Queries\\CurrenciesQuery\\GetAllCurrenciesQuery.cs",
-              "RelativeToolTip": "Web-POS.Api\\Queries\\CurrenciesQuery\\GetAllCurrenciesQuery.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABkAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-26T17:34:51.512Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "CurrencyRepository.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Repository\\CurrencyRepository.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Repository\\CurrencyRepository.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Repository\\CurrencyRepository.cs",
-              "RelativeToolTip": "Web-POS.Api\\Repository\\CurrencyRepository.cs",
-              "ViewState": "AgIAAA0AAAAAAAAAAAAgwCcAAAAaAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-26T17:28:52.521Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 10,
-              "Title": "MapperCurrency.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Helpers\\MapperCurrency.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Helpers\\MapperCurrency.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Helpers\\MapperCurrency.cs",
-              "RelativeToolTip": "Web-POS.Api\\Helpers\\MapperCurrency.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-26T17:27:54.705Z",
+              "WhenOpened": "2026-03-26T18:18:43.872Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 1,
-              "Title": "CurrencyDto.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Models\\CurrencyDto.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Models\\CurrencyDto.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Models\\CurrencyDto.cs",
-              "RelativeToolTip": "Web-POS.Api\\Models\\CurrencyDto.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAqwAkAAAARAAAAAAAAAA==",
+              "Title": "ProductRepository.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Repository\\ProductRepository.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Repository\\ProductRepository.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Repository\\ProductRepository.cs",
+              "RelativeToolTip": "Web-POS.Api\\Repository\\ProductRepository.cs",
+              "ViewState": "AgIAAC4AAAAAAAAAAAAcwEwAAAANAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-26T17:26:38.862Z",
+              "WhenOpened": "2026-03-26T18:18:15.516Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "ProductDto.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Models\\ProductDto.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Models\\ProductDto.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Models\\ProductDto.cs",
+              "RelativeToolTip": "Web-POS.Api\\Models\\ProductDto.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAA1AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-26T18:17:07.878Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "ProductsController.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\ProductsController.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Controllers\\ProductsController.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\ProductsController.cs",
+              "RelativeToolTip": "Web-POS.Api\\Controllers\\ProductsController.cs",
+              "ViewState": "AgIAADAAAAAAAAAAAAAqwFIAAAANAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-26T18:16:27.821Z",
               "EditorCaption": ""
             },
             {
@@ -245,19 +207,6 @@
             {
               "$type": "Bookmark",
               "Name": "ST:128:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "Currency.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Domain\\Currency.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Domain\\Currency.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Domain\\Currency.cs",
-              "RelativeToolTip": "Web-POS.Api\\Domain\\Currency.cs",
-              "ViewState": "AgIAAAQAAAAAAAAAAAAawBkAAAAfAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-26T17:24:17.94Z",
-              "EditorCaption": ""
             }
           ]
         }
@@ -282,7 +231,7 @@
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 14,
+              "DocumentIndex": 11,
               "Title": "Customer.cs",
               "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Domain\\Customer.cs",
               "RelativeDocumentMoniker": "Web-POS.Api\\Domain\\Customer.cs",
@@ -290,12 +239,11 @@
               "RelativeToolTip": "Web-POS.Api\\Domain\\Customer.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAAAxAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-24T22:10:00.904Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-24T22:10:00.904Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 13,
+              "DocumentIndex": 10,
               "Title": "CustomerDto.cs",
               "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Models\\CustomerDto.cs",
               "RelativeDocumentMoniker": "Web-POS.Api\\Models\\CustomerDto.cs",
@@ -303,12 +251,11 @@
               "RelativeToolTip": "Web-POS.Api\\Models\\CustomerDto.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAACQAAAAIAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-26T17:27:10.349Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-26T17:27:10.349Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 11,
+              "DocumentIndex": 8,
               "Title": "MapperCustomer.cs",
               "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Helpers\\MapperCustomer.cs",
               "RelativeDocumentMoniker": "Web-POS.Api\\Helpers\\MapperCustomer.cs",
@@ -321,7 +268,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 18,
+              "DocumentIndex": 15,
               "Title": "UpdateCustomerCommand.cs",
               "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Commands\\CustomerCommands\\Update\\UpdateCustomerCommand.cs",
               "RelativeDocumentMoniker": "Web-POS.Api\\Commands\\CustomerCommands\\Update\\UpdateCustomerCommand.cs",
@@ -333,7 +280,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 17,
+              "DocumentIndex": 14,
               "Title": "CustomerController.cs",
               "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\CustomerController.cs",
               "RelativeDocumentMoniker": "Web-POS.Api\\Controllers\\CustomerController.cs",
@@ -341,12 +288,11 @@
               "RelativeToolTip": "Web-POS.Api\\Controllers\\CustomerController.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAD4AAABFAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-23T11:24:32.023Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-23T11:24:32.023Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 19,
+              "DocumentIndex": 16,
               "Title": "AddCustomerCommand.cs",
               "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Commands\\CustomerCommands\\Add\\AddCustomerCommand.cs",
               "RelativeDocumentMoniker": "Web-POS.Api\\Commands\\CustomerCommands\\Add\\AddCustomerCommand.cs",
@@ -358,7 +304,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 20,
+              "DocumentIndex": 17,
               "Title": "GetCustomerByIdQuery.cs",
               "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Queries\\CustomerQuery\\Get\\GetCustomerByIdQuery.cs",
               "RelativeDocumentMoniker": "Web-POS.Api\\Queries\\CustomerQuery\\Get\\GetCustomerByIdQuery.cs",
@@ -370,7 +316,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 16,
+              "DocumentIndex": 13,
               "Title": "CustomerRepository.cs",
               "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Repository\\CustomerRepository.cs",
               "RelativeDocumentMoniker": "Web-POS.Api\\Repository\\CustomerRepository.cs",
@@ -378,12 +324,11 @@
               "RelativeToolTip": "Web-POS.Api\\Repository\\CustomerRepository.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABYAAAAMAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-22T22:44:59.72Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-22T22:44:59.72Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 15,
+              "DocumentIndex": 12,
               "Title": "CustomerService.cs",
               "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Services\\CustomerService.cs",
               "RelativeDocumentMoniker": "Web-POS.Api\\Services\\CustomerService.cs",
@@ -391,12 +336,11 @@
               "RelativeToolTip": "Web-POS.Api\\Services\\CustomerService.cs",
               "ViewState": "AgIAAAoAAAAAAAAAAAA1wA8AAABBAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-22T22:48:45.443Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-22T22:48:45.443Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 12,
+              "DocumentIndex": 9,
               "Title": "GetAllCustomersQuery.cs",
               "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Queries\\CustomerQuery\\Get\\GetAllCustomersQuery.cs",
               "RelativeDocumentMoniker": "Web-POS.Api\\Queries\\CustomerQuery\\Get\\GetAllCustomersQuery.cs",
@@ -404,8 +348,7 @@
               "RelativeToolTip": "Web-POS.Api\\Queries\\CustomerQuery\\Get\\GetAllCustomersQuery.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABcAAAA2AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-22T22:56:55.608Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-22T22:56:55.608Z"
             }
           ]
         }

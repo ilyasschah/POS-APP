@@ -5,8 +5,9 @@ namespace Api.Models
     public class ProductDto
     {
         public int Id { get; set; }
+        public int CompanyId { get; set; }
         public int? ProductGroupId { get; set; }
-        public string ProductGroupName { get; set; }
+        public string? ProductGroupName { get; set; }
         public string Name { get; set; } = default!;
         public string? Code { get; set; }
         public int? PLU { get; set; }
@@ -59,6 +60,7 @@ namespace Api.Models
 
     public class UpdateProductRequest
     {
+        public int Id { get; set; }
         public int? ProductGroupId { get; set; }
         public required string Name { get; set; }
         public string? Code { get; set; }
@@ -72,7 +74,6 @@ namespace Api.Models
         public required bool IsUsingDefaultQuantity { get; set; }
         public required bool IsEnabled { get; set; }
         public string? Description { get; set; }
-        public DateTime? DateCreated { get; set; }
         public DateTime? DateUpdated { get; set; }
         public required decimal Cost { get; set; }
         public decimal? Markup { get; set; }

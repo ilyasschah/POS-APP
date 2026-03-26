@@ -158,7 +158,6 @@ namespace Api.Domain
             bool isUsingDefaultQuantity,
             bool isEnabled,
             string? description,
-            DateTime? dateCreated,
             DateTime? dateUpdated,
             decimal cost,
             decimal? markup,
@@ -181,7 +180,6 @@ namespace Api.Domain
             IsUsingDefaultQuantity = isUsingDefaultQuantity;
             IsEnabled = isEnabled;
             Description = description;
-            DateCreated = dateCreated;
             DateUpdated = dateUpdated;
             Cost = cost;
             Markup = markup;

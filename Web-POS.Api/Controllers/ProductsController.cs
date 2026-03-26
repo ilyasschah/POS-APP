@@ -18,54 +18,76 @@ namespace Api.Controllers
         [HttpGet("[action]")]
         public async Task<ActionResult<List<ProductDto>>> GetAll([FromQuery] int companyId)
         {
-            if (companyId <= 0) return BadRequest("Company ID is required");
+            if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
             var result = await mediator.Send(new GetAllProductsQuery { CompanyId = companyId });
             return Ok(result);
         }
 
         [HttpGet("[action]")]
-        public async Task<ActionResult<ProductDto>>GetById([FromQuery] int id, [FromQuery] int companyId)
+        public async Task<ActionResult<ProductDto>> GetById([FromQuery] int id, [FromQuery] int companyId)
         {
-            if (companyId <= 0) return BadRequest("Company ID is required");
+            if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
             var result = await mediator.Send(new GetProductByIdQuery { Id = id, CompanyId = companyId });
-            return result is null ? NotFound() : Ok(result);
+            return result is null ? NotFound(new { message = "Product not found" }) : Ok(result);
         }
 
         [HttpGet("[action]")]
-        public async Task<ActionResult<ProductDto>> GetByProductGroup([FromQuery] int productGroupId, [FromQuery] int companyId)
+        public async Task<ActionResult<List<ProductDto>>> GetByProductGroup([FromQuery] int productGroupId, [FromQuery] int companyId)
         {
-            if (companyId <= 0) return BadRequest("Company ID is required");
-            var result = await mediator.Send(new GetProductByProductGroupQuery { ProductGroup = productGroupId, CompanyId = companyId });
-            return result is null ? NotFound() : Ok(result);
+            if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
+            var result = await mediator.Send(new GetProductGroupQuery { ProductGroup = productGroupId, CompanyId = companyId });
+            return result is null ? NotFound(new { message = "No products found for this group" }) : Ok(result);
         }
 
 
         [HttpPost("[action]")]
-        public async Task<ActionResult<ProductDto>> Add([FromBody] CreateProductRequest req,[FromQuery] int companyId)           
+        public async Task<ActionResult<ProductDto>> Add([FromBody] CreateProductRequest req, [FromQuery] int companyId)
         {
-            if (companyId <= 0) return BadRequest("Company ID is required");
+            if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
 
-            var command = new AddProductCommand(req, companyId);
-            command.Request.CompanyId = companyId;
+            try
+            {
+                var command = new AddProductCommand(req, companyId);
+                var result = await mediator.Send(command);
 
-            var result = await mediator.Send(command);
-            return CreatedAtAction(nameof(GetById), new { id = result.Id, companyId }, result);
+                return Ok(new { message = "Product created successfully", data = result });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
-        [HttpPut("[action]")]
-        public async Task<IActionResult> Update([FromQuery] int id,[FromBody] UpdateProductRequest req,[FromQuery] int companyId)          
+        [HttpPatch("[action]")] 
+        public async Task<IActionResult> Update([FromBody] UpdateProductRequest req, [FromQuery] int companyId)
         {
-            if (companyId == 0) return BadRequest("Company ID is required");
-            var ok = await mediator.Send(new UpdateProductCommand(id, req, companyId));
-            return ok ? NoContent() : NotFound();
+            if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
+
+            try
+            {
+                var ok = await mediator.Send(new UpdateProductCommand(req.Id, req, companyId));
+                return ok ? Ok(new { message = "Product updated successfully" }) : NotFound(new { message = "Product not found" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         [HttpDelete("[action]")]
-        public async Task<IActionResult> Delete([FromQuery] int id,[FromQuery] int companyId)
+        public async Task<IActionResult> Delete([FromQuery] int id, [FromQuery] int companyId)
         {
-            if (companyId == 0) return BadRequest("Company ID is required");
-            var ok = await mediator.Send(new DeleteProductCommand(id, companyId));
-            return ok ? NoContent() : NotFound();
+            if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
+
+            try
+            {
+                var ok = await mediator.Send(new DeleteProductCommand(id, companyId));
+                return ok ? Ok(new { message = "Product deleted successfully" }) : NotFound(new { message = "Product not found" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
     }
 }

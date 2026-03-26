@@ -32,12 +32,13 @@ namespace Api.Repository
                 .FirstOrDefaultAsync(p => p.Id == id && p.CompanyId == companyId);
         }
 
-        public async Task<Product?> GetByProductGroupAsync(int productGroupId, int companyId)
+        public async Task<List<Product>> GetByProductGroupAsync(int productGroupId, int companyId)
         {
             return await _db.Products
                 .AsNoTracking()
                 .Include(p => p.ProductGroup)
-                .FirstOrDefaultAsync(p => p.ProductGroupId == productGroupId && p.CompanyId == companyId);
+                .Where(p => p.ProductGroupId == productGroupId && p.CompanyId == companyId)
+                .ToListAsync();
         }
         public async Task<Product?> GetByCodeAsync(string code, int companyId)
         {
@@ -72,8 +73,15 @@ namespace Api.Repository
 
         public async Task DeleteAsync(Product entity)
         {
-            _db.Products.Remove(entity);
-            await _db.SaveChangesAsync();
+            try
+            {
+                _db.Products.Remove(entity);
+                await _db.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex) when (ex.InnerException is Microsoft.Data.SqlClient.SqlException sqlEx && sqlEx.Number == 547)
+            {
+                throw new InvalidOperationException("Cannot delete this product because it is currently linked to one or more documents or stock items.");
+            }
         }
     }
 }

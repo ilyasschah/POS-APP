@@ -88,7 +88,6 @@ namespace Api.Services
                 isUsingDefaultQuantity: req.IsUsingDefaultQuantity,
                 isEnabled: req.IsEnabled,
                 description: req.Description,
-                dateCreated: req.DateCreated ?? entity.DateCreated,
                 dateUpdated: req.DateUpdated ?? DateTime.UtcNow,
                 cost: req.Cost,
                 markup: req.Markup,
