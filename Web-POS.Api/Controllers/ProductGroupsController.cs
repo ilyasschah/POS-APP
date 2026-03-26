@@ -3,7 +3,6 @@ using Api.Commands.ProductGroupCommands.Add;
 using Api.Commands.ProductGroupCommands.Delete;
 using Api.Commands.ProductGroupCommands.Update;
 using Api.Models;
-using Api.Queries.ProductGroupQuery;
 using Api.Queries.ProductGroupsQuery;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;

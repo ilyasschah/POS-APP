@@ -1,14 +1,15 @@
-﻿using FluentValidation;
-using MediatR;
-using Api.Helpers;
+﻿using MediatR;
 using Api.Models;
-using Api.Services;
+using Api.Repository;
+using Api.Domain;
+using Api.Helpers;
+using FluentValidation;
 
 namespace Api.Commands.CurrenciesCommands.Add
 {
     public class AddCurrencyCommand : IRequest<CurrencyDto>
     {
-        public CreateCurrencyRequest Request { get; }
+        public CreateCurrencyRequest Request { get; set; }
 
         public AddCurrencyCommand(CreateCurrencyRequest request)
         {
@@ -17,27 +18,30 @@ namespace Api.Commands.CurrenciesCommands.Add
 
         public class AddCurrencyCommandHandler : IRequestHandler<AddCurrencyCommand, CurrencyDto>
         {
-            private readonly CurrencyService _service;
+            private readonly CurrencyRepository _repository;
 
-            public AddCurrencyCommandHandler(CurrencyService service)
+            public AddCurrencyCommandHandler(CurrencyRepository repository)
             {
-                _service = service;
+                _repository = repository;
             }
 
             public async Task<CurrencyDto> Handle(AddCurrencyCommand command, CancellationToken cancellationToken)
             {
-                var entity = await _service.Create(command.Request);
+                if (await _repository.ExistsAsync(command.Request.Name))
+                    throw new InvalidOperationException($"Currency '{command.Request.Name}' already exists.");
+
+                var entity = Currency.Create(command.Request.Name, command.Request.Code);
+                await _repository.AddAsync(entity);
+
                 return MapperCurrency.MapToCurrencyDto(entity);
             }
         }
-
-        public class AddCurrencyCommandValidator : AbstractValidator<AddCurrencyCommand>
+    }
+    public class AddCurrencyCommandValidator : AbstractValidator<AddCurrencyCommand>
+    {
+        public AddCurrencyCommandValidator()
         {
-            public AddCurrencyCommandValidator()
-            {
-                RuleFor(c => c.Request.Name).NotEmpty().MaximumLength(100);
-                RuleFor(c => c.Request.Code).MaximumLength(10).When(x => x.Request.Code != null);
-            }
+            RuleFor(x => x.Request.Name).NotEmpty().WithMessage("Currency name is required.");
         }
     }
 }

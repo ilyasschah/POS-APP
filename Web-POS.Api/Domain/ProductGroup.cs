@@ -54,8 +54,7 @@ namespace Api.Domain
             Color = string.IsNullOrWhiteSpace(color) ? "Transparent" : color;
             Image = image;
             Rank = rank;
-
-            // Safety check: A group cannot be its own parent
+            
             if (ParentGroupId == Id)
             {
                 ParentGroupId = null;

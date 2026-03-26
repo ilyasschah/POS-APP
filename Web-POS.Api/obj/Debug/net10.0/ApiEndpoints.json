@@ -599,13 +599,13 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "Name",
-        "Type": "System.String",
-        "IsRequired": false
+        "Name": "request",
+        "Type": "Api.Models.CreateCurrencyRequest",
+        "IsRequired": true
       },
       {
-        "Name": "Code",
-        "Type": "System.String",
+        "Name": "companyId",
+        "Type": "System.Int32",
         "IsRequired": false
       }
     ],
@@ -624,7 +624,7 @@
   {
     "ContainingType": "Api.Controllers.CurrenciesController",
     "Method": "Delete",
-    "RelativePath": "api/Currencies/Delete/{id}",
+    "RelativePath": "api/Currencies/Delete",
     "HttpMethod": "DELETE",
     "IsController": true,
     "Order": 0,
@@ -632,7 +632,7 @@
       {
         "Name": "id",
         "Type": "System.Int32",
-        "IsRequired": true
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
@@ -660,7 +660,7 @@
   {
     "ContainingType": "Api.Controllers.CurrenciesController",
     "Method": "GetById",
-    "RelativePath": "api/Currencies/GetById/{id}",
+    "RelativePath": "api/Currencies/GetById",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -668,7 +668,7 @@
       {
         "Name": "id",
         "Type": "System.Int32",
-        "IsRequired": true
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
@@ -686,7 +686,7 @@
   {
     "ContainingType": "Api.Controllers.CurrenciesController",
     "Method": "GetByName",
-    "RelativePath": "api/Currencies/GetByName/{name}",
+    "RelativePath": "api/Currencies/GetByName",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -694,7 +694,7 @@
       {
         "Name": "name",
         "Type": "System.String",
-        "IsRequired": true
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
@@ -712,25 +712,20 @@
   {
     "ContainingType": "Api.Controllers.CurrenciesController",
     "Method": "Update",
-    "RelativePath": "api/Currencies/Update/{id}",
-    "HttpMethod": "PUT",
+    "RelativePath": "api/Currencies/Update",
+    "HttpMethod": "PATCH",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
         "Name": "id",
         "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "request",
+        "Type": "Api.Models.UpdateCurrencyRequest",
         "IsRequired": true
-      },
-      {
-        "Name": "Name",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "Code",
-        "Type": "System.String",
-        "IsRequired": false
       }
     ],
     "ReturnTypes": []

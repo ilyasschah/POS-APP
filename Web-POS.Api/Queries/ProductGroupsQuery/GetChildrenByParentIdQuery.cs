@@ -4,7 +4,7 @@ using Api.Repository;
 using Api.Helpers;
 using FluentValidation;
 
-namespace Api.Queries.ProductGroupQuery
+namespace Api.Queries.ProductGroupsQuery
 {
     public class GetProductGroupChildrenQuery : IRequest<List<ProductGroupDto>>
     {

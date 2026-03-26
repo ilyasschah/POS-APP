@@ -11,7 +11,7 @@ namespace Api.Helpers
             {
                 Id = entity.Id,
                 Name = entity.Name,
-                Code = entity.Code
+                Code = entity.Code,
             };
         }
     }
