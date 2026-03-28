@@ -1,15 +1,17 @@
 ﻿using MediatR;
 using Api.Services;
+using FluentValidation;
 
 namespace Api.Commands.ProductsCommentsCommands.Delete
 {
     public class DeleteProductCommentCommand : IRequest<bool>
     {
         public int Id { get; }
-
-        public DeleteProductCommentCommand(int id)
+        public int CompanyId { get; }
+        public DeleteProductCommentCommand(int id, int companyId)
         {
             Id = id;
+            CompanyId = companyId;
         }
 
         public class DeleteProductCommentCommandHandler : IRequestHandler<DeleteProductCommentCommand, bool>
@@ -23,8 +25,16 @@ namespace Api.Commands.ProductsCommentsCommands.Delete
 
             public Task<bool> Handle(DeleteProductCommentCommand command, CancellationToken cancellationToken)
             {
-                return _service.Delete(command.Id);
+                return _service.Delete(command.Id, command.CompanyId);
             }
+        }
+    }
+    public class DeleteProductCommentCommandValidator : AbstractValidator<DeleteProductCommentCommand>
+    {
+        public DeleteProductCommentCommandValidator()
+        {
+            RuleFor(c => c.Id).GreaterThan(0).WithMessage("Id must be valid.");
+            RuleFor(c => c.CompanyId).GreaterThan(0).WithMessage("CompanyId must be valid.");
         }
     }
 }

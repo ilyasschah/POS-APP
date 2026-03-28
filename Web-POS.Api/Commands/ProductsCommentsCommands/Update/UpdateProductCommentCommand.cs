@@ -7,13 +7,13 @@ namespace Api.Commands.ProductsCommentsCommands.Update
 {
     public class UpdateProductCommentCommand : IRequest<bool>
     {
-        public int Id { get; }
         public UpdateProductCommentRequest Request { get; }
+        public int CompanyId { get; }
 
-        public UpdateProductCommentCommand(int id, UpdateProductCommentRequest request)
+        public UpdateProductCommentCommand(UpdateProductCommentRequest request, int companyId)
         {
-            Id = id;
             Request = request;
+            CompanyId = companyId;
         }
 
         public class UpdateProductCommentCommandHandler : IRequestHandler<UpdateProductCommentCommand, bool>
@@ -27,7 +27,7 @@ namespace Api.Commands.ProductsCommentsCommands.Update
 
             public Task<bool> Handle(UpdateProductCommentCommand command, CancellationToken cancellationToken)
             {
-                return _service.Update(command.Id, command.Request);
+                return _service.Update(command.Request, command.CompanyId);
             }
         }
 
@@ -35,9 +35,9 @@ namespace Api.Commands.ProductsCommentsCommands.Update
         {
             public UpdateProductCommentCommandValidator()
             {
-                RuleFor(x => x.Id).GreaterThan(0);
-                RuleFor(x => x.Request.ProductId).GreaterThan(0);
-                RuleFor(x => x.Request.Comment).NotEmpty();
+                RuleFor(x => x.Request.ProductId).GreaterThan(0).WithMessage("Product ID must be valid.");
+                RuleFor(x => x.Request.Comment).NotEmpty().WithMessage("Comment cannot be empty.");
+                RuleFor(x => x.CompanyId).GreaterThan(0).WithMessage("Company ID must be valid.");
             }
         }
     }

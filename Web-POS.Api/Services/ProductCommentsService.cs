@@ -13,39 +13,50 @@ namespace Api.Services
             _repository = repository;
         }
 
-        public async Task<ProductComment> Create(CreateProductCommentRequest req)
+        public async Task<ProductComment> CreateAsync(CreateProductCommentRequest req, int companyId)
         {
             if (string.IsNullOrWhiteSpace(req.Comment))
                 throw new InvalidOperationException("Comment cannot be empty.");
 
-            if (!await _repository.ProductExistsAsync(req.ProductId))
-                throw new InvalidOperationException($"Product with Id '{req.ProductId}' does not exist.");
+            if (await _repository.ExistsAsync(req.Comment, req.ProductId, companyId))
+                throw new InvalidOperationException($"Product with Id '{req.ProductId}' Already has this comment '{req.Comment}'.");
 
-            var entity = ProductComment.Create(req.ProductId, req.Comment.Trim());
+            var entity = ProductComment.Create(
+                req.ProductId, 
+                req.Comment.Trim(), 
+                companyId);
             await _repository.AddAsync(entity);
             return entity;
         }
 
-        public async Task<bool> Update(int id, UpdateProductCommentRequest req)
+        public async Task<bool> Update(UpdateProductCommentRequest req, int companyId)
         {
-            var entity = await _repository.GetByIdAsync(id, trackEntity: true)
-                         ?? throw new InvalidOperationException($"ProductComment with ID '{id}' not found.");
+            var entity = await _repository.GetByIdAsync(req.Id, companyId)
+                         ?? throw new InvalidOperationException($"ProductComment with ID '{req.Id}' not found.");
 
-            if (string.IsNullOrWhiteSpace(req.Comment))
+            var finalProductId = req.ProductId ?? entity.ProductId;
+            var finalComment = req.Comment ?? entity.Comment;
+
+            if (string.IsNullOrWhiteSpace(finalComment))
                 throw new InvalidOperationException("Comment cannot be empty.");
 
-            if (!await _repository.ProductExistsAsync(req.ProductId))
-                throw new InvalidOperationException($"Product with Id '{req.ProductId}' does not exist.");
+            if ((req.ProductId.HasValue && req.ProductId.Value != entity.ProductId) ||
+                (req.Comment != null && req.Comment.ToLower() != entity.Comment.ToLower()))
+            {
+                if (await _repository.ExistsAsync(finalComment, finalProductId, companyId, req.Id))
+                    throw new InvalidOperationException($"Product with Id '{finalProductId}' already has the comment '{finalComment}'.");
+            }
 
-            entity.Update(req.ProductId, req.Comment.Trim());
+            entity.Update(req.ProductId, req.Comment);
+
             await _repository.UpdateAsync(entity);
             return true;
         }
 
-        public async Task<bool> Delete(int id)
+        public async Task<bool> Delete(int id , int companyId)
         {
-            var entity = await _repository.GetByIdAsync(id, trackEntity: true);
-            if (entity == null) return false;
+            var entity = await _repository.GetByIdAsync(id, companyId)
+                         ?? throw new InvalidOperationException($"ProductComment with ID '{id}' not found.");
 
             await _repository.DeleteAsync(entity);
             return true;

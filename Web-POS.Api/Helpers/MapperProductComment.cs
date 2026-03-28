@@ -11,6 +11,7 @@ namespace Api.Helpers
             {
                 Id = entity.Id,
                 ProductId = entity.ProductId,
+                CompanyId = entity.CompanyId,
                 Comment = entity.Comment
             };
         }

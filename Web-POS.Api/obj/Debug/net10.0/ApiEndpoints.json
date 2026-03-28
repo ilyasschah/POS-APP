@@ -4176,13 +4176,13 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "ProductId",
-        "Type": "System.Int32",
-        "IsRequired": false
+        "Name": "req",
+        "Type": "Api.Models.CreateProductCommentRequest",
+        "IsRequired": true
       },
       {
-        "Name": "Comment",
-        "Type": "System.String",
+        "Name": "companyId",
+        "Type": "System.Int32",
         "IsRequired": false
       }
     ],
@@ -4201,7 +4201,7 @@
   {
     "ContainingType": "Api.Controllers.ProductCommentsController",
     "Method": "Delete",
-    "RelativePath": "api/ProductComments/Delete/{id}",
+    "RelativePath": "api/ProductComments/Delete",
     "HttpMethod": "DELETE",
     "IsController": true,
     "Order": 0,
@@ -4209,7 +4209,12 @@
       {
         "Name": "id",
         "Type": "System.Int32",
-        "IsRequired": true
+        "IsRequired": false
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
@@ -4221,7 +4226,13 @@
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
+    "Parameters": [
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
     "ReturnTypes": [
       {
         "Type": "System.Collections.Generic.List\u00601[[Api.Models.ProductCommentDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
@@ -4237,7 +4248,7 @@
   {
     "ContainingType": "Api.Controllers.ProductCommentsController",
     "Method": "GetById",
-    "RelativePath": "api/ProductComments/GetById/{id}",
+    "RelativePath": "api/ProductComments/GetById",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -4245,7 +4256,12 @@
       {
         "Name": "id",
         "Type": "System.Int32",
-        "IsRequired": true
+        "IsRequired": false
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
@@ -4263,7 +4279,7 @@
   {
     "ContainingType": "Api.Controllers.ProductCommentsController",
     "Method": "GetByProductId",
-    "RelativePath": "api/ProductComments/GetByProductId/{productId}",
+    "RelativePath": "api/ProductComments/GetByProductId",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -4271,7 +4287,12 @@
       {
         "Name": "productId",
         "Type": "System.Int32",
-        "IsRequired": true
+        "IsRequired": false
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
@@ -4289,24 +4310,19 @@
   {
     "ContainingType": "Api.Controllers.ProductCommentsController",
     "Method": "Update",
-    "RelativePath": "api/ProductComments/Update/{id}",
-    "HttpMethod": "PUT",
+    "RelativePath": "api/ProductComments/Update",
+    "HttpMethod": "PATCH",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "id",
-        "Type": "System.Int32",
+        "Name": "req",
+        "Type": "Api.Models.UpdateProductCommentRequest",
         "IsRequired": true
       },
       {
-        "Name": "ProductId",
+        "Name": "companyId",
         "Type": "System.Int32",
-        "IsRequired": false
-      },
-      {
-        "Name": "Comment",
-        "Type": "System.String",
         "IsRequired": false
       }
     ],

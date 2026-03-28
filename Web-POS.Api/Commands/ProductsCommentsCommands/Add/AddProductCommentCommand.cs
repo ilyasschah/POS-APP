@@ -9,10 +9,12 @@ namespace Api.Commands.ProductsCommentsCommands.Add
     public class AddProductCommentCommand : IRequest<ProductCommentDto>
     {
         public CreateProductCommentRequest Request { get; }
+        public int CompanyId { get; }
 
-        public AddProductCommentCommand(CreateProductCommentRequest request)
+        public AddProductCommentCommand(CreateProductCommentRequest request, int companyId)
         {
             Request = request;
+            CompanyId = companyId;
         }
 
         public class AddProductCommentCommandHandler : IRequestHandler<AddProductCommentCommand, ProductCommentDto>
@@ -26,7 +28,7 @@ namespace Api.Commands.ProductsCommentsCommands.Add
 
             public async Task<ProductCommentDto> Handle(AddProductCommentCommand command, CancellationToken cancellationToken)
             {
-                var entity = await _service.Create(command.Request);
+                var entity = await _service.CreateAsync(command.Request, command.CompanyId);
                 return MapperProductComment.MapToProductCommentDto(entity);
             }
         }
@@ -35,8 +37,9 @@ namespace Api.Commands.ProductsCommentsCommands.Add
         {
             public AddProductCommentCommandValidator()
             {
-                RuleFor(x => x.Request.ProductId).GreaterThan(0);
-                RuleFor(x => x.Request.Comment).NotEmpty();
+                RuleFor(x => x.Request.ProductId).GreaterThan(0).WithMessage("Product ID must be valid.");
+                RuleFor(x => x.Request.Comment).NotEmpty().WithMessage("Comment cannot be empty.");
+                RuleFor(x => x.CompanyId).GreaterThan(0).WithMessage("Company ID must be valid.");
             }
         }
     }

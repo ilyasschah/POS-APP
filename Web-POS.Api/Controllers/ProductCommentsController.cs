@@ -13,45 +13,83 @@ namespace Api.Controllers
     public class ProductCommentsController(IMediator mediator) : ControllerBase
     {
         [HttpGet("[action]")]
-        public async Task<ActionResult<List<ProductCommentDto>>> GetAll()
+        public async Task<ActionResult<List<ProductCommentDto>>> GetAll([FromQuery] int companyId)
         {
-            var result = await mediator.Send(new GetAllProductCommentsQuery());
+            if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
+
+            var result = await mediator.Send(new GetAllProductCommentsQuery { CompanyId = companyId });
             return Ok(result);
         }
 
-        [HttpGet("[action]/{id:int}")]
-        public async Task<ActionResult<ProductCommentDto>> GetById(int id)
+        [HttpGet("[action]")]
+        public async Task<ActionResult<ProductCommentDto>> GetById([FromQuery] int id, [FromQuery] int companyId)
         {
-            var result = await mediator.Send(new GetProductCommentByIdQuery { Id = id });
-            return result is null ? NotFound() : Ok(result);
+            if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
+            if (id <= 0) return BadRequest(new { message = "Comment ID is required" });
+
+            var result = await mediator.Send(new GetProductCommentByIdQuery { Id = id, CompanyId = companyId });
+            return result is null ? NotFound(new { message = "Product comment not found" }) : Ok(result);
         }
 
-        [HttpGet("[action]/{productId:int}")]
-        public async Task<ActionResult<List<ProductCommentDto>>> GetByProductId(int productId)
+        [HttpGet("[action]")]
+        public async Task<ActionResult<List<ProductCommentDto>>> GetByProductId([FromQuery] int productId, [FromQuery] int companyId)
         {
-            var result = await mediator.Send(new GetProductCommentsByProductIdQuery { ProductId = productId });
+            if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
+            if (productId <= 0) return BadRequest(new { message = "Product ID is required" });
+
+            var result = await mediator.Send(new GetProductCommentsByProductIdQuery { ProductId = productId, CompanyId = companyId });
             return Ok(result);
         }
 
         [HttpPost("[action]")]
-        public async Task<ActionResult<ProductCommentDto>> Add([FromQuery] CreateProductCommentRequest req)
+        public async Task<ActionResult<ProductCommentDto>> Add([FromBody] CreateProductCommentRequest req, [FromQuery] int companyId)
         {
-            var result = await mediator.Send(new AddProductCommentCommand(req));
-            return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+            if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
+            try
+            {
+                var result = await mediator.Send(new AddProductCommentCommand(req, companyId));
+
+                return Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
-        [HttpPut("[action]/{id:int}")]
-        public async Task<IActionResult> Update(int id, [FromQuery] UpdateProductCommentRequest req)
+        [HttpPatch("[action]")]
+        public async Task<IActionResult> Update([FromBody] UpdateProductCommentRequest req, [FromQuery] int companyId)
         {
-            var ok = await mediator.Send(new UpdateProductCommentCommand(id, req));
-            return ok ? NoContent() : NotFound();
+            if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
+            try
+            {
+                var ok = await mediator.Send(new UpdateProductCommentCommand(req, companyId));
+                return ok
+                    ? Ok(new { message = "Product comment updated successfully" })
+                    : NotFound(new { message = "Product comment not found" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
-        [HttpDelete("[action]/{id:int}")]
-        public async Task<IActionResult> Delete(int id)
+        [HttpDelete("[action]")]
+        public async Task<IActionResult> Delete([FromQuery] int id, [FromQuery] int companyId)
         {
-            var ok = await mediator.Send(new DeleteProductCommentCommand(id));
-            return ok ? NoContent() : NotFound();
+            if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
+            if (id <= 0) return BadRequest(new { message = "Comment ID is required" });
+            try
+            {
+                var ok = await mediator.Send(new DeleteProductCommentCommand(id, companyId));
+                return ok
+                    ? Ok(new { message = "Product comment deleted successfully" })
+                    : NotFound(new { message = "Product comment not found" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
     }
 }
