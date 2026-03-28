@@ -64,7 +64,7 @@ namespace Api.Domain
         // Navs
         public ProductGroup? ProductGroup { get; set; }
         public Currency? Currency { get; set; }
-
+        public virtual ICollection<ProductTax> ProductTaxes { get; set; } = new List<ProductTax>();
         public Product() { }
 
         private Product(

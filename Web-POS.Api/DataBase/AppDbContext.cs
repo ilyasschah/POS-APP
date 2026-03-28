@@ -139,7 +139,7 @@ namespace Api.DataBase
                 e.Property(x => x.Value).HasPrecision(18, 2)
             );
 
-            b.Entity<ProductTax>().HasNoKey();
+            b.Entity<ProductTax>().HasKey(pt => new { pt.ProductId, pt.TaxId });
 
             b.Entity<Warehouse>(e =>
             {

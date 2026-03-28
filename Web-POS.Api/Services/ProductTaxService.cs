@@ -1,4 +1,5 @@
 using Api.Domain;
+using Api.Models;
 using Api.Repository;
 using System;
 using System.Threading.Tasks;
@@ -14,22 +15,23 @@ namespace Api.Services
             _repository = repository;
         }
 
-        public async Task<bool> Create(int productId, int taxId)
+        public async Task<bool> CreateAsync(CreateProductTaxRequest request, int companyId)
         {
-            var exists = await _repository.ExistsAsync(productId, taxId);
+            var exists = await _repository.ExistsAsync(request.ProductId, request.TaxId, companyId);
             if (exists)
             {
-                throw new InvalidOperationException($"The link between Product ID '{productId}' and Tax ID '{taxId}' already exists.");
+                throw new InvalidOperationException($"The link between Product ID '{request.ProductId}' and Tax ID '{request.TaxId}' already exists.");
             }
 
-            var newProductTax = ProductTax.Create(productId, taxId);
+            var newProductTax = ProductTax.Create(request.ProductId, request.TaxId, companyId);
+
             await _repository.AddAsync(newProductTax);
             return true;
         }
 
-        public async Task<bool> Delete(int productId, int taxId)
+        public async Task<bool> DeleteAsync(int productId, int taxId, int companyId)
         {
-            var entityToDelete = await _repository.FindAsync(productId, taxId);
+            var entityToDelete = await _repository.FindAsync(productId, taxId, companyId);
             if (entityToDelete == null)
             {
                 return false;

@@ -59,16 +59,16 @@ namespace Api.Services
             return entity;
         }
 
-        public async Task<bool> Update(int id, UpdateProductRequest req, int companyId)
+        public async Task<bool> Update(UpdateProductRequest req, int companyId)
         {
-            var entity = await _repository.GetByIdAsync(id, companyId, trackEntity: true);
+            var entity = await _repository.GetByIdAsync(req.Id, companyId, trackEntity: true);
 
             if (entity == null) return false;
 
             if (!string.IsNullOrWhiteSpace(req.Code))
             {
                 var existsCode = await _repository.GetByCodeAsync(req.Code, companyId);
-                if (existsCode != null && existsCode.Id != id)
+                if (existsCode != null && existsCode.Id != req.Id)
                     throw new InvalidOperationException($"Another product with the code '{req.Code}' already exists.");
             }
 

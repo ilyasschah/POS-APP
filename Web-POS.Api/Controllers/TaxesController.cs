@@ -9,7 +9,7 @@ using Api.Models;
 
 namespace Api.Controllers
 {
-    //[SwaggerVisible]
+    [SwaggerVisible]
     [Route("api/[controller]")]
     [ApiController]
     public class TaxesController(IMediator mediator) : ControllerBase

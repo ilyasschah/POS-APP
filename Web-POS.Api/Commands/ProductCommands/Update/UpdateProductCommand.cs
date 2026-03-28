@@ -7,13 +7,11 @@ namespace Api.Commands.ProductCommands.Update
 {
     public class UpdateProductCommand : IRequest<bool>
     {
-        public int Id { get; }
         public UpdateProductRequest Request { get; }
         public int CompanyId { get; }
 
-        public UpdateProductCommand(int id, UpdateProductRequest request, int companyId)
+        public UpdateProductCommand(UpdateProductRequest request, int companyId)
         {
-            Id = id;
             Request = request;
             CompanyId = companyId;
         }
@@ -29,7 +27,7 @@ namespace Api.Commands.ProductCommands.Update
 
             public Task<bool> Handle(UpdateProductCommand command, CancellationToken cancellationToken)
             {
-                return _service.Update(command.Id, command.Request, command.CompanyId);
+                return _service.Update(command.Request, command.CompanyId);
             }
         }
 
@@ -37,7 +35,7 @@ namespace Api.Commands.ProductCommands.Update
         {
             public UpdateProductCommandValidator()
             {
-                RuleFor(c => c.Id).GreaterThan(0);
+                RuleFor(c => c.Request.Id).GreaterThan(0);
                 RuleFor(c => c.Request.Name).NotEmpty().MaximumLength(255);
                 RuleFor(c => c.Request.Price).GreaterThanOrEqualTo(0);
                 RuleFor(c => c.Request.Code).MaximumLength(100).When(x => x.Request.Code != null);

@@ -9,7 +9,7 @@ using Api.Queries.DocumentItemQuery;
 
 namespace Api.Controllers
 {
-    [SwaggerVisible]
+    //[SwaggerVisible]
     [Route("api/[controller]")]
     [ApiController]
     public class DocumentItemsController : ControllerBase

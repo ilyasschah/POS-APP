@@ -4643,12 +4643,12 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "ProductId",
-        "Type": "System.Int32",
-        "IsRequired": false
+        "Name": "request",
+        "Type": "Api.Models.CreateProductTaxRequest",
+        "IsRequired": true
       },
       {
-        "Name": "TaxId",
+        "Name": "companyId",
         "Type": "System.Int32",
         "IsRequired": false
       }
@@ -4672,6 +4672,11 @@
         "Name": "taxId",
         "Type": "System.Int32",
         "IsRequired": false
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
@@ -4683,7 +4688,13 @@
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
+    "Parameters": [
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
     "ReturnTypes": [
       {
         "Type": "System.Collections.Generic.List\u00601[[Api.Models.ProductTaxDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
@@ -4699,7 +4710,7 @@
   {
     "ContainingType": "Api.Controllers.ProductTaxesController",
     "Method": "GetByProductId",
-    "RelativePath": "api/ProductTaxes/GetByProductId/ByProduct/{productId}",
+    "RelativePath": "api/ProductTaxes/GetByProductId",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -4707,7 +4718,12 @@
       {
         "Name": "productId",
         "Type": "System.Int32",
-        "IsRequired": true
+        "IsRequired": false
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
@@ -4725,7 +4741,7 @@
   {
     "ContainingType": "Api.Controllers.ProductTaxesController",
     "Method": "GetByTaxId",
-    "RelativePath": "api/ProductTaxes/GetByTaxId/ByTax/{taxId}",
+    "RelativePath": "api/ProductTaxes/GetByTaxId",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -4733,7 +4749,12 @@
       {
         "Name": "taxId",
         "Type": "System.Int32",
-        "IsRequired": true
+        "IsRequired": false
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [

@@ -7,20 +7,19 @@ namespace Api.Commands.ProductTaxCommands.Add
 {
     public class AddProductTaxCommand : IRequest<bool>
     {
-        public CreateProductTaxRequest Request { get; set; }
+        public required CreateProductTaxRequest Request { get; set; }
+        public required int CompanyId { get; set; }
 
         public class AddProductTaxCommandHandler : IRequestHandler<AddProductTaxCommand, bool>
         {
             private readonly ProductTaxService _service;
-
             public AddProductTaxCommandHandler(ProductTaxService service)
             {
                 _service = service;
             }
-
-            public Task<bool> Handle(AddProductTaxCommand command, CancellationToken cancellationToken)
+            public async Task<bool> Handle(AddProductTaxCommand command, CancellationToken cancellationToken)
             {
-                return _service.Create(command.Request.ProductId, command.Request.TaxId);
+                return await _service.CreateAsync(command.Request, command.CompanyId);
             }
         }
 
@@ -30,6 +29,7 @@ namespace Api.Commands.ProductTaxCommands.Add
             {
                 RuleFor(c => c.Request.ProductId).GreaterThan(0);
                 RuleFor(c => c.Request.TaxId).GreaterThan(0);
+                RuleFor(c => c.CompanyId).GreaterThan(0).WithMessage("Company ID must be valid.");
             }
         }
     }

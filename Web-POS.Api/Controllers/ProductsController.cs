@@ -65,7 +65,7 @@ namespace Api.Controllers
 
             try
             {
-                var ok = await mediator.Send(new UpdateProductCommand(req.Id, req, companyId));
+                var ok = await mediator.Send(new UpdateProductCommand(req, companyId));
                 return ok ? Ok(new { message = "Product updated successfully" }) : NotFound(new { message = "Product not found" });
             }
             catch (InvalidOperationException ex)

@@ -14,4 +14,9 @@ namespace Api.Models
         public required int ProductId { get; set; }
         public required int TaxId { get; set; }
     }
+    public class UpdateProductTaxRequest
+    {
+        public required int ProductId { get; set; }
+        public required int TaxId { get; set; }
+    }
 }

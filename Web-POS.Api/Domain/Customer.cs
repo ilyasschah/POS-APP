@@ -69,7 +69,7 @@ namespace Api.Domain
             City = city;
             CountryId = countryId;
             DateCreated = dateCreated;
-            DateUpdated = dateCreated; // On creation, DateUpdated is the same as DateCreated
+            DateUpdated = dateCreated; 
             Email = email;
             PhoneNumber = phoneNumber;
             IsEnabled = isEnabled;
