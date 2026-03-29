@@ -1,56 +1,70 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Api.DataBase;
 using Api.Domain;
-using Api.DataBase;
+using Microsoft.EntityFrameworkCore;
 
 namespace Api.Repository
 {
-    public class BarcodeRepository(AppDbContext db)
+    public class BarcodeRepository
     {
-        public AppDbContext _db = db;
+        private readonly AppDbContext _db;
+
+        public BarcodeRepository(AppDbContext db)
+        {
+            _db = db;
+        }
 
         public async Task<List<Barcode>> GetProductsNamesBarcodesAsync(int companyId)
         {
             return await _db.Barcodes
                 .AsNoTracking()
+                .Include(b => b.Product)
                 .Where(b => b.CompanyId == companyId)
-                .Include(BarCode => BarCode.Product)
-                .Include(BarCode => BarCode.Company)
                 .ToListAsync();
         }
+
         public async Task<Barcode?> GetBarCodeByIdQuery(int id, int companyId)
         {
             return await _db.Barcodes
                 .AsNoTracking()
-                .Where(s => s.CompanyId == companyId)
                 .Include(b => b.Product)
-                .Include(b => b.Company)
                 .FirstOrDefaultAsync(b => b.Id == id && b.CompanyId == companyId);
         }
+
         public async Task<Barcode?> GetByValueAsync(string value, int companyId)
         {
             return await _db.Barcodes
                 .AsNoTracking()
-                .Where(s => s.CompanyId == companyId) 
                 .Include(b => b.Product)
-                .Include(b => b.Company)
                 .FirstOrDefaultAsync(b => b.Value == value && b.CompanyId == companyId);
         }
-        public bool Existsbyvalue(string value, int companyId)
+
+        public async Task<List<Barcode>> GetByProductIdAsync(int productId, int companyId)
         {
-            return _db.Barcodes
-                .Where(c => c.CompanyId == companyId)
-                .Any(c => c.Value == value && c.CompanyId == companyId);
+            return await _db.Barcodes
+                .AsNoTracking()
+                .Include(b => b.Product)
+                .Where(b => b.ProductId == productId && b.CompanyId == companyId)
+                .ToListAsync();
         }
-        public async Task Add(Barcode newBarcode)
+
+        public async Task<bool> ExistsByValueAsync(string value, int companyId)
         {
-            _db.Barcodes.Add(newBarcode);
+            return await _db.Barcodes
+                .AnyAsync(c => c.Value == value && c.CompanyId == companyId);
+        }
+
+        public async Task AddAsync(Barcode newBarcode)
+        {
+            await _db.Barcodes.AddAsync(newBarcode);
             await _db.SaveChangesAsync();
-        }        
+        }
+
         public async Task UpdateAsync(Barcode barcode)
         {
             _db.Barcodes.Update(barcode);
             await _db.SaveChangesAsync();
         }
+
         public async Task DeleteAsync(Barcode barcode)
         {
             _db.Barcodes.Remove(barcode);

@@ -188,7 +188,7 @@ var app = builder.Build();
 var logger = app.Services.GetRequiredService<ILogger<Program>>();
 
 logger.LogInformation("========================================");
-logger.LogInformation("Web POS - Products.Api starting");
+logger.LogInformation("Web POS - Api starting");
 logger.LogInformation("Environment: {env}", app.Environment.EnvironmentName);
 logger.LogInformation("Content root: {root}", app.Environment.ContentRootPath);
 logger.LogInformation("========================================");

@@ -15,43 +15,82 @@ namespace Api.Controllers
         [HttpGet("[action]")]
         public async Task<ActionResult<List<BarcodeDto>>> GetAllBarCodeProductName([FromQuery] int companyId)
         {
-            if (companyId <= 0) return BadRequest("Company ID is required");
+            if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
             return Ok(await mediator.Send(new GetAllBarCodeProductNameQuery { CompanyId = companyId }));
         }
+
         [HttpGet("[action]/{id:int}")]
-        public async Task<ActionResult<BarcodeDto>> GetById(int id, [FromQuery] int companyId)
+        public async Task<ActionResult<BarcodeDto>> GetById([FromQuery] int id, [FromQuery] int companyId)
         {
-            if (companyId <= 0) return BadRequest("Company ID is required");
-            return Ok(await mediator.Send(new GetBarcodeByIdQuery(id, companyId)));
+            if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
+
+            var result = await mediator.Send(new GetBarcodeByIdQuery(id, companyId));
+            return result == null ? NotFound(new { message = "Barcode not found" }) : Ok(result);
         }
+
+        // ⭐ NEW: We need this for the Flutter Barcodes Tab!
+        [HttpGet("[action]")]
+        public async Task<ActionResult<List<BarcodeDto>>> GetByProductId([FromQuery] int productId, [FromQuery] int companyId)
+        {
+            if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
+            if (productId <= 0) return BadRequest(new { message = "Product ID is required" });
+
+            // You will need to create this Query if you don't have it yet!
+            var result = await mediator.Send(new GetBarcodesByProductIdQuery { ProductId = productId, CompanyId = companyId });
+            return Ok(result);
+        }
+
         [HttpPost("[action]")]
-        public async Task<ActionResult<BarcodeDto>> Add([FromBody] CreateBarcodeRequest createrequest, [FromQuery] int companyId)
+        public async Task<IActionResult> Add([FromBody] CreateBarcodeRequest createRequest, [FromQuery] int companyId)
         {
-            if (companyId == 0) return BadRequest("Company ID is required");
-            var command = new AddBarcodecommand(createrequest, companyId);
-            var result = await mediator.Send(command);
-            return Ok(new
+            if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
+            try
             {
-                message = $"The barcode {result.Value} has been assigned to product name {result.ProductName}"
-            });
+                var result = await mediator.Send(new AddBarcodecommand(createRequest, companyId));
+                return Ok(new
+                {
+                    message = $"The barcode '{result.Value}' has been assigned to product '{result.ProductName}'",
+                    data = result
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
+
         [HttpPatch("[action]")]
-        public async Task<ActionResult<BarcodeDto>> Update([FromBody] UpdateBarcodeRequest updaterequest, [FromQuery] int companyId)
+        public async Task<IActionResult> Update([FromBody] UpdateBarcodeRequest updateRequest, [FromQuery] int companyId)
         {
-            if (companyId <= 0) return BadRequest("Company ID is required");
-            var command = new UpdateBarcodecommand(updaterequest, companyId);
-            var result = await mediator.Send(command);
-            return Ok(new
-            { message = $"The barcode {result.Value} has been updated to product name {result.ProductName}" }
-            );
+            if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
+            try
+            {
+                var result = await mediator.Send(new UpdateBarcodecommand(updateRequest, companyId));
+                return Ok(new { message = $"The barcode '{result.Value}' has been updated for product '{result.ProductName}'" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
+
         [HttpDelete("[action]")]
-        public async Task<ActionResult<bool>> Delete(DeleteBarcodeRequest deleterequest,[FromQuery] int companyId)
+        public async Task<IActionResult> Delete([FromQuery] int id, [FromQuery] int companyId)
         {
-            if (companyId <= 0) return BadRequest("Company ID is required");
-            var command = new DeleteBarcodeByIdCommand(deleterequest, companyId);
-            var result = await mediator.Send(command);
-            return result;
+            if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
+            if (id <= 0) return BadRequest(new { message = "Barcode ID is required" });
+
+            try
+            {
+                var result = await mediator.Send(new DeleteBarcodeByIdCommand(id, companyId));
+                return result
+                    ? Ok(new { message = "Barcode deleted successfully" })
+                    : NotFound(new { message = "Barcode not found" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
     }
 }

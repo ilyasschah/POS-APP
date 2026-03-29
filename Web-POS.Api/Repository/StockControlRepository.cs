@@ -1,68 +1,58 @@
-// FILE: Products.Api.Repository\StockControlRepository.cs
-
-using Microsoft.EntityFrameworkCore;
-using Api.Domain;
 using Api.DataBase;
+using Api.Domain;
+using Microsoft.EntityFrameworkCore;
 
-namespace Api.Repository;
-
-public class StockControlRepository
+namespace Api.Repository
 {
-    public readonly AppDbContext _db;
-
-    public StockControlRepository(AppDbContext db)
+    public class StockControlRepository
     {
-        _db = db;
-    }
+        private readonly AppDbContext _db;
 
-    public async Task<List<StockControl>> GetAllAsync(int companyId)
-    {
-        return await _db.StockControls
-            .Where(sc => sc.CompanyId == companyId)
-            .AsNoTracking()
-            .Include(sc => sc.Product)
-            .Include(sc => sc.Customer)
-            .ToListAsync();
-    }
+        public StockControlRepository(AppDbContext db)
+        {
+            _db = db;
+        }
 
-    // Backwards-compatible non-scoped overload
-    public async Task<List<StockControl>> GetAllAsync()
-    {
-        return await _db.StockControls
-            .AsNoTracking()
-            .Include(sc => sc.Product)
-            .Include(sc => sc.Customer)
-            .ToListAsync();
-    }
+        public async Task<StockControl?> GetByIdAsync(int id, int companyId)
+        {
+            return await _db.StockControls
+                .Include(x => x.Product)
+                .Include(x => x.Customer)
+                .FirstOrDefaultAsync(x => x.Id == id && x.CompanyId == companyId);
+        }
 
-    public async Task<StockControl?> GetByIdAsync(int id)
-    {
-        return await _db.StockControls
-            .Include(sc => sc.Product)
-            .Include(sc => sc.Customer)
-            .FirstOrDefaultAsync(sc => sc.Id == id);
-    }
+        public async Task<StockControl?> GetByProductIdAsync(int productId, int companyId)
+        {
+            return await _db.StockControls
+                .Include(x => x.Product)
+                .Include(x => x.Customer)
+                .FirstOrDefaultAsync(x => x.ProductId == productId && x.CompanyId == companyId);
+        }
 
-    public bool ExistsForProduct(int productId)
-    {
-        return _db.StockControls.Any(sc => sc.ProductId == productId);
-    }
+        public async Task<bool> ExistsForProductAsync(int productId, int companyId)
+        {
+            return await _db.StockControls
+                .Include(x => x.Product)
+                .Include(x => x.Customer)
+                .AnyAsync(x => x.ProductId == productId && x.CompanyId == companyId);
+        }
 
-    public async Task AddAsync(StockControl entity)
-    {
-        _db.StockControls.Add(entity);
-        await _db.SaveChangesAsync();
-    }
+        public async Task AddAsync(StockControl entity)
+        {
+            await _db.StockControls.AddAsync(entity);
+            await _db.SaveChangesAsync();
+        }
 
-    public async Task UpdateAsync(StockControl entity)
-    {
-        _db.StockControls.Update(entity);
-        await _db.SaveChangesAsync();
-    }
+        public async Task UpdateAsync(StockControl entity)
+        {
+            _db.StockControls.Update(entity);
+            await _db.SaveChangesAsync();
+        }
 
-    public async Task DeleteAsync(StockControl entity)
-    {
-        _db.StockControls.Remove(entity);
-        await _db.SaveChangesAsync();
+        public async Task DeleteAsync(StockControl entity)
+        {
+            _db.StockControls.Remove(entity);
+            await _db.SaveChangesAsync();
+        }
     }
 }

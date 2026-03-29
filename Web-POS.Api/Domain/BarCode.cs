@@ -7,30 +7,44 @@ namespace Api.Domain
     public class Barcode
     {
         [Key]
-        public int Id { get; set; }
-        public int CompanyId { get; set; }
-        public string Value { get; set; }
-        public int ProductId { get; set; }
-        [ForeignKey(nameof(ProductId))]
-        public virtual Product Product { get; set; }
-        [ForeignKey(nameof(CompanyId))]
-        public virtual Company Company { get; set; }
+        public int Id { get; private set; }
+        public int CompanyId { get; private set; }
+        public string Value { get; private set; }
+        public int ProductId { get; private set; }
 
-        private Barcode(string value, int productid, int companyId)
-        {
-            Value = value;
-            ProductId = productid;
-            CompanyId = companyId;
-        }
+        [ForeignKey(nameof(ProductId))]
+        public virtual Product Product { get; private set; }
+
+        [ForeignKey(nameof(CompanyId))]
+        public virtual Company Company { get; private set; }
+
         public Barcode() { }
 
-        public static Barcode Create(string value, int productid, int companyId)
+        private Barcode(string value, int productId, int companyId)
         {
-            return new Barcode(value, productid, companyId);
+            Value = value;
+            ProductId = productId;
+            CompanyId = companyId;
         }
-        public void UpdateValue(string newvalue)
+
+        public static Barcode Create(string value, int productId, int companyId)
         {
-            Value = newvalue;
+            if (string.IsNullOrWhiteSpace(value))
+                throw new ArgumentException("Barcode value cannot be empty.", nameof(value));
+            if (productId <= 0)
+                throw new ArgumentException("ProductId must be valid.", nameof(productId));
+            if (companyId <= 0)
+                throw new ArgumentException("CompanyId must be valid.", nameof(companyId));
+
+            return new Barcode(value, productId, companyId);
+        }
+
+        public void UpdateValue(string? newValue)
+        {
+            if (!string.IsNullOrWhiteSpace(newValue))
+            {
+                Value = newValue;
+            }
         }
     }
 }

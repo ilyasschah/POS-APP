@@ -1,41 +1,45 @@
-// FILE: Products.Api.Commands\StockControlCommands\Update\UpdateStockControlCommand.cs
-
 using FluentValidation;
 using MediatR;
 using Api.Services;
 using Api.Models;
+using System.Threading;
+using System.Threading.Tasks;
 
-namespace Api.Commands.StockControlCommands.Update;
-
-public class UpdateStockControlCommand : IRequest<bool>
+namespace Api.Commands.StockControlCommands.Update
 {
-    public UpdateStockControlRequest Request { get; set; }
-
-    public UpdateStockControlCommand(UpdateStockControlRequest request)
+    public class UpdateStockControlCommand : IRequest<bool>
     {
-        Request = request;
-    }
+        public UpdateStockControlRequest Request { get; set; }
+        public int CompanyId { get; set; }
 
-    public class UpdateStockControlCommandHandler : IRequestHandler<UpdateStockControlCommand, bool>
-    {
-        private readonly StockControlService _service;
-
-        public UpdateStockControlCommandHandler(StockControlService service)
+        public UpdateStockControlCommand(UpdateStockControlRequest request, int companyId)
         {
-            _service = service;
+            Request = request;
+            CompanyId = companyId;
         }
 
-        public Task<bool> Handle(UpdateStockControlCommand request, CancellationToken cancellationToken)
+        public class UpdateStockControlCommandHandler : IRequestHandler<UpdateStockControlCommand, bool>
         {
-            return _service.Update(request.Request);
-        }
-    }
+            private readonly StockControlService _service;
 
-    public class UpdateStockControlCommandValidator : AbstractValidator<UpdateStockControlCommand>
-    {
-        public UpdateStockControlCommandValidator()
+            public UpdateStockControlCommandHandler(StockControlService service)
+            {
+                _service = service;
+            }
+
+            public async Task<bool> Handle(UpdateStockControlCommand request, CancellationToken cancellationToken)
+            {
+                return await _service.Update(request.Request, request.CompanyId);
+            }
+        }
+
+        public class UpdateStockControlCommandValidator : AbstractValidator<UpdateStockControlCommand>
         {
-            RuleFor(c => c.Request.Id).GreaterThan(0).WithMessage("Id must be valid.");
+            public UpdateStockControlCommandValidator()
+            {
+                RuleFor(c => c.Request.Id).GreaterThan(0).WithMessage("Id must be valid.");
+                RuleFor(c => c.CompanyId).GreaterThan(0).WithMessage("CompanyId is required."); 
+            }
         }
     }
 }

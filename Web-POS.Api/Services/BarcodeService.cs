@@ -1,5 +1,4 @@
-﻿using Api.Helpers;
-using Api.Domain;
+﻿using Api.Domain;
 using Api.Models;
 using Api.Repository;
 
@@ -7,38 +6,38 @@ namespace Api.Services
 {
     public class BarcodeService
     {
-        public BarcodeRepository _barcodeRepository;
-        public ProductRepository _productRepository;
+        private readonly BarcodeRepository _barcodeRepository;
+        private readonly ProductRepository _productRepository;
+
         public BarcodeService(BarcodeRepository barcodeRepository, ProductRepository productRepository)
         {
             _barcodeRepository = barcodeRepository;
             _productRepository = productRepository;
         }
+
         public async Task<BarcodeDto> Create(CreateBarcodeRequest req, int companyId)
         {
-            var cexists = _barcodeRepository.Existsbyvalue(req.Value, companyId);
-            if (cexists == true)
+            var exists = await _barcodeRepository.ExistsByValueAsync(req.Value, companyId);
+            if (exists)
                 throw new InvalidOperationException($"A Barcode with the Value '{req.Value}' already exists.");
+
             var product = await _productRepository.GetByIdAsync(req.ProductId, companyId);
             if (product == null)
                 throw new InvalidOperationException($"Product with Id '{req.ProductId}' does not exist.");
-            var newbarcode = Barcode.Create(
-                value: req.Value,
-                productid: req.ProductId,
-                companyId: companyId
-            );
-            await _barcodeRepository.Add(newbarcode);
+
+            var newBarcode = Barcode.Create(req.Value, req.ProductId, companyId);
+
+            await _barcodeRepository.AddAsync(newBarcode);
+
             return new BarcodeDto
             {
-                Id = newbarcode.Id,
-                Value = newbarcode.Value,
-                ProductId = newbarcode.ProductId,
-                ProductName = product.Name,
-                CompanyId = companyId,
-                CompanyName = newbarcode.Company?.Name
-
+                Id = newBarcode.Id,
+                Value = newBarcode.Value,
+                ProductId = newBarcode.ProductId,
+                ProductName = product.Name
             };
         }
+
         public async Task<BarcodeDto> Update(UpdateBarcodeRequest req, int companyId)
         {
             var entityToUpdate = await _barcodeRepository.GetBarCodeByIdQuery(req.Id, companyId);
@@ -46,13 +45,14 @@ namespace Api.Services
             if (entityToUpdate == null)
                 throw new InvalidOperationException("Barcode not found.");
 
-            var conflict = await _barcodeRepository.GetByValueAsync(req.NewBarcodeValue, companyId);
+            var conflict = await _barcodeRepository.GetByValueAsync(req.Value, companyId);
 
             if (conflict != null && conflict.Id != req.Id)
             {
-                throw new InvalidOperationException($"The Barcode '{req.NewBarcodeValue}' is already assigned to another product.");
+                throw new InvalidOperationException($"The Barcode '{req.Value}' is already assigned to another product.");
             }
-            entityToUpdate.UpdateValue(req.NewBarcodeValue);
+
+            entityToUpdate.UpdateValue(req.Value);
 
             await _barcodeRepository.UpdateAsync(entityToUpdate);
 
@@ -60,16 +60,17 @@ namespace Api.Services
             {
                 Id = entityToUpdate.Id,
                 Value = entityToUpdate.Value,
-                ProductName = entityToUpdate.Product?.Name,
-                CompanyName = entityToUpdate.Company?.Name
+                ProductId = entityToUpdate.ProductId,
+                ProductName = entityToUpdate.Product?.Name ?? string.Empty
             };
         }
-        public async Task<bool> Delete(DeleteBarcodeRequest req, int companyId)
+
+        public async Task<bool> Delete(int id, int companyId)
         {
-            var barcode = await _barcodeRepository.GetByValueAsync(req.Value, companyId);
+            var barcode = await _barcodeRepository.GetBarCodeByIdQuery(id, companyId);
             if (barcode == null)
-                throw new InvalidOperationException($"Barcode with Value '{req.Value}' does not exist.");
-            
+                throw new InvalidOperationException($"Barcode with Id '{id}' not found.");
+
             await _barcodeRepository.DeleteAsync(barcode);
             return true;
         }

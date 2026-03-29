@@ -3,18 +3,16 @@ using Api.Models;
 
 namespace Api.Helpers
 {
-    public class MapperBarcode_ProductName
+    public static class MapperBarcode
     {
-        public static BarcodeDto MapBarCodes(Barcode barcodes)
+        public static BarcodeDto MapToBarcodeDto(Barcode entity) 
         {
             return new BarcodeDto
             {
-                Id = barcodes.Id,
-                Value = barcodes.Value,
-                ProductId = barcodes.ProductId,
-                ProductName = barcodes.Product.Name,
-                CompanyId = barcodes.CompanyId,
-                CompanyName = barcodes.Company.Name
+                Id = entity.Id,
+                Value = entity.Value,
+                ProductId = entity.ProductId,
+                ProductName = entity.Product?.Name ?? "N/A"
             };
         }
     }

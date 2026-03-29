@@ -1,51 +1,50 @@
-// FILE: Products.Api.Services\StockControlService.cs
-
 using Api.Domain;
 using Api.Models;
 using Api.Repository;
 
-namespace Api.Services;
-
-public class StockControlService
+namespace Api.Services
 {
-    public readonly StockControlRepository _repository;
-
-    public StockControlService(StockControlRepository repository)
+    public class StockControlService
     {
-        _repository = repository;
-    }
+        public readonly StockControlRepository _repository;
 
-    public async Task<bool> Create(CreateStockControlRequest req)
-    {
-        if (_repository.ExistsForProduct(req.ProductId))
-            throw new InvalidOperationException($"A StockControl for ProductId '{req.ProductId}' already exists.");
+        public StockControlService(StockControlRepository repository)
+        {
+            _repository = repository;
+        }
 
-        var newEntity = StockControl.Create(req.ProductId);
-        newEntity.Update(req.CustomerId, req.ReorderPoint, req.PreferredQuantity, req.IsLowStockWarningEnabled, req.LowStockWarningQuantity);
+        public async Task<bool> Create(CreateStockControlRequest req, int companyId)
+        {
+            if (await _repository.ExistsForProductAsync(req.ProductId, companyId))
+                throw new InvalidOperationException($"A Stock Control rule for Product '{req.ProductId}' already exists.");
 
-        await _repository.AddAsync(newEntity);
-        return true;
-    }
+            var newEntity = StockControl.Create(req.ProductId, companyId);
 
-    public async Task<bool> Update(UpdateStockControlRequest req)
-    {
-        var entity = await _repository.GetByIdAsync(req.Id);
-        if (entity == null)
-            throw new InvalidOperationException($"A StockControl with the ID '{req.Id}' does not exist.");
+            newEntity.Update(req.CustomerId, req.ReorderPoint, req.PreferredQuantity, req.IsLowStockWarningEnabled, req.LowStockWarningQuantity);
 
-        entity.Update(req.CustomerId, req.ReorderPoint, req.PreferredQuantity, req.IsLowStockWarningEnabled, req.LowStockWarningQuantity);
+            await _repository.AddAsync(newEntity);
+            return true;
+        }
 
-        await _repository.UpdateAsync(entity);
-        return true;
-    }
+        public async Task<bool> Update(UpdateStockControlRequest req, int companyId)
+        {
+            var entity = await _repository.GetByIdAsync(req.Id, companyId)
+                         ?? throw new InvalidOperationException($"A StockControl with the ID '{req.Id}' does not exist.");
 
-    public async Task<bool> Delete(int id)
-    {
-        var entity = await _repository.GetByIdAsync(id);
-        if (entity == null)
-            return false;
+            entity.Update(req.CustomerId, req.ReorderPoint, req.PreferredQuantity, req.IsLowStockWarningEnabled, req.LowStockWarningQuantity);
 
-        await _repository.DeleteAsync(entity);
-        return true;
+            await _repository.UpdateAsync(entity);
+            return true;
+        }
+
+        public async Task<bool> Delete(int id, int companyId)
+        {
+            var entity = await _repository.GetByIdAsync(id, companyId);
+            if (entity == null)
+                return false;
+
+            await _repository.DeleteAsync(entity);
+            return true;
+        }
     }
 }

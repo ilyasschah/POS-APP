@@ -10,9 +10,13 @@
 
   <ItemGroup>
     <Compile Remove="3-Data\**" />
+    <Compile Remove="Queries\BarcodesQuery\BarcodesCommands\**" />
     <Content Remove="3-Data\**" />
+    <Content Remove="Queries\BarcodesQuery\BarcodesCommands\**" />
     <EmbeddedResource Remove="3-Data\**" />
+    <EmbeddedResource Remove="Queries\BarcodesQuery\BarcodesCommands\**" />
     <None Remove="3-Data\**" />
+    <None Remove="Queries\BarcodesQuery\BarcodesCommands\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -29,6 +33,7 @@
     <Folder Include="Commands\ApplicationPropertyCommands\Delete\" />
     <Folder Include="Commands\TaxesCommands\NewFolder1\" />
     <Folder Include="Commands\TaxesCommands\NewFolder\" />
+    <Folder Include="Queries\BarcodesQuery\Get\" />
   </ItemGroup>
 
 </Project>

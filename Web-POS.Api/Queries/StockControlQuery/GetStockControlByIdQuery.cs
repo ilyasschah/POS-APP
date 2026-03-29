@@ -1,30 +1,30 @@
-// FILE: Products.Api.Queries\StockControlQuery\GetStockControlByIdQuery.cs
-
 using MediatR;
 using Api.Helpers;
 using Api.Repository;
 using Api.Models;
 
-namespace Api.Queries.StockControlQuery;
-
-public class GetStockControlByIdQuery : IRequest<StockControlDto?>
+namespace Api.Queries.StockControlQuery
 {
-    public int Id { get; }
-    public GetStockControlByIdQuery(int id) { Id = id; }
-
-    public class GetStockControlByIdQueryHandler : IRequestHandler<GetStockControlByIdQuery, StockControlDto?>
+    public class GetStockControlByIdQuery : IRequest<StockControlDto?>
     {
-        private readonly StockControlRepository _repository;
+        public int Id { get; set; }
+        public int CompanyId { get; set; }
 
-        public GetStockControlByIdQueryHandler(StockControlRepository repository)
+        public class GetStockControlByIdQueryHandler : IRequestHandler<GetStockControlByIdQuery, StockControlDto?>
         {
-            _repository = repository;
-        }
+            private readonly StockControlRepository _repository;
 
-        public async Task<StockControlDto?> Handle(GetStockControlByIdQuery request, CancellationToken cancellationToken)
-        {
-            var entity = await _repository.GetByIdAsync(request.Id);
-            return entity == null ? null : MapperStockControl.MapToStockControlDto(entity);
+            public GetStockControlByIdQueryHandler(StockControlRepository repository)
+            {
+                _repository = repository;
+            }
+
+            public async Task<StockControlDto?> Handle(GetStockControlByIdQuery request, CancellationToken cancellationToken)
+            {
+                var entity = await _repository.GetByIdAsync(request.Id, request.CompanyId);
+                return entity == null ? null : MapperStockControl.MapToStockControlDto(entity);
+            }
         }
     }
+    
 }

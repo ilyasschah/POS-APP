@@ -1,7 +1,8 @@
 ﻿using MediatR;
-using Api.Helpers;
-using Api.Repository;
 using Api.Models;
+using Api.Repository;
+using Api.Helpers;
+
 namespace Api.Queries.BarcodesQuery.Get
 {
     public class GetAllBarCodeProductNameQuery : IRequest<List<BarcodeDto>>
@@ -10,15 +11,17 @@ namespace Api.Queries.BarcodesQuery.Get
 
         public class GetAllBarCodeProductNameQueryHandler : IRequestHandler<GetAllBarCodeProductNameQuery, List<BarcodeDto>>
         {
-            private readonly BarcodeRepository _barcodeRepository;
-            public GetAllBarCodeProductNameQueryHandler(BarcodeRepository barcodeRepository)
+            private readonly BarcodeRepository _repository;
+
+            public GetAllBarCodeProductNameQueryHandler(BarcodeRepository repository)
             {
-                _barcodeRepository = barcodeRepository;
+                _repository = repository;
             }
+
             public async Task<List<BarcodeDto>> Handle(GetAllBarCodeProductNameQuery request, CancellationToken cancellationToken)
             {
-                var barcode = await _barcodeRepository.GetProductsNamesBarcodesAsync(request.CompanyId);
-                return barcode.Select(MapperBarcode_ProductName.MapBarCodes).ToList();
+                var entities = await _repository.GetProductsNamesBarcodesAsync(request.CompanyId);
+                return entities.Select(MapperBarcode.MapToBarcodeDto).ToList();
             }
         }
     }

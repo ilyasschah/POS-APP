@@ -1,31 +1,45 @@
-// FILE: Products.Api.Commands\StockControlCommands\Delete\DeleteStockControlCommand.cs
-
+using FluentValidation;
 using MediatR;
 using Api.Services;
+using System.Threading;
+using System.Threading.Tasks;
 
-namespace Api.Commands.StockControlCommands.Delete;
-
-public class DeleteStockControlCommand : IRequest<bool>
+namespace Api.Commands.StockControlCommands.Delete
 {
-    public int Id { get; }
-
-    public DeleteStockControlCommand(int id)
+    public class DeleteStockControlCommand : IRequest<bool>
     {
-        Id = id;
-    }
+        public int Id { get; set; }
+        public int CompanyId { get; set; } // SECURED: Added CompanyId
 
-    public class DeleteStockControlCommandHandler : IRequestHandler<DeleteStockControlCommand, bool>
-    {
-        private readonly StockControlService _service;
-
-        public DeleteStockControlCommandHandler(StockControlService service)
+        public DeleteStockControlCommand(int id, int companyId)
         {
-            _service = service;
+            Id = id;
+            CompanyId = companyId;
         }
 
-        public Task<bool> Handle(DeleteStockControlCommand request, CancellationToken cancellationToken)
+        public class DeleteStockControlCommandHandler : IRequestHandler<DeleteStockControlCommand, bool>
         {
-            return _service.Delete(request.Id);
+            private readonly StockControlService _service;
+
+            public DeleteStockControlCommandHandler(StockControlService service)
+            {
+                _service = service;
+            }
+
+            public async Task<bool> Handle(DeleteStockControlCommand request, CancellationToken cancellationToken)
+            {
+                // SECURED: Passing the CompanyId down to your Service layer
+                return await _service.Delete(request.Id, request.CompanyId);
+            }
+        }
+
+        public class DeleteStockControlCommandValidator : AbstractValidator<DeleteStockControlCommand>
+        {
+            public DeleteStockControlCommandValidator()
+            {
+                RuleFor(c => c.Id).GreaterThan(0).WithMessage("Id must be valid.");
+                RuleFor(c => c.CompanyId).GreaterThan(0).WithMessage("CompanyId is required."); // Validating tenant
+            }
         }
     }
 }

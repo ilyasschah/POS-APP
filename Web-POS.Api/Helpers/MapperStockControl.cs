@@ -1,25 +1,24 @@
-// FILE: Products.Api.Helpers\MapperStockControl.cs
-
 using Api.Domain;
 using Api.Models;
 
-namespace Api.Helpers;
-
-public static class MapperStockControl
+namespace Api.Helpers
 {
-    public static StockControlDto MapToStockControlDto(StockControl entity)
+    public static class MapperStockControl
     {
-        return new StockControlDto
+        public static StockControlDto MapToStockControlDto(StockControl entity)
         {
-            Id = entity.Id,
-            ProductId = entity.ProductId,
-            ProductName = entity.Product?.Name ?? "N/A",
-            CustomerId = entity.CustomerId,
-            CustomerName = entity.Customer?.Name ?? "N/A",
-            ReorderPoint = entity.ReorderPoint,
-            PreferredQuantity = entity.PreferredQuantity,
-            IsLowStockWarningEnabled = entity.IsLowStockWarningEnabled,
-            LowStockWarningQuantity = entity.LowStockWarningQuantity
-        };
+            return new StockControlDto
+            {
+                Id = entity.Id,
+                ProductId = entity.ProductId,
+                ProductName = entity.Product?.Name ?? "N/A",
+                CustomerId = entity.CustomerId,
+                CustomerName = entity.Customer?.Name ?? "N/A",
+                ReorderPoint = entity.ReorderPoint,
+                PreferredQuantity = entity.PreferredQuantity,
+                IsLowStockWarningEnabled = entity.IsLowStockWarningEnabled,
+                LowStockWarningQuantity = entity.LowStockWarningQuantity
+            };
+        }
     }
 }
