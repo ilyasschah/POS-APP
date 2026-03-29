@@ -3,16 +3,16 @@ using Api.Models;
 
 namespace Api.Helpers
 {
-    public class MapperDocumentItemTax
+    public static class MapperDocumentItemTax
     {
-        public static DocumentItemTaxDto MapperToDocumenItemTax (DocumentItemTax documentItemTax)
+        public static DocumentItemTaxDto MapToDocumentItemTaxDto(DocumentItemTax entity)
         {
             return new DocumentItemTaxDto
             {
-                DocumentItemId = documentItemTax.DocumentItemId,
-                TaxID = documentItemTax.TaxID,
-                TaxName = documentItemTax.Tax?.Name,
-                Amount = documentItemTax.Amount
+                DocumentItemId = entity.DocumentItemId,
+                TaxId = entity.TaxId,
+                TaxName = entity.Tax?.Name ?? "N/A",
+                Amount = entity.Amount
             };
         }
     }

@@ -1,45 +1,43 @@
 ﻿using FluentValidation;
 using MediatR;
-using Api.Commands.BarcodesCommands.Update;
-using Api.Models;
 using Api.Services;
+using Api.Models;
 
 namespace Api.Commands.DocumentItemExpirationDateCommands.Update
 {
-    public class UpdateDocumentItemExpirationDateCommand : IRequest<bool>
+    public class UpdateDocumentItemExpirationDateCommand : IRequest<DocumentItemExpirationDateDto>
     {
         public UpdateDocumentItemExpirationDateRequest Request { get; set; }
-        //public int DocumentItemId { get; set; }
-        //public DateTime NewExpirationDate { get; set; }
-        public UpdateDocumentItemExpirationDateCommand(UpdateDocumentItemExpirationDateRequest request)
+        public int CompanyId { get; set; }
+
+        public UpdateDocumentItemExpirationDateCommand(UpdateDocumentItemExpirationDateRequest request, int companyId)
         {
             Request = request;
+            CompanyId = companyId;
         }
-        public class UpdateDocumentItemExpirationDateCommandHandler : IRequestHandler<UpdateDocumentItemExpirationDateCommand, bool>
+
+        public class UpdateDocumentItemExpirationDateCommandHandler : IRequestHandler<UpdateDocumentItemExpirationDateCommand, DocumentItemExpirationDateDto>
         {
-            private readonly DocumentItemExpirationDateService _documentItemExpirationDateService;
-            public UpdateDocumentItemExpirationDateCommandHandler(DocumentItemExpirationDateService documentItemExpirationDateService)
+            private readonly DocumentItemExpirationDateService _service;
+
+            public UpdateDocumentItemExpirationDateCommandHandler(DocumentItemExpirationDateService service)
             {
-                _documentItemExpirationDateService = documentItemExpirationDateService;
+                _service = service;
             }
-            public async Task<bool> Handle(UpdateDocumentItemExpirationDateCommand request, CancellationToken cancellationToken)
+
+            public async Task<DocumentItemExpirationDateDto> Handle(UpdateDocumentItemExpirationDateCommand request, CancellationToken cancellationToken)
             {
-                try
-                {
-                    return await _documentItemExpirationDateService.UpdateByDocumentItemId(request.Request.DocumentItemId, request.Request.ExpirationDate);
-                }
-                catch (Exception)
-                {
-                    throw;
-                }
+                return await _service.Update(request.Request, request.CompanyId);
             }
-            public class UpdateDocumentItemExpirationDateCommandValidator : AbstractValidator<UpdateDocumentItemExpirationDateCommand>
+        }
+
+        public class UpdateDocumentItemExpirationDateCommandValidator : AbstractValidator<UpdateDocumentItemExpirationDateCommand>
+        {
+            public UpdateDocumentItemExpirationDateCommandValidator()
             {
-                public UpdateDocumentItemExpirationDateCommandValidator()
-                {
-                    RuleFor(o => o.Request.ExpirationDate).NotNull().NotEmpty().WithMessage("Expiration Date mut not be null.");
-                    RuleFor(pid => pid.Request.DocumentItemId).NotNull().NotEmpty().WithMessage("Document Item ID must be entred ");
-                }
+                RuleFor(c => c.Request.DocumentItemId).GreaterThan(0);
+                RuleFor(c => c.Request.ExpirationDate).NotEmpty();
+                RuleFor(c => c.CompanyId).GreaterThan(0);
             }
         }
     }

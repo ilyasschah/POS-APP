@@ -85,8 +85,10 @@ namespace Api.DataBase
             });
 
             b.Entity<DocumentItemTax>(e => 
-                e.Property(x => x.Amount).HasPrecision(18, 2)
-            );
+            {
+                e.Property(x => x.Amount).HasPrecision(18, 2);
+                e.HasKey(dit => new { dit.DocumentItemId, dit.TaxId });
+            });
 
             b.Entity<Payment>(e =>
             {

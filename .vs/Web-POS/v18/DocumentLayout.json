@@ -90,7 +90,7 @@
         "Y": 0,
         "Width": 1022,
         "Height": 1062,
-        "WindowState": 2
+        "WindowState": 0
       },
       "DocumentGroups": [
         {
@@ -129,7 +129,7 @@
               "RelativeDocumentMoniker": "Web-POS.Api\\Models\\CustomerDto.cs",
               "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Models\\CustomerDto.cs",
               "RelativeToolTip": "Web-POS.Api\\Models\\CustomerDto.cs",
-              "ViewState": "AgIAAA0AAAAAAAAAAAAzwCQAAAAIAAAAAAAAAA==",
+              "ViewState": "AgIAAA4AAAAAAAAAAAAuwCQAAAAIAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-03-26T17:27:10.349Z",
               "EditorCaption": ""

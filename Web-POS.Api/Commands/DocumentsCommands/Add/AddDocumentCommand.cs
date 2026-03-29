@@ -5,7 +5,7 @@ using Api.Services;
 
 namespace Api.Commands.DocumentsCommands.Add
 {
-    public class AddDocumentCommand : IRequest<bool>
+    public class AddDocumentCommand : IRequest<DocumentDto>
     {
         public CreateDocumentRequest Request { get; }
         public int CompanyId { get; }
@@ -16,7 +16,7 @@ namespace Api.Commands.DocumentsCommands.Add
             CompanyId = companyId;
         }
 
-        public class AddDocumentCommandHandler : IRequestHandler<AddDocumentCommand, bool>
+        public class AddDocumentCommandHandler : IRequestHandler<AddDocumentCommand, DocumentDto>
         {
             private readonly DocumentService _service;
 
@@ -25,7 +25,7 @@ namespace Api.Commands.DocumentsCommands.Add
                 _service = service;
             }
 
-            public async Task<bool> Handle(AddDocumentCommand command, CancellationToken cancellationToken)
+            public async Task<DocumentDto> Handle(AddDocumentCommand command, CancellationToken cancellationToken)
             {
                 return await _service.CreateAsync(command.Request, command.CompanyId);
             }

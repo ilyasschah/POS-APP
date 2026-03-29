@@ -254,12 +254,17 @@
       {
         "Name": "id",
         "Type": "System.Int32",
-        "IsRequired": true
+        "IsRequired": false
       },
       {
         "Name": "companyId",
         "Type": "System.Int32",
         "IsRequired": false
+      },
+      {
+        "Name": "id",
+        "Type": "",
+        "IsRequired": true
       }
     ],
     "ReturnTypes": [
@@ -1204,87 +1209,62 @@
     ]
   },
   {
-    "ContainingType": "Api.Controllers.DocumentItemExpirationDateController",
+    "ContainingType": "Api.Controllers.DocumentItemExpirationDatesController",
     "Method": "Add",
-    "RelativePath": "api/DocumentItemExpirationDate/Add",
+    "RelativePath": "api/DocumentItemExpirationDates/Add",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "DocumentItemId",
-        "Type": "System.Int32",
-        "IsRequired": false
-      },
-      {
-        "Name": "ExpirationDate",
-        "Type": "System.DateTime",
-        "IsRequired": false
-      }
-    ],
-    "ReturnTypes": [
-      {
-        "Type": "Api.Models.DocumentItemExpirationDateDto",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
-  },
-  {
-    "ContainingType": "Api.Controllers.DocumentItemExpirationDateController",
-    "Method": "Delete",
-    "RelativePath": "api/DocumentItemExpirationDate/Delete/{id}",
-    "HttpMethod": "DELETE",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "id",
-        "Type": "System.Int32",
-        "IsRequired": false
-      },
-      {
-        "Name": "id",
-        "Type": "",
+        "Name": "req",
+        "Type": "Api.Models.CreateDocumentItemExpirationDateRequest",
         "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Api.Controllers.DocumentItemExpirationDateController",
-    "Method": "GetAll",
-    "RelativePath": "api/DocumentItemExpirationDate/GetAll",
-    "HttpMethod": "GET",
+    "ContainingType": "Api.Controllers.DocumentItemExpirationDatesController",
+    "Method": "Delete",
+    "RelativePath": "api/DocumentItemExpirationDates/Delete",
+    "HttpMethod": "DELETE",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
-    "ReturnTypes": [
+    "Parameters": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Api.Models.DocumentItemExpirationDateDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
+        "Name": "documentItemId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
-    ]
+    ],
+    "ReturnTypes": []
   },
   {
-    "ContainingType": "Api.Controllers.DocumentItemExpirationDateController",
-    "Method": "GetById",
-    "RelativePath": "api/DocumentItemExpirationDate/GetById",
+    "ContainingType": "Api.Controllers.DocumentItemExpirationDatesController",
+    "Method": "Get",
+    "RelativePath": "api/DocumentItemExpirationDates/Get",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "id",
+        "Name": "documentItemId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "companyId",
         "Type": "System.Int32",
         "IsRequired": false
       }
@@ -1302,21 +1282,21 @@
     ]
   },
   {
-    "ContainingType": "Api.Controllers.DocumentItemExpirationDateController",
+    "ContainingType": "Api.Controllers.DocumentItemExpirationDatesController",
     "Method": "Update",
-    "RelativePath": "api/DocumentItemExpirationDate/Update",
-    "HttpMethod": "POST",
+    "RelativePath": "api/DocumentItemExpirationDates/Update",
+    "HttpMethod": "PATCH",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "DocumentItemId",
-        "Type": "System.Int32",
-        "IsRequired": false
+        "Name": "req",
+        "Type": "Api.Models.UpdateDocumentItemExpirationDateRequest",
+        "IsRequired": true
       },
       {
-        "Name": "ExpirationDate",
-        "Type": "System.DateTime",
+        "Name": "companyId",
+        "Type": "System.Int32",
         "IsRequired": false
       }
     ],
@@ -1484,9 +1464,9 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Api.Controllers.DocumentItemTaxController",
+    "ContainingType": "Api.Controllers.DocumentItemTaxesController",
     "Method": "Add",
-    "RelativePath": "api/DocumentItemTax/Add",
+    "RelativePath": "api/DocumentItemTaxes/Add",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
@@ -1495,48 +1475,58 @@
         "Name": "req",
         "Type": "Api.Models.CreateDocumentItemTaxRequest",
         "IsRequired": true
-      }
-    ],
-    "ReturnTypes": [
+      },
       {
-        "Type": "Api.Models.DocumentItemTaxDto",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
-  },
-  {
-    "ContainingType": "Api.Controllers.DocumentItemTaxController",
-    "Method": "Delete",
-    "RelativePath": "api/DocumentItemTax/Delete/{id}",
-    "HttpMethod": "DELETE",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "id",
+        "Name": "companyId",
         "Type": "System.Int32",
-        "IsRequired": true
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Api.Controllers.DocumentItemTaxController",
+    "ContainingType": "Api.Controllers.DocumentItemTaxesController",
+    "Method": "Delete",
+    "RelativePath": "api/DocumentItemTaxes/Delete",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "documentItemId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "taxId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Api.Controllers.DocumentItemTaxesController",
     "Method": "GetByDocumentItemId",
-    "RelativePath": "api/DocumentItemTax/GetByDocumentItemId/{documentitemid}",
+    "RelativePath": "api/DocumentItemTaxes/GetByDocumentItemId",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "documentitemid",
+        "Name": "documentItemId",
         "Type": "System.Int32",
-        "IsRequired": true
+        "IsRequired": false
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
@@ -1552,21 +1542,57 @@
     ]
   },
   {
-    "ContainingType": "Api.Controllers.DocumentItemTaxController",
-    "Method": "Update",
-    "RelativePath": "api/DocumentItemTax/Update",
-    "HttpMethod": "POST",
+    "ContainingType": "Api.Controllers.DocumentItemTaxesController",
+    "Method": "GetByIds",
+    "RelativePath": "api/DocumentItemTaxes/GetByIds",
+    "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "DocumentItemId",
+        "Name": "documentItemId",
         "Type": "System.Int32",
         "IsRequired": false
       },
       {
-        "Name": "Amount",
-        "Type": "System.Decimal",
+        "Name": "taxId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "Api.Models.DocumentItemTaxDto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "Api.Controllers.DocumentItemTaxesController",
+    "Method": "Update",
+    "RelativePath": "api/DocumentItemTaxes/Update",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "req",
+        "Type": "Api.Models.UpdateDocumentItemTaxRequest",
+        "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
         "IsRequired": false
       }
     ],

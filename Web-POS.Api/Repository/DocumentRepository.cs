@@ -56,10 +56,11 @@ namespace Api.Repository
                 .AnyAsync(d => d.Number.ToLower() == number.ToLower() && d.CompanyId == companyId);
         }
 
-        public async Task AddAsync(Document entity)
+        public async Task<bool> AddAsync(Document entity)
         {
             _db.Documents.Add(entity);
             await _db.SaveChangesAsync();
+            return true;
         }
 
         public async Task<bool> UpdateAsync(Document entity)

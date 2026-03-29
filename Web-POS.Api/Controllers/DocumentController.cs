@@ -41,13 +41,17 @@ namespace Api.Controllers
         [HttpPost("[action]")]
         public async Task<IActionResult> Add([FromBody] CreateDocumentRequest req, [FromQuery] int companyId)
         {
-            if (companyId <= 0) return BadRequest("Company ID is required");
+            if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
 
-            var result = await mediator.Send(new AddDocumentCommand(req, companyId));
-
-            return result
-                ? Ok(new { Message = "Document created" })
-                : BadRequest(new { Message = "Failed to create document" });
+            try
+            {
+                var result = await mediator.Send(new AddDocumentCommand(req, companyId));
+                return Ok(new { message = "Document created", data = result });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         [HttpPatch("[action]")]

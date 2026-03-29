@@ -2,17 +2,19 @@
 {
     public class DocumentItemExpirationDateDto
     {
-        public int? DocumentItemId { get; set; }
-        public DateTime? ExpirationDate { get; set; }
+        public int DocumentItemId { get; set; }
+        public DateTime ExpirationDate { get; set; }
     }
+
     public class CreateDocumentItemExpirationDateRequest
     {
-        public int DocumentItemId { get; set; }
-        public DateTime ExpirationDate { get; set; } = DateTime.UtcNow;
+        public required int DocumentItemId { get; set; }
+        public required DateTime ExpirationDate { get; set; }
     }
+
     public class UpdateDocumentItemExpirationDateRequest
     {
-        public int DocumentItemId { get; set; }
-        public DateTime ExpirationDate { get; set; } = DateTime.UtcNow;
+        public required int DocumentItemId { get; set; }
+        public required DateTime ExpirationDate { get; set; }
     }
 }

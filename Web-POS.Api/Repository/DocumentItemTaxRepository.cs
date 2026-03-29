@@ -1,40 +1,59 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Api.DataBase;
+﻿using Api.DataBase;
 using Api.Domain;
+using Microsoft.EntityFrameworkCore;
 
 namespace Api.Repository
 {
-    public class DocumentItemTaxRepository(AppDbContext db)
+    public class DocumentItemTaxRepository
     {
-        public AppDbContext _db = db;
-        public async Task<List<DocumentItemTax>> GetByDocumentItemIdAsync(int documentItemId)
+        private readonly AppDbContext _db;
+
+        public DocumentItemTaxRepository(AppDbContext db)
+        {
+            _db = db;
+        }
+
+        public async Task<List<DocumentItemTax>> GetByDocumentItemIdAsync(int documentItemId, int companyId)
         {
             return await _db.DocumentItemTaxes
-                .Where(dit => dit.DocumentItemId == documentItemId)
-                .Include(dit => dit.DocumentItem)
-                .Include(tax => tax.Tax)
+                .AsNoTracking()
+                .Include(dit => dit.Tax)
+                .Where(dit => dit.DocumentItemId == documentItemId && dit.CompanyId == companyId)
                 .ToListAsync();
         }
-        public async Task<DocumentItemTax?> Getbydocumentidtoupdated(int docdocumentItemId)
+
+        public async Task<DocumentItemTax?> GetByIdsAsync(int documentItemId, int taxId, int companyId)
         {
             return await _db.DocumentItemTaxes
-                .FirstOrDefaultAsync(dit => dit.DocumentItemId == docdocumentItemId);
+                .AsNoTracking()
+                .Include(dit => dit.Tax)
+                .FirstOrDefaultAsync(dit =>
+                    dit.DocumentItemId == documentItemId &&
+                    dit.TaxId == taxId &&
+                    dit.CompanyId == companyId);
         }
-        public bool ExistsByDocumentItemId(int documentItemId)
+
+        public async Task<bool> ExistsAsync(int documentItemId, int taxId, int companyId)
         {
-            return _db.DocumentItemTaxes
-                .Any(dit => dit.DocumentItemId == documentItemId);
+            return await _db.DocumentItemTaxes
+                .AnyAsync(dit =>
+                    dit.DocumentItemId == documentItemId &&
+                    dit.TaxId == taxId &&
+                    dit.CompanyId == companyId);
         }
+
         public async Task AddAsync(DocumentItemTax newDocumentItemTax)
         {
-            _db.DocumentItemTaxes.Add(newDocumentItemTax);
+            await _db.DocumentItemTaxes.AddAsync(newDocumentItemTax);
             await _db.SaveChangesAsync();
         }
+
         public async Task UpdateAsync(DocumentItemTax documentItemTax)
         {
             _db.DocumentItemTaxes.Update(documentItemTax);
             await _db.SaveChangesAsync();
         }
+
         public async Task DeleteAsync(DocumentItemTax documentItemTax)
         {
             _db.DocumentItemTaxes.Remove(documentItemTax);

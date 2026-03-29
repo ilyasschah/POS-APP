@@ -1,15 +1,16 @@
 ﻿using Api.Domain;
 using Api.Models;
+
 namespace Api.Helpers
 {
-    public class MapperDocumentItemExpirationDate
+    public static class MapperDocumentItemExpirationDate
     {
-        public static DocumentItemExpirationDateDto MapperToDocumentItemExpirationDate (DocumentItemExpirationDate documentItemExpirationDate)
+        public static DocumentItemExpirationDateDto MapToDocumentItemExpirationDateDto(DocumentItemExpirationDate entity)
         {
             return new DocumentItemExpirationDateDto
             {
-                DocumentItemId = documentItemExpirationDate.DocumentItemId,
-                ExpirationDate = documentItemExpirationDate.ExpirationDate
+                DocumentItemId = entity.DocumentItemId,
+                ExpirationDate = entity.ExpirationDate
             };
         }
     }

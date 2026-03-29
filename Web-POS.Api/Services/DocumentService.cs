@@ -15,7 +15,7 @@ namespace Api.Services
             _documentRepository = documentRepository;
         }
 
-        public async Task<bool> CreateAsync(CreateDocumentRequest request, int companyId)
+        public async Task<DocumentDto> CreateAsync(CreateDocumentRequest request, int companyId)
         {
             var document = Document.Create(
                 request.Number,
@@ -41,7 +41,10 @@ namespace Api.Services
             );
 
             await _documentRepository.AddAsync(document);
-            return true;
+            return new DocumentDto
+            {
+                Id = document.Id,
+            };
         }
 
         public async Task<bool> UpdateAsync(UpdateDocumentRequest request, int companyId)

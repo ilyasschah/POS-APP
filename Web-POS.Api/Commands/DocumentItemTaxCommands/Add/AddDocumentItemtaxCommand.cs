@@ -1,45 +1,44 @@
-﻿using Api.Commands.DocumentItemCommands.Add;
-using FluentValidation;
+﻿using FluentValidation;
 using MediatR;
-using Api.Models;
 using Api.Services;
+using Api.Models;
 
 namespace Api.Commands.DocumentItemTaxCommands.Add
 {
-    public class AddDocumentItemtaxCommand : IRequest<bool>
+    public class AddDocumentItemTaxCommand : IRequest<DocumentItemTaxDto>
     {
         public CreateDocumentItemTaxRequest Request { get; set; }
-        public AddDocumentItemtaxCommand(CreateDocumentItemTaxRequest createDocumentItemTaxRequest)
+        public int CompanyId { get; set; }
+
+        public AddDocumentItemTaxCommand(CreateDocumentItemTaxRequest request, int companyId)
         {
-            Request = createDocumentItemTaxRequest;
+            Request = request;
+            CompanyId = companyId;
         }
-        public class AddDocumentItemtaxCommandHandler : IRequestHandler<AddDocumentItemtaxCommand, bool>
+
+        public class AddDocumentItemTaxCommandHandler : IRequestHandler<AddDocumentItemTaxCommand, DocumentItemTaxDto>
         {
-            private readonly DocumentItemTaxService _documentItemTaxService;
-            public AddDocumentItemtaxCommandHandler(DocumentItemTaxService documentItemTaxService)
+            private readonly DocumentItemTaxService _service;
+
+            public AddDocumentItemTaxCommandHandler(DocumentItemTaxService service)
             {
-                _documentItemTaxService = documentItemTaxService;
-            }
-            public Task<bool> Handle(AddDocumentItemtaxCommand request, CancellationToken cancellationToken)
-            {
-                try
-                {
-                    return _documentItemTaxService.Create(request.Request);
-                }
-                catch (Exception)
-                {
-                    throw;
-                }
-            }
-            public class AddDocumentItemCommandValidator : AbstractValidator<AddDocumentItemtaxCommand>
-            {
-                public AddDocumentItemCommandValidator()
-                {
-                    RuleFor(o => o.Request.DocumentItemId).NotNull().NotEmpty().WithMessage("document ID must not be null.");
-                    RuleFor(pid => pid.Request.TaxId).NotNull().NotEmpty().WithMessage("product IDmust not be null");
-                }
+                _service = service;
             }
 
+            public async Task<DocumentItemTaxDto> Handle(AddDocumentItemTaxCommand request, CancellationToken cancellationToken)
+            {
+                return await _service.Create(request.Request, request.CompanyId);
+            }
+        }
+
+        public class AddDocumentItemTaxCommandValidator : AbstractValidator<AddDocumentItemTaxCommand>
+        {
+            public AddDocumentItemTaxCommandValidator()
+            {
+                RuleFor(c => c.Request.DocumentItemId).GreaterThan(0);
+                RuleFor(c => c.Request.TaxId).GreaterThan(0);
+                RuleFor(c => c.CompanyId).GreaterThan(0);
+            }
         }
     }
 }
