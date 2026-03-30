@@ -1,30 +1,56 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Api.Commands.ZReportCommands.Add;
-using Api.Commands.ZReportCommands.Delete;
-using Api.Queries.ZReportQuery;
-using Api.Models;
+using Api.Commands.ZReportCommands;
+using Api.Queries.ZReportQueries;
 
 namespace Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ZReportController (IMediator mediator): ControllerBase
+    public class ZReportsController : ControllerBase
     {
-        [HttpGet("[action]")]
-        public async Task<ActionResult<List<ZReportDto>>> GetAll()
+        private readonly IMediator _mediator;
+
+        public ZReportsController(IMediator mediator)
         {
-            return Ok(await mediator.Send(new GetAllZReportsQuery()));
+            _mediator = mediator;
         }
-        [HttpPost("[action]")]
-        public async Task<ActionResult<bool>> Add(CreateZReportRequest zReportRequest)
+
+        [HttpGet("GetById")]
+        public async Task<IActionResult> GetById([FromQuery] int id, [FromQuery] int companyId)
         {
-            return Ok(await mediator.Send(new AddZReportCommand(zReportRequest)));
+            var result = await _mediator.Send(new GetZReportByIdQuery(id, companyId));
+            if (result == null) return NotFound("Z-Report not found.");
+            return Ok(result);
         }
-        [HttpDelete("delete/{id}")]
-        public async Task<ActionResult<bool>> Delete(int id)
+
+        [HttpGet("GetAll")]
+        public async Task<IActionResult> GetAll([FromQuery] int companyId)
         {
-            return Ok(await mediator.Send(new DeleteZReportCommand(id)));
+            var result = await _mediator.Send(new GetAllZReportsQuery(companyId));
+            return Ok(result);
+        }
+
+        [HttpGet("GetLast")]
+        public async Task<IActionResult> GetLast([FromQuery] int companyId)
+        {
+            var result = await _mediator.Send(new GetLastZReportQuery(companyId));
+            if (result == null) return NotFound("No Z-Reports found for this company.");
+            return Ok(result);
+        }
+
+        [HttpPost("Generate")]
+        public async Task<IActionResult> Generate([FromQuery] int companyId, [FromQuery] int userId)
+        {
+            try
+            {
+                var result = await _mediator.Send(new GenerateZReportCommand(companyId, userId));
+                return Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
     }
 }

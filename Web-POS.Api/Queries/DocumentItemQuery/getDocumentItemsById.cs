@@ -6,12 +6,12 @@ using FluentValidation;
 
 namespace Api.Queries.DocumentItemQuery
 {
-    public class GetDocumentItemsByIdQuery : IRequest<DocumentItemDto>
+    public class GetDocumentItemsByIdQuery : IRequest<DocumentItemDto?>
     {
         public int Id { get; set; }
         public int CompanyId { get; set; }
     }
-    public class GetDocumentItemsByIdQueryHandler : IRequestHandler<GetDocumentItemsByIdQuery, DocumentItemDto>
+    public class GetDocumentItemsByIdQueryHandler : IRequestHandler<GetDocumentItemsByIdQuery, DocumentItemDto?>
     {
         private readonly DocumentItemRepository _documentItemRepository;
         public GetDocumentItemsByIdQueryHandler(DocumentItemRepository documentItemRepository)

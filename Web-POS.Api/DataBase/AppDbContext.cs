@@ -51,7 +51,7 @@ namespace Api.DataBase
         public DbSet<DocumentItemTax> DocumentItemTaxes { get; set; }
         public DbSet<DocumentItemExpirationDate> DocumentItemExpirationDates { get; set; }
         public DbSet<DocumentsCounter> DocumentsCounter { get; set; }
-
+        public DbSet<ZReportPaymentSummary> ZReportPaymentSummaries { get; internal set; }
 
         protected override void ConfigureConventions(ModelConfigurationBuilder cfg)
         {

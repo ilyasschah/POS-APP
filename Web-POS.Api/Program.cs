@@ -113,7 +113,7 @@ builder.Services.AddScoped<FloorPlanTableService>();
 builder.Services.AddScoped<StartingCashService>();
 builder.Services.AddScoped<StockService>();
 builder.Services.AddScoped<WarehouseService>();
-builder.Services.AddScoped<ZReportservice>();
+builder.Services.AddScoped<ZReportService>();
 builder.Services.AddScoped<PaymentTypeService>();
 builder.Services.AddScoped<PaymentService>();
 builder.Services.AddScoped<DocumentService>();

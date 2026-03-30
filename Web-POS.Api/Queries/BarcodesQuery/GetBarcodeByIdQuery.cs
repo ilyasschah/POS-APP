@@ -3,7 +3,7 @@ using Api.Models;
 using Api.Repository;
 using Api.Helpers;
 
-namespace Api.Queries.BarcodesQuery.Get
+namespace Api.Queries.BarcodesQuery
 {
     public class GetBarcodeByIdQuery : IRequest<BarcodeDto?>
     {

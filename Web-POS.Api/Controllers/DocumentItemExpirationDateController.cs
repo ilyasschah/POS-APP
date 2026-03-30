@@ -1,10 +1,10 @@
-﻿using MediatR;
-using Microsoft.AspNetCore.Mvc;
-using Api.Commands.DocumentItemExpirationDateCommands.Add;
-using Api.Commands.DocumentItemExpirationDateCommands.Update;
+﻿using Api.Commands.DocumentItemExpirationDateCommands.Add;
 using Api.Commands.DocumentItemExpirationDateCommands.Delete;
-using Api.Queries.DocumentItemExpirationDateQuery.Get;
+using Api.Commands.DocumentItemExpirationDateCommands.Update;
 using Api.Models;
+using Api.Queries.DocumentItemExpirationDateQuery;
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers
 {

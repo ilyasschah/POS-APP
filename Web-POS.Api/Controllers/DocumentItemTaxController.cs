@@ -1,10 +1,10 @@
-﻿using MediatR;
-using Microsoft.AspNetCore.Mvc;
-using Api.Commands.DocumentItemTaxCommands.Add;
-using Api.Commands.DocumentItemTaxCommands.Update;
+﻿using Api.Commands.DocumentItemTaxCommands.Add;
 using Api.Commands.DocumentItemTaxCommands.Delete;
-using Api.Queries.DocumentItemTaxQuery.Get;
+using Api.Commands.DocumentItemTaxCommands.Update;
 using Api.Models;
+using Api.Queries.DocumentItemTaxQuery;
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers
 {

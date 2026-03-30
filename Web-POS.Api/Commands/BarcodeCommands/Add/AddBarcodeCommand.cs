@@ -3,7 +3,7 @@ using MediatR;
 using Api.Services;
 using Api.Models;
 
-namespace Api.Commands.BarcodesCommands.Add
+namespace Api.Commands.BarcodeCommands.Add
 {
     public class AddBarcodecommand : IRequest<BarcodeDto>
     {

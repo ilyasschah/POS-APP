@@ -2,7 +2,7 @@
 using Api.Models;
 using Api.Services;
 
-namespace Api.Queries.DocumentItemExpirationDateQuery.Get
+namespace Api.Queries.DocumentItemExpirationDateQuery
 {
     public class GetDocumentItemExpirationDateQuery : IRequest<DocumentItemExpirationDateDto?>
     {

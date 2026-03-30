@@ -1,7 +1,6 @@
+using Api.Services;
 using FluentValidation;
 using MediatR;
-using Api.Commands.BarcodesCommands.Delete;
-using Api.Services;
 
 namespace Api.Commands.CompanyCommands.Delete;
 

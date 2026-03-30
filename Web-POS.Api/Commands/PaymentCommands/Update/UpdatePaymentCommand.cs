@@ -1,26 +1,22 @@
 ﻿using FluentValidation;
 using MediatR;
-using System.Threading;
-using System.Threading.Tasks;
 using Api.Services;
 using Api.Models;
 
 namespace Api.Commands.PaymentCommands.Update
 {
-    public class UpdatePaymentCommand : IRequest<bool>
+    public class UpdatePaymentCommand : IRequest<PaymentDto>
     {
-        public int Id { get; set; }
+        public UpdatePaymentRequest Request { get; set; }
         public int CompanyId { get; set; }
-        public UpdatePaymentRequest Request { get; }
 
-        public UpdatePaymentCommand(int id, UpdatePaymentRequest request, int companyId) // <-- Add this constructor
+        public UpdatePaymentCommand(UpdatePaymentRequest request, int companyId)
         {
-            Id = id;
             Request = request;
             CompanyId = companyId;
         }
 
-        public class UpdatePaymentCommandHandler : IRequestHandler<UpdatePaymentCommand, bool>
+        public class UpdatePaymentCommandHandler : IRequestHandler<UpdatePaymentCommand, PaymentDto>
         {
             private readonly PaymentService _service;
 
@@ -29,9 +25,9 @@ namespace Api.Commands.PaymentCommands.Update
                 _service = service;
             }
 
-            public Task<bool> Handle(UpdatePaymentCommand command, CancellationToken cancellationToken)
+            public async Task<PaymentDto> Handle(UpdatePaymentCommand request, CancellationToken cancellationToken)
             {
-                return _service.Update(command.Id, command.Request, command.CompanyId);
+                return await _service.Update(request.Request, request.CompanyId);
             }
         }
 
@@ -39,8 +35,9 @@ namespace Api.Commands.PaymentCommands.Update
         {
             public UpdatePaymentCommandValidator()
             {
-                RuleFor(c => c.Id).GreaterThan(0);
+                RuleFor(c => c.Request.Id).GreaterThan(0);
                 RuleFor(c => c.Request.Amount).GreaterThanOrEqualTo(0);
+                RuleFor(c => c.Request.Date).NotEmpty();
                 RuleFor(c => c.CompanyId).GreaterThan(0);
             }
         }

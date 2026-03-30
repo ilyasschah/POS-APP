@@ -3,40 +3,92 @@
   "WorkspaceRootPath": "D:\\repos\\Web-POS\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\commands\\documentitemexpirationdatecommands\\update\\updatedocumentitemexpirationdatecommand.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\commands\\documentitemexpirationdatecommands\\update\\updatedocumentitemexpirationdatecommand.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\services\\zreportservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\services\\zreportservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\repository\\paymentrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\repository\\paymentrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\queries\\paymentquery\\getunreportedpaymentsquery.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\queries\\paymentquery\\getunreportedpaymentsquery.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\helpers\\mapperpayment.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\helpers\\mapperpayment.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\models\\paymentdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\models\\paymentdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\controllers\\paymentcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\controllers\\paymentcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\domain\\zreportpaymentsummary.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\domain\\zreportpaymentsummary.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\queries\\documentitemquery\\getdocumentitemsbyid.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\queries\\documentitemquery\\getdocumentitemsbyid.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\controllers\\documentitemtaxcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\controllers\\documentitemtaxcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\controllers\\documentitemexpirationdatecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\controllers\\documentitemexpirationdatecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\commands\\documentitemexpirationdatecommands\\add\\adddocumentitemexpirationdatecommand.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\commands\\documentitemexpirationdatecommands\\add\\adddocumentitemexpirationdatecommand.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\controllers\\barcodecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\controllers\\barcodecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\commands\\documentitemexpirationdatecommands\\delete\\deletedocumentitemexpirationdatecommand.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\commands\\documentitemexpirationdatecommands\\delete\\deletedocumentitemexpirationdatecommand.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\commands\\companycommands\\delete\\deletecompanycommand.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\commands\\companycommands\\delete\\deletecompanycommand.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\queries\\documentitemexpirationdatequery\\getdocumentitemexpirationdatequery.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\queries\\documentitemexpirationdatequery\\getdocumentitemexpirationdatequery.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\controllers\\zreportcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\controllers\\zreportcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\repository\\documentitemexpirationdaterepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\repository\\documentitemexpirationdaterepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\commands\\zreportcommands\\add\\generatezreportcommand.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\commands\\zreportcommands\\add\\generatezreportcommand.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\services\\documentitemexpirationdateservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\services\\documentitemexpirationdateservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\queries\\zreportquery\\getzreportbyidquery.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\queries\\zreportquery\\getzreportbyidquery.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\helpers\\mapperdocumentitemexpirationdate.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\helpers\\mapperdocumentitemexpirationdate.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\queries\\zreportquery\\getlastzreportquery.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\queries\\zreportquery\\getlastzreportquery.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\models\\documentitemexpirationdatedto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\models\\documentitemexpirationdatedto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\queries\\zreportquery\\getallzreportsquery.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\queries\\zreportquery\\getallzreportsquery.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\repository\\zreportrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\repository\\zreportrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\database\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\database\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\helpers\\mapperzreport.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\helpers\\mapperzreport.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\models\\zreportdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\models\\zreportdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\domain\\zreport.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\domain\\zreport.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\models\\customerdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -90,110 +142,266 @@
       "DocumentGroups": [
         {
           "DockedWidth": 235,
-          "SelectedChildIndex": 3,
+          "SelectedChildIndex": 16,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "AddDocumentItemExpirationDateCommand.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Commands\\DocumentItemExpirationDateCommands\\Add\\AddDocumentItemExpirationDateCommand.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Commands\\DocumentItemExpirationDateCommands\\Add\\AddDocumentItemExpirationDateCommand.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Commands\\DocumentItemExpirationDateCommands\\Add\\AddDocumentItemExpirationDateCommand.cs",
-              "RelativeToolTip": "Web-POS.Api\\Commands\\DocumentItemExpirationDateCommands\\Add\\AddDocumentItemExpirationDateCommand.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAwwBkAAAANAAAAAAAAAA==",
+              "DocumentIndex": 4,
+              "Title": "PaymentDto.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Models\\PaymentDto.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Models\\PaymentDto.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Models\\PaymentDto.cs",
+              "RelativeToolTip": "Web-POS.Api\\Models\\PaymentDto.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAnAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-29T15:39:05.074Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "DocumentItemExpirationDateController.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\DocumentItemExpirationDateController.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Controllers\\DocumentItemExpirationDateController.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\DocumentItemExpirationDateController.cs",
-              "RelativeToolTip": "Web-POS.Api\\Controllers\\DocumentItemExpirationDateController.cs",
-              "ViewState": "AgIAAAMAAAAAAAAAAAAAABgAAABJAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-29T15:37:52.205Z",
+              "WhenOpened": "2026-03-30T19:43:42.301Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 3,
-              "Title": "DeleteDocumentItemExpirationDateCommand.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Commands\\DocumentItemExpirationDateCommands\\Delete\\DeleteDocumentItemExpirationDateCommand.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Commands\\DocumentItemExpirationDateCommands\\Delete\\DeleteDocumentItemExpirationDateCommand.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Commands\\DocumentItemExpirationDateCommands\\Delete\\DeleteDocumentItemExpirationDateCommand.cs",
-              "RelativeToolTip": "Web-POS.Api\\Commands\\DocumentItemExpirationDateCommands\\Delete\\DeleteDocumentItemExpirationDateCommand.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABYAAAANAAAAAAAAAA==",
+              "Title": "MapperPayment.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Helpers\\MapperPayment.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Helpers\\MapperPayment.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Helpers\\MapperPayment.cs",
+              "RelativeToolTip": "Web-POS.Api\\Helpers\\MapperPayment.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAhAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-29T15:37:32.33Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "UpdateDocumentItemExpirationDateCommand.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Commands\\DocumentItemExpirationDateCommands\\Update\\UpdateDocumentItemExpirationDateCommand.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Commands\\DocumentItemExpirationDateCommands\\Update\\UpdateDocumentItemExpirationDateCommand.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Commands\\DocumentItemExpirationDateCommands\\Update\\UpdateDocumentItemExpirationDateCommand.cs",
-              "RelativeToolTip": "Web-POS.Api\\Commands\\DocumentItemExpirationDateCommands\\Update\\UpdateDocumentItemExpirationDateCommand.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAqwAcAAAA7AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-29T15:37:26.278Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "GetDocumentItemExpirationDateQuery.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Queries\\DocumentItemExpirationDateQuery\\GetDocumentItemExpirationDateQuery.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Queries\\DocumentItemExpirationDateQuery\\GetDocumentItemExpirationDateQuery.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Queries\\DocumentItemExpirationDateQuery\\GetDocumentItemExpirationDateQuery.cs",
-              "RelativeToolTip": "Web-POS.Api\\Queries\\DocumentItemExpirationDateQuery\\GetDocumentItemExpirationDateQuery.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAAAJAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-29T15:35:05.863Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "DocumentItemExpirationDateService.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Services\\DocumentItemExpirationDateService.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Services\\DocumentItemExpirationDateService.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Services\\DocumentItemExpirationDateService.cs",
-              "RelativeToolTip": "Web-POS.Api\\Services\\DocumentItemExpirationDateService.cs",
-              "ViewState": "AgIAAAoAAAAAAAAAAADwvyoAAAA6AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-29T15:33:22.295Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "DocumentItemExpirationDateRepository.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Repository\\DocumentItemExpirationDateRepository.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Repository\\DocumentItemExpirationDateRepository.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Repository\\DocumentItemExpirationDateRepository.cs",
-              "RelativeToolTip": "Web-POS.Api\\Repository\\DocumentItemExpirationDateRepository.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAAA0AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-29T15:30:46.31Z",
+              "WhenOpened": "2026-03-30T19:43:26.216Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 7,
-              "Title": "MapperDocumentItemExpirationDate.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Helpers\\MapperDocumentItemExpirationDate.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Helpers\\MapperDocumentItemExpirationDate.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Helpers\\MapperDocumentItemExpirationDate.cs",
-              "RelativeToolTip": "Web-POS.Api\\Helpers\\MapperDocumentItemExpirationDate.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAAABAAAAAAAAAA==",
+              "Title": "GetDocumentItemsById.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Queries\\DocumentItemQuery\\GetDocumentItemsById.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Queries\\DocumentItemQuery\\GetDocumentItemsById.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Queries\\DocumentItemQuery\\GetDocumentItemsById.cs",
+              "RelativeToolTip": "Web-POS.Api\\Queries\\DocumentItemQuery\\GetDocumentItemsById.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABMAAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-29T15:30:38.542Z",
+              "WhenOpened": "2026-03-30T19:41:31.237Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "PaymentRepository.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Repository\\PaymentRepository.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Repository\\PaymentRepository.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Repository\\PaymentRepository.cs",
+              "RelativeToolTip": "Web-POS.Api\\Repository\\PaymentRepository.cs",
+              "ViewState": "AgIAAA4AAAAAAAAAAAAEwCUAAAAlAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-30T19:39:32.359Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "GetUnreportedPaymentsQuery.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Queries\\PaymentQuery\\GetUnreportedPaymentsQuery.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Queries\\PaymentQuery\\GetUnreportedPaymentsQuery.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Queries\\PaymentQuery\\GetUnreportedPaymentsQuery.cs",
+              "RelativeToolTip": "Web-POS.Api\\Queries\\PaymentQuery\\GetUnreportedPaymentsQuery.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABsAAABVAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-30T19:39:14.268Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "PaymentController.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\PaymentController.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Controllers\\PaymentController.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\PaymentController.cs",
+              "RelativeToolTip": "Web-POS.Api\\Controllers\\PaymentController.cs",
+              "ViewState": "AgIAABoAAAAAAAAAAAAuwC8AAABMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-30T19:34:36.491Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "DocumentItemTaxController.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\DocumentItemTaxController.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Controllers\\DocumentItemTaxController.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\DocumentItemTaxController.cs",
+              "RelativeToolTip": "Web-POS.Api\\Controllers\\DocumentItemTaxController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAB0AAAA3AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-30T19:34:27.518Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "DocumentItemExpirationDateController.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\DocumentItemExpirationDateController.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Controllers\\DocumentItemExpirationDateController.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\DocumentItemExpirationDateController.cs",
+              "RelativeToolTip": "Web-POS.Api\\Controllers\\DocumentItemExpirationDateController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABUAAAAdAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-30T19:34:18.182Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "BarCodeController.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\BarCodeController.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Controllers\\BarCodeController.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\BarCodeController.cs",
+              "RelativeToolTip": "Web-POS.Api\\Controllers\\BarCodeController.cs",
+              "ViewState": "AgIAAA8AAAAAAAAAAAAewCwAAAAPAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-30T19:33:43.714Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "DeleteCompanyCommand.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Commands\\CompanyCommands\\Delete\\DeleteCompanyCommand.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Commands\\CompanyCommands\\Delete\\DeleteCompanyCommand.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Commands\\CompanyCommands\\Delete\\DeleteCompanyCommand.cs",
+              "RelativeToolTip": "Web-POS.Api\\Commands\\CompanyCommands\\Delete\\DeleteCompanyCommand.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-30T19:33:33.907Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "ZReportController.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\ZReportController.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Controllers\\ZReportController.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\ZReportController.cs",
+              "RelativeToolTip": "Web-POS.Api\\Controllers\\ZReportController.cs",
+              "ViewState": "AgIAABMAAAAAAAAAAAAgwBoAAAAbAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-30T19:27:52.089Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "GenerateZReportCommand.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Commands\\ZReportCommands\\Add\\GenerateZReportCommand.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Commands\\ZReportCommands\\Add\\GenerateZReportCommand.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Commands\\ZReportCommands\\Add\\GenerateZReportCommand.cs",
+              "RelativeToolTip": "Web-POS.Api\\Commands\\ZReportCommands\\Add\\GenerateZReportCommand.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-30T19:25:34.329Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "GetLastZReportQuery.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Queries\\ZReportQuery\\GetLastZReportQuery.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Queries\\ZReportQuery\\GetLastZReportQuery.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Queries\\ZReportQuery\\GetLastZReportQuery.cs",
+              "RelativeToolTip": "Web-POS.Api\\Queries\\ZReportQuery\\GetLastZReportQuery.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABgAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-30T19:25:10.526Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "GetAllZReportsQuery.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Queries\\ZReportQuery\\GetAllZReportsQuery.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Queries\\ZReportQuery\\GetAllZReportsQuery.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Queries\\ZReportQuery\\GetAllZReportsQuery.cs",
+              "RelativeToolTip": "Web-POS.Api\\Queries\\ZReportQuery\\GetAllZReportsQuery.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABYAAAApAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-30T19:24:57.601Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "GetZReportByIdQuery.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Queries\\ZReportQuery\\GetZReportByIdQuery.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Queries\\ZReportQuery\\GetZReportByIdQuery.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Queries\\ZReportQuery\\GetZReportByIdQuery.cs",
+              "RelativeToolTip": "Web-POS.Api\\Queries\\ZReportQuery\\GetZReportByIdQuery.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABkAAAANAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-30T19:24:42.689Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 18,
+              "Title": "AppDbContext.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\DataBase\\AppDbContext.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\DataBase\\AppDbContext.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\DataBase\\AppDbContext.cs",
+              "RelativeToolTip": "Web-POS.Api\\DataBase\\AppDbContext.cs",
+              "ViewState": "AgIAAB0AAAAAAAAAAIA6wDEAAAA+AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-30T19:20:29.908Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "ZReportService.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Services\\ZReportService.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Services\\ZReportService.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Services\\ZReportService.cs",
+              "RelativeToolTip": "Web-POS.Api\\Services\\ZReportService.cs",
+              "ViewState": "AgIAAEUAAAAAAAAAAAAowFAAAAAyAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-30T19:18:19.905Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 17,
+              "Title": "ZReportRepository.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Repository\\ZReportRepository.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Repository\\ZReportRepository.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Repository\\ZReportRepository.cs",
+              "RelativeToolTip": "Web-POS.Api\\Repository\\ZReportRepository.cs",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAAABoAAAAxAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-30T19:15:23.609Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 19,
+              "Title": "MapperZReport.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Helpers\\MapperZReport.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Helpers\\MapperZReport.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Helpers\\MapperZReport.cs",
+              "RelativeToolTip": "Web-POS.Api\\Helpers\\MapperZReport.cs",
+              "ViewState": "AgIAAAoAAAAAAAAAAAAgwCQAAAA1AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-30T19:14:28.821Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 20,
+              "Title": "ZReportDto.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Models\\ZReportDto.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Models\\ZReportDto.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Models\\ZReportDto.cs",
+              "RelativeToolTip": "Web-POS.Api\\Models\\ZReportDto.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAB8AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-30T19:08:56.865Z",
               "EditorCaption": ""
             },
             {
@@ -215,18 +423,37 @@
             {
               "$type": "Bookmark",
               "Name": "ST:128:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
+            }
+          ]
+        },
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "ZReportPaymentSummary.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Domain\\ZReportPaymentSummary.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Domain\\ZReportPaymentSummary.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Domain\\ZReportPaymentSummary.cs",
+              "RelativeToolTip": "Web-POS.Api\\Domain\\ZReportPaymentSummary.cs",
+              "ViewState": "AgIAAAYAAAAAAAAAAAA4wBsAAAAwAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-30T19:11:41.432Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
-              "Title": "DocumentItemExpirationDateDto.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Models\\DocumentItemExpirationDateDto.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Models\\DocumentItemExpirationDateDto.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Models\\DocumentItemExpirationDateDto.cs",
-              "RelativeToolTip": "Web-POS.Api\\Models\\DocumentItemExpirationDateDto.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAFAAAAAAAAAA==",
+              "DocumentIndex": 21,
+              "Title": "ZReport.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Domain\\ZReport.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Domain\\ZReport.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Domain\\ZReport.cs",
+              "RelativeToolTip": "Web-POS.Api\\Domain\\ZReport.cs",
+              "ViewState": "AgIAABkAAAAAAAAAAAAzwDUAAAAfAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-29T15:30:05.533Z",
+              "WhenOpened": "2026-03-30T19:02:09.756Z",
               "EditorCaption": ""
             }
           ]
@@ -252,7 +479,7 @@
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 11,
+              "DocumentIndex": 24,
               "Title": "DeleteCustomerCommand.cs",
               "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Commands\\CustomerCommands\\Delete\\DeleteCustomerCommand.cs",
               "RelativeDocumentMoniker": "Web-POS.Api\\Commands\\CustomerCommands\\Delete\\DeleteCustomerCommand.cs",
@@ -264,7 +491,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 17,
+              "DocumentIndex": 30,
               "Title": "Customer.cs",
               "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Domain\\Customer.cs",
               "RelativeDocumentMoniker": "Web-POS.Api\\Domain\\Customer.cs",
@@ -276,20 +503,20 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 9,
+              "DocumentIndex": 22,
               "Title": "CustomerDto.cs",
               "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Models\\CustomerDto.cs",
               "RelativeDocumentMoniker": "Web-POS.Api\\Models\\CustomerDto.cs",
               "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Models\\CustomerDto.cs",
               "RelativeToolTip": "Web-POS.Api\\Models\\CustomerDto.cs",
-              "ViewState": "AgIAAA4AAAAAAAAAAAAuwCQAAAAIAAAAAAAAAA==",
+              "ViewState": "AgIAABAAAAAAAAAAAAA0wCQAAAAIAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-03-26T17:27:10.349Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 19,
+              "DocumentIndex": 32,
               "Title": "MapperCustomer.cs",
               "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Helpers\\MapperCustomer.cs",
               "RelativeDocumentMoniker": "Web-POS.Api\\Helpers\\MapperCustomer.cs",
@@ -301,7 +528,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 18,
+              "DocumentIndex": 31,
               "Title": "CustomerRepository.cs",
               "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Repository\\CustomerRepository.cs",
               "RelativeDocumentMoniker": "Web-POS.Api\\Repository\\CustomerRepository.cs",
@@ -313,7 +540,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 16,
+              "DocumentIndex": 29,
               "Title": "CustomerService.cs",
               "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Services\\CustomerService.cs",
               "RelativeDocumentMoniker": "Web-POS.Api\\Services\\CustomerService.cs",
@@ -325,7 +552,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 12,
+              "DocumentIndex": 25,
               "Title": "UpdateCustomerCommand.cs",
               "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Commands\\CustomerCommands\\Update\\UpdateCustomerCommand.cs",
               "RelativeDocumentMoniker": "Web-POS.Api\\Commands\\CustomerCommands\\Update\\UpdateCustomerCommand.cs",
@@ -337,7 +564,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 10,
+              "DocumentIndex": 23,
               "Title": "CustomerController.cs",
               "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\CustomerController.cs",
               "RelativeDocumentMoniker": "Web-POS.Api\\Controllers\\CustomerController.cs",
@@ -349,7 +576,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 13,
+              "DocumentIndex": 26,
               "Title": "AddCustomerCommand.cs",
               "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Commands\\CustomerCommands\\Add\\AddCustomerCommand.cs",
               "RelativeDocumentMoniker": "Web-POS.Api\\Commands\\CustomerCommands\\Add\\AddCustomerCommand.cs",
@@ -361,7 +588,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 14,
+              "DocumentIndex": 27,
               "Title": "GetCustomerByIdQuery.cs",
               "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Queries\\CustomerQuery\\Get\\GetCustomerByIdQuery.cs",
               "RelativeDocumentMoniker": "Web-POS.Api\\Queries\\CustomerQuery\\Get\\GetCustomerByIdQuery.cs",
@@ -373,7 +600,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 15,
+              "DocumentIndex": 28,
               "Title": "GetAllCustomersQuery.cs",
               "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Queries\\CustomerQuery\\Get\\GetAllCustomersQuery.cs",
               "RelativeDocumentMoniker": "Web-POS.Api\\Queries\\CustomerQuery\\Get\\GetAllCustomersQuery.cs",

@@ -1,10 +1,10 @@
-﻿using MediatR;
-using Microsoft.AspNetCore.Mvc;
-using Api.Commands.BarcodesCommands.Add;
-using Api.Commands.BarcodesCommands.Delete;
-using Api.Commands.BarcodesCommands.Update;
-using Api.Queries.BarcodesQuery.Get;
+﻿using Api.Commands.BarcodeCommands.Add;
+using Api.Commands.BarcodeCommands.Delete;
+using Api.Commands.BarcodeCommands.Update;
 using Api.Models;
+using Api.Queries.BarcodesQuery;
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers
 {
@@ -28,14 +28,12 @@ namespace Api.Controllers
             return result == null ? NotFound(new { message = "Barcode not found" }) : Ok(result);
         }
 
-        // ⭐ NEW: We need this for the Flutter Barcodes Tab!
         [HttpGet("[action]")]
         public async Task<ActionResult<List<BarcodeDto>>> GetByProductId([FromQuery] int productId, [FromQuery] int companyId)
         {
             if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
             if (productId <= 0) return BadRequest(new { message = "Product ID is required" });
 
-            // You will need to create this Query if you don't have it yet!
             var result = await mediator.Send(new GetBarcodesByProductIdQuery { ProductId = productId, CompanyId = companyId });
             return Ok(result);
         }

@@ -2,7 +2,7 @@
 using MediatR;
 using Api.Services;
 
-namespace Api.Commands.BarcodesCommands.Delete
+namespace Api.Commands.BarcodeCommands.Delete
 {
     public class DeleteBarcodeByIdCommand : IRequest<bool>
     {

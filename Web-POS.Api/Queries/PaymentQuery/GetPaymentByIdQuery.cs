@@ -1,7 +1,7 @@
 ﻿using MediatR;
-using Api.Helpers;
-using Api.Repository;
 using Api.Models;
+using Api.Repository;
+using Api.Helpers;
 
 namespace Api.Queries.PaymentQuery
 {
@@ -9,6 +9,12 @@ namespace Api.Queries.PaymentQuery
     {
         public int Id { get; set; }
         public int CompanyId { get; set; }
+
+        public GetPaymentByIdQuery(int id, int companyId)
+        {
+            Id = id;
+            CompanyId = companyId;
+        }
 
         public class GetPaymentByIdQueryHandler : IRequestHandler<GetPaymentByIdQuery, PaymentDto?>
         {
@@ -21,8 +27,8 @@ namespace Api.Queries.PaymentQuery
 
             public async Task<PaymentDto?> Handle(GetPaymentByIdQuery request, CancellationToken cancellationToken)
             {
-                var entity = await _repository.GetByIdAsync(request.Id, request.CompanyId);
-                return entity == null ? null : MapperPayment.MapToPaymentDto(entity);
+                var payment = await _repository.GetByIdAsync(request.Id, request.CompanyId);
+                return payment == null ? null : MapperPayment.MapToPaymentDto(payment);
             }
         }
     }

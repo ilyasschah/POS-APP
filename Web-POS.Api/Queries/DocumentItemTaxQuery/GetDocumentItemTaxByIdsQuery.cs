@@ -3,7 +3,7 @@ using Api.Models;
 using Api.Repository;
 using Api.Helpers;
 
-namespace Api.Queries.DocumentItemTaxQuery.Get
+namespace Api.Queries.DocumentItemTaxQuery
 {
     public class GetDocumentItemTaxByIdsQuery : IRequest<DocumentItemTaxDto?>
     {
