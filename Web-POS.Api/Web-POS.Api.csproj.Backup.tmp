@@ -20,13 +20,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="BCrypt.Net-Next" Version="4.1.0" />
     <PackageReference Include="FluentValidation" Version="12.1.1" />
     <PackageReference Include="MediatR" Version="14.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.2" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.2" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.2" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.2" />
+    <PackageReference Include="Portable.BouncyCastle" Version="1.9.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.0" />
   </ItemGroup>
 
@@ -35,7 +35,6 @@
     <Folder Include="Commands\TaxesCommands\NewFolder1\" />
     <Folder Include="Commands\TaxesCommands\NewFolder\" />
     <Folder Include="Queries\BarcodesQuery\Get\" />
-    <Folder Include="Queries\SecurityKeysQuery\Get\" />
   </ItemGroup>
 
 </Project>

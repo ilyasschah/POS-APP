@@ -1,37 +1,49 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace Api.Domain
 {
     [Table("SecurityKey")]
+    [PrimaryKey(nameof(CompanyId), nameof(Name))]
     public class SecurityKey
     {
-        [Key]
-        public string Name { get; set; }
-        public int? Level { get; set; }
+        public int CompanyId { get; private set; }
 
+        [MaxLength(100)]
+        public string Name { get; private set; }
 
-        private SecurityKey(string name, int level)
+        public int Level { get; private set; }
+
+        public SecurityKey() { }
+
+        private SecurityKey(int companyId, string name, int level)
         {
+            CompanyId = companyId;
             Name = name;
             Level = level;
         }
-        public SecurityKey() { }
-        public static SecurityKey Create(string name, int level)
+
+        public static SecurityKey Create(int companyId, string name, int level)
         {
-            if (name == null)
-            {
-                throw new ArgumentException("Security Name Cant be white scapce.", nameof(name));
-            }
-            return new SecurityKey(name, level);
+            if (companyId <= 0)
+                throw new ArgumentException("Invalid CompanyId", nameof(companyId));
+
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("Security Name cannot be empty or whitespace.", nameof(name));
+
+            if (level < 0 || level > 1)
+                throw new ArgumentException("Level must be 0 (Cashier) or 1 (Admin).", nameof(level));
+
+            return new SecurityKey(companyId, name, level);
         }
-        //public void UpdateValue(string newValue)
-        //{
-        //    if (string.IsNullOrWhiteSpace(newValue))
-        //    {
-        //        throw new ArgumentException("Value cannot be null or whitespace.", nameof(newValue));
-        //    }
-        //    Value = newValue;
-        //}
+
+        public void UpdateLevel(int newLevel)
+        {
+            if (newLevel < 0 || newLevel > 1)
+                throw new ArgumentException("Level must be 0 (Cashier) or 1 (Admin).", nameof(newLevel));
+
+            Level = newLevel;
+        }
     }
 }

@@ -1,11 +1,12 @@
 {
   "version": 2,
-  "dgSpecHash": "ykg7JU6e6YY=",
+  "dgSpecHash": "wUoompafkE8=",
   "success": true,
   "projectFilePath": "D:\\repos\\Web-POS\\Web-POS.Api\\Web-POS.Api.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\ILYASS\\.nuget\\packages\\azure.core\\1.47.1\\azure.core.1.47.1.nupkg.sha512",
     "C:\\Users\\ILYASS\\.nuget\\packages\\azure.identity\\1.14.2\\azure.identity.1.14.2.nupkg.sha512",
+    "C:\\Users\\ILYASS\\.nuget\\packages\\bcrypt.net-next\\4.1.0\\bcrypt.net-next.4.1.0.nupkg.sha512",
     "C:\\Users\\ILYASS\\.nuget\\packages\\fluentvalidation\\12.1.1\\fluentvalidation.12.1.1.nupkg.sha512",
     "C:\\Users\\ILYASS\\.nuget\\packages\\mediatr\\14.0.0\\mediatr.14.0.0.nupkg.sha512",
     "C:\\Users\\ILYASS\\.nuget\\packages\\mediatr.contracts\\2.0.1\\mediatr.contracts.2.0.1.nupkg.sha512",

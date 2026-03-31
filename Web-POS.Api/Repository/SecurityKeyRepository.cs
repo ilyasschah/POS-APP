@@ -1,34 +1,43 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Api.Domain;
 using Api.DataBase;
+
 namespace Api.Repository
 {
     public class SecurityKeyRepository
     {
-        public AppDbContext _db;
+        private readonly AppDbContext _db;
+
         public SecurityKeyRepository(AppDbContext db)
         {
             _db = db;
         }
-        public async Task<List<SecurityKey>> GetSecurityKeysAsync()
+
+        public async Task<List<SecurityKey>> GetAllAsync(int companyId)
         {
             return await _db.SecurityKeys
                 .AsNoTracking()
+                .Where(sk => sk.CompanyId == companyId)
                 .ToListAsync();
         }
-        public async Task Add(SecurityKey newSecurityKey)
+
+        public async Task<SecurityKey?> GetByNameAsync(string name, int companyId)
         {
-            _db.SecurityKeys.Add(newSecurityKey);
-            await _db.SaveChangesAsync();
+            return await _db.SecurityKeys
+                .FirstOrDefaultAsync(sk => sk.Name == name && sk.CompanyId == companyId);
         }
-        public async Task DeleteAsync(SecurityKey securityKey)
+
+        public async Task<bool> UpdateAsync(SecurityKey entity)
         {
-            _db.SecurityKeys.Remove(securityKey);
+            _db.SecurityKeys.Update(entity);
             await _db.SaveChangesAsync();
+            return true;
         }
-        public bool Exist(string keyName)
+
+        public async Task AddRangeAsync(IEnumerable<SecurityKey> entities)
         {
-            return _db.SecurityKeys.Any(sk => sk.Name == keyName);
+            await _db.SecurityKeys.AddRangeAsync(entities);
+            await _db.SaveChangesAsync();
         }
     }
 }

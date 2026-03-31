@@ -1,21 +1,43 @@
-﻿using Api.Domain;
+﻿using Api.Models;
 using Api.Repository;
+using Api.Helpers;
 
 namespace Api.Services
 {
     public class SecurityKeyService
     {
-        public SecurityKeyRepository _securityKeyRepository;
-        public SecurityKeyService (SecurityKeyRepository securityKeyRepository)
-        { _securityKeyRepository = securityKeyRepository; }
-        public async Task<bool> Create(string name , int level)
+        private readonly SecurityKeyRepository _repository;
+
+        public SecurityKeyService(SecurityKeyRepository repository)
         {
-            var skexists = _securityKeyRepository.Exist(name);
-            if (skexists == true)
-                throw new InvalidOperationException($"A security key with the name '{name}' already exists.");
-            var newsecuritykey = SecurityKey.Create(name, level);
-            await _securityKeyRepository.Add(newsecuritykey);
-            return true;
+            _repository = repository;
+        }
+
+        public async Task<List<SecurityKeyDto>> GetAllAsync(int companyId)
+        {
+            var entities = await _repository.GetAllAsync(companyId);
+
+            return entities.Select(MapperSecurityKey.MapToDto).ToList();
+        }
+
+        public async Task<SecurityKeyDto?> GetByNameAsync(string name, int companyId)
+        {
+            var entity = await _repository.GetByNameAsync(name, companyId);
+
+            if (entity == null) return null;
+
+            return MapperSecurityKey.MapToDto(entity);
+        }
+
+        public async Task<bool> UpdateAsync(UpdateSecurityKeyRequest req, int companyId)
+        {
+            var entity = await _repository.GetByNameAsync(req.Name, companyId);
+
+            if (entity == null) return false; 
+
+            entity.UpdateLevel(req.Level);
+
+            return await _repository.UpdateAsync(entity);
         }
     }
 }

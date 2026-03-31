@@ -6,7 +6,7 @@ namespace Api.Repository;
 
 public class UserRepository
 {
-    public readonly AppDbContext _db;
+    private readonly AppDbContext _db;
 
     public UserRepository(AppDbContext db)
     {
@@ -59,10 +59,6 @@ public class UserRepository
         if (entity == null)
         {
             throw new InvalidOperationException("User not found.");
-        }
-        if (entity.CompanyId != companyId)
-        {
-            throw new UnauthorizedAccessException("You do not have permission to delete this user.");
         }
         _db.Users.Remove(entity);
         await _db.SaveChangesAsync();

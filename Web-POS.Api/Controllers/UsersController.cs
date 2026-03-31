@@ -37,12 +37,13 @@ public class UsersController(IMediator mediator) : ControllerBase
     {
         if (companyId == 0)
             return BadRequest("Company ID is required");
-
-        return Ok(await mediator.Send(new GetUserByUsernameQuery(username) { CompanyId = companyId }));
+        var result = await mediator.Send(new GetUserByUsernameQuery(username) { CompanyId = companyId });
+        if (result == null) return NotFound($"User '{username}' not found.");
+        return Ok(result);
     }
 
     [HttpPost("[action]")]
-    public async Task<ActionResult<UserDto>> Add( CreateUserRequest request, [FromQuery] int companyId)
+    public async Task<ActionResult<UserDto>> Add([FromBody] CreateUserRequest request, [FromQuery] int companyId)
     {
         if (companyId == 0) return BadRequest("Company ID is required");
 
@@ -69,4 +70,3 @@ public class UsersController(IMediator mediator) : ControllerBase
         return Ok(result);
     }
 }
-        

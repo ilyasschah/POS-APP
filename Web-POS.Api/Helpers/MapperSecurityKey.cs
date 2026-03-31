@@ -3,14 +3,14 @@ using Api.Models;
 
 namespace Api.Helpers
 {
-    public class MapperSecurityKey
+    public static class MapperSecurityKey
     {
-        public static SecurityKeyDto MapToSecurityKey(SecurityKey securityKey)
+        public static SecurityKeyDto MapToDto(SecurityKey entity)
         {
             return new SecurityKeyDto
             {
-                Name = securityKey.Name,
-                Level = securityKey.Level,
+                Name = entity.Name,
+                Level = entity.Level
             };
         }
     }

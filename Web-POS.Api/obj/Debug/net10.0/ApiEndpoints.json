@@ -5250,17 +5250,48 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Api.Controllers.SecurityKeyController",
-    "Method": "AddSecurityKey",
-    "RelativePath": "api/SecurityKey/AddSecurityKey",
-    "HttpMethod": "POST",
+    "ContainingType": "Api.Controllers.SecurityKeysController",
+    "Method": "GetAll",
+    "RelativePath": "api/SecurityKeys/GetAll",
+    "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "securityKeyRequest",
-        "Type": "Api.Models.CreateSecurityKeyRequest",
-        "IsRequired": true
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.SecurityKeyDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "Api.Controllers.SecurityKeysController",
+    "Method": "GetByName",
+    "RelativePath": "api/SecurityKeys/GetByName",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "name",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
@@ -5276,24 +5307,25 @@
     ]
   },
   {
-    "ContainingType": "Api.Controllers.SecurityKeyController",
-    "Method": "GetAll",
-    "RelativePath": "api/SecurityKey/GetAll",
-    "HttpMethod": "GET",
+    "ContainingType": "Api.Controllers.SecurityKeysController",
+    "Method": "Update",
+    "RelativePath": "api/SecurityKeys/Update",
+    "HttpMethod": "PATCH",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
-    "ReturnTypes": [
+    "Parameters": [
       {
-        "Type": "System.Collections.Generic.List\u00601[[Api.Models.SecurityKeyDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
+        "Name": "request",
+        "Type": "Api.Models.UpdateSecurityKeyRequest",
+        "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
-    ]
+    ],
+    "ReturnTypes": []
   },
   {
     "ContainingType": "Api.Controllers.StartingCashController",
