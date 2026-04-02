@@ -5,14 +5,13 @@ namespace Api.Helpers
 {
     public static class MapperFloorPlanTable
     {
-        public static FloorPlanTableDto MapToFloorPlanTableDto(FloorPlanTable entity)
+        public static FloorPlanTableDto MapToDto(FloorPlanTable entity)
         {
             return new FloorPlanTableDto
             {
                 Id = entity.Id,
-                Name = entity.Name,
                 FloorPlanId = entity.FloorPlanId,
-                FloorPlanName = entity.FloorPlan?.Name ?? "N/A",
+                Name = entity.Name,
                 PositionX = entity.PositionX,
                 PositionY = entity.PositionY,
                 Width = entity.Width,

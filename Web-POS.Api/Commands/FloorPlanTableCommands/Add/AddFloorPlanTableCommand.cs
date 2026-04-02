@@ -1,40 +1,27 @@
-﻿using FluentValidation;
-using MediatR;
-using Api.Helpers;
+﻿using MediatR;
 using Api.Models;
 using Api.Services;
 
-namespace Api.Commands.FloorPlanTableCommands.Add
+namespace Api.Commands.FloorPlanTableCommand.Add
 {
     public class AddFloorPlanTableCommand : IRequest<FloorPlanTableDto>
     {
-        public CreateFloorPlanTableRequest Request { get; set; }
+        public required CreateFloorPlanTableRequest Request { get; set; }
+        public int CompanyId { get; set; }
+    }
 
-        public class AddFloorPlanTableCommandHandler : IRequestHandler<AddFloorPlanTableCommand, FloorPlanTableDto>
+    public class AddFloorPlanTableHandler : IRequestHandler<AddFloorPlanTableCommand, FloorPlanTableDto>
+    {
+        private readonly FloorPlanTableService _service;
+
+        public AddFloorPlanTableHandler(FloorPlanTableService service)
         {
-            private readonly FloorPlanTableService _service;
-
-            public AddFloorPlanTableCommandHandler(FloorPlanTableService service)
-            {
-                _service = service;
-            }
-
-            public async Task<FloorPlanTableDto> Handle(AddFloorPlanTableCommand command, CancellationToken cancellationToken)
-            {
-                var newEntity = await _service.Create(command.Request);
-                return MapperFloorPlanTable.MapToFloorPlanTableDto(newEntity);
-            }
+            _service = service;
         }
 
-        public class AddFloorPlanTableCommandValidator : AbstractValidator<AddFloorPlanTableCommand>
+        public async Task<FloorPlanTableDto> Handle(AddFloorPlanTableCommand request, CancellationToken cancellationToken)
         {
-            public AddFloorPlanTableCommandValidator()
-            {
-                RuleFor(c => c.Request.Name).NotEmpty();
-                RuleFor(c => c.Request.FloorPlanId).GreaterThan(0);
-                RuleFor(c => c.Request.Width).GreaterThan(0);
-                RuleFor(c => c.Request.Height).GreaterThan(0);
-            }
+            return await _service.CreateAsync(request.Request, request.CompanyId);
         }
     }
 }

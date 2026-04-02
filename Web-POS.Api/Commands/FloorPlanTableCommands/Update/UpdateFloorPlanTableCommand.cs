@@ -1,39 +1,27 @@
-﻿using FluentValidation;
-using MediatR;
+﻿using MediatR;
 using Api.Models;
 using Api.Services;
 
-namespace Api.Commands.FloorPlanTableCommands.Update
+namespace Api.Commands.FloorPlanTableCommand.Update
 {
     public class UpdateFloorPlanTableCommand : IRequest<bool>
     {
-        public int Id { get; set; }
-        public UpdateFloorPlanTableRequest Request { get; set; }
+        public required UpdateTableGeometryRequest Request { get; set; }
+        public int CompanyId { get; set; }
+    }
 
-        public class UpdateFloorPlanTableCommandHandler : IRequestHandler<UpdateFloorPlanTableCommand, bool>
+    public class UpdateFloorPlanTableHandler : IRequestHandler<UpdateFloorPlanTableCommand, bool>
+    {
+        private readonly FloorPlanTableService _service;
+
+        public UpdateFloorPlanTableHandler(FloorPlanTableService service)
         {
-            private readonly FloorPlanTableService _service;
-
-            public UpdateFloorPlanTableCommandHandler(FloorPlanTableService service)
-            {
-                _service = service;
-            }
-
-            public Task<bool> Handle(UpdateFloorPlanTableCommand command, CancellationToken cancellationToken)
-            {
-                return _service.Update(command.Id, command.Request);
-            }
+            _service = service;
         }
 
-        public class UpdateFloorPlanTableCommandValidator : AbstractValidator<UpdateFloorPlanTableCommand>
+        public async Task<bool> Handle(UpdateFloorPlanTableCommand request, CancellationToken cancellationToken)
         {
-            public UpdateFloorPlanTableCommandValidator()
-            {
-                RuleFor(c => c.Id).GreaterThan(0);
-                RuleFor(c => c.Request.Name).NotEmpty();
-                RuleFor(c => c.Request.Width).GreaterThan(0);
-                RuleFor(c => c.Request.Height).GreaterThan(0);
-            }
+            return await _service.UpdateGeometryAsync(request.Request, request.CompanyId);
         }
     }
 }

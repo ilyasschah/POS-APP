@@ -1,14 +1,14 @@
-using FluentValidation;
 using MediatR;
-using Api.Helpers;
-using Api.Services;
+using FluentValidation;
 using Api.Models;
+using Api.Services;
 
-namespace Api.Commands.FloorPlanCommands.Add
+namespace Api.Commands.FloorPlanCommand.Add
 {
     public class AddFloorPlanCommand : IRequest<FloorPlanDto>
     {
-        public CreateFloorPlanRequest Request { get; set; }
+        public required CreateFloorPlanRequest Request { get; set; }
+        public int CompanyId { get; set; }
 
         public class AddFloorPlanCommandHandler : IRequestHandler<AddFloorPlanCommand, FloorPlanDto>
         {
@@ -21,17 +21,20 @@ namespace Api.Commands.FloorPlanCommands.Add
 
             public async Task<FloorPlanDto> Handle(AddFloorPlanCommand command, CancellationToken cancellationToken)
             {
-                var newEntity = await _service.Create(command.Request);
-                return MapperFloorPlan.MapToFloorPlanDto(newEntity);
+                return await _service.CreateAsync(command.Request, command.CompanyId);
             }
         }
+    }
 
-        public class AddFloorPlanCommandValidator : AbstractValidator<AddFloorPlanCommand>
+    public class AddFloorPlanCommandValidator : AbstractValidator<AddFloorPlanCommand>
+    {
+        public AddFloorPlanCommandValidator()
         {
-            public AddFloorPlanCommandValidator()
-            {
-                RuleFor(c => c.Request.Name).NotEmpty();
-            }
+            RuleFor(x => x.CompanyId)
+                .GreaterThan(0).WithMessage("CompanyId is required and must be greater than 0.");
+
+            RuleFor(x => x.Request.Name)
+                .NotEmpty().WithMessage("Name is required.");
         }
     }
 }

@@ -7,24 +7,26 @@ namespace Api.Domain
     public class FloorPlan
     {
         [Key]
-        public int Id { get; set; }
-        public int CompanyId { get; set; }
-        public string Name { get; set; }
-        public string Color { get; set; }
+        public int Id { get; private set; }
 
-        private FloorPlan(string name, string color)
+        public int CompanyId { get; private set; }
+
+        public string Name { get; private set; }
+        public string Color { get; private set; }
+
+        public FloorPlan() { }
+
+        private FloorPlan(int companyId, string name, string color)
         {
+            CompanyId = companyId;
             Name = name;
             Color = color;
         }
 
-        public FloorPlan() { }
-
-        public static FloorPlan Create(string name, string color = "Transparent")
+        public static FloorPlan Create(int companyId, string name, string color = "Transparent")
         {
-            return new FloorPlan(name, color);
+            return new FloorPlan(companyId, name, color);
         }
-
         public void Update(string name, string color)
         {
             Name = name;

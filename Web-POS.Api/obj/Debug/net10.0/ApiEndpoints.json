@@ -1917,13 +1917,13 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "Name",
-        "Type": "System.String",
-        "IsRequired": false
+        "Name": "request",
+        "Type": "Api.Models.CreateFloorPlanRequest",
+        "IsRequired": true
       },
       {
-        "Name": "Color",
-        "Type": "System.String",
+        "Name": "companyId",
+        "Type": "System.Int32",
         "IsRequired": false
       }
     ],
@@ -1942,7 +1942,7 @@
   {
     "ContainingType": "Api.Controllers.FloorPlansController",
     "Method": "Delete",
-    "RelativePath": "api/FloorPlans/Delete/{id}",
+    "RelativePath": "api/FloorPlans/Delete",
     "HttpMethod": "DELETE",
     "IsController": true,
     "Order": 0,
@@ -1950,7 +1950,12 @@
       {
         "Name": "id",
         "Type": "System.Int32",
-        "IsRequired": true
+        "IsRequired": false
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
@@ -1962,7 +1967,13 @@
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
+    "Parameters": [
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
     "ReturnTypes": [
       {
         "Type": "System.Collections.Generic.List\u00601[[Api.Models.FloorPlanDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
@@ -1978,7 +1989,7 @@
   {
     "ContainingType": "Api.Controllers.FloorPlansController",
     "Method": "GetById",
-    "RelativePath": "api/FloorPlans/GetById/{id}",
+    "RelativePath": "api/FloorPlans/GetById",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -1986,33 +1997,12 @@
       {
         "Name": "id",
         "Type": "System.Int32",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": [
+        "IsRequired": false
+      },
       {
-        "Type": "Api.Models.FloorPlanDto",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
-  },
-  {
-    "ContainingType": "Api.Controllers.FloorPlansController",
-    "Method": "GetByName",
-    "RelativePath": "api/FloorPlans/GetByName/{name}",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "name",
-        "Type": "System.String",
-        "IsRequired": true
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
@@ -2030,24 +2020,19 @@
   {
     "ContainingType": "Api.Controllers.FloorPlansController",
     "Method": "Update",
-    "RelativePath": "api/FloorPlans/Update/{id}",
-    "HttpMethod": "PUT",
+    "RelativePath": "api/FloorPlans/Update",
+    "HttpMethod": "PATCH",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "id",
-        "Type": "System.Int32",
+        "Name": "request",
+        "Type": "Api.Models.UpdateFloorPlanRequest",
         "IsRequired": true
       },
       {
-        "Name": "Name",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "Color",
-        "Type": "System.String",
+        "Name": "companyId",
+        "Type": "System.Int32",
         "IsRequired": false
       }
     ],
@@ -2062,38 +2047,13 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "Name",
-        "Type": "System.String",
-        "IsRequired": false
+        "Name": "request",
+        "Type": "Api.Models.CreateFloorPlanTableRequest",
+        "IsRequired": true
       },
       {
-        "Name": "FloorPlanId",
+        "Name": "companyId",
         "Type": "System.Int32",
-        "IsRequired": false
-      },
-      {
-        "Name": "PositionX",
-        "Type": "System.Nullable\u00601[[System.Double, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "PositionY",
-        "Type": "System.Nullable\u00601[[System.Double, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "Width",
-        "Type": "System.Double",
-        "IsRequired": false
-      },
-      {
-        "Name": "Height",
-        "Type": "System.Double",
-        "IsRequired": false
-      },
-      {
-        "Name": "IsRound",
-        "Type": "System.Nullable\u00601[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
         "IsRequired": false
       }
     ],
@@ -2112,7 +2072,7 @@
   {
     "ContainingType": "Api.Controllers.FloorPlanTablesController",
     "Method": "Delete",
-    "RelativePath": "api/FloorPlanTables/Delete/{id}",
+    "RelativePath": "api/FloorPlanTables/Delete",
     "HttpMethod": "DELETE",
     "IsController": true,
     "Order": 0,
@@ -2120,7 +2080,12 @@
       {
         "Name": "id",
         "Type": "System.Int32",
-        "IsRequired": true
+        "IsRequired": false
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
@@ -2132,7 +2097,13 @@
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
+    "Parameters": [
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
     "ReturnTypes": [
       {
         "Type": "System.Collections.Generic.List\u00601[[Api.Models.FloorPlanTableDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
@@ -2148,7 +2119,7 @@
   {
     "ContainingType": "Api.Controllers.FloorPlanTablesController",
     "Method": "GetByFloorPlanId",
-    "RelativePath": "api/FloorPlanTables/GetByFloorPlanId/ByFloorPlan/{floorPlanId}",
+    "RelativePath": "api/FloorPlanTables/GetByFloorPlanId",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -2156,7 +2127,12 @@
       {
         "Name": "floorPlanId",
         "Type": "System.Int32",
-        "IsRequired": true
+        "IsRequired": false
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
@@ -2174,7 +2150,7 @@
   {
     "ContainingType": "Api.Controllers.FloorPlanTablesController",
     "Method": "GetById",
-    "RelativePath": "api/FloorPlanTables/GetById/{id}",
+    "RelativePath": "api/FloorPlanTables/GetById",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -2182,7 +2158,12 @@
       {
         "Name": "id",
         "Type": "System.Int32",
-        "IsRequired": true
+        "IsRequired": false
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
@@ -2199,45 +2180,51 @@
   },
   {
     "ContainingType": "Api.Controllers.FloorPlanTablesController",
-    "Method": "Update",
-    "RelativePath": "api/FloorPlanTables/Update/{id}",
-    "HttpMethod": "PUT",
+    "Method": "GetByName",
+    "RelativePath": "api/FloorPlanTables/GetByName",
+    "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "id",
-        "Type": "System.Int32",
-        "IsRequired": true
-      },
-      {
-        "Name": "Name",
+        "Name": "name",
         "Type": "System.String",
         "IsRequired": false
       },
       {
-        "Name": "PositionX",
-        "Type": "System.Double",
+        "Name": "companyId",
+        "Type": "System.Int32",
         "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "Api.Models.FloorPlanTableDto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "Api.Controllers.FloorPlanTablesController",
+    "Method": "UpdateGeometry",
+    "RelativePath": "api/FloorPlanTables/UpdateGeometry",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "Api.Models.UpdateTableGeometryRequest",
+        "IsRequired": true
       },
       {
-        "Name": "PositionY",
-        "Type": "System.Double",
-        "IsRequired": false
-      },
-      {
-        "Name": "Width",
-        "Type": "System.Double",
-        "IsRequired": false
-      },
-      {
-        "Name": "Height",
-        "Type": "System.Double",
-        "IsRequired": false
-      },
-      {
-        "Name": "IsRound",
-        "Type": "System.Boolean",
+        "Name": "companyId",
+        "Type": "System.Int32",
         "IsRequired": false
       }
     ],

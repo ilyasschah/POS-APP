@@ -35,6 +35,8 @@
     <Folder Include="Commands\TaxesCommands\NewFolder1\" />
     <Folder Include="Commands\TaxesCommands\NewFolder\" />
     <Folder Include="Queries\BarcodesQuery\Get\" />
+    <Folder Include="Queries\FloorPlanQuery\Get\" />
+    <Folder Include="Queries\FloorPlanTableQuery\Get\" />
     <Folder Include="Queries\SecurityKeysQuery\Get\" />
   </ItemGroup>
 

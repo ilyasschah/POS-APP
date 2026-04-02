@@ -5,7 +5,7 @@ namespace Api.Helpers
 {
     public static class MapperFloorPlan
     {
-        public static FloorPlanDto MapToFloorPlanDto(FloorPlan entity)
+        public static FloorPlanDto MapToDto(FloorPlan entity)
         {
             return new FloorPlanDto
             {

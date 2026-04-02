@@ -1,57 +1,73 @@
-﻿using MediatR;
-using Microsoft.AspNetCore.Mvc;
-using Api.Commands.FloorPlanCommands.Add;
-using Api.Commands.FloorPlanCommands.Delete;
-using Api.Commands.FloorPlanCommands.Update;
-using Api.Queries.FloorPlanQuery.Get;
+﻿using Api.Commands.FloorPlanCommand.Add;
+using Api.Commands.FloorPlanCommand.Delete;
+using Api.Commands.FloorPlanCommand.Update;
 using Api.Models;
+using Api.Queries.FloorPlanQuery;
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers
 {
-    [ApiController]
     [Route("api/[controller]")]
-    public class FloorPlansController(IMediator mediator) : ControllerBase
+    [ApiController]
+    public class FloorPlansController : ControllerBase
     {
-        [HttpGet("[action]")]
-        public async Task<ActionResult<List<FloorPlanDto>>> GetAll()
+        private readonly IMediator _mediator;
+
+        public FloorPlansController(IMediator mediator)
         {
-            var result = await mediator.Send(new GetAllFloorPlansQuery());
+            _mediator = mediator;
+        }
+
+        [HttpGet("[action]")]
+        public async Task<ActionResult<List<FloorPlanDto>>> GetAll([FromQuery] int companyId)
+        {
+            if (companyId == 0) return BadRequest();
+
+            var result = await _mediator.Send(new GetAllFloorPlansQuery { CompanyId = companyId });
             return Ok(result);
         }
 
-        [HttpGet("[action]/{id:int}")]
-        public async Task<ActionResult<FloorPlanDto>> GetById(int id)
+        [HttpGet("[action]")]
+        public async Task<ActionResult<FloorPlanDto>> GetById([FromQuery] int id, [FromQuery] int companyId)
         {
-            var result = await mediator.Send(new GetFloorPlanByIdQuery { Id = id });
-            return result != null ? Ok(result) : NotFound();
-        }
+            if (companyId == 0) return BadRequest();
 
-        [HttpGet("[action]/{name}")]
-        public async Task<ActionResult<FloorPlanDto>> GetByName(string name)
-        {
-            var result = await mediator.Send(new GetFloorPlanByNameQuery { Name = name });
-            return result != null ? Ok(result) : NotFound();
+            var result = await _mediator.Send(new GetFloorPlanByIdQuery { Id = id, CompanyId = companyId });
+            if (result == null) return NotFound();
+
+            return Ok(result);
         }
 
         [HttpPost("[action]")]
-        public async Task<ActionResult<FloorPlanDto>> Add([FromQuery] CreateFloorPlanRequest req)
+        public async Task<ActionResult<FloorPlanDto>> Add([FromBody] CreateFloorPlanRequest request, [FromQuery] int companyId)
         {
-            var result = await mediator.Send(new AddFloorPlanCommand { Request = req });
-            return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+            if (companyId == 0) return BadRequest();
+
+            var result = await _mediator.Send(new AddFloorPlanCommand { Request = request, CompanyId = companyId });
+            return Ok(result);
         }
 
-        [HttpPut("[action]/{id}")]
-        public async Task<IActionResult> Update(int id, [FromQuery] UpdateFloorPlanRequest req)
+        [HttpPatch("[action]")]
+        public async Task<ActionResult> Update([FromBody] UpdateFloorPlanRequest request, [FromQuery] int companyId)
         {
-            var result = await mediator.Send(new UpdateFloorPlanCommand { Id = id, Request = req });
-            return result ? NoContent() : NotFound();
+            if (companyId == 0) return BadRequest();
+
+            var success = await _mediator.Send(new UpdateFloorPlanCommand { Request = request, CompanyId = companyId });
+            if (!success) return NotFound();
+
+            return Ok();
         }
 
-        [HttpDelete("[action]/{id}")]
-        public async Task<IActionResult> Delete(int id)
+        [HttpDelete("[action]")]
+        public async Task<ActionResult> Delete([FromQuery] int id, [FromQuery] int companyId)
         {
-            var result = await mediator.Send(new DeleteFloorPlanCommand { Id = id });
-            return result ? NoContent() : NotFound();
+            if (companyId == 0) return BadRequest();
+
+            var success = await _mediator.Send(new DeleteFloorPlanCommand { Id = id, CompanyId = companyId });
+            if (!success) return NotFound();
+
+            return Ok();
         }
     }
 }

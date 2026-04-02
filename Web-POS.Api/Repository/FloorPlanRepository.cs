@@ -6,54 +6,46 @@ namespace Api.Repository
 {
     public class FloorPlanRepository
     {
-        public readonly AppDbContext _db;
+        private readonly AppDbContext _db;
 
         public FloorPlanRepository(AppDbContext db)
         {
             _db = db;
         }
 
-        public async Task<List<FloorPlan>> GetAllAsync()
+        public async Task<List<FloorPlan>> GetAllAsync(int companyId)
         {
-            return await _db.FloorPlans.AsNoTracking().ToListAsync();
+            return await _db.FloorPlans
+                .AsNoTracking()
+                .Where(f => f.CompanyId == companyId)
+                .ToListAsync();
         }
 
-        public async Task<FloorPlan?> GetByIdAsync(int id, bool trackEntity = false)
+        public async Task<FloorPlan?> GetByIdAsync(int id, int companyId)
         {
-            var query = _db.FloorPlans.AsQueryable();
-            if (!trackEntity)
-            {
-                query = query.AsNoTracking();
-            }
-            return await query.FirstOrDefaultAsync(fp => fp.Id == id);
+            return await _db.FloorPlans
+                .FirstOrDefaultAsync(f => f.Id == id && f.CompanyId == companyId);
         }
 
-        public async Task<FloorPlan?> GetByNameAsync(string name)
-        {
-            return await _db.FloorPlans.AsNoTracking().FirstOrDefaultAsync(fp => fp.Name == name);
-        }
-
-        public async Task<bool> ExistsAsync(string name)
-        {
-            return await _db.FloorPlans.AnyAsync(fp => fp.Name.ToLower() == name.ToLower());
-        }
-
-        public async Task AddAsync(FloorPlan entity)
+        public async Task<FloorPlan> AddAsync(FloorPlan entity)
         {
             _db.FloorPlans.Add(entity);
             await _db.SaveChangesAsync();
+            return entity;
         }
 
-        public async Task UpdateAsync(FloorPlan entity)
+        public async Task<bool> UpdateAsync(FloorPlan entity)
         {
             _db.FloorPlans.Update(entity);
             await _db.SaveChangesAsync();
+            return true;
         }
 
-        public async Task DeleteAsync(FloorPlan entity)
+        public async Task<bool> DeleteAsync(FloorPlan entity)
         {
             _db.FloorPlans.Remove(entity);
             await _db.SaveChangesAsync();
+            return true;
         }
     }
 }

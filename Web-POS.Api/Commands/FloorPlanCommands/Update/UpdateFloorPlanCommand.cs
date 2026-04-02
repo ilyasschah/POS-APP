@@ -1,14 +1,14 @@
-using FluentValidation;
 using MediatR;
-using Api.Services;
+using FluentValidation;
 using Api.Models;
+using Api.Services;
 
-namespace Api.Commands.FloorPlanCommands.Update
+namespace Api.Commands.FloorPlanCommand.Update
 {
     public class UpdateFloorPlanCommand : IRequest<bool>
     {
-        public int Id { get; set; }
-        public UpdateFloorPlanRequest Request { get; set; }
+        public required UpdateFloorPlanRequest Request { get; set; }
+        public int CompanyId { get; set; }
 
         public class UpdateFloorPlanCommandHandler : IRequestHandler<UpdateFloorPlanCommand, bool>
         {
@@ -19,19 +19,28 @@ namespace Api.Commands.FloorPlanCommands.Update
                 _service = service;
             }
 
-            public Task<bool> Handle(UpdateFloorPlanCommand command, CancellationToken cancellationToken)
+            public async Task<bool> Handle(UpdateFloorPlanCommand command, CancellationToken cancellationToken)
             {
-                return _service.Update(command.Id, command.Request);
+                return await _service.UpdateAsync(command.Request, command.CompanyId);
             }
         }
+    }
 
-        public class UpdateFloorPlanCommandValidator : AbstractValidator<UpdateFloorPlanCommand>
+    public class UpdateFloorPlanCommandValidator : AbstractValidator<UpdateFloorPlanCommand>
+    {
+        public UpdateFloorPlanCommandValidator()
         {
-            public UpdateFloorPlanCommandValidator()
-            {
-                RuleFor(c => c.Id).GreaterThan(0);
-                RuleFor(c => c.Request.Name).NotEmpty();
-            }
+            RuleFor(x => x.CompanyId)
+                .GreaterThan(0).WithMessage("CompanyId is required and must be greater than 0.");
+
+            RuleFor(x => x.Request.Id)
+                .GreaterThan(0).WithMessage("Id is required and must be greater than 0.");
+
+            RuleFor(x => x.Request.Name)
+                .NotEmpty().WithMessage("Name is required.");
+
+            RuleFor(x => x.Request.Color)
+                .NotEmpty().WithMessage("Color is required.");
         }
     }
 }

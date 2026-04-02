@@ -52,6 +52,7 @@ namespace Api.DataBase
         public DbSet<DocumentItemExpirationDate> DocumentItemExpirationDates { get; set; }
         public DbSet<DocumentsCounter> DocumentsCounter { get; set; }
         public DbSet<ZReportPaymentSummary> ZReportPaymentSummaries { get; internal set; }
+        public DbSet<Booking> Bookings { get; set; }
 
         protected override void ConfigureConventions(ModelConfigurationBuilder cfg)
         {
@@ -89,7 +90,11 @@ namespace Api.DataBase
                 e.Property(x => x.Amount).HasPrecision(18, 2);
                 e.HasKey(dit => new { dit.DocumentItemId, dit.TaxId });
             });
+            b.Entity<FloorPlanTable>()
+                .ToTable("FloorPlanTable", tb => tb.HasTrigger("SomeTrigger"));
 
+            b.Entity<Booking>()
+                .ToTable("Booking", tb => tb.HasTrigger("SomeTrigger"));
             b.Entity<Payment>(e =>
             {
                 e.ToTable(tb => tb.HasTrigger("Payment_Insert_Trigger"));

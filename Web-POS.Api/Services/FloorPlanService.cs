@@ -1,59 +1,53 @@
-﻿using Api.Domain;
-using Api.Models;
+﻿using Api.Models;
 using Api.Repository;
+using Api.Domain;
+using Api.Helpers;
 
 namespace Api.Services
 {
     public class FloorPlanService
     {
-        public readonly FloorPlanRepository _repository;
+        private readonly FloorPlanRepository _repository;
 
         public FloorPlanService(FloorPlanRepository repository)
         {
             _repository = repository;
         }
 
-        public async Task<FloorPlan> Create(CreateFloorPlanRequest req)
+        public async Task<List<FloorPlanDto>> GetAllAsync(int companyId)
         {
-            if (await _repository.ExistsAsync(req.Name))
-            {
-                throw new InvalidOperationException($"A floor plan with the name '{req.Name}' already exists.");
-            }
-
-            var newFloorPlan = FloorPlan.Create(req.Name, req.Color);
-            await _repository.AddAsync(newFloorPlan);
-            return newFloorPlan;
+            var entities = await _repository.GetAllAsync(companyId);
+            return entities.Select(MapperFloorPlan.MapToDto).ToList();
         }
 
-        public async Task<bool> Update(int id, UpdateFloorPlanRequest req)
+        public async Task<FloorPlanDto?> GetByIdAsync(int id, int companyId)
         {
-            var entityToUpdate = await _repository.GetByIdAsync(id, trackEntity: true);
-            if (entityToUpdate == null)
-            {
-                throw new InvalidOperationException($"A floor plan with the ID '{id}' was not found.");
-            }
-
-            var existingByName = await _repository.GetByNameAsync(req.Name);
-            if (existingByName != null && existingByName.Id != id)
-            {
-                throw new InvalidOperationException($"Another floor plan with the name '{req.Name}' already exists.");
-            }
-
-            entityToUpdate.Update(req.Name, req.Color ?? entityToUpdate.Color);
-            await _repository.UpdateAsync(entityToUpdate);
-            return true;
+            var entity = await _repository.GetByIdAsync(id, companyId);
+            return entity == null ? null : MapperFloorPlan.MapToDto(entity);
         }
 
-        public async Task<bool> Delete(int id)
+        public async Task<FloorPlanDto> CreateAsync(CreateFloorPlanRequest req, int companyId)
         {
-            var entityToDelete = await _repository.GetByIdAsync(id, trackEntity: true);
-            if (entityToDelete == null)
-            {
-                return false;
-            }
+            var entity = FloorPlan.Create(companyId, req.Name, req.Color);
+            var savedEntity = await _repository.AddAsync(entity);
+            return MapperFloorPlan.MapToDto(savedEntity);
+        }
 
-            await _repository.DeleteAsync(entityToDelete);
-            return true;
+        public async Task<bool> UpdateAsync(UpdateFloorPlanRequest req, int companyId)
+        {
+            var entity = await _repository.GetByIdAsync(req.Id, companyId);
+            if (entity == null) return false;
+
+            entity.Update(req.Name, req.Color);
+            return await _repository.UpdateAsync(entity);
+        }
+
+        public async Task<bool> DeleteAsync(int id, int companyId)
+        {
+            var entity = await _repository.GetByIdAsync(id, companyId);
+            if (entity == null) return false;
+
+            return await _repository.DeleteAsync(entity);
         }
     }
 }

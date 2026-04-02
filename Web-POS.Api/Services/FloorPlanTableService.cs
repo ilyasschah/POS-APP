@@ -1,66 +1,74 @@
-﻿using Api.Domain;
-using Api.Models;
+﻿using Api.Models;
 using Api.Repository;
+using Api.Domain;
+using Api.Helpers;
 
 namespace Api.Services
 {
     public class FloorPlanTableService
     {
-        public readonly FloorPlanTableRepository _repository;
+        private readonly FloorPlanTableRepository _repository;
 
         public FloorPlanTableService(FloorPlanTableRepository repository)
         {
             _repository = repository;
         }
 
-        public async Task<FloorPlanTable> Create(CreateFloorPlanTableRequest req)
+        public async Task<List<FloorPlanTableDto>> GetAllAsync(int companyId)
         {
-            if (await _repository.ExistsAsync(req.Name, req.FloorPlanId))
-            {
-                throw new InvalidOperationException($"A table with the name '{req.Name}' already exists on this floor plan.");
-            }
-
-            var newTable = FloorPlanTable.Create(req.Name, req.FloorPlanId, req.Width, req.Height);
-
-            newTable.PositionX = req.PositionX ?? 0;
-            newTable.PositionY = req.PositionY ?? 0;
-            newTable.IsRound = req.IsRound ?? false;
-
-            await _repository.AddAsync(newTable);
-            return newTable;
+            var entities = await _repository.GetAllAsync(companyId);
+            return entities.Select(MapperFloorPlanTable.MapToDto).ToList();
         }
 
-        public async Task<bool> Update(int id, UpdateFloorPlanTableRequest req)
+        public async Task<List<FloorPlanTableDto>> GetByFloorPlanIdAsync(int floorPlanId, int companyId)
         {
-            var entityToUpdate = await _repository.GetByIdAsync(id, trackEntity: true);
-            if (entityToUpdate == null)
-            {
-                throw new InvalidOperationException($"A table with the ID '{id}' was not found.");
-            }
-
-            if (entityToUpdate.Name.ToLower() != req.Name.ToLower())
-            {
-                if (await _repository.ExistsAsync(req.Name, entityToUpdate.FloorPlanId))
-                {
-                    throw new InvalidOperationException($"Another table with the name '{req.Name}' already exists on this floor plan.");
-                }
-            }
-
-            entityToUpdate.Update(req.Name, req.PositionX, req.PositionY, req.Width, req.Height, req.IsRound);
-            await _repository.UpdateAsync(entityToUpdate);
-            return true;
+            var entities = await _repository.GetByFloorPlanIdAsync(floorPlanId, companyId);
+            return entities.Select(MapperFloorPlanTable.MapToDto).ToList();
         }
 
-        public async Task<bool> Delete(int id)
+        public async Task<FloorPlanTableDto?> GetByIdAsync(int id, int companyId)
         {
-            var entityToDelete = await _repository.GetByIdAsync(id, trackEntity: true);
-            if (entityToDelete == null)
-            {
-                return false;
-            }
+            var entity = await _repository.GetByIdAsync(id, companyId);
+            return entity == null ? null : MapperFloorPlanTable.MapToDto(entity);
+        }
 
-            await _repository.DeleteAsync(entityToDelete);
-            return true;
+        public async Task<FloorPlanTableDto?> GetByNameAsync(string name, int companyId)
+        {
+            var entity = await _repository.GetByNameAsync(name, companyId);
+            return entity == null ? null : MapperFloorPlanTable.MapToDto(entity);
+        }
+
+        public async Task<FloorPlanTableDto> CreateAsync(CreateFloorPlanTableRequest req, int companyId)
+        {
+            var entity = FloorPlanTable.Create(
+                companyId,
+                req.FloorPlanId,
+                req.Name,
+                req.PositionX,
+                req.PositionY,
+                req.Width,
+                req.Height,
+                req.IsRound);
+
+            var savedEntity = await _repository.AddAsync(entity);
+            return MapperFloorPlanTable.MapToDto(savedEntity);
+        }
+
+        public async Task<bool> UpdateGeometryAsync(UpdateTableGeometryRequest req, int companyId)
+        {
+            var entity = await _repository.GetByIdAsync(req.Id, companyId);
+            if (entity == null) return false;
+
+            entity.UpdateGeometry(req.PositionX, req.PositionY, req.Width, req.Height);
+            return await _repository.UpdateAsync(entity);
+        }
+
+        public async Task<bool> DeleteAsync(int id, int companyId)
+        {
+            var entity = await _repository.GetByIdAsync(id, companyId);
+            if (entity == null) return false;
+
+            return await _repository.DeleteAsync(entity);
         }
     }
 }

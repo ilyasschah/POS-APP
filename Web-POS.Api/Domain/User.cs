@@ -23,11 +23,9 @@ namespace Api.Domain
         public bool IsEnabled { get; private set; }
         public string? Email { get; private set; }
 
-        // --- Navigation Properties ---
         [ForeignKey(nameof(CompanyId))]
         public virtual Company Company { get; private set; }
 
-        // Required by EF Core
         public User() { }
 
         private User(int companyId, string? firstName, string? lastName, string username, string password, int accessLevel, bool isEnabled, string? email)

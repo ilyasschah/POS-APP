@@ -7,42 +7,53 @@ namespace Api.Domain
     public class FloorPlanTable
     {
         [Key]
-        public int Id { get; set; }
-        public int CompanyId { get; set; }
-        public string Name { get; set; }
-        public int FloorPlanId { get; set; }
-        public double PositionX { get; set; }
-        public double PositionY { get; set; }
-        public double Width { get; set; }
-        public double Height { get; set; }
-        public bool IsRound { get; set; }
+        public int Id { get; private set; }
+        public int CompanyId { get; private set; }
+        public int FloorPlanId { get; private set; }
+
+        [MaxLength(100)]
+        public string Name { get; private set; }
+
+        public double PositionX { get; private set; }
+        public double PositionY { get; private set; }
+        public double Width { get; private set; }
+        public double Height { get; private set; }
+        public bool IsRound { get; private set; }
 
         [ForeignKey(nameof(FloorPlanId))]
-        public virtual FloorPlan FloorPlan { get; set; }
-
-        private FloorPlanTable(string name, int floorPlanId, double width, double height)
-        {
-            Name = name;
-            FloorPlanId = floorPlanId;
-            Width = width;
-            Height = height;
-        }
+        public virtual FloorPlan? FloorPlan { get; private set; }
 
         public FloorPlanTable() { }
 
-        public static FloorPlanTable Create(string name, int floorPlanId, double width, double height)
+        private FloorPlanTable(int companyId, int floorPlanId, string name, double positionX, double positionY, double width, double height, bool isRound)
         {
-            return new FloorPlanTable(name, floorPlanId, width, height);
-        }
-
-        public void Update(string name, double positionX, double positionY, double width, double height, bool isRound)
-        {
+            CompanyId = companyId;
+            FloorPlanId = floorPlanId;
             Name = name;
             PositionX = positionX;
             PositionY = positionY;
             Width = width;
             Height = height;
             IsRound = isRound;
+        }
+
+        public static FloorPlanTable Create(int companyId, int floorPlanId, string name, double positionX, double positionY, double width, double height, bool isRound)
+        {
+            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Table name is required.");
+            return new FloorPlanTable(companyId, floorPlanId, name, positionX, positionY, width, height, isRound);
+        }
+
+        public void UpdateGeometry(double positionX, double positionY, double width, double height)
+        {
+            PositionX = positionX;
+            PositionY = positionY;
+            Width = width;
+            Height = height;
+        }
+
+        public void Rename(string newName)
+        {
+            Name = newName;
         }
     }
 }

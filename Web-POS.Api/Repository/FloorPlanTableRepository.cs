@@ -6,68 +6,60 @@ namespace Api.Repository
 {
     public class FloorPlanTableRepository
     {
-        public readonly AppDbContext _db;
+        private readonly AppDbContext _db;
 
         public FloorPlanTableRepository(AppDbContext db)
         {
             _db = db;
         }
 
-        public async Task<List<FloorPlanTable>> GetAllAsync()
+        public async Task<List<FloorPlanTable>> GetAllAsync(int companyId)
         {
             return await _db.FloorPlanTables
-                .Include(fpt => fpt.FloorPlan)
                 .AsNoTracking()
+                .Where(t => t.CompanyId == companyId)
                 .ToListAsync();
         }
 
-        public async Task<FloorPlanTable?> GetByIdAsync(int id, bool trackEntity = false)
-        {
-            var query = _db.FloorPlanTables.AsQueryable();
-            if (!trackEntity)
-            {
-                query = query.AsNoTracking();
-            }
-            return await query
-                .Include(fpt => fpt.FloorPlan)
-                .FirstOrDefaultAsync(fpt => fpt.Id == id);
-        }
-        public async Task<FloorPlanTable?> GetByNameAsync(string name)
+        public async Task<List<FloorPlanTable>> GetByFloorPlanIdAsync(int floorPlanId, int companyId)
         {
             return await _db.FloorPlanTables
                 .AsNoTracking()
-                .Include(fpt => fpt.FloorPlan)
-                .FirstOrDefaultAsync(fpt => fpt.Name.ToLower() == name.ToLower());
-        }
-        public async Task<List<FloorPlanTable>> GetByFloorPlanIdAsync(int floorPlanId)
-        {
-            return await _db.FloorPlanTables
-                .Where(fpt => fpt.FloorPlanId == floorPlanId)
-                .AsNoTracking()
+                .Where(t => t.FloorPlanId == floorPlanId && t.CompanyId == companyId)
                 .ToListAsync();
         }
 
-        public async Task<bool> ExistsAsync(string name, int floorPlanId)
+        public async Task<FloorPlanTable?> GetByIdAsync(int id, int companyId)
         {
-            return await _db.FloorPlanTables.AnyAsync(fpt => fpt.Name.ToLower() == name.ToLower() && fpt.FloorPlanId == floorPlanId);
+            return await _db.FloorPlanTables
+                .FirstOrDefaultAsync(t => t.Id == id && t.CompanyId == companyId);
         }
 
-        public async Task AddAsync(FloorPlanTable entity)
+        public async Task<FloorPlanTable?> GetByNameAsync(string name, int companyId)
+        {
+            return await _db.FloorPlanTables
+                .FirstOrDefaultAsync(t => t.Name == name && t.CompanyId == companyId);
+        }
+
+        public async Task<FloorPlanTable> AddAsync(FloorPlanTable entity)
         {
             _db.FloorPlanTables.Add(entity);
             await _db.SaveChangesAsync();
+            return entity;
         }
 
-        public async Task UpdateAsync(FloorPlanTable entity)
+        public async Task<bool> UpdateAsync(FloorPlanTable entity)
         {
             _db.FloorPlanTables.Update(entity);
             await _db.SaveChangesAsync();
+            return true;
         }
 
-        public async Task DeleteAsync(FloorPlanTable entity)
+        public async Task<bool> DeleteAsync(FloorPlanTable entity)
         {
             _db.FloorPlanTables.Remove(entity);
             await _db.SaveChangesAsync();
+            return true;
         }
     }
 }

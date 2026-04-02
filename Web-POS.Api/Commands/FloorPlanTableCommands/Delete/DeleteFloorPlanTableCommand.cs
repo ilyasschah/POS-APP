@@ -1,27 +1,26 @@
 ﻿using MediatR;
-using System.Threading;
-using System.Threading.Tasks;
 using Api.Services;
 
-namespace Api.Commands.FloorPlanTableCommands.Delete
+namespace Api.Commands.FloorPlanTableCommand.Delete
 {
     public class DeleteFloorPlanTableCommand : IRequest<bool>
     {
         public int Id { get; set; }
+        public int CompanyId { get; set; }
+    }
 
-        public class DeleteFloorPlanTableCommandHandler : IRequestHandler<DeleteFloorPlanTableCommand, bool>
+    public class DeleteFloorPlanTableHandler : IRequestHandler<DeleteFloorPlanTableCommand, bool>
+    {
+        private readonly FloorPlanTableService _service;
+
+        public DeleteFloorPlanTableHandler(FloorPlanTableService service)
         {
-            private readonly FloorPlanTableService _service;
+            _service = service;
+        }
 
-            public DeleteFloorPlanTableCommandHandler(FloorPlanTableService service)
-            {
-                _service = service;
-            }
-
-            public Task<bool> Handle(DeleteFloorPlanTableCommand command, CancellationToken cancellationToken)
-            {
-                return _service.Delete(command.Id);
-            }
+        public async Task<bool> Handle(DeleteFloorPlanTableCommand request, CancellationToken cancellationToken)
+        {
+            return await _service.DeleteAsync(request.Id, request.CompanyId);
         }
     }
 }

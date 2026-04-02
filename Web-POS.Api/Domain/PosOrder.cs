@@ -18,7 +18,7 @@ namespace Api.Domain
         public int ServiceType { get; set; }
 
         [ForeignKey(nameof(UserId))]
-        public virtual User User { get; set; }
+        public virtual User? User { get; set; }
 
         [ForeignKey(nameof(CustomerId))]
         public virtual Customer? Customer { get; set; }
