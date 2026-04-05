@@ -12,6 +12,9 @@ namespace Api.Models
         public int? CustomerId { get; set; }
         public string? CustomerName { get; set; }
         public int ServiceType { get; set; }
+        public int ServiceStatus { get; set; }
+        public int? FloorPlanTableId { get; set; }
+        //public int? BookingId { get; set; }
     }
 
     public class CreatePosOrderRequest
@@ -23,10 +26,14 @@ namespace Api.Models
         public decimal? Total { get; set; }
         public int? CustomerId { get; set; }
         public int ServiceType { get; set; }
+        public int ServiceStatus { get; set; }
+        public int? FloorPlanTableId { get; set; }
+        //public int? BookingId { get; set; }
     }
 
     public class UpdatePosOrderRequest
     {
+        public int Id { get; set; } 
         public required int UserId { get; set; }
         public required string Number { get; set; }
         public decimal Discount { get; set; }
@@ -34,5 +41,8 @@ namespace Api.Models
         public decimal? Total { get; set; }
         public int? CustomerId { get; set; }
         public int ServiceType { get; set; }
+        public int ServiceStatus { get; set; }
+        public int? FloorPlanTableId { get; set; }
+        //public int? BookingId { get; set; }
     }
 }

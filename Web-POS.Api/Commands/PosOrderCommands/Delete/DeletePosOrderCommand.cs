@@ -1,49 +1,41 @@
-// File: Commands/PosOrderCommands/Update/UpdatePosOrderCommand.cs
-
-using FluentValidation;
 using MediatR;
-using System.Threading;
-using System.Threading.Tasks;
+using FluentValidation;
 using Api.Services;
-using Api.Models;
 
-namespace Api.Commands.PosOrderCommands.Delete
+namespace Api.Commands.PosOrderCommand
 {
-    public class UpdatePosOrderCommand : IRequest<bool>
+    public class DeletePosOrderCommand : IRequest<bool>
     {
-        public int Id { get; }
-        public UpdatePosOrderRequest Request { get; }
+        public int Id { get; set; }
 
-        public UpdatePosOrderCommand(int id, UpdatePosOrderRequest request)
+        public DeletePosOrderCommand(int id)
         {
             Id = id;
-            Request = request;
         }
 
-        // Nested Handler
-        public class UpdatePosOrderCommandHandler : IRequestHandler<UpdatePosOrderCommand, bool>
+        // --- VALIDATOR ---
+        public class DeletePosOrderCommandValidator : AbstractValidator<DeletePosOrderCommand>
+        {
+            public DeletePosOrderCommandValidator()
+            {
+                RuleFor(x => x.Id)
+                    .GreaterThan(0).WithMessage("Order ID must be valid.");
+            }
+        }
+
+        // --- HANDLER ---
+        public class DeletePosOrderCommandHandler : IRequestHandler<DeletePosOrderCommand, bool>
         {
             private readonly PosOrderService _service;
 
-            public UpdatePosOrderCommandHandler(PosOrderService service)
+            public DeletePosOrderCommandHandler(PosOrderService service)
             {
                 _service = service;
             }
 
-            public Task<bool> Handle(UpdatePosOrderCommand command, CancellationToken cancellationToken)
+            public async Task<bool> Handle(DeletePosOrderCommand command, CancellationToken cancellationToken)
             {
-                return _service.Update(command.Id, command.Request);
-            }
-        }
-
-        // Nested Validator
-        public class UpdatePosOrderCommandValidator : AbstractValidator<UpdatePosOrderCommand>
-        {
-            public UpdatePosOrderCommandValidator()
-            {
-                RuleFor(c => c.Id).GreaterThan(0).WithMessage("A valid Order ID is required.");
-                RuleFor(c => c.Request.Number).NotNull().NotEmpty().WithMessage("Order number is required.");
-                RuleFor(c => c.Request.UserId).GreaterThan(0).WithMessage("A valid user is required.");
+                return await _service.Delete(command.Id);
             }
         }
     }

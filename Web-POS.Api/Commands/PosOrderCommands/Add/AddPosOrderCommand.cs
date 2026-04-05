@@ -1,49 +1,55 @@
-using FluentValidation;
 using MediatR;
-using Api.Services;
+using FluentValidation;
 using Api.Models;
+using Api.Services;
+using Api.Helpers;
 
-namespace Api.Commands.PosOrderCommands.Add
+namespace Api.Commands.PosOrderCommand
 {
-    public class AddPosOrderCommand : IRequest<PosOrderDto>
+    public class CreatePosOrderCommand : IRequest<PosOrderDto>
     {
+        public int CompanyId { get; set; }
         public CreatePosOrderRequest Request { get; set; }
 
-        public AddPosOrderCommand(CreatePosOrderRequest request)
+        public CreatePosOrderCommand(int companyId, CreatePosOrderRequest request)
         {
+            CompanyId = companyId;
             Request = request;
         }
-        public class AddPosOrderCommandHandler : IRequestHandler<AddPosOrderCommand, PosOrderDto>
+
+        // --- VALIDATOR ---
+        public class CreatePosOrderCommandValidator : AbstractValidator<CreatePosOrderCommand>
+        {
+            public CreatePosOrderCommandValidator()
+            {
+                RuleFor(x => x.CompanyId)
+                    .GreaterThan(0).WithMessage("Company ID must be valid.");
+
+                RuleFor(x => x.Request.UserId)
+                    .GreaterThan(0).WithMessage("User ID must be valid.");
+
+                RuleFor(x => x.Request.Number)
+                    .NotEmpty().WithMessage("Order Number is required.");
+
+                RuleFor(x => x.Request.Discount)
+                    .GreaterThanOrEqualTo(0).WithMessage("Discount cannot be negative.");
+            }
+        }
+
+        // --- HANDLER ---
+        public class CreatePosOrderCommandHandler : IRequestHandler<CreatePosOrderCommand, PosOrderDto>
         {
             private readonly PosOrderService _service;
 
-            public AddPosOrderCommandHandler(PosOrderService service)
+            public CreatePosOrderCommandHandler(PosOrderService service)
             {
                 _service = service;
             }
 
-            public async Task<PosOrderDto> Handle(AddPosOrderCommand command, CancellationToken cancellationToken)
+            public async Task<PosOrderDto> Handle(CreatePosOrderCommand command, CancellationToken cancellationToken)
             {
-                var newEntity = await _service.Create(command.Request);
-                return new PosOrderDto
-                {
-                    Id = newEntity.Id,
-                    UserId = newEntity.UserId,
-                    Number = newEntity.Number,
-                    Discount = newEntity.Discount,
-                    DiscountType = newEntity.DiscountType,
-                    Total = newEntity.Total,
-                    CustomerId = newEntity.CustomerId,
-                    ServiceType = newEntity.ServiceType
-                };
-            }
-        }
-        public class AddPosOrderCommandValidator : AbstractValidator<AddPosOrderCommand>
-        {
-            public AddPosOrderCommandValidator()
-            {
-                RuleFor(c => c.Request.Number).NotNull().NotEmpty().WithMessage("Order number is required.");
-                RuleFor(c => c.Request.UserId).GreaterThan(0).WithMessage("A valid user is required.");
+                var newEntity = await _service.Create(command.CompanyId, command.Request);
+                return MapperPosOrder.MapToPosOrderDto(newEntity);
             }
         }
     }

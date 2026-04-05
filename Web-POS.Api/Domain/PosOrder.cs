@@ -1,3 +1,4 @@
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -16,6 +17,13 @@ namespace Api.Domain
         public decimal? Total { get; set; }
         public int? CustomerId { get; set; }
         public int ServiceType { get; set; }
+        public int ServiceStatus { get; set; }
+
+        // Links to the physical table (Turns table red in Flutter if not null)
+        public int? FloorPlanTableId { get; set; }
+
+        // Links back to the original booking (if this order came from a reservation)
+        //public int? BookingId { get; set; }
 
         [ForeignKey(nameof(UserId))]
         public virtual User? User { get; set; }
@@ -25,8 +33,9 @@ namespace Api.Domain
 
         public PosOrder() { }
 
-        private PosOrder(int userId, string number, decimal discount, int discountType, decimal? total, int? customerId, int serviceType)
+        private PosOrder(int companyId, int userId, string number, decimal discount, int discountType, decimal? total, int? customerId, int serviceType, int serviceStatus, int? floorPlanTableId)
         {
+            CompanyId = companyId;
             UserId = userId;
             Number = number;
             Discount = discount;
@@ -34,15 +43,22 @@ namespace Api.Domain
             Total = total;
             CustomerId = customerId;
             ServiceType = serviceType;
+
+            ServiceStatus = serviceStatus;
+            FloorPlanTableId = floorPlanTableId;
+            //BookingId = bookingId;
         }
-        public static PosOrder Create(int userId, string number, decimal discount, int discountType, decimal? total, int? customerId, int serviceType)
+
+        public static PosOrder Create(int companyId, int userId, string number, decimal discount, int discountType, decimal? total, int? customerId, int serviceType, int serviceStatus, int? floorPlanTableId = null)
         {
+            if (companyId <= 0) throw new ArgumentException("Company ID must be valid.", nameof(companyId));
             if (userId <= 0) throw new ArgumentException("User ID must be valid.", nameof(userId));
             if (string.IsNullOrWhiteSpace(number)) throw new ArgumentException("Order number cannot be empty.", nameof(number));
 
-            return new PosOrder(userId, number, discount, discountType, total, customerId, serviceType);
+            return new PosOrder(companyId, userId, number, discount, discountType, total, customerId, serviceType, serviceStatus, floorPlanTableId);
         }
-        public void Update(int userId, string number, decimal discount, int discountType, decimal? total, int? customerId, int serviceType)
+
+        public void Update(int userId, string number, decimal discount, int discountType, decimal? total, int? customerId, int serviceType, int serviceStatus, int? floorPlanTableId)
         {
             if (userId <= 0) throw new ArgumentException("User ID must be valid.", nameof(userId));
             if (string.IsNullOrWhiteSpace(number)) throw new ArgumentException("Order number cannot be empty.", nameof(number));
@@ -54,6 +70,10 @@ namespace Api.Domain
             Total = total;
             CustomerId = customerId;
             ServiceType = serviceType;
+
+            ServiceStatus = serviceStatus;
+            FloorPlanTableId = floorPlanTableId;
+            //BookingId = bookingId;
         }
     }
 }

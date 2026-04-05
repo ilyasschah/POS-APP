@@ -18,7 +18,10 @@ namespace Api.Helpers
                 CustomerId = entity.CustomerId,
                 UserName = entity.User?.Username ?? "N/A",
                 CustomerName = entity.Customer?.Name ?? "N/A",
-                ServiceType = entity.ServiceType
+                ServiceType = entity.ServiceType,
+                ServiceStatus = entity.ServiceStatus,
+                FloorPlanTableId = entity.FloorPlanTableId,
+                //BookingId = entity.BookingId
             };
         }
     }
