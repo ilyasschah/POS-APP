@@ -1,22 +1,48 @@
 using MediatR;
-using Api.Helpers;
+using FluentValidation;
 using Api.Repository;
+using Api.Helpers;
 using Api.Models;
 
 namespace Api.Queries.PosOrderItemQuery
 {
-    public record GetPosOrderItemByIdQuery(int Id) : IRequest<PosOrderItemDto>;
-    public class GetPosOrderItemByIdQueryHandler : IRequestHandler<GetPosOrderItemByIdQuery, PosOrderItemDto>
+    public class GetPosOrderItemByIdQuery : IRequest<PosOrderItemDto?>
     {
-        private readonly PosOrderItemRepository _repository;
-        public GetPosOrderItemByIdQueryHandler(PosOrderItemRepository repository)
+        public int Id { get; set; }
+        public int CompanyId { get; set; }
+
+        // --- VALIDATOR ---
+        public class GetPosOrderItemByIdQueryValidator : AbstractValidator<GetPosOrderItemByIdQuery>
         {
-            _repository = repository;
+            public GetPosOrderItemByIdQueryValidator()
+            {
+                RuleFor(x => x.Id)
+                    .GreaterThan(0).WithMessage("Item ID must be greater than zero.");
+
+                RuleFor(x => x.CompanyId)
+                    .GreaterThan(0).WithMessage("Company ID must be valid.");
+            }
         }
-        public async Task<PosOrderItemDto> Handle(GetPosOrderItemByIdQuery request, CancellationToken cancellationToken)
+
+        // --- HANDLER ---
+        public class GetPosOrderItemByIdQueryHandler : IRequestHandler<GetPosOrderItemByIdQuery, PosOrderItemDto?>
         {
-            var item = await _repository.GetByIdAsync(request.Id);
-            return MapperPosOrderItem.MapToPosOrderItemDto(item);
+            private readonly PosOrderItemRepository _repository;
+
+            public GetPosOrderItemByIdQueryHandler(PosOrderItemRepository repository)
+            {
+                _repository = repository;
+            }
+
+            public async Task<PosOrderItemDto?> Handle(GetPosOrderItemByIdQuery request, CancellationToken cancellationToken)
+            {
+                var entity = await _repository.GetByIdAsync(request.Id, request.CompanyId);
+
+                if (entity == null)
+                    return null;
+
+                return MapperPosOrderItem.MapToPosOrderItemDto(entity);
+            }
         }
     }
 }

@@ -19,7 +19,7 @@ namespace Api.Controllers
             return Ok(await mediator.Send(new GetAllBarCodeProductNameQuery { CompanyId = companyId }));
         }
 
-        [HttpGet("[action]/{id:int}")]
+        [HttpGet("[action]")]
         public async Task<ActionResult<BarcodeDto>> GetById([FromQuery] int id, [FromQuery] int companyId)
         {
             if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });

@@ -19,7 +19,7 @@ namespace Api.Controllers
             return Ok (await mediator.Send(new GetAllCountriesQuery { CompanyId = companyId }));
         }
 
-        [HttpGet("[action]/{id:int}")]
+        [HttpGet("[action]")]
         public async Task<ActionResult<CountryDto>> GetById(int id, [FromQuery] int companyId)
         {
             if (companyId <= 0) return BadRequest("Company ID is required");
@@ -35,7 +35,7 @@ namespace Api.Controllers
             return CreatedAtAction(nameof(GetById), new { id = 0, companyId }, result);
         }
 
-        [HttpPut("[action]/{id:int}")]
+        [HttpPut("[action]")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateCountryRequest req, [FromQuery] int companyId)
         {
             if (companyId <= 0) return BadRequest("Company ID is required");
@@ -43,7 +43,7 @@ namespace Api.Controllers
             return ok ? NoContent() : NotFound();
         }
 
-        [HttpDelete("[action]/{id:int}")]
+        [HttpDelete("[action]")]
         public async Task<IActionResult> Delete(int id, [FromQuery] int companyId)
         {
             if (companyId <= 0) return BadRequest("Company ID is required");

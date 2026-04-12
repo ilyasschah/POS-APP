@@ -127,6 +127,55 @@
         }
       }
     },
+    "/api/PosOrder/Checkout": {
+      "post": {
+        "tags": [
+          "PosOrder"
+        ],
+        "parameters": [
+          {
+            "name": "companyId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckoutPosOrderRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckoutPosOrderRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckoutPosOrderRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/PosOrder/Update": {
       "patch": {
         "tags": [
@@ -1016,9 +1065,41 @@
   },
   "components": {
     "schemas": {
+      "CheckoutPosOrderRequest": {
+        "required": [
+          "amountPaid",
+          "documentTypeId",
+          "paymentTypeId",
+          "posOrderId",
+          "warehouseId"
+        ],
+        "type": "object",
+        "properties": {
+          "posOrderId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "paymentTypeId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "amountPaid": {
+            "type": "number",
+            "format": "double"
+          },
+          "documentTypeId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "warehouseId": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
       "CreatePosOrderRequest": {
         "required": [
-          "number",
           "userId"
         ],
         "type": "object",
@@ -1026,10 +1107,6 @@
           "userId": {
             "type": "integer",
             "format": "int32"
-          },
-          "number": {
-            "type": "string",
-            "nullable": true
           },
           "discount": {
             "type": "number",

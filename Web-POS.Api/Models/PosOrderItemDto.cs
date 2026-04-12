@@ -1,47 +1,56 @@
+using System;
+
 namespace Api.Models
 {
-    public record PosOrderItemDto
+    public class PosOrderItemDto
     {
-        public int Id { get; init; }
-        public int PosOrderId { get; init; }
-        public int ProductId { get; init; }
-        public string ProductName { get; init; }
-        public int RoundNumber { get; init; }
-        public decimal Quantity { get; init; }
-        public decimal Price { get; init; }
-        public bool IsLocked { get; init; }
-        public decimal Discount { get; init; }
-        public int DiscountType { get; init; }
-        public bool IsFeatured { get; init; }
-        public int? VoidedBy { get; init; }
-        public string? VoidedByUserName { get; init; }
-        public string? Comment { get; init; }
-        public DateTime DateCreated { get; init; }
-        public string? Bundle { get; init; }
-        public int DiscountAppliedType { get; init; }
+        public int Id { get; set; }
+        public int PosOrderId { get; set; }
+        public int ProductId { get; set; }
+
+        // Helpful for the Flutter UI so you don't have to look up the product separately
+        public string ProductName { get; set; } = string.Empty;
+
+        public int RoundNumber { get; set; }
+        public decimal Quantity { get; set; }
+        public decimal Price { get; set; }
+        public bool IsLocked { get; set; }
+        public decimal Discount { get; set; }
+        public int DiscountType { get; set; }
+        public int DiscountAppliedType { get; set; }
+        public bool IsFeatured { get; set; }
+        public int? VoidedBy { get; set; }
+
+        // Helpful to know WHO voided it
+        public string? VoidedByUserName { get; set; }
+
+        public string? Comment { get; set; }
+        public DateTime DateCreated { get; set; }
+        public string? Bundle { get; set; }
     }
 
-    public record CreatePosOrderItemRequest
+    public class CreatePosOrderItemRequest
     {
-        public required int PosOrderId { get; init; }
-        public required int ProductId { get; init; }
-        public int RoundNumber { get; init; } = 0;
-        public required decimal Quantity { get; init; }
-        public required decimal Price { get; init; }
-        public decimal Discount { get; init; } = 0;
-        public int DiscountType { get; init; } = 0;
-        public string? Comment { get; init; }
-        public string? Bundle { get; init; }
+        public required int PosOrderId { get; set; }
+        public required int ProductId { get; set; }
+        public int RoundNumber { get; set; }
+        public required decimal Quantity { get; set; }
+        public required decimal Price { get; set; }
+        public decimal Discount { get; set; }
+        public int DiscountType { get; set; }
+        public int DiscountAppliedType { get; set; }
+        public string? Comment { get; set; }
+        public string? Bundle { get; set; }
     }
 
-    public record UpdatePosOrderItemRequest
+    public class UpdatePosOrderItemRequest
     {
-        public required int Id { get; init; }
-        public required decimal Quantity { get; init; }
-        public required decimal Price { get; init; }
-        public decimal Discount { get; init; }
-        public string? Comment { get; init; }
+        public required int Id { get; set; }
+        public required decimal Quantity { get; set; }
+        public required decimal Price { get; set; }
+        public decimal Discount { get; set; }
+        public int DiscountType { get; set; }
+        public int DiscountAppliedType { get; set; }
+        public string? Comment { get; set; }
     }
 }
-
-

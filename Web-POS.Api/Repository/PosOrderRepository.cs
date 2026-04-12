@@ -1,6 +1,7 @@
-using Microsoft.EntityFrameworkCore;
 using Api.DataBase;
 using Api.Domain;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Api.Repository;
 
@@ -53,7 +54,11 @@ public class PosOrderRepository
             .Include(o => o.Customer)
             .FirstOrDefaultAsync(o => o.Id == id && o.CompanyId == companyId);
     }
-
+    public async Task<FloorPlanTable?> GetFloorPlanTableAsync(int tableId, int companyId)
+    {
+        return await _db.FloorPlanTables
+            .FirstOrDefaultAsync(t => t.Id == tableId && t.CompanyId == companyId);
+    }
     public async Task<PosOrder?> GetByIdAsync(int id, bool trackEntity = false)
     {
         var query = _db.PosOrders.AsQueryable();
@@ -77,13 +82,20 @@ public class PosOrderRepository
         _db.PosOrders.Add(entity);
         await _db.SaveChangesAsync();
     }
+    public async Task<IDbContextTransaction> BeginTransactionAsync()
+    {
+        return await _db.Database.BeginTransactionAsync();
+    }
 
     public async Task UpdateAsync(PosOrder entity)
     {
         _db.PosOrders.Update(entity);
         await _db.SaveChangesAsync();
     }
-
+    public void UpdateFloorPlanTable(FloorPlanTable table)
+    {
+        _db.FloorPlanTables.Update(table);
+    }
     public async Task DeleteAsync(PosOrder entity)
     {
         _db.PosOrders.Remove(entity);

@@ -19,7 +19,7 @@ namespace Api.Controllers
             return Ok(result);
         }
 
-        [HttpGet("[action]/{id:int}")]
+        [HttpGet("[action]")]
         public async Task<ActionResult<ApplicationPropertyDto>> GetById(int id, [FromQuery] int companyId)
         {
             if (companyId <= 0) return BadRequest("Company ID is required");

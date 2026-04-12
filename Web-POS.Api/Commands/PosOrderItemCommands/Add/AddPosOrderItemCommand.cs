@@ -1,59 +1,57 @@
-using FluentValidation;
 using MediatR;
-using Api.Helpers;
+using FluentValidation;
 using Api.Models;
 using Api.Services;
+using Api.Helpers;
 
-namespace Api.Commands.PosOrderItemCommands.Add
+namespace Api.Commands.PosOrderItemCommand
 {
-    public class AddPosOrderItemCommand : IRequest<PosOrderItemDto>
+    public class CreatePosOrderItemCommand : IRequest<PosOrderItemDto>
     {
+        public int CompanyId { get; set; }
         public CreatePosOrderItemRequest Request { get; set; }
-        public AddPosOrderItemCommand(CreatePosOrderItemRequest createposorderitemRequest)
+
+        public CreatePosOrderItemCommand(int companyId, CreatePosOrderItemRequest request)
         {
-            Request = createposorderitemRequest;
+            CompanyId = companyId;
+            Request = request;
         }
-        public class AddPosOrderItemCommandHandler : IRequestHandler<AddPosOrderItemCommand, PosOrderItemDto>
+
+        public class CreatePosOrderItemCommandValidator : AbstractValidator<CreatePosOrderItemCommand>
+        {
+            public CreatePosOrderItemCommandValidator()
+            {
+                RuleFor(x => x.CompanyId)
+                    .GreaterThan(0).WithMessage("Company ID must be valid.");
+
+                RuleFor(x => x.Request.PosOrderId)
+                    .GreaterThan(0).WithMessage("Order ID is required to add an item.");
+
+                RuleFor(x => x.Request.ProductId)
+                    .GreaterThan(0).WithMessage("Product ID is required.");
+
+                RuleFor(x => x.Request.Quantity)
+                    .GreaterThan(0).WithMessage("Quantity must be greater than zero.");
+
+                RuleFor(x => x.Request.Price)
+                    .GreaterThanOrEqualTo(0).WithMessage("Price cannot be negative.");
+            }
+        }
+
+        // --- HANDLER ---
+        public class CreatePosOrderItemCommandHandler : IRequestHandler<CreatePosOrderItemCommand, PosOrderItemDto>
         {
             private readonly PosOrderItemService _service;
 
-            public AddPosOrderItemCommandHandler(PosOrderItemService service)
+            public CreatePosOrderItemCommandHandler(PosOrderItemService service)
             {
                 _service = service;
             }
-            public async Task<PosOrderItemDto> Handle(AddPosOrderItemCommand command, CancellationToken cancellationToken)
-            {
-                
-                try
-                {
-                    var newEntity = await _service.CreateAsync(command.Request);
-                    return new PosOrderItemDto
-                    {
-                        PosOrderId = newEntity.PosOrderId,
-                        ProductId = newEntity.ProductId,
-                        ProductName = newEntity.Product.Name,
-                        Quantity = newEntity.Quantity,
-                        Price = newEntity.Price,
-                        Discount = newEntity.Discount,
-                        DiscountType = newEntity.DiscountType,
-                        Comment = newEntity.Comment,
-                        RoundNumber = newEntity.RoundNumber,
-                    };
-                }
-                catch (Exception)
-                {
-                    throw;
-                }
-            }
-        }
 
-        public class AddPosOrderItemCommandValidator : AbstractValidator<AddPosOrderItemCommand>
-        {
-            public AddPosOrderItemCommandValidator()
+            public async Task<PosOrderItemDto> Handle(CreatePosOrderItemCommand command, CancellationToken cancellationToken)
             {
-                RuleFor(c => c.Request.PosOrderId).GreaterThan(0);
-                RuleFor(c => c.Request.ProductId).GreaterThan(0);
-                RuleFor(c => c.Request.Quantity).GreaterThan(0);
+                var newEntity = await _service.Create(command.CompanyId, command.Request);
+                return MapperPosOrderItem.MapToPosOrderItemDto(newEntity);
             }
         }
     }

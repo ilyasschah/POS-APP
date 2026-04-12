@@ -5,6 +5,7 @@
         public int Id { get; set; }
         public int FloorPlanId { get; set; }
         public string? Name { get; set; }
+        public int Status { get; set; }
         public double PositionX { get; set; }
         public double PositionY { get; set; }
         public double Width { get; set; }
@@ -21,6 +22,7 @@
         public double Width { get; set; }
         public double Height { get; set; }
         public bool IsRound { get; set; }
+        public int Status { get; set; }
     }
 
     public class UpdateTableGeometryRequest
@@ -30,5 +32,6 @@
         public double PositionY { get; set; }
         public double Width { get; set; }
         public double Height { get; set; }
+        public int Status { get; set; }
     }
 }

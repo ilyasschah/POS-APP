@@ -1,26 +1,38 @@
 using MediatR;
-using Api.Helpers;
+using FluentValidation;
 using Api.Repository;
+using Api.Helpers;
 using Api.Models;
 
 namespace Api.Queries.PosOrderItemQuery
 {
-    public class GetPosOrderItemsByOrderIdQuery : IRequest<IEnumerable<PosOrderItemDto>>
+    public class GetPosOrderItemsByOrderIdQuery : IRequest<List<PosOrderItemDto>>
     {
         public int PosOrderId { get; set; }
-    }
-    public class GetPosOrderItemsByOrderIdQueryHandler : IRequestHandler<GetPosOrderItemsByOrderIdQuery, IEnumerable<PosOrderItemDto>>
-    {
-        private readonly PosOrderItemRepository _repository;
 
-        public GetPosOrderItemsByOrderIdQueryHandler(PosOrderItemRepository repository)
+        public class GetPosOrderItemsByOrderIdQueryValidator : AbstractValidator<GetPosOrderItemsByOrderIdQuery>
         {
-            _repository = repository;
+            public GetPosOrderItemsByOrderIdQueryValidator()
+            {
+                RuleFor(x => x.PosOrderId)
+                    .GreaterThan(0).WithMessage("Order ID must be greater than zero.");
+            }
         }
-        public async Task<IEnumerable<PosOrderItemDto>> Handle(GetPosOrderItemsByOrderIdQuery request, CancellationToken cancellationToken)
+
+        public class GetPosOrderItemsByOrderIdQueryHandler : IRequestHandler<GetPosOrderItemsByOrderIdQuery, List<PosOrderItemDto>>
         {
-            var items = await _repository.GetByOrderIdAsync(request.PosOrderId);
-            return items.Select(MapperPosOrderItem.MapToPosOrderItemDto).ToList();
+            private readonly PosOrderItemRepository _repository;
+
+            public GetPosOrderItemsByOrderIdQueryHandler(PosOrderItemRepository repository)
+            {
+                _repository = repository;
+            }
+
+            public async Task<List<PosOrderItemDto>> Handle(GetPosOrderItemsByOrderIdQuery request, CancellationToken cancellationToken)
+            {
+                var entities = await _repository.GetByPosOrderIdAsync(request.PosOrderId);
+                return entities.Select(MapperPosOrderItem.MapToPosOrderItemDto).ToList();
+            }
         }
     }
 }

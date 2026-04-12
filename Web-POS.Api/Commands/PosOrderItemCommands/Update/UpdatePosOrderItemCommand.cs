@@ -1,17 +1,39 @@
-using FluentValidation;
 using MediatR;
+using FluentValidation;
 using Api.Models;
 using Api.Services;
 
-namespace Api.Commands.PosOrderItemCommands.Update
+namespace Api.Commands.PosOrderItemCommand
 {
     public class UpdatePosOrderItemCommand : IRequest<bool>
     {
+        public int CompanyId { get; set; }
         public UpdatePosOrderItemRequest Request { get; set; }
-        public UpdatePosOrderItemCommand (UpdatePosOrderItemRequest updatePosOrderItemRequest)
+
+        public UpdatePosOrderItemCommand(int companyId, UpdatePosOrderItemRequest request)
         {
-            Request = updatePosOrderItemRequest;
+            CompanyId = companyId;
+            Request = request;
         }
+        public class UpdatePosOrderItemCommandValidator : AbstractValidator<UpdatePosOrderItemCommand>
+        {
+            public UpdatePosOrderItemCommandValidator()
+            {
+                RuleFor(x => x.Request.Id)
+                    .GreaterThan(0).WithMessage("Item ID must be valid.");
+
+                RuleFor(x => x.CompanyId)
+                    .GreaterThan(0).WithMessage("Company ID must be valid.");
+
+                RuleFor(x => x.Request.Quantity)
+                    .GreaterThan(0).WithMessage("Quantity must be greater than zero.");
+
+                RuleFor(x => x.Request.Price)
+                    .GreaterThanOrEqualTo(0).WithMessage("Price cannot be negative.");
+            }
+        }
+
+        // --- HANDLER ---
         public class UpdatePosOrderItemCommandHandler : IRequestHandler<UpdatePosOrderItemCommand, bool>
         {
             private readonly PosOrderItemService _service;
@@ -20,26 +42,10 @@ namespace Api.Commands.PosOrderItemCommands.Update
             {
                 _service = service;
             }
-            public Task<bool> Handle(UpdatePosOrderItemCommand command, CancellationToken cancellationToken)
-            {
-                try
-                {
-                    return _service.UpdateAsync(command.Request);
-                }
-                catch (Exception)
-                {
 
-                    throw;
-                }
-            }
-        }
-
-        public class UpdatePosOrderItemCommandValidator : AbstractValidator<UpdatePosOrderItemCommand>
-        {
-            public UpdatePosOrderItemCommandValidator()
+            public async Task<bool> Handle(UpdatePosOrderItemCommand command, CancellationToken cancellationToken)
             {
-                RuleFor(c => c.Request.Quantity).NotNull().NotEmpty().GreaterThan(0);
-                RuleFor(c => c.Request.Price).NotNull().NotEmpty().GreaterThanOrEqualTo(0);
+                return await _service.Update(command.CompanyId, command.Request);
             }
         }
     }

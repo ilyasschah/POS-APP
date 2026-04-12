@@ -66,7 +66,7 @@ namespace Api.Controllers
 
             try
             {
-                var command = new CreatePosOrderCommand(companyId, request);
+                var command = new CreatePosOrderCommand( request, companyId);
                 var result = await _mediator.Send(command);
 
                 return CreatedAtAction(nameof(GetById), new { id = result.Id, companyId = companyId }, result);
@@ -74,6 +74,29 @@ namespace Api.Controllers
             catch (InvalidOperationException ex)
             {
                 return BadRequest(ex.Message);
+            }
+        }
+        [HttpPost("Checkout")]
+        public async Task<IActionResult> Checkout([FromQuery] int companyId, [FromQuery] int userId, [FromBody] CheckoutPosOrderRequest request)
+        {
+            if (companyId <= 0 || userId <= 0)
+                return BadRequest(new { message = "Company ID and User ID are required." });
+
+            try
+            {
+                var command = new CheckoutPosOrderCommand(companyId, userId, request);
+                await _mediator.Send(command);
+
+                return Ok(new { message = "Payment successful! Order converted to Document." });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message }); // e.g. "Order not found."
+            }
+            catch (Exception ex)
+            {
+                // Catch database errors or transaction failures
+                return StatusCode(500, new { message = "Checkout failed.", details = ex.Message });
             }
         }
 

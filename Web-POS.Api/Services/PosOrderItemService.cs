@@ -1,26 +1,22 @@
 using Api.Domain;
 using Api.Models;
 using Api.Repository;
-using System.Reflection.Metadata;
 
 namespace Api.Services
 {
-    public class PosOrderItemService 
+    public class PosOrderItemService
     {
-        private readonly PosOrderItemRepository _repository;
+        public readonly PosOrderItemRepository _repository;
 
         public PosOrderItemService(PosOrderItemRepository repository)
         {
             _repository = repository;
         }
 
-        public async Task<PosOrderItem> CreateAsync(CreatePosOrderItemRequest req)
+        public async Task<PosOrderItem> Create(int companyId, CreatePosOrderItemRequest req)
         {
-            if (await _repository.ExistsForOrderAsync(req.PosOrderId,req.ProductId))
-            {
-                throw new InvalidOperationException("This product already exists on the order.");
-            }
-            var newItem = PosOrderItem.Create(
+            var newEntity = PosOrderItem.Create(
+                companyId,
                 req.PosOrderId,
                 req.ProductId,
                 req.RoundNumber,
@@ -28,38 +24,49 @@ namespace Api.Services
                 req.Price,
                 req.Discount,
                 req.DiscountType,
+                req.DiscountAppliedType,
                 req.Comment,
                 req.Bundle
             );
-            await _repository.AddAsync(newItem);
-            return newItem;
+
+            await _repository.AddAsync(newEntity);
+            return newEntity;
         }
 
-        public async Task<bool> UpdateAsync(UpdatePosOrderItemRequest request)
+        public async Task<bool> Update(int companyId, UpdatePosOrderItemRequest req)
         {
-            var existingItem = await _repository.GetByIdAsync(request.Id);
-            if (existingItem == null)
-            {
-                throw new InvalidOperationException("Order item not found.");
-            }
+            // We pass companyId here to ensure one tenant can't update another tenant's order items!
+            var entity = await _repository.GetByIdAsync(req.Id, companyId, trackEntity: true);
 
-            existingItem.UpdateDetails(request.Quantity, request.Price, request.Discount, request.Comment);
+            if (entity == null)
+                throw new InvalidOperationException($"A PosOrderItem with the ID '{req.Id}' does not exist.");
 
-            await _repository.UpdateAsync(existingItem);
+            // The Domain entity will automatically throw an error here if IsLocked is true
+            entity.UpdateDetails(
+                req.Quantity,
+                req.Price,
+                req.Discount,
+                req.DiscountType,
+                req.DiscountAppliedType,
+                req.Comment
+            );
+
+            await _repository.UpdateAsync(entity);
             return true;
         }
 
-        public async Task<bool> DeleteAsync(int id)
+        public async Task<bool> Delete(int id, int companyId)
         {
-            var existingItem = await _repository.GetByIdAsync(id);
-            if (existingItem == null)
-            {
-                throw new InvalidOperationException("Order item not found.");
-            }
+            var entity = await _repository.GetByIdAsync(id, companyId, trackEntity: true);
 
-            await _repository.DeleteAsync(id);
+            if (entity == null)
+                return false;
+
+            if (entity.IsLocked)
+                throw new InvalidOperationException("You cannot delete an item that has already been sent to the kitchen. Please use the Void function instead.");
+
+            await _repository.DeleteAsync(entity);
             return true;
         }
     }
 }
-     

@@ -20,6 +20,8 @@ namespace Api.Domain
         public double Height { get; private set; }
         public bool IsRound { get; private set; }
 
+        public int Status { get; private set; }
+
         [ForeignKey(nameof(FloorPlanId))]
         public virtual FloorPlan? FloorPlan { get; private set; }
 
@@ -35,6 +37,7 @@ namespace Api.Domain
             Width = width;
             Height = height;
             IsRound = isRound;
+            Status = 0; 
         }
 
         public static FloorPlanTable Create(int companyId, int floorPlanId, string name, double positionX, double positionY, double width, double height, bool isRound)
@@ -54,6 +57,12 @@ namespace Api.Domain
         public void Rename(string newName)
         {
             Name = newName;
+        }
+
+        public void UpdateStatus(int status)
+        {
+            if (status < 0 || status > 2) throw new ArgumentException("Invalid table status.");
+            Status = status;
         }
     }
 }

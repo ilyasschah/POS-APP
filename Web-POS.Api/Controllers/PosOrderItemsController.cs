@@ -1,51 +1,124 @@
+using Api.Commands.PosOrderItemCommand;
+using Api.Commands.PosOrderItemCommands.Delete;
+using Api.Models;
+using Api.Queries.PosOrderItemQuery;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Api.Commands.PosOrderItemCommands.Add;
-using Api.Commands.PosOrderItemCommands.Delete;
-using Api.Commands.PosOrderItemCommands.Update;
-using Api.Queries.PosOrderItemQuery;
-using Api.Models;
 
 namespace Api.Controllers
 {
-    [ApiController]
     [Route("api/[controller]")]
-    public class PosOrderItemsController(IMediator mediator) : ControllerBase
+    [ApiController]
+    public class PosOrderItemController : ControllerBase
     {
-        [HttpGet("[action]")]
-        public async Task<ActionResult<List<PosOrderItemDto>>> GetAll([FromQuery] int companyId)
+        private readonly IMediator _mediator;
+
+        public PosOrderItemController(IMediator mediator)
         {
-            if (companyId == 0) return BadRequest("Company ID is required");
-            return Ok(await mediator.Send(new GetAllPosOrderItemsQuery { CompanyId = companyId }));
+            _mediator = mediator;
         }
 
-        [HttpGet("[action]/{id}")]
-        public async Task<ActionResult> GetById(int id)
+        // GET: api/PosOrderItem/Order?posOrderId=1
+        [HttpGet("Order")]
+        public async Task<IActionResult> GetByOrderId([FromQuery] int posOrderId)
         {
-            return Ok(await mediator.Send(new GetPosOrderItemByIdQuery(id)));
+            if (posOrderId <= 0)
+                return BadRequest(new { message = "Order ID must be provided." });
+
+            var query = new GetPosOrderItemsByOrderIdQuery { PosOrderId = posOrderId };
+            var result = await _mediator.Send(query);
+
+            return Ok(result);
         }
 
-        [HttpPost("[action]")]
-        public async Task<ActionResult> Add([FromQuery] CreatePosOrderItemRequest request)
+        // GET: api/PosOrderItem?id=5&companyId=2
+        [HttpGet]
+        public async Task<IActionResult> GetById([FromQuery] int id, [FromQuery] int companyId)
         {
-            var command = new AddPosOrderItemCommand(request);
-            var newId = await mediator.Send(command);
-            return CreatedAtAction(nameof(GetById), new { id = newId }, request);
+            if (id <= 0 || companyId <= 0)
+                return BadRequest(new { message = "Both Item ID and Company ID must be provided." });
+
+            var query = new GetPosOrderItemByIdQuery { Id = id, CompanyId = companyId };
+            var result = await _mediator.Send(query);
+
+            if (result == null)
+                return NotFound(new { message = $"Order Item with ID {id} not found." });
+
+            return Ok(result);
         }
 
-        [HttpPut("[action]")]
-        public async Task<ActionResult> Update([FromQuery] UpdatePosOrderItemRequest request)
+        // POST: api/PosOrderItem?companyId=2
+        [HttpPost]
+        public async Task<IActionResult> Create([FromQuery] int companyId, [FromBody] CreatePosOrderItemRequest request)
         {
-            var command = new UpdatePosOrderItemCommand(request);
-            await mediator.Send(command);
-            return NoContent();
+            if (companyId <= 0)
+                return BadRequest(new { message = "Company ID must be provided." });
+
+            try
+            {
+                var command = new CreatePosOrderItemCommand(companyId, request);
+                var result = await _mediator.Send(command);
+
+                return Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
-        [HttpDelete("[action]/{id}")]
-        public async Task<ActionResult> Delete(int id)
+        // PATCH: api/PosOrderItem?companyId=2
+        [HttpPatch]
+        public async Task<IActionResult> Update([FromQuery] int companyId, [FromBody] UpdatePosOrderItemRequest request)
         {
-            return await mediator.Send(new DeletePosOrderItemCommand(id)) ? NoContent() : NotFound();
+            if (companyId <= 0)
+                return BadRequest(new { message = "Company ID must be provided." });
+
+            try
+            {
+                var command = new UpdatePosOrderItemCommand( companyId, request);
+                var success = await _mediator.Send(command);
+
+                if (!success)
+                    return NotFound(new { message = $"Order Item with ID {request.Id} not found." });
+
+                return NoContent();
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        // DELETE: api/PosOrderItem?id=5&companyId=2
+        [HttpDelete]
+        public async Task<IActionResult> Delete([FromQuery] int id, [FromQuery] int companyId)
+        {
+            if (id <= 0 || companyId <= 0)
+                return BadRequest(new { message = "Both Item ID and Company ID must be provided." });
+
+            try
+            {
+                var command = new DeletePosOrderItemCommand(id, companyId);
+                var success = await _mediator.Send(command);
+
+                if (!success)
+                    return NotFound(new { message = $"Order Item with ID {id} not found." });
+
+                return NoContent();
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
     }
 }
-

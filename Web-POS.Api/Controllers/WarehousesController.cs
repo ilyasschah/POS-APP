@@ -22,7 +22,7 @@ namespace Api.Controllers
     }
 
         [HttpGet("[action]")]
-        public async Task<ActionResult<WarehouseDto>> GetById(int id, [FromQuery] int companyId)
+        public async Task<ActionResult<WarehouseDto>> GetById([FromQuery] int id, [FromQuery] int companyId)
     {
         if (companyId == 0) return BadRequest("Company ID is required");
         var result = await mediator.Send(new GetWarehouseByIdQuery { Id = id, CompanyId = companyId });

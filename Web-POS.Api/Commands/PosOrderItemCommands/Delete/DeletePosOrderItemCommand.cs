@@ -6,9 +6,11 @@ namespace Api.Commands.PosOrderItemCommands.Delete
     public class DeletePosOrderItemCommand : IRequest<bool>
     {
         public int Id { get; set; }
-        public DeletePosOrderItemCommand (int id)
+        public int CompanyId { get; set; } 
+        public DeletePosOrderItemCommand (int id, int companyId)
         {
             Id = id;
+            CompanyId = companyId;
         }
 
         public class DeletePosOrderItemCommandHandler : IRequestHandler<DeletePosOrderItemCommand, bool>
@@ -22,7 +24,7 @@ namespace Api.Commands.PosOrderItemCommands.Delete
 
             public Task<bool> Handle(DeletePosOrderItemCommand command, CancellationToken cancellationToken)
             {
-                return _service.DeleteAsync(command.Id);
+                return _service.Delete( command.Id,command.CompanyId);
             }
         }
     }

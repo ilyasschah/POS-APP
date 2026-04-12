@@ -1,100 +1,69 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Api.Domain;
 using Api.DataBase;
+using Api.Domain;
 
-namespace Api.Repository
+namespace Api.Repository;
+
+public class PosOrderItemRepository
 {
-    public class PosOrderItemRepository
+    public readonly AppDbContext _db;
+
+    public PosOrderItemRepository(AppDbContext db)
     {
-        private readonly AppDbContext _context;
-
-        public PosOrderItemRepository(AppDbContext context)
-        {
-            _context = context;
-        }
-
-        public async Task<List<PosOrderItem>> GetAllAsync(int companyId)
-        {
-            return await _context.PosOrderItems
-                .AsNoTracking()
-                .Where(i => i.CompanyId == companyId)
-                .Include(p => p.Product)
-                .Include(p => p.VoidedByUser)
-                .Include(po => po.PosOrder)
-                .ToListAsync();
-        }
-
-        // Backwards-compatible non-scoped method
-        public async Task<List<PosOrderItem>> GetAllAsync()
-        {
-            return await _context.PosOrderItems
-                .AsNoTracking()
-                .Include(p => p.Product)
-                .Include(p => p.VoidedByUser)
-                .Include(po => po.PosOrder)
-                .ToListAsync();
-        }
-
-        public async Task<PosOrderItem?> GetByIdAsync(int id)
-        {
-            return await _context.PosOrderItems
-                .Include(p => p.Product)
-                .Include(p => p.VoidedByUser)
-                .FirstOrDefaultAsync(p => p.Id == id);
-        }
-        public async Task<List<PosOrderItem>> GetByOrderIdAsync(int posOrderId, int companyId)
-        {
-            return await _context.PosOrderItems
-                .AsNoTracking()
-                .Where(item => item.PosOrderId == posOrderId && item.CompanyId == companyId)
-                .Include(p => p.Product)
-                .Include(p => p.VoidedByUser)
-                .ToListAsync();
-        }
-
-        public async Task<List<PosOrderItem>> GetByOrderIdAsync(int posOrderId)
-        {
-            return await _context.PosOrderItems
-                .AsNoTracking()
-                .Where(item => item.PosOrderId == posOrderId)
-                .Include(p => p.Product)
-                .Include(p => p.VoidedByUser)
-                .ToListAsync();
-        }
-
-        public async Task AddAsync(PosOrderItem entity)
-        {
-            await _context.PosOrderItems
-                .AddAsync(entity);
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task UpdateAsync(PosOrderItem entity)
-        {
-            _context.PosOrderItems.Update(entity);
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task DeleteAsync(int id)
-        {
-            var entity = await GetByIdAsync(id);
-            if (entity != null)
-            {
-                _context.PosOrderItems.Remove(entity);
-                await _context.SaveChangesAsync();
-            }
-        }
-
-        public async Task<bool> ExistsAsync(int id)
-        {
-            return await _context.PosOrderItems.AnyAsync(e => e.Id == id);
-        }
-
-        public async Task<bool> ExistsForOrderAsync(int posOrderId, int productId)
-        {
-            return await _context.PosOrderItems.AnyAsync(e => e.PosOrderId == posOrderId && e.ProductId == productId);
-        }
+        _db = db;
     }
 
-}
+    public async Task<List<PosOrderItem>> GetByPosOrderIdAsync(int posOrderId)
+    {
+        return await _db.PosOrderItems
+            .Where(i => i.PosOrderId == posOrderId)
+            .AsNoTracking()
+            .Include(i => i.Product)
+            .Include(i => i.VoidedByUser)
+            .ToListAsync();
+    }
 
+    public async Task<PosOrderItem?> GetByIdAsync(int id, int companyId, bool trackEntity = false)
+    {
+        var query = _db.PosOrderItems.AsQueryable();
+
+        if (!trackEntity)
+            query = query.AsNoTracking();
+
+        return await query
+            .Include(i => i.Product)
+            .Include(i => i.VoidedByUser)
+            .FirstOrDefaultAsync(i => i.Id == id && i.CompanyId == companyId);
+    }
+
+    public async Task<PosOrderItem?> GetByIdAsync(int id, bool trackEntity = false)
+    {
+        var query = _db.PosOrderItems.AsQueryable();
+
+        if (!trackEntity)
+            query = query.AsNoTracking();
+
+        return await query
+            .Include(i => i.Product)
+            .Include(i => i.VoidedByUser)
+            .FirstOrDefaultAsync(i => i.Id == id);
+    }
+
+    public async Task AddAsync(PosOrderItem entity)
+    {
+        _db.PosOrderItems.Add(entity);
+        await _db.SaveChangesAsync();
+    }
+
+    public async Task UpdateAsync(PosOrderItem entity)
+    {
+        _db.PosOrderItems.Update(entity);
+        await _db.SaveChangesAsync();
+    }
+
+    public async Task DeleteAsync(PosOrderItem entity)
+    {
+        _db.PosOrderItems.Remove(entity);
+        await _db.SaveChangesAsync();
+    }
+}

@@ -13,29 +13,53 @@ namespace Api.Services
             _repository = repository;
         }
 
-        // Added companyId here to pass to the Domain!
         public async Task<PosOrder> Create(int companyId, CreatePosOrderRequest req)
         {
-            if (await _repository.ExistsAsync(req.Number))
-                throw new InvalidOperationException($"An order with number '{req.Number}' already exists.");
+            using var transaction = await _repository.BeginTransactionAsync();
 
-            var newEntity = PosOrder.Create(
-                companyId,
-                req.UserId,
-                req.Number,
-                req.Discount,
-                req.DiscountType,
-                req.Total,
-                req.CustomerId,
-                req.ServiceType,
-                // --- NEW FIELDS ---
-                req.ServiceStatus,
-                req.FloorPlanTableId
-                //req.BookingId
-            );
+            try
+            {
+                if (req.FloorPlanTableId.HasValue)
+                {
+                    var table = await _repository.GetFloorPlanTableAsync(req.FloorPlanTableId.Value, companyId);
 
-            await _repository.AddAsync(newEntity);
-            return newEntity;
+                    if (table == null)
+                        throw new InvalidOperationException("Table not found.");
+
+                    if (table.Status == 1)
+                        throw new InvalidOperationException("This table is already occupied. Please select an existing order.");
+
+                    table.UpdateStatus(1);
+                    _repository.UpdateFloorPlanTable(table);
+                }
+
+                string orderNumber = $"ORD-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..4].ToUpper()}";
+
+                int defaultServiceStatus = 1;
+
+                var newOrder = PosOrder.Create(
+                    companyId: companyId,
+                    userId: req.UserId,
+                    number: orderNumber,
+                    discount: 0,
+                    discountType: 0,
+                    total: 0,
+                    customerId: req.CustomerId,
+                    serviceType: req.ServiceType,
+                    serviceStatus: defaultServiceStatus,
+                    floorPlanTableId: req.FloorPlanTableId
+                );
+
+                await _repository.AddAsync(newOrder);
+                await transaction.CommitAsync();
+
+                return newOrder;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task<bool> Update(UpdatePosOrderRequest req, int companyId)
@@ -51,10 +75,8 @@ namespace Api.Services
                 req.Total,
                 req.CustomerId,
                 req.ServiceType,
-                // --- NEW FIELDS ---
                 req.ServiceStatus,
                 req.FloorPlanTableId
-                //req.BookingId
             );
 
             await _repository.UpdateAsync(entity);

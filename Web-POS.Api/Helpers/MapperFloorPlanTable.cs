@@ -12,6 +12,7 @@ namespace Api.Helpers
                 Id = entity.Id,
                 FloorPlanId = entity.FloorPlanId,
                 Name = entity.Name,
+                Status = entity.Status,
                 PositionX = entity.PositionX,
                 PositionY = entity.PositionY,
                 Width = entity.Width,

@@ -8,13 +8,13 @@ namespace Api.Commands.PosOrderCommand
 {
     public class CreatePosOrderCommand : IRequest<PosOrderDto>
     {
-        public int CompanyId { get; set; }
         public CreatePosOrderRequest Request { get; set; }
+        public int CompanyId { get; set; }
 
-        public CreatePosOrderCommand(int companyId, CreatePosOrderRequest request)
+        public CreatePosOrderCommand(CreatePosOrderRequest request, int companyId)
         {
-            CompanyId = companyId;
             Request = request;
+            CompanyId = companyId;
         }
 
         // --- VALIDATOR ---
@@ -27,9 +27,6 @@ namespace Api.Commands.PosOrderCommand
 
                 RuleFor(x => x.Request.UserId)
                     .GreaterThan(0).WithMessage("User ID must be valid.");
-
-                RuleFor(x => x.Request.Number)
-                    .NotEmpty().WithMessage("Order Number is required.");
 
                 RuleFor(x => x.Request.Discount)
                     .GreaterThanOrEqualTo(0).WithMessage("Discount cannot be negative.");

@@ -1,3 +1,4 @@
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -8,7 +9,8 @@ namespace Api.Domain
     {
         [Key]
         public int Id { get; private set; }
-        public int CompanyId { get; set; }
+        public int CompanyId { get; private set; }
+
         public int PosOrderId { get; private set; }
         public int ProductId { get; private set; }
         public int RoundNumber { get; private set; }
@@ -24,7 +26,6 @@ namespace Api.Domain
         public string? Bundle { get; private set; }
         public int DiscountAppliedType { get; private set; }
 
-        // Foreign Key Navigation Properties
         [ForeignKey("PosOrderId")]
         public virtual PosOrder PosOrder { get; private set; }
 
@@ -32,14 +33,13 @@ namespace Api.Domain
         public virtual Product Product { get; private set; }
 
         [ForeignKey("VoidedBy")]
-        public virtual User VoidedByUser { get; private set; }
+        public virtual User? VoidedByUser { get; private set; }
 
-        // EF Core Constructor
         public PosOrderItem() { }
 
-        // Private Constructor for Factory Method
-        private PosOrderItem(int posOrderId, int productId, int roundNumber, decimal quantity, decimal price, decimal discount, int discountType, string? comment, string? bundle)
+        private PosOrderItem(int companyId, int posOrderId, int productId, int roundNumber, decimal quantity, decimal price, decimal discount, int discountType, int discountAppliedType, string? comment, string? bundle)
         {
+            CompanyId = companyId;
             PosOrderId = posOrderId;
             ProductId = productId;
             RoundNumber = roundNumber;
@@ -47,31 +47,36 @@ namespace Api.Domain
             Price = price;
             Discount = discount;
             DiscountType = discountType;
+            DiscountAppliedType = discountAppliedType;
             Comment = comment;
             Bundle = bundle;
             DateCreated = DateTime.UtcNow;
             IsLocked = false;
             IsFeatured = false;
-            DiscountAppliedType = 0;
             VoidedBy = null;
         }
 
-        // Static Factory Method
-        public static PosOrderItem Create(int posOrderId, int productId, int roundNumber, decimal quantity, decimal price, decimal discount, int discountType, string? comment, string? bundle)
+        public static PosOrderItem Create(int companyId, int posOrderId, int productId, int roundNumber, decimal quantity, decimal price, decimal discount, int discountType, int discountAppliedType, string? comment, string? bundle)
         {
+            if (companyId <= 0) throw new ArgumentException("Company ID must be valid.", nameof(companyId));
             if (quantity <= 0) throw new ArgumentException("Quantity must be positive.", nameof(quantity));
             if (price < 0) throw new ArgumentException("Price cannot be negative.", nameof(price));
 
-            return new PosOrderItem(posOrderId, productId, roundNumber, quantity, price, discount, discountType, comment, bundle);
+            return new PosOrderItem(companyId, posOrderId, productId, roundNumber, quantity, price, discount, discountType, discountAppliedType, comment, bundle);
         }
 
-        // Public methods to update properties
-        public void UpdateDetails(decimal quantity, decimal price, decimal discount, string? comment)
+        public void UpdateDetails(decimal quantity, decimal price, decimal discount, int discountType, int discountAppliedType, string? comment)
         {
-            if (IsLocked) throw new InvalidOperationException("Cannot update a locked order item.");
+            if (IsLocked)
+                throw new InvalidOperationException("This item is locked because it has already been sent to the kitchen. Please void it to make changes."); 
+            if (quantity <= 0) throw new ArgumentException("Quantity must be positive.", nameof(quantity));
+            if (price < 0) throw new ArgumentException("Price cannot be negative.", nameof(price));
+
             Quantity = quantity;
             Price = price;
             Discount = discount;
+            DiscountType = discountType;
+            DiscountAppliedType = discountAppliedType;
             Comment = comment;
         }
 
@@ -86,6 +91,3 @@ namespace Api.Domain
         }
     }
 }
-
-
-

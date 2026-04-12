@@ -5,27 +5,31 @@ namespace Api.Helpers
 {
     public static class MapperPosOrderItem
     {
-        public static PosOrderItemDto MapToPosOrderItemDto(PosOrderItem item)
+        public static PosOrderItemDto MapToPosOrderItemDto(PosOrderItem entity)
         {
             return new PosOrderItemDto
             {
-                Id = item.Id,
-                PosOrderId = item.PosOrderId,
-                ProductId = item.ProductId,
-                ProductName = item.Product?.Name ?? "N/A",
-                RoundNumber = item.RoundNumber,
-                Quantity = item.Quantity,
-                Price = item.Price,
-                IsLocked = item.IsLocked,
-                Discount = item.Discount,
-                DiscountType = item.DiscountType,
-                IsFeatured = item.IsFeatured,
-                VoidedBy = item.VoidedBy,
-                VoidedByUserName = item.VoidedByUser?.Username?? "N/A",
-                Comment = item.Comment,
-                DateCreated = item.DateCreated,
-                Bundle = item.Bundle,
-                DiscountAppliedType = item.DiscountAppliedType
+                Id = entity.Id,
+                PosOrderId = entity.PosOrderId,
+                ProductId = entity.ProductId,
+
+                ProductName = entity.Product?.Name ?? "Unknown Product",
+
+                RoundNumber = entity.RoundNumber,
+                Quantity = entity.Quantity,
+                Price = entity.Price,
+                IsLocked = entity.IsLocked,
+                Discount = entity.Discount,
+                DiscountType = entity.DiscountType,
+                DiscountAppliedType = entity.DiscountAppliedType,
+                IsFeatured = entity.IsFeatured,
+                VoidedBy = entity.VoidedBy,
+
+                VoidedByUserName = entity.VoidedByUser?.Username ?? "N/A",
+
+                Comment = entity.Comment,
+                DateCreated = entity.DateCreated,
+                Bundle = entity.Bundle
             };
         }
     }
