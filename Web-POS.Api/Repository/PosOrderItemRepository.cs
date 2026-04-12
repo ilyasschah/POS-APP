@@ -54,6 +54,11 @@ public class PosOrderItemRepository
         _db.PosOrderItems.Add(entity);
         await _db.SaveChangesAsync();
     }
+    public async Task AddRangeAsync(IEnumerable<PosOrderItem> entities)
+    {
+        await _db.PosOrderItems.AddRangeAsync(entities);
+        await _db.SaveChangesAsync();
+    }
 
     public async Task UpdateAsync(PosOrderItem entity)
     {

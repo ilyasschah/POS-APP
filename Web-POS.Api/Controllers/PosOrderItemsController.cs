@@ -1,4 +1,6 @@
+using Api.Attributes;
 using Api.Commands.PosOrderItemCommand;
+using Api.Commands.PosOrderItemCommands.Add;
 using Api.Commands.PosOrderItemCommands.Delete;
 using Api.Models;
 using Api.Queries.PosOrderItemQuery;
@@ -7,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers
 {
+    [SwaggerVisible]
     [Route("api/[controller]")]
     [ApiController]
     public class PosOrderItemController : ControllerBase
@@ -18,7 +21,6 @@ namespace Api.Controllers
             _mediator = mediator;
         }
 
-        // GET: api/PosOrderItem/Order?posOrderId=1
         [HttpGet("Order")]
         public async Task<IActionResult> GetByOrderId([FromQuery] int posOrderId)
         {
@@ -31,7 +33,6 @@ namespace Api.Controllers
             return Ok(result);
         }
 
-        // GET: api/PosOrderItem?id=5&companyId=2
         [HttpGet]
         public async Task<IActionResult> GetById([FromQuery] int id, [FromQuery] int companyId)
         {
@@ -47,7 +48,6 @@ namespace Api.Controllers
             return Ok(result);
         }
 
-        // POST: api/PosOrderItem?companyId=2
         [HttpPost]
         public async Task<IActionResult> Create([FromQuery] int companyId, [FromBody] CreatePosOrderItemRequest request)
         {
@@ -70,8 +70,31 @@ namespace Api.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
+        [HttpPost]
+        public async Task<IActionResult> BulkAdd([FromQuery] int companyId, [FromBody] List<BulkAddPosOrderItemRequest> requests)
+        {
+            if (companyId <= 0)
+                return BadRequest(new { message = "Company ID is required." });
 
-        // PATCH: api/PosOrderItem?companyId=2
+            if (requests == null || !requests.Any())
+                return BadRequest(new { message = "Item list cannot be empty." });
+
+            try
+            {
+                var command = new BulkAddPosOrderItemsCommand(companyId, requests);
+                var result = await _mediator.Send(command);
+
+                if (result)
+                    return Ok(new { message = "Items successfully added to the order." });
+
+                return BadRequest(new { message = "Failed to add items to the order." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while saving the cart.", details = ex.Message });
+            }
+        }
+
         [HttpPatch]
         public async Task<IActionResult> Update([FromQuery] int companyId, [FromBody] UpdatePosOrderItemRequest request)
         {
@@ -98,7 +121,6 @@ namespace Api.Controllers
             }
         }
 
-        // DELETE: api/PosOrderItem?id=5&companyId=2
         [HttpDelete]
         public async Task<IActionResult> Delete([FromQuery] int id, [FromQuery] int companyId)
         {

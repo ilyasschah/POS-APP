@@ -1,5 +1,3 @@
-using System;
-
 namespace Api.Models
 {
     public class PosOrderItemDto
@@ -7,10 +5,7 @@ namespace Api.Models
         public int Id { get; set; }
         public int PosOrderId { get; set; }
         public int ProductId { get; set; }
-
-        // Helpful for the Flutter UI so you don't have to look up the product separately
         public string ProductName { get; set; } = string.Empty;
-
         public int RoundNumber { get; set; }
         public decimal Quantity { get; set; }
         public decimal Price { get; set; }
@@ -20,10 +15,7 @@ namespace Api.Models
         public int DiscountAppliedType { get; set; }
         public bool IsFeatured { get; set; }
         public int? VoidedBy { get; set; }
-
-        // Helpful to know WHO voided it
         public string? VoidedByUserName { get; set; }
-
         public string? Comment { get; set; }
         public DateTime DateCreated { get; set; }
         public string? Bundle { get; set; }
@@ -41,6 +33,19 @@ namespace Api.Models
         public int DiscountAppliedType { get; set; }
         public string? Comment { get; set; }
         public string? Bundle { get; set; }
+    }
+    public class BulkAddPosOrderItemRequest
+    {
+        public int PosOrderId { get; set; }
+        public int ProductId { get; set; }
+        public int RoundNumber { get; set; }
+        public decimal Quantity { get; set; }
+        public decimal Price { get; set; }
+        public decimal Discount { get; set; }
+        public int DiscountType { get; set; }
+        public string? Comment { get; set; }
+        public string? Bundle { get; set; }
+        public int DiscountAppliedType { get; set; }
     }
 
     public class UpdatePosOrderItemRequest

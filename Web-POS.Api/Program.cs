@@ -41,6 +41,7 @@ builder.Services.AddDbContext<AppDbContext>(opt =>
     }));
 
 // ================== REPOSITORIES ==================
+builder.Services.AddScoped<MenuRepository>();
 builder.Services.AddScoped<BarcodeRepository>();
 builder.Services.AddScoped<CurrencyRepository>();
 builder.Services.AddScoped<FiscalItemRepository>();

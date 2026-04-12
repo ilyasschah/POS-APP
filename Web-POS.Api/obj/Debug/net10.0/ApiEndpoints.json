@@ -2314,6 +2314,27 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "Api.Controllers.MenuController",
+    "Method": "GetFullMenu",
+    "RelativePath": "api/Menu",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "warehouseId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Api.Controllers.MigrationsController",
     "Method": "Add",
     "RelativePath": "api/Migrations/Add",
@@ -2999,6 +3020,27 @@
       {
         "Name": "request",
         "Type": "Api.Models.CreatePosOrderItemRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Api.Controllers.PosOrderItemController",
+    "Method": "BulkAdd",
+    "RelativePath": "api/PosOrderItem",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "requests",
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.BulkAddPosOrderItemRequest, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "IsRequired": true
       }
     ],
