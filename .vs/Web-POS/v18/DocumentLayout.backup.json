@@ -1,48 +1,7 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "D:\\repos\\Web-POS\\",
-  "Documents": [
-    {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\repository\\posorderitemrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\repository\\posorderitemrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\commands\\posorderitemcommands\\add\\bulkaddposorderitemscommand.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\commands\\posorderitemcommands\\add\\bulkaddposorderitemscommand.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\models\\posorderitemdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\models\\posorderitemdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\controllers\\posorderitemscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\controllers\\posorderitemscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\domain\\posorderitem.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\domain\\posorderitem.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\controllers\\menucontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\controllers\\menucontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\queries\\menuquery\\getfullmenuquery.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\queries\\menuquery\\getfullmenuquery.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\repository\\menurepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\repository\\menurepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\models\\menumodels.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\models\\menumodels.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    }
-  ],
+  "Documents": [],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
@@ -50,47 +9,8 @@
       "DocumentGroups": [
         {
           "DockedWidth": 235,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": -1,
           "Children": [
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "BulkAddPosOrderItemsCommand.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Commands\\PosOrderItemCommands\\Add\\BulkAddPosOrderItemsCommand.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Commands\\PosOrderItemCommands\\Add\\BulkAddPosOrderItemsCommand.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Commands\\PosOrderItemCommands\\Add\\BulkAddPosOrderItemsCommand.cs",
-              "RelativeToolTip": "Web-POS.Api\\Commands\\PosOrderItemCommands\\Add\\BulkAddPosOrderItemsCommand.cs",
-              "ViewState": "AgIAABUAAAAAAAAAAADgvyUAAAA1AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-12T15:02:45.107Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "PosOrderItemRepository.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Repository\\PosOrderItemRepository.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Repository\\PosOrderItemRepository.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Repository\\PosOrderItemRepository.cs",
-              "RelativeToolTip": "Web-POS.Api\\Repository\\PosOrderItemRepository.cs",
-              "ViewState": "AgIAAA8AAAAAAAAAAAA5wD4AAAA2AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-12T15:02:17.671Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "PosOrderItemDto.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Models\\PosOrderItemDto.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Models\\PosOrderItemDto.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Models\\PosOrderItemDto.cs",
-              "RelativeToolTip": "Web-POS.Api\\Models\\PosOrderItemDto.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAACQAAAARAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-12T15:01:14.729Z",
-              "EditorCaption": ""
-            },
             {
               "$type": "Bookmark",
               "Name": "ST:128:0:{75188d03-9892-4ae2-abf1-207126247ce5}"
@@ -110,103 +30,6 @@
             {
               "$type": "Bookmark",
               "Name": "ST:128:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "PosOrderItemsController.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\PosOrderItemsController.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Controllers\\PosOrderItemsController.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\PosOrderItemsController.cs",
-              "RelativeToolTip": "Web-POS.Api\\Controllers\\PosOrderItemsController.cs",
-              "ViewState": "AgIAADAAAAAAAAAAAAAiwEkAAAB2AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-12T15:00:52.937Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "MenuController.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\MenuController.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Controllers\\MenuController.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\MenuController.cs",
-              "RelativeToolTip": "Web-POS.Api\\Controllers\\MenuController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABsAAAAJAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-12T14:49:10.388Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "GetFullMenuQuery.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Queries\\MenuQuery\\GetFullMenuQuery.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Queries\\MenuQuery\\GetFullMenuQuery.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Queries\\MenuQuery\\GetFullMenuQuery.cs",
-              "RelativeToolTip": "Web-POS.Api\\Queries\\MenuQuery\\GetFullMenuQuery.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABUAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-12T14:48:52.494Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "Program.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Program.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Program.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Program.cs",
-              "RelativeToolTip": "Web-POS.Api\\Program.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAACoAAAA1AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-12T14:48:26.191Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 8,
-              "Title": "MenuRepository.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Repository\\MenuRepository.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Repository\\MenuRepository.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Repository\\MenuRepository.cs",
-              "RelativeToolTip": "Web-POS.Api\\Repository\\MenuRepository.cs",
-              "ViewState": "AgIAAA4AAAAAAAAAAAAuwCoAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-12T14:47:53.641Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 9,
-              "Title": "MenuModels.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Models\\MenuModels.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Models\\MenuModels.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Models\\MenuModels.cs",
-              "RelativeToolTip": "Web-POS.Api\\Models\\MenuModels.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAAA1AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-12T14:47:27.932Z",
-              "EditorCaption": ""
-            }
-          ]
-        },
-        {
-          "DockedWidth": 200,
-          "SelectedChildIndex": 0,
-          "Children": [
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "PosOrderItem.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Domain\\PosOrderItem.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Domain\\PosOrderItem.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Domain\\PosOrderItem.cs",
-              "RelativeToolTip": "Web-POS.Api\\Domain\\PosOrderItem.cs",
-              "ViewState": "AgIAACYAAAAAAAAAAADgvzoAAADFAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-12T15:05:34.758Z",
-              "EditorCaption": ""
             }
           ]
         }

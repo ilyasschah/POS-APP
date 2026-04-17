@@ -19,7 +19,6 @@ namespace Api.Domain
         public double Width { get; private set; }
         public double Height { get; private set; }
         public bool IsRound { get; private set; }
-
         public int Status { get; private set; }
 
         [ForeignKey(nameof(FloorPlanId))]

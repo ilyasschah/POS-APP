@@ -8,7 +8,10 @@ namespace Api.Queries.PosOrderItemQuery
 {
     public class GetPosOrderItemsByOrderIdQuery : IRequest<List<PosOrderItemDto>>
     {
+        
         public int PosOrderId { get; set; }
+        public int CompanyId { get; set; }
+
 
         public class GetPosOrderItemsByOrderIdQueryValidator : AbstractValidator<GetPosOrderItemsByOrderIdQuery>
         {
@@ -16,6 +19,8 @@ namespace Api.Queries.PosOrderItemQuery
             {
                 RuleFor(x => x.PosOrderId)
                     .GreaterThan(0).WithMessage("Order ID must be greater than zero.");
+                RuleFor(x => x.CompanyId)
+                    .GreaterThan(0).WithMessage("Company ID must be greater than zero.");
             }
         }
 
@@ -30,7 +35,7 @@ namespace Api.Queries.PosOrderItemQuery
 
             public async Task<List<PosOrderItemDto>> Handle(GetPosOrderItemsByOrderIdQuery request, CancellationToken cancellationToken)
             {
-                var entities = await _repository.GetByPosOrderIdAsync(request.PosOrderId);
+                var entities = await _repository.GetByPosOrderIdAsync(request.PosOrderId, request.CompanyId);
                 return entities.Select(MapperPosOrderItem.MapToPosOrderItemDto).ToList();
             }
         }

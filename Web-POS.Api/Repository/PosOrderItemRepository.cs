@@ -13,10 +13,10 @@ public class PosOrderItemRepository
         _db = db;
     }
 
-    public async Task<List<PosOrderItem>> GetByPosOrderIdAsync(int posOrderId)
+    public async Task<List<PosOrderItem>> GetByPosOrderIdAsync(int posOrderId, int companyId)
     {
         return await _db.PosOrderItems
-            .Where(i => i.PosOrderId == posOrderId)
+            .Where(i => i.PosOrderId == posOrderId && i.CompanyId == companyId)
             .AsNoTracking()
             .Include(i => i.Product)
             .Include(i => i.VoidedByUser)
@@ -36,18 +36,7 @@ public class PosOrderItemRepository
             .FirstOrDefaultAsync(i => i.Id == id && i.CompanyId == companyId);
     }
 
-    public async Task<PosOrderItem?> GetByIdAsync(int id, bool trackEntity = false)
-    {
-        var query = _db.PosOrderItems.AsQueryable();
-
-        if (!trackEntity)
-            query = query.AsNoTracking();
-
-        return await query
-            .Include(i => i.Product)
-            .Include(i => i.VoidedByUser)
-            .FirstOrDefaultAsync(i => i.Id == id);
-    }
+    
 
     public async Task AddAsync(PosOrderItem entity)
     {

@@ -1,6 +1,7 @@
 using Api.Domain;
 using Api.Models;
 using Api.Repository;
+using Microsoft.EntityFrameworkCore;
 
 namespace Api.Services
 {
@@ -15,51 +16,56 @@ namespace Api.Services
 
         public async Task<PosOrder> Create(int companyId, CreatePosOrderRequest req)
         {
-            using var transaction = await _repository.BeginTransactionAsync();
+            var strategy = _repository.CreateExecutionStrategy();
 
-            try
+            return await strategy.ExecuteAsync(async () =>
             {
-                if (req.FloorPlanTableId.HasValue)
+                using var transaction = await _repository.BeginTransactionAsync();
+
+                try
                 {
-                    var table = await _repository.GetFloorPlanTableAsync(req.FloorPlanTableId.Value, companyId);
+                    if (req.FloorPlanTableId.HasValue)
+                    {
+                        var table = await _repository.GetFloorPlanTableAsync(req.FloorPlanTableId.Value, companyId);
 
-                    if (table == null)
-                        throw new InvalidOperationException("Table not found.");
+                        if (table == null)
+                            throw new InvalidOperationException("Table not found.");
 
-                    if (table.Status == 1)
-                        throw new InvalidOperationException("This table is already occupied. Please select an existing order.");
+                        if (table.Status == 1)
+                            throw new InvalidOperationException("This table is already occupied. Please select an existing order.");
 
-                    table.UpdateStatus(1);
-                    _repository.UpdateFloorPlanTable(table);
+                        table.UpdateStatus(1);
+                        _repository.UpdateFloorPlanTable(table);
+                    }
+
+                    string orderNumber = $"ORD-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..4].ToUpper()}";
+
+                    int defaultServiceStatus = 1;
+
+                    var newOrder = PosOrder.Create(
+                        companyId: companyId,
+                        userId: req.UserId,
+                        number: orderNumber,
+                        discount: 0,
+                        discountType: 0,
+                        total: 0,
+                        customerId: req.CustomerId,
+                        serviceType: req.ServiceType,
+                        serviceStatus: defaultServiceStatus,
+                        floorPlanTableId: req.FloorPlanTableId
+                    );
+
+                    await _repository.AddAsync(newOrder);
+                    await transaction.CommitAsync();
+
+                    return newOrder;
                 }
-
-                string orderNumber = $"ORD-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..4].ToUpper()}";
-
-                int defaultServiceStatus = 1;
-
-                var newOrder = PosOrder.Create(
-                    companyId: companyId,
-                    userId: req.UserId,
-                    number: orderNumber,
-                    discount: 0,
-                    discountType: 0,
-                    total: 0,
-                    customerId: req.CustomerId,
-                    serviceType: req.ServiceType,
-                    serviceStatus: defaultServiceStatus,
-                    floorPlanTableId: req.FloorPlanTableId
-                );
-
-                await _repository.AddAsync(newOrder);
-                await transaction.CommitAsync();
-
-                return newOrder;
-            }
-            catch
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            });
         }
 
         public async Task<bool> Update(UpdatePosOrderRequest req, int companyId)

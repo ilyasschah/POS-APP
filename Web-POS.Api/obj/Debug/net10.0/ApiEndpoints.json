@@ -2985,50 +2985,8 @@
   },
   {
     "ContainingType": "Api.Controllers.PosOrderItemController",
-    "Method": "GetById",
-    "RelativePath": "api/PosOrderItem",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "id",
-        "Type": "System.Int32",
-        "IsRequired": false
-      },
-      {
-        "Name": "companyId",
-        "Type": "System.Int32",
-        "IsRequired": false
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "Api.Controllers.PosOrderItemController",
-    "Method": "Create",
-    "RelativePath": "api/PosOrderItem",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "companyId",
-        "Type": "System.Int32",
-        "IsRequired": false
-      },
-      {
-        "Name": "request",
-        "Type": "Api.Models.CreatePosOrderItemRequest",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "Api.Controllers.PosOrderItemController",
     "Method": "BulkAdd",
-    "RelativePath": "api/PosOrderItem",
+    "RelativePath": "api/PosOrderItem/BulkAdd",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
@@ -3048,9 +3006,9 @@
   },
   {
     "ContainingType": "Api.Controllers.PosOrderItemController",
-    "Method": "Update",
-    "RelativePath": "api/PosOrderItem",
-    "HttpMethod": "PATCH",
+    "Method": "Create",
+    "RelativePath": "api/PosOrderItem/Create",
+    "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
     "Parameters": [
@@ -3061,7 +3019,7 @@
       },
       {
         "Name": "request",
-        "Type": "Api.Models.UpdatePosOrderItemRequest",
+        "Type": "Api.Models.CreatePosOrderItemRequest",
         "IsRequired": true
       }
     ],
@@ -3070,7 +3028,7 @@
   {
     "ContainingType": "Api.Controllers.PosOrderItemController",
     "Method": "Delete",
-    "RelativePath": "api/PosOrderItem",
+    "RelativePath": "api/PosOrderItem/Delete",
     "HttpMethod": "DELETE",
     "IsController": true,
     "Order": 0,
@@ -3090,8 +3048,29 @@
   },
   {
     "ContainingType": "Api.Controllers.PosOrderItemController",
+    "Method": "GetById",
+    "RelativePath": "api/PosOrderItem/GetById",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Api.Controllers.PosOrderItemController",
     "Method": "GetByOrderId",
-    "RelativePath": "api/PosOrderItem/Order",
+    "RelativePath": "api/PosOrderItem/GetByOrderId",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -3100,6 +3079,32 @@
         "Name": "posOrderId",
         "Type": "System.Int32",
         "IsRequired": false
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Api.Controllers.PosOrderItemController",
+    "Method": "Update",
+    "RelativePath": "api/PosOrderItem/Update",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "request",
+        "Type": "Api.Models.UpdatePosOrderItemRequest",
+        "IsRequired": true
       }
     ],
     "ReturnTypes": []

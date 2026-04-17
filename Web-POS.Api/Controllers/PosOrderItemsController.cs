@@ -21,19 +21,19 @@ namespace Api.Controllers
             _mediator = mediator;
         }
 
-        [HttpGet("Order")]
-        public async Task<IActionResult> GetByOrderId([FromQuery] int posOrderId)
+        [HttpGet("[action]")]
+        public async Task<IActionResult> GetByOrderId([FromQuery] int posOrderId, [FromQuery] int companyId)
         {
             if (posOrderId <= 0)
                 return BadRequest(new { message = "Order ID must be provided." });
 
-            var query = new GetPosOrderItemsByOrderIdQuery { PosOrderId = posOrderId };
+            var query = new GetPosOrderItemsByOrderIdQuery { PosOrderId = posOrderId, CompanyId = companyId };
             var result = await _mediator.Send(query);
 
             return Ok(result);
         }
 
-        [HttpGet]
+        [HttpGet("[action]")]
         public async Task<IActionResult> GetById([FromQuery] int id, [FromQuery] int companyId)
         {
             if (id <= 0 || companyId <= 0)
@@ -48,7 +48,7 @@ namespace Api.Controllers
             return Ok(result);
         }
 
-        [HttpPost]
+        [HttpPost("[action]")]
         public async Task<IActionResult> Create([FromQuery] int companyId, [FromBody] CreatePosOrderItemRequest request)
         {
             if (companyId <= 0)
@@ -70,7 +70,7 @@ namespace Api.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
-        [HttpPost]
+        [HttpPost("[action]")]
         public async Task<IActionResult> BulkAdd([FromQuery] int companyId, [FromBody] List<BulkAddPosOrderItemRequest> requests)
         {
             if (companyId <= 0)
@@ -95,7 +95,7 @@ namespace Api.Controllers
             }
         }
 
-        [HttpPatch]
+        [HttpPatch("[action]")]
         public async Task<IActionResult> Update([FromQuery] int companyId, [FromBody] UpdatePosOrderItemRequest request)
         {
             if (companyId <= 0)
@@ -121,7 +121,7 @@ namespace Api.Controllers
             }
         }
 
-        [HttpDelete]
+        [HttpDelete("[action]")]
         public async Task<IActionResult> Delete([FromQuery] int id, [FromQuery] int companyId)
         {
             if (id <= 0 || companyId <= 0)

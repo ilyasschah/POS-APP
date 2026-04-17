@@ -86,7 +86,10 @@ public class PosOrderRepository
     {
         return await _db.Database.BeginTransactionAsync();
     }
-
+    public IExecutionStrategy CreateExecutionStrategy()
+    {
+        return _db.Database.CreateExecutionStrategy();
+    }
     public async Task UpdateAsync(PosOrder entity)
     {
         _db.PosOrders.Update(entity);
