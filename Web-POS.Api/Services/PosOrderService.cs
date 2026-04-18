@@ -89,14 +89,46 @@ namespace Api.Services
             return true;
         }
 
-        public async Task<bool> Delete(int id)
+        public async Task<bool> Delete(int id, int companyId)
         {
-            var entity = await _repository.GetByIdAsync(id, trackEntity: true);
-            if (entity == null)
-                return false;
+            var strategy = _repository.CreateExecutionStrategy();
 
-            await _repository.DeleteAsync(entity);
-            return true;
+            return await strategy.ExecuteAsync(async () =>
+            {
+                using var transaction = await _repository.BeginTransactionAsync();
+
+                try
+                {
+                    var order = await _repository.GetByIdAsync(id, trackEntity: true);
+                    if (order == null) return false;
+
+                    if (order.FloorPlanTableId.HasValue)
+                    {
+                        var table = await _repository.GetFloorPlanTableAsync(order.FloorPlanTableId.Value, companyId);
+                        if (table != null)
+                        {
+                            table.UpdateStatus(0);
+                            _repository.UpdateFloorPlanTable(table);
+                        }
+                    }
+
+                    bool deleted = await _repository.DeleteAsync(id, companyId);
+
+                    if (deleted)
+                    {
+                        await transaction.CommitAsync();
+                        return true;
+                    }
+
+                    await transaction.RollbackAsync();
+                    return false;
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            });
         }
     }
 }

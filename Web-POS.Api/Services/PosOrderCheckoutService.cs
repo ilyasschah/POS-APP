@@ -39,34 +39,20 @@ namespace Api.Services
 
                     string documentNumber = $"INV-{DateTime.UtcNow:yyyyMMdd}-{posOrder.Id}";
 
-                    var document = Document.Create(
-                        number: documentNumber,
-                        userId: userId,
-                        companyId: companyId,
-                        documentTypeId: req.DocumentTypeId,
-                        warehouseId: req.WarehouseId,
-                        total: posOrder.Total ?? 0,
-                        customerId: posOrder.CustomerId,
-                        orderNumber: posOrder.Number,
-                        discount: posOrder.Discount,
-                        discountType: posOrder.DiscountType,
-                        paidStatus: 1,
-                        serviceType: posOrder.ServiceType
-                    );
-
-                    _db.Documents.Add(document);
-                    await _db.SaveChangesAsync();
-
+                    decimal actualGrandTotal = 0;
                     var documentItems = new List<DocumentItem>();
+
                     foreach (var item in posOrderItems)
                     {
                         decimal itemTotal = item.Quantity * item.Price;
                         decimal priceAfterDiscount = item.Price - item.Discount;
                         decimal totalAfterDiscount = priceAfterDiscount * item.Quantity;
 
+                        actualGrandTotal += totalAfterDiscount; 
+
                         var docItem = DocumentItem.Create(
                             companyId: companyId,
-                            documentId: document.Id,
+                            documentId: 0, 
                             productId: item.ProductId,
                             quantity: item.Quantity,
                             expectedQuantity: item.Quantity,
@@ -83,7 +69,39 @@ namespace Api.Services
                         );
                         documentItems.Add(docItem);
                     }
-                    _db.DocumentItems.AddRange(documentItems);
+
+                    var document = Document.Create(
+                        number: documentNumber,
+                        userId: userId,
+                        companyId: companyId,
+                        documentTypeId: req.DocumentTypeId,
+                        warehouseId: req.WarehouseId,
+                        total: actualGrandTotal,
+                        customerId: posOrder.CustomerId,
+                        orderNumber: posOrder.Number,
+                        discount: posOrder.Discount,
+                        discountType: posOrder.DiscountType,
+                        paidStatus: 1,
+                        serviceType: posOrder.ServiceType
+                    );
+
+                    _db.Documents.Add(document);
+                    await _db.SaveChangesAsync();
+
+                    foreach (var docItem in documentItems)
+                    {
+                    }
+
+                    var finalDocumentItems = documentItems.Select(item => DocumentItem.Create(
+                            companyId: companyId, documentId: document.Id, productId: item.ProductId,
+                            quantity: item.Quantity, expectedQuantity: item.Quantity, priceBeforeTax: item.PriceBeforeTax,
+                            price: item.Price, discount: item.Discount, discountType: item.DiscountType,
+                            productCost: 0, priceBeforeTaxAfterDiscount: item.PriceBeforeTaxAfterDiscount,
+                            priceAfterDiscount: item.PriceAfterDiscount, total: item.Total,
+                            totalAfterDocumentDiscount: item.TotalAfterDocumentDiscount, discountApplyRule: false
+                    )).ToList();
+
+                    _db.DocumentItems.AddRange(finalDocumentItems);
 
                     var payment = Payment.Create(
                         companyId: companyId,
@@ -101,7 +119,7 @@ namespace Api.Services
                         var table = await _db.FloorPlanTables.FirstOrDefaultAsync(t => t.Id == posOrder.FloorPlanTableId.Value && t.CompanyId == companyId);
                         if (table != null)
                         {
-                            table.UpdateStatus(0); 
+                            table.UpdateStatus(0);
                             _db.FloorPlanTables.Update(table);
                         }
                     }
@@ -118,7 +136,7 @@ namespace Api.Services
                     await transaction.RollbackAsync();
                     throw;
                 }
-            }); 
+            });
         }
     }
 }

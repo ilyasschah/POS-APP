@@ -99,9 +99,17 @@ public class PosOrderRepository
     {
         _db.FloorPlanTables.Update(table);
     }
-    public async Task DeleteAsync(PosOrder entity)
+    public async Task<bool> DeleteAsync(int id, int companyId)
     {
+        var entity = await _db.PosOrders
+            .FirstOrDefaultAsync(x => x.Id == id && x.CompanyId == companyId);
+
+        if (entity == null)
+            return false;
+
         _db.PosOrders.Remove(entity);
         await _db.SaveChangesAsync();
+
+        return true;
     }
 }

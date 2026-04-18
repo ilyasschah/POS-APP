@@ -2900,6 +2900,11 @@
         "Name": "id",
         "Type": "System.Int32",
         "IsRequired": false
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
@@ -2954,6 +2959,22 @@
         "Type": "System.String",
         "IsRequired": false
       },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Api.Controllers.PosOrderController",
+    "Method": "GetKitchenOrders",
+    "RelativePath": "api/PosOrder/GetKitchenOrders",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
       {
         "Name": "companyId",
         "Type": "System.Int32",

@@ -1,7 +1,8 @@
 ﻿using MediatR;
 using Api.Domain;
 using Api.Models;
-using Api.Repository;
+using Api.DataBase;
+using Microsoft.EntityFrameworkCore;
 
 namespace Api.Commands.PosOrderItemCommands.Add
 {
@@ -18,11 +19,11 @@ namespace Api.Commands.PosOrderItemCommands.Add
 
         public class BulkAddPosOrderItemsCommandHandler : IRequestHandler<BulkAddPosOrderItemsCommand, bool>
         {
-            private readonly PosOrderItemRepository _repository;
+            private readonly AppDbContext _db;
 
-            public BulkAddPosOrderItemsCommandHandler(PosOrderItemRepository repository)
+            public BulkAddPosOrderItemsCommandHandler(AppDbContext db)
             {
-                _repository = repository;
+                _db = db;
             }
 
             public async Task<bool> Handle(BulkAddPosOrderItemsCommand command, CancellationToken cancellationToken)
@@ -30,27 +31,81 @@ namespace Api.Commands.PosOrderItemCommands.Add
                 if (command.Items == null || !command.Items.Any())
                     return false;
 
-                var itemsToSave = new List<PosOrderItem>();
+                int posOrderId = command.Items.First().PosOrderId;
+                var strategy = _db.Database.CreateExecutionStrategy();
 
-                foreach (var req in command.Items)
+                return await strategy.ExecuteAsync(async () =>
                 {
-                    var item = PosOrderItem.Create(
-                        companyId: command.CompanyId,
-                        posOrderId: req.PosOrderId,
-                        productId: req.ProductId,
-                        roundNumber: req.RoundNumber,
-                        quantity: req.Quantity,
-                        price: req.Price,
-                        discount: req.Discount,
-                        discountType: req.DiscountType,
-                        discountAppliedType: req.DiscountAppliedType,
-                        comment: req.Comment,
-                        bundle: req.Bundle
-                    );
-                    itemsToSave.Add(item);
-                }
-                await _repository.AddRangeAsync(itemsToSave);
-                return true;
+                    using var transaction = await _db.Database.BeginTransactionAsync(cancellationToken);
+
+                    try
+                    {
+                        var existingItems = await _db.PosOrderItems
+                            .Where(i => i.PosOrderId == posOrderId && i.CompanyId == command.CompanyId)
+                            .ToListAsync(cancellationToken);
+
+                        var incomingProductIds = command.Items.Select(i => i.ProductId).ToList();
+
+                        var itemsToRemove = existingItems
+                            .Where(e => !incomingProductIds.Contains(e.ProductId))
+                            .ToList();
+
+                        if (itemsToRemove.Any())
+                        {
+                            _db.PosOrderItems.RemoveRange(itemsToRemove);
+                        }
+
+                        foreach (var req in command.Items)
+                        {
+                            var existingItem = existingItems.FirstOrDefault(e => e.ProductId == req.ProductId);
+
+                            if (existingItem != null)
+                            {
+                                existingItem.UpdateDetails(
+                                    req.Quantity, req.Price, req.Discount, req.DiscountType,
+                                    req.DiscountAppliedType, req.Comment
+                                );
+                                _db.PosOrderItems.Update(existingItem);
+                            }
+                            else
+                            {
+                                var newItem = PosOrderItem.Create(
+                                    companyId: command.CompanyId, posOrderId: req.PosOrderId,
+                                    productId: req.ProductId, roundNumber: req.RoundNumber,
+                                    quantity: req.Quantity, price: req.Price, discount: req.Discount,
+                                    discountType: req.DiscountType, discountAppliedType: req.DiscountAppliedType,
+                                    comment: req.Comment, bundle: req.Bundle
+                                );
+                                _db.PosOrderItems.Add(newItem);
+                            }
+                        }
+
+                        await _db.SaveChangesAsync(cancellationToken);
+
+                        var orderToUpdate = await _db.PosOrders.FirstOrDefaultAsync(o => o.Id == posOrderId, cancellationToken);
+                        if (orderToUpdate != null)
+                        {
+                            var finalItems = await _db.PosOrderItems.Where(i => i.PosOrderId == posOrderId).ToListAsync(cancellationToken);
+                            decimal newTotal = finalItems.Sum(i => (i.Price - i.Discount) * i.Quantity);
+
+                            orderToUpdate.Update(
+                                orderToUpdate.UserId, orderToUpdate.Number, orderToUpdate.Discount,
+                                orderToUpdate.DiscountType, newTotal, orderToUpdate.CustomerId,
+                                orderToUpdate.ServiceType, orderToUpdate.ServiceStatus, orderToUpdate.FloorPlanTableId
+                            );
+                            _db.PosOrders.Update(orderToUpdate);
+                            await _db.SaveChangesAsync(cancellationToken);
+                        }
+
+                        await transaction.CommitAsync(cancellationToken);
+                        return true;
+                    }
+                    catch
+                    {
+                        await transaction.RollbackAsync(cancellationToken);
+                        throw;
+                    }
+                });
             }
         }
     }

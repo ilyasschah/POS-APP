@@ -14,7 +14,6 @@ namespace Api.Helpers
                 ProductId = entity.ProductId,
 
                 ProductName = entity.Product?.Name ?? "Unknown Product",
-
                 RoundNumber = entity.RoundNumber,
                 Quantity = entity.Quantity,
                 Price = entity.Price,
@@ -24,9 +23,7 @@ namespace Api.Helpers
                 DiscountAppliedType = entity.DiscountAppliedType,
                 IsFeatured = entity.IsFeatured,
                 VoidedBy = entity.VoidedBy,
-
                 VoidedByUserName = entity.VoidedByUser?.Username ?? "N/A",
-
                 Comment = entity.Comment,
                 DateCreated = entity.DateCreated,
                 Bundle = entity.Bundle

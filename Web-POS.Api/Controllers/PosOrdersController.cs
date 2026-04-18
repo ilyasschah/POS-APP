@@ -91,11 +91,10 @@ namespace Api.Controllers
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { message = ex.Message }); // e.g. "Order not found."
+                return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
             {
-                // Catch database errors or transaction failures
                 return StatusCode(500, new { message = "Checkout failed.", details = ex.Message });
             }
         }
@@ -117,17 +116,33 @@ namespace Api.Controllers
                 return BadRequest(ex.Message);
             }
         }
-
         [HttpDelete("[action]")]
-        public async Task<IActionResult> Delete([FromQuery] int id)
+        public async Task<IActionResult> Delete([FromQuery] int id, [FromQuery] int companyId)
         {
-            var command = new DeletePosOrderCommand(id);
+            var command = new DeletePosOrderCommand(id, companyId);
             var success = await _mediator.Send(command);
 
             if (!success)
-                return NotFound($"PosOrder with ID {id} not found.");
+                return NotFound(new
+                {
+                    message = $"PosOrder with ID {id} and CompanyId {companyId} was not found."
+                });
 
-            return NoContent();
+            return Ok(new
+            {
+                message = $"PosOrder with ID {id} was deleted successfully."
+            });
+        }
+        [HttpGet("GetKitchenOrders")]
+        public async Task<IActionResult> GetKitchenOrders([FromQuery] int companyId)
+        {
+            if (companyId <= 0)
+                return BadRequest("Company ID must be provided.");
+
+            var query = new Api.Queries.KitchenQuery.GetKitchenOrdersQuery { CompanyId = companyId };
+            var result = await _mediator.Send(query);
+
+            return Ok(result);
         }
     }
 }
