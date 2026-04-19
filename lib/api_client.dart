@@ -8,7 +8,7 @@ class ApiClient {
 
   ApiClient() {
     _dio = Dio();
-    _dio.options.baseUrl = 'https://localhost:7002/api';
+    _dio.options.baseUrl = 'https://192.168.11.103:7002/api';
     _dio.options.connectTimeout = const Duration(seconds: 10);
 
     if (!kIsWeb) {
