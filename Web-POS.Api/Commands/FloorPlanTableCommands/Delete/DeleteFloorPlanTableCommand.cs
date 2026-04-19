@@ -1,7 +1,7 @@
 ﻿using MediatR;
 using Api.Services;
 
-namespace Api.Commands.FloorPlanTableCommand.Delete
+namespace Api.Commands.FloorPlanTableCommands.Delete
 {
     public class DeleteFloorPlanTableCommand : IRequest<bool>
     {

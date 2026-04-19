@@ -1,7 +1,7 @@
-﻿using MediatR;
+﻿using Api.Commands.ZReportCommands.Add;
+using Api.Queries.ZReportQuery;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Api.Commands.ZReportCommands;
-using Api.Queries.ZReportQueries;
 
 namespace Api.Controllers
 {

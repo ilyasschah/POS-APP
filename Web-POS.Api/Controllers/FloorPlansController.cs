@@ -1,6 +1,6 @@
-﻿using Api.Commands.FloorPlanCommand.Add;
-using Api.Commands.FloorPlanCommand.Delete;
-using Api.Commands.FloorPlanCommand.Update;
+﻿using Api.Commands.FloorPlanCommands.Add;
+using Api.Commands.FloorPlanCommands.Delete;
+using Api.Commands.FloorPlanCommands.Update;
 using Api.Models;
 using Api.Queries.FloorPlanQuery;
 using MediatR;

@@ -2,7 +2,7 @@ using MediatR;
 using FluentValidation;
 using Api.Services;
 
-namespace Api.Commands.FloorPlanCommand.Delete
+namespace Api.Commands.FloorPlanCommands.Delete
 {
     public class DeleteFloorPlanCommand : IRequest<bool>
     {

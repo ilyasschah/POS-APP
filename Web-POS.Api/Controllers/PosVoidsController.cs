@@ -1,11 +1,9 @@
+using Api.Commands.PosVoidCommands.Add;
+using Api.Commands.PosVoidCommands.Update;
+using Api.Models;
+using Api.Queries.PosVoidQuery;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Api.Commands.PosVoidCommands.Add;
-using Api.Commands.PosVoidCommands.Delete;
-using Api.Commands.PosVoidCommands.Update;
-using Api.Queries.PosVoidQuery;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
-using Api.Models;
 
 namespace Api.Controllers
 {
@@ -44,11 +42,10 @@ namespace Api.Controllers
         {
             return Ok(await mediator.Send(new UpdatePosVoidCommand (request)));
         }
-        //DELETE: api/posvoids/delete/5
-        [HttpDelete("Delete/{id}")]
-        public async Task<IActionResult> Delete(string reason)
-        {
-            return Ok(await mediator.Send(new DeletePosVoidCommand(reason)));
-        }
+        //[HttpDelete("Delete/{id}")]
+        //public async Task<IActionResult> Delete(string reason)
+        //{
+        //    return Ok(await mediator.Send(new DeletePosVoidCommand(reason)));
+        //}
     }
 }

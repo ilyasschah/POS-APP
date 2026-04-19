@@ -2,7 +2,7 @@
 using Api.Models;
 using Api.Services;
 
-namespace Api.Commands.PosOrderCommand
+namespace Api.Commands.PosOrderCommands
 {
     public class CheckoutPosOrderCommand : IRequest<bool>
     {

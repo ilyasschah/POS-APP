@@ -3,7 +3,7 @@ using Api.Repository;
 using Api.Helpers;
 using Api.Models;
 
-namespace Api.Queries.KitchenQuery
+namespace Api.Queries.PosOrderQuery
 {
     public class KitchenOrderResponseDto
     {

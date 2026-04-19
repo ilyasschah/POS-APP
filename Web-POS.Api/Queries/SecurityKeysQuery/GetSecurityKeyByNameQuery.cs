@@ -3,7 +3,7 @@ using Api.Services;
 using FluentValidation;
 using MediatR;
 
-namespace Api.Queries.SecurityKeyQueries
+namespace Api.Queries.SecurityKeysQuery
 {
     public class GetSecurityKeyByNameQuery : IRequest<SecurityKeyDto?>
     {

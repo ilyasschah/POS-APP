@@ -3,7 +3,7 @@ using FluentValidation;
 using Api.Models;
 using Api.Services;
 
-namespace Api.Commands.FloorPlanCommand.Add
+namespace Api.Commands.FloorPlanCommands.Add
 {
     public class AddFloorPlanCommand : IRequest<FloorPlanDto>
     {

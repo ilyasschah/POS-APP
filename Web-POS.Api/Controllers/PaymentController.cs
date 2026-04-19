@@ -2,7 +2,6 @@
 using Api.Commands.PaymentCommands.Delete;
 using Api.Commands.PaymentCommands.Update;
 using Api.Models;
-using Api.Queries.PaymentQueries;
 using Api.Queries.PaymentQuery;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;

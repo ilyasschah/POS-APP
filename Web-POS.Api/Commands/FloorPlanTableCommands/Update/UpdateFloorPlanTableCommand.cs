@@ -2,7 +2,7 @@
 using Api.Models;
 using Api.Services;
 
-namespace Api.Commands.FloorPlanTableCommand.Update
+namespace Api.Commands.FloorPlanTableCommands.Update
 {
     public class UpdateFloorPlanTableCommand : IRequest<bool>
     {

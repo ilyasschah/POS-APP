@@ -3,32 +3,36 @@
   "WorkspaceRootPath": "D:\\repos\\Web-POS\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\controllers\\posvoidscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\controllers\\posvoidscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\controllers\\zreportcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\controllers\\zreportcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\controllers\\posorderscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\controllers\\posorderscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\queries\\posorderquery\\getkitchenordersquery.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\queries\\posorderquery\\getkitchenordersquery.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\controllers\\floorplanscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\controllers\\floorplanscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\services\\posordercheckoutservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\services\\posordercheckoutservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\controllers\\floorplantablescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\controllers\\floorplantablescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\commands\\posorderitemcommands\\add\\bulkaddposorderitemscommand.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\commands\\posorderitemcommands\\add\\bulkaddposorderitemscommand.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\controllers\\posorderitemscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\controllers\\posorderitemscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\services\\posorderservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\services\\posorderservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\controllers\\securitykeycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\controllers\\securitykeycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\commands\\posordercommands\\delete\\deleteposordercommand.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\commands\\posordercommands\\delete\\deleteposordercommand.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\repository\\posorderrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\repository\\posorderrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\controllers\\paymentcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\controllers\\paymentcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -38,73 +42,8 @@
       "DocumentGroups": [
         {
           "DockedWidth": 235,
-          "SelectedChildIndex": 11,
+          "SelectedChildIndex": 5,
           "Children": [
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "GetKitchenOrdersQuery.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Queries\\PosOrderQuery\\GetKitchenOrdersQuery.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Queries\\PosOrderQuery\\GetKitchenOrdersQuery.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Queries\\PosOrderQuery\\GetKitchenOrdersQuery.cs",
-              "RelativeToolTip": "Web-POS.Api\\Queries\\PosOrderQuery\\GetKitchenOrdersQuery.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAACMAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-18T14:42:45.155Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "PosOrderCheckoutService.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Services\\PosOrderCheckoutService.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Services\\PosOrderCheckoutService.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Services\\PosOrderCheckoutService.cs",
-              "RelativeToolTip": "Web-POS.Api\\Services\\PosOrderCheckoutService.cs",
-              "ViewState": "AgIAAAgAAAAAAAAAAAAQwCcAAAA/AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-18T14:08:19.121Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "BulkAddPosOrderItemsCommand.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Commands\\PosOrderItemCommands\\Add\\BulkAddPosOrderItemsCommand.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Commands\\PosOrderItemCommands\\Add\\BulkAddPosOrderItemsCommand.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Commands\\PosOrderItemCommands\\Add\\BulkAddPosOrderItemsCommand.cs",
-              "RelativeToolTip": "Web-POS.Api\\Commands\\PosOrderItemCommands\\Add\\BulkAddPosOrderItemsCommand.cs",
-              "ViewState": "AgIAADkAAAAAAAAAAAAmwFkAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-18T13:18:30.294Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "DeletePosOrderCommand.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Commands\\PosOrderCommands\\Delete\\DeletePosOrderCommand.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Commands\\PosOrderCommands\\Delete\\DeletePosOrderCommand.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Commands\\PosOrderCommands\\Delete\\DeletePosOrderCommand.cs",
-              "RelativeToolTip": "Web-POS.Api\\Commands\\PosOrderCommands\\Delete\\DeletePosOrderCommand.cs",
-              "ViewState": "AgIAAAgAAAAAAAAAAAAQwCAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-18T12:40:38.86Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "PosOrderRepository.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Repository\\PosOrderRepository.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Repository\\PosOrderRepository.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Repository\\PosOrderRepository.cs",
-              "RelativeToolTip": "Web-POS.Api\\Repository\\PosOrderRepository.cs",
-              "ViewState": "AgIAAEoAAAAAAAAAAIAywG8AAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-18T12:38:51.801Z",
-              "EditorCaption": ""
-            },
             {
               "$type": "Bookmark",
               "Name": "ST:128:0:{75188d03-9892-4ae2-abf1-207126247ce5}"
@@ -127,28 +66,106 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "PosOrderService.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Services\\PosOrderService.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Services\\PosOrderService.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Services\\PosOrderService.cs",
-              "RelativeToolTip": "Web-POS.Api\\Services\\PosOrderService.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAEUAAAAAAAAAAAAAAA==",
+              "DocumentIndex": 0,
+              "Title": "PosVoidsController.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\PosVoidsController.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Controllers\\PosVoidsController.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\PosVoidsController.cs",
+              "RelativeToolTip": "Web-POS.Api\\Controllers\\PosVoidsController.cs",
+              "ViewState": "AgIAABMAAAAAAAAAAAAgwBEAAABHAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-18T12:38:07.964Z",
+              "WhenOpened": "2026-04-19T17:52:00.296Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
+              "Title": "ZReportController.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\ZReportController.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Controllers\\ZReportController.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\ZReportController.cs",
+              "RelativeToolTip": "Web-POS.Api\\Controllers\\ZReportController.cs",
+              "ViewState": "AgIAAB0AAAAAAAAAAAAwwBoAAAAbAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-19T17:51:39.438Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "PaymentController.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\PaymentController.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Controllers\\PaymentController.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\PaymentController.cs",
+              "RelativeToolTip": "Web-POS.Api\\Controllers\\PaymentController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAARAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-19T17:49:38.441Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "SecurityKeyController.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\SecurityKeyController.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Controllers\\SecurityKeyController.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\SecurityKeyController.cs",
+              "RelativeToolTip": "Web-POS.Api\\Controllers\\SecurityKeyController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAdAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-19T17:49:36.738Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
               "Title": "PosOrdersController.cs",
               "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\PosOrdersController.cs",
               "RelativeDocumentMoniker": "Web-POS.Api\\Controllers\\PosOrdersController.cs",
               "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\PosOrdersController.cs",
               "RelativeToolTip": "Web-POS.Api\\Controllers\\PosOrdersController.cs",
-              "ViewState": "AgIAAGkAAAAAAAAAAAAswI8AAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAIsAAAAvAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-17T22:14:05.173Z",
+              "WhenOpened": "2026-04-19T17:49:35.075Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "PosOrderItemsController.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\PosOrderItemsController.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Controllers\\PosOrderItemsController.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\PosOrderItemsController.cs",
+              "RelativeToolTip": "Web-POS.Api\\Controllers\\PosOrderItemsController.cs",
+              "ViewState": "AgIAAE4AAAAAAAAAAAAkwGwAAAAdAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-19T17:49:33.288Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "FloorPlanTablesController.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\FloorPlanTablesController.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Controllers\\FloorPlanTablesController.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\FloorPlanTablesController.cs",
+              "RelativeToolTip": "Web-POS.Api\\Controllers\\FloorPlanTablesController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABUAAAAdAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-19T17:49:31.587Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "FloorPlansController.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\FloorPlansController.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Controllers\\FloorPlansController.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\FloorPlansController.cs",
+              "RelativeToolTip": "Web-POS.Api\\Controllers\\FloorPlansController.cs",
+              "ViewState": "AgIAAB4AAAAAAAAAAAAAwEgAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-19T17:49:22.887Z",
               "EditorCaption": ""
             }
           ]

@@ -1,9 +1,12 @@
-using Microsoft.AspNetCore.Mvc;
-using MediatR;
+using Api.Attributes;
+using Api.Commands.PosOrderCommands;
+using Api.Commands.PosOrderCommands.Add;
+using Api.Commands.PosOrderCommands.Delete;
+using Api.Commands.PosOrderCommands.Update;
 using Api.Models;
 using Api.Queries.PosOrderQuery;
-using Api.Commands.PosOrderCommand;
-using Api.Attributes;
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers
 {
@@ -139,7 +142,7 @@ namespace Api.Controllers
             if (companyId <= 0)
                 return BadRequest("Company ID must be provided.");
 
-            var query = new Api.Queries.KitchenQuery.GetKitchenOrdersQuery { CompanyId = companyId };
+            var query = new GetKitchenOrdersQuery { CompanyId = companyId };
             var result = await _mediator.Send(query);
 
             return Ok(result);

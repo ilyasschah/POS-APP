@@ -1,7 +1,7 @@
 using Api.Attributes;
-using Api.Commands.PosOrderItemCommand;
 using Api.Commands.PosOrderItemCommands.Add;
 using Api.Commands.PosOrderItemCommands.Delete;
+using Api.Commands.PosOrderItemCommands.Update;
 using Api.Models;
 using Api.Queries.PosOrderItemQuery;
 using MediatR;

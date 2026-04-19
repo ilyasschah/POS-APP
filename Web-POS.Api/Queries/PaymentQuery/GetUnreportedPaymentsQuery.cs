@@ -3,7 +3,7 @@ using Api.Models;
 using Api.Repository;
 using Api.Helpers;
 
-namespace Api.Queries.PaymentQueries
+namespace Api.Queries.PaymentQuery
 {
     public class GetUnreportedPaymentsQuery : IRequest<IEnumerable<PaymentDto?>>
     {

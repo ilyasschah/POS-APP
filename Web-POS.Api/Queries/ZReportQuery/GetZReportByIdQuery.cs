@@ -3,7 +3,7 @@ using Api.Models;
 using Api.Repository;
 using Api.Helpers;
 
-namespace Api.Queries.ZReportQueries
+namespace Api.Queries.ZReportQuery
 {
     public class GetZReportByIdQuery : IRequest<ZReportDto?>
     {

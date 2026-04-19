@@ -8,10 +8,7 @@ namespace Api.Commands.PosVoidCommands.Delete;
 public class DeletePosVoidCommand : IRequest<bool>
 {
     public string? Reason { get; set; }
-    public DeletePosVoidCommand (string reason)
-    {
-        Reason = reason;
-    }
+    
     public class DeletePosVoidCommandHandler : IRequestHandler<DeletePosVoidCommand, bool>
     {
         private readonly PosVoidService _service;

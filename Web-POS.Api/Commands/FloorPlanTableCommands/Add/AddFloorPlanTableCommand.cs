@@ -2,7 +2,7 @@
 using Api.Models;
 using Api.Services;
 
-namespace Api.Commands.FloorPlanTableCommand.Add
+namespace Api.Commands.FloorPlanTableCommands.Add
 {
     public class AddFloorPlanTableCommand : IRequest<FloorPlanTableDto>
     {

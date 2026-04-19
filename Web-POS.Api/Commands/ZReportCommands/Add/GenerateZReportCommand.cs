@@ -3,7 +3,7 @@ using MediatR;
 using Api.Models;
 using Api.Services;
 
-namespace Api.Commands.ZReportCommands
+namespace Api.Commands.ZReportCommands.Add
 {
     public class GenerateZReportCommand : IRequest<ZReportDto>
     {

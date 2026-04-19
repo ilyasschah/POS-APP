@@ -4033,27 +4033,6 @@
   },
   {
     "ContainingType": "Api.Controllers.PosVoidsController",
-    "Method": "Delete",
-    "RelativePath": "api/PosVoids/Delete/{id}",
-    "HttpMethod": "DELETE",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "reason",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "id",
-        "Type": "",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "Api.Controllers.PosVoidsController",
     "Method": "GetAll",
     "RelativePath": "api/PosVoids/GetAll",
     "HttpMethod": "GET",

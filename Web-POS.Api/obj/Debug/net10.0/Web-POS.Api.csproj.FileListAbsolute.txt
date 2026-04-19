@@ -8,6 +8,7 @@ D:\repos\Web-POS\Web-POS.Api\bin\Debug\net10.0\Web-POS.Api.dll
 D:\repos\Web-POS\Web-POS.Api\bin\Debug\net10.0\Web-POS.Api.pdb
 D:\repos\Web-POS\Web-POS.Api\bin\Debug\net10.0\Azure.Core.dll
 D:\repos\Web-POS\Web-POS.Api\bin\Debug\net10.0\Azure.Identity.dll
+D:\repos\Web-POS\Web-POS.Api\bin\Debug\net10.0\BCrypt.Net-Next.dll
 D:\repos\Web-POS\Web-POS.Api\bin\Debug\net10.0\FluentValidation.dll
 D:\repos\Web-POS\Web-POS.Api\bin\Debug\net10.0\MediatR.dll
 D:\repos\Web-POS\Web-POS.Api\bin\Debug\net10.0\MediatR.Contracts.dll
@@ -81,4 +82,4 @@ D:\repos\Web-POS\Web-POS.Api\obj\Debug\net10.0\refint\Web-POS.Api.dll
 D:\repos\Web-POS\Web-POS.Api\obj\Debug\net10.0\Web-POS.Api.pdb
 D:\repos\Web-POS\Web-POS.Api\obj\Debug\net10.0\Web-POS.Api.genruntimeconfig.cache
 D:\repos\Web-POS\Web-POS.Api\obj\Debug\net10.0\ref\Web-POS.Api.dll
-D:\repos\Web-POS\Web-POS.Api\bin\Debug\net10.0\BCrypt.Net-Next.dll
+D:\repos\Web-POS\Web-POS.Api\bin\Debug\net10.0\libman.json

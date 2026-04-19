@@ -1,6 +1,5 @@
-﻿using Api.Commands.SecurityKeyCommands;
+﻿using Api.Commands.SecurityKeyCommands.Add;
 using Api.Models;
-using Api.Queries.SecurityKeyQueries;
 using Api.Queries.SecurityKeysQuery;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;

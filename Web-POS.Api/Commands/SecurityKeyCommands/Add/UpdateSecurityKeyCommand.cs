@@ -3,7 +3,7 @@ using Api.Services;
 using FluentValidation;
 using MediatR;
 
-namespace Api.Commands.SecurityKeyCommands
+namespace Api.Commands.SecurityKeyCommands.Add
 {
     public class UpdateSecurityKeyCommand : IRequest<bool>
     {

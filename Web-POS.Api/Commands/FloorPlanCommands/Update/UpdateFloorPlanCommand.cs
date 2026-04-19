@@ -3,7 +3,7 @@ using FluentValidation;
 using Api.Models;
 using Api.Services;
 
-namespace Api.Commands.FloorPlanCommand.Update
+namespace Api.Commands.FloorPlanCommands.Update
 {
     public class UpdateFloorPlanCommand : IRequest<bool>
     {

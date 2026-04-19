@@ -1,10 +1,10 @@
-﻿using MediatR;
-using Microsoft.AspNetCore.Mvc;
+﻿using Api.Commands.FloorPlanTableCommands.Add;
+using Api.Commands.FloorPlanTableCommands.Delete;
+using Api.Commands.FloorPlanTableCommands.Update;
 using Api.Models;
 using Api.Queries.FloorPlanTableQuery;
-using Api.Commands.FloorPlanTableCommand.Add;
-using Api.Commands.FloorPlanTableCommand.Update;
-using Api.Commands.FloorPlanTableCommand.Delete;
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers
 {

@@ -2,7 +2,7 @@ using MediatR;
 using FluentValidation;
 using Api.Services;
 
-namespace Api.Commands.PosOrderCommand
+namespace Api.Commands.PosOrderCommands.Delete
 {
     public class DeletePosOrderCommand : IRequest<bool>
     {

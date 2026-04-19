@@ -4,7 +4,7 @@ using Api.Models;
 using Api.Services;
 using Api.Helpers;
 
-namespace Api.Commands.PosOrderCommand
+namespace Api.Commands.PosOrderCommands.Add
 {
     public class CreatePosOrderCommand : IRequest<PosOrderDto>
     {

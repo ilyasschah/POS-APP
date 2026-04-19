@@ -3,7 +3,7 @@ using FluentValidation;
 using Api.Models;
 using Api.Services;
 
-namespace Api.Commands.PosOrderCommand
+namespace Api.Commands.PosOrderCommands.Update
 {
     public class UpdatePosOrderCommand : IRequest<bool>
     {
