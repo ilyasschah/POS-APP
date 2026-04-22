@@ -214,11 +214,11 @@ using (var scope = app.Services.CreateScope())
 
 app.UseSwagger();
 app.UseSwaggerUI(c => {
-    c.SwaggerEndpoint("./v1/swagger.json", "My API V1"); // Use relative path for IIS
+    c.SwaggerEndpoint("./v1/swagger.json", "My API V1");
     c.RoutePrefix = "swagger";
 });
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();

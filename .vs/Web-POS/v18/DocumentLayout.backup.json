@@ -3,6 +3,10 @@
   "WorkspaceRootPath": "D:\\repos\\Web-POS\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
       "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
     },
@@ -43,28 +47,40 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "launchSettings.json",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Properties\\launchSettings.json",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Properties\\launchSettings.json",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Properties\\launchSettings.json",
-              "RelativeToolTip": "Web-POS.Api\\Properties\\launchSettings.json",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAACAAAAAkAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2026-04-19T20:59:00.879Z",
+              "Title": "Program.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Program.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Program.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Program.cs",
+              "RelativeToolTip": "Web-POS.Api\\Program.cs",
+              "ViewState": "AgIAANIAAAAAPDMzM7MSwNwAAAACAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-22T18:58:40.64Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 1,
+              "Title": "launchSettings.json",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Properties\\launchSettings.json",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Properties\\launchSettings.json",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Properties\\launchSettings.json",
+              "RelativeToolTip": "Web-POS.Api\\Properties\\launchSettings.json",
+              "ViewState": "AgIAAA0AAAAAAAAAAAAYwB8AAAAjAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-04-22T18:58:01.526Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
               "Title": "appsettings.json",
               "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\appsettings.json",
               "RelativeDocumentMoniker": "Web-POS.Api\\appsettings.json",
               "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\appsettings.json",
               "RelativeToolTip": "Web-POS.Api\\appsettings.json",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2026-04-19T20:58:33.109Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-04-19T20:58:33.109Z"
             }
           ]
         }
