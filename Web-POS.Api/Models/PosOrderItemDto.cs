@@ -46,6 +46,7 @@ namespace Api.Models
         public string? Comment { get; set; }
         public string? Bundle { get; set; }
         public int DiscountAppliedType { get; set; }
+        public List<int> AppliedTaxIds { get; set; } = new List<int>();
     }
 
     public class UpdatePosOrderItemRequest

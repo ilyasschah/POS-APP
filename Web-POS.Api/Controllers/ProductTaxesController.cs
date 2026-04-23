@@ -4,9 +4,6 @@ using Api.Commands.ProductTaxCommands.Add;
 using Api.Commands.ProductTaxCommands.Delete;
 using Api.Queries.ProductTaxQuery;
 using Api.Models;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Api.Attributes;
 
 namespace Api.Controllers

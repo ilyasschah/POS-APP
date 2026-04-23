@@ -3,16 +3,32 @@
   "WorkspaceRootPath": "D:\\repos\\Web-POS\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\database\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\database\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\domain\\posorderitemtax.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\domain\\posorderitemtax.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\commands\\posorderitemcommands\\add\\bulkaddposorderitemscommand.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\commands\\posorderitemcommands\\add\\bulkaddposorderitemscommand.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\services\\posorderitemservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\services\\posorderitemservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\models\\posorderitemdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\models\\posorderitemdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\models\\checkoutposorderrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\models\\checkoutposorderrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\services\\posordercheckoutservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\services\\posordercheckoutservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -22,8 +38,86 @@
       "DocumentGroups": [
         {
           "DockedWidth": 235,
-          "SelectedChildIndex": 5,
+          "SelectedChildIndex": 0,
           "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "AppDbContext.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\DataBase\\AppDbContext.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\DataBase\\AppDbContext.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\DataBase\\AppDbContext.cs",
+              "RelativeToolTip": "Web-POS.Api\\DataBase\\AppDbContext.cs",
+              "ViewState": "AgIAADEAAAAAAAAAAAAmwB0AAAA2AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-23T20:09:23.993Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "PosOrderItemTax.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Domain\\PosOrderItemTax.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Domain\\PosOrderItemTax.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Domain\\PosOrderItemTax.cs",
+              "RelativeToolTip": "Web-POS.Api\\Domain\\PosOrderItemTax.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAAAsAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-23T20:08:43.249Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "BulkAddPosOrderItemsCommand.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Commands\\PosOrderItemCommands\\Add\\BulkAddPosOrderItemsCommand.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Commands\\PosOrderItemCommands\\Add\\BulkAddPosOrderItemsCommand.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Commands\\PosOrderItemCommands\\Add\\BulkAddPosOrderItemsCommand.cs",
+              "RelativeToolTip": "Web-POS.Api\\Commands\\PosOrderItemCommands\\Add\\BulkAddPosOrderItemsCommand.cs",
+              "ViewState": "AgIAAD8AAAAAAAAAAAAmwGkAAABEAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-23T19:58:54.826Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "PosOrderItemService.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Services\\PosOrderItemService.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Services\\PosOrderItemService.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Services\\PosOrderItemService.cs",
+              "RelativeToolTip": "Web-POS.Api\\Services\\PosOrderItemService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-23T19:58:06.805Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "PosOrderItemDto.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Models\\PosOrderItemDto.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Models\\PosOrderItemDto.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Models\\PosOrderItemDto.cs",
+              "RelativeToolTip": "Web-POS.Api\\Models\\PosOrderItemDto.cs",
+              "ViewState": "AgIAABIAAAAAAAAAAAAiwC8AAAA0AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-23T19:51:43.625Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "CheckoutPosOrderRequest.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Models\\CheckoutPosOrderRequest.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Models\\CheckoutPosOrderRequest.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Models\\CheckoutPosOrderRequest.cs",
+              "RelativeToolTip": "Web-POS.Api\\Models\\CheckoutPosOrderRequest.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAA0AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-23T19:50:47.011Z",
+              "EditorCaption": ""
+            },
             {
               "$type": "Bookmark",
               "Name": "ST:128:0:{75188d03-9892-4ae2-abf1-207126247ce5}"
@@ -46,41 +140,16 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "Program.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Program.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Program.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Program.cs",
-              "RelativeToolTip": "Web-POS.Api\\Program.cs",
-              "ViewState": "AgIAANIAAAAAPDMzM7MSwNwAAAACAAAAAAAAAA==",
+              "DocumentIndex": 6,
+              "Title": "PosOrderCheckoutService.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Services\\PosOrderCheckoutService.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Services\\PosOrderCheckoutService.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Services\\PosOrderCheckoutService.cs",
+              "RelativeToolTip": "Web-POS.Api\\Services\\PosOrderCheckoutService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAABkAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-22T18:58:40.64Z",
+              "WhenOpened": "2026-04-23T19:50:30.992Z",
               "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "launchSettings.json",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Properties\\launchSettings.json",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Properties\\launchSettings.json",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Properties\\launchSettings.json",
-              "RelativeToolTip": "Web-POS.Api\\Properties\\launchSettings.json",
-              "ViewState": "AgIAAA0AAAAAAAAAAAAYwB8AAAAjAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2026-04-22T18:58:01.526Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "appsettings.json",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\appsettings.json",
-              "RelativeDocumentMoniker": "Web-POS.Api\\appsettings.json",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\appsettings.json",
-              "RelativeToolTip": "Web-POS.Api\\appsettings.json",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2026-04-19T20:58:33.109Z"
             }
           ]
         }

@@ -28,6 +28,7 @@ namespace Api.DataBase
         public DbSet<LoyaltyCard> LoyaltyCards { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<PosOrder> PosOrders { get; set; }
+        public DbSet<PosOrderItemTax> PosOrderItemTaxes { get; set; }
         public DbSet<PosVoid> PosVoids { get; set; }
         public DbSet<PosOrderItem> PosOrderItems { get; set; }
         public DbSet<FloorPlan> FloorPlans { get; set; }

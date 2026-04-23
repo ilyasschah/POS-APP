@@ -82,11 +82,42 @@ namespace Api.Commands.PosOrderItemCommands.Add
 
                         await _db.SaveChangesAsync(cancellationToken);
 
+                        var currentItems = await _db.PosOrderItems
+                            .Where(i => i.PosOrderId == posOrderId && i.CompanyId == command.CompanyId)
+                            .ToListAsync(cancellationToken);
+                        var currentItemIds = currentItems.Select(i => i.Id).ToList();
+                        var oldTaxes = await _db.Set<PosOrderItemTax>()
+                            .Where(t => currentItemIds.Contains(t.PosOrderItemId))
+                            .ToListAsync(cancellationToken);
+
+                        if (oldTaxes.Any())
+                        {
+                            _db.Set<PosOrderItemTax>().RemoveRange(oldTaxes);
+                        }
+
+                        foreach (var req in command.Items)
+                        {
+                            var savedItem = currentItems.FirstOrDefault(i => i.ProductId == req.ProductId);
+
+                            if (savedItem != null && req.AppliedTaxIds != null && req.AppliedTaxIds.Any())
+                            {
+                                foreach (var taxId in req.AppliedTaxIds)
+                                {
+                                    var newTax = new PosOrderItemTax
+                                    {
+                                        PosOrderItemId = savedItem.Id,
+                                        TaxId = taxId,
+                                        CompanyId = command.CompanyId
+                                    };
+                                    _db.Set<PosOrderItemTax>().Add(newTax);
+                                }
+                            }
+                        }
+
                         var orderToUpdate = await _db.PosOrders.FirstOrDefaultAsync(o => o.Id == posOrderId, cancellationToken);
                         if (orderToUpdate != null)
                         {
-                            var finalItems = await _db.PosOrderItems.Where(i => i.PosOrderId == posOrderId).ToListAsync(cancellationToken);
-                            decimal newTotal = finalItems.Sum(i => (i.Price - i.Discount) * i.Quantity);
+                            decimal newTotal = currentItems.Sum(i => (i.Price - i.Discount) * i.Quantity);
 
                             orderToUpdate.Update(
                                 orderToUpdate.UserId, orderToUpdate.Number, orderToUpdate.Discount,
@@ -94,9 +125,9 @@ namespace Api.Commands.PosOrderItemCommands.Add
                                 orderToUpdate.ServiceType, orderToUpdate.ServiceStatus, orderToUpdate.FloorPlanTableId
                             );
                             _db.PosOrders.Update(orderToUpdate);
-                            await _db.SaveChangesAsync(cancellationToken);
                         }
 
+                        await _db.SaveChangesAsync(cancellationToken);
                         await transaction.CommitAsync(cancellationToken);
                         return true;
                     }

@@ -32,16 +32,13 @@ namespace Api.Services
             await _repository.AddAsync(newEntity);
             return newEntity;
         }
-
         public async Task<bool> Update(int companyId, UpdatePosOrderItemRequest req)
         {
-            // We pass companyId here to ensure one tenant can't update another tenant's order items!
             var entity = await _repository.GetByIdAsync(req.Id, companyId, trackEntity: true);
 
             if (entity == null)
                 throw new InvalidOperationException($"A PosOrderItem with the ID '{req.Id}' does not exist.");
 
-            // The Domain entity will automatically throw an error here if IsLocked is true
             entity.UpdateDetails(
                 req.Quantity,
                 req.Price,
@@ -54,7 +51,6 @@ namespace Api.Services
             await _repository.UpdateAsync(entity);
             return true;
         }
-
         public async Task<bool> Delete(int id, int companyId)
         {
             var entity = await _repository.GetByIdAsync(id, companyId, trackEntity: true);

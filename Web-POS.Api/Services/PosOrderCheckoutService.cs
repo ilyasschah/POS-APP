@@ -37,39 +37,45 @@ namespace Api.Services
                     if (!posOrderItems.Any())
                         throw new InvalidOperationException("Cannot checkout an empty order.");
 
-                    string documentNumber = $"INV-{DateTime.UtcNow:yyyyMMdd}-{posOrder.Id}";
+                    var posOrderItemIds = posOrderItems.Select(i => i.Id).ToList();
+                    var cartTaxes = await _db.PosOrderItemTaxes
+                        .Include(t => t.Tax)
+                        .Where(t => posOrderItemIds.Contains(t.PosOrderItemId) && t.CompanyId == companyId)
+                        .ToListAsync();
 
                     decimal actualGrandTotal = 0;
-                    var documentItems = new List<DocumentItem>();
+                    var taxAmountsMap = new Dictionary<int, List<(int TaxId, decimal Amount)>>();
 
                     foreach (var item in posOrderItems)
                     {
-                        decimal itemTotal = item.Quantity * item.Price;
                         decimal priceAfterDiscount = item.Price - item.Discount;
                         decimal totalAfterDiscount = priceAfterDiscount * item.Quantity;
+                        actualGrandTotal += totalAfterDiscount;
 
-                        actualGrandTotal += totalAfterDiscount; 
+                        var itemTaxes = cartTaxes.Where(t => t.PosOrderItemId == item.Id).ToList();
+                        var calculatedTaxes = new List<(int TaxId, decimal Amount)>();
 
-                        var docItem = DocumentItem.Create(
-                            companyId: companyId,
-                            documentId: 0, 
-                            productId: item.ProductId,
-                            quantity: item.Quantity,
-                            expectedQuantity: item.Quantity,
-                            priceBeforeTax: item.Price,
-                            price: item.Price,
-                            discount: item.Discount,
-                            discountType: item.DiscountType,
-                            productCost: 0,
-                            priceBeforeTaxAfterDiscount: priceAfterDiscount,
-                            priceAfterDiscount: priceAfterDiscount,
-                            total: itemTotal,
-                            totalAfterDocumentDiscount: totalAfterDiscount,
-                            discountApplyRule: false
-                        );
-                        documentItems.Add(docItem);
+                        foreach (var cartTax in itemTaxes)
+                        {
+                            decimal taxAmount = 0;
+                            
+                            if (cartTax.Tax.IsFixed)
+                            {
+                                taxAmount = cartTax.Tax.Rate * item.Quantity;
+                            }
+                            else
+                            {
+                                taxAmount = totalAfterDiscount * (cartTax.Tax.Rate / 100m);
+                            }
+
+                            actualGrandTotal += taxAmount; 
+                            calculatedTaxes.Add((cartTax.TaxId, taxAmount));
+                        }
+
+                        taxAmountsMap[item.Id] = calculatedTaxes;
                     }
 
+                    string documentNumber = $"INV-{DateTime.UtcNow:yyyyMMdd}-{posOrder.Id}";
                     var document = Document.Create(
                         number: documentNumber,
                         userId: userId,
@@ -88,20 +94,55 @@ namespace Api.Services
                     _db.Documents.Add(document);
                     await _db.SaveChangesAsync();
 
-                    foreach (var docItem in documentItems)
+                    var cartToDocItemMap = new Dictionary<int, DocumentItem>();
+
+                    foreach (var item in posOrderItems)
                     {
+                        decimal itemTotal = item.Quantity * item.Price;
+                        decimal priceAfterDiscount = item.Price - item.Discount;
+                        decimal totalAfterDiscount = priceAfterDiscount * item.Quantity;
+
+                        var docItem = DocumentItem.Create(
+                            companyId: companyId,
+                            documentId: document.Id,
+                            productId: item.ProductId,
+                            quantity: item.Quantity,
+                            expectedQuantity: item.Quantity,
+                            priceBeforeTax: item.Price,
+                            price: item.Price,
+                            discount: item.Discount,
+                            discountType: item.DiscountType,
+                            productCost: 0,
+                            priceBeforeTaxAfterDiscount: priceAfterDiscount,
+                            priceAfterDiscount: priceAfterDiscount,
+                            total: itemTotal,
+                            totalAfterDocumentDiscount: totalAfterDiscount,
+                            discountApplyRule: false
+                        );
+
+                        _db.DocumentItems.Add(docItem);
+                        cartToDocItemMap[item.Id] = docItem; 
                     }
+                    await _db.SaveChangesAsync();
 
-                    var finalDocumentItems = documentItems.Select(item => DocumentItem.Create(
-                            companyId: companyId, documentId: document.Id, productId: item.ProductId,
-                            quantity: item.Quantity, expectedQuantity: item.Quantity, priceBeforeTax: item.PriceBeforeTax,
-                            price: item.Price, discount: item.Discount, discountType: item.DiscountType,
-                            productCost: 0, priceBeforeTaxAfterDiscount: item.PriceBeforeTaxAfterDiscount,
-                            priceAfterDiscount: item.PriceAfterDiscount, total: item.Total,
-                            totalAfterDocumentDiscount: item.TotalAfterDocumentDiscount, discountApplyRule: false
-                    )).ToList();
+                    foreach (var kvp in cartToDocItemMap)
+                    {
+                        int cartItemId = kvp.Key;
+                        DocumentItem savedDocItem = kvp.Value;
+                        var taxesToApply = taxAmountsMap[cartItemId];
 
-                    _db.DocumentItems.AddRange(finalDocumentItems);
+                        foreach (var taxInfo in taxesToApply)
+                        {
+                            var docTax = DocumentItemTax.Create(
+                                documentItemId: savedDocItem.Id,
+                                taxId: taxInfo.TaxId,
+                                amount: taxInfo.Amount,
+                                companyId: companyId
+                            );
+
+                            _db.Add(docTax);
+                        }
+                    }
 
                     var payment = Payment.Create(
                         companyId: companyId,
@@ -111,6 +152,9 @@ namespace Api.Services
                         userId: userId
                     );
                     _db.Payments.Add(payment);
+
+                    if (cartTaxes.Any())
+                        _db.PosOrderItemTaxes.RemoveRange(cartTaxes);
 
                     _db.PosOrderItems.RemoveRange(posOrderItems);
 
@@ -126,6 +170,7 @@ namespace Api.Services
 
                     _db.PosOrders.Remove(posOrder);
 
+                    // 6. Final Save & Commit
                     await _db.SaveChangesAsync();
                     await transaction.CommitAsync();
 
