@@ -11,13 +11,13 @@ namespace Api.Domain
         public int CompanyId { get; private set; }
 
         [ForeignKey(nameof(DocumentItemId))]
-        public virtual DocumentItem DocumentItem { get; private set; }
+        public virtual DocumentItem? DocumentItem { get; private set; }
 
         [ForeignKey(nameof(TaxId))]
-        public virtual Tax Tax { get; private set; }
+        public virtual Tax? Tax { get; private set; }
 
         [ForeignKey(nameof(CompanyId))]
-        public virtual Company Company { get; private set; }
+        public virtual Company? Company { get; private set; }
 
         public DocumentItemTax() { }
 

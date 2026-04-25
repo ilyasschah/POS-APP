@@ -1,29 +1,27 @@
 ﻿using MediatR;
 using Api.Services;
 
-namespace Api.Commands.PromotionItem.Delete
+namespace Api.Commands.PromotionItemCommands
 {
     public class DeletePromotionItemCommand : IRequest<bool>
     {
-        public int Id { get; }
+        public int Id { get; set; }
+        public int CompanyId { get; set; }
 
-        public DeletePromotionItemCommand(int id)
+        public DeletePromotionItemCommand(int id, int companyId)
         {
             Id = id;
+            CompanyId = companyId;
         }
 
         public class DeletePromotionItemCommandHandler : IRequestHandler<DeletePromotionItemCommand, bool>
         {
             private readonly PromotionItemService _service;
+            public DeletePromotionItemCommandHandler(PromotionItemService service) => _service = service;
 
-            public DeletePromotionItemCommandHandler(PromotionItemService service)
+            public async Task<bool> Handle(DeletePromotionItemCommand command, CancellationToken cancellationToken)
             {
-                _service = service;
-            }
-
-            public Task<bool> Handle(DeletePromotionItemCommand command, CancellationToken cancellationToken)
-            {
-                return _service.Delete(command.Id);
+                return await _service.Delete(command.Id, command.CompanyId);
             }
         }
     }

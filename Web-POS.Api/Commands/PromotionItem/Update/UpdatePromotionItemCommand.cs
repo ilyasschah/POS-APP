@@ -1,42 +1,28 @@
-﻿using FluentValidation;
-using MediatR;
-using Api.Services;
+﻿using MediatR;
 using Api.Models;
+using Api.Services;
 
-namespace Api.Commands.PromotionItem.Update
+namespace Api.Commands.PromotionItemCommands
 {
     public class UpdatePromotionItemCommand : IRequest<bool>
     {
-        public int Id { get; }
-        public UpdatePromotionItemRequest Request { get; }
+        public int CompanyId { get; set; }
+        public UpdatePromotionItemRequest Request { get; set; }
 
-        public UpdatePromotionItemCommand(int id, UpdatePromotionItemRequest request)
+        public UpdatePromotionItemCommand(int companyId, UpdatePromotionItemRequest request)
         {
-            Id = id;
+            CompanyId = companyId;
             Request = request;
         }
 
         public class UpdatePromotionItemCommandHandler : IRequestHandler<UpdatePromotionItemCommand, bool>
         {
             private readonly PromotionItemService _service;
+            public UpdatePromotionItemCommandHandler(PromotionItemService service) => _service = service;
 
-            public UpdatePromotionItemCommandHandler(PromotionItemService service)
+            public async Task<bool> Handle(UpdatePromotionItemCommand command, CancellationToken cancellationToken)
             {
-                _service = service;
-            }
-
-            public Task<bool> Handle(UpdatePromotionItemCommand command, CancellationToken cancellationToken)
-            {
-                return _service.Update(command.Id, command.Request);
-            }
-        }
-
-        public class UpdatePromotionItemCommandValidator : AbstractValidator<UpdatePromotionItemCommand>
-        {
-            public UpdatePromotionItemCommandValidator()
-            {
-                RuleFor(c => c.Id).GreaterThan(0);
-                RuleFor(c => c.Request.Uid).GreaterThan(0);
+                return await _service.Update(command.CompanyId, command.Request);
             }
         }
     }

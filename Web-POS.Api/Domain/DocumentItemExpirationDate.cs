@@ -7,21 +7,19 @@ namespace Api.Domain
     public class DocumentItemExpirationDate
     {
         [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.None)] // Tells EF Core the ID is provided manually, not auto-incremented
+        [DatabaseGenerated(DatabaseGeneratedOption.None)]
         public int DocumentItemId { get; private set; }
 
-        [Column(TypeName = "date")] // Ensures it maps specifically to the SQL 'date' type, ignoring time
+        [Column(TypeName = "date")]
         public DateTime ExpirationDate { get; private set; }
 
         public int CompanyId { get; private set; }
 
         [ForeignKey(nameof(DocumentItemId))]
-        public virtual DocumentItem DocumentItem { get; private set; }
+        public virtual DocumentItem? DocumentItem { get; private set; }
 
-        [ForeignKey(nameof(CompanyId))]
-        public virtual Company Company { get; private set; }
+        public virtual Company? Company { get; private set; }
 
-        // Required by EF Core
         public DocumentItemExpirationDate() { }
 
         private DocumentItemExpirationDate(int documentItemId, DateTime expirationDate, int companyId)

@@ -10,7 +10,7 @@ namespace Api.Domain
         public int Id { get; private set; }
         public int CompanyId { get; private set; }
         public string? Code { get; private set; }
-        public string Name { get; private set; }
+        public string? Name { get; private set; }
         public string? TaxNumber { get; private set; }
         public string? Address { get; private set; }
         public string? PostalCode { get; private set; }
@@ -37,7 +37,7 @@ namespace Api.Domain
         private Customer(
             int companyId,
             string? code,
-            string name,
+            string? name,
             string? taxNumber,
             string? address,
             string? postalCode,

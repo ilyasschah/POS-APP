@@ -12,7 +12,7 @@ namespace Api.Domain
         public int? CustomerId { get; private set; }
 
         [MaxLength(100)]
-        public string ReservationName { get; private set; }
+        public string? ReservationName { get; private set; }
         public int? FloorPlanTableId { get; private set; }
         public int? DocumentId { get; private set; }
         public DateTime StartTime { get; private set; } = DateTime.Now;

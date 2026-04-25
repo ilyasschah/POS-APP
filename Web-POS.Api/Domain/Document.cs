@@ -32,7 +32,7 @@ namespace Api.Domain
         public int ServiceType { get; private set; }
 
         [ForeignKey(nameof(UserId))]
-        public virtual User User { get; private set; }
+        public virtual User? User { get; private set; }
 
         [ForeignKey(nameof(CustomerId))]
         public virtual Customer? Customer { get; private set; }
@@ -41,10 +41,10 @@ namespace Api.Domain
         public virtual Company? Company { get; private set; }
 
         [ForeignKey(nameof(DocumentTypeId))]
-        public virtual DocumentType DocumentType { get; private set; }
+        public virtual DocumentType? DocumentType { get; private set; }
 
         [ForeignKey(nameof(WarehouseId))]
-        public virtual Warehouse Warehouse { get; private set; }
+        public virtual Warehouse? Warehouse { get; private set; }
 
         private Document(
             string number,

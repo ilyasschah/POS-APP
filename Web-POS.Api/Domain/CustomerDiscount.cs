@@ -12,7 +12,7 @@ namespace Api.Domain
         public int Uid { get; set; }
         public decimal Value { get; set; }
         [ForeignKey("CustomerId")]
-        public virtual Customer Customer { get; set; }
+        public virtual Customer? Customer { get; set; }
 
         private CustomerDiscount (int customerid , int type, int uid, decimal value)
         {

@@ -1,4 +1,5 @@
 ﻿using Api.Domain;
+using Api.Helpers;
 using Api.Models;
 using Api.Repository;
 
@@ -6,76 +7,50 @@ namespace Api.Services
 {
     public class PromotionItemService
     {
-        public readonly PromotionItemRepository _repository;
+        private readonly PromotionItemRepository _repository;
+        private readonly PromotionRepository _promotionRepository;
 
-        public PromotionItemService(PromotionItemRepository repository)
+        public PromotionItemService(PromotionItemRepository repository , PromotionRepository promotionRepository)
         {
             _repository = repository;
+            _promotionRepository = promotionRepository;
         }
 
-        public async Task<PromotionItem> Create(CreatePromotionItemRequest req)
+        public async Task<PromotionItemDto> Create(int companyId, CreateSinglePromotionItemRequest req)
         {
-            var existingItems = await _repository.GetByPromotionIdAsync(req.PromotionId);
-            if (existingItems.Any(i => i.Uid == req.Uid))
-            {
-                throw new InvalidOperationException($"This item (UID: {req.Uid}) already exists in this promotion.");
-            }
+            var promotion = await _promotionRepository.GetByIdAsync(req.PromotionId, companyId);
+            if (promotion == null) throw new InvalidOperationException("Promotion not found.");
 
-            var newItem = PromotionItem.Create(
-                req.PromotionId,
-                req.Uid,
-                req.Value ?? 0
-            );
+            var item = PromotionItem.Create(req.PromotionId, req.Uid, req.Value);
+            item.CompanyId = companyId;
+            item.DiscountType = req.DiscountType;
+            item.PriceType = req.PriceType;
+            item.IsConditional = req.IsConditional;
+            item.Quantity = req.Quantity;
+            item.ConditionType = req.ConditionType;
+            item.QuantityLimit = req.QuantityLimit;
 
-            newItem.DiscountType = req.DiscountType ?? 0;
-            newItem.PriceType = req.PriceType ?? 0;
-            newItem.IsConditional = req.IsConditional ?? true;
-            newItem.Quantity = req.Quantity ?? 0;
-            newItem.ConditionType = req.ConditionType ?? 0;
-            newItem.QuantityLimit = req.QuantityLimit ?? 0;
-
-            await _repository.AddAsync(newItem);
-            return newItem;
+            await _repository.AddSingleItemAsync(item);
+            return MapperPromotionItem.MapToDto(item);
         }
 
-        public async Task<bool> Update(int id, UpdatePromotionItemRequest req)
+        public async Task<bool> Update(int companyId, UpdatePromotionItemRequest req)
         {
-            var entityToUpdate = await _repository.GetByIdAsync(id, trackEntity: true);
-            if (entityToUpdate == null)
-            {
-                throw new InvalidOperationException($"A promotion item with the ID '{id}' was not found.");
-            }
+            var item = await _repository.GetItemByIdAsync(req.Id, companyId, trackEntity: true);
+            if (item == null) throw new InvalidOperationException("Promotion Item not found.");
 
-            var existingItems = await _repository.GetByPromotionIdAsync(entityToUpdate.PromotionId);
-            if (existingItems.Any(i => i.Uid == req.Uid && i.Id != id))
-            {
-                throw new InvalidOperationException($"Another item (UID: {req.Uid}) already exists in this promotion.");
-            }
+            item.Update(req.Uid, req.DiscountType, req.PriceType, req.Value, req.IsConditional, req.Quantity, req.ConditionType, req.QuantityLimit);
 
-            entityToUpdate.Update(
-                req.Uid,
-                req.DiscountType,
-                req.PriceType,
-                req.Value,
-                req.IsConditional,
-                req.Quantity,
-                req.ConditionType,
-                req.QuantityLimit
-            );
-
-            await _repository.UpdateAsync(entityToUpdate);
+            await _repository.UpdateSingleItemAsync(item);
             return true;
         }
 
-        public async Task<bool> Delete(int id)
+        public async Task<bool> Delete(int id, int companyId)
         {
-            var entityToDelete = await _repository.GetByIdAsync(id, trackEntity: true);
-            if (entityToDelete == null)
-            {
-                return false;
-            }
+            var item = await _repository.GetItemByIdAsync(id, companyId, trackEntity: true);
+            if (item == null) return false;
 
-            await _repository.DeleteAsync(entityToDelete);
+            await _repository.DeleteSingleItemAsync(item);
             return true;
         }
     }

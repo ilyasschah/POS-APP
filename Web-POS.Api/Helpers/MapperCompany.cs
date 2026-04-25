@@ -12,7 +12,7 @@ public static class MapperCompany
             Id = entity.Id,
             Name = entity.Name,
             CountryId = entity.CountryId,
-            CountryName = entity.Country.Name,
+            CountryName = entity.Country?.Name,
             Address = entity.Address,
             PostalCode = entity.PostalCode,
             City = entity.City,

@@ -4,9 +4,11 @@ using Api.Commands.ApplicationPropertyCommands.Add;
 using Api.Commands.ApplicationPropertyCommands.Update;
 using Api.Queries.ApplicationPropertyQuery;
 using Api.Models;
+using Api.Attributes;
 
 namespace Api.Controllers
 {
+    [SwaggerVisible]
     [ApiController]
     [Route("api/[controller]")]
     public class ApplicationPropertiesController(IMediator mediator) : ControllerBase
@@ -46,7 +48,7 @@ namespace Api.Controllers
             return CreatedAtAction(nameof(GetById), new { id = result.Id, companyId = companyId }, result);
         }
 
-        [HttpPut("[action]")]
+        [HttpPatch("[action]")]
         public async Task<ActionResult<bool>> Update([FromBody] UpdateApplicationPropertyRequest request, [FromQuery] int companyId)
         {
             if (companyId <= 0) return BadRequest("Company ID is required");

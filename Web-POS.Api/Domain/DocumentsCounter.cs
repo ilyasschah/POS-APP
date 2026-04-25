@@ -7,7 +7,7 @@ namespace Api.Domain
     public class DocumentsCounter
     {
         [Key]
-        public string Name { get; set; }
+        public string? Name { get; set; }
         public int Value { get; set; }
 
         private DocumentsCounter(string name, int value)

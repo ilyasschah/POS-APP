@@ -19,8 +19,16 @@ namespace Api.Models
         public string? Comment { get; set; }
         public DateTime DateCreated { get; set; }
         public string? Bundle { get; set; }
+        public List<PosOrderItemTaxDto> Taxes { get; set; } = new List<PosOrderItemTaxDto>();
     }
-
+    public class PosOrderItemTaxDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public decimal Rate { get; set; }
+        public bool IsFixed { get; set; }
+        public bool IsTaxOnTotal { get; set; }
+    }
     public class CreatePosOrderItemRequest
     {
         public required int PosOrderId { get; set; }

@@ -1,59 +1,48 @@
-﻿using MediatR;
-using Microsoft.AspNetCore.Mvc;
-using Api.Commands.Promotion.Add;
-using Api.Commands.Promotion.Delete;
+﻿using Api.Commands.Promotion.Delete;
 using Api.Commands.Promotion.Update;
-using Api.Queries.PromotionQuery;
+using Api.Commands.PromotionCommands;
+using Api.Commands.PromotionCommands.Add;
 using Api.Models;
+using Api.Queries.PromotionQuery;
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class PromotionsController(IMediator mediator) : ControllerBase
+    public class PromotionsController : ControllerBase
     {
-        [HttpGet("[action]")]
-        public async Task<ActionResult<List<PromotionDto>>> GetAll([FromQuery] int companyId)
+        private readonly IMediator _mediator;
+
+        public PromotionsController(IMediator mediator)
         {
-            if (companyId == 0) return BadRequest("Company ID is required");
-            var result = await mediator.Send(new GetAllPromotionsQuery { CompanyId = companyId });
-            return Ok(result);
+            _mediator = mediator;
         }
 
-        [HttpGet("[action]/{id:int}")]
-        public async Task<ActionResult<PromotionDto>> GetById(int id, [FromQuery] int companyId)
+        [HttpGet("GetActive")]
+        public async Task<IActionResult> GetActive([FromQuery] int companyId)
         {
-            if (companyId == 0) return BadRequest("Company ID is required");
-            var result = await mediator.Send(new GetPromotionByIdQuery { Id = id, CompanyId = companyId });
-            return result != null ? Ok(result) : NotFound();
+            return Ok(await _mediator.Send(new GetActivePromotionsQuery { CompanyId = companyId }));
         }
 
-        [HttpGet("[action]/{name}")]
-        public async Task<ActionResult<PromotionDto>> GetByName(string name, [FromQuery] int companyId)
+        [HttpPost("Add")]
+        public async Task<IActionResult> Add([FromQuery] int companyId, [FromBody] CreatePromotionRequest req)
         {
-            if (companyId == 0) return BadRequest("Company ID is required");
-            var result = await mediator.Send(new GetPromotionByNameQuery { Name = name, CompanyId = companyId });
-            return result != null ? Ok(result) : NotFound();
+            return Ok(await _mediator.Send(new CreatePromotionCommand(companyId, req)));
         }
 
-        [HttpPost("[action]")]
-        public async Task<ActionResult<PromotionDto>> Add([FromQuery] CreatePromotionRequest req)
+        [HttpPut("[action]")]
+        public async Task<IActionResult> Update([FromQuery] int companyId, [FromBody] UpdatePromotionRequest req)
         {
-            var result = await mediator.Send(new AddPromotionCommand(req));
-            return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
-        }
-
-        [HttpPut("[action]/{id}")]
-        public async Task<IActionResult> Update(int id, [FromQuery] UpdatePromotionRequest req)
-        {
-            var result = await mediator.Send(new UpdatePromotionCommand(id, req));
+            var result = await _mediator.Send(new UpdatePromotionCommand(companyId, req));
             return result ? NoContent() : NotFound();
         }
 
-        [HttpDelete("[action]/{id}")]
-        public async Task<IActionResult> Delete(int id)
+        [HttpDelete("[action]")]
+        public async Task<IActionResult> Delete(int id, [FromQuery] int companyId)
         {
-            var result = await mediator.Send(new DeletePromotionCommand(id));
+            var result = await _mediator.Send(new DeletePromotionCommand(id, companyId));
             return result ? NoContent() : NotFound();
         }
     }

@@ -27,7 +27,7 @@ namespace Api.Domain
         public string? CountrySubentity { get; private set; }
 
         [ForeignKey(nameof(CountryId))]
-        public virtual Country Country { get; set; }
+        public virtual Country? Country { get; set; }
 
         public Company() { }
 

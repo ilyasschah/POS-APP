@@ -18,8 +18,6 @@ namespace Api.Domain
         public int? CustomerId { get; set; }
         public int ServiceType { get; set; }
         public int ServiceStatus { get; set; }
-
-        // Links to the physical table (Turns table red in Flutter if not null)
         public int? FloorPlanTableId { get; set; }
 
         // Links back to the original booking (if this order came from a reservation)

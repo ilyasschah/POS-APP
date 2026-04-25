@@ -9,12 +9,12 @@ namespace Api.Commands.Promotion.Update
 {
     public class UpdatePromotionCommand : IRequest<bool>
     {
-        public int Id { get; }
+        public int CompanyId { get; }
         public UpdatePromotionRequest Request { get; }
 
-        public UpdatePromotionCommand(int id, UpdatePromotionRequest request)
+        public UpdatePromotionCommand(int companyId, UpdatePromotionRequest request)
         {
-            Id = id;
+            CompanyId = companyId;
             Request = request;
         }
 
@@ -29,7 +29,7 @@ namespace Api.Commands.Promotion.Update
 
             public Task<bool> Handle(UpdatePromotionCommand command, CancellationToken cancellationToken)
             {
-                return _service.Update(command.Id, command.Request);
+                return _service.Update(command.CompanyId, command.Request);
             }
         }
 
@@ -37,7 +37,7 @@ namespace Api.Commands.Promotion.Update
         {
             public UpdatePromotionCommandValidator()
             {
-                RuleFor(c => c.Id).GreaterThan(0);
+                RuleFor(c => c.CompanyId).GreaterThan(0);
                 RuleFor(c => c.Request.Name).NotEmpty();
             }
         }

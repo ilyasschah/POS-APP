@@ -1,12 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Api.DataBase;
 using Api.Domain;
-using Api.DataBase;
+using Microsoft.EntityFrameworkCore;
 
 namespace Api.Repository
 {
     public class PromotionRepository
     {
-        public readonly AppDbContext _db;
+        private readonly AppDbContext _db;
 
         public PromotionRepository(AppDbContext db)
         {
@@ -15,73 +15,68 @@ namespace Api.Repository
 
         public async Task<List<Promotion>> GetAllAsync(int companyId)
         {
-            return await _db.Promotions
-                .Where(p => p.CompanyId == companyId)
-                .AsNoTracking()
-                .ToListAsync();
+            return await _db.Promotions.AsNoTracking().Where(p => p.CompanyId == companyId).ToListAsync();
+        }
+
+        public async Task<List<Promotion>> GetActivePromotionsAsync(int companyId)
+        {
+            return await _db.Promotions.AsNoTracking().Where(p => p.CompanyId == companyId && p.IsEnabled).ToListAsync();
         }
 
         public async Task<Promotion?> GetByIdAsync(int id, int companyId, bool trackEntity = false)
         {
             var query = _db.Promotions.AsQueryable();
-            if (!trackEntity)
-            {
-                query = query.AsNoTracking();
-            }
+            if (!trackEntity) query = query.AsNoTracking();
             return await query.FirstOrDefaultAsync(p => p.Id == id && p.CompanyId == companyId);
         }
 
-        public async Task<Promotion?> GetByNameAsync(string name, int companyId)
+        public async Task<List<PromotionItem>> GetItemsByPromotionIdAsync(int promotionId, int companyId, bool trackEntity = false)
         {
-            return await _db.Promotions.AsNoTracking().FirstOrDefaultAsync(p => p.Name == name && p.CompanyId == companyId);
+            var query = _db.PromotionItems.Where(i => i.PromotionId == promotionId && i.CompanyId == companyId);
+            if (!trackEntity) query = query.AsNoTracking();
+            return await query.ToListAsync();
         }
 
-        public async Task<bool> ExistsAsync(string name, int companyId)
+        public async Task<List<PromotionItem>> GetItemsByPromotionIdsAsync(List<int> promotionIds, int companyId)
         {
-            return await _db.Promotions.AnyAsync(p => p.Name.ToLower() == name.ToLower() && p.CompanyId == companyId);
+            return await _db.PromotionItems.AsNoTracking()
+                .Where(i => promotionIds.Contains(i.PromotionId) && i.CompanyId == companyId)
+                .ToListAsync();
         }
 
-        // Backwards-compatible non-scoped overloads
-        public async Task<List<Promotion>> GetAllAsync()
+        public async Task AddPromotionAsync(Promotion promotion, List<PromotionItem> items)
         {
-            return await _db.Promotions.AsNoTracking().ToListAsync();
-        }
+            _db.Promotions.Add(promotion);
+            await _db.SaveChangesAsync();
 
-        public async Task<Promotion?> GetByIdAsync(int id, bool trackEntity = false)
-        {
-            var query = _db.Promotions.AsQueryable();
-            if (!trackEntity)
+            foreach (var item in items)
             {
-                query = query.AsNoTracking();
+                item.PromotionId = promotion.Id;
+                _db.PromotionItems.Add(item);
             }
-            return await query.FirstOrDefaultAsync(p => p.Id == id);
-        }
-
-        public async Task<Promotion?> GetByNameAsync(string name)
-        {
-            return await _db.Promotions.AsNoTracking().FirstOrDefaultAsync(p => p.Name == name);
-        }
-
-        public async Task<bool> ExistsAsync(string name)
-        {
-            return await _db.Promotions.AnyAsync(p => p.Name.ToLower() == name.ToLower());
-        }
-
-        public async Task AddAsync(Promotion entity)
-        {
-            _db.Promotions.Add(entity);
             await _db.SaveChangesAsync();
         }
 
-        public async Task UpdateAsync(Promotion entity)
+        public async Task UpdatePromotionAsync(Promotion promotion, List<PromotionItem> newItems)
         {
-            _db.Promotions.Update(entity);
+            _db.Promotions.Update(promotion);
+
+            var oldItems = await _db.PromotionItems.Where(i => i.PromotionId == promotion.Id).ToListAsync();
+            _db.PromotionItems.RemoveRange(oldItems);
+
+            foreach (var item in newItems)
+            {
+                item.PromotionId = promotion.Id;
+                _db.PromotionItems.Add(item);
+            }
             await _db.SaveChangesAsync();
         }
 
-        public async Task DeleteAsync(Promotion entity)
+        public async Task DeletePromotionAsync(Promotion promotion)
         {
-            _db.Promotions.Remove(entity);
+            var items = await _db.PromotionItems.Where(i => i.PromotionId == promotion.Id).ToListAsync();
+            _db.PromotionItems.RemoveRange(items);
+            _db.Promotions.Remove(promotion);
             await _db.SaveChangesAsync();
         }
     }

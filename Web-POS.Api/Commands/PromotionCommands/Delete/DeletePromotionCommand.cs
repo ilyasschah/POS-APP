@@ -8,10 +8,12 @@ namespace Api.Commands.Promotion.Delete
     public class DeletePromotionCommand : IRequest<bool>
     {
         public int Id { get; }
+        public int CompanyId { get; }
 
-        public DeletePromotionCommand(int id)
+        public DeletePromotionCommand(int id, int companyId)
         {
             Id = id;
+            CompanyId = companyId;
         }
 
         public class DeletePromotionCommandHandler : IRequestHandler<DeletePromotionCommand, bool>
@@ -25,7 +27,7 @@ namespace Api.Commands.Promotion.Delete
 
             public Task<bool> Handle(DeletePromotionCommand command, CancellationToken cancellationToken)
             {
-                return _service.Delete(command.Id);
+                return _service.Delete(command.Id, command.CompanyId);
             }
         }
     }

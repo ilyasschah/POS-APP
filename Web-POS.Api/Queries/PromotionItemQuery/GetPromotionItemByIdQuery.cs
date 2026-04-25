@@ -8,6 +8,7 @@ namespace Api.Queries.PromotionItemQuery
     public class GetPromotionItemByIdQuery : IRequest<PromotionItemDto?>
     {
         public int Id { get; set; }
+        public int companyId { get; set; }
 
         public class GetPromotionItemByIdQueryHandler : IRequestHandler<GetPromotionItemByIdQuery, PromotionItemDto?>
         {
@@ -20,8 +21,8 @@ namespace Api.Queries.PromotionItemQuery
 
             public async Task<PromotionItemDto?> Handle(GetPromotionItemByIdQuery request, CancellationToken cancellationToken)
             {
-                var entity = await _repository.GetByIdAsync(request.Id);
-                return entity == null ? null : MapperPromotionItem.MapToPromotionItemDto(entity);
+                var entity = await _repository.GetItemByIdAsync(request.Id, request.companyId);
+                return entity == null ? null : MapperPromotionItem.MapToDto(entity);
             }
         }
     }

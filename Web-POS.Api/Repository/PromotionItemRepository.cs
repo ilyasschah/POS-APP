@@ -16,50 +16,28 @@ namespace Api.Repository
             _db = db;
         }
 
-        public async Task<List<PromotionItem>> GetAllAsync()
-        {
-            return await _db.PromotionItems
-                .Include(pi => pi.Promotion)
-                .AsNoTracking()
-                .ToListAsync();
-        }
-
-        public async Task<PromotionItem?> GetByIdAsync(int id, bool trackEntity = false)
+        public async Task<PromotionItem?> GetItemByIdAsync(int id, int companyId, bool trackEntity = false)
         {
             var query = _db.PromotionItems.AsQueryable();
-            if (!trackEntity)
-            {
-                query = query.AsNoTracking();
-            }
-            return await query
-                .Include(pi => pi.Promotion)
-                .FirstOrDefaultAsync(pi => pi.Id == id);
+            if (!trackEntity) query = query.AsNoTracking();
+            return await query.FirstOrDefaultAsync(i => i.Id == id && i.CompanyId == companyId);
         }
 
-        public async Task<List<PromotionItem>> GetByPromotionIdAsync(int promotionId)
+        public async Task AddSingleItemAsync(PromotionItem item)
         {
-            return await _db.PromotionItems
-                .Where(pi => pi.PromotionId == promotionId)
-                .Include(pi => pi.Promotion)
-                .AsNoTracking()
-                .ToListAsync();
-        }
-
-        public async Task AddAsync(PromotionItem entity)
-        {
-            _db.PromotionItems.Add(entity);
+            _db.PromotionItems.Add(item);
             await _db.SaveChangesAsync();
         }
 
-        public async Task UpdateAsync(PromotionItem entity)
+        public async Task UpdateSingleItemAsync(PromotionItem item)
         {
-            _db.PromotionItems.Update(entity);
+            _db.PromotionItems.Update(item);
             await _db.SaveChangesAsync();
         }
 
-        public async Task DeleteAsync(PromotionItem entity)
+        public async Task DeleteSingleItemAsync(PromotionItem item)
         {
-            _db.PromotionItems.Remove(entity);
+            _db.PromotionItems.Remove(item);
             await _db.SaveChangesAsync();
         }
     }

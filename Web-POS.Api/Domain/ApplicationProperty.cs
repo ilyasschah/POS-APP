@@ -8,18 +8,11 @@ namespace Api.Domain
     {
         [Key]
         public int Id { get; private set; }
-
         public int CompanyId { get; private set; }
-
-        [Required]
-        [MaxLength(255)]
-        public string Name { get; private set; }
-
-        [Required]
-        public string Value { get; private set; }
-
+        public string? Name { get; private set; }
+        public string? Value { get; private set; }
         [ForeignKey(nameof(CompanyId))]
-        public virtual Company Company { get; private set; }
+        public virtual Company? Company { get; private set; }
 
         private ApplicationProperty(int companyId, string name, string value)
         {
@@ -46,7 +39,6 @@ namespace Api.Domain
         {
             if (string.IsNullOrWhiteSpace(value))
                 throw new ArgumentException("Value must not be empty.", nameof(value));
-
             Value = value;
         }
     }

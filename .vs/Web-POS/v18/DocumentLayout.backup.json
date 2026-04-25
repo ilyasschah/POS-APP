@@ -3,32 +3,36 @@
   "WorkspaceRootPath": "D:\\repos\\Web-POS\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\database\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\database\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\controllers\\promotioncontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\controllers\\promotioncontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\domain\\posorderitemtax.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\domain\\posorderitemtax.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\queries\\promotionitemquery\\getpromotionitembyidquery.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\queries\\promotionitemquery\\getpromotionitembyidquery.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\commands\\posorderitemcommands\\add\\bulkaddposorderitemscommand.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\commands\\posorderitemcommands\\add\\bulkaddposorderitemscommand.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\models\\promotionitemdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\models\\promotionitemdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\services\\posorderitemservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\services\\posorderitemservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\services\\promotionitemservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\services\\promotionitemservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\models\\posorderitemdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\models\\posorderitemdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\queries\\promotionitemquery\\getallpromotionitemsquery.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\queries\\promotionitemquery\\getallpromotionitemsquery.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\models\\checkoutposorderrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\models\\checkoutposorderrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\commands\\promotioncommands\\add\\createpromotioncommand.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\commands\\promotioncommands\\add\\createpromotioncommand.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\services\\posordercheckoutservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\services\\posordercheckoutservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\commands\\promotionitem\\add\\createpromotionitemcommand.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\commands\\promotionitem\\add\\createpromotionitemcommand.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|d:\\repos\\web-pos\\web-pos.api\\models\\promotiondtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BB6EDDD3-507D-6D2A-F616-562D0CEB0D3F}|Web-POS.Api\\Web-POS.Api.csproj|solutionrelative:web-pos.api\\models\\promotiondtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -38,86 +42,8 @@
       "DocumentGroups": [
         {
           "DockedWidth": 235,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 9,
           "Children": [
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "AppDbContext.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\DataBase\\AppDbContext.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\DataBase\\AppDbContext.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\DataBase\\AppDbContext.cs",
-              "RelativeToolTip": "Web-POS.Api\\DataBase\\AppDbContext.cs",
-              "ViewState": "AgIAADEAAAAAAAAAAAAmwB0AAAA2AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-23T20:09:23.993Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "PosOrderItemTax.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Domain\\PosOrderItemTax.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Domain\\PosOrderItemTax.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Domain\\PosOrderItemTax.cs",
-              "RelativeToolTip": "Web-POS.Api\\Domain\\PosOrderItemTax.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAAAsAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-23T20:08:43.249Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "BulkAddPosOrderItemsCommand.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Commands\\PosOrderItemCommands\\Add\\BulkAddPosOrderItemsCommand.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Commands\\PosOrderItemCommands\\Add\\BulkAddPosOrderItemsCommand.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Commands\\PosOrderItemCommands\\Add\\BulkAddPosOrderItemsCommand.cs",
-              "RelativeToolTip": "Web-POS.Api\\Commands\\PosOrderItemCommands\\Add\\BulkAddPosOrderItemsCommand.cs",
-              "ViewState": "AgIAAD8AAAAAAAAAAAAmwGkAAABEAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-23T19:58:54.826Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "PosOrderItemService.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Services\\PosOrderItemService.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Services\\PosOrderItemService.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Services\\PosOrderItemService.cs",
-              "RelativeToolTip": "Web-POS.Api\\Services\\PosOrderItemService.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-23T19:58:06.805Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "PosOrderItemDto.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Models\\PosOrderItemDto.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Models\\PosOrderItemDto.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Models\\PosOrderItemDto.cs",
-              "RelativeToolTip": "Web-POS.Api\\Models\\PosOrderItemDto.cs",
-              "ViewState": "AgIAABIAAAAAAAAAAAAiwC8AAAA0AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-23T19:51:43.625Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "CheckoutPosOrderRequest.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Models\\CheckoutPosOrderRequest.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Models\\CheckoutPosOrderRequest.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Models\\CheckoutPosOrderRequest.cs",
-              "RelativeToolTip": "Web-POS.Api\\Models\\CheckoutPosOrderRequest.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAA0AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-23T19:50:47.011Z",
-              "EditorCaption": ""
-            },
             {
               "$type": "Bookmark",
               "Name": "ST:128:0:{75188d03-9892-4ae2-abf1-207126247ce5}"
@@ -140,15 +66,112 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "PosOrderCheckoutService.cs",
-              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Services\\PosOrderCheckoutService.cs",
-              "RelativeDocumentMoniker": "Web-POS.Api\\Services\\PosOrderCheckoutService.cs",
-              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Services\\PosOrderCheckoutService.cs",
-              "RelativeToolTip": "Web-POS.Api\\Services\\PosOrderCheckoutService.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAABkAAAAAAAAAA==",
+              "DocumentIndex": 3,
+              "Title": "PromotionItemService.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Services\\PromotionItemService.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Services\\PromotionItemService.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Services\\PromotionItemService.cs",
+              "RelativeToolTip": "Web-POS.Api\\Services\\PromotionItemService.cs",
+              "ViewState": "AgIAABAAAAAAAAAAAAAgwBEAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-23T19:50:30.992Z",
+              "WhenOpened": "2026-04-25T14:59:40.922Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "GetPromotionItemByIdQuery.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Queries\\PromotionItemQuery\\GetPromotionItemByIdQuery.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Queries\\PromotionItemQuery\\GetPromotionItemByIdQuery.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Queries\\PromotionItemQuery\\GetPromotionItemByIdQuery.cs",
+              "RelativeToolTip": "Web-POS.Api\\Queries\\PromotionItemQuery\\GetPromotionItemByIdQuery.cs",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAIwBkAAAANAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-25T14:59:13.203Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "GetAllPromotionItemsQuery.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Queries\\PromotionItemQuery\\GetAllPromotionItemsQuery.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Queries\\PromotionItemQuery\\GetAllPromotionItemsQuery.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Queries\\PromotionItemQuery\\GetAllPromotionItemsQuery.cs",
+              "RelativeToolTip": "Web-POS.Api\\Queries\\PromotionItemQuery\\GetAllPromotionItemsQuery.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-25T14:58:39.666Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "CreatePromotionCommand.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Commands\\PromotionCommands\\Add\\CreatePromotionCommand.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Commands\\PromotionCommands\\Add\\CreatePromotionCommand.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Commands\\PromotionCommands\\Add\\CreatePromotionCommand.cs",
+              "RelativeToolTip": "Web-POS.Api\\Commands\\PromotionCommands\\Add\\CreatePromotionCommand.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAAnAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-25T14:58:21.026Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "PromotionController.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\PromotionController.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Controllers\\PromotionController.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Controllers\\PromotionController.cs",
+              "RelativeToolTip": "Web-POS.Api\\Controllers\\PromotionController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAB0AAABHAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-25T14:57:57.9Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "CreatePromotionItemCommand.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Commands\\PromotionItem\\Add\\CreatePromotionItemCommand.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Commands\\PromotionItem\\Add\\CreatePromotionItemCommand.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Commands\\PromotionItem\\Add\\CreatePromotionItemCommand.cs",
+              "RelativeToolTip": "Web-POS.Api\\Commands\\PromotionItem\\Add\\CreatePromotionItemCommand.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAqwA4AAAAeAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-25T14:52:47.917Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "PromotionDtos.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Models\\PromotionDtos.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Models\\PromotionDtos.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Models\\PromotionDtos.cs",
+              "RelativeToolTip": "Web-POS.Api\\Models\\PromotionDtos.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACAAAAAHAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-25T14:49:12.742Z",
+              "EditorCaption": ""
+            }
+          ]
+        },
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "PromotionItemDto.cs",
+              "DocumentMoniker": "D:\\repos\\Web-POS\\Web-POS.Api\\Models\\PromotionItemDto.cs",
+              "RelativeDocumentMoniker": "Web-POS.Api\\Models\\PromotionItemDto.cs",
+              "ToolTip": "D:\\repos\\Web-POS\\Web-POS.Api\\Models\\PromotionItemDto.cs",
+              "RelativeToolTip": "Web-POS.Api\\Models\\PromotionItemDto.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAqwAIAAAARAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-25T14:45:36.306Z",
               "EditorCaption": ""
             }
           ]

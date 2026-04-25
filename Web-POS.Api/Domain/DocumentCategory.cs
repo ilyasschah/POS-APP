@@ -9,7 +9,7 @@ namespace Api.Domain
         [Key]
         public int Id { get; set; }
         public int CompanyId { get; set; }
-        public string Name { get; set; }
+        public string? Name { get; set; }
         public string? LanguageKey  { get; set; }
 
         public DocumentCategory (string name , string languagekey, int companyId)

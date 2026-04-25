@@ -1,57 +1,48 @@
-﻿using MediatR;
-using Microsoft.AspNetCore.Mvc;
-using Api.Commands.PromotionItem.Add;
-using Api.Commands.PromotionItem.Delete;
-using Api.Commands.PromotionItem.Update;
-using Api.Queries.PromotionItemQuery;
+﻿using Api.Commands.PromotionItemCommands;
 using Api.Models;
+using Api.Queries.PromotionItemQuery;
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers
 {
-    [ApiController]
     [Route("api/[controller]")]
-    public class PromotionItemsController(IMediator mediator) : ControllerBase
+    [ApiController]
+    public class PromotionItemsController : ControllerBase
     {
-        [HttpGet("[action]")]
-        public async Task<ActionResult<List<PromotionItemDto>>> GetAll()
+        private readonly IMediator _mediator;
+
+        public PromotionItemsController(IMediator mediator)
         {
-            var result = await mediator.Send(new GetAllPromotionItemsQuery());
+            _mediator = mediator;
+        }
+
+        [HttpGet("GetByPromotionId")]
+        public async Task<IActionResult> GetByPromotionId([FromQuery] int promotionId, [FromQuery] int companyId)
+        {
+            var result = await _mediator.Send(new GetPromotionItemsByPromotionIdQuery { PromotionId = promotionId, CompanyId = companyId });
             return Ok(result);
         }
 
-        [HttpGet("[action]/{id:int}")]
-        public async Task<ActionResult<PromotionItemDto>> GetById(int id)
+        [HttpPost("Add")]
+        public async Task<IActionResult> Add([FromQuery] int companyId, [FromBody] CreateSinglePromotionItemRequest req)
         {
-            var result = await mediator.Send(new GetPromotionItemByIdQuery { Id = id });
-            return result != null ? Ok(result) : NotFound();
-        }
-
-        [HttpGet("[action]/ByPromotion/{promotionId:int}")]
-        public async Task<ActionResult<List<PromotionItemDto>>> GetByPromotionId(int promotionId)
-        {
-            var result = await mediator.Send(new GetPromotionItemsByPromotionIdQuery { PromotionId = promotionId });
+            var result = await _mediator.Send(new CreatePromotionItemCommand(companyId, req));
             return Ok(result);
         }
 
-        [HttpPost("[action]")]
-        public async Task<ActionResult<PromotionItemDto>> Add([FromQuery] CreatePromotionItemRequest req)
+        [HttpPatch("Update")]
+        public async Task<IActionResult> Update([FromQuery] int companyId, [FromBody] UpdatePromotionItemRequest req)
         {
-            var result = await mediator.Send(new AddPromotionItemCommand(req));
-            return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+            var result = await _mediator.Send(new UpdatePromotionItemCommand(companyId, req));
+            return Ok(result);
         }
 
-        [HttpPut("[action]/{id}")]
-        public async Task<IActionResult> Update(int id, [FromQuery] UpdatePromotionItemRequest req)
+        [HttpDelete("Delete")]
+        public async Task<IActionResult> Delete([FromQuery] int id, [FromQuery] int companyId)
         {
-            var result = await mediator.Send(new UpdatePromotionItemCommand(id, req));
-            return result ? NoContent() : NotFound();
-        }
-
-        [HttpDelete("[action]/{id}")]
-        public async Task<IActionResult> Delete(int id)
-        {
-            var result = await mediator.Send(new DeletePromotionItemCommand(id));
-            return result ? NoContent() : NotFound();
+            var result = await _mediator.Send(new DeletePromotionItemCommand(id, companyId));
+            return Ok(result);
         }
     }
 }

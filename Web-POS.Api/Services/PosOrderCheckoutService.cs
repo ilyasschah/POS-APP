@@ -24,6 +24,7 @@ namespace Api.Services
 
                 try
                 {
+                    // 1. Fetch Order and temporary Cart Items/Taxes for cleanup later
                     var posOrder = await _db.PosOrders
                         .FirstOrDefaultAsync(o => o.Id == req.PosOrderId && o.CompanyId == companyId);
 
@@ -34,55 +35,28 @@ namespace Api.Services
                         .Where(i => i.PosOrderId == req.PosOrderId && i.VoidedBy == null)
                         .ToListAsync();
 
-                    if (!posOrderItems.Any())
+                    if (!posOrderItems.Any() || req.Items == null || !req.Items.Any())
                         throw new InvalidOperationException("Cannot checkout an empty order.");
 
                     var posOrderItemIds = posOrderItems.Select(i => i.Id).ToList();
                     var cartTaxes = await _db.PosOrderItemTaxes
-                        .Include(t => t.Tax)
                         .Where(t => posOrderItemIds.Contains(t.PosOrderItemId) && t.CompanyId == companyId)
                         .ToListAsync();
 
-                    decimal actualGrandTotal = 0;
-                    var taxAmountsMap = new Dictionary<int, List<(int TaxId, decimal Amount)>>();
+                    // --- PHASE 1: Create Document ---
+                    // Summing the exact Total sent explicitly from the Front-end
+                    decimal documentGrandTotal = req.Items.Sum(i => i.Total);
 
-                    foreach (var item in posOrderItems)
-                    {
-                        decimal priceAfterDiscount = item.Price - item.Discount;
-                        decimal totalAfterDiscount = priceAfterDiscount * item.Quantity;
-                        actualGrandTotal += totalAfterDiscount;
+                    // Flowchart logic: Document Numbering based on DocumentType
+                    string documentNumber = $"DOC-{req.DocumentTypeId}-{DateTime.UtcNow:yyyyMMdd}-{posOrder.Id}";
 
-                        var itemTaxes = cartTaxes.Where(t => t.PosOrderItemId == item.Id).ToList();
-                        var calculatedTaxes = new List<(int TaxId, decimal Amount)>();
-
-                        foreach (var cartTax in itemTaxes)
-                        {
-                            decimal taxAmount = 0;
-                            
-                            if (cartTax.Tax.IsFixed)
-                            {
-                                taxAmount = cartTax.Tax.Rate * item.Quantity;
-                            }
-                            else
-                            {
-                                taxAmount = totalAfterDiscount * (cartTax.Tax.Rate / 100m);
-                            }
-
-                            actualGrandTotal += taxAmount; 
-                            calculatedTaxes.Add((cartTax.TaxId, taxAmount));
-                        }
-
-                        taxAmountsMap[item.Id] = calculatedTaxes;
-                    }
-
-                    string documentNumber = $"INV-{DateTime.UtcNow:yyyyMMdd}-{posOrder.Id}";
                     var document = Document.Create(
                         number: documentNumber,
                         userId: userId,
                         companyId: companyId,
                         documentTypeId: req.DocumentTypeId,
                         warehouseId: req.WarehouseId,
-                        total: actualGrandTotal,
+                        total: documentGrandTotal,
                         customerId: posOrder.CustomerId,
                         orderNumber: posOrder.Number,
                         discount: posOrder.Discount,
@@ -92,57 +66,54 @@ namespace Api.Services
                     );
 
                     _db.Documents.Add(document);
-                    await _db.SaveChangesAsync();
-
-                    var cartToDocItemMap = new Dictionary<int, DocumentItem>();
-
-                    foreach (var item in posOrderItems)
+                    await _db.SaveChangesAsync(); // Generates document.Id
+                    var productIds = posOrderItems.Select(i => i.ProductId).Distinct().ToList();
+                    var productCosts = await _db.Products
+                        .Where(p => productIds.Contains(p.Id) && p.CompanyId == companyId)
+                        .ToDictionaryAsync(p => p.Id, p => p.Cost);
+                    // --- PHASE 2: Create DocumentItems & Taxes strictly from Frontend Payload ---
+                    foreach (var frontendItem in req.Items)
                     {
-                        decimal itemTotal = item.Quantity * item.Price;
-                        decimal priceAfterDiscount = item.Price - item.Discount;
-                        decimal totalAfterDiscount = priceAfterDiscount * item.Quantity;
+                        var originalCartItem = posOrderItems.FirstOrDefault(i => i.ProductId == frontendItem.ProductId);
+                        if (originalCartItem == null) continue;
 
                         var docItem = DocumentItem.Create(
                             companyId: companyId,
                             documentId: document.Id,
-                            productId: item.ProductId,
-                            quantity: item.Quantity,
-                            expectedQuantity: item.Quantity,
-                            priceBeforeTax: item.Price,
-                            price: item.Price,
-                            discount: item.Discount,
-                            discountType: item.DiscountType,
-                            productCost: 0,
-                            priceBeforeTaxAfterDiscount: priceAfterDiscount,
-                            priceAfterDiscount: priceAfterDiscount,
-                            total: itemTotal,
-                            totalAfterDocumentDiscount: totalAfterDiscount,
+                            productId: originalCartItem.ProductId,
+                            quantity: originalCartItem.Quantity,
+                            expectedQuantity: originalCartItem.Quantity,
+                            priceBeforeTax: originalCartItem.Price,
+                            price: originalCartItem.Price,
+                            discount: originalCartItem.Discount,
+                            discountType: originalCartItem.DiscountType,
+                            productCost: productCosts.ContainsKey(originalCartItem.ProductId) ? productCosts[originalCartItem.ProductId] : 0,
+                            priceBeforeTaxAfterDiscount: frontendItem.PriceBeforeTaxAfterDiscount,
+                            priceAfterDiscount: frontendItem.PriceAfterDiscount,
+                            total: frontendItem.Total,
+                            totalAfterDocumentDiscount: frontendItem.TotalAfterDocumentDiscount,
                             discountApplyRule: false
                         );
 
                         _db.DocumentItems.Add(docItem);
-                        cartToDocItemMap[item.Id] = docItem; 
-                    }
-                    await _db.SaveChangesAsync();
+                        await _db.SaveChangesAsync();
 
-                    foreach (var kvp in cartToDocItemMap)
-                    {
-                        int cartItemId = kvp.Key;
-                        DocumentItem savedDocItem = kvp.Value;
-                        var taxesToApply = taxAmountsMap[cartItemId];
-
-                        foreach (var taxInfo in taxesToApply)
+                        if (frontendItem.Taxes != null && frontendItem.Taxes.Any())
                         {
-                            var docTax = DocumentItemTax.Create(
-                                documentItemId: savedDocItem.Id,
-                                taxId: taxInfo.TaxId,
-                                amount: taxInfo.Amount,
-                                companyId: companyId
-                            );
-
-                            _db.Add(docTax);
+                            foreach (var taxDto in frontendItem.Taxes)
+                            {
+                                var docTax = DocumentItemTax.Create(
+                                    documentItemId: docItem.Id,
+                                    taxId: taxDto.TaxId,
+                                    amount: taxDto.Amount,
+                                    companyId: companyId
+                                );
+                                _db.Add(docTax);
+                            }
                         }
                     }
+
+                    await _db.SaveChangesAsync();
 
                     var payment = Payment.Create(
                         companyId: companyId,
@@ -170,7 +141,7 @@ namespace Api.Services
 
                     _db.PosOrders.Remove(posOrder);
 
-                    // 6. Final Save & Commit
+                    // Final Save & Commit
                     await _db.SaveChangesAsync();
                     await transaction.CommitAsync();
 

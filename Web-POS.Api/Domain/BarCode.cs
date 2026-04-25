@@ -9,14 +9,14 @@ namespace Api.Domain
         [Key]
         public int Id { get; private set; }
         public int CompanyId { get; private set; }
-        public string Value { get; private set; }
+        public string? Value { get; private set; }
         public int ProductId { get; private set; }
 
         [ForeignKey(nameof(ProductId))]
-        public virtual Product Product { get; private set; }
+        public virtual Product? Product { get; private set; }
 
         [ForeignKey(nameof(CompanyId))]
-        public virtual Company Company { get; private set; }
+        public virtual Company? Company { get; private set; }
 
         public Barcode() { }
 

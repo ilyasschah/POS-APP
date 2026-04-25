@@ -5,6 +5,263 @@
     "version": "1.0"
   },
   "paths": {
+    "/api/ApplicationProperties/GetAll": {
+      "get": {
+        "tags": [
+          "ApplicationProperties"
+        ],
+        "parameters": [
+          {
+            "name": "companyId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ApplicationPropertyDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ApplicationPropertyDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ApplicationPropertyDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ApplicationProperties/GetById": {
+      "get": {
+        "tags": [
+          "ApplicationProperties"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "companyId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPropertyDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPropertyDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPropertyDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ApplicationProperties/GetByName": {
+      "get": {
+        "tags": [
+          "ApplicationProperties"
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "companyId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPropertyDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPropertyDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPropertyDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ApplicationProperties/Add": {
+      "post": {
+        "tags": [
+          "ApplicationProperties"
+        ],
+        "parameters": [
+          {
+            "name": "companyId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateApplicationPropertyRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateApplicationPropertyRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateApplicationPropertyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPropertyDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPropertyDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPropertyDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ApplicationProperties/Update": {
+      "patch": {
+        "tags": [
+          "ApplicationProperties"
+        ],
+        "parameters": [
+          {
+            "name": "companyId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateApplicationPropertyRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateApplicationPropertyRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateApplicationPropertyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/Company/GetAll": {
       "get": {
         "tags": [
@@ -1543,6 +1800,28 @@
   },
   "components": {
     "schemas": {
+      "ApplicationPropertyDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "value": {
+            "type": "string",
+            "nullable": true
+          },
+          "companyName": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "BulkAddPosOrderItemRequest": {
         "type": "object",
         "properties": {
@@ -1585,6 +1864,72 @@
           "discountAppliedType": {
             "type": "integer",
             "format": "int32"
+          },
+          "appliedTaxIds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CheckoutItemDto": {
+        "required": [
+          "priceAfterDiscount",
+          "priceBeforeTaxAfterDiscount",
+          "productId",
+          "total",
+          "totalAfterDocumentDiscount"
+        ],
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "priceBeforeTaxAfterDiscount": {
+            "type": "number",
+            "format": "double"
+          },
+          "priceAfterDiscount": {
+            "type": "number",
+            "format": "double"
+          },
+          "total": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalAfterDocumentDiscount": {
+            "type": "number",
+            "format": "double"
+          },
+          "taxes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CheckoutItemTaxDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CheckoutItemTaxDto": {
+        "required": [
+          "amount",
+          "taxId"
+        ],
+        "type": "object",
+        "properties": {
+          "taxId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "amount": {
+            "type": "number",
+            "format": "double"
           }
         },
         "additionalProperties": false
@@ -1593,6 +1938,7 @@
         "required": [
           "amountPaid",
           "documentTypeId",
+          "items",
           "paymentTypeId",
           "posOrderId",
           "warehouseId"
@@ -1618,6 +1964,13 @@
           "warehouseId": {
             "type": "integer",
             "format": "int32"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CheckoutItemDto"
+            },
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -1694,6 +2047,24 @@
             "nullable": true
           },
           "countrySubentity": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateApplicationPropertyRequest": {
+        "required": [
+          "name",
+          "value"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "value": {
             "type": "string",
             "nullable": true
           }
@@ -2211,6 +2582,24 @@
         },
         "additionalProperties": false
       },
+      "UpdateApplicationPropertyRequest": {
+        "required": [
+          "id",
+          "newValue"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "newValue": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "UpdateCompanyLogoRequest": {
         "required": [
           "id",
@@ -2551,6 +2940,9 @@
     }
   },
   "tags": [
+    {
+      "name": "ApplicationProperties"
+    },
     {
       "name": "Company"
     },

@@ -5,13 +5,12 @@ namespace Api.Helpers
 {
     public static class MapperPromotionItem
     {
-        public static PromotionItemDto MapToPromotionItemDto(PromotionItem entity)
+        public static PromotionItemDto MapToDto(PromotionItem entity)
         {
             return new PromotionItemDto
             {
                 Id = entity.Id,
                 PromotionId = entity.PromotionId,
-                PromotionName = entity.Promotion?.Name ?? "N/A",
                 Uid = entity.Uid,
                 DiscountType = entity.DiscountType,
                 PriceType = entity.PriceType,
