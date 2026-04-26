@@ -22,16 +22,18 @@ class KitchenItem {
 class KitchenOrder {
   final int id;
   final String number;
-  final int? tableId;
+  final String? tableName;
   final int serviceType;
+  final int serviceStatus;
   final DateTime? dateCreated;
   final List<KitchenItem> items;
 
   KitchenOrder({
     required this.id,
     required this.number,
-    this.tableId,
+    this.tableName,
     required this.serviceType,
+    required this.serviceStatus,
     this.dateCreated,
     required this.items,
   });
@@ -96,42 +98,31 @@ class _KitchenScreenState extends State<KitchenScreen> {
 
     try {
       final rawData = await _apiClient.getKitchenOrders(widget.companyId);
-      List<KitchenOrder> loadedOrders = [];
+      debugPrint("KITCHEN RAW DATA: $rawData");
 
-      for (var item in rawData) {
-        final orderData = item['order'] ?? item['Order'];
-        final itemsData = item['items'] ?? item['Items'];
+      final loadedOrders = rawData.map<KitchenOrder>((item) {
+        // Backend now returns a clean flat KitchenOrderDto — simple direct mapping.
+        final rawItems = (item['items'] ?? []) as List<dynamic>;
 
-        List<KitchenItem> kitchenItems = (itemsData as List<dynamic>).map((i) {
+        final kitchenItems = rawItems.map((i) {
           return KitchenItem(
-            id: i['id'] ?? i['Id'] ?? 0,
-            name: i['productName'] ?? i['ProductName'] ?? 'Unknown Item',
-            quantity: (i['quantity'] ?? i['Quantity'] ?? 1).toDouble(),
-            comment: i['comment'] ?? i['Comment'],
+            id: (i['id'] ?? 0) as int,
+            name: (i['productName'] ?? 'Unknown Item') as String,
+            quantity: ((i['quantity'] ?? 1) as num).toDouble(),
+            comment: i['comment'] as String?,
           );
         }).toList();
 
-        DateTime? parsedDate;
-        final dateStr =
-            orderData['dateCreated'] ??
-            orderData['DateCreated'] ??
-            orderData['date'] ??
-            orderData['Date'];
-        if (dateStr != null) parsedDate = DateTime.tryParse(dateStr);
-
-        loadedOrders.add(
-          KitchenOrder(
-            id: orderData['id'] ?? orderData['Id'],
-            number: orderData['number'] ?? orderData['Number'] ?? 'Unknown',
-            tableId:
-                orderData['floorPlanTableId'] ?? orderData['FloorPlanTableId'],
-            serviceType:
-                orderData['serviceType'] ?? orderData['ServiceType'] ?? 1,
-            dateCreated: parsedDate,
-            items: kitchenItems,
-          ),
+        return KitchenOrder(
+          id: item['id'] as int,
+          number: (item['number'] ?? 'Unknown') as String,
+          tableName: item['tableName'] as String?,
+          serviceType: (item['serviceType'] ?? item['ServiceType'] ?? 1) as int,
+          serviceStatus: (item['serviceStatus'] ?? 2) as int,
+          dateCreated: null, // Not provided by PosOrder entity
+          items: kitchenItems,
         );
-      }
+      }).toList();
 
       if (mounted) {
         setState(() {
@@ -139,7 +130,9 @@ class _KitchenScreenState extends State<KitchenScreen> {
           _isLoading = false;
         });
       }
-    } catch (e) {
+    } catch (e, stacktrace) {
+      debugPrint("KITCHEN PARSE ERROR: $e");
+      debugPrint(stacktrace.toString());
       if (mounted) setState(() => _isLoading = false);
     }
   }
@@ -213,7 +206,41 @@ class _KitchenScreenState extends State<KitchenScreen> {
                 children: _orders.map((order) {
                   return KitchenCard(
                     order: order,
+                    companyId: widget.companyId,
                     onRemove: () => _removeOrder(order.id),
+                    onMarkReady: (id) async {
+                      try {
+                        // ✨ Task 1: Execute the PATCH request
+                        final success = await _apiClient.updateStatus(
+                          widget.companyId,
+                          id,
+                          3,
+                        );
+
+                        if (success) {
+                          if (mounted) {
+                            // ✨ Task 3: Immediate UI Update
+                            _removeOrder(id);
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Order Marked as Ready!"),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          }
+                        }
+                      } catch (e) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text("Error: $e"),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
+                    },
                   );
                 }).toList(),
               ),
@@ -226,13 +253,21 @@ class _KitchenScreenState extends State<KitchenScreen> {
 class KitchenCard extends StatelessWidget {
   final KitchenOrder order;
   final VoidCallback onRemove;
+  final int companyId;
+  final Function(int) onMarkReady;
 
-  const KitchenCard({super.key, required this.order, required this.onRemove});
+  const KitchenCard({
+    super.key,
+    required this.order,
+    required this.onRemove,
+    required this.companyId,
+    required this.onMarkReady,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final title = order.tableId != null
-        ? "Table ${order.tableId}"
+    final title = order.tableName != null && order.tableName!.isNotEmpty
+        ? order.tableName!
         : order.number;
     final timeStr = order.dateCreated != null
         ? "${order.dateCreated!.hour.toString().padLeft(2, '0')}:${order.dateCreated!.minute.toString().padLeft(2, '0')}"
@@ -275,7 +310,7 @@ class KitchenCard extends StatelessWidget {
                   timeStr,
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.black87.withValues(alpha:0.7),
+                    color: Colors.black87.withValues(alpha: 0.7),
                   ),
                 ),
               ],
@@ -374,25 +409,25 @@ class KitchenCard extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                TextButton.icon(
-                  onPressed: onRemove,
-                  icon: const Icon(Icons.close, color: Colors.redAccent),
-                  label: const Text(
-                    "Cancel",
-                    style: TextStyle(color: Colors.redAccent),
+                if (order.serviceStatus == 2)
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => onMarkReady(order.id),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      icon: const Icon(Icons.check_circle, color: Colors.white),
+                      label: const Text(
+                        "DONE",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-                ElevatedButton.icon(
-                  onPressed: onRemove,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                  ),
-                  icon: const Icon(Icons.check, color: Colors.white),
-                  label: const Text(
-                    "Done",
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
               ],
             ),
           ),

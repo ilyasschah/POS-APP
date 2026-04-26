@@ -44,4 +44,20 @@ class ApiClient {
       throw Exception('Failed to fetch kitchen orders: $e');
     }
   }
+  // 3. Update Order Status (e.g., Mark as Ready)
+  Future<bool> updateStatus(int companyId, int orderId, int status) async {
+    try {
+      final response = await _dio.patch(
+        '/PosOrder/UpdateStatus',
+        queryParameters: {'companyId': companyId},
+        data: {
+          'id': orderId,
+          'serviceStatus': status,
+        },
+      );
+      return response.statusCode == 200 || response.statusCode == 204;
+    } catch (e) {
+      throw Exception('Failed to update status: $e');
+    }
+  }
 }
