@@ -17,6 +17,7 @@ namespace Api.Domain
         public TimeSpan? EndTime { get; set; }
         public int DaysOfWeek { get; set; }
         public bool IsEnabled { get; set; }
+        public virtual ICollection<PromotionItem> Items { get; set; } = new List<PromotionItem>();
 
         private Promotion(string name, int daysOfWeek)
         {

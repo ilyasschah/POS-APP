@@ -4987,6 +4987,22 @@
   },
   {
     "ContainingType": "Api.Controllers.PromotionsController",
+    "Method": "GetAll",
+    "RelativePath": "api/Promotions/GetAll",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Api.Controllers.PromotionsController",
     "Method": "Update",
     "RelativePath": "api/Promotions/Update",
     "HttpMethod": "PUT",

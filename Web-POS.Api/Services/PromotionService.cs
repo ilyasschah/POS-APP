@@ -1,4 +1,4 @@
-﻿using Api.Domain;
+using Api.Domain;
 using Api.Helpers;
 using Api.Models;
 using Api.Repository;
@@ -25,7 +25,7 @@ namespace Api.Services
 
             var items = req.Items.Select(i =>
             {
-                var item = PromotionItem.Create(0, i.Uid, i.Value);
+                var item = PromotionItem.Create(0, i.ProductId, i.Value);
                 item.CompanyId = companyId;
                 item.DiscountType = i.DiscountType;
                 item.PriceType = i.PriceType;
@@ -49,7 +49,7 @@ namespace Api.Services
 
             var items = req.Items.Select(i =>
             {
-                var item = PromotionItem.Create(promotion.Id, i.Uid, i.Value);
+                var item = PromotionItem.Create(promotion.Id, i.ProductId, i.Value);
                 item.CompanyId = companyId;
                 item.DiscountType = i.DiscountType;
                 item.PriceType = i.PriceType;

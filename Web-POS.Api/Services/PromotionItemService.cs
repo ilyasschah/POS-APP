@@ -21,7 +21,7 @@ namespace Api.Services
             var promotion = await _promotionRepository.GetByIdAsync(req.PromotionId, companyId);
             if (promotion == null) throw new InvalidOperationException("Promotion not found.");
 
-            var item = PromotionItem.Create(req.PromotionId, req.Uid, req.Value);
+            var item = PromotionItem.Create(req.PromotionId, req.ProductId, req.Value);
             item.CompanyId = companyId;
             item.DiscountType = req.DiscountType;
             item.PriceType = req.PriceType;
@@ -39,7 +39,7 @@ namespace Api.Services
             var item = await _repository.GetItemByIdAsync(req.Id, companyId, trackEntity: true);
             if (item == null) throw new InvalidOperationException("Promotion Item not found.");
 
-            item.Update(req.Uid, req.DiscountType, req.PriceType, req.Value, req.IsConditional, req.Quantity, req.ConditionType, req.QuantityLimit);
+            item.Update(req.ProductId, req.DiscountType, req.PriceType, req.Value, req.IsConditional, req.Quantity, req.ConditionType, req.QuantityLimit);
 
             await _repository.UpdateSingleItemAsync(item);
             return true;

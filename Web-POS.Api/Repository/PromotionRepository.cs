@@ -15,12 +15,20 @@ namespace Api.Repository
 
         public async Task<List<Promotion>> GetAllAsync(int companyId)
         {
-            return await _db.Promotions.AsNoTracking().Where(p => p.CompanyId == companyId).ToListAsync();
+            return await _db.Promotions
+                .AsNoTracking()
+                .Include(p => p.Items)
+                .Where(p => p.CompanyId == companyId)
+                .ToListAsync();
         }
 
         public async Task<List<Promotion>> GetActivePromotionsAsync(int companyId)
         {
-            return await _db.Promotions.AsNoTracking().Where(p => p.CompanyId == companyId && p.IsEnabled).ToListAsync();
+            return await _db.Promotions
+                .AsNoTracking()
+                .Include(p => p.Items)
+                .Where(p => p.CompanyId == companyId && p.IsEnabled)
+                .ToListAsync();
         }
 
         public async Task<Promotion?> GetByIdAsync(int id, int companyId, bool trackEntity = false)

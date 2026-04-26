@@ -1,10 +1,11 @@
-﻿namespace Api.Models
+namespace Api.Models
 {
     public class PromotionItemDto
     {
         public int Id { get; set; }
         public int PromotionId { get; set; }
-        public int Uid { get; set; }
+        public int ProductId { get; set; }
+        //public int Uid { get; set; }
         public int DiscountType { get; set; }
         public int PriceType { get; set; }
         public decimal Value { get; set; }
@@ -16,7 +17,7 @@
     public class CreateSinglePromotionItemRequest
     {
         public required int PromotionId { get; set; }
-        public required int Uid { get; set; }
+        public required int ProductId { get; set; }
         public required int DiscountType { get; set; }
         public required int PriceType { get; set; }
         public required decimal Value { get; set; }
@@ -27,7 +28,7 @@
     }
     public class CreatePromotionItemRequest
     {
-        public int Uid { get; set; }
+        public int ProductId { get; set; }
         public int DiscountType { get; set; }
         public int PriceType { get; set; }
         public decimal Value { get; set; }
@@ -39,7 +40,7 @@
     public class UpdatePromotionItemRequest
     {
         public required int Id { get; set; }
-        public required int Uid { get; set; }
+        public required int ProductId { get; set; }
         public required int DiscountType { get; set; }
         public required int PriceType { get; set; }
         public required decimal Value { get; set; }

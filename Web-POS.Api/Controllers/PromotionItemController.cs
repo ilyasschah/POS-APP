@@ -5,9 +5,11 @@ using Api.Models;
 using Api.Queries.PromotionItemQuery;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Api.Attributes;
 
 namespace Api.Controllers
 {
+    [SwaggerVisible]
     [Route("api/[controller]")]
     [ApiController]
     public class PromotionItemsController : ControllerBase

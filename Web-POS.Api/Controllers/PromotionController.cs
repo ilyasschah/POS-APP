@@ -6,9 +6,11 @@ using Api.Models;
 using Api.Queries.PromotionQuery;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Api.Attributes;
 
 namespace Api.Controllers
 {
+    [SwaggerVisible]
     [ApiController]
     [Route("api/[controller]")]
     public class PromotionsController : ControllerBase
@@ -19,7 +21,11 @@ namespace Api.Controllers
         {
             _mediator = mediator;
         }
-
+        [HttpGet("GetAll")]
+        public async Task<IActionResult> GetAll([FromQuery] int companyId)
+        {
+            return Ok(await _mediator.Send(new GetAllPromotionsQuery { CompanyId = companyId }));
+        }
         [HttpGet("GetActive")]
         public async Task<IActionResult> GetActive([FromQuery] int companyId)
         {

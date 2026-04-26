@@ -1698,6 +1698,304 @@
         }
       }
     },
+    "/api/PromotionItems/GetByPromotionId": {
+      "get": {
+        "tags": [
+          "PromotionItems"
+        ],
+        "parameters": [
+          {
+            "name": "promotionId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "companyId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/PromotionItems/Add": {
+      "post": {
+        "tags": [
+          "PromotionItems"
+        ],
+        "parameters": [
+          {
+            "name": "companyId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSinglePromotionItemRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSinglePromotionItemRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSinglePromotionItemRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/PromotionItems/Update": {
+      "patch": {
+        "tags": [
+          "PromotionItems"
+        ],
+        "parameters": [
+          {
+            "name": "companyId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePromotionItemRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePromotionItemRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePromotionItemRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/PromotionItems/Delete": {
+      "delete": {
+        "tags": [
+          "PromotionItems"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "companyId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Promotions/GetAll": {
+      "get": {
+        "tags": [
+          "Promotions"
+        ],
+        "parameters": [
+          {
+            "name": "companyId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Promotions/GetActive": {
+      "get": {
+        "tags": [
+          "Promotions"
+        ],
+        "parameters": [
+          {
+            "name": "companyId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Promotions/Add": {
+      "post": {
+        "tags": [
+          "Promotions"
+        ],
+        "parameters": [
+          {
+            "name": "companyId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePromotionRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePromotionRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePromotionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Promotions/Update": {
+      "put": {
+        "tags": [
+          "Promotions"
+        ],
+        "parameters": [
+          {
+            "name": "companyId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePromotionRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePromotionRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePromotionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Promotions/Delete": {
+      "delete": {
+        "tags": [
+          "Promotions"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "companyId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Taxes/GetAllTaxes": {
       "get": {
         "tags": [
@@ -2613,6 +2911,140 @@
         },
         "additionalProperties": false
       },
+      "CreatePromotionItemRequest": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "discountType": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "priceType": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "value": {
+            "type": "number",
+            "format": "double"
+          },
+          "isConditional": {
+            "type": "boolean"
+          },
+          "quantity": {
+            "type": "number",
+            "format": "double"
+          },
+          "conditionType": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "quantityLimit": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreatePromotionRequest": {
+        "required": [
+          "daysOfWeek",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "daysOfWeek": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "startTime": {
+            "type": "string",
+            "format": "date-span",
+            "nullable": true
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "endTime": {
+            "type": "string",
+            "format": "date-span",
+            "nullable": true
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreatePromotionItemRequest"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateSinglePromotionItemRequest": {
+        "required": [
+          "conditionType",
+          "discountType",
+          "isConditional",
+          "priceType",
+          "productId",
+          "promotionId",
+          "quantity",
+          "quantityLimit",
+          "value"
+        ],
+        "type": "object",
+        "properties": {
+          "promotionId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "productId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "discountType": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "priceType": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "value": {
+            "type": "number",
+            "format": "double"
+          },
+          "isConditional": {
+            "type": "boolean"
+          },
+          "quantity": {
+            "type": "number",
+            "format": "double"
+          },
+          "conditionType": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "quantityLimit": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
       "CreateTaxRequestDto": {
         "required": [
           "isEnabled",
@@ -3181,6 +3613,112 @@
         },
         "additionalProperties": false
       },
+      "UpdatePromotionItemRequest": {
+        "required": [
+          "conditionType",
+          "discountType",
+          "id",
+          "isConditional",
+          "priceType",
+          "productId",
+          "quantity",
+          "quantityLimit",
+          "value"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "productId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "discountType": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "priceType": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "value": {
+            "type": "number",
+            "format": "double"
+          },
+          "isConditional": {
+            "type": "boolean"
+          },
+          "quantity": {
+            "type": "number",
+            "format": "double"
+          },
+          "conditionType": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "quantityLimit": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdatePromotionRequest": {
+        "required": [
+          "daysOfWeek",
+          "id",
+          "isEnabled",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "daysOfWeek": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "isEnabled": {
+            "type": "boolean"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "startTime": {
+            "type": "string",
+            "format": "date-span",
+            "nullable": true
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "endTime": {
+            "type": "string",
+            "format": "date-span",
+            "nullable": true
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UpdatePromotionItemRequest"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "UpdateTaxRequestDto": {
         "required": [
           "id",
@@ -3243,6 +3781,12 @@
     },
     {
       "name": "ProductTaxes"
+    },
+    {
+      "name": "PromotionItems"
+    },
+    {
+      "name": "Promotions"
     },
     {
       "name": "Taxes"

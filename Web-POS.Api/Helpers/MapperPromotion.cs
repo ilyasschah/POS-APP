@@ -22,7 +22,7 @@ namespace Api.Helpers
                 {
                     Id = i.Id,
                     PromotionId = i.PromotionId,
-                    Uid = i.Uid,
+                    ProductId = i.Uid,
                     DiscountType = i.DiscountType,
                     PriceType = i.PriceType,
                     Value = i.Value,

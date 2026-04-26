@@ -11,7 +11,7 @@ namespace Api.Helpers
             {
                 Id = entity.Id,
                 PromotionId = entity.PromotionId,
-                Uid = entity.Uid,
+                ProductId = entity.Uid,
                 DiscountType = entity.DiscountType,
                 PriceType = entity.PriceType,
                 Value = entity.Value,
