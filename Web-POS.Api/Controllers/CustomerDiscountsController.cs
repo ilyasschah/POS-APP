@@ -1,11 +1,13 @@
-﻿using Api.Commands.CustomerDiscountCommands;
+using Api.Commands.CustomerDiscountCommands;
 using Api.Models;
 using Api.Queries.CustomerDiscountQuery;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Api.Attributes;
 
 namespace Api.Controllers
 {
+    [SwaggerVisible]
     [Route("api/[controller]")]
     [ApiController]
     public class CustomerDiscountsController : ControllerBase
@@ -28,7 +30,7 @@ namespace Api.Controllers
         public async Task<IActionResult> GetByCustomerId([FromQuery] int customerId, [FromQuery] int companyId)
         {
             var result = await _mediator.Send(new GetCustomerDiscountByCustomerIdQuery { CustomerId = customerId, CompanyId = companyId });
-            if (result == null) return NotFound("No discount found for this customer.");
+            if (result == null) return Ok(null);
             return Ok(result);
         }
 

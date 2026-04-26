@@ -1779,11 +1779,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\repos\\Web-POS\\Web-POS.Api\\Web-POS.Api.csproj",
+      "projectUniqueName": "D:\\repos\\POS-APP\\Back-End\\Web-POS.Api\\Web-POS.Api.csproj",
       "projectName": "Web-POS.Api",
-      "projectPath": "D:\\repos\\Web-POS\\Web-POS.Api\\Web-POS.Api.csproj",
+      "projectPath": "D:\\repos\\POS-APP\\Back-End\\Web-POS.Api\\Web-POS.Api.csproj",
       "packagesPath": "C:\\Users\\ILYASS\\.nuget\\packages\\",
-      "outputPath": "D:\\repos\\Web-POS\\Web-POS.Api\\obj\\",
+      "outputPath": "D:\\repos\\POS-APP\\Back-End\\Web-POS.Api\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "D:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

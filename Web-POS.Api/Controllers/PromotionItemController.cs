@@ -1,4 +1,6 @@
-﻿using Api.Commands.PromotionItemCommands;
+﻿using Api.Commands.PromotionItem.Add;
+using Api.Commands.PromotionItem.Delete;
+using Api.Commands.PromotionItem.Update;
 using Api.Models;
 using Api.Queries.PromotionItemQuery;
 using MediatR;

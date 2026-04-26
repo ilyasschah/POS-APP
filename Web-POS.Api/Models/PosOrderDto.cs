@@ -20,6 +20,7 @@ namespace Api.Models
     public class CreatePosOrderRequest
     {
         public required int UserId { get; set; }
+        public string? Number { get; set; }
         public decimal Discount { get; set; }
         public int DiscountType { get; set; }
         public decimal? Total { get; set; }
@@ -28,7 +29,11 @@ namespace Api.Models
         public int ServiceStatus { get; set; }
         public int? FloorPlanTableId { get; set; }
     }
-
+    public class UpdatePosOrderStatusRequest
+    {
+        public required int Id { get; set; }
+        public required int ServiceStatus { get; set; }
+    }
     public class UpdatePosOrderRequest
     {
         public int Id { get; set; } 

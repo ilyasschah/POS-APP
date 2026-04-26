@@ -1,7 +1,7 @@
-﻿using Api.Commands.Promotion.Delete;
-using Api.Commands.Promotion.Update;
-using Api.Commands.PromotionCommands;
+﻿
 using Api.Commands.PromotionCommands.Add;
+using Api.Commands.PromotionCommands.Delete;
+using Api.Commands.PromotionCommands.Update;
 using Api.Models;
 using Api.Queries.PromotionQuery;
 using MediatR;

@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Api.Services;
 
-namespace Api.Commands.Promotion.Delete
+namespace Api.Commands.PromotionCommands.Delete
 {
     public class DeletePromotionCommand : IRequest<bool>
     {

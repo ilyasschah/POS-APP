@@ -488,6 +488,170 @@
         }
       }
     },
+    "/api/CustomerDiscounts/GetAll": {
+      "get": {
+        "tags": [
+          "CustomerDiscounts"
+        ],
+        "parameters": [
+          {
+            "name": "companyId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/CustomerDiscounts/GetByCustomerId": {
+      "get": {
+        "tags": [
+          "CustomerDiscounts"
+        ],
+        "parameters": [
+          {
+            "name": "customerId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "companyId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/CustomerDiscounts/Add": {
+      "post": {
+        "tags": [
+          "CustomerDiscounts"
+        ],
+        "parameters": [
+          {
+            "name": "companyId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCustomerDiscountRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCustomerDiscountRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCustomerDiscountRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/CustomerDiscounts/Update": {
+      "patch": {
+        "tags": [
+          "CustomerDiscounts"
+        ],
+        "parameters": [
+          {
+            "name": "companyId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCustomerDiscountRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCustomerDiscountRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCustomerDiscountRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/CustomerDiscounts/Delete": {
+      "delete": {
+        "tags": [
+          "CustomerDiscounts"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "companyId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/PosOrder/GetAll": {
       "get": {
         "tags": [
@@ -689,6 +853,47 @@
             "application/*+json": {
               "schema": {
                 "$ref": "#/components/schemas/UpdatePosOrderRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/PosOrder/UpdateStatus": {
+      "patch": {
+        "tags": [
+          "PosOrder"
+        ],
+        "parameters": [
+          {
+            "name": "companyId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePosOrderStatusRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePosOrderStatusRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePosOrderStatusRequest"
               }
             }
           }
@@ -1938,6 +2143,7 @@
         "required": [
           "amountPaid",
           "documentTypeId",
+          "grandTotal",
           "items",
           "paymentTypeId",
           "posOrderId",
@@ -1954,6 +2160,10 @@
             "format": "int32"
           },
           "amountPaid": {
+            "type": "number",
+            "format": "double"
+          },
+          "grandTotal": {
             "type": "number",
             "format": "double"
           },
@@ -2145,6 +2355,34 @@
         },
         "additionalProperties": false
       },
+      "CreateCustomerDiscountRequest": {
+        "required": [
+          "customerId",
+          "type",
+          "uid",
+          "value"
+        ],
+        "type": "object",
+        "properties": {
+          "customerId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "type": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "uid": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "value": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
       "CreatePosOrderItemRequest": {
         "required": [
           "posOrderId",
@@ -2206,6 +2444,10 @@
           "userId": {
             "type": "integer",
             "format": "int32"
+          },
+          "number": {
+            "type": "string",
+            "nullable": true
           },
           "discount": {
             "type": "number",
@@ -2698,6 +2940,29 @@
         },
         "additionalProperties": false
       },
+      "UpdateCustomerDiscountRequest": {
+        "required": [
+          "id",
+          "type",
+          "value"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "type": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "value": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
       "UpdatePosOrderItemRequest": {
         "required": [
           "id",
@@ -2786,6 +3051,24 @@
             "type": "integer",
             "format": "int32",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdatePosOrderStatusRequest": {
+        "required": [
+          "id",
+          "serviceStatus"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "serviceStatus": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -2945,6 +3228,9 @@
     },
     {
       "name": "Company"
+    },
+    {
+      "name": "CustomerDiscounts"
     },
     {
       "name": "PosOrder"

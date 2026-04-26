@@ -3059,6 +3059,27 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "Api.Controllers.PosOrderController",
+    "Method": "UpdateStatus",
+    "RelativePath": "api/PosOrder/UpdateStatus",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "req",
+        "Type": "Api.Models.UpdatePosOrderStatusRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Api.Controllers.PosOrderItemController",
     "Method": "BulkAdd",
     "RelativePath": "api/PosOrderItem/BulkAdd",

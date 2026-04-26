@@ -24,14 +24,6 @@ public class PosOrderRepository
             .ToListAsync();
     }
 
-    public async Task<List<PosOrder>> GetAllAsync()
-    {
-        return await _db.PosOrders
-            .AsNoTracking()
-            .Include(o => o.User)
-            .Include(o => o.Customer)
-            .ToListAsync();
-    }
 
     public async Task<PosOrder?> GetByNumberAsync(string number, int companyId)
     {

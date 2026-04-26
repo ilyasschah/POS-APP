@@ -15,8 +15,6 @@ namespace Api.Commands.PosOrderCommands.Update
             CompanyId = companyId;
             Request = request;
         }
-
-        // --- VALIDATOR ---
         public class UpdatePosOrderCommandValidator : AbstractValidator<UpdatePosOrderCommand>
         {
             public UpdatePosOrderCommandValidator()
@@ -47,7 +45,7 @@ namespace Api.Commands.PosOrderCommands.Update
 
             public async Task<bool> Handle(UpdatePosOrderCommand command, CancellationToken cancellationToken)
             {
-                return await _service.Update(command.Request, command.CompanyId);
+                return await _service.Update(command.CompanyId, command.Request);
             }
         }
     }

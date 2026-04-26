@@ -24,7 +24,6 @@ namespace Api.Services
 
                 try
                 {
-                    // 1. Fetch Order and temporary Cart Items/Taxes for cleanup later
                     var posOrder = await _db.PosOrders
                         .FirstOrDefaultAsync(o => o.Id == req.PosOrderId && o.CompanyId == companyId);
 
@@ -43,11 +42,8 @@ namespace Api.Services
                         .Where(t => posOrderItemIds.Contains(t.PosOrderItemId) && t.CompanyId == companyId)
                         .ToListAsync();
 
-                    // --- PHASE 1: Create Document ---
-                    // Summing the exact Total sent explicitly from the Front-end
-                    decimal documentGrandTotal = req.Items.Sum(i => i.Total);
+                    decimal documentGrandTotal = req.GrandTotal;
 
-                    // Flowchart logic: Document Numbering based on DocumentType
                     string documentNumber = $"DOC-{req.DocumentTypeId}-{DateTime.UtcNow:yyyyMMdd}-{posOrder.Id}";
 
                     var document = Document.Create(
@@ -66,12 +62,11 @@ namespace Api.Services
                     );
 
                     _db.Documents.Add(document);
-                    await _db.SaveChangesAsync(); // Generates document.Id
+                    await _db.SaveChangesAsync(); 
                     var productIds = posOrderItems.Select(i => i.ProductId).Distinct().ToList();
                     var productCosts = await _db.Products
                         .Where(p => productIds.Contains(p.Id) && p.CompanyId == companyId)
                         .ToDictionaryAsync(p => p.Id, p => p.Cost);
-                    // --- PHASE 2: Create DocumentItems & Taxes strictly from Frontend Payload ---
                     foreach (var frontendItem in req.Items)
                     {
                         var originalCartItem = posOrderItems.FirstOrDefault(i => i.ProductId == frontendItem.ProductId);
@@ -140,8 +135,6 @@ namespace Api.Services
                     }
 
                     _db.PosOrders.Remove(posOrder);
-
-                    // Final Save & Commit
                     await _db.SaveChangesAsync();
                     await transaction.CommitAsync();
 

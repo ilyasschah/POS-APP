@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Api.Domain
@@ -60,7 +60,7 @@ namespace Api.Domain
 
         public void UpdateStatus(int status)
         {
-            if (status < 0 || status > 2) throw new ArgumentException("Invalid table status.");
+            if (status < 0 || status > 3) throw new ArgumentException("Invalid table status.");
             Status = status;
         }
     }

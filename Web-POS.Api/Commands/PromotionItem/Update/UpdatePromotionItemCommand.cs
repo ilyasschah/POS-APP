@@ -2,7 +2,7 @@
 using Api.Models;
 using Api.Services;
 
-namespace Api.Commands.PromotionItemCommands
+namespace Api.Commands.PromotionItem.Update
 {
     public class UpdatePromotionItemCommand : IRequest<bool>
     {

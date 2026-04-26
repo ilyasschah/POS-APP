@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Api.Domain;
 using Api.DataBase;
 
@@ -32,12 +32,14 @@ namespace Api.Repository
         public async Task<FloorPlanTable?> GetByIdAsync(int id, int companyId)
         {
             return await _db.FloorPlanTables
+                .AsNoTracking()
                 .FirstOrDefaultAsync(t => t.Id == id && t.CompanyId == companyId);
         }
 
         public async Task<FloorPlanTable?> GetByNameAsync(string name, int companyId)
         {
             return await _db.FloorPlanTables
+                .AsNoTracking()
                 .FirstOrDefaultAsync(t => t.Name == name && t.CompanyId == companyId);
         }
 

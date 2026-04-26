@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "9QfLO4yKqsU=",
+  "dgSpecHash": "3WW8A9OWz44=",
   "success": true,
-  "projectFilePath": "D:\\repos\\Web-POS\\Web-POS.Api\\Web-POS.Api.csproj",
+  "projectFilePath": "D:\\repos\\POS-APP\\Back-End\\Web-POS.Api\\Web-POS.Api.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\ILYASS\\.nuget\\packages\\azure.core\\1.47.1\\azure.core.1.47.1.nupkg.sha512",
     "C:\\Users\\ILYASS\\.nuget\\packages\\azure.identity\\1.14.2\\azure.identity.1.14.2.nupkg.sha512",

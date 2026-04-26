@@ -119,6 +119,22 @@ namespace Api.Controllers
                 return BadRequest(ex.Message);
             }
         }
+        [HttpPatch("UpdateStatus")]
+        public async Task<IActionResult> UpdateStatus([FromQuery] int companyId, [FromBody] UpdatePosOrderStatusRequest req)
+        {
+            try
+            {
+                var command = new UpdatePosOrderStatusCommand(companyId, req);
+                var success = await _mediator.Send(command);
+                if (!success)
+                    return NotFound($"PosOrder with ID {req.Id} not found.");
+                return NoContent();
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
         [HttpDelete("[action]")]
         public async Task<IActionResult> Delete([FromQuery] int id, [FromQuery] int companyId)
         {

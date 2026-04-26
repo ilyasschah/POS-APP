@@ -20,75 +20,136 @@ namespace Api.Services
 
             return await strategy.ExecuteAsync(async () =>
             {
-                using var transaction = await _repository.BeginTransactionAsync();
+                using (var transaction = await _repository.BeginTransactionAsync())
+                {
+                    try
+                    {
+                        if (req.FloorPlanTableId.HasValue)
+                        {
+                            var table = await _repository.GetFloorPlanTableAsync(req.FloorPlanTableId.Value, companyId);
+                            if (table != null)
+                            {
+                                table.UpdateStatus(req.ServiceStatus);
+                                _repository.UpdateFloorPlanTable(table);
+                            }
+                        }
 
+                        string orderNumber = string.IsNullOrWhiteSpace(req.Number)
+                            ? $"ORD-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..4].ToUpper()}"
+                            : req.Number;
+
+                        var newOrder = PosOrder.Create(
+                            companyId: companyId,
+                            userId: req.UserId,
+                            number: orderNumber,
+                            discount: req.Discount,
+                            discountType: req.DiscountType,
+                            total: req.Total,
+                            customerId: req.CustomerId,
+                            serviceType: req.ServiceType,
+                            serviceStatus: req.ServiceStatus,
+                            floorPlanTableId: req.FloorPlanTableId
+                        );
+
+                        await _repository.AddAsync(newOrder);
+                        await transaction.CommitAsync();
+                        return newOrder;
+                    }
+                    catch (Exception)
+                    {
+                        await transaction.RollbackAsync();
+                        throw;
+                    }
+                }
+            });
+        }
+
+        public async Task<bool> Update(int companyId, UpdatePosOrderRequest req)
+        {
+            var strategy = _repository.CreateExecutionStrategy();
+
+            return await strategy.ExecuteAsync(async () =>
+            {
+                using (var transaction = await _repository.BeginTransactionAsync())
+                {
+                    try
+                    {
+                        var order = await _repository.GetByIdAsync(req.Id, companyId, trackEntity: true);
+                        if (order == null) return false;
+
+                        order.Update(
+                            req.UserId,
+                            req.Number,
+                            req.Discount,
+                            req.DiscountType,
+                            req.Total,
+                            req.CustomerId,
+                            req.ServiceType,
+                            req.ServiceStatus,
+                            req.FloorPlanTableId
+                        );
+
+                        // Sync Table Status
+                        if (req.FloorPlanTableId.HasValue)
+                        {
+                            var table = await _repository.GetFloorPlanTableAsync(req.FloorPlanTableId.Value, companyId);
+                            if (table != null)
+                            {
+                                table.UpdateStatus(req.ServiceStatus);
+                                _repository.UpdateFloorPlanTable(table);
+                            }
+                        }
+
+                        await _repository.UpdateAsync(order);
+                        await transaction.CommitAsync();
+                        return true;
+                    }
+                    catch (Exception)
+                    {
+                        await transaction.RollbackAsync();
+                        throw;
+                    }
+                }
+            });
+        }
+        public async Task<bool> UpdateStatus(int companyId, UpdatePosOrderStatusRequest req)
+        {
+            var strategy = _repository.CreateExecutionStrategy();
+
+            return await strategy.ExecuteAsync(async () =>
+            {
+                using var transaction = await _repository.BeginTransactionAsync();
                 try
                 {
-                    if (req.FloorPlanTableId.HasValue)
+                    var order = await _repository.GetByIdAsync(req.Id, companyId);
+                    if (order == null) return false;
+
+                    // Update Order Status
+                    order.Update(order.UserId, order.Number, order.Discount, order.DiscountType, order.Total, order.CustomerId, order.ServiceType, req.ServiceStatus, order.FloorPlanTableId);
+                    await _repository.UpdateAsync(order);
+
+                    // Sync Table Status
+                    if (order.FloorPlanTableId.HasValue)
                     {
-                        var table = await _repository.GetFloorPlanTableAsync(req.FloorPlanTableId.Value, companyId);
-
-                        if (table == null)
-                            throw new InvalidOperationException("Table not found.");
-
-                        if (table.Status == 1)
-                            throw new InvalidOperationException("This table is already occupied. Please select an existing order.");
-
-                        table.UpdateStatus(1);
-                        _repository.UpdateFloorPlanTable(table);
+                        var table = await _repository.GetFloorPlanTableAsync(order.FloorPlanTableId.Value, companyId);
+                        if (table != null)
+                        {
+                            table.UpdateStatus(req.ServiceStatus);
+                            _repository.UpdateFloorPlanTable(table);
+                        }
                     }
 
-                    string orderNumber = $"ORD-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..4].ToUpper()}";
-
-                    int defaultServiceStatus = 1;
-
-                    var newOrder = PosOrder.Create(
-                        companyId: companyId,
-                        userId: req.UserId,
-                        number: orderNumber,
-                        discount: 0,
-                        discountType: 0,
-                        total: 0,
-                        customerId: req.CustomerId,
-                        serviceType: req.ServiceType,
-                        serviceStatus: defaultServiceStatus,
-                        floorPlanTableId: req.FloorPlanTableId
-                    );
-
-                    await _repository.AddAsync(newOrder);
+                    await _repository._db.SaveChangesAsync();
                     await transaction.CommitAsync();
-
-                    return newOrder;
+                    return true;
                 }
-                catch
+                catch (Exception)
                 {
                     await transaction.RollbackAsync();
                     throw;
                 }
             });
         }
-
-        public async Task<bool> Update(UpdatePosOrderRequest req, int companyId)
-        {
-            var entity = await _repository.GetByIdAsync(req.Id, trackEntity: true);
-            if (entity == null)
-                throw new InvalidOperationException($"A PosOrder with the ID '{req.Id}' does not exist.");
-            entity.Update(
-                req.UserId,
-                req.Number,
-                req.Discount,
-                req.DiscountType,
-                req.Total,
-                req.CustomerId,
-                req.ServiceType,
-                req.ServiceStatus,
-                req.FloorPlanTableId
-            );
-
-            await _repository.UpdateAsync(entity);
-            return true;
-        }
-
         public async Task<bool> Delete(int id, int companyId)
         {
             var strategy = _repository.CreateExecutionStrategy();
@@ -99,7 +160,7 @@ namespace Api.Services
 
                 try
                 {
-                    var order = await _repository.GetByIdAsync(id, trackEntity: true);
+                    var order = await _repository.GetByIdAsync(id, companyId, trackEntity: true);
                     if (order == null) return false;
 
                     if (order.FloorPlanTableId.HasValue)
