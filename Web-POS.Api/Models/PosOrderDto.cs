@@ -28,6 +28,7 @@ namespace Api.Models
         public int ServiceType { get; set; }
         public int ServiceStatus { get; set; }
         public int? FloorPlanTableId { get; set; }
+        public required int WarehouseId { get; set; }
     }
     public class UpdatePosOrderStatusRequest
     {
@@ -46,5 +47,13 @@ namespace Api.Models
         public int ServiceType { get; set; }
         public int ServiceStatus { get; set; }
         public int? FloorPlanTableId { get; set; }
+        public required int WarehouseId { get; set; }
+    }
+
+    public class BulkAddPosOrderItemsResponse
+    {
+        public bool Success { get; set; }
+        public List<string> Warnings { get; set; } = new List<string>();
+        public string? Message { get; set; }
     }
 }

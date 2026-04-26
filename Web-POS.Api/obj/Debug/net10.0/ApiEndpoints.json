@@ -2959,6 +2959,11 @@
         "Name": "companyId",
         "Type": "System.Int32",
         "IsRequired": false
+      },
+      {
+        "Name": "warehouseId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
@@ -3089,6 +3094,11 @@
     "Parameters": [
       {
         "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "warehouseId",
         "Type": "System.Int32",
         "IsRequired": false
       },

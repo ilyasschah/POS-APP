@@ -8,11 +8,13 @@ namespace Api.Commands.PosOrderCommands.Delete
     {
         public int Id { get; set; }
         public int CompanyId { get; set; }
+        public int WarehouseId { get; set; }
 
-        public DeletePosOrderCommand(int id, int companyId)
+        public DeletePosOrderCommand(int id, int companyId, int warehouseId)
         {
             Id = id;
             CompanyId = companyId;
+            WarehouseId = warehouseId;
         }
 
         public class DeletePosOrderCommandValidator : AbstractValidator<DeletePosOrderCommand>
@@ -24,6 +26,9 @@ namespace Api.Commands.PosOrderCommands.Delete
 
                 RuleFor(x => x.CompanyId)
                     .GreaterThan(0).WithMessage("Company ID must be valid.");
+                
+                RuleFor(x => x.WarehouseId)
+                    .GreaterThan(0).WithMessage("Warehouse ID must be valid.");
             }
         }
 
@@ -38,7 +43,7 @@ namespace Api.Commands.PosOrderCommands.Delete
 
             public async Task<bool> Handle(DeletePosOrderCommand command, CancellationToken cancellationToken)
             {
-                return await _service.Delete(command.Id, command.CompanyId);
+                return await _service.Delete(command.Id, command.CompanyId, command.WarehouseId);
             }
         }
     }

@@ -926,6 +926,14 @@
               "type": "integer",
               "format": "int32"
             }
+          },
+          {
+            "name": "warehouseId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
           }
         ],
         "responses": {
@@ -1066,6 +1074,14 @@
         "parameters": [
           {
             "name": "companyId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "warehouseId",
             "in": "query",
             "schema": {
               "type": "integer",
@@ -2735,7 +2751,8 @@
       },
       "CreatePosOrderRequest": {
         "required": [
-          "userId"
+          "userId",
+          "warehouseId"
         ],
         "type": "object",
         "properties": {
@@ -2777,6 +2794,10 @@
             "type": "integer",
             "format": "int32",
             "nullable": true
+          },
+          "warehouseId": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -3437,7 +3458,8 @@
       "UpdatePosOrderRequest": {
         "required": [
           "number",
-          "userId"
+          "userId",
+          "warehouseId"
         ],
         "type": "object",
         "properties": {
@@ -3483,6 +3505,10 @@
             "type": "integer",
             "format": "int32",
             "nullable": true
+          },
+          "warehouseId": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false

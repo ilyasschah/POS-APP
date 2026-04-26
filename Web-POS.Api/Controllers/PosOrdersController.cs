@@ -67,6 +67,9 @@ namespace Api.Controllers
             if (companyId <= 0)
                 return BadRequest("Company ID must be provided.");
 
+            if (request.WarehouseId <= 0)
+                return BadRequest("Warehouse ID is required for inventory tracking.");
+
             try
             {
                 var command = new CreatePosOrderCommand( request, companyId);
@@ -105,6 +108,12 @@ namespace Api.Controllers
         [HttpPatch("[action]")]
         public async Task<IActionResult> Update([FromBody] UpdatePosOrderRequest request, [FromQuery] int companyId)
         {
+            if (companyId <= 0)
+                return BadRequest("Company ID must be provided.");
+
+            if (request.WarehouseId <= 0)
+                return BadRequest("Warehouse ID is required for inventory tracking.");
+
             try
             {
                 var command = new UpdatePosOrderCommand(request,companyId);
@@ -136,9 +145,9 @@ namespace Api.Controllers
             }
         }
         [HttpDelete("[action]")]
-        public async Task<IActionResult> Delete([FromQuery] int id, [FromQuery] int companyId)
+        public async Task<IActionResult> Delete([FromQuery] int id, [FromQuery] int companyId, [FromQuery] int warehouseId)
         {
-            var command = new DeletePosOrderCommand(id, companyId);
+            var command = new DeletePosOrderCommand(id, companyId, warehouseId);
             var success = await _mediator.Send(command);
 
             if (!success)

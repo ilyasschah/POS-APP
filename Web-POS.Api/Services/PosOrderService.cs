@@ -150,7 +150,7 @@ namespace Api.Services
                 }
             });
         }
-        public async Task<bool> Delete(int id, int companyId)
+        public async Task<bool> Delete(int id, int companyId, int warehouseId)
         {
             var strategy = _repository.CreateExecutionStrategy();
 
@@ -160,8 +160,34 @@ namespace Api.Services
 
                 try
                 {
-                    var order = await _repository.GetByIdAsync(id, companyId, trackEntity: true);
+                    // Fetch order with items and products for stock reversal
+                    var order = await _repository._db.PosOrders
+                        .Include(o => o.User)
+                        .Include(o => o.Customer)
+                        .FirstOrDefaultAsync(o => o.Id == id && o.CompanyId == companyId);
+
                     if (order == null) return false;
+
+                    var items = await _repository._db.PosOrderItems
+                        .Include(i => i.Product)
+                        .Where(i => i.PosOrderId == id && i.CompanyId == companyId)
+                        .ToListAsync();
+
+                    // --- Task 4: Stock Reversal ---
+                    foreach (var item in items)
+                    {
+                        if (item.Product != null && !item.Product.IsService)
+                        {
+                            var stock = await _repository._db.Stocks
+                                .FirstOrDefaultAsync(s => s.ProductId == item.ProductId && s.WarehouseId == warehouseId && s.CompanyId == companyId);
+                            
+                            if (stock != null)
+                            {
+                                stock.UpdateDetails(stock.Quantity + item.Quantity, stock.WarehouseId, stock.ProductId);
+                                _repository._db.Stocks.Update(stock);
+                            }
+                        }
+                    }
 
                     if (order.FloorPlanTableId.HasValue)
                     {
@@ -173,16 +199,12 @@ namespace Api.Services
                         }
                     }
 
-                    bool deleted = await _repository.DeleteAsync(id, companyId);
+                    _repository._db.PosOrderItems.RemoveRange(items);
+                    _repository._db.PosOrders.Remove(order);
+                    await _repository._db.SaveChangesAsync();
 
-                    if (deleted)
-                    {
-                        await transaction.CommitAsync();
-                        return true;
-                    }
-
-                    await transaction.RollbackAsync();
-                    return false;
+                    await transaction.CommitAsync();
+                    return true;
                 }
                 catch
                 {

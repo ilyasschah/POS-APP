@@ -71,23 +71,26 @@ namespace Api.Controllers
             }
         }
         [HttpPost("[action]")]
-        public async Task<IActionResult> BulkAdd([FromQuery] int companyId, [FromBody] List<BulkAddPosOrderItemRequest> requests)
+        public async Task<IActionResult> BulkAdd([FromQuery] int companyId, [FromQuery] int warehouseId, [FromBody] List<BulkAddPosOrderItemRequest> requests)
         {
             if (companyId <= 0)
                 return BadRequest(new { message = "Company ID is required." });
+            
+            if (warehouseId <= 0)
+                return BadRequest(new { message = "Warehouse ID is required." });
 
             if (requests == null || !requests.Any())
                 return BadRequest(new { message = "Item list cannot be empty." });
 
             try
             {
-                var command = new BulkAddPosOrderItemsCommand(companyId, requests);
+                var command = new BulkAddPosOrderItemsCommand(companyId, warehouseId, requests);
                 var result = await _mediator.Send(command);
 
-                if (result)
-                    return Ok(new { message = "Items successfully added to the order." });
+                if (result.Success)
+                    return Ok(result);
 
-                return BadRequest(new { message = "Failed to add items to the order." });
+                return BadRequest(result);
             }
             catch (Exception ex)
             {
