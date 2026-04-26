@@ -56,7 +56,8 @@ class KitchenOrder {
 
 // --- MAIN SCREEN ---
 class KitchenScreen extends StatefulWidget {
-  final int companyId; // ✨ DIRECT INJECTION! No complex state managers needed!
+  final int
+  companyId; // TODO: We should make it injectable from the main.dart file or a config file.
 
   const KitchenScreen({super.key, required this.companyId});
 
@@ -101,7 +102,6 @@ class _KitchenScreenState extends State<KitchenScreen> {
       debugPrint("KITCHEN RAW DATA: $rawData");
 
       final loadedOrders = rawData.map<KitchenOrder>((item) {
-        // Backend now returns a clean flat KitchenOrderDto — simple direct mapping.
         final rawItems = (item['items'] ?? []) as List<dynamic>;
 
         final kitchenItems = rawItems.map((i) {
@@ -119,7 +119,7 @@ class _KitchenScreenState extends State<KitchenScreen> {
           tableName: item['tableName'] as String?,
           serviceType: (item['serviceType'] ?? item['ServiceType'] ?? 1) as int,
           serviceStatus: (item['serviceStatus'] ?? 2) as int,
-          dateCreated: null, // Not provided by PosOrder entity
+          dateCreated: null, // TODO: Not provided by PosOrder entity
           items: kitchenItems,
         );
       }).toList();
@@ -210,7 +210,6 @@ class _KitchenScreenState extends State<KitchenScreen> {
                     onRemove: () => _removeOrder(order.id),
                     onMarkReady: (id) async {
                       try {
-                        // ✨ Task 1: Execute the PATCH request
                         final success = await _apiClient.updateStatus(
                           widget.companyId,
                           id,
@@ -219,7 +218,6 @@ class _KitchenScreenState extends State<KitchenScreen> {
 
                         if (success) {
                           if (mounted) {
-                            // ✨ Task 3: Immediate UI Update
                             _removeOrder(id);
 
                             ScaffoldMessenger.of(context).showSnackBar(
