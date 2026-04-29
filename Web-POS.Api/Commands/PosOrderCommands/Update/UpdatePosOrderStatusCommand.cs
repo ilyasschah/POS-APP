@@ -2,7 +2,7 @@
 using Api.Models;
 using Api.Services;
 
-namespace Api.Commands.PosOrderCommands
+namespace Api.Commands.PosOrderCommands.Update
 {
     public class UpdatePosOrderStatusCommand : IRequest<bool>
     {
