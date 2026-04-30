@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(flutter clean *)"
+      "Bash(flutter clean *)",
+      "Bash(flutter sdk-path *)",
+      "Bash(where flutter *)"
     ]
   }
 }
