@@ -4,6 +4,7 @@
     {
         public int Id { get; set; }
         public int? CustomerId { get; set; }
+        public int? UserId { get; set; }
         public required string ReservationName { get; set; }
         public int? FloorPlanTableId { get; set; }
         public int? DocumentId { get; set; }
@@ -19,6 +20,7 @@
     public class CreateBookingRequest
     {
         public int? CustomerId { get; set; }
+        public int? UserId { get; set; }
         public required string ReservationName { get; set; }
         public int? FloorPlanTableId { get; set; }
         public DateTime StartTime { get; set; }

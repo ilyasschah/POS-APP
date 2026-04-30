@@ -10,6 +10,7 @@ namespace Api.Domain
         public int Id { get; private set; }
         public int CompanyId { get; private set; }
         public int? CustomerId { get; private set; }
+        public int? UserId { get; private set; }
 
         [MaxLength(100)]
         public string? ReservationName { get; private set; }
@@ -18,7 +19,7 @@ namespace Api.Domain
         public DateTime StartTime { get; private set; } = DateTime.Now;
         public DateTime EndTime { get; private set; }
         public int GuestCount { get; private set; }
-        // 0 = Pending, 1 = Checked-In, 2 = Completed, 3 = Canceled
+        // 1 = Scheduled, 2 = Arrived / Waiting, 3 = In Service, 4 = Completed & Paid, 5 = No Show
         public int Status { get; private set; }
 
         [MaxLength(500)]
@@ -27,9 +28,12 @@ namespace Api.Domain
         [ForeignKey(nameof(FloorPlanTableId))]
         public virtual FloorPlanTable? FloorPlanTable { get; private set; }
 
+        [ForeignKey(nameof(UserId))]
+        public virtual User? AssignedUser { get; private set; }
+
         public Booking() { }
 
-        private Booking(int companyId, string reservationName, DateTime startTime, DateTime endTime, int guestCount, int? customerId, int? floorPlanTableId, string? note)
+        private Booking(int companyId, string reservationName, DateTime startTime, DateTime endTime, int guestCount, int? customerId, int? floorPlanTableId, string? note, int? userId)
         {
             CompanyId = companyId;
             ReservationName = reservationName;
@@ -39,26 +43,33 @@ namespace Api.Domain
             CustomerId = customerId;
             FloorPlanTableId = floorPlanTableId;
             Note = note;
-            Status = 0;
+            UserId = userId;
+            Status = 1; // Scheduled
         }
 
-        public static Booking Create(int companyId, string reservationName, DateTime startTime, DateTime endTime, int guestCount = 1, int? customerId = null, int? floorPlanTableId = null, string? note = null)
+        public static Booking Create(int companyId, string reservationName, DateTime startTime, DateTime endTime, int guestCount = 1, int? customerId = null, int? floorPlanTableId = null, string? note = null, int? userId = null)
         {
             if (companyId <= 0) throw new ArgumentException("Invalid Company ID");
             if (string.IsNullOrWhiteSpace(reservationName)) throw new ArgumentException("Reservation name is required.");
             if (startTime >= endTime) throw new ArgumentException("End time must be after start time.");
 
-            return new Booking(companyId, reservationName, startTime, endTime, guestCount, customerId, floorPlanTableId, note);
+            return new Booking(companyId, reservationName, startTime, endTime, guestCount, customerId, floorPlanTableId, note, userId);
         }
 
-        public void MarkAsCheckedIn(int documentId)
+        public void MarkAsArrived() => Status = 2;
+        public void MarkAsInService(int? documentId = null)
         {
-            Status = 1;
-            DocumentId = documentId;
+            Status = 3;
+            if (documentId.HasValue) DocumentId = documentId;
         }
+        public void MarkAsCompleted() => Status = 4;
+        public void MarkAsNoShow() => Status = 5;
 
-        public void MarkAsCompleted() => Status = 2;
-        public void CancelBooking() => Status = 3;
+        public void UpdateStatus(int status, int? documentId = null)
+        {
+            Status = status;
+            if (documentId.HasValue) DocumentId = documentId;
+        }
 
         public void Reschedule(DateTime newStartTime, DateTime newEndTime)
         {
