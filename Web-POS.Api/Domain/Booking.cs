@@ -71,6 +71,12 @@ namespace Api.Domain
             if (documentId.HasValue) DocumentId = documentId;
         }
 
+        public void UpdateResource(int? userId, int? floorPlanTableId)
+        {
+            UserId = userId;
+            FloorPlanTableId = floorPlanTableId;
+        }
+
         public void Reschedule(DateTime newStartTime, DateTime newEndTime)
         {
             if (newStartTime >= newEndTime) throw new ArgumentException("End time must be after start time.");

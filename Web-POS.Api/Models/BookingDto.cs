@@ -37,4 +37,11 @@
 
         public int? DocumentId { get; set; }
     }
+
+    public class UpdateBookingResourceRequest
+    {
+        public int BookingId { get; set; }
+        public int? UserId { get; set; }
+        public int? FloorPlanTableId { get; set; }
+    }
 }

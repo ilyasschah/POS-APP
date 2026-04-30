@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Api.Commands.BookingCommands.Add;
 using Api.Commands.BookingCommands.UpdateStatus;
+using Api.Commands.BookingCommands.UpdateResource;
 using Api.Commands.BookingCommands.Delete;
 using Api.Queries.BookingQuery.Get;
 using Api.Models;
@@ -46,6 +47,16 @@ namespace Api.Controllers
             var success = await mediator.Send(new UpdateBookingStatusCommand(request, companyId));
             if (!success) return NotFound();
             return Ok(new { Message = "Booking status updated" });
+        }
+
+        [HttpPatch("[action]")]
+        public async Task<ActionResult> UpdateResource([FromBody] UpdateBookingResourceRequest request, [FromQuery] int companyId)
+        {
+            if (companyId == 0) return BadRequest("Company ID is required");
+            if (request.BookingId == 0) return BadRequest("Booking ID is required");
+            var success = await mediator.Send(new UpdateBookingResourceCommand(request, companyId));
+            if (!success) return NotFound();
+            return Ok(new { Message = "Booking resource updated" });
         }
 
         [HttpDelete("[action]")]
