@@ -1,6 +1,8 @@
+using Api.Repository;
+using Api.Services;
 using FluentValidation;
 using MediatR;
-using Api.Services;
+using Microsoft.OpenApi;
 
 namespace Api.Commands.BookingCommands.Delete
 {
@@ -8,25 +10,54 @@ namespace Api.Commands.BookingCommands.Delete
     {
         public int Id { get; }
         public int CompanyId { get; }
+        public int WarehouseId { get; } 
 
-        public DeleteBookingCommand(int id, int companyId)
+        public DeleteBookingCommand(int id, int companyId,int warehouseid)
         {
             Id = id;
             CompanyId = companyId;
+            WarehouseId = warehouseid;
         }
 
         public class DeleteBookingCommandHandler : IRequestHandler<DeleteBookingCommand, bool>
         {
             private readonly BookingService _bookingService;
+            private readonly PosOrderService _posOrderService;
+            private readonly BookingRepository _bookingRepository;     
+            private readonly PosOrderRepository _posOrderRepository;
 
-            public DeleteBookingCommandHandler(BookingService bookingService)
+            public DeleteBookingCommandHandler(
+                BookingService bookingService,
+                PosOrderService posOrderService,
+                BookingRepository bookingRepository,
+                PosOrderRepository posOrderRepository)
             {
                 _bookingService = bookingService;
+                _posOrderService = posOrderService;
+                _bookingRepository = bookingRepository;
+                _posOrderRepository = posOrderRepository;
             }
 
             public async Task<bool> Handle(DeleteBookingCommand request, CancellationToken cancellationToken)
             {
-                return await _bookingService.DeleteAsync(request.Id, request.CompanyId);
+                var booking = await _bookingRepository.GetByIdAsync(request.Id, request.CompanyId);
+                if (booking == null) return false;
+
+                int? linkedPosOrderId = booking.PosOrderId;
+
+                var bookingDeleted = await _bookingService.DeleteAsync(request.Id, request.CompanyId);
+
+                if (bookingDeleted && linkedPosOrderId.HasValue)
+                {
+                    var posOrder = await _posOrderRepository.GetByIdAsync(linkedPosOrderId.Value, request.CompanyId);
+
+                    if (posOrder != null)
+                    {
+                        await _posOrderService.Delete(posOrder.Id, request.CompanyId, request.WarehouseId);
+                    }
+                }
+
+                return bookingDeleted;
             }
         }
 

@@ -497,6 +497,44 @@
         }
       }
     },
+    "/api/Bookings/LinkPosOrder": {
+      "patch": {
+        "tags": [
+          "Bookings"
+        ],
+        "parameters": [
+          {
+            "name": "companyId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "bookingId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "posOrderId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Bookings/Delete": {
       "delete": {
         "tags": [
@@ -513,6 +551,14 @@
           },
           {
             "name": "companyId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "warehouseid",
             "in": "query",
             "schema": {
               "type": "integer",
@@ -2862,6 +2908,11 @@
             "nullable": true
           },
           "documentId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "posOrderId": {
             "type": "integer",
             "format": "int32",
             "nullable": true

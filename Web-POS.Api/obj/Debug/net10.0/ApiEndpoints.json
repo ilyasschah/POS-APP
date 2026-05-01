@@ -374,6 +374,11 @@
         "Name": "companyId",
         "Type": "System.Int32",
         "IsRequired": false
+      },
+      {
+        "Name": "warehouseid",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
@@ -434,6 +439,32 @@
         "StatusCode": 200
       }
     ]
+  },
+  {
+    "ContainingType": "Api.Controllers.BookingsController",
+    "Method": "LinkPosOrder",
+    "RelativePath": "api/Bookings/LinkPosOrder",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "bookingId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "posOrderId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
   },
   {
     "ContainingType": "Api.Controllers.BookingsController",

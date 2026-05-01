@@ -160,7 +160,6 @@ namespace Api.Services
 
                 try
                 {
-                    // Fetch order with items and products for stock reversal
                     var order = await _repository._db.PosOrders
                         .Include(o => o.User)
                         .Include(o => o.Customer)
@@ -173,7 +172,6 @@ namespace Api.Services
                         .Where(i => i.PosOrderId == id && i.CompanyId == companyId)
                         .ToListAsync();
 
-                    // --- Task 4: Stock Reversal ---
                     foreach (var item in items)
                     {
                         if (item.Product != null && !item.Product.IsService)

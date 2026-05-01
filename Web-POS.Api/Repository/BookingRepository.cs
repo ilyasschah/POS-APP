@@ -16,7 +16,7 @@ namespace Api.Repository
                 .OrderBy(b => b.StartTime)
                 .ToListAsync();
         }
-
+        
         public async Task<Booking?> GetByIdAsync(int id, int companyId)
         {
             return await _db.Bookings

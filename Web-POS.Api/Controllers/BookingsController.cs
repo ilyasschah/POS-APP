@@ -58,13 +58,24 @@ namespace Api.Controllers
             if (!success) return NotFound();
             return Ok(new { Message = "Booking resource updated" });
         }
+        [HttpPatch("[action]")]
+        public async Task<ActionResult> LinkPosOrder([FromQuery] int companyId, [FromQuery] int bookingId, [FromQuery] int posOrderId)
+        {
+            if (companyId == 0 || bookingId == 0 || posOrderId == 0)
+                return BadRequest("Invalid parameters");
 
+            var success = await mediator.Send(new LinkPosOrderCommand(companyId, bookingId, posOrderId));
+
+            if (!success) return NotFound("Booking not found");
+
+            return Ok(new { Message = "Order Linked to Booking" });
+        }
         [HttpDelete("[action]")]
-        public async Task<ActionResult> Delete([FromQuery] int id, [FromQuery] int companyId)
+        public async Task<ActionResult> Delete([FromQuery] int id, [FromQuery] int companyId, [FromQuery] int  warehouseid)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
             if (id == 0) return BadRequest("Booking ID is required");
-            var success = await mediator.Send(new DeleteBookingCommand(id, companyId));
+            var success = await mediator.Send(new DeleteBookingCommand(id, companyId, warehouseid));
             if (!success) return NotFound();
             return Ok(new { Id = id, Message = "Booking deleted" });
         }

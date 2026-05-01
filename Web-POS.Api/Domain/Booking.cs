@@ -16,10 +16,13 @@ namespace Api.Domain
         public string? ReservationName { get; private set; }
         public int? FloorPlanTableId { get; private set; }
         public int? DocumentId { get; private set; }
+
+        // ✨ NEW: The Linked POS Order ID
+        public int? PosOrderId { get; private set; }
+
         public DateTime StartTime { get; private set; } = DateTime.Now;
         public DateTime EndTime { get; private set; }
         public int GuestCount { get; private set; }
-        // 1 = Scheduled, 2 = Arrived / Waiting, 3 = In Service, 4 = Completed & Paid, 5 = No Show
         public int Status { get; private set; }
 
         [MaxLength(500)]
@@ -44,7 +47,7 @@ namespace Api.Domain
             FloorPlanTableId = floorPlanTableId;
             Note = note;
             UserId = userId;
-            Status = 1; // Scheduled
+            Status = 1;
         }
 
         public static Booking Create(int companyId, string reservationName, DateTime startTime, DateTime endTime, int guestCount = 1, int? customerId = null, int? floorPlanTableId = null, string? note = null, int? userId = null)
@@ -54,6 +57,10 @@ namespace Api.Domain
             if (startTime >= endTime) throw new ArgumentException("End time must be after start time.");
 
             return new Booking(companyId, reservationName, startTime, endTime, guestCount, customerId, floorPlanTableId, note, userId);
+        }
+        public void LinkPosOrder(int posOrderId)
+        {
+            PosOrderId = posOrderId;
         }
 
         public void MarkAsArrived() => Status = 2;
