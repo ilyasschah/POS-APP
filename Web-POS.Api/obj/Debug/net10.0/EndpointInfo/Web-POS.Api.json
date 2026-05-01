@@ -456,6 +456,47 @@
         }
       }
     },
+    "/api/Bookings/UpdateResource": {
+      "patch": {
+        "tags": [
+          "Bookings"
+        ],
+        "parameters": [
+          {
+            "name": "companyId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBookingResourceRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBookingResourceRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBookingResourceRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Bookings/Delete": {
       "delete": {
         "tags": [
@@ -3876,6 +3917,26 @@
           },
           "newValue": {
             "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateBookingResourceRequest": {
+        "type": "object",
+        "properties": {
+          "bookingId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "userId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "floorPlanTableId": {
+            "type": "integer",
+            "format": "int32",
             "nullable": true
           }
         },

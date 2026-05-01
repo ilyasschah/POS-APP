@@ -437,6 +437,27 @@
   },
   {
     "ContainingType": "Api.Controllers.BookingsController",
+    "Method": "UpdateResource",
+    "RelativePath": "api/Bookings/UpdateResource",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "Api.Models.UpdateBookingResourceRequest",
+        "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Api.Controllers.BookingsController",
     "Method": "UpdateStatus",
     "RelativePath": "api/Bookings/UpdateStatus",
     "HttpMethod": "PATCH",
