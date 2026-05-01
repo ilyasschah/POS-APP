@@ -3,6 +3,7 @@ using Api.Commands.FloorPlanTableCommands.Delete;
 using Api.Commands.FloorPlanTableCommands.Update;
 using Api.Models;
 using Api.Queries.FloorPlanTableQuery;
+using Api.Services;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,10 +14,12 @@ namespace Api.Controllers
     public class FloorPlanTablesController : ControllerBase
     {
         private readonly IMediator _mediator;
+        private readonly FloorPlanTableService _service;
 
-        public FloorPlanTablesController(IMediator mediator)
+        public FloorPlanTablesController(IMediator mediator, FloorPlanTableService service)
         {
             _mediator = mediator;
+            _service = service;
         }
 
         [HttpGet("[action]")]
@@ -64,6 +67,15 @@ namespace Api.Controllers
         {
             if (companyId == 0) return BadRequest();
             var success = await _mediator.Send(new UpdateFloorPlanTableCommand { Request = request, CompanyId = companyId });
+            if (!success) return NotFound();
+            return Ok();
+        }
+
+        [HttpPatch("[action]")]
+        public async Task<ActionResult> FreeTable([FromQuery] int tableId, [FromQuery] int companyId)
+        {
+            if (companyId == 0) return BadRequest();
+            var success = await _service.FreeTableAsync(tableId, companyId);
             if (!success) return NotFound();
             return Ok();
         }
