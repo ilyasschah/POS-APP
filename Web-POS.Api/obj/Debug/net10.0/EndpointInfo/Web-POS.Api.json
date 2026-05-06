@@ -3094,6 +3094,10 @@
               "$ref": "#/components/schemas/CheckoutItemDto"
             },
             "nullable": true
+          },
+          "orderNumber": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

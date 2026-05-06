@@ -34,14 +34,10 @@ namespace Api.Services
                             }
                         }
 
-                        string orderNumber = string.IsNullOrWhiteSpace(req.Number)
-                            ? $"ORD-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..4].ToUpper()}"
-                            : req.Number;
-
                         var newOrder = PosOrder.Create(
                             companyId: companyId,
                             userId: req.UserId,
-                            number: orderNumber,
+                            number: req.Number ?? "New Order",
                             discount: req.Discount,
                             discountType: req.DiscountType,
                             total: req.Total,

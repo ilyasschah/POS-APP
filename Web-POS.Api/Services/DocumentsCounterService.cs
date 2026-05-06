@@ -22,7 +22,7 @@ namespace Api.Services
                 throw new InvalidOperationException($"A counter with the name '{req.Name}' already exists.");
             }
 
-            var newCounter = DocumentsCounter.Create(req.Name, req.Value);
+            var newCounter = DocumentsCounter.Create(req.Name, req.Value, req.CompanyId);
             await _repository.AddAsync(newCounter);
             return newCounter;
         }

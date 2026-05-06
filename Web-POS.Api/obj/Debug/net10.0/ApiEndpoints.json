@@ -1846,6 +1846,11 @@
         "Name": "Value",
         "Type": "System.Int32",
         "IsRequired": false
+      },
+      {
+        "Name": "CompanyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [

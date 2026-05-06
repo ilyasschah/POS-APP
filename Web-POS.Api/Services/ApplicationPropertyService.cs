@@ -17,10 +17,24 @@ namespace Api.Services
 
         public async Task<ApplicationPropertyDto> CreateAsync(CreateApplicationPropertyRequest req, int companyId)
         {
-            var exists = await _repository.ExistsAsync(req.Name, companyId);
-            if (exists)
+            var company = await _companyRepository.GetByIdAsync(companyId);
+
+            var existing = await _repository.GetByNameAsync(req.Name, companyId);
+            if (existing != null)
             {
-                throw new InvalidOperationException($"Property with name '{req.Name}' already exists.");
+                // Upsert: property already exists — update the value and return
+                // it rather than throwing. The frontend may call Add on startup
+                // to seed default settings that were already persisted.
+                existing.UpdateValue(req.Value);
+                await _repository.UpdateAsync(existing);
+
+                return new ApplicationPropertyDto
+                {
+                    Id = existing.Id,
+                    Name = existing.Name,
+                    Value = existing.Value,
+                    CompanyName = company?.Name
+                };
             }
 
             var newApplicationProperty = ApplicationProperty.Create(
@@ -30,8 +44,6 @@ namespace Api.Services
             );
 
             await _repository.AddAsync(newApplicationProperty);
-
-            var company = await _companyRepository.GetByIdAsync(companyId);
 
             return new ApplicationPropertyDto
             {

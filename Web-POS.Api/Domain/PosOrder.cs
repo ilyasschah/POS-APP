@@ -20,9 +20,6 @@ namespace Api.Domain
         public int ServiceStatus { get; set; }
         public int? FloorPlanTableId { get; set; }
 
-        // Links back to the original booking (if this order came from a reservation)
-        //public int? BookingId { get; set; }
-
         [ForeignKey(nameof(UserId))]
         public virtual User? User { get; set; }
 
@@ -44,7 +41,6 @@ namespace Api.Domain
 
             ServiceStatus = serviceStatus;
             FloorPlanTableId = floorPlanTableId;
-            //BookingId = bookingId;
         }
 
         public static PosOrder Create(int companyId, int userId, string number, decimal discount, int discountType, decimal? total, int? customerId, int serviceType, int serviceStatus, int? floorPlanTableId = null)
@@ -68,10 +64,8 @@ namespace Api.Domain
             Total = total;
             CustomerId = customerId;
             ServiceType = serviceType;
-
             ServiceStatus = serviceStatus;
             FloorPlanTableId = floorPlanTableId;
-            //BookingId = bookingId;
         }
     }
 }

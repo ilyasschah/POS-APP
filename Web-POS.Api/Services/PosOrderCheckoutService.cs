@@ -1,6 +1,7 @@
 ﻿using Api.DataBase;
 using Api.Domain;
 using Api.Models;
+using Api.Repository;
 using Microsoft.EntityFrameworkCore;
 
 namespace Api.Services
@@ -8,10 +9,12 @@ namespace Api.Services
     public class PosOrderCheckoutService
     {
         private readonly AppDbContext _db;
+        private readonly DocumentsCounterRepository _counterRepo;
 
-        public PosOrderCheckoutService(AppDbContext db)
+        public PosOrderCheckoutService(AppDbContext db, DocumentsCounterRepository counterRepo)
         {
             _db = db;
+            _counterRepo = counterRepo;
         }
 
         public async Task<Document> CheckoutAsync(int companyId, int userId, CheckoutPosOrderRequest req)
@@ -44,7 +47,34 @@ namespace Api.Services
 
                     decimal documentGrandTotal = req.GrandTotal;
 
-                    string documentNumber = $"DOC-{req.DocumentTypeId}-{DateTime.UtcNow:yyyyMMdd}-{posOrder.Id}";
+                    // Enterprise document numbering: YY-CCC-NNNNNN
+                    string yy = DateTime.UtcNow.ToString("yy");
+                    string counterKey = $"DOC_{yy}_200_{companyId}";
+                    var counter = await _counterRepo.GetByNameAsync(counterKey, trackEntity: true);
+                    int nextValue;
+                    if (counter == null)
+                    {
+                        nextValue = 1;
+                        var newCounter = DocumentsCounter.Create(counterKey, nextValue, companyId);
+                        await _counterRepo.AddAsync(newCounter);
+                    }
+                    else
+                    {
+                        nextValue = counter.Value + 1;
+                        counter.UpdateValue(nextValue);
+                        await _counterRepo.UpdateAsync(counter);
+                    }
+                    string documentNumber = $"{yy}-200-{nextValue.ToString().PadLeft(6, '0')}";
+
+                    // Default null customer to Walk-In (Code = "C000")
+                    int? effectiveCustomerId = posOrder.CustomerId;
+                    if (effectiveCustomerId == null || effectiveCustomerId == 0)
+                    {
+                        effectiveCustomerId = await _db.Customers
+                            .Where(c => c.CompanyId == companyId && c.Code == "C000")
+                            .Select(c => (int?)c.Id)
+                            .FirstOrDefaultAsync();
+                    }
 
                     var document = Document.Create(
                         number: documentNumber,
@@ -53,8 +83,8 @@ namespace Api.Services
                         documentTypeId: req.DocumentTypeId,
                         warehouseId: req.WarehouseId,
                         total: documentGrandTotal,
-                        customerId: posOrder.CustomerId,
-                        orderNumber: posOrder.Number,
+                        customerId: effectiveCustomerId,
+                        orderNumber: req.OrderNumber ?? posOrder.Number,
                         discount: posOrder.Discount,
                         discountType: posOrder.DiscountType,
                         paidStatus: 1,

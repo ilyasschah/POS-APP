@@ -9,6 +9,7 @@
         public required int DocumentTypeId { get; set; }
         public required int WarehouseId { get; set; }
         public required List<CheckoutItemDto> Items { get; set; }
+        public string? OrderNumber { get; set; }
     }
 
     public class CheckoutItemDto

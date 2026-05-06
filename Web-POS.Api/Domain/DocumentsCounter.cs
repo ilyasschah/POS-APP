@@ -9,18 +9,20 @@ namespace Api.Domain
         [Key]
         public string? Name { get; set; }
         public int Value { get; set; }
+        public int CompanyId { get; private set; }
 
-        private DocumentsCounter(string name, int value)
+        private DocumentsCounter(string name, int value, int companyId)
         {
             Name = name;
             Value = value;
+            CompanyId = companyId;
         }
 
         public DocumentsCounter() { }
 
-        public static DocumentsCounter Create(string name, int value)
+        public static DocumentsCounter Create(string name, int value, int companyId)
         {
-            return new DocumentsCounter(name, value);
+            return new DocumentsCounter(name, value, companyId);
         }
 
         public void UpdateValue(int newValue)
