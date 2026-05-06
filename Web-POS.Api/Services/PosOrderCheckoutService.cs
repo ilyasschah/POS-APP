@@ -47,6 +47,19 @@ namespace Api.Services
 
                     decimal documentGrandTotal = req.GrandTotal;
 
+                    // Validate the requested warehouse exists; fall back to the
+                    // DocumentType's own warehouse so the FK never fails on
+                    // re-opened orders whose warehouse context was lost.
+                    int warehouseId = req.WarehouseId;
+                    if (warehouseId <= 0 || !await _db.Warehouses.AnyAsync(w => w.Id == warehouseId))
+                    {
+                        var docType = await _db.DocumentTypes
+                            .AsNoTracking()
+                            .FirstOrDefaultAsync(d => d.Id == req.DocumentTypeId);
+                        warehouseId = docType?.WarehouseId
+                            ?? throw new InvalidOperationException($"Warehouse {req.WarehouseId} not found and DocumentType {req.DocumentTypeId} has no fallback warehouse.");
+                    }
+
                     // Enterprise document numbering: YY-CCC-NNNNNN
                     string yy = DateTime.UtcNow.ToString("yy");
                     string counterKey = $"DOC_{yy}_200_{companyId}";
@@ -81,7 +94,7 @@ namespace Api.Services
                         userId: userId,
                         companyId: companyId,
                         documentTypeId: req.DocumentTypeId,
-                        warehouseId: req.WarehouseId,
+                        warehouseId: warehouseId,
                         total: documentGrandTotal,
                         customerId: effectiveCustomerId,
                         orderNumber: req.OrderNumber ?? posOrder.Number,

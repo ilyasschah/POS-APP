@@ -3,6 +3,7 @@ using Api.Commands.PosOrderCommands;
 using Api.Commands.PosOrderCommands.Add;
 using Api.Commands.PosOrderCommands.Delete;
 using Api.Commands.PosOrderCommands.Update;
+using Api.Commands.PosOrderCommands.Void;
 using Api.Models;
 using Api.Queries.PosOrderQuery;
 using MediatR;
@@ -144,6 +145,32 @@ namespace Api.Controllers
                 return BadRequest(ex.Message);
             }
         }
+        [HttpPost("Void")]
+        public async Task<IActionResult> Void(
+            [FromQuery] int posOrderId,
+            [FromQuery] int companyId,
+            [FromQuery] int warehouseId,
+            [FromQuery] int documentTypeId = 4)
+        {
+            if (companyId <= 0 || posOrderId <= 0 || warehouseId <= 0)
+                return BadRequest(new { message = "Company ID, Order ID, and Warehouse ID are required." });
+
+            try
+            {
+                var command = new VoidPosOrderCommand(posOrderId, companyId, warehouseId, documentTypeId);
+                var success = await _mediator.Send(command);
+
+                if (!success)
+                    return NotFound(new { message = $"PosOrder with ID {posOrderId} not found." });
+
+                return Ok(new { message = "Order voided successfully." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Void failed.", details = ex.Message });
+            }
+        }
+
         [HttpDelete("[action]")]
         public async Task<IActionResult> Delete([FromQuery] int id, [FromQuery] int companyId, [FromQuery] int warehouseId)
         {

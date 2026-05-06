@@ -3293,6 +3293,37 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "Api.Controllers.PosOrderController",
+    "Method": "Void",
+    "RelativePath": "api/PosOrder/Void",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "posOrderId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "warehouseId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "documentTypeId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Api.Controllers.PosOrderItemController",
     "Method": "BulkAdd",
     "RelativePath": "api/PosOrderItem/BulkAdd",

@@ -132,6 +132,7 @@ builder.Services.AddScoped<PosPrinterSettingsService>();
 builder.Services.AddScoped<PosPrinterSelectionSettingsService>();
 builder.Services.AddScoped<TemplateService>();
 builder.Services.AddScoped<PosOrderCheckoutService>();
+builder.Services.AddScoped<PosOrderVoidService>();
 builder.Services.AddScoped<BookingService>();
 
 builder.Services.AddMediatR(cfg =>
