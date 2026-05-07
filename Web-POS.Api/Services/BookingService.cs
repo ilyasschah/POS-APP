@@ -18,7 +18,7 @@ namespace Api.Services
                 request.EndTime,
                 request.GuestCount,
                 request.CustomerId,
-                request.FloorPlanTableId,
+                request.TableIds,
                 request.Note,
                 request.UserId
             );
@@ -40,7 +40,7 @@ namespace Api.Services
             var booking = await _repository.GetByIdAsync(request.BookingId, companyId);
             if (booking == null) return false;
 
-            booking.UpdateResource(request.UserId, request.FloorPlanTableId);
+            booking.UpdateResource(request.UserId, request.TableIds);
             return await _repository.UpdateAsync(booking);
         }
 

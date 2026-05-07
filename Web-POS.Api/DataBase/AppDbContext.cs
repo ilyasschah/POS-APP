@@ -94,8 +94,18 @@ namespace Api.DataBase
             b.Entity<FloorPlanTable>()
                 .ToTable("FloorPlanTable", tb => tb.HasTrigger("SomeTrigger"));
 
-            b.Entity<Booking>()
-                .ToTable("Booking", tb => tb.HasTrigger("SomeTrigger"));
+            b.Entity<Booking>(e =>
+            {
+                e.ToTable("Booking", tb => tb.HasTrigger("SomeTrigger"));
+                e.Property(x => x.TableIds)
+                    .HasConversion(
+                        v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
+                        v => string.IsNullOrEmpty(v)
+                            ? new List<int>()
+                            : System.Text.Json.JsonSerializer.Deserialize<List<int>>(v, (System.Text.Json.JsonSerializerOptions?)null) ?? new List<int>()
+                    )
+                    .HasColumnType("nvarchar(1000)");
+            });
             b.Entity<Payment>(e =>
             {
                 e.ToTable(tb => tb.HasTrigger("Payment_Insert_Trigger"));

@@ -2949,9 +2949,12 @@
             "type": "string",
             "nullable": true
           },
-          "floorPlanTableId": {
-            "type": "integer",
-            "format": "int32",
+          "tableIds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
             "nullable": true
           },
           "documentId": {
@@ -3265,9 +3268,12 @@
             "type": "string",
             "nullable": true
           },
-          "floorPlanTableId": {
-            "type": "integer",
-            "format": "int32",
+          "tableIds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
             "nullable": true
           },
           "startTime": {
@@ -4036,9 +4042,12 @@
             "format": "int32",
             "nullable": true
           },
-          "floorPlanTableId": {
-            "type": "integer",
-            "format": "int32",
+          "tableIds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
             "nullable": true
           }
         },

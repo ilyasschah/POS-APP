@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Api.Domain
@@ -14,10 +14,11 @@ namespace Api.Domain
 
         [MaxLength(100)]
         public string? ReservationName { get; private set; }
-        public int? FloorPlanTableId { get; private set; }
-        public int? DocumentId { get; private set; }
 
-        // ✨ NEW: The Linked POS Order ID
+        // Stored as a JSON array column — see AppDbContext ValueConverter
+        public List<int> TableIds { get; private set; } = new();
+
+        public int? DocumentId { get; private set; }
         public int? PosOrderId { get; private set; }
 
         public DateTime StartTime { get; private set; } = DateTime.Now;
@@ -28,15 +29,13 @@ namespace Api.Domain
         [MaxLength(500)]
         public string? Note { get; private set; }
 
-        [ForeignKey(nameof(FloorPlanTableId))]
-        public virtual FloorPlanTable? FloorPlanTable { get; private set; }
-
         [ForeignKey(nameof(UserId))]
         public virtual User? AssignedUser { get; private set; }
 
         public Booking() { }
 
-        private Booking(int companyId, string reservationName, DateTime startTime, DateTime endTime, int guestCount, int? customerId, int? floorPlanTableId, string? note, int? userId)
+        private Booking(int companyId, string reservationName, DateTime startTime, DateTime endTime,
+            int guestCount, int? customerId, List<int>? tableIds, string? note, int? userId)
         {
             CompanyId = companyId;
             ReservationName = reservationName;
@@ -44,24 +43,31 @@ namespace Api.Domain
             EndTime = endTime;
             GuestCount = guestCount;
             CustomerId = customerId;
-            FloorPlanTableId = floorPlanTableId;
+            TableIds = tableIds ?? new List<int>();
             Note = note;
             UserId = userId;
             Status = 1;
         }
 
-        public static Booking Create(int companyId, string reservationName, DateTime startTime, DateTime endTime, int guestCount = 1, int? customerId = null, int? floorPlanTableId = null, string? note = null, int? userId = null)
+        public static Booking Create(
+            int companyId,
+            string reservationName,
+            DateTime startTime,
+            DateTime endTime,
+            int guestCount = 1,
+            int? customerId = null,
+            List<int>? tableIds = null,
+            string? note = null,
+            int? userId = null)
         {
             if (companyId <= 0) throw new ArgumentException("Invalid Company ID");
             if (string.IsNullOrWhiteSpace(reservationName)) throw new ArgumentException("Reservation name is required.");
             if (startTime >= endTime) throw new ArgumentException("End time must be after start time.");
 
-            return new Booking(companyId, reservationName, startTime, endTime, guestCount, customerId, floorPlanTableId, note, userId);
+            return new Booking(companyId, reservationName, startTime, endTime, guestCount, customerId, tableIds, note, userId);
         }
-        public void LinkPosOrder(int posOrderId)
-        {
-            PosOrderId = posOrderId;
-        }
+
+        public void LinkPosOrder(int posOrderId) => PosOrderId = posOrderId;
 
         public void MarkAsArrived() => Status = 2;
         public void MarkAsInService(int? documentId = null)
@@ -78,10 +84,10 @@ namespace Api.Domain
             if (documentId.HasValue) DocumentId = documentId;
         }
 
-        public void UpdateResource(int? userId, int? floorPlanTableId)
+        public void UpdateResource(int? userId, List<int>? tableIds)
         {
             UserId = userId;
-            FloorPlanTableId = floorPlanTableId;
+            TableIds = tableIds ?? new List<int>();
         }
 
         public void Reschedule(DateTime newStartTime, DateTime newEndTime)

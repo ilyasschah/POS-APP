@@ -1,4 +1,4 @@
-﻿namespace Api.Models
+namespace Api.Models
 {
     public class BookingDto
     {
@@ -6,7 +6,7 @@
         public int? CustomerId { get; set; }
         public int? UserId { get; set; }
         public required string ReservationName { get; set; }
-        public int? FloorPlanTableId { get; set; }
+        public List<int> TableIds { get; set; } = new();
         public int? DocumentId { get; set; }
         public int? PosOrderId { get; set; }
         public DateTime StartTime { get; set; }
@@ -21,7 +21,7 @@
         public int? CustomerId { get; set; }
         public int? UserId { get; set; }
         public required string ReservationName { get; set; }
-        public int? FloorPlanTableId { get; set; }
+        public List<int> TableIds { get; set; } = new();
         public DateTime StartTime { get; set; }
         public DateTime EndTime { get; set; }
         public int GuestCount { get; set; }
@@ -31,9 +31,7 @@
     public class UpdateBookingStatusRequest
     {
         public int BookingId { get; set; }
-
         public int Status { get; set; }
-
         public int? DocumentId { get; set; }
     }
 
@@ -41,6 +39,6 @@
     {
         public int BookingId { get; set; }
         public int? UserId { get; set; }
-        public int? FloorPlanTableId { get; set; }
+        public List<int> TableIds { get; set; } = new();
     }
 }
