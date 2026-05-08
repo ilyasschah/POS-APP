@@ -8,10 +8,12 @@ namespace Api.Commands.PosPrinterSelectionCommands.Add
     public class AddPosPrinterSelectionCommand : IRequest<PosPrinterSelectionDto>
     {
         public CreatePosPrinterSelectionRequest Request { get; }
+        public int CompanyId { get; }
 
-        public AddPosPrinterSelectionCommand(CreatePosPrinterSelectionRequest request)
+        public AddPosPrinterSelectionCommand(CreatePosPrinterSelectionRequest request, int companyId)
         {
             Request = request;
+            CompanyId = companyId;
         }
 
         public class AddPosPrinterSelectionCommandHandler
@@ -26,7 +28,7 @@ namespace Api.Commands.PosPrinterSelectionCommands.Add
 
             public async Task<PosPrinterSelectionDto> Handle(AddPosPrinterSelectionCommand command, CancellationToken cancellationToken)
             {
-                var entity = await _service.Create(command.Request);
+                var entity = await _service.Create(command.Request, command.CompanyId);
                 return MapperPosPrinterSelection.MapToPosPrinterSelectionDto(entity);
             }
         }

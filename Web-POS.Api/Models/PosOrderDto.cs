@@ -29,6 +29,7 @@ namespace Api.Models
         public int ServiceStatus { get; set; }
         public int? FloorPlanTableId { get; set; }
         public required int WarehouseId { get; set; }
+        public int? BookingId { get; set; }
     }
     public class UpdatePosOrderStatusRequest
     {

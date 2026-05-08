@@ -18,6 +18,14 @@ namespace Api.Repository
             return await _db.PosPrinterSelections.AsNoTracking().ToListAsync();
         }
 
+        public async Task<List<PosPrinterSelection>> GetAllAsync(int companyId)
+        {
+            return await _db.PosPrinterSelections
+                .Where(p => p.CompanyId == companyId)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
         public async Task<PosPrinterSelection?> GetByIdAsync(int id, bool trackEntity = false)
         {
             var q = _db.PosPrinterSelections.AsQueryable();
@@ -31,9 +39,10 @@ namespace Api.Repository
                 .FirstOrDefaultAsync(p => p.Key == key);
         }
 
-        public async Task<bool> ExistsAsync(string key)
+        public async Task<bool> ExistsAsync(string key, int companyId)
         {
-            return await _db.PosPrinterSelections.AnyAsync(p => p.Key.ToLower() == key.ToLower());
+            return await _db.PosPrinterSelections.AnyAsync(
+                p => p.Key.ToLower() == key.ToLower() && p.CompanyId == companyId);
         }
 
         public async Task AddAsync(PosPrinterSelection entity)

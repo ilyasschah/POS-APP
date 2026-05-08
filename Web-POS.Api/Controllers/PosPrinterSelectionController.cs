@@ -13,9 +13,10 @@ namespace Api.Controllers
     public class PosPrinterSelectionsController(IMediator mediator) : ControllerBase
     {
         [HttpGet("[action]")]
-        public async Task<ActionResult<List<PosPrinterSelectionDto>>> GetAll()
+        public async Task<ActionResult<List<PosPrinterSelectionDto>>> GetAll([FromQuery] int companyId)
         {
-            var result = await mediator.Send(new GetAllPosPrinterSelectionsQuery());
+            if (companyId == 0) return BadRequest("Company ID is required.");
+            var result = await mediator.Send(new GetAllPosPrinterSelectionsQuery { CompanyId = companyId });
             return Ok(result);
         }
 
@@ -34,9 +35,10 @@ namespace Api.Controllers
         }
 
         [HttpPost("[action]")]
-        public async Task<ActionResult<PosPrinterSelectionDto>> Add([FromQuery] CreatePosPrinterSelectionRequest req)
+        public async Task<ActionResult<PosPrinterSelectionDto>> Add([FromQuery] int companyId, [FromBody] CreatePosPrinterSelectionRequest req)
         {
-            var result = await mediator.Send(new AddPosPrinterSelectionCommand(req));
+            if (companyId == 0) return BadRequest("Company ID is required.");
+            var result = await mediator.Send(new AddPosPrinterSelectionCommand(req, companyId));
             return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
         }
 

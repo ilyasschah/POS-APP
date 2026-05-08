@@ -13,7 +13,7 @@ namespace Api.Services
             _repository = repository;
         }
 
-        public async Task<PosPrinterSettings> Create(CreatePosPrinterSettingsRequest req)
+        public async Task<PosPrinterSettings> Create(CreatePosPrinterSettingsRequest req, int companyId)
         {
             if (await _repository.ExistsByPrinterNameAsync(req.PrinterName))
                 throw new InvalidOperationException($"A printer with name '{req.PrinterName}' already exists.");
@@ -23,6 +23,7 @@ namespace Api.Services
                 req.PaperWidth ?? 32
             );
 
+            entity.CompanyId = companyId;
             entity.Header = req.Header;
             entity.Footer = req.Footer;
             entity.FeedLines = req.FeedLines ?? 0;

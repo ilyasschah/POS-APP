@@ -21,6 +21,15 @@ namespace Api.Repository
                 .ToListAsync();
         }
 
+        public async Task<List<PosPrinterSelectionSettings>> GetAllAsync(int companyId)
+        {
+            return await _db.PosPrinterSelectionSettings
+                .Where(x => x.CompanyId == companyId)
+                .AsNoTracking()
+                .Include(x => x.PosPrinterSelection)
+                .ToListAsync();
+        }
+
         public async Task<PosPrinterSelectionSettings?> GetByIdAsync(int id, bool trackEntity = false)
         {
             var q = _db.PosPrinterSelectionSettings.AsQueryable();
@@ -30,11 +39,11 @@ namespace Api.Repository
                 .FirstOrDefaultAsync(x => x.Id == id);
         }
 
-        public async Task<List<PosPrinterSelectionSettings>> GetBySelectionIdAsync(int posPrinterSelectionId)
+        public async Task<List<PosPrinterSelectionSettings>> GetBySelectionIdAsync(int posPrinterSelectionId, int companyId)
         {
             return await _db.PosPrinterSelectionSettings
+                .Where(x => x.PosPrinterSelectionId == posPrinterSelectionId && x.CompanyId == companyId)
                 .AsNoTracking()
-                .Where(x => x.PosPrinterSelectionId == posPrinterSelectionId)
                 .Include(x => x.PosPrinterSelection)
                 .ToListAsync();
         }

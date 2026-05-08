@@ -90,6 +90,21 @@ namespace Api.Domain
             TableIds = tableIds ?? new List<int>();
         }
 
+        public void Update(string reservationName, DateTime startTime, DateTime endTime,
+            int guestCount, int? userId, List<int>? tableIds, string? note, int? customerId = null)
+        {
+            if (string.IsNullOrWhiteSpace(reservationName)) throw new ArgumentException("Reservation name is required.");
+            if (startTime >= endTime) throw new ArgumentException("End time must be after start time.");
+            ReservationName = reservationName;
+            StartTime = startTime;
+            EndTime = endTime;
+            GuestCount = guestCount;
+            UserId = userId;
+            TableIds = tableIds ?? new List<int>();
+            Note = note;
+            CustomerId = customerId;
+        }
+
         public void Reschedule(DateTime newStartTime, DateTime newEndTime)
         {
             if (newStartTime >= newEndTime) throw new ArgumentException("End time must be after start time.");

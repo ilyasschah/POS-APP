@@ -41,4 +41,17 @@ namespace Api.Models
         public int? UserId { get; set; }
         public List<int> TableIds { get; set; } = new();
     }
+
+    public class UpdateBookingRequest
+    {
+        public int BookingId { get; set; }
+        public required string ReservationName { get; set; }
+        public DateTime StartTime { get; set; }
+        public DateTime EndTime { get; set; }
+        public int GuestCount { get; set; }
+        public int? CustomerId { get; set; }
+        public int? UserId { get; set; }
+        public List<int> TableIds { get; set; } = new();
+        public string? Note { get; set; }
+    }
 }

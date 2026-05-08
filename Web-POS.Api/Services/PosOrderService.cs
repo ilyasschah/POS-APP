@@ -34,6 +34,15 @@ namespace Api.Services
                             }
                         }
 
+                        int? effectiveCustomerId = req.CustomerId;
+                        if (!effectiveCustomerId.HasValue || effectiveCustomerId == 0)
+                        {
+                            effectiveCustomerId = await _repository._db.Customers
+                                .Where(c => c.CompanyId == companyId && c.Code == "C000")
+                                .Select(c => (int?)c.Id)
+                                .FirstOrDefaultAsync();
+                        }
+
                         var newOrder = PosOrder.Create(
                             companyId: companyId,
                             userId: req.UserId,
@@ -41,13 +50,28 @@ namespace Api.Services
                             discount: req.Discount,
                             discountType: req.DiscountType,
                             total: req.Total,
-                            customerId: req.CustomerId,
+                            customerId: effectiveCustomerId,
                             serviceType: req.ServiceType,
                             serviceStatus: req.ServiceStatus,
                             floorPlanTableId: req.FloorPlanTableId
                         );
 
                         await _repository.AddAsync(newOrder);
+
+                        // Link booking → order. AddAsync already called SaveChangesAsync so
+                        // newOrder.Id is now the real DB identity value.
+                        if (req.BookingId.HasValue)
+                        {
+                            var booking = await _repository._db.Bookings
+                                .FirstOrDefaultAsync(b => b.Id == req.BookingId.Value && b.CompanyId == companyId);
+                            if (booking != null)
+                            {
+                                booking.LinkPosOrder(newOrder.Id);
+                                booking.UpdateStatus(3); // In Service
+                                await _repository._db.SaveChangesAsync(); // flush booking changes before commit
+                            }
+                        }
+
                         await transaction.CommitAsync();
                         return newOrder;
                     }
@@ -93,6 +117,26 @@ namespace Api.Services
                             {
                                 table.UpdateStatus(req.ServiceStatus);
                                 _repository.UpdateFloorPlanTable(table);
+                            }
+                        }
+
+                        // When service type changes away from Dine-In (0), free and clear
+                        // any tables that were reserved on the linked booking.
+                        if (req.ServiceType != 0)
+                        {
+                            var booking = await _repository._db.Bookings
+                                .FirstOrDefaultAsync(b => b.PosOrderId == req.Id && b.CompanyId == companyId);
+                            if (booking != null && booking.TableIds.Count > 0)
+                            {
+                                foreach (var tableId in booking.TableIds)
+                                {
+                                    var t = await _repository._db.FloorPlanTables
+                                        .FirstOrDefaultAsync(t => t.Id == tableId && t.CompanyId == companyId);
+                                    if (t != null) { t.UpdateStatus(0); _repository._db.FloorPlanTables.Update(t); }
+                                }
+                                // Replace the list reference so EF Core detects the change
+                                // (in-place .Clear() is invisible to the JSON ValueConverter).
+                                booking.UpdateResource(booking.UserId, new List<int>());
                             }
                         }
 

@@ -7,6 +7,8 @@ namespace Api.Queries.PosPrinterSelectionQuery
 {
     public class GetAllPosPrinterSelectionsQuery : IRequest<List<PosPrinterSelectionDto>>
     {
+        public int CompanyId { get; set; }
+
         public class GetAllPosPrinterSelectionsQueryHandler
             : IRequestHandler<GetAllPosPrinterSelectionsQuery, List<PosPrinterSelectionDto>>
         {
@@ -19,7 +21,7 @@ namespace Api.Queries.PosPrinterSelectionQuery
 
             public async Task<List<PosPrinterSelectionDto>> Handle(GetAllPosPrinterSelectionsQuery request, CancellationToken cancellationToken)
             {
-                var list = await _repository.GetAllAsync();
+                var list = await _repository.GetAllAsync(request.CompanyId);
                 return list.Select(MapperPosPrinterSelection.MapToPosPrinterSelectionDto).ToList();
             }
         }

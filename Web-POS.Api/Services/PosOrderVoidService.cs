@@ -92,16 +92,25 @@ namespace Api.Services
                         }
                     }
 
-                    // Free the floor plan table
-                    if (posOrder.FloorPlanTableId.HasValue)
+                    // Free floor plan tables and sync booking status
+                    var booking = await _db.Bookings
+                        .FirstOrDefaultAsync(b => b.PosOrderId == posOrderId && b.CompanyId == companyId);
+
+                    if (booking != null)
+                    {
+                        var tableIdsToFree = new List<int>(booking.TableIds);
+                        _db.Bookings.Remove(booking);
+                        foreach (var tableId in tableIdsToFree)
+                        {
+                            var t = await _db.FloorPlanTables.FirstOrDefaultAsync(t => t.Id == tableId && t.CompanyId == companyId);
+                            if (t != null) { t.UpdateStatus(0); _db.FloorPlanTables.Update(t); }
+                        }
+                    }
+                    else if (posOrder.FloorPlanTableId.HasValue)
                     {
                         var table = await _db.FloorPlanTables
                             .FirstOrDefaultAsync(t => t.Id == posOrder.FloorPlanTableId.Value && t.CompanyId == companyId);
-                        if (table != null)
-                        {
-                            table.UpdateStatus(0);
-                            _db.FloorPlanTables.Update(table);
-                        }
+                        if (table != null) { table.UpdateStatus(0); _db.FloorPlanTables.Update(table); }
                     }
 
                     var itemIds = items.Select(i => i.Id).ToList();

@@ -9,10 +9,12 @@ namespace Api.Commands.PosPrinterSettingsCommands.Add
     public class AddPosPrinterSettingsCommand : IRequest<PosPrinterSettingsDto>
     {
         public CreatePosPrinterSettingsRequest Request { get; }
+        public int CompanyId { get; }
 
-        public AddPosPrinterSettingsCommand(CreatePosPrinterSettingsRequest request)
+        public AddPosPrinterSettingsCommand(CreatePosPrinterSettingsRequest request, int companyId)
         {
             Request = request;
+            CompanyId = companyId;
         }
 
         public class AddPosPrinterSettingsCommandHandler
@@ -27,7 +29,7 @@ namespace Api.Commands.PosPrinterSettingsCommands.Add
 
             public async Task<PosPrinterSettingsDto> Handle(AddPosPrinterSettingsCommand command, CancellationToken cancellationToken)
             {
-                var entity = await _service.Create(command.Request);
+                var entity = await _service.Create(command.Request, command.CompanyId);
                 return MapperPosPrinterSettings.MapToPosPrinterSettingsDto(entity);
             }
         }

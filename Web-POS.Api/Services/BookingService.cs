@@ -44,6 +44,24 @@ namespace Api.Services
             return await _repository.UpdateAsync(booking);
         }
 
+        public async Task<bool> UpdateAsync(UpdateBookingRequest request, int companyId)
+        {
+            var booking = await _repository.GetByIdAsync(request.BookingId, companyId);
+            if (booking == null) return false;
+
+            booking.Update(
+                request.ReservationName,
+                request.StartTime,
+                request.EndTime,
+                request.GuestCount,
+                request.UserId,
+                request.TableIds,
+                request.Note,
+                request.CustomerId
+            );
+            return await _repository.UpdateAsync(booking);
+        }
+
         public async Task<bool> DeleteAsync(int id, int companyId)
         {
             var booking = await _repository.GetByIdAsync(id, companyId);

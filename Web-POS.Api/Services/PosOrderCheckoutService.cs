@@ -167,14 +167,22 @@ namespace Api.Services
 
                     _db.PosOrderItems.RemoveRange(posOrderItems);
 
-                    if (posOrder.FloorPlanTableId.HasValue)
+                    var booking = await _db.Bookings
+                        .FirstOrDefaultAsync(b => b.PosOrderId == posOrder.Id && b.CompanyId == companyId);
+
+                    if (booking != null)
+                    {
+                        booking.UpdateStatus(4, document.Id); // Completed + link receipt
+                        foreach (var tableId in booking.TableIds)
+                        {
+                            var t = await _db.FloorPlanTables.FirstOrDefaultAsync(t => t.Id == tableId && t.CompanyId == companyId);
+                            if (t != null) { t.UpdateStatus(0); _db.FloorPlanTables.Update(t); }
+                        }
+                    }
+                    else if (posOrder.FloorPlanTableId.HasValue)
                     {
                         var table = await _db.FloorPlanTables.FirstOrDefaultAsync(t => t.Id == posOrder.FloorPlanTableId.Value && t.CompanyId == companyId);
-                        if (table != null)
-                        {
-                            table.UpdateStatus(0);
-                            _db.FloorPlanTables.Update(table);
-                        }
+                        if (table != null) { table.UpdateStatus(0); _db.FloorPlanTables.Update(table); }
                     }
 
                     _db.PosOrders.Remove(posOrder);

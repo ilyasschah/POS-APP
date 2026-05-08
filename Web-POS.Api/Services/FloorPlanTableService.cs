@@ -63,6 +63,15 @@ namespace Api.Services
             return await _repository.UpdateAsync(entity);
         }
 
+        public async Task<bool> OccupyTableAsync(int tableId, int companyId)
+        {
+            var entity = await _repository.GetByIdAsync(tableId, companyId);
+            if (entity == null) return false;
+
+            entity.UpdateStatus(1);
+            return await _repository.UpdateAsync(entity);
+        }
+
         public async Task<bool> FreeTableAsync(int tableId, int companyId)
         {
             var entity = await _repository.GetByIdAsync(tableId, companyId);

@@ -13,12 +13,13 @@ namespace Api.Services
             _repository = repository;
         }
 
-        public async Task<PosPrinterSelection> Create(CreatePosPrinterSelectionRequest req)
+        public async Task<PosPrinterSelection> Create(CreatePosPrinterSelectionRequest req, int companyId)
         {
-            if (await _repository.ExistsAsync(req.Key))
-                throw new InvalidOperationException($"Printer selection with key '{req.Key}' already exists.");
+            if (await _repository.ExistsAsync(req.Key, companyId))
+                throw new InvalidOperationException($"Printer selection with key '{req.Key}' already exists for this company.");
 
             var entity = PosPrinterSelection.Create(req.Key, req.PrinterName, req.IsEnabled ?? false);
+            entity.CompanyId = companyId;
             await _repository.AddAsync(entity);
             return entity;
         }

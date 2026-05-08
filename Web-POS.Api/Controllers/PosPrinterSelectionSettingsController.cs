@@ -13,9 +13,10 @@ namespace Api.Controllers
     public class PosPrinterSelectionSettingsController(IMediator mediator) : ControllerBase
     {
         [HttpGet("[action]")]
-        public async Task<ActionResult<List<PosPrinterSelectionSettingsDto>>> GetAll()
+        public async Task<ActionResult<List<PosPrinterSelectionSettingsDto>>> GetAll([FromQuery] int companyId)
         {
-            var result = await mediator.Send(new GetAllPosPrinterSelectionSettingsQuery());
+            if (companyId == 0) return BadRequest("Company ID is required.");
+            var result = await mediator.Send(new GetAllPosPrinterSelectionSettingsQuery { CompanyId = companyId });
             return Ok(result);
         }
 
@@ -27,16 +28,22 @@ namespace Api.Controllers
         }
 
         [HttpGet("[action]/{posPrinterSelectionId:int}")]
-        public async Task<ActionResult<List<PosPrinterSelectionSettingsDto>>> GetBySelectionId(int posPrinterSelectionId)
+        public async Task<ActionResult<List<PosPrinterSelectionSettingsDto>>> GetBySelectionId(int posPrinterSelectionId, [FromQuery] int companyId)
         {
-            var result = await mediator.Send(new GetPosPrinterSelectionSettingsBySelectionIdQuery { PosPrinterSelectionId = posPrinterSelectionId });
+            if (companyId == 0) return BadRequest("Company ID is required.");
+            var result = await mediator.Send(new GetPosPrinterSelectionSettingsBySelectionIdQuery
+            {
+                PosPrinterSelectionId = posPrinterSelectionId,
+                CompanyId = companyId
+            });
             return Ok(result);
         }
 
         [HttpPost("[action]")]
-        public async Task<ActionResult<PosPrinterSelectionSettingsDto>> Add([FromQuery] CreatePosPrinterSelectionSettingsRequest req)
+        public async Task<ActionResult<PosPrinterSelectionSettingsDto>> Add([FromQuery] int companyId, [FromBody] CreatePosPrinterSelectionSettingsRequest req)
         {
-            var result = await mediator.Send(new AddPosPrinterSelectionSettingsCommand(req));
+            if (companyId == 0) return BadRequest("Company ID is required.");
+            var result = await mediator.Send(new AddPosPrinterSelectionSettingsCommand(req, companyId));
             return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
         }
 

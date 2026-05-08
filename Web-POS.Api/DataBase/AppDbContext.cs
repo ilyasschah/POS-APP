@@ -1,6 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System.Reflection.Emit;
 using Api.Domain;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using System.Linq;
+using System;
 namespace Api.DataBase
 {
     public class AppDbContext : DbContext
@@ -97,6 +100,12 @@ namespace Api.DataBase
             b.Entity<Booking>(e =>
             {
                 e.ToTable("Booking", tb => tb.HasTrigger("SomeTrigger"));
+
+                var intListComparer = new ValueComparer<List<int>>(
+                    (c1, c2) => c1.SequenceEqual(c2),
+                    c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+                    c => c.ToList());
+
                 e.Property(x => x.TableIds)
                     .HasConversion(
                         v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
@@ -104,7 +113,8 @@ namespace Api.DataBase
                             ? new List<int>()
                             : System.Text.Json.JsonSerializer.Deserialize<List<int>>(v, (System.Text.Json.JsonSerializerOptions?)null) ?? new List<int>()
                     )
-                    .HasColumnType("nvarchar(1000)");
+                    .HasColumnType("nvarchar(1000)")
+                    .Metadata.SetValueComparer(intListComparer);
             });
             b.Entity<Payment>(e =>
             {

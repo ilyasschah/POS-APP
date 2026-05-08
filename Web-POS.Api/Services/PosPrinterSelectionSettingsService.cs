@@ -13,7 +13,7 @@ namespace Api.Services
             _repository = repository;
         }
 
-        public async Task<PosPrinterSelectionSettings> Create(CreatePosPrinterSelectionSettingsRequest req)
+        public async Task<PosPrinterSelectionSettings> Create(CreatePosPrinterSelectionSettingsRequest req, int companyId)
         {
             if (!await _repository.SelectionExistsAsync(req.PosPrinterSelectionId))
                 throw new InvalidOperationException($"PosPrinterSelection with Id '{req.PosPrinterSelectionId}' does not exist.");
@@ -46,6 +46,7 @@ namespace Api.Services
                 printLogoFullWidth: req.PrintLogoFullWidth ?? false
             );
 
+            entity.CompanyId = companyId;
             await _repository.AddAsync(entity);
             return entity;
         }

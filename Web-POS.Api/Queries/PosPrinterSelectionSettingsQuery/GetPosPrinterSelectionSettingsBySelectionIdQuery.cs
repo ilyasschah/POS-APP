@@ -8,6 +8,7 @@ namespace Api.Queries.PosPrinterSelectionSettingsQuery
     public class GetPosPrinterSelectionSettingsBySelectionIdQuery : IRequest<List<PosPrinterSelectionSettingsDto>>
     {
         public int PosPrinterSelectionId { get; set; }
+        public int CompanyId { get; set; }
 
         public class GetPosPrinterSelectionSettingsBySelectionIdQueryHandler
             : IRequestHandler<GetPosPrinterSelectionSettingsBySelectionIdQuery, List<PosPrinterSelectionSettingsDto>>
@@ -21,7 +22,7 @@ namespace Api.Queries.PosPrinterSelectionSettingsQuery
 
             public async Task<List<PosPrinterSelectionSettingsDto>> Handle(GetPosPrinterSelectionSettingsBySelectionIdQuery request, CancellationToken cancellationToken)
             {
-                var list = await _repository.GetBySelectionIdAsync(request.PosPrinterSelectionId);
+                var list = await _repository.GetBySelectionIdAsync(request.PosPrinterSelectionId, request.CompanyId);
                 return list.Select(MapperPosPrinterSelectionSettings.MapToPosPrinterSelectionSettingsDto).ToList();
             }
         }
