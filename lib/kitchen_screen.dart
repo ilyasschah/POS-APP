@@ -56,8 +56,7 @@ class KitchenOrder {
 
 // --- MAIN SCREEN ---
 class KitchenScreen extends StatefulWidget {
-  final int
-  companyId; // TODO: We should make it injectable from the main.dart file or a config file.
+  final int companyId;
 
   const KitchenScreen({super.key, required this.companyId});
 
@@ -119,7 +118,7 @@ class _KitchenScreenState extends State<KitchenScreen> {
           tableName: item['tableName'] as String?,
           serviceType: (item['serviceType'] ?? item['ServiceType'] ?? 1) as int,
           serviceStatus: (item['serviceStatus'] ?? 2) as int,
-          dateCreated: null, // TODO: Not provided by PosOrder entity
+          dateCreated: null,
           items: kitchenItems,
         );
       }).toList();
@@ -209,6 +208,7 @@ class _KitchenScreenState extends State<KitchenScreen> {
                     companyId: widget.companyId,
                     onRemove: () => _removeOrder(order.id),
                     onMarkReady: (id) async {
+                      final messenger = ScaffoldMessenger.of(context);
                       try {
                         final success = await _apiClient.updateStatus(
                           widget.companyId,
@@ -216,27 +216,24 @@ class _KitchenScreenState extends State<KitchenScreen> {
                           3,
                         );
 
+                        if (!mounted) return;
                         if (success) {
-                          if (mounted) {
-                            _removeOrder(id);
-
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("Order Marked as Ready!"),
-                                backgroundColor: Colors.green,
-                              ),
-                            );
-                          }
-                        }
-                      } catch (e) {
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text("Error: $e"),
-                              backgroundColor: Colors.red,
+                          _removeOrder(id);
+                          messenger.showSnackBar(
+                            const SnackBar(
+                              content: Text("Order Marked as Ready!"),
+                              backgroundColor: Colors.green,
                             ),
                           );
                         }
+                      } catch (e) {
+                        if (!mounted) return;
+                        messenger.showSnackBar(
+                          SnackBar(
+                            content: Text("Error: $e"),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
                       }
                     },
                   );
