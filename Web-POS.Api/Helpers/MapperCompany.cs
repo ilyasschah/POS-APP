@@ -11,6 +11,7 @@ public static class MapperCompany
         {
             Id = entity.Id,
             Name = entity.Name,
+            Logo = entity.Logo,
             CountryId = entity.CountryId,
             CountryName = entity.Country?.Name,
             Address = entity.Address,

@@ -57,6 +57,7 @@ namespace Api.DataBase
         public DbSet<DocumentsCounter> DocumentsCounter { get; set; }
         public DbSet<ZReportPaymentSummary> ZReportPaymentSummaries { get; internal set; }
         public DbSet<Booking> Bookings { get; set; }
+        public DbSet<DashboardSalesDataView> DashboardSalesDataViews { get; set; }
 
         protected override void ConfigureConventions(ModelConfigurationBuilder cfg)
         {
@@ -67,6 +68,11 @@ namespace Api.DataBase
 
             base.OnModelCreating(b);
 
+            b.Entity<DashboardSalesDataView>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToView("vw_DashboardSalesData");
+            });
             b.Entity<Document>(e =>
             {
                 e.ToTable(table => table.HasTrigger("Document_Insert_Trigger"));

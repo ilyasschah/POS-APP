@@ -20,8 +20,6 @@ namespace Api.Domain
                 throw new ArgumentException("Invalid CompanyId", nameof(companyId));
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentException("Name must not be empty.", nameof(name));
-            if (string.IsNullOrWhiteSpace(value))
-                throw new ArgumentException("Value must not be empty.", nameof(value));
 
             CompanyId = companyId;
             Name = name.Trim();
@@ -37,8 +35,6 @@ namespace Api.Domain
 
         public void UpdateValue(string value)
         {
-            if (string.IsNullOrWhiteSpace(value))
-                throw new ArgumentException("Value must not be empty.", nameof(value));
             Value = value;
         }
     }
