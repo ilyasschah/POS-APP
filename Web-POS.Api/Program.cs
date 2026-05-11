@@ -86,6 +86,7 @@ builder.Services.AddScoped<PosPrinterSelectionSettingsRepository>();
 builder.Services.AddScoped<PosPrinterSettingsRepository>();
 builder.Services.AddScoped<TemplateRepository>();
 builder.Services.AddScoped<BookingRepository>();
+builder.Services.AddScoped<UserDevicePinRepository>();
 
 // ================== SERVICES ==================
 builder.Services.AddScoped<BarcodeService>();

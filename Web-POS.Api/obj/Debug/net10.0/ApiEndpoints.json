@@ -176,6 +176,22 @@
     ]
   },
   {
+    "ContainingType": "Api.Controllers.AuthController",
+    "Method": "SetDevicePin",
+    "RelativePath": "api/Auth/SetDevicePin",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "body",
+        "Type": "Api.Models.SetDevicePinRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Api.Controllers.BarcodesController",
     "Method": "Add",
     "RelativePath": "api/Barcodes/Add",

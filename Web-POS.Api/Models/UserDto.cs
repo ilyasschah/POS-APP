@@ -10,6 +10,8 @@ public class UserDto
     public int AccessLevel { get; set; }
     public bool IsEnabled { get; set; }
     public string? Email { get; set; }
+    public bool HasPinForThisDevice { get; set; }
+    public string? HashedPin { get; set; }
 }
 
 public class CreateUserRequest

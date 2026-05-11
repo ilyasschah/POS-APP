@@ -1,11 +1,17 @@
-﻿using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
+﻿using Api.Domain;
+using Api.Models;
+using Api.Repository;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
+using Api.Attributes;
 
 namespace Api.Controllers;
 
+[SwaggerVisible]
 [ApiController]
 [Route("api/[controller]")]
 public class AuthController(IConfiguration config) : ControllerBase
@@ -30,7 +36,8 @@ public class AuthController(IConfiguration config) : ControllerBase
         public object User { get; set; } = new { Id = 1, Username = DemoUsername, Roles = new[] { "Admin" } };
         public string? Message { get; set; }
     }
-
+    
+    
     [HttpPost("[action]")]
     public ActionResult<LoginResponse> Login([FromBody] LoginRequest body)
     {
@@ -47,7 +54,50 @@ public class AuthController(IConfiguration config) : ControllerBase
         var (token, expiresIn) = CreateJwt(body.Username);
         return Ok(new LoginResponse { Success = true, Token = token, ExpiresIn = expiresIn });
     }
+    [HttpPost("SetDevicePin")]
+    public async Task<IActionResult> SetDevicePin([FromBody] SetDevicePinRequest body,[FromServices] UserDevicePinRepository pinRepo)
+    {
+        if (string.IsNullOrWhiteSpace(body.Pin) || body.Pin.Length < 4)
+            return BadRequest(new { message = "PIN must be at least 4 digits." });
 
+        if (string.IsNullOrWhiteSpace(body.DeviceId))
+            return BadRequest(new { message = "Device ID is required." });
+
+        // 1. Hash the PIN using SHA256
+        using var sha256 = SHA256.Create();
+        var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(body.Pin));
+        var hashedPin = Convert.ToBase64String(hashedBytes);
+
+        // 2. Check if a PIN already exists for this User on this exact Device
+        var existingPinRecord = await pinRepo.GetByUserAndDeviceAsync(body.UserId, body.DeviceId);
+
+        if (existingPinRecord != null)
+        {
+            // Update existing
+            existingPinRecord.HashedPin = hashedPin;
+            await pinRepo.UpdateAsync(existingPinRecord);
+        }
+        else
+        {
+            // Create new
+            var newPinRecord = new UserDevicePin
+            {
+                UserId = body.UserId,
+                CompanyId = body.CompanyId,
+                DeviceId = body.DeviceId,
+                HashedPin = hashedPin,
+                CreatedAt = DateTime.UtcNow
+            };
+            await pinRepo.AddAsync(newPinRecord);
+        }
+
+        return Ok(new
+        {
+            Success = true,
+            Message = "Device PIN set successfully.",
+            HashedPin = hashedPin
+        });
+    }
     private (string token, int expiresIn) CreateJwt(string username)
     {
         var issuer = config["Jwt:Issuer"] ?? "Products.Api";

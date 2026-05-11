@@ -12,6 +12,7 @@ namespace Api.DataBase
         {
         }
         public DbSet<Currency> Currencies { get; set; }
+        public DbSet<UserDevicePin> UserDevicePins { get; set; }
         public DbSet<ProductGroup> ProductGroups { get; set; }
         public DbSet<Product> Products { get; set; } 
         public DbSet<Barcode> Barcodes { get; set; }
