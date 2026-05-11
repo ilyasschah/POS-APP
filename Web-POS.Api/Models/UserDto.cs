@@ -36,3 +36,8 @@ public class UpdateUserRequest
         public string? Email { get; set; }
     
 }
+public class AdminResetPasswordRequest
+{
+    public int UserId { get; set; }
+    public required string NewPassword { get; set; }
+}

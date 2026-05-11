@@ -1,20 +1,23 @@
-﻿using Api.Domain;
+﻿using Api.Attributes;
+using Api.Commands.UserCommands.Delete;
+using Api.Domain;
 using Api.Models;
+using Api.Queries.UserQuery;
 using Api.Repository;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using Api.Attributes;
 
 namespace Api.Controllers;
 
 [SwaggerVisible]
 [ApiController]
 [Route("api/[controller]")]
-public class AuthController(IConfiguration config) : ControllerBase
+public class AuthController(IConfiguration config , IMediator mediator) : ControllerBase
 {
     // ---- TEMP credentials so you can test immediately
     // username: admin   password: Admin@123
@@ -43,8 +46,6 @@ public class AuthController(IConfiguration config) : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(body.Username) || string.IsNullOrWhiteSpace(body.Password))
             return BadRequest(new { message = "Username and password are required." });
-
-        // Step-1: in-memory check. (Next step we’ll switch to DB + hash.)
         if (!string.Equals(body.Username, DemoUsername, StringComparison.OrdinalIgnoreCase) ||
             body.Password != DemoPassword)
         {
@@ -62,24 +63,18 @@ public class AuthController(IConfiguration config) : ControllerBase
 
         if (string.IsNullOrWhiteSpace(body.DeviceId))
             return BadRequest(new { message = "Device ID is required." });
-
-        // 1. Hash the PIN using SHA256
         using var sha256 = SHA256.Create();
         var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(body.Pin));
         var hashedPin = Convert.ToBase64String(hashedBytes);
-
-        // 2. Check if a PIN already exists for this User on this exact Device
         var existingPinRecord = await pinRepo.GetByUserAndDeviceAsync(body.UserId, body.DeviceId);
 
         if (existingPinRecord != null)
         {
-            // Update existing
             existingPinRecord.HashedPin = hashedPin;
             await pinRepo.UpdateAsync(existingPinRecord);
         }
         else
         {
-            // Create new
             var newPinRecord = new UserDevicePin
             {
                 UserId = body.UserId,
@@ -97,6 +92,22 @@ public class AuthController(IConfiguration config) : ControllerBase
             Message = "Device PIN set successfully.",
             HashedPin = hashedPin
         });
+    }
+    [HttpGet("GetActiveDevices")]
+    public async Task<ActionResult<List<UserDeviceDto>>> GetActiveDevices([FromQuery] int userId, [FromQuery] int companyId)
+    {
+        if (companyId == 0) return BadRequest("Company ID is required");
+        var result = await mediator.Send(new GetActiveDevicesQuery { UserId = userId, CompanyId = companyId });
+        return Ok(result);
+    }
+
+    [HttpDelete("RevokeDevice")]
+    public async Task<ActionResult> RevokeDevice([FromQuery] int userId, [FromQuery] string deviceId, [FromQuery] int companyId)
+    {
+        if (companyId == 0) return BadRequest("Company ID is required");
+        var result = await mediator.Send(new RevokeDeviceCommand { UserId = userId, DeviceId = deviceId, CompanyId = companyId });
+        if (!result) return NotFound("Device or PIN not found.");
+        return Ok(new { Success = true, Message = "Device revoked successfully" });
     }
     private (string token, int expiresIn) CreateJwt(string username)
     {

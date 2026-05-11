@@ -1,6 +1,5 @@
 using FluentValidation;
 using MediatR;
-using Api.Helpers;
 using Api.Repository;
 using Api.Models;
 
@@ -9,6 +8,7 @@ namespace Api.Queries.UserQuery;
 public class GetAllUsersQuery : IRequest<List<UserDto>>
 {
     public int CompanyId { get; set; }
+    public string? DeviceId { get; set; }
 
     public class GetAllUsersQueryHandler : IRequestHandler<GetAllUsersQuery, List<UserDto>>
     {
@@ -21,10 +21,10 @@ public class GetAllUsersQuery : IRequest<List<UserDto>>
 
         public async Task<List<UserDto>> Handle(GetAllUsersQuery request, CancellationToken cancellationToken)
         {
-            var entities = await _repository.GetAllAsync(request.CompanyId);
-            return entities.Select(MapperUser.MapToUserDto).ToList();
+            return await _repository.GetAllUsersAsync(request.CompanyId, request.DeviceId);
         }
     }
+
     public class GetAllUsersQueryValidator : AbstractValidator<GetAllUsersQuery>
     {
         public GetAllUsersQueryValidator()

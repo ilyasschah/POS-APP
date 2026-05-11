@@ -14,35 +14,31 @@ public class UserRepository
         _db = db;
     }
 
-    public async Task<List<User>> GetAllAsync(int companyId)
+    
+    public async Task<List<UserDto>> GetAllUsersAsync(int companyId, string? deviceId)
     {
         return await _db.Users
             .AsNoTracking()
-            .Where(u => u.CompanyId == companyId)
+            .Where(u => u.CompanyId == companyId && u.IsEnabled)
+            .Select(u => new
+            {
+                User = u,
+                Pin = _db.UserDevicePins.FirstOrDefault(p => p.UserId == u.Id && p.DeviceId == deviceId)
+            })
+            .Select(x => new UserDto
+            {
+                Id = x.User.Id,
+                CompanyId = x.User.CompanyId,
+                FirstName = x.User.FirstName,
+                LastName = x.User.LastName,
+                Username = x.User.Username,
+                AccessLevel = x.User.AccessLevel,
+                IsEnabled = x.User.IsEnabled,
+                Email = x.User.Email,
+                HasPinForThisDevice = x.Pin != null,
+                HashedPin = x.Pin != null ? x.Pin.HashedPin : null
+            })
             .ToListAsync();
-    }
-    public async Task<List<UserDto>> GetAllUsersAsync(int companyId, string? deviceId)
-    {
-        var query = from u in _db.Users
-                    where u.CompanyId == companyId && u.IsEnabled
-                    from pin in _db.UserDevicePins
-                        .Where(p => p.UserId == u.Id && p.DeviceId == deviceId)
-                        .DefaultIfEmpty()
-                    select new UserDto
-                    {
-                        Id = u.Id,
-                        CompanyId = u.CompanyId,
-                        FirstName = u.FirstName,
-                        LastName = u.LastName,
-                        Username = u.Username,
-                        AccessLevel = u.AccessLevel,
-                        IsEnabled = u.IsEnabled,
-                        Email = u.Email,
-                        HasPinForThisDevice = pin != null,
-                        HashedPin = pin != null ? pin.HashedPin : null
-                    };
-
-        return await query.ToListAsync();
     }
     public async Task<User?> GetByIdAsync(int id, int companyId)
     {

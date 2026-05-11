@@ -17,10 +17,10 @@ namespace Api.Controllers;
 public class UsersController(IMediator mediator) : ControllerBase
 {
     [HttpGet("[action]")]
-    public async Task<ActionResult<List<UserDto>>> GetAllUsers([FromQuery] int companyId)
+    public async Task<ActionResult<List<UserDto>>> GetAllUsers([FromQuery] int companyId, [FromQuery] string? deviceId)
     {
         if (companyId == 0) return BadRequest("Company ID is required");
-        return Ok(await mediator.Send(new GetAllUsersQuery { CompanyId = companyId }));
+        return Ok(await mediator.Send(new GetAllUsersQuery { CompanyId = companyId, DeviceId = deviceId }));
     }
 
     [HttpGet("[action]")]
@@ -51,7 +51,34 @@ public class UsersController(IMediator mediator) : ControllerBase
         var result = await mediator.Send(command);
         return Ok(result);
     }
-
+    [HttpPatch("[action]")]
+    public async Task<ActionResult> ChangePassword([FromBody] ChangePasswordRequest request, [FromQuery] int companyId)
+    {
+        if (companyId == 0) return BadRequest("Company ID is required");
+        try
+        {
+            var result = await mediator.Send(new ChangePasswordCommand(request, companyId));
+            return Ok(new { Success = result, Message = "Password updated successfully" });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { Message = ex.Message });
+        }
+    }
+    [HttpPatch("[action]")]
+    public async Task<ActionResult> AdminResetPassword([FromBody] AdminResetPasswordRequest request, [FromQuery] int companyId)
+    {
+        if (companyId == 0) return BadRequest("Company ID is required");
+        try
+        {
+            var result = await mediator.Send(new AdminResetPasswordCommand(request, companyId));
+            return Ok(new { Success = result, Message = "Password forcibly reset successfully" });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { Message = ex.Message });
+        }
+    }
     [HttpPatch("[action]")]
     public async Task<ActionResult<UserDto>> UpdateUser([FromBody] UpdateUserRequest updateRequest, [FromQuery] int companyId)
     {
