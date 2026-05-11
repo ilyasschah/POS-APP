@@ -89,6 +89,7 @@ builder.Services.AddScoped<BookingRepository>();
 builder.Services.AddScoped<UserDevicePinRepository>();
 
 // ================== SERVICES ==================
+builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<BarcodeService>();
 builder.Services.AddScoped<CurrencyService>();
 builder.Services.AddScoped<FiscalItemService>();
@@ -108,6 +109,7 @@ builder.Services.AddScoped<CompanyService>();
 builder.Services.AddScoped<StockControlService>();
 builder.Services.AddScoped<LoyaltyCardService>();
 builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<UserDevicePinService>();
 builder.Services.AddScoped<PosOrderService>();
 builder.Services.AddScoped<PosVoidService>();
 builder.Services.AddScoped<PosOrderItemService>();

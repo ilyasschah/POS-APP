@@ -1,6 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Api.DataBase;
 using Api.Domain;
-using Api.DataBase;
+using Api.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Api.Repository
 {
@@ -8,22 +9,51 @@ namespace Api.Repository
     {
         private readonly AppDbContext _db = db;
 
-        public async Task<UserDevicePin?> GetByUserAndDeviceAsync(int userId, string deviceId)
+        public async Task<UserDevicePin?> GetByUserAndDeviceAsync(int userId, string deviceId, int companyId, CancellationToken cancellationToken = default)
         {
             return await _db.UserDevicePins
-                .FirstOrDefaultAsync(p => p.UserId == userId && p.DeviceId == deviceId);
+                .FirstOrDefaultAsync(p => p.UserId == userId && p.DeviceId == deviceId && p.CompanyId == companyId, cancellationToken);
         }
+        public async Task<List<UserDevicePinDto>> GetActiveDevicesAsync(int? userId,int companyId, CancellationToken cancellationToken = default)
+        {
+            var query = _db.UserDevicePins.Where(p => p.CompanyId == companyId);
 
-        public async Task AddAsync(UserDevicePin entity)
+            if (userId.HasValue && userId > 0)
+            {
+                query = query.Where(p => p.UserId == userId.Value);
+            }
+
+            return await query
+                .AsNoTracking()
+                .Join(_db.Users,
+                    pin => pin.UserId,
+                    user => user.Id,
+                    (pin, user) => new UserDevicePinDto
+                    {
+                        DeviceId = pin.DeviceId,
+                        CreatedAt = pin.CreatedAt,
+                        UserId = user.Id,
+                        Username = user.Username,
+                        UserDisplayName = user.FirstName + " " + user.LastName
+                    })
+                .ToListAsync(cancellationToken);
+        }
+        public async Task AddAsync(UserDevicePin entity, CancellationToken cancellationToken = default)
         {
             _db.UserDevicePins.Add(entity);
-            await _db.SaveChangesAsync();
+            await _db.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task UpdateAsync(UserDevicePin entity)
+        public async Task UpdateAsync(UserDevicePin entity, CancellationToken cancellationToken = default)
         {
             _db.UserDevicePins.Update(entity);
-            await _db.SaveChangesAsync();
+            await _db.SaveChangesAsync(cancellationToken);
+        }
+        
+        public async Task RemoveAsync(UserDevicePin entity, CancellationToken cancellationToken = default)
+        {
+            _db.UserDevicePins.Remove(entity);
+            await _db.SaveChangesAsync(cancellationToken);
         }
     }
 }

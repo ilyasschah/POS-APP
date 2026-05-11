@@ -10,7 +10,7 @@ using Api.Models;
 using Api.Attributes;
 namespace Api.Controllers
 {
-    [SwaggerVisible ]
+    //[SwaggerVisible ]
     [Route("api/[controller]")]
     [ApiController]
     public class BookingsController(IMediator mediator) : ControllerBase

@@ -36,8 +36,15 @@ public class UpdateUserRequest
         public string? Email { get; set; }
     
 }
+public class ChangePasswordRequest
+{
+    public int UserId { get; set; }
+    public string OldPassword { get; set; } = string.Empty;
+    public string NewPassword { get; set; } = string.Empty;
+}
 public class AdminResetPasswordRequest
 {
     public int UserId { get; set; }
     public required string NewPassword { get; set; }
 }
+

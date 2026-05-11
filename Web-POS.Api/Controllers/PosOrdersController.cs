@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers
 {
-    [SwaggerVisible]
+    //[SwaggerVisible]
     [Route("api/[controller]")]
     [ApiController]
     public class PosOrderController : ControllerBase

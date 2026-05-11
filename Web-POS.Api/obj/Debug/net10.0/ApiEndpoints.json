@@ -151,37 +151,6 @@
   },
   {
     "ContainingType": "Api.Controllers.AuthController",
-    "Method": "GetActiveDevices",
-    "RelativePath": "api/Auth/GetActiveDevices",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "userId",
-        "Type": "System.Int32",
-        "IsRequired": false
-      },
-      {
-        "Name": "companyId",
-        "Type": "System.Int32",
-        "IsRequired": false
-      }
-    ],
-    "ReturnTypes": [
-      {
-        "Type": "System.Collections.Generic.List\u00601[[Api.Models.UserDeviceDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
-  },
-  {
-    "ContainingType": "Api.Controllers.AuthController",
     "Method": "Login",
     "RelativePath": "api/Auth/Login",
     "HttpMethod": "POST",
@@ -190,13 +159,13 @@
     "Parameters": [
       {
         "Name": "body",
-        "Type": "Api.Controllers.AuthController\u002BLoginRequest",
+        "Type": "Api.Models.LoginRequest",
         "IsRequired": true
       }
     ],
     "ReturnTypes": [
       {
-        "Type": "Api.Controllers.AuthController\u002BLoginResponse",
+        "Type": "Api.Models.LoginResponse",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -205,48 +174,6 @@
         "StatusCode": 200
       }
     ]
-  },
-  {
-    "ContainingType": "Api.Controllers.AuthController",
-    "Method": "RevokeDevice",
-    "RelativePath": "api/Auth/RevokeDevice",
-    "HttpMethod": "DELETE",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "userId",
-        "Type": "System.Int32",
-        "IsRequired": false
-      },
-      {
-        "Name": "deviceId",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "companyId",
-        "Type": "System.Int32",
-        "IsRequired": false
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "Api.Controllers.AuthController",
-    "Method": "SetDevicePin",
-    "RelativePath": "api/Auth/SetDevicePin",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "body",
-        "Type": "Api.Models.SetDevicePinRequest",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
   },
   {
     "ContainingType": "Api.Controllers.BarcodesController",
@@ -6100,6 +6027,79 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "Api.Controllers.UserDevicePinsController",
+    "Method": "GetActiveDevices",
+    "RelativePath": "api/UserDevicePins/GetActiveDevices",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "userId",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.UserDevicePinDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "Api.Controllers.UserDevicePinsController",
+    "Method": "RevokeDevice",
+    "RelativePath": "api/UserDevicePins/RevokeDevice",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "Api.Models.RevokeDeviceRequest",
+        "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Api.Controllers.UserDevicePinsController",
+    "Method": "SetDevicePin",
+    "RelativePath": "api/UserDevicePins/SetDevicePin",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "Api.Models.SetDevicePinRequest",
+        "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Api.Controllers.UsersController",
     "Method": "Add",
     "RelativePath": "api/Users/Add",
@@ -6129,6 +6129,27 @@
         "StatusCode": 200
       }
     ]
+  },
+  {
+    "ContainingType": "Api.Controllers.UsersController",
+    "Method": "AdminResetPassword",
+    "RelativePath": "api/Users/AdminResetPassword",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "Api.Models.AdminResetPasswordRequest",
+        "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
   },
   {
     "ContainingType": "Api.Controllers.UsersController",

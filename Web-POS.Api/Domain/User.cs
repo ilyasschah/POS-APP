@@ -12,13 +12,10 @@ namespace Api.Domain
         public int CompanyId { get; private set; }
         public string? FirstName { get; private set; }
         public string? LastName { get; private set; }
-
         [Required]
         public string? Username { get; private set; }
-
         [Required]
         public string Password { get; private set; }
-
         public int AccessLevel { get; private set; }
         public bool IsEnabled { get; private set; }
         public string? Email { get; private set; }

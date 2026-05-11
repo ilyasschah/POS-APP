@@ -5,7 +5,7 @@ using Api.Attributes;
 
 namespace Api.Controllers
 {
-    [SwaggerVisible]
+    //[SwaggerVisible]
     [ApiController]
     [Route("api/[controller]")]
     public class DashboardController : ControllerBase

@@ -1,12 +1,11 @@
-using MediatR;
-using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Mvc;
+using Api.Attributes;
 using Api.Commands.UserCommands.Add;
 using Api.Commands.UserCommands.Delete;
 using Api.Commands.UserCommands.Update;
-using Api.Queries.UserQuery;
 using Api.Models;
-using Api.Attributes;
+using Api.Queries.UserQuery;
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;
 

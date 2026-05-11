@@ -22,9 +22,6 @@ namespace Api.Services
             var existing = await _repository.GetByNameAsync(req.Name, companyId);
             if (existing != null)
             {
-                // Upsert: property already exists — update the value and return
-                // it rather than throwing. The frontend may call Add on startup
-                // to seed default settings that were already persisted.
                 existing.UpdateValue(req.Value);
                 await _repository.UpdateAsync(existing);
 
