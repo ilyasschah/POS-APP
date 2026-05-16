@@ -36,8 +36,15 @@ namespace Api.Controllers
         public async Task<ActionResult<BookingDto>> Add([FromBody] CreateBookingRequest request, [FromQuery] int companyId)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
-            var result = await mediator.Send(new AddBookingCommand(request, companyId));
-            return CreatedAtAction(nameof(GetById), new { id = result.Id, companyId }, result);
+            try
+            {
+                var result = await mediator.Send(new AddBookingCommand(request, companyId));
+                return Ok(result);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
         }
 
         [HttpPatch("[action]")]

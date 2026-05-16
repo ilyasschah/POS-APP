@@ -58,6 +58,13 @@ namespace Api.Domain
             Name = newName;
         }
 
+        public void UpdateProperties(string name, bool isRound)
+        {
+            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Table name is required.");
+            Name = name;
+            IsRound = isRound;
+        }
+
         public void UpdateStatus(int status)
         {
             if (status < 0 || status > 3) throw new ArgumentException("Invalid table status.");

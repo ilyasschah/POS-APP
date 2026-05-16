@@ -237,6 +237,16 @@ namespace Api.Services
                         }
                     }
 
+                    // If this order was linked to a booking, detach it and roll the
+                    // booking back to Arrived (2) so staff can create a replacement order.
+                    var linkedBooking = await _repository._db.Bookings
+                        .FirstOrDefaultAsync(b => b.PosOrderId == id && b.CompanyId == companyId);
+                    if (linkedBooking != null)
+                    {
+                        linkedBooking.UnlinkPosOrder();
+                        linkedBooking.MarkAsArrived();
+                    }
+
                     _repository._db.PosOrderItems.RemoveRange(items);
                     _repository._db.PosOrders.Remove(order);
                     await _repository._db.SaveChangesAsync();

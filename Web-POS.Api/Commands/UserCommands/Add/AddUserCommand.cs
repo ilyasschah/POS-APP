@@ -35,8 +35,18 @@ public class AddUserCommand : IRequest<UserDto>
     {
         public AddUserCommandValidator()
         {
-            RuleFor(c => c.Request.Username).NotNull().NotEmpty().WithMessage("Username is required.");
-            RuleFor(c => c.Request.Password).NotNull().NotEmpty().WithMessage("Password is required.");
+            RuleFor(c => c.Request.Username)
+                .NotNull().NotEmpty().WithMessage("Username is required.")
+                .MinimumLength(3).WithMessage("Username must be at least 3 characters.")
+                .MaximumLength(50).WithMessage("Username must not exceed 50 characters.");
+
+            RuleFor(c => c.Request.Password)
+                .NotNull().NotEmpty().WithMessage("Password is required.")
+                .MinimumLength(6).WithMessage("Password must be at least 6 characters.");
+
+            RuleFor(c => c.Request.Email)
+                .EmailAddress().WithMessage("Email must be a valid email address.")
+                .When(c => !string.IsNullOrWhiteSpace(c.Request.Email));
         }
     }
 }

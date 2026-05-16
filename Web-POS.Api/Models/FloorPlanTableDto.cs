@@ -34,4 +34,11 @@
         public double Height { get; set; }
         public int Status { get; set; }
     }
+
+    public class UpdateTablePropertiesRequest
+    {
+        public int Id { get; set; }
+        public required string Name { get; set; }
+        public bool IsRound { get; set; }
+    }
 }

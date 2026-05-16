@@ -2,6 +2,7 @@ using Api.Domain;
 using Api.Helpers;
 using Api.Models;
 using Api.Repository;
+using Microsoft.EntityFrameworkCore;
 
 namespace Api.Services
 {
@@ -30,6 +31,20 @@ namespace Api.Services
         {
             var booking = await _repository.GetByIdAsync(request.BookingId, companyId);
             if (booking == null) return false;
+
+            if (request.Status == 5 && booking.TableIds.Count > 0)
+            {
+                foreach (var tableId in booking.TableIds)
+                {
+                    var table = await _repository._db.FloorPlanTables
+                        .FirstOrDefaultAsync(t => t.Id == tableId && t.CompanyId == companyId);
+                    if (table != null)
+                    {
+                        table.UpdateStatus(0);
+                        _repository._db.FloorPlanTables.Update(table);
+                    }
+                }
+            }
 
             booking.UpdateStatus(request.Status, request.DocumentId);
             return await _repository.UpdateAsync(booking);

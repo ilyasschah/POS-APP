@@ -15,11 +15,11 @@ public class UserRepository
     }
 
     
-    public async Task<List<UserDto>> GetAllUsersAsync(int companyId, string? deviceId)
+    public async Task<List<UserDto>> GetAllUsersAsync(int companyId, string? deviceId, bool includeDisabled = false)
     {
         return await _db.Users
             .AsNoTracking()
-            .Where(u => u.CompanyId == companyId && u.IsEnabled)
+            .Where(u => u.CompanyId == companyId && (includeDisabled || u.IsEnabled))
             .Select(u => new
             {
                 User = u,

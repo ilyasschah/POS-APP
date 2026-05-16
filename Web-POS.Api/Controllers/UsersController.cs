@@ -16,10 +16,10 @@ namespace Api.Controllers;
 public class UsersController(IMediator mediator) : ControllerBase
 {
     [HttpGet("[action]")]
-    public async Task<ActionResult<List<UserDto>>> GetAllUsers([FromQuery] int companyId, [FromQuery] string? deviceId)
+    public async Task<ActionResult<List<UserDto>>> GetAllUsers([FromQuery] int companyId, [FromQuery] string? deviceId, [FromQuery] bool includeDisabled = false)
     {
         if (companyId == 0) return BadRequest("Company ID is required");
-        return Ok(await mediator.Send(new GetAllUsersQuery { CompanyId = companyId, DeviceId = deviceId }));
+        return Ok(await mediator.Send(new GetAllUsersQuery { CompanyId = companyId, DeviceId = deviceId, IncludeDisabled = includeDisabled }));
     }
 
     [HttpGet("[action]")]
@@ -45,10 +45,16 @@ public class UsersController(IMediator mediator) : ControllerBase
     public async Task<ActionResult<UserDto>> Add([FromBody] CreateUserRequest request, [FromQuery] int companyId)
     {
         if (companyId == 0) return BadRequest("Company ID is required");
-
-        var command = new AddUserCommand(request, companyId);
-        var result = await mediator.Send(command);
-        return Ok(result);
+        try
+        {
+            var command = new AddUserCommand(request, companyId);
+            var result = await mediator.Send(command);
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
     }
     [HttpPatch("[action]")]
     public async Task<ActionResult> ChangePassword([FromBody] ChangePasswordRequest request, [FromQuery] int companyId)

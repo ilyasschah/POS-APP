@@ -68,6 +68,7 @@ namespace Api.Domain
         }
 
         public void LinkPosOrder(int posOrderId) => PosOrderId = posOrderId;
+        public void UnlinkPosOrder() => PosOrderId = null;
 
         public void MarkAsArrived() => Status = 2;
         public void MarkAsInService(int? documentId = null)

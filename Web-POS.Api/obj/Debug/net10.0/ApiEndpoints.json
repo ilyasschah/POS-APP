@@ -6220,6 +6220,11 @@
         "Name": "deviceId",
         "Type": "System.String",
         "IsRequired": false
+      },
+      {
+        "Name": "includeDisabled",
+        "Type": "System.Boolean",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [

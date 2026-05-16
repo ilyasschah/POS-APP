@@ -72,6 +72,15 @@ namespace Api.Controllers
         }
 
         [HttpPatch("[action]")]
+        public async Task<ActionResult> Update([FromBody] UpdateTablePropertiesRequest request, [FromQuery] int companyId)
+        {
+            if (companyId == 0) return BadRequest();
+            var success = await _service.UpdatePropertiesAsync(request, companyId);
+            if (!success) return NotFound();
+            return Ok();
+        }
+
+        [HttpPatch("[action]")]
         public async Task<ActionResult> OccupyTable([FromQuery] int tableId, [FromQuery] int companyId)
         {
             if (companyId == 0) return BadRequest();

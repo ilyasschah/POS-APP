@@ -748,6 +748,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "includeDisabled",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
           }
         ],
         "responses": {

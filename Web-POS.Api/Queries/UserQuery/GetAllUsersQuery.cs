@@ -9,6 +9,7 @@ public class GetAllUsersQuery : IRequest<List<UserDto>>
 {
     public int CompanyId { get; set; }
     public string? DeviceId { get; set; }
+    public bool IncludeDisabled { get; set; } = false;
 
     public class GetAllUsersQueryHandler : IRequestHandler<GetAllUsersQuery, List<UserDto>>
     {
@@ -21,7 +22,7 @@ public class GetAllUsersQuery : IRequest<List<UserDto>>
 
         public async Task<List<UserDto>> Handle(GetAllUsersQuery request, CancellationToken cancellationToken)
         {
-            return await _repository.GetAllUsersAsync(request.CompanyId, request.DeviceId);
+            return await _repository.GetAllUsersAsync(request.CompanyId, request.DeviceId, request.IncludeDisabled);
         }
     }
 
