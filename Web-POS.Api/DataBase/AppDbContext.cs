@@ -59,6 +59,10 @@ namespace Api.DataBase
         public DbSet<ZReportPaymentSummary> ZReportPaymentSummaries { get; internal set; }
         public DbSet<Booking> Bookings { get; set; }
         public DbSet<DashboardSalesDataView> DashboardSalesDataViews { get; set; }
+        public DbSet<SalesByProductRow> SalesByProductRows { get; set; }
+        public DbSet<SalesByTaxRow> SalesByTaxRows { get; set; }
+        public DbSet<SalesItemListRow> SalesItemListRows { get; set; }
+        public DbSet<SalesByPaymentTypeRow> SalesByPaymentTypeRows { get; set; }
 
         protected override void ConfigureConventions(ModelConfigurationBuilder cfg)
         {
@@ -73,6 +77,30 @@ namespace Api.DataBase
             {
                 entity.HasNoKey();
                 entity.ToView("vw_DashboardSalesData");
+            });
+
+            b.Entity<SalesByProductRow>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToView("vw_SalesByProduct");
+            });
+
+            b.Entity<SalesByTaxRow>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToView("vw_SalesByTax");
+            });
+
+            b.Entity<SalesItemListRow>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToView("vw_SalesItemList");
+            });
+
+            b.Entity<SalesByPaymentTypeRow>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToView("vw_SalesByPaymentType");
             });
             b.Entity<Document>(e =>
             {
