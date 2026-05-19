@@ -61,6 +61,24 @@ namespace Api.Models
         public decimal Amount { get; set; }
     }
 
+    public class RefundItemListDto
+    {
+        public string? CustomerCode { get; set; }
+        public string CustomerName { get; set; } = "";
+        public string DocumentNumber { get; set; } = "";
+        public string? RefNumber { get; set; }
+        public DateTime Date { get; set; }
+        public DateTime DateCreated { get; set; }
+        public string? OrderNumber { get; set; }
+        public string? ProductCode { get; set; }
+        public string ProductName { get; set; } = "";
+        public decimal Quantity { get; set; }
+        public string UOM { get; set; } = "";
+        public decimal TotalBeforeTax { get; set; }
+        public decimal TotalTax { get; set; }
+        public decimal Total { get; set; }
+    }
+
     public class SalesItemListDto
     {
         public string DocumentTypeName { get; set; } = "";
@@ -78,5 +96,61 @@ namespace Api.Models
         public decimal TotalBeforeTax { get; set; }
         public decimal TotalTax { get; set; }
         public decimal Total { get; set; }
+    }
+
+    public class InvoiceListDto
+    {
+        public DateTime Date { get; set; }
+        public string DocumentNumber { get; set; } = "";
+        public string CustomerName { get; set; } = "";
+        public string PaymentMethodName { get; set; } = "";
+        public decimal Total { get; set; }
+    }
+
+    public class DailySalesDto
+    {
+        public DateTime Date { get; set; }
+        public decimal Total { get; set; }
+    }
+
+    public class HourlySalesDto
+    {
+        public int Hour { get; set; }
+        public decimal TotalSales { get; set; }
+        public int SalesCount { get; set; }
+    }
+
+    public class HourlySalesByGroupDto
+    {
+        public string ProductGroup { get; set; } = "";
+        public int Hour { get; set; }
+        public decimal Total { get; set; }
+    }
+
+    public class SalesByTableDto
+    {
+        public string OrderNumber { get; set; } = "";
+        public int NumberOfSales { get; set; }
+        public decimal Total { get; set; }
+    }
+
+    public class ProfitDto
+    {
+        public string? ProductCode { get; set; }
+        public string ProductName { get; set; } = "";
+        public decimal Quantity { get; set; }
+        public decimal Cost { get; set; }
+        public decimal Total { get; set; }
+    }
+
+    public class UnpaidSalesDto
+    {
+        public string DocumentNumber { get; set; } = "";
+        public DateTime Date { get; set; }
+        public DateTime? DueDate { get; set; }
+        public string CustomerName { get; set; } = "";
+        public decimal DocumentTotal { get; set; }
+        public decimal TotalPaid { get; set; }
+        public decimal TotalUnpaid { get; set; }
     }
 }

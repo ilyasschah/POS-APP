@@ -1,3 +1,4 @@
+using Api.Constants;
 using Api.DataBase;
 using Api.Domain;
 using Api.Repository;
@@ -39,7 +40,7 @@ namespace Api.Services
                     // Generate a document number so syncOrderNumber on the client can
                     // still see this order's sequence number after it leaves PosOrders.
                     string yy = DateTime.UtcNow.ToString("yy");
-                    string counterKey = $"DOC_{yy}_200_{companyId}";
+                    string counterKey = $"DOC_{yy}_{DocumentTypeConstants.SalesCode}_{companyId}";
                     var counter = await _counterRepo.GetByNameAsync(counterKey, trackEntity: true);
                     int nextValue;
                     if (counter == null)
@@ -54,7 +55,7 @@ namespace Api.Services
                         counter.UpdateValue(nextValue);
                         await _counterRepo.UpdateAsync(counter);
                     }
-                    string documentNumber = $"{yy}-200-{nextValue.ToString().PadLeft(6, '0')}";
+                    string documentNumber = $"{yy}-{DocumentTypeConstants.SalesCode}-{nextValue.ToString().PadLeft(6, '0')}";
 
                     // paidStatus 99 = voided — distinct from normal paid (1) or unpaid (0)
                     var tombstone = Document.Create(
@@ -66,7 +67,7 @@ namespace Api.Services
                         total: 0,
                         customerId: posOrder.CustomerId,
                         orderNumber: posOrder.Number,
-                        paidStatus: 99,
+                        paidStatus: PaidStatusConstants.Voided,
                         note: "VOID",
                         serviceType: posOrder.ServiceType
                     );

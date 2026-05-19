@@ -1,6 +1,7 @@
 ﻿using Api.Commands.DocumentsCommands.Add;
 using Api.Commands.DocumentsCommands.Delete;
 using Api.Commands.DocumentsCommands.Update;
+using Api.Commands.RefundCommands;
 using Api.Queries.DocumentQuery;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -64,6 +65,31 @@ namespace Api.Controllers
             return result
                 ? Ok(new { Message = "Document updated" })
                 : BadRequest(new { Message = "Failed to update document" });
+        }
+
+        [HttpPost("[action]")]
+        public async Task<IActionResult> Refund(
+            [FromBody] ProcessRefundRequest req,
+            [FromQuery] int companyId,
+            [FromQuery] int userId)
+        {
+            if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
+            if (userId <= 0)    return BadRequest(new { message = "User ID is required" });
+
+            try
+            {
+                var result = await mediator.Send(new ProcessRefundCommand
+                {
+                    CompanyId = companyId,
+                    UserId    = userId,
+                    Request   = req,
+                });
+                return Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         [HttpDelete("[action]")]

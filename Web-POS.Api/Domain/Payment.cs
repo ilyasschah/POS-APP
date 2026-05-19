@@ -56,7 +56,7 @@ namespace Api.Domain
         {
             if (companyId <= 0) throw new ArgumentException("Invalid CompanyId");
             if (documentId <= 0) throw new ArgumentException("Invalid DocumentId");
-            if (amount < 0) throw new ArgumentException("Amount cannot be negative");
+            // Negative amounts are valid for refund documents
 
             return new Payment(companyId, documentId, paymentTypeId, amount, userId);
         }

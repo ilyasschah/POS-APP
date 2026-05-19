@@ -63,6 +63,14 @@ namespace Api.DataBase
         public DbSet<SalesByTaxRow> SalesByTaxRows { get; set; }
         public DbSet<SalesItemListRow> SalesItemListRows { get; set; }
         public DbSet<SalesByPaymentTypeRow> SalesByPaymentTypeRows { get; set; }
+        public DbSet<RefundItemListRow> RefundItemListRows { get; set; }
+        public DbSet<InvoiceListRow> InvoiceListRows { get; set; }
+        public DbSet<DailySalesRow> DailySalesRows { get; set; }
+        public DbSet<HourlySalesRow> HourlySalesRows { get; set; }
+        public DbSet<HourlySalesByGroupRow> HourlySalesByGroupRows { get; set; }
+        public DbSet<SalesByTableRow> SalesByTableRows { get; set; }
+        public DbSet<ProfitRow> ProfitRows { get; set; }
+        public DbSet<UnpaidSalesRow> UnpaidSalesRows { get; set; }
 
         protected override void ConfigureConventions(ModelConfigurationBuilder cfg)
         {
@@ -101,6 +109,54 @@ namespace Api.DataBase
             {
                 entity.HasNoKey();
                 entity.ToView("vw_SalesByPaymentType");
+            });
+
+            b.Entity<RefundItemListRow>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToView("vw_RefundItemList");
+            });
+
+            b.Entity<InvoiceListRow>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToView("vw_InvoiceList");
+            });
+
+            b.Entity<DailySalesRow>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToView("vw_DailySalesRow");
+            });
+
+            b.Entity<HourlySalesRow>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToView("vw_HourlySalesRow");
+            });
+
+            b.Entity<HourlySalesByGroupRow>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToView("vw_HourlySalesByGroupRow");
+            });
+
+            b.Entity<SalesByTableRow>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToView("vw_SalesByTableRow");
+            });
+
+            b.Entity<ProfitRow>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToView("vw_ProfitRow");
+            });
+
+            b.Entity<UnpaidSalesRow>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToView("vw_UnpaidSalesRow");
             });
             b.Entity<Document>(e =>
             {

@@ -1,4 +1,5 @@
-﻿using Api.DataBase;
+﻿using Api.Constants;
+using Api.DataBase;
 using Api.Domain;
 using Api.Models;
 using Api.Repository;
@@ -62,7 +63,7 @@ namespace Api.Services
 
                     // Enterprise document numbering: YY-CCC-NNNNNN
                     string yy = DateTime.UtcNow.ToString("yy");
-                    string counterKey = $"DOC_{yy}_200_{companyId}";
+                    string counterKey = $"DOC_{yy}_{DocumentTypeConstants.SalesCode}_{companyId}";
                     var counter = await _counterRepo.GetByNameAsync(counterKey, trackEntity: true);
                     int nextValue;
                     if (counter == null)
@@ -77,7 +78,7 @@ namespace Api.Services
                         counter.UpdateValue(nextValue);
                         await _counterRepo.UpdateAsync(counter);
                     }
-                    string documentNumber = $"{yy}-200-{nextValue.ToString().PadLeft(6, '0')}";
+                    string documentNumber = $"{yy}-{DocumentTypeConstants.SalesCode}-{nextValue.ToString().PadLeft(6, '0')}";
 
                     // Default null customer to Walk-In (Code = "C000")
                     int? effectiveCustomerId = posOrder.CustomerId;

@@ -4,6 +4,7 @@ using Api.Commands.PosOrderCommands.Add;
 using Api.Commands.PosOrderCommands.Delete;
 using Api.Commands.PosOrderCommands.Update;
 using Api.Commands.PosOrderCommands.Void;
+using Api.Constants;
 using Api.Models;
 using Api.Queries.PosOrderQuery;
 using MediatR;
@@ -150,7 +151,7 @@ namespace Api.Controllers
             [FromQuery] int posOrderId,
             [FromQuery] int companyId,
             [FromQuery] int warehouseId,
-            [FromQuery] int documentTypeId = 4)
+            [FromQuery] int documentTypeId = DocumentTypeConstants.Sales)
         {
             if (companyId <= 0 || posOrderId <= 0 || warehouseId <= 0)
                 return BadRequest(new { message = "Company ID, Order ID, and Warehouse ID are required." });
