@@ -39,8 +39,9 @@ namespace Api.Domain
         [ForeignKey(nameof(VoidedBy))]
         public virtual User? VoidedByUser { get; set; }
 
-        private PosVoid(string orderNumber, int? userId, string userName, int? productId, string productName, int roundNumber, decimal quantity, decimal price, decimal discount, int discountType, decimal total, string? bundle)
+        private PosVoid(int companyId, string orderNumber, int? userId, string userName, int? productId, string productName, int roundNumber, decimal quantity, decimal price, decimal discount, int discountType, decimal total, string? bundle, string? reason, int? voidedById, string? voidedByName)
         {
+            CompanyId = companyId;
             OrderNumber = orderNumber;
             UserId = userId;
             UserName = userName;
@@ -53,7 +54,10 @@ namespace Api.Domain
             DiscountType = discountType;
             Total = total;
             Bundle = bundle;
-            IsConfirmed = false;
+            Reason = reason;
+            VoidedBy = voidedById;
+            VoidedByName = voidedByName;
+            IsConfirmed = true;
             DateCreated = DateTime.UtcNow;
             DateVoided = DateTime.UtcNow;
         }
@@ -61,10 +65,11 @@ namespace Api.Domain
         public PosVoid() { }
 
         public static PosVoid Create(
-            string orderNumber, int? userId, string userName, int? productId, string productName, int roundNumber,
-            decimal quantity, decimal price, decimal discount, int discountType, decimal total, string? bundle)
+            int companyId, string orderNumber, int? userId, string userName, int? productId, string productName, int roundNumber,
+            decimal quantity, decimal price, decimal discount, int discountType, decimal total, string? bundle,
+            string? reason = null, int? voidedById = null, string? voidedByName = null)
         {
-            return new PosVoid(orderNumber, userId, userName, productId, productName, roundNumber, quantity, price, discount, discountType, total, bundle);
+            return new PosVoid(companyId, orderNumber, userId, userName, productId, productName, roundNumber, quantity, price, discount, discountType, total, bundle, reason, voidedById, voidedByName);
         }
         public void UpdateConfirmation(int id ,int? voidedById, string? voidedByName, string? reason)
         {

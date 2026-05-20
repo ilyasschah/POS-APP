@@ -12,6 +12,7 @@ namespace Api.Models
 
     public class CreateVoidReasonRequest
     {
+        public required int CompanyId { get; set; }
         public required string Name { get; set; }
         public required int Rank { get; set; }
     }

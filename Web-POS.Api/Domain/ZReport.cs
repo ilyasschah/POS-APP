@@ -34,6 +34,12 @@ namespace Api.Domain
         [Column(TypeName = "decimal(18,2)")]
         public decimal GrandTotal { get; private set; }
 
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal TotalCashIn { get; private set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal TotalCashOut { get; private set; }
+
         // --- NAVIGATION PROPERTIES ---
 
         // Links the payments that were locked into this specific Z-Report
@@ -56,7 +62,9 @@ namespace Api.Domain
             decimal discountsGranted,
             decimal taxableTotal,
             decimal totalTax,
-            decimal grandTotal)
+            decimal grandTotal,
+            decimal totalCashIn,
+            decimal totalCashOut)
         {
             CompanyId = companyId;
             Number = number;
@@ -68,6 +76,8 @@ namespace Api.Domain
             TaxableTotal = taxableTotal;
             TotalTax = totalTax;
             GrandTotal = grandTotal;
+            TotalCashIn = totalCashIn;
+            TotalCashOut = totalCashOut;
             DateCreated = DateTime.UtcNow;
         }
 
@@ -81,7 +91,9 @@ namespace Api.Domain
             decimal discountsGranted,
             decimal taxableTotal,
             decimal totalTax,
-            decimal grandTotal)
+            decimal grandTotal,
+            decimal totalCashIn = 0,
+            decimal totalCashOut = 0)
         {
             if (companyId <= 0) throw new ArgumentException("Invalid CompanyId");
             if (number <= 0) throw new ArgumentException("Invalid Report Number");
@@ -98,7 +110,9 @@ namespace Api.Domain
                 discountsGranted,
                 taxableTotal,
                 totalTax,
-                grandTotal
+                grandTotal,
+                totalCashIn,
+                totalCashOut
             );
         }
     }

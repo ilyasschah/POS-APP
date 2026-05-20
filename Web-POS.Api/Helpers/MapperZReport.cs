@@ -21,6 +21,8 @@ namespace Api.Helpers
                 TaxableTotal = entity.TaxableTotal,
                 TotalTax = entity.TotalTax,
                 GrandTotal = entity.GrandTotal,
+                TotalCashIn = entity.TotalCashIn,
+                TotalCashOut = entity.TotalCashOut,
 
                 PaymentSummaries = entity.PaymentSummaries != null
                     ? entity.PaymentSummaries.Select(MapToZReportPaymentSummaryDto).ToList()

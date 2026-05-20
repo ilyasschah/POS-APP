@@ -14,8 +14,9 @@ namespace Api.Domain
         public int Rank { get; set; }
         public DateTime DateCreated { get; set; }
 
-        private VoidReason(string name, int rank)
+        private VoidReason(int companyId, string name, int rank)
         {
+            CompanyId = companyId;
             Name = name;
             Rank = rank;
             DateCreated = DateTime.UtcNow;
@@ -23,9 +24,9 @@ namespace Api.Domain
 
         public VoidReason() { }
 
-        public static VoidReason Create(string name, int rank)
+        public static VoidReason Create(int companyId, string name, int rank)
         {
-            return new VoidReason(name, rank);
+            return new VoidReason(companyId, name, rank);
         }
 
         public void Update(string name, int rank)

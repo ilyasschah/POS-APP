@@ -5,6 +5,7 @@ using Api.Commands.StartingCashCommands.Delete;
 using Api.Commands.StartingCashCommands.Update;
 using Api.Queries.StartingCashQuery;
 using Api.Models;
+using System;
 
 namespace Api.Controllers
 {
@@ -52,6 +53,27 @@ namespace Api.Controllers
         {
             var ok = await mediator.Send(new DeleteStartingCashCommand(id));
             return ok ? NoContent() : NotFound();
+        }
+
+        [HttpGet("[action]")]
+        public async Task<ActionResult<List<StartingCashDto>>> GetByDateRange(
+            [FromQuery] int companyId,
+            [FromQuery] DateTime startDate,
+            [FromQuery] DateTime endDate,
+            [FromQuery] int? userId = null)
+        {
+            if (companyId == 0) return BadRequest("Company ID is required");
+            if (endDate.Date < startDate.Date) return BadRequest("End date must be on or after start date");
+
+            var result = await mediator.Send(new GetStartingCashByDateRangeQuery
+            {
+                CompanyId = companyId,
+                StartDate = startDate,
+                EndDate   = endDate,
+                UserId    = userId,
+            });
+
+            return Ok(result);
         }
     }
 }

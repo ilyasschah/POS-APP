@@ -16,6 +16,8 @@
         public decimal TaxableTotal { get; set; }
         public decimal TotalTax { get; set; }
         public decimal GrandTotal { get; set; }
+        public decimal TotalCashIn { get; set; }
+        public decimal TotalCashOut { get; set; }
 
         // Nested list to show the "Cash: $100, Credit: $50" breakdown
         public List<ZReportPaymentSummaryDto> PaymentSummaries { get; set; } = new();

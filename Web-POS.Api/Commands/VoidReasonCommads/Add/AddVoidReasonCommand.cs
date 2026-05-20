@@ -35,6 +35,7 @@ namespace Api.Commands.VoidReasonCommads.Add
         {
             public AddVoidReasonCommandValidator()
             {
+                RuleFor(c => c.Request.CompanyId).GreaterThan(0);
                 RuleFor(c => c.Request.Name).NotEmpty();
                 RuleFor(c => c.Request.Rank).GreaterThanOrEqualTo(0);
             }

@@ -26,9 +26,10 @@ namespace Api.Commands.PosVoidCommands.Add
                 try
                 {
                     return await _service.Create(
+                         command.Request.CompanyId,
                          command.Request.OrderNumber,
-                         command.Request.UserId ,
-                         command.Request.UserName ,
+                         command.Request.UserId,
+                         command.Request.UserName,
                          command.Request.ProductId,
                          command.Request.ProductName,
                          command.Request.RoundNumber,
@@ -37,7 +38,10 @@ namespace Api.Commands.PosVoidCommands.Add
                          command.Request.Discount,
                          command.Request.DiscountType,
                          command.Request.Total,
-                         command.Request.Bundle   
+                         command.Request.Bundle,
+                         command.Request.Reason,
+                         command.Request.VoidedById,
+                         command.Request.VoidedByName
                         );
                 }
                 catch (Exception)
@@ -52,6 +56,7 @@ namespace Api.Commands.PosVoidCommands.Add
         {
             public AddPosVoidCommandValidator()
             {
+                RuleFor(c => c.Request.CompanyId).GreaterThan(0);
                 RuleFor(c => c.Request.OrderNumber).NotEmpty();
                 RuleFor(c => c.Request.UserName).NotEmpty();
                 RuleFor(c => c.Request.ProductName).NotEmpty();

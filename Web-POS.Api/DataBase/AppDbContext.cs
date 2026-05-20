@@ -71,6 +71,11 @@ namespace Api.DataBase
         public DbSet<SalesByTableRow> SalesByTableRows { get; set; }
         public DbSet<ProfitRow> ProfitRows { get; set; }
         public DbSet<UnpaidSalesRow> UnpaidSalesRows { get; set; }
+        public DbSet<DiscountsGrantedRow> DiscountsGrantedRows { get; set; }
+        public DbSet<ItemsDiscountsRow> ItemsDiscountsRows { get; set; }
+        public DbSet<StockMovementRow> StockMovementRows { get; set; }
+        public DbSet<PurchaseByProductRow> PurchaseByProductRows { get; set; }
+        public DbSet<UnpaidPurchaseRow> UnpaidPurchaseRows { get; set; }
 
         protected override void ConfigureConventions(ModelConfigurationBuilder cfg)
         {
@@ -158,6 +163,39 @@ namespace Api.DataBase
                 entity.HasNoKey();
                 entity.ToView("vw_UnpaidSalesRow");
             });
+
+            b.Entity<DiscountsGrantedRow>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToView("vw_DiscountsGranted");
+            });
+
+            b.Entity<ItemsDiscountsRow>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToView("vw_ItemsDiscounts");
+                entity.Property(x => x.TotalDiscount).HasPrecision(18, 2);
+            });
+
+            b.Entity<StockMovementRow>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToView("vw_StockMovement");
+                entity.Property(x => x.Quantity).HasPrecision(18, 4);
+            });
+
+            b.Entity<PurchaseByProductRow>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToView("vw_PurchaseByProduct");
+            });
+
+            b.Entity<UnpaidPurchaseRow>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToView("vw_UnpaidPurchaseRow");
+            });
+
             b.Entity<Document>(e =>
             {
                 e.ToTable(table => table.HasTrigger("Document_Insert_Trigger"));
@@ -211,6 +249,10 @@ namespace Api.DataBase
             {
                 e.ToTable(tb => tb.HasTrigger("Payment_Insert_Trigger"));
                 e.Property(x => x.Amount).HasPrecision(18, 2);
+            });
+            b.Entity<StartingCash>(e =>
+            {
+                e.ToTable(tb => tb.HasTrigger("StartingCash_Trigger"));
             });
             b.Entity<Barcode>(e =>
             {

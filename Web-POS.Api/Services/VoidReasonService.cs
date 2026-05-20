@@ -22,7 +22,7 @@ namespace Api.Services
                 throw new InvalidOperationException($"A void reason with the name '{req.Name}' already exists.");
             }
 
-            var newReason = VoidReason.Create(req.Name, req.Rank);
+            var newReason = VoidReason.Create(req.CompanyId, req.Name, req.Rank);
             await _repository.AddAsync(newReason);
             return newReason;
         }

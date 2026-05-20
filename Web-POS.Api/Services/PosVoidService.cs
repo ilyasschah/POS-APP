@@ -12,35 +12,37 @@ namespace Api.Services
         {
             _repository = repository;
         }
-        public async Task<bool> Create(string orderNumber, int? userId, string userName, int? productId, string productName, int roundNumber,
-            decimal quantity, decimal price, decimal discount, int discountType, decimal total, string? bundle)
+        public async Task<bool> Create(int companyId, string orderNumber, int? userId, string userName, int? productId, string productName, int roundNumber,
+            decimal quantity, decimal price, decimal discount, int discountType, decimal total, string? bundle,
+            string? reason = null, int? voidedById = null, string? voidedByName = null)
         {
-            if (_repository.Exists(orderNumber,roundNumber,productId ?? 0))
-                throw new InvalidOperationException($"This item has already been voided in order '{orderNumber}'.");
-
             var newEntity = PosVoid.Create(
-                orderNumber, 
-                userId, 
-                userName, 
-                productId, 
-                productName, 
-                roundNumber, 
-                quantity, 
-                price, 
-                discount, 
+                companyId,
+                orderNumber,
+                userId,
+                userName,
+                productId,
+                productName,
+                roundNumber,
+                quantity,
+                price,
+                discount,
                 discountType,
-                total, 
-                bundle
+                total,
+                bundle,
+                reason,
+                voidedById,
+                voidedByName
             );
             await _repository.AddAsync(newEntity);
             return true;
         }
-        public async Task<bool> Update(int id,int voidedById, string? voidedByName, string reason)
+        public async Task<bool> Update(int id, int voidedById, string? voidedByName, string? reason)
         {
-            var entity = await _repository.GetByReasonAsync(reason);
+            var entity = await _repository.GetByIdAsync(id);
             if (entity == null)
-                throw new InvalidOperationException($"A PosVoid with the Reason '{reason}' does not exist.");
-            entity.UpdateConfirmation(id ,voidedById, voidedByName, reason);
+                throw new InvalidOperationException($"PosVoid with Id '{id}' does not exist.");
+            entity.UpdateConfirmation(id, voidedById, voidedByName, reason);
             await _repository.UpdateAsync(entity);
             return true;
         }

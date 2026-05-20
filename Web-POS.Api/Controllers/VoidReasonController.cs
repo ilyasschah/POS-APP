@@ -15,9 +15,9 @@ namespace Api.Controllers
     public class VoidReasonsController(IMediator mediator) : ControllerBase
     {
         [HttpGet("[action]")]
-        public async Task<ActionResult<List<VoidReasonDto>>> GetAll()
+        public async Task<ActionResult<List<VoidReasonDto>>> GetAll([FromQuery] int? companyId = null)
         {
-            var result = await mediator.Send(new GetAllVoidReasonsQuery());
+            var result = await mediator.Send(new GetAllVoidReasonsQuery { CompanyId = companyId });
             return Ok(result);
         }
 

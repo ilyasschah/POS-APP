@@ -153,4 +153,57 @@ namespace Api.Models
         public decimal TotalPaid { get; set; }
         public decimal TotalUnpaid { get; set; }
     }
+
+    public class StockMovementDto
+    {
+        public string? ProductCode { get; set; }
+        public string ProductName { get; set; } = "";
+        public decimal NumSales { get; set; }
+    }
+
+    public class ItemsDiscountsDto
+    {
+        public string? ProductCode { get; set; }
+        public string ProductName { get; set; } = "";
+        public decimal TotalDiscount { get; set; }
+    }
+
+    public class DiscountsGrantedDto
+    {
+        public string CustomerName { get; set; } = "";
+        public string DocumentNumber { get; set; } = "";
+        public DateTime Date { get; set; }
+        public string UserName { get; set; } = "";
+        public decimal TotalBeforeDiscount { get; set; }
+        public decimal TotalAfterDiscount { get; set; }
+        public decimal DiscountGranted { get; set; }
+    }
+
+    public class PurchaseByProductDto
+    {
+        public string? Code { get; set; }
+        public string Product { get; set; } = "";
+        public decimal Quantity { get; set; }
+        public string UOM { get; set; } = "";
+        public decimal TotalBeforeTax { get; set; }
+        public decimal Total { get; set; }
+    }
+
+    public class PurchaseBySupplierDto
+    {
+        public string Supplier { get; set; } = "";
+        public decimal TotalBeforeTax { get; set; }
+        public decimal Total { get; set; }
+    }
+
+    public class UnpaidPurchaseDto
+    {
+        public string DocumentNumber { get; set; } = "";
+        public DateTime Date { get; set; }
+        public DateTime? DueDate { get; set; }
+        public string SupplierName { get; set; } = "";
+        public decimal DocumentTotal { get; set; }
+        public decimal TotalPaid { get; set; }
+        public decimal TotalUnpaid { get; set; }
+    }
 }

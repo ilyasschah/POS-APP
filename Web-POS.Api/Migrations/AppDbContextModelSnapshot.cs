@@ -2007,6 +2007,14 @@ namespace Api.Migrations
                     b.Property<int>("ToDocumentId")
                         .HasColumnType("int");
 
+                    b.Property<decimal>("TotalCashIn")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("TotalCashOut")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<decimal>("TotalReturns")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");

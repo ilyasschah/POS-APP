@@ -61,6 +61,14 @@ namespace Api.Services
 
                     decimal grandTotal = unreportedPayments.Sum(p => p.Amount);
 
+                    // Cash In / Cash Out from unlinked StartingCash entries
+                    var unreportedCash = await _db.StartingCashes
+                        .Where(sc => sc.CompanyId == companyId && sc.ZReportNumber == null)
+                        .ToListAsync();
+
+                    decimal totalCashIn  = unreportedCash.Where(sc => sc.StartingCashType == 0).Sum(sc => sc.Amount);
+                    decimal totalCashOut = unreportedCash.Where(sc => sc.StartingCashType == 1).Sum(sc => sc.Amount);
+
                     // Generate the Z-Report Entity
                     int nextNumber = lastReport != null ? lastReport.Number + 1 : 1;
 
@@ -74,7 +82,9 @@ namespace Api.Services
                         discountsGranted: discountsGranted,
                         taxableTotal: taxableTotal,
                         totalTax: totalTax,
-                        grandTotal: grandTotal
+                        grandTotal: grandTotal,
+                        totalCashIn: totalCashIn,
+                        totalCashOut: totalCashOut
                     );
 
                     await _db.ZReports.AddAsync(zReport);
@@ -99,6 +109,9 @@ namespace Api.Services
                         payment.LockToZReport(zReport.Id);
                         _db.Payments.Update(payment);
                     }
+
+                    foreach (var sc in unreportedCash)
+                        sc.ZReportNumber = nextNumber;
 
                     await _db.SaveChangesAsync();
                     await transaction.CommitAsync();

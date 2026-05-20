@@ -29,6 +29,7 @@ namespace Api.Services
                 zReportNumber: req.ZReportNumber,
                 dateCreated: req.DateCreated ?? DateTime.UtcNow
             );
+            entity.CompanyId = req.CompanyId;
 
             await _repository.AddAsync(entity);
             return entity;

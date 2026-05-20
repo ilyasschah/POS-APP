@@ -1,7 +1,10 @@
-﻿using Api.Domain;
+﻿using Api.Constants;
+using Api.DataBase;
+using Api.Domain;
 using Api.Helpers;
 using Api.Models;
 using Api.Repository;
+using Microsoft.EntityFrameworkCore;
 
 namespace Api.Services
 {
@@ -10,15 +13,18 @@ namespace Api.Services
         private readonly DocumentItemRepository _itemRepository;
         private readonly ProductRepository _productRepository;
         private readonly DocumentRepository _documentRepository;
+        private readonly AppDbContext _db;
 
         public DocumentItemService(
             DocumentItemRepository itemRepository,
             ProductRepository productRepository,
-            DocumentRepository documentRepository)
+            DocumentRepository documentRepository,
+            AppDbContext db)
         {
             _itemRepository = itemRepository;
             _productRepository = productRepository;
             _documentRepository = documentRepository;
+            _db = db;
         }
 
         public async Task<DocumentItemDto> CreateAsync(CreateDocumentItemRequest request, int companyId)
@@ -47,6 +53,12 @@ namespace Api.Services
                 request.ProductCost, pbtd, pad, total, total, request.DiscountApplyRule);
 
             await _itemRepository.AddAsync(entity);
+
+            // Add stock for purchase documents — no IsService exclusion:
+            // buying something always puts it in stock regardless of product type
+            if (document.DocumentTypeId == DocumentTypeConstants.Purchase)
+                await AdjustStockAsync(document.WarehouseId, request.ProductId, companyId, request.Quantity);
+
             return MapperDocumentItem.MapToDto(entity);
         }
 
@@ -54,6 +66,8 @@ namespace Api.Services
         {
             var entity = await _itemRepository.GetByIdAsync(request.Id, companyId);
             if (entity == null) throw new KeyNotFoundException("Item not found.");
+
+            decimal oldQuantity = entity.Quantity;
 
             int targetDocId = request.DocumentId ?? entity.DocumentId;
             if (request.DocumentId.HasValue && request.DocumentId.Value != entity.DocumentId)
@@ -88,14 +102,49 @@ namespace Api.Services
                 calcDisc, calcDiscType, request.ProductCost ?? entity.ProductCost,
                 pbtd, pad, total, total, request.DiscountApplyRule ?? entity.DiscountApplyRule);
 
-            return await _itemRepository.UpdateAsync(entity);
+            var result = await _itemRepository.UpdateAsync(entity);
+
+            // Delta stock adjustment for purchase documents
+            decimal delta = calcQuantity - oldQuantity;
+            if (delta != 0)
+            {
+                var doc = await _documentRepository.GetByIdAsync(targetDocId, companyId);
+                if (doc != null && doc.DocumentTypeId == DocumentTypeConstants.Purchase)
+                    await AdjustStockAsync(doc.WarehouseId, targetProdId, companyId, delta);
+            }
+
+            return result;
         }
 
         public async Task<bool> DeleteAsync(int id, int companyId)
         {
             var entity = await _itemRepository.GetByIdAsync(id, companyId);
             if (entity == null) throw new KeyNotFoundException("Item not found.");
+
+            // Reverse stock when a purchase item is removed
+            var doc = await _documentRepository.GetByIdAsync(entity.DocumentId, companyId);
+            if (doc != null && doc.DocumentTypeId == DocumentTypeConstants.Purchase)
+                await AdjustStockAsync(doc.WarehouseId, entity.ProductId, companyId, -entity.Quantity);
+
             return await _itemRepository.DeleteAsync(entity);
+        }
+
+        private async Task AdjustStockAsync(int warehouseId, int productId, int companyId, decimal delta)
+        {
+            var stock = await _db.Stocks.FirstOrDefaultAsync(
+                s => s.ProductId == productId && s.WarehouseId == warehouseId && s.CompanyId == companyId);
+
+            if (stock != null)
+            {
+                stock.UpdateDetails(stock.Quantity + delta, warehouseId, productId);
+                _db.Stocks.Update(stock);
+            }
+            else
+            {
+                // Create a new stock record if none exists yet for this product/warehouse
+                _db.Stocks.Add(Stock.Create(delta, warehouseId, productId, companyId));
+            }
+            await _db.SaveChangesAsync();
         }
     }
 }

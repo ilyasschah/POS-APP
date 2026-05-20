@@ -7,14 +7,54 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Api.Models;
 using Api.Attributes;
+using Api.DataBase;
+using Api.Domain;
+using Microsoft.EntityFrameworkCore;
 
 namespace Api.Controllers
 {
     //[SwaggerVisible]
     [Route("api/[controller]")]
     [ApiController]
-    public class DocumentController(IMediator mediator) : ControllerBase
+    public class DocumentController(IMediator mediator, AppDbContext db) : ControllerBase
     {
+        [HttpGet("[action]")]
+        public async Task<ActionResult<string>> GetNextNumber(
+            [FromQuery] int companyId,
+            [FromQuery] int documentTypeId)
+        {
+            if (companyId <= 0)       return BadRequest("Company ID is required");
+            if (documentTypeId <= 0)  return BadRequest("Document type ID is required");
+
+            var docType = await db.DocumentTypes
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t => t.Id == documentTypeId);
+
+            if (docType == null) return BadRequest("Invalid document type");
+
+            string yy = DateTime.UtcNow.ToString("yy");
+            string counterKey = $"DOC_{yy}_{docType.Code}_{companyId}";
+
+            var counter = await db.DocumentsCounter
+                .FirstOrDefaultAsync(c => c.Name.ToLower() == counterKey.ToLower());
+
+            int next;
+            if (counter == null)
+            {
+                next = 1;
+                db.DocumentsCounter.Add(DocumentsCounter.Create(counterKey, next, companyId));
+            }
+            else
+            {
+                next = counter.Value + 1;
+                counter.UpdateValue(next);
+            }
+            await db.SaveChangesAsync();
+
+            return Ok($"{yy}-{docType.Code}-{next.ToString().PadLeft(6, '0')}");
+        }
+
+
         [HttpGet("[action]")]
         public async Task<ActionResult<List<DocumentDto>>> GetAll([FromQuery] int companyId)
         {

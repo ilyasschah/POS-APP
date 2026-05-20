@@ -7,6 +7,8 @@ namespace Api.Queries.VoidReasonQuery
 {
     public class GetAllVoidReasonsQuery : IRequest<List<VoidReasonDto>>
     {
+        public int? CompanyId { get; set; }
+
         public class GetAllVoidReasonsQueryHandler : IRequestHandler<GetAllVoidReasonsQuery, List<VoidReasonDto>>
         {
             private readonly VoidReasonRepository _repository;
@@ -18,7 +20,7 @@ namespace Api.Queries.VoidReasonQuery
 
             public async Task<List<VoidReasonDto>> Handle(GetAllVoidReasonsQuery request, CancellationToken cancellationToken)
             {
-                var entities = await _repository.GetAllAsync();
+                var entities = await _repository.GetAllAsync(request.CompanyId);
                 return entities.Select(MapperVoidReason.MapToVoidReasonDto).ToList();
             }
         }

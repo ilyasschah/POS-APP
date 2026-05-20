@@ -15,9 +15,12 @@ namespace Api.Repository
             _db = db;
         }
 
-        public async Task<List<VoidReason>> GetAllAsync()
+        public async Task<List<VoidReason>> GetAllAsync(int? companyId = null)
         {
-            return await _db.VoidReasons.AsNoTracking().ToListAsync();
+            var q = _db.VoidReasons.AsNoTracking();
+            if (companyId.HasValue)
+                q = q.Where(vr => vr.CompanyId == companyId.Value);
+            return await q.OrderBy(vr => vr.Rank).ThenBy(vr => vr.Name).ToListAsync();
         }
 
         public async Task<VoidReason?> GetByIdAsync(int id, bool trackEntity = false)
