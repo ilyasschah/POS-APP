@@ -1,7 +1,5 @@
-﻿using MediatR;
-using System.Threading;
-using System.Threading.Tasks;
-using Api.Services;
+﻿using Api.Services;
+using MediatR;
 
 namespace Api.Commands.PosVoidCommands.Delete;
 

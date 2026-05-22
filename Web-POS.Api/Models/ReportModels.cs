@@ -189,6 +189,28 @@ namespace Api.Models
         public decimal Total { get; set; }
     }
 
+    public class StockReturnByProductDto
+    {
+        public DateTime Date { get; set; }
+        public string? Code { get; set; }
+        public string Product { get; set; } = "";
+        public decimal Quantity { get; set; }
+        public string UOM { get; set; } = "";
+        public decimal TotalBeforeTax { get; set; }
+        public decimal Total { get; set; }
+    }
+
+    public class LossAndDamageByProductDto
+    {
+        public DateTime Date { get; set; }
+        public string? Code { get; set; }
+        public string Product { get; set; } = "";
+        public decimal Quantity { get; set; }
+        public string UOM { get; set; } = "";
+        public decimal TotalBeforeTax { get; set; }
+        public decimal Total { get; set; }
+    }
+
     public class PurchaseBySupplierDto
     {
         public string Supplier { get; set; } = "";
@@ -205,5 +227,89 @@ namespace Api.Models
         public decimal DocumentTotal { get; set; }
         public decimal TotalPaid { get; set; }
         public decimal TotalUnpaid { get; set; }
+    }
+
+    public class PurchaseDiscountsDto
+    {
+        public string SupplierName { get; set; } = "";
+        public string DocumentNumber { get; set; } = "";
+        public DateTime Date { get; set; }
+        public string UserName { get; set; } = "";
+        public decimal TotalBeforeDiscount { get; set; }
+        public decimal TotalAfterDiscount { get; set; }
+        public decimal DiscountGranted { get; set; }
+    }
+
+    public class PurchaseByTaxDto
+    {
+        public string TaxName { get; set; } = "";
+        public decimal TotalBeforeTax { get; set; }
+        public decimal TaxAmount { get; set; }
+        public decimal Total { get; set; }
+    }
+
+    public class PurchaseInvoiceListDto
+    {
+        public DateTime Date { get; set; }
+        public string DocumentNumber { get; set; } = "";
+        public string? ExternalDocument { get; set; }
+        public string SupplierName { get; set; } = "";
+        public decimal Total { get; set; }
+    }
+
+    public class PurchaseItemsDiscountsDto
+    {
+        public string SupplierName { get; set; } = "";
+        public string DocumentNumber { get; set; } = "";
+        public DateTime Date { get; set; }
+        public string UserName { get; set; } = "";
+        public string? ProductCode { get; set; }
+        public string ProductName { get; set; } = "";
+        public decimal Quantity { get; set; }
+        public decimal Cost { get; set; }
+        public decimal TotalBeforeDiscount { get; set; }
+        public decimal TotalAfterDiscount { get; set; }
+        public decimal DiscountValue { get; set; }
+        public int DiscountType { get; set; }
+        public decimal TotalDiscount { get; set; }
+    }
+
+    public class PurchaseExpirationDateDto
+    {
+        public string?  ProductCode    { get; set; }
+        public string   ProductName    { get; set; } = "";
+        public decimal  Quantity       { get; set; }
+        public string   UOM            { get; set; } = "";
+        public DateTime ExpirationDate { get; set; }
+    }
+
+    public class ReorderProductListDto
+    {
+        public string  SupplierName  { get; set; } = "N/A";
+        public string  ProductName   { get; set; } = "";
+        public decimal OrderQuantity { get; set; }
+        public string  UOM           { get; set; } = "";
+    }
+
+    public class LowStockWarningDto
+    {
+        public string  SupplierName           { get; set; } = "N/A";
+        public string  ProductName            { get; set; } = "";
+        public decimal CurrentStock           { get; set; }
+        public decimal LowStockWarningQuantity { get; set; }
+        public decimal OrderQuantity          { get; set; }
+        public string  UOM                   { get; set; } = "";
+    }
+
+    public class TransactionHistoryDto
+    {
+        public DateTime? Date            { get; set; }
+        public string    TransactionType { get; set; } = "";
+        public string?   RefNumber       { get; set; }
+        public decimal   Credit          { get; set; }
+        public decimal   Debit           { get; set; }
+        public decimal   Balance         { get; set; }
+        public bool      IsPreviousBalance { get; set; }
+        public string    PartnerName     { get; set; } = "";
     }
 }

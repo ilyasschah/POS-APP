@@ -592,6 +592,108 @@ namespace Api.Controllers
         }
 
         [HttpGet("[action]")]
+        public async Task<ActionResult<List<PurchaseDiscountsDto>>> GetPurchaseDiscounts(
+            [FromQuery] int companyId,
+            [FromQuery] DateTime startDate,
+            [FromQuery] DateTime endDate,
+            [FromQuery] int? supplierId = null,
+            [FromQuery] int? userId = null)
+        {
+            if (companyId == 0) return BadRequest("Company ID is required");
+            if (endDate.Date < startDate.Date) return BadRequest("End date must be on or after start date");
+
+            var result = await mediator.Send(new GetPurchaseDiscountsQuery
+            {
+                CompanyId  = companyId,
+                StartDate  = startDate,
+                EndDate    = endDate,
+                SupplierId = supplierId,
+                UserId     = userId,
+            });
+
+            return Ok(result);
+        }
+
+        [HttpGet("[action]")]
+        public async Task<ActionResult<List<PurchaseByTaxDto>>> GetPurchaseByTax(
+            [FromQuery] int companyId,
+            [FromQuery] DateTime startDate,
+            [FromQuery] DateTime endDate,
+            [FromQuery] int? supplierId = null,
+            [FromQuery] int? userId = null,
+            [FromQuery] int? warehouseId = null,
+            [FromQuery] int? productId = null,
+            [FromQuery] int? productGroupId = null)
+        {
+            if (companyId == 0) return BadRequest("Company ID is required");
+            if (endDate.Date < startDate.Date) return BadRequest("End date must be on or after start date");
+
+            var result = await mediator.Send(new GetPurchaseByTaxQuery
+            {
+                CompanyId      = companyId,
+                StartDate      = startDate,
+                EndDate        = endDate,
+                SupplierId     = supplierId,
+                UserId         = userId,
+                WarehouseId    = warehouseId,
+                ProductId      = productId,
+                ProductGroupId = productGroupId,
+            });
+
+            return Ok(result);
+        }
+
+        [HttpGet("[action]")]
+        public async Task<ActionResult<List<PurchaseInvoiceListDto>>> GetPurchaseInvoiceList(
+            [FromQuery] int companyId,
+            [FromQuery] DateTime startDate,
+            [FromQuery] DateTime endDate,
+            [FromQuery] int? supplierId = null,
+            [FromQuery] int? userId = null,
+            [FromQuery] int? warehouseId = null)
+        {
+            if (companyId == 0) return BadRequest("Company ID is required");
+            if (endDate.Date < startDate.Date) return BadRequest("End date must be on or after start date");
+
+            var result = await mediator.Send(new GetPurchaseInvoiceListQuery
+            {
+                CompanyId  = companyId,
+                StartDate  = startDate,
+                EndDate    = endDate,
+                SupplierId = supplierId,
+                UserId     = userId,
+                WarehouseId = warehouseId,
+            });
+
+            return Ok(result);
+        }
+
+        [HttpGet("[action]")]
+        public async Task<ActionResult<List<PurchaseItemsDiscountsDto>>> GetPurchaseItemsDiscounts(
+            [FromQuery] int companyId,
+            [FromQuery] DateTime startDate,
+            [FromQuery] DateTime endDate,
+            [FromQuery] int? supplierId = null,
+            [FromQuery] int? userId = null,
+            [FromQuery] int? productId = null)
+        {
+            if (companyId == 0) return BadRequest("Company ID is required");
+            if (endDate.Date < startDate.Date) return BadRequest("End date must be on or after start date");
+
+            var result = await mediator.Send(new GetPurchaseItemsDiscountsQuery
+            {
+                CompanyId  = companyId,
+                StartDate  = startDate,
+                EndDate    = endDate,
+                SupplierId = supplierId,
+                UserId     = userId,
+                ProductId  = productId,
+            });
+
+            return Ok(result);
+        }
+
+        [HttpGet("[action]")]
         public async Task<ActionResult<List<SalesByTaxDto>>> GetSalesByTax(
             [FromQuery] int companyId,
             [FromQuery] DateTime startDate,
@@ -615,6 +717,147 @@ namespace Api.Controllers
                 WarehouseId    = warehouseId,
                 ProductId      = productId,
                 ProductGroupId = productGroupId,
+            });
+
+            return Ok(result);
+        }
+
+        [HttpGet("[action]")]
+        public async Task<ActionResult<List<PurchaseExpirationDateDto>>> GetPurchaseExpirationDate(
+            [FromQuery] int companyId,
+            [FromQuery] DateTime startDate,
+            [FromQuery] DateTime endDate,
+            [FromQuery] int? supplierId = null,
+            [FromQuery] int? userId = null,
+            [FromQuery] int? warehouseId = null,
+            [FromQuery] int? productId = null,
+            [FromQuery] int? productGroupId = null)
+        {
+            if (companyId == 0) return BadRequest("Company ID is required");
+            if (endDate.Date < startDate.Date) return BadRequest("End date must be on or after start date");
+
+            var result = await mediator.Send(new GetPurchaseExpirationDateQuery
+            {
+                CompanyId      = companyId,
+                StartDate      = startDate,
+                EndDate        = endDate,
+                SupplierId     = supplierId,
+                UserId         = userId,
+                WarehouseId    = warehouseId,
+                ProductId      = productId,
+                ProductGroupId = productGroupId,
+            });
+
+            return Ok(result);
+        }
+
+        [HttpGet("[action]")]
+        public async Task<ActionResult<List<StockReturnByProductDto>>> GetStockReturnByProduct(
+            [FromQuery] int companyId,
+            [FromQuery] DateTime startDate,
+            [FromQuery] DateTime endDate,
+            [FromQuery] int? userId = null,
+            [FromQuery] int? warehouseId = null,
+            [FromQuery] int? productId = null,
+            [FromQuery] int? productGroupId = null)
+        {
+            if (companyId == 0) return BadRequest("Company ID is required");
+            if (endDate.Date < startDate.Date) return BadRequest("End date must be on or after start date");
+
+            var result = await mediator.Send(new GetStockReturnByProductQuery
+            {
+                CompanyId      = companyId,
+                StartDate      = startDate,
+                EndDate        = endDate,
+                UserId         = userId,
+                WarehouseId    = warehouseId,
+                ProductId      = productId,
+                ProductGroupId = productGroupId,
+            });
+
+            return Ok(result);
+        }
+
+        [HttpGet("[action]")]
+        public async Task<ActionResult<List<LossAndDamageByProductDto>>> GetLossAndDamageByProduct(
+            [FromQuery] int companyId,
+            [FromQuery] DateTime startDate,
+            [FromQuery] DateTime endDate,
+            [FromQuery] int? userId = null,
+            [FromQuery] int? warehouseId = null,
+            [FromQuery] int? productId = null,
+            [FromQuery] int? productGroupId = null)
+        {
+            if (companyId == 0) return BadRequest("Company ID is required");
+            if (endDate.Date < startDate.Date) return BadRequest("End date must be on or after start date");
+
+            var result = await mediator.Send(new GetLossAndDamageByProductQuery
+            {
+                CompanyId      = companyId,
+                StartDate      = startDate,
+                EndDate        = endDate,
+                UserId         = userId,
+                WarehouseId    = warehouseId,
+                ProductId      = productId,
+                ProductGroupId = productGroupId,
+            });
+
+            return Ok(result);
+        }
+
+        [HttpGet("[action]")]
+        public async Task<ActionResult<List<ReorderProductListDto>>> GetReorderProductList(
+            [FromQuery] int companyId,
+            [FromQuery] int? supplierId = null,
+            [FromQuery] int? productId  = null)
+        {
+            if (companyId == 0) return BadRequest("Company ID is required");
+
+            var result = await mediator.Send(new GetReorderProductListQuery
+            {
+                CompanyId  = companyId,
+                SupplierId = supplierId,
+                ProductId  = productId,
+            });
+
+            return Ok(result);
+        }
+
+        [HttpGet("[action]")]
+        public async Task<ActionResult<List<LowStockWarningDto>>> GetLowStockWarning(
+            [FromQuery] int companyId,
+            [FromQuery] int? supplierId = null,
+            [FromQuery] int? productId  = null)
+        {
+            if (companyId == 0) return BadRequest("Company ID is required");
+
+            var result = await mediator.Send(new GetLowStockWarningQuery
+            {
+                CompanyId  = companyId,
+                SupplierId = supplierId,
+                ProductId  = productId,
+            });
+
+            return Ok(result);
+        }
+
+        [HttpGet("[action]")]
+        public async Task<ActionResult<List<TransactionHistoryDto>>> GetTransactionHistory(
+            [FromQuery] int companyId,
+            [FromQuery] int partnerId,
+            [FromQuery] DateTime startDate,
+            [FromQuery] DateTime endDate)
+        {
+            if (companyId == 0) return BadRequest("Company ID is required");
+            if (partnerId == 0) return BadRequest("Partner ID is required");
+            if (endDate.Date < startDate.Date) return BadRequest("End date must be on or after start date");
+
+            var result = await mediator.Send(new GetTransactionHistoryQuery
+            {
+                CompanyId = companyId,
+                PartnerId = partnerId,
+                StartDate = startDate,
+                EndDate   = endDate,
             });
 
             return Ok(result);

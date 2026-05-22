@@ -1,5 +1,6 @@
 ﻿using Api.Attributes;
 using Api.Commands.ProductGroupCommands.Add;
+using Api.Commands.ProductGroupCommands.AssignProducts;
 using Api.Commands.ProductGroupCommands.Delete;
 using Api.Commands.ProductGroupCommands.Update;
 using Api.Models;
@@ -64,6 +65,15 @@ namespace Api.Controllers
             if (companyId <= 0) return BadRequest("Company ID is required");
             var result = await _mediator.Send(new DeleteProductGroupCommand(id, companyId));
             return Ok(new { Message = result ? "Product Group deleted successfully" : "Failed to delete group" });
+        }
+
+        [HttpPost("[action]")]
+        public async Task<IActionResult> AssignProducts([FromBody] AssignProductsToGroupRequest request)
+        {
+            if (request.CompanyId <= 0) return BadRequest("Company ID is required");
+            if (request.GroupId <= 0) return BadRequest("Group ID is required");
+            var updated = await _mediator.Send(new AssignProductsToGroupCommand(request));
+            return Ok(new { Updated = updated });
         }
     }
 }

@@ -52,6 +52,9 @@ namespace Api.Services
 
             await _repository.AddAsync(newDocumentItemTax);
 
+            // After adding the tax, recalculate the item's price and total
+            await RecalculateItemAsync(req.DocumentItemId, companyId);
+
             return new DocumentItemTaxDto
             {
                 DocumentItemId = newDocumentItemTax.DocumentItemId,
@@ -103,7 +106,43 @@ namespace Api.Services
                 throw new InvalidOperationException("Document item tax not found.");
 
             await _repository.DeleteAsync(entityToDelete);
+
+            // After removing the tax, recalculate the item's price and total
+            await RecalculateItemAsync(documentItemId, companyId);
+
             return true;
+        }
+
+        // Recomputes DocumentItem.Price and .Total after any tax change.
+        // Price = PriceBeforeTax × (1 + sumOfAllAppliedRates / 100)
+        private async Task RecalculateItemAsync(int documentItemId, int companyId)
+        {
+            var item = await _documentItemRepository.GetByIdAsync(documentItemId, companyId);
+            if (item == null) return;
+
+            var appliedTaxes = await _repository.GetByDocumentItemIdAsync(documentItemId, companyId);
+            decimal totalTaxRate = appliedTaxes
+                .Where(t => t.Tax != null)
+                .Sum(t => t.Tax!.Rate);
+
+            decimal pbt = item.PriceBeforeTax;
+            decimal price = pbt * (1 + totalTaxRate / 100m);
+
+            decimal disc = item.Discount;
+            int discType = item.DiscountType;
+
+            decimal discountBase = discType == 0 ? pbt * (disc / 100m) : disc;
+            decimal discountTaxed = discType == 0 ? price * (disc / 100m) : disc;
+            decimal pbtd = pbt - discountBase;
+            decimal pad = price - discountTaxed;
+            decimal total = pad * item.Quantity;
+
+            item.UpdateDetails(
+                item.DocumentId, item.ProductId, item.Quantity, item.ExpectedQuantity,
+                pbt, price, disc, discType, item.ProductCost,
+                pbtd, pad, total, total, item.DiscountApplyRule);
+
+            await _documentItemRepository.UpdateAsync(item);
         }
     }
 }

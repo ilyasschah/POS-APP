@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Api.Attributes;
 using Api.Commands.ProductCommands.Add;
 using Api.Commands.ProductCommands.Delete;
+using Api.Commands.ProductCommands.Import;
 using Api.Commands.ProductCommands.Update;
 using Api.Queries.ProductsQuery;
 using Api.Models;
@@ -39,6 +40,24 @@ namespace Api.Controllers
             return result is null ? NotFound(new { message = "No products found for this group" }) : Ok(result);
         }
 
+
+        [HttpPost("[action]")]
+        public async Task<ActionResult<ImportProductsResult>> ImportBulk([FromBody] ImportProductsRequest req)
+        {
+            if (req.CompanyId <= 0) return BadRequest(new { message = "Company ID is required" });
+            if (req.Rows == null || req.Rows.Count == 0)
+                return BadRequest(new { message = "No rows to import" });
+            var result = await mediator.Send(new ImportProductsCommand(req));
+            return Ok(result);
+        }
+
+        [HttpGet("[action]")]
+        public async Task<ActionResult<List<ProductExportDto>>> GetForExport([FromQuery] int companyId)
+        {
+            if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
+            var result = await mediator.Send(new GetProductsForExportQuery { CompanyId = companyId });
+            return Ok(result);
+        }
 
         [HttpPost("[action]")]
         public async Task<ActionResult<ProductDto>> Add([FromBody] CreateProductRequest req, [FromQuery] int companyId)

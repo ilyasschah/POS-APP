@@ -76,6 +76,14 @@ namespace Api.DataBase
         public DbSet<StockMovementRow> StockMovementRows { get; set; }
         public DbSet<PurchaseByProductRow> PurchaseByProductRows { get; set; }
         public DbSet<UnpaidPurchaseRow> UnpaidPurchaseRows { get; set; }
+        public DbSet<PurchaseDiscountsRow> PurchaseDiscountsRows { get; set; }
+        public DbSet<PurchaseItemsDiscountsRow> PurchaseItemsDiscountsRows { get; set; }
+        public DbSet<PurchaseInvoiceListRow> PurchaseInvoiceListRows { get; set; }
+        public DbSet<PurchaseByTaxRow> PurchaseByTaxRows { get; set; }
+        public DbSet<PurchaseExpirationDateRow> PurchaseExpirationDateRows { get; set; }
+        public DbSet<StockReturnByProductRow> StockReturnByProductRows { get; set; }
+        public DbSet<LossAndDamageByProductRow> LossAndDamageByProductRows { get; set; }
+        public DbSet<TransactionHistoryRow> TransactionHistoryRows { get; set; }
 
         protected override void ConfigureConventions(ModelConfigurationBuilder cfg)
         {
@@ -194,6 +202,61 @@ namespace Api.DataBase
             {
                 entity.HasNoKey();
                 entity.ToView("vw_UnpaidPurchaseRow");
+            });
+
+            b.Entity<PurchaseDiscountsRow>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToView("vw_PurchaseDiscounts");
+            });
+
+            b.Entity<PurchaseItemsDiscountsRow>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToView("vw_PurchaseItemsDiscounts");
+                entity.Property(x => x.Quantity).HasPrecision(18, 4);
+                entity.Property(x => x.DiscountValue).HasPrecision(18, 2);
+            });
+
+            b.Entity<PurchaseInvoiceListRow>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToView("vw_PurchaseInvoiceList");
+            });
+
+            b.Entity<PurchaseByTaxRow>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToView("vw_PurchaseByTax");
+            });
+
+            b.Entity<PurchaseExpirationDateRow>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToView("vw_PurchaseExpirationDate");
+                entity.Property(x => x.Quantity).HasPrecision(18, 4);
+            });
+
+            b.Entity<StockReturnByProductRow>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToView("vw_StockReturnByProduct");
+                entity.Property(x => x.Quantity).HasPrecision(18, 4);
+            });
+
+            b.Entity<LossAndDamageByProductRow>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToView("vw_LossAndDamageByProduct");
+                entity.Property(x => x.Quantity).HasPrecision(18, 4);
+            });
+
+            b.Entity<TransactionHistoryRow>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToView("vw_TransactionHistory");
+                entity.Property(x => x.Credit).HasPrecision(18, 2);
+                entity.Property(x => x.Debit).HasPrecision(18, 2);
             });
 
             b.Entity<Document>(e =>

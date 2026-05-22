@@ -26,9 +26,20 @@ namespace Api.Services
             if (warehouse == null)
                 throw new UnauthorizedAccessException($"Warehouse with ID {request.WarehouseId} does not exist or does not belong to your company.");
 
-            var cexist = await _stockRepository.Existby_P_id_W_id(request.ProductId, request.WarehouseId, companyId);
-            if (cexist)
-                throw new InvalidOperationException($"A stock for product '{request.ProductId}' in warehouse '{request.WarehouseId}' already exists.");
+            var existing = await _stockRepository.GetByProductAndWarehouseAsync(request.ProductId, request.WarehouseId, companyId);
+            if (existing != null)
+            {
+                existing.UpdateDetails(request.Quantity, existing.WarehouseId, existing.ProductId);
+                await _stockRepository.UpdateQuantityAsync(existing);
+                return new StockDto
+                {
+                    Id = existing.Id,
+                    CompanyId = companyId,
+                    Quantity = existing.Quantity,
+                    WarehouseId = existing.WarehouseId,
+                    ProductId = existing.ProductId
+                };
+            }
 
             var newstock = Stock.Create(request.Quantity, request.WarehouseId, request.ProductId, companyId);
             await _stockRepository.Add(newstock);

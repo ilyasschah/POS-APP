@@ -35,11 +35,12 @@ namespace Api.Services
             var document = await _documentRepository.GetByIdAsync(request.DocumentId, companyId);
             if (document == null) throw new UnauthorizedAccessException("Invalid Document.");
 
-            decimal discountBase = request.DiscountType == 1
+            // DiscountType 0 = percentage, 1 = fixed amount
+            decimal discountBase = request.DiscountType == 0
                 ? request.PriceBeforeTax * (request.Discount / 100m)
                 : request.Discount;
 
-            decimal discountTaxed = request.DiscountType == 1
+            decimal discountTaxed = request.DiscountType == 0
                 ? request.Price * (request.Discount / 100m)
                 : request.Discount;
 
@@ -58,6 +59,14 @@ namespace Api.Services
             // buying something always puts it in stock regardless of product type
             if (document.DocumentTypeId == DocumentTypeConstants.Purchase)
                 await AdjustStockAsync(document.WarehouseId, request.ProductId, companyId, request.Quantity);
+
+            // Stock return sends goods back to supplier → subtract from stock
+            if (document.DocumentTypeId == DocumentTypeConstants.StockReturn)
+                await AdjustStockAsync(document.WarehouseId, request.ProductId, companyId, -request.Quantity);
+
+            // Loss and damage removes items from stock
+            if (document.DocumentTypeId == DocumentTypeConstants.LossAndDamage)
+                await AdjustStockAsync(document.WarehouseId, request.ProductId, companyId, -request.Quantity);
 
             return MapperDocumentItem.MapToDto(entity);
         }
@@ -89,8 +98,9 @@ namespace Api.Services
             decimal calcDisc = request.Discount ?? entity.Discount;
             int calcDiscType = request.DiscountType ?? entity.DiscountType;
 
-            decimal discountBase = calcDiscType == 1 ? calcPbt * (calcDisc / 100m) : calcDisc;
-            decimal discountTaxed = calcDiscType == 1 ? calcPrice * (calcDisc / 100m) : calcDisc;
+            // DiscountType 0 = percentage, 1 = fixed amount
+            decimal discountBase = calcDiscType == 0 ? calcPbt * (calcDisc / 100m) : calcDisc;
+            decimal discountTaxed = calcDiscType == 0 ? calcPrice * (calcDisc / 100m) : calcDisc;
 
             decimal pbtd = calcPbt - discountBase;
             decimal pad = calcPrice - discountTaxed;
@@ -104,13 +114,17 @@ namespace Api.Services
 
             var result = await _itemRepository.UpdateAsync(entity);
 
-            // Delta stock adjustment for purchase documents
+            // Delta stock adjustment for purchase and stock return documents
             decimal delta = calcQuantity - oldQuantity;
             if (delta != 0)
             {
                 var doc = await _documentRepository.GetByIdAsync(targetDocId, companyId);
                 if (doc != null && doc.DocumentTypeId == DocumentTypeConstants.Purchase)
                     await AdjustStockAsync(doc.WarehouseId, targetProdId, companyId, delta);
+                else if (doc != null && doc.DocumentTypeId == DocumentTypeConstants.StockReturn)
+                    await AdjustStockAsync(doc.WarehouseId, targetProdId, companyId, -delta);
+                else if (doc != null && doc.DocumentTypeId == DocumentTypeConstants.LossAndDamage)
+                    await AdjustStockAsync(doc.WarehouseId, targetProdId, companyId, -delta);
             }
 
             return result;
@@ -121,10 +135,14 @@ namespace Api.Services
             var entity = await _itemRepository.GetByIdAsync(id, companyId);
             if (entity == null) throw new KeyNotFoundException("Item not found.");
 
-            // Reverse stock when a purchase item is removed
+            // Reverse stock when a purchase or stock return item is removed
             var doc = await _documentRepository.GetByIdAsync(entity.DocumentId, companyId);
             if (doc != null && doc.DocumentTypeId == DocumentTypeConstants.Purchase)
                 await AdjustStockAsync(doc.WarehouseId, entity.ProductId, companyId, -entity.Quantity);
+            else if (doc != null && doc.DocumentTypeId == DocumentTypeConstants.StockReturn)
+                await AdjustStockAsync(doc.WarehouseId, entity.ProductId, companyId, entity.Quantity);
+            else if (doc != null && doc.DocumentTypeId == DocumentTypeConstants.LossAndDamage)
+                await AdjustStockAsync(doc.WarehouseId, entity.ProductId, companyId, entity.Quantity);
 
             return await _itemRepository.DeleteAsync(entity);
         }

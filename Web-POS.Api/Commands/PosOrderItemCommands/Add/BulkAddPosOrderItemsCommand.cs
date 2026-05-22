@@ -12,12 +12,14 @@ namespace Api.Commands.PosOrderItemCommands.Add
     {
         public int CompanyId { get; set; }
         public int WarehouseId { get; set; }
+        public decimal OrderTotal { get; set; }
         public List<BulkAddPosOrderItemRequest> Items { get; set; }
 
-        public BulkAddPosOrderItemsCommand(int companyId, int warehouseId, List<BulkAddPosOrderItemRequest> items)
+        public BulkAddPosOrderItemsCommand(int companyId, int warehouseId, decimal orderTotal, List<BulkAddPosOrderItemRequest> items)
         {
             CompanyId = companyId;
             WarehouseId = warehouseId;
+            OrderTotal = orderTotal;
             Items = items;
         }
 
@@ -229,7 +231,7 @@ namespace Api.Commands.PosOrderItemCommands.Add
                             }
                         }
 
-                        decimal newTotal = currentItems.Sum(i => (i.Price - i.Discount) * i.Quantity);
+                        decimal newTotal = command.OrderTotal;
 
                         orderToUpdate.Update(
                             orderToUpdate.UserId, orderToUpdate.Number, orderToUpdate.Discount,

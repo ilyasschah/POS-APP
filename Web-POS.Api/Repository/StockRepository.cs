@@ -34,6 +34,12 @@ namespace Api.Repository
             return await _db.Stocks
                 .AnyAsync(s => s.ProductId == productid && s.WarehouseId == warehouseid && s.CompanyId == companyid);
         }
+
+        public async Task<Stock?> GetByProductAndWarehouseAsync(int productId, int warehouseId, int companyId)
+        {
+            return await _db.Stocks
+                .FirstOrDefaultAsync(s => s.ProductId == productId && s.WarehouseId == warehouseId && s.CompanyId == companyId);
+        }
         public async Task Add(Stock newstock)
         {
             _db.Stocks.Add(newstock);

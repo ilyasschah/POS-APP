@@ -71,11 +71,11 @@ namespace Api.Controllers
             }
         }
         [HttpPost("[action]")]
-        public async Task<IActionResult> BulkAdd([FromQuery] int companyId, [FromQuery] int warehouseId, [FromBody] List<BulkAddPosOrderItemRequest> requests)
+        public async Task<IActionResult> BulkAdd([FromQuery] int companyId, [FromQuery] int warehouseId, [FromQuery] decimal orderTotal, [FromBody] List<BulkAddPosOrderItemRequest> requests)
         {
             if (companyId <= 0)
                 return BadRequest(new { message = "Company ID is required." });
-            
+
             if (warehouseId <= 0)
                 return BadRequest(new { message = "Warehouse ID is required." });
 
@@ -84,7 +84,7 @@ namespace Api.Controllers
 
             try
             {
-                var command = new BulkAddPosOrderItemsCommand(companyId, warehouseId, requests);
+                var command = new BulkAddPosOrderItemsCommand(companyId, warehouseId, orderTotal, requests);
                 var result = await _mediator.Send(command);
 
                 if (result.Success)
