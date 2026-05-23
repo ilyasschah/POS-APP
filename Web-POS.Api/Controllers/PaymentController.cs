@@ -1,4 +1,5 @@
 ﻿using Api.Commands.PaymentCommands.Add;
+using Api.Commands.PaymentCommands.ApplyCredit;
 using Api.Commands.PaymentCommands.Delete;
 using Api.Commands.PaymentCommands.Update;
 using Api.Models;
@@ -92,6 +93,29 @@ namespace Api.Controllers
                 return ok
                     ? Ok(new { message = "Payment deleted successfully" })
                     : NotFound(new { message = "Payment not found" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPost("[action]")]
+        public async Task<IActionResult> ApplyCreditPayment(
+            [FromBody] ApplyCreditPaymentRequest req,
+            [FromQuery] int companyId,
+            [FromQuery] int userId)
+        {
+            if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
+            if (userId    <= 0) return BadRequest(new { message = "User ID is required" });
+
+            try
+            {
+                var ok = await _mediator.Send(
+                    new ApplyCreditPaymentCommand(req, companyId, userId));
+                return ok
+                    ? Ok(new { message = "Credit payment applied successfully" })
+                    : BadRequest(new { message = "No documents were updated" });
             }
             catch (InvalidOperationException ex)
             {

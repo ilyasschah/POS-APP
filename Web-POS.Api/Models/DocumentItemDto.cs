@@ -7,7 +7,9 @@
         public int DocumentId { get; set; }
         public string? DocumentNumber { get; set; }
         public int ProductId { get; set; }
+        public string? ProductCode { get; set; }
         public string? ProductName { get; set; }
+        public string? MeasurementUnit { get; set; }
         public decimal Quantity { get; set; }
         public decimal ExpectedQuantity { get; set; }
         public decimal PriceBeforeTax { get; set; }

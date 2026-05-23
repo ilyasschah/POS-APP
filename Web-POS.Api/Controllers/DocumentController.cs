@@ -10,6 +10,7 @@ using Api.Attributes;
 using Api.DataBase;
 using Api.Domain;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 
 namespace Api.Controllers
 {
@@ -61,6 +62,26 @@ namespace Api.Controllers
             if (companyId <= 0) return BadRequest("Company ID is required");
 
             return Ok(await mediator.Send(new GetAllDocumentsQuery { CompanyId = companyId }));
+        }
+
+        [HttpGet("[action]")]
+        public async Task<ActionResult<List<SalesHistoryDocumentDto>>> GetSalesHistory(
+            [FromQuery] int companyId,
+            [FromQuery] DateTime startDate,
+            [FromQuery] DateTime endDate,
+            [FromQuery] int? userId = null,
+            [FromQuery] int? customerId = null)
+        {
+            if (companyId <= 0) return BadRequest("Company ID is required");
+
+            return Ok(await mediator.Send(new GetSalesHistoryQuery
+            {
+                CompanyId  = companyId,
+                StartDate  = startDate,
+                EndDate    = endDate,
+                UserId     = userId,
+                CustomerId = customerId,
+            }));
         }
 
         [HttpGet("[action]")]
@@ -142,6 +163,21 @@ namespace Api.Controllers
             return result
                 ? Ok(new { Message = "Document deleted" })
                 : BadRequest(new { Message = "Failed to delete document" });
+        }
+
+        [HttpGet("[action]")]
+        public async Task<ActionResult<List<UnpaidDocumentDto>>> GetUnpaidByCustomer(
+            [FromQuery] int companyId,
+            [FromQuery] int customerId)
+        {
+            if (companyId  <= 0) return BadRequest("Company ID is required");
+            if (customerId <= 0) return BadRequest("Customer ID is required");
+
+            return Ok(await mediator.Send(new GetUnpaidByCustomerQuery
+            {
+                CompanyId  = companyId,
+                CustomerId = customerId,
+            }));
         }
     }
 }

@@ -1,7 +1,9 @@
 ﻿using FluentValidation;
 using MediatR;
+using Api.DataBase;
 using Api.Models;
 using Api.Services;
+using Microsoft.EntityFrameworkCore;
 
 namespace Api.Commands.DocumentsCommands.Update
 {
@@ -19,14 +21,32 @@ namespace Api.Commands.DocumentsCommands.Update
         public class UpdateDocumentCommandHandler : IRequestHandler<UpdateDocumentCommand, bool>
         {
             private readonly DocumentService _service;
+            private readonly AppDbContext    _db;
 
-            public UpdateDocumentCommandHandler(DocumentService service)
+            public UpdateDocumentCommandHandler(DocumentService service, AppDbContext db)
             {
                 _service = service;
+                _db      = db;
             }
 
             public async Task<bool> Handle(UpdateDocumentCommand command, CancellationToken cancellationToken)
             {
+                // Rule 3: marking a document as Unpaid (0) must wipe its payment
+                // records so the database stays financially consistent.
+                if (command.Request.PaidStatus == 0)
+                {
+                    var payments = await _db.Payments
+                        .Where(p => p.DocumentId == command.Request.Id
+                                 && p.CompanyId  == command.CompanyId)
+                        .ToListAsync(cancellationToken);
+
+                    if (payments.Count > 0)
+                    {
+                        _db.Payments.RemoveRange(payments);
+                        await _db.SaveChangesAsync(cancellationToken);
+                    }
+                }
+
                 return await _service.UpdateAsync(command.Request, command.CompanyId);
             }
         }

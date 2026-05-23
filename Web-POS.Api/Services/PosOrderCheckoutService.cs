@@ -90,6 +90,13 @@ namespace Api.Services
                             .FirstOrDefaultAsync();
                     }
 
+                    // Rule 2: respect the PaymentType's MarkAsPaid flag so that
+                    // credit/tab payment types leave the document as Unpaid (0).
+                    var paymentType = await _db.PaymentTypes
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(pt => pt.Id == req.PaymentTypeId);
+                    int paidStatus = (paymentType?.MarkAsPaid ?? true) ? 1 : 0;
+
                     var document = Document.Create(
                         number: documentNumber,
                         userId: userId,
@@ -101,7 +108,7 @@ namespace Api.Services
                         orderNumber: req.OrderNumber ?? posOrder.Number,
                         discount: posOrder.Discount,
                         discountType: posOrder.DiscountType,
-                        paidStatus: 1,
+                        paidStatus: paidStatus,
                         serviceType: posOrder.ServiceType
                     );
 
