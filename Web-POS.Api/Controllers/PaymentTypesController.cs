@@ -56,8 +56,15 @@ namespace Api.Controllers
         public async Task<ActionResult<PaymentTypeDto>> Delete([FromQuery] int id, [FromQuery] int companyId)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
-            var result = await mediator.Send(new DeletePaymentTypeCommand(id, companyId));
-            return Ok(new { Message = result ? "Payment type deleted successfully" : "Failed to delete payment type" });
+            try
+            {
+                var result = await mediator.Send(new DeletePaymentTypeCommand(id, companyId));
+                return Ok(new { Message = result ? "Payment type deleted successfully" : "Failed to delete payment type" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
         }
     }
 }

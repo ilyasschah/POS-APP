@@ -11,6 +11,7 @@
         public double Width { get; set; }
         public double Height { get; set; }
         public bool IsRound { get; set; }
+        public int? AssignedUserId { get; set; }
     }
 
     public class CreateFloorPlanTableRequest

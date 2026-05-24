@@ -24,7 +24,7 @@ namespace Api.Commands.CountryCommands.Update
             public UpdateCountryCommandHandler(CountryService service) => _service = service;
             public Task<bool> Handle(UpdateCountryCommand command, CancellationToken cancellationToken)
             {
-                return _service.Update(command.Id, command.Request.Name, command.CompanyId);
+                return _service.Update(command.Id, command.Request.Name, command.Request.Code, command.CompanyId);
             }
         }
 

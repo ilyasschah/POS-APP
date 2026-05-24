@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Api.Domain;
 using Api.DataBase;
+using Api.Models;
 
 namespace Api.Repository
 {
@@ -21,11 +22,28 @@ namespace Api.Repository
                 .ToListAsync();
         }
 
-        public async Task<List<FloorPlanTable>> GetByFloorPlanIdAsync(int floorPlanId, int companyId)
+        public async Task<List<FloorPlanTableDto>> GetByFloorPlanIdAsync(int floorPlanId, int companyId)
         {
             return await _db.FloorPlanTables
                 .AsNoTracking()
                 .Where(t => t.FloorPlanId == floorPlanId && t.CompanyId == companyId)
+                .Select(t => new FloorPlanTableDto
+                {
+                    Id = t.Id,
+                    FloorPlanId = t.FloorPlanId,
+                    Name = t.Name,
+                    Status = t.Status,
+                    PositionX = t.PositionX,
+                    PositionY = t.PositionY,
+                    Width = t.Width,
+                    Height = t.Height,
+                    IsRound = t.IsRound,
+                    AssignedUserId = _db.PosOrders
+                        .Where(o => o.FloorPlanTableId == t.Id && o.CompanyId == companyId)
+                        .OrderByDescending(o => o.Id)
+                        .Select(o => (int?)o.UserId)
+                        .FirstOrDefault()
+                })
                 .ToListAsync();
         }
 

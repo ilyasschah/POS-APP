@@ -22,8 +22,7 @@ namespace Api.Services
 
         public async Task<List<FloorPlanTableDto>> GetByFloorPlanIdAsync(int floorPlanId, int companyId)
         {
-            var entities = await _repository.GetByFloorPlanIdAsync(floorPlanId, companyId);
-            return entities.Select(MapperFloorPlanTable.MapToDto).ToList();
+            return await _repository.GetByFloorPlanIdAsync(floorPlanId, companyId);
         }
 
         public async Task<FloorPlanTableDto?> GetByIdAsync(int id, int companyId)

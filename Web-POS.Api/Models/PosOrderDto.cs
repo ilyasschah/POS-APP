@@ -14,6 +14,7 @@ namespace Api.Models
         public int ServiceType { get; set; }
         public int ServiceStatus { get; set; }
         public int? FloorPlanTableId { get; set; }
+        public DateTime? DueDate { get; set; }
         //public int? BookingId { get; set; }
     }
 

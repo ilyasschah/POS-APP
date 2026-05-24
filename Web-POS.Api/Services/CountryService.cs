@@ -20,11 +20,12 @@ namespace Api.Services
             return true;
         }
 
-        public async Task<bool> Update(int id, string newName, int companyId)
+        public async Task<bool> Update(int id, string newName, string? newCode, int companyId)
         {
             var entity = await _countryRepository.GetCountryId_byCompanyQuery(id, companyId);
             if (entity == null) return false;
             entity.UpdateName(newName);
+            entity.Code = newCode;
             await _countryRepository.Update(entity);
             return true;
         }

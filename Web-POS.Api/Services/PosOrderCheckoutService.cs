@@ -97,6 +97,16 @@ namespace Api.Services
                         .FirstOrDefaultAsync(pt => pt.Id == req.PaymentTypeId);
                     int paidStatus = (paymentType?.MarkAsPaid ?? true) ? 1 : 0;
 
+                    // Rule 3: calculate DueDate from the DefaultDueDateDays setting.
+                    var dueDateProp = await _db.ApplicationProperties
+                        .Where(ap => ap.CompanyId == companyId && ap.Name == "Order.DefaultDueDateDays")
+                        .Select(ap => ap.Value)
+                        .FirstOrDefaultAsync();
+                    int dueDateDays = int.TryParse(dueDateProp, out var parsedDays) ? parsedDays : 0;
+                    DateTime? calculatedDueDate = dueDateDays > 0
+                        ? DateTime.UtcNow.Date.AddDays(dueDateDays)
+                        : (DateTime?)null;
+
                     var document = Document.Create(
                         number: documentNumber,
                         userId: userId,
@@ -109,7 +119,8 @@ namespace Api.Services
                         discount: posOrder.Discount,
                         discountType: posOrder.DiscountType,
                         paidStatus: paidStatus,
-                        serviceType: posOrder.ServiceType
+                        serviceType: posOrder.ServiceType,
+                        dueDate: calculatedDueDate
                     );
 
                     _db.Documents.Add(document);

@@ -5,6 +5,7 @@ using Api.Commands.CountryCommands.Update;
 using Api.Commands.CountryCommands.Delete;
 using Api.Queries.CountryQuery.Get;
 using Api.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Api.Controllers
 {
@@ -47,8 +48,15 @@ namespace Api.Controllers
         public async Task<IActionResult> Delete(int id, [FromQuery] int companyId)
         {
             if (companyId <= 0) return BadRequest("Company ID is required");
-            var ok = await mediator.Send(new DeleteCountryCommand(id, companyId));
-            return ok ? NoContent() : NotFound();
+            try
+            {
+                var ok = await mediator.Send(new DeleteCountryCommand(id, companyId));
+                return ok ? NoContent() : NotFound();
+            }
+            catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FK_") == true)
+            {
+                return BadRequest(new { message = "Cannot delete this country because it is referenced by one or more companies." });
+            }
         }
     }
 }

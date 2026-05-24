@@ -77,31 +77,40 @@ namespace Api.Commands.PosOrderItemCommands.Add
                             .ToDictionaryAsync(s => s.ProductId, cancellationToken);
 
                         // --- Task 1: Pre-save Inventory Check (Delta Logic) ---
-                        foreach (var req in command.Items)
+                        var preventNegInvProp = await _db.ApplicationProperties
+                            .Where(ap => ap.CompanyId == command.CompanyId && ap.Name == "Order.PreventNegativeInventory")
+                            .Select(ap => ap.Value)
+                            .FirstOrDefaultAsync(cancellationToken);
+                        bool preventNegativeInventory = !string.Equals(preventNegInvProp, "false", StringComparison.OrdinalIgnoreCase);
+
+                        if (preventNegativeInventory)
                         {
-                            var product = products[req.ProductId];
-                            if (product.IsService) continue;
-
-                            var existingItem = existingItems.FirstOrDefault(e => e.ProductId == req.ProductId);
-                            decimal oldQuantity = existingItem?.Quantity ?? 0;
-                            decimal delta = req.Quantity - oldQuantity;
-
-                            if (delta > 0)
+                            foreach (var req in command.Items)
                             {
-                                // We need more stock
-                                if (!stocks.TryGetValue(req.ProductId, out var stock) || stock.Quantity < delta)
-                                {
-                                    // Fallback Check
-                                    var otherWarehouses = await _db.Stocks
-                                        .Include(s => s.Warehouse)
-                                        .Where(s => s.ProductId == req.ProductId && s.WarehouseId != command.WarehouseId && s.Quantity >= delta && s.CompanyId == command.CompanyId)
-                                        .Select(s => s.Warehouse.Name)
-                                        .ToListAsync(cancellationToken);
+                                var product = products[req.ProductId];
+                                if (product.IsService) continue;
 
-                                    string whList = otherWarehouses.Any() ? string.Join(", ", otherWarehouses) : "None";
-                                    response.Success = false;
-                                    response.Message = $"Product {product.Name} is out of stock in this warehouse (needed {delta} more). It is available in Warehouse(s): {whList}.";
-                                    return response;
+                                var existingItem = existingItems.FirstOrDefault(e => e.ProductId == req.ProductId);
+                                decimal oldQuantity = existingItem?.Quantity ?? 0;
+                                decimal delta = req.Quantity - oldQuantity;
+
+                                if (delta > 0)
+                                {
+                                    // We need more stock
+                                    if (!stocks.TryGetValue(req.ProductId, out var stock) || stock.Quantity < delta)
+                                    {
+                                        // Fallback Check
+                                        var otherWarehouses = await _db.Stocks
+                                            .Include(s => s.Warehouse)
+                                            .Where(s => s.ProductId == req.ProductId && s.WarehouseId != command.WarehouseId && s.Quantity >= delta && s.CompanyId == command.CompanyId)
+                                            .Select(s => s.Warehouse.Name)
+                                            .ToListAsync(cancellationToken);
+
+                                        string whList = otherWarehouses.Any() ? string.Join(", ", otherWarehouses) : "None";
+                                        response.Success = false;
+                                        response.Message = $"Product {product.Name} is out of stock in this warehouse (needed {delta} more). It is available in Warehouse(s): {whList}.";
+                                        return response;
+                                    }
                                 }
                             }
                         }

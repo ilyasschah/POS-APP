@@ -18,6 +18,7 @@
         public string Color { get; set; } = string.Empty;
         public byte[]? Image { get; set; }
         public decimal StockQuantity { get; set; }
+        public decimal Cost { get; set; }
         public List<MenuTaxDto> Taxes { get; set; } = new();
     }
 

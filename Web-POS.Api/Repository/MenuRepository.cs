@@ -36,6 +36,8 @@ namespace Api.Repository
                             Color = p.Color,
                             Image = p.Image,
 
+                            Cost = p.Cost,
+
                             StockQuantity = _db.Stocks
                                 .Where(s => s.ProductId == p.Id && s.WarehouseId == warehouseId)
                                 .Select(s => s.Quantity)

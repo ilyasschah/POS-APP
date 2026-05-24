@@ -20,6 +20,7 @@ namespace Api.Repository
                 .Where(p => p.CompanyId == companyId)
                 .Include(p => p.ProductGroup)
                 .Include(p => p.Currency)
+                .Include(p => p.Barcodes)
                 .ToListAsync();
         }
         public async Task<Product?> GetByIdAsync(int id, int companyId, bool trackEntity = false)

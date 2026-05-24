@@ -65,6 +65,7 @@ namespace Api.Domain
         public ProductGroup? ProductGroup { get; set; }
         public Currency? Currency { get; set; }
         public virtual ICollection<ProductTax> ProductTaxes { get; set; } = new List<ProductTax>();
+        public virtual ICollection<Barcode> Barcodes { get; set; } = new List<Barcode>();
         public Product() { }
 
         private Product(

@@ -19,6 +19,7 @@ namespace Api.Domain
         public int ServiceType { get; set; }
         public int ServiceStatus { get; set; }
         public int? FloorPlanTableId { get; set; }
+        public DateTime? DueDate { get; set; }
 
         [ForeignKey(nameof(UserId))]
         public virtual User? User { get; set; }

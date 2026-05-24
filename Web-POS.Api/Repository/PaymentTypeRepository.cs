@@ -63,9 +63,11 @@ namespace Api.Repository
         {
             var entity = await GetByIdAsync(id, companyId);
             if (entity == null)
-            {
                 throw new InvalidOperationException("Payment type not found or you do not have permission to delete it.");
-            }
+
+            bool isInUse = await _db.Payments.AnyAsync(p => p.PaymentTypeId == id);
+            if (isInUse)
+                throw new InvalidOperationException("This payment type cannot be deleted because it is already used in one or more transactions.");
 
             _db.PaymentTypes.Remove(entity);
             await _db.SaveChangesAsync();
