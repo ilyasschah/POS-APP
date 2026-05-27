@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'api_client.dart';
 
@@ -65,23 +67,108 @@ class KitchenScreen extends StatefulWidget {
 }
 
 class _KitchenScreenState extends State<KitchenScreen> {
+  static const int _kdsPort = 9090;
+
   Timer? _refreshTimer;
   int _refreshSeconds = 30;
   bool _isLoading = false;
   List<KitchenOrder> _orders = [];
   final ApiClient _apiClient = ApiClient();
+  HttpServer? _httpServer;
+  String _deviceIp = '…';
+  bool _serverRunning = false;
+  final ScrollController _scrollController = ScrollController();
+  bool _canScrollLeft = false;
+  bool _canScrollRight = false;
 
   @override
   void initState() {
     super.initState();
     _fetchData();
     _startTimer();
+    _startHttpServer();
+    _resolveDeviceIp();
+    _scrollController.addListener(_updateScrollArrows);
+  }
+
+  void _updateScrollArrows() {
+    final canLeft = _scrollController.offset > 0;
+    final canRight = _scrollController.offset < _scrollController.position.maxScrollExtent;
+    if (canLeft != _canScrollLeft || canRight != _canScrollRight) {
+      setState(() {
+        _canScrollLeft = canLeft;
+        _canScrollRight = canRight;
+      });
+    }
+  }
+
+  void _scrollBy(double delta) {
+    _scrollController.animateTo(
+      (_scrollController.offset + delta).clamp(0.0, _scrollController.position.maxScrollExtent),
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
   }
 
   @override
   void dispose() {
     _refreshTimer?.cancel();
+    _httpServer?.close(force: true);
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _resolveDeviceIp() async {
+    try {
+      final interfaces = await NetworkInterface.list(
+        type: InternetAddressType.IPv4,
+        includeLinkLocal: false,
+      );
+      for (final iface in interfaces) {
+        for (final addr in iface.addresses) {
+          if (!addr.isLoopback) {
+            if (mounted) setState(() => _deviceIp = addr.address);
+            return;
+          }
+        }
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _startHttpServer() async {
+    try {
+      _httpServer = await HttpServer.bind(InternetAddress.anyIPv4, _kdsPort);
+      if (mounted) setState(() => _serverRunning = true);
+      debugPrint('[KDS] HTTP server listening on port $_kdsPort');
+      _httpServer!.listen(_handleRequest);
+    } catch (e) {
+      debugPrint('[KDS] Failed to start HTTP server: $e');
+    }
+  }
+
+  Future<void> _handleRequest(HttpRequest req) async {
+    try {
+      await req.drain<void>();
+      if (req.method == 'POST' && req.uri.path == '/refresh') {
+        _fetchData();
+        req.response
+          ..statusCode = HttpStatus.ok
+          ..headers.contentType = ContentType.json
+          ..write(jsonEncode({'status': 'refreshing'}));
+      } else if (req.method == 'GET' && req.uri.path == '/health') {
+        req.response
+          ..statusCode = HttpStatus.ok
+          ..headers.contentType = ContentType.json
+          ..write(jsonEncode({'status': 'ok'}));
+      } else {
+        req.response.statusCode = HttpStatus.notFound;
+      }
+    } catch (e) {
+      debugPrint('[KDS] handler error: $e');
+      req.response.statusCode = HttpStatus.internalServerError;
+    } finally {
+      await req.response.close();
+    }
   }
 
   void _startTimer() {
@@ -98,8 +185,6 @@ class _KitchenScreenState extends State<KitchenScreen> {
 
     try {
       final rawData = await _apiClient.getKitchenOrders(widget.companyId);
-      debugPrint("KITCHEN RAW DATA: $rawData");
-
       final loadedOrders = rawData.map<KitchenOrder>((item) {
         final rawItems = (item['items'] ?? []) as List<dynamic>;
 
@@ -112,13 +197,19 @@ class _KitchenScreenState extends State<KitchenScreen> {
           );
         }).toList();
 
+        DateTime? createdAt;
+        final rawDate = item['dateCreated'];
+        if (rawDate != null) {
+          createdAt = DateTime.tryParse(rawDate.toString())?.toLocal();
+        }
+
         return KitchenOrder(
           id: item['id'] as int,
           number: (item['number'] ?? 'Unknown') as String,
           tableName: item['tableName'] as String?,
           serviceType: (item['serviceType'] ?? item['ServiceType'] ?? 1) as int,
           serviceStatus: (item['serviceStatus'] ?? 2) as int,
-          dateCreated: null,
+          dateCreated: createdAt,
           items: kitchenItems,
         );
       }).toList();
@@ -127,6 +218,9 @@ class _KitchenScreenState extends State<KitchenScreen> {
         setState(() {
           _orders = loadedOrders;
           _isLoading = false;
+        });
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && _scrollController.hasClients) _updateScrollArrows();
         });
       }
     } catch (e, stacktrace) {
@@ -150,9 +244,18 @@ class _KitchenScreenState extends State<KitchenScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF546E7A),
         foregroundColor: Colors.white,
-        title: Text(
-          "Company ${widget.companyId} - ${_orders.length} orders",
-          style: const TextStyle(fontWeight: FontWeight.bold),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Kitchen Display — ${_orders.length} order${_orders.length == 1 ? '' : 's'}",
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+            ),
+            Text(
+              'IP: $_deviceIp:$_kdsPort',
+              style: const TextStyle(fontSize: 11, color: Colors.white70),
+            ),
+          ],
         ),
         actions: [
           Row(
@@ -187,59 +290,246 @@ class _KitchenScreenState extends State<KitchenScreen> {
         ],
       ),
       body: _orders.isEmpty
-          ? const Center(
-              child: Text(
-                "Waiting for orders...",
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // ── Setup card ────────────────────────────────────────
+                  Container(
+                    width: 420,
+                    margin: const EdgeInsets.symmetric(horizontal: 24),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: 12,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        // header
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 20, horizontal: 24),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF546E7A),
+                            borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(16)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.lan_outlined,
+                                  color: Colors.white, size: 28),
+                              const SizedBox(width: 12),
+                              const Text(
+                                'Kitchen Display — Setup',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const Spacer(),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: _serverRunning
+                                      ? Colors.green.shade400
+                                      : Colors.orange.shade400,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      _serverRunning
+                                          ? Icons.circle
+                                          : Icons.hourglass_top,
+                                      size: 10,
+                                      color: Colors.white,
+                                    ),
+                                    const SizedBox(width: 5),
+                                    Text(
+                                      _serverRunning ? 'Ready' : 'Starting…',
+                                      style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        // body
+                        Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Enter this address in the POS app:',
+                                style: TextStyle(
+                                    fontSize: 14, color: Colors.black54),
+                              ),
+                              const SizedBox(height: 10),
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 18, horizontal: 20),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                      color: const Color(0xFFCBD5E1)),
+                                ),
+                                child: Text(
+                                  '$_deviceIp:$_kdsPort',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    fontSize: 32,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF0F172A),
+                                    letterSpacing: 1.5,
+                                    fontFamily: 'monospace',
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              const Text(
+                                'Settings → Kitchen Display → Add this IP',
+                                style: TextStyle(
+                                    fontSize: 13, color: Colors.black45),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  // ── Waiting label ──────────────────────────────────────
+                  const Text(
+                    'Waiting for orders…',
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
             )
-          : SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: _orders.map((order) {
-                  return KitchenCard(
-                    order: order,
-                    companyId: widget.companyId,
-                    onRemove: () => _removeOrder(order.id),
-                    onMarkReady: (id) async {
-                      final messenger = ScaffoldMessenger.of(context);
-                      try {
-                        final success = await _apiClient.updateStatus(
-                          widget.companyId,
-                          id,
-                          3,
+          : Stack(
+              children: [
+                Scrollbar(
+                  controller: _scrollController,
+                  thumbVisibility: true,
+                  thickness: 8,
+                  child: SingleChildScrollView(
+                    controller: _scrollController,
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: _orders.map((order) {
+                        return KitchenCard(
+                          order: order,
+                          companyId: widget.companyId,
+                          onRemove: () => _removeOrder(order.id),
+                          onMarkReady: (id) async {
+                            final messenger = ScaffoldMessenger.of(context);
+                            try {
+                              final success = await _apiClient.updateStatus(
+                                widget.companyId,
+                                id,
+                                3,
+                              );
+                              if (!mounted) return;
+                              if (success) {
+                                _removeOrder(id);
+                                messenger.showSnackBar(
+                                  const SnackBar(
+                                    content: Text("Order Marked as Ready!"),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              if (!mounted) return;
+                              messenger.showSnackBar(
+                                SnackBar(
+                                  content: Text("Error: $e"),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          },
                         );
-
-                        if (!mounted) return;
-                        if (success) {
-                          _removeOrder(id);
-                          messenger.showSnackBar(
-                            const SnackBar(
-                              content: Text("Order Marked as Ready!"),
-                              backgroundColor: Colors.green,
-                            ),
-                          );
-                        }
-                      } catch (e) {
-                        if (!mounted) return;
-                        messenger.showSnackBar(
-                          SnackBar(
-                            content: Text("Error: $e"),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                      }
-                    },
-                  );
-                }).toList(),
-              ),
+                      }).toList(),
+                    ),
+                  ),
+                ),
+                // Left arrow
+                if (_canScrollLeft)
+                  Positioned(
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    child: Center(
+                      child: _ScrollArrowButton(
+                        icon: Icons.chevron_left,
+                        onTap: () => _scrollBy(-340),
+                      ),
+                    ),
+                  ),
+                // Right arrow
+                if (_canScrollRight)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    bottom: 0,
+                    child: Center(
+                      child: _ScrollArrowButton(
+                        icon: Icons.chevron_right,
+                        onTap: () => _scrollBy(340),
+                      ),
+                    ),
+                  ),
+              ],
             ),
+    );
+  }
+}
+
+// --- SCROLL ARROW BUTTON ---
+class _ScrollArrowButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _ScrollArrowButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 44,
+        height: 80,
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.35),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, color: Colors.white, size: 32),
+      ),
     );
   }
 }
