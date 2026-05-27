@@ -15,7 +15,6 @@ namespace Api.Models
         public int ServiceStatus { get; set; }
         public int? FloorPlanTableId { get; set; }
         public DateTime? DueDate { get; set; }
-        //public int? BookingId { get; set; }
     }
 
     public class CreatePosOrderRequest

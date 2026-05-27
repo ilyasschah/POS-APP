@@ -13,12 +13,21 @@ namespace Api.Repository
             _db = db;
         }
 
-        public async Task<List<Tax>> GetAllTaxesAsync(int companyId)
+        public async Task<List<Tax>> GetAllTaxesAsync(int companyId, DateTime? modifiedAfter = null)
         {
-            return await _db.Taxes
-                .Where(t => t.CompanyId == companyId)
+            var query = _db.Taxes
                 .AsNoTracking()
-                .ToListAsync();
+                .Where(t => t.CompanyId == companyId);
+
+            if (modifiedAfter.HasValue)
+            {
+                var watermark = modifiedAfter.Value.Kind == DateTimeKind.Utc
+                    ? modifiedAfter.Value
+                    : modifiedAfter.Value.ToUniversalTime();
+                query = query.Where(t => t.LastModified > watermark);
+            }
+
+            return await query.ToListAsync();
         }
 
         public async Task<Tax?> GetTaxByIdAsync(int id, int companyId)

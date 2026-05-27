@@ -1,5 +1,6 @@
 using Api.DataBase;
 using Api.Domain;
+using Api.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
@@ -12,6 +13,61 @@ public class PosOrderRepository
     public PosOrderRepository(AppDbContext db)
     {
         _db = db;
+    }
+
+    public async Task<List<KitchenOrderDto>> GetKitchenOrdersAsync(int companyId)
+    {
+        var orders = await _db.PosOrders
+            .AsNoTracking()
+            .Where(o => o.CompanyId == companyId && o.ServiceStatus == 2)
+            .OrderBy(o => o.Id)
+            .ToListAsync();
+
+        if (orders.Count == 0) return new List<KitchenOrderDto>();
+
+        var orderIds = orders.Select(o => o.Id).ToList();
+
+        var tableIds = orders
+            .Where(o => o.FloorPlanTableId.HasValue)
+            .Select(o => o.FloorPlanTableId!.Value)
+            .Distinct()
+            .ToList();
+
+        var items = await _db.PosOrderItems
+            .AsNoTracking()
+            .Where(i => orderIds.Contains(i.PosOrderId) && i.CompanyId == companyId)
+            .Include(i => i.Product)
+            .ToListAsync();
+
+        var tables = tableIds.Count > 0
+            ? await _db.FloorPlanTables
+                .AsNoTracking()
+                .Where(t => tableIds.Contains(t.Id) && t.CompanyId == companyId)
+                .ToListAsync()
+            : new List<FloorPlanTable>();
+
+        return orders.Select(o => new KitchenOrderDto
+        {
+            Id = o.Id,
+            Number = o.Number,
+            FloorPlanTableId = o.FloorPlanTableId,
+            TableName = o.FloorPlanTableId.HasValue
+                ? tables.FirstOrDefault(t => t.Id == o.FloorPlanTableId.Value)?.Name
+                : null,
+            ServiceType = o.ServiceType,
+            ServiceStatus = o.ServiceStatus,
+            DateCreated = o.DateCreated,
+            Items = items
+                .Where(i => i.PosOrderId == o.Id)
+                .Select(i => new KitchenOrderItemDto
+                {
+                    Id = i.Id,
+                    ProductName = i.Product?.Name ?? "Unknown",
+                    Quantity = i.Quantity,
+                    Comment = i.Comment,
+                })
+                .ToList(),
+        }).ToList();
     }
 
     public async Task<List<PosOrder>> GetAllAsync(int companyId)

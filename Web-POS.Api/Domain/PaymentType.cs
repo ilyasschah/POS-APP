@@ -4,11 +4,12 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Api.Domain
 {
     [Table("PaymentType")]
-    public class PaymentType
+    public class PaymentType : ISyncableEntity
     {
         [Key]
         public int Id { get; set; }
         public int CompanyId { get; set; }
+        public DateTime LastModified { get; set; } = DateTime.UtcNow;
         public string Name { get; set; }
         public string? Code { get; set; }
         public bool IsCustomerRequired { get; set; }

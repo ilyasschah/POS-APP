@@ -1,6 +1,7 @@
 using Api.Attributes;
 using Api.Commands.PosOrderCommands;
 using Api.Commands.PosOrderCommands.Add;
+using Api.Commands.PosOrderCommands.BatchSync;
 using Api.Commands.PosOrderCommands.Delete;
 using Api.Commands.PosOrderCommands.Update;
 using Api.Commands.PosOrderCommands.Void;
@@ -189,6 +190,23 @@ namespace Api.Controllers
                 message = $"PosOrder with ID {id} was deleted successfully."
             });
         }
+        [HttpPost("BatchSync")]
+        public async Task<ActionResult<BatchSyncPosOrdersResponse>> BatchSync(
+            [FromQuery] int companyId,
+            [FromBody] BatchSyncPosOrdersRequest request)
+        {
+            if (companyId <= 0)
+                return BadRequest(new { message = "Company ID is required." });
+
+            if (request?.Orders is null || request.Orders.Count == 0)
+                return BadRequest(new { message = "Batch contains no orders." });
+
+            // Always returns 200 — partial failures are encoded inside the results array.
+            // The client inspects each result.Success individually.
+            var result = await _mediator.Send(new BatchSyncPosOrdersCommand(request, companyId));
+            return Ok(result);
+        }
+
         [HttpGet("GetKitchenOrders")]
         public async Task<IActionResult> GetKitchenOrders([FromQuery] int companyId)
         {

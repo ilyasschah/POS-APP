@@ -16,10 +16,10 @@ namespace Api.Controllers;
 public class UsersController(IMediator mediator) : ControllerBase
 {
     [HttpGet("[action]")]
-    public async Task<ActionResult<List<UserDto>>> GetAllUsers([FromQuery] int companyId, [FromQuery] string? deviceId, [FromQuery] bool includeDisabled = false)
+    public async Task<ActionResult<List<UserDto>>> GetAllUsers([FromQuery] int companyId, [FromQuery] string? deviceId, [FromQuery] bool includeDisabled = false, [FromQuery] DateTime? modifiedAfter = null)
     {
         if (companyId == 0) return BadRequest("Company ID is required");
-        return Ok(await mediator.Send(new GetAllUsersQuery { CompanyId = companyId, DeviceId = deviceId, IncludeDisabled = includeDisabled }));
+        return Ok(await mediator.Send(new GetAllUsersQuery { CompanyId = companyId, DeviceId = deviceId, IncludeDisabled = includeDisabled, ModifiedAfter = modifiedAfter }));
     }
 
     [HttpGet("[action]")]

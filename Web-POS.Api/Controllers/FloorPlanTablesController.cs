@@ -23,10 +23,10 @@ namespace Api.Controllers
         }
 
         [HttpGet("[action]")]
-        public async Task<ActionResult<List<FloorPlanTableDto>>> GetAll([FromQuery] int companyId)
+        public async Task<ActionResult<List<FloorPlanTableDto>>> GetAll([FromQuery] int companyId, [FromQuery] DateTime? modifiedAfter = null)
         {
             if (companyId == 0) return BadRequest();
-            return Ok(await _mediator.Send(new GetAllFloorPlanTablesQuery { CompanyId = companyId }));
+            return Ok(await _mediator.Send(new GetAllFloorPlanTablesQuery { CompanyId = companyId, ModifiedAfter = modifiedAfter }));
         }
 
         [HttpGet("[action]")]

@@ -20,6 +20,7 @@ namespace Api.Domain
         public int ServiceStatus { get; set; }
         public int? FloorPlanTableId { get; set; }
         public DateTime? DueDate { get; set; }
+        public DateTime DateCreated { get; set; } = DateTime.UtcNow;
 
         [ForeignKey(nameof(UserId))]
         public virtual User? User { get; set; }

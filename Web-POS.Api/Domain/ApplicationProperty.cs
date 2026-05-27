@@ -4,13 +4,16 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Api.Domain
 {
     [Table("ApplicationProperty")]
-    public class ApplicationProperty
+    public class ApplicationProperty : ISyncableEntity
     {
         [Key]
         public int Id { get; private set; }
         public int CompanyId { get; private set; }
         public string? Name { get; private set; }
         public string? Value { get; private set; }
+
+        // Public set required by ISyncableEntity — stamped by DbContext, never by call sites.
+        public DateTime LastModified { get; set; } = DateTime.UtcNow;
         [ForeignKey(nameof(CompanyId))]
         public virtual Company? Company { get; private set; }
 

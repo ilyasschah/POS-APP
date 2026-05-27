@@ -16,7 +16,8 @@ namespace Api.Helpers
                 IsFixed = tax.IsFixed,
                 IsTaxOnTotal = tax.IsTaxOnTotal,
                 IsEnabled = tax.IsEnabled,
-                CompanyId = tax.CompanyId
+                CompanyId = tax.CompanyId,
+                LastModified = tax.LastModified
             };
         }
     }

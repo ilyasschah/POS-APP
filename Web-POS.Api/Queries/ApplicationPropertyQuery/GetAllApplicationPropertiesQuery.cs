@@ -9,6 +9,7 @@ namespace Api.Queries.ApplicationPropertyQuery
     public class GetAllApplicationPropertiesQuery : IRequest<List<ApplicationPropertyDto>>
     {
         public int CompanyId { get; set; }
+        public DateTime? ModifiedAfter { get; set; }
 
         public class GetAllApplicationPropertiesQueryHandler : IRequestHandler<GetAllApplicationPropertiesQuery, List<ApplicationPropertyDto>>
         {
@@ -21,7 +22,7 @@ namespace Api.Queries.ApplicationPropertyQuery
 
             public async Task<List<ApplicationPropertyDto>> Handle(GetAllApplicationPropertiesQuery request, CancellationToken cancellationToken)
             {
-                var applicationProperties = await _repository.GetAllAsync(request.CompanyId);
+                var applicationProperties = await _repository.GetAllAsync(request.CompanyId, request.ModifiedAfter);
                 return applicationProperties.Select(MapperApplicationProperty.MapToApplicationPropertyDto).ToList();
             }
         }

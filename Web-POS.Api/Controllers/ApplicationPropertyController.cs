@@ -14,10 +14,10 @@ namespace Api.Controllers
     public class ApplicationPropertiesController(IMediator mediator) : ControllerBase
     {
         [HttpGet("[action]")]
-        public async Task<ActionResult<List<ApplicationPropertyDto>>> GetAll([FromQuery] int companyId)
+        public async Task<ActionResult<List<ApplicationPropertyDto>>> GetAll([FromQuery] int companyId, [FromQuery] DateTime? modifiedAfter = null)
         {
             if (companyId <= 0) return BadRequest("Company ID is required");
-            var result = await mediator.Send(new GetAllApplicationPropertiesQuery { CompanyId = companyId });
+            var result = await mediator.Send(new GetAllApplicationPropertiesQuery { CompanyId = companyId, ModifiedAfter = modifiedAfter });
             return Ok(result);
         }
 

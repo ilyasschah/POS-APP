@@ -6,11 +6,12 @@ using System.Reflection;
 namespace Api.Domain
 {
     [Table("Product")]
-    public class Product
+    public class Product : ISyncableEntity
     {
         [Key]
         public int Id { get; set; }
         public int CompanyId { get; set; }
+        public DateTime LastModified { get; set; } = DateTime.UtcNow;
 
         [ForeignKey(nameof(ProductGroup))]
         public int? ProductGroupId { get; set; }

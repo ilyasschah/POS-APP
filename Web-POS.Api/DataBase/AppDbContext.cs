@@ -89,6 +89,30 @@ namespace Api.DataBase
         {
             cfg.Properties<decimal>().HavePrecision(18, 2);
         }
+
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            StampLastModified();
+            return base.SaveChangesAsync(cancellationToken);
+        }
+
+        public override int SaveChanges()
+        {
+            StampLastModified();
+            return base.SaveChanges();
+        }
+
+        private void StampLastModified()
+        {
+            var now = DateTime.UtcNow;
+            foreach (var entry in ChangeTracker.Entries<ISyncableEntity>())
+            {
+                if (entry.State == EntityState.Added || entry.State == EntityState.Modified)
+                {
+                    entry.Entity.LastModified = now;
+                }
+            }
+        }
         protected override void OnModelCreating(ModelBuilder b)
         {
 

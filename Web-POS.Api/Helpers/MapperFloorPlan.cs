@@ -11,7 +11,8 @@ namespace Api.Helpers
             {
                 Id = entity.Id,
                 Name = entity.Name,
-                Color = entity.Color
+                Color = entity.Color,
+                LastModified = entity.LastModified
             };
         }
     }

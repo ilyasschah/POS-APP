@@ -4,11 +4,14 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Api.Domain
 {
     [Table("ProductGroup")]
-    public class ProductGroup
+    public class ProductGroup : ISyncableEntity
     {
         [Key]
         public int Id { get; private set; }
         public int CompanyId { get; private set; }
+
+        // Public set required by ISyncableEntity — stamped by DbContext, never by call sites.
+        public DateTime LastModified { get; set; } = DateTime.UtcNow;
 
         [Required, MaxLength(255)]
         public string Name { get; private set; } = default!;

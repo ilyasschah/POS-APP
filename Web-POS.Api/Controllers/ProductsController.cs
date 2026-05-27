@@ -17,10 +17,10 @@ namespace Api.Controllers
     {
 
         [HttpGet("[action]")]
-        public async Task<ActionResult<List<ProductDto>>> GetAll([FromQuery] int companyId)
+        public async Task<ActionResult<List<ProductDto>>> GetAll([FromQuery] int companyId, [FromQuery] DateTime? modifiedAfter = null)
         {
             if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
-            var result = await mediator.Send(new GetAllProductsQuery { CompanyId = companyId });
+            var result = await mediator.Send(new GetAllProductsQuery { CompanyId = companyId, ModifiedAfter = modifiedAfter });
             return Ok(result);
         }
 

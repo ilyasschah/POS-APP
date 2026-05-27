@@ -34,7 +34,8 @@ namespace Api.Helpers
                 AgeRestriction = entity.AgeRestriction,
                 LastPurchasePrice = entity.LastPurchasePrice,
                 Rank = entity.Rank,
-                Barcodes = entity.Barcodes.Select(b => b.Value ?? "").Where(v => v.Length > 0).ToList()
+                Barcodes = entity.Barcodes.Select(b => b.Value ?? "").Where(v => v.Length > 0).ToList(),
+                LastModified = entity.LastModified
             };
         }
         public static List<ProductDto> MapToProductDtoPG(List<Product> entities)
@@ -66,7 +67,8 @@ namespace Api.Helpers
                 AgeRestriction = entity.AgeRestriction,
                 LastPurchasePrice = entity.LastPurchasePrice,
                 Rank = entity.Rank,
-                Barcodes = entity.Barcodes.Select(b => b.Value ?? "").Where(v => v.Length > 0).ToList()
+                Barcodes = entity.Barcodes.Select(b => b.Value ?? "").Where(v => v.Length > 0).ToList(),
+                LastModified = entity.LastModified
             }).ToList();
         }
     }

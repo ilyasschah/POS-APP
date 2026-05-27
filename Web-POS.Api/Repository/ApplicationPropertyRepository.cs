@@ -8,12 +8,22 @@ namespace Api.Repository
     {
         private readonly AppDbContext _db = db;
 
-        public async Task<List<ApplicationProperty>> GetAllAsync(int companyId)
+        public async Task<List<ApplicationProperty>> GetAllAsync(int companyId, DateTime? modifiedAfter = null)
         {
-            return await _db.ApplicationProperties
-                .Where(p => p.CompanyId == companyId)
-                .Include(p => p.Company)
+            var query = _db.ApplicationProperties
                 .AsNoTracking()
+                .Where(p => p.CompanyId == companyId);
+
+            if (modifiedAfter.HasValue)
+            {
+                var watermark = modifiedAfter.Value.Kind == DateTimeKind.Utc
+                    ? modifiedAfter.Value
+                    : modifiedAfter.Value.ToUniversalTime();
+                query = query.Where(p => p.LastModified > watermark);
+            }
+
+            return await query
+                .Include(p => p.Company)
                 .ToListAsync();
         }
 

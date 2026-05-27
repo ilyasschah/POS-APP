@@ -8,6 +8,7 @@ namespace Api.Queries.ProductsQuery
     public class GetAllProductsQuery : IRequest<List<ProductDto>>
     {
         public int CompanyId { get; set; }
+        public DateTime? ModifiedAfter { get; set; }
 
         public class GetAllProductsQueryHandler : IRequestHandler<GetAllProductsQuery, List<ProductDto>>
         {
@@ -20,7 +21,7 @@ namespace Api.Queries.ProductsQuery
 
             public async Task<List<ProductDto>> Handle(GetAllProductsQuery request, CancellationToken cancellationToken)
             {
-                var list = await _repository.GetAllAsync(request.CompanyId);
+                var list = await _repository.GetAllAsync(request.CompanyId, request.ModifiedAfter);
                 return list.Select(MapperProduct.MapToProductDto).ToList();
             }
         }

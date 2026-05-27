@@ -10,6 +10,7 @@ namespace Api.Helpers
             return new FloorPlanTableDto
             {
                 Id = entity.Id,
+                CompanyId = entity.CompanyId,
                 FloorPlanId = entity.FloorPlanId,
                 Name = entity.Name,
                 Status = entity.Status,
@@ -17,7 +18,8 @@ namespace Api.Helpers
                 PositionY = entity.PositionY,
                 Width = entity.Width,
                 Height = entity.Height,
-                IsRound = entity.IsRound
+                IsRound = entity.IsRound,
+                LastModified = entity.LastModified
             };
         }
     }

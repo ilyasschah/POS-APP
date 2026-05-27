@@ -12,6 +12,7 @@ public class UserDto
     public string? Email { get; set; }
     public bool HasPinForThisDevice { get; set; }
     public string? HashedPin { get; set; }
+    public DateTime LastModified { get; set; }
 }
 
 public class CreateUserRequest

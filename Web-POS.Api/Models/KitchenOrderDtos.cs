@@ -12,6 +12,7 @@ namespace Api.Models
         public string? TableName { get; set; }
         public int ServiceType { get; set; }
         public int ServiceStatus { get; set; }
+        public DateTime DateCreated { get; set; }
         public List<KitchenOrderItemDto> Items { get; set; } = new();
     }
 

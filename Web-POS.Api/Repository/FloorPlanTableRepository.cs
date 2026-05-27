@@ -14,12 +14,21 @@ namespace Api.Repository
             _db = db;
         }
 
-        public async Task<List<FloorPlanTable>> GetAllAsync(int companyId)
+        public async Task<List<FloorPlanTable>> GetAllAsync(int companyId, DateTime? modifiedAfter = null)
         {
-            return await _db.FloorPlanTables
+            var query = _db.FloorPlanTables
                 .AsNoTracking()
-                .Where(t => t.CompanyId == companyId)
-                .ToListAsync();
+                .Where(t => t.CompanyId == companyId);
+
+            if (modifiedAfter.HasValue)
+            {
+                var watermark = modifiedAfter.Value.Kind == DateTimeKind.Utc
+                    ? modifiedAfter.Value
+                    : modifiedAfter.Value.ToUniversalTime();
+                query = query.Where(t => t.LastModified > watermark);
+            }
+
+            return await query.ToListAsync();
         }
 
         public async Task<List<FloorPlanTableDto>> GetByFloorPlanIdAsync(int floorPlanId, int companyId)

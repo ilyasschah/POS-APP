@@ -14,9 +14,9 @@ namespace Api.Services
             _repository = repository;
         }
 
-        public async Task<List<FloorPlanTableDto>> GetAllAsync(int companyId)
+        public async Task<List<FloorPlanTableDto>> GetAllAsync(int companyId, DateTime? modifiedAfter = null)
         {
-            var entities = await _repository.GetAllAsync(companyId);
+            var entities = await _repository.GetAllAsync(companyId, modifiedAfter);
             return entities.Select(MapperFloorPlanTable.MapToDto).ToList();
         }
 

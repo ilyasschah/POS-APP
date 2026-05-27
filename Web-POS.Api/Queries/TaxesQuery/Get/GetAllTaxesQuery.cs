@@ -9,6 +9,7 @@ namespace Api.Queries.TaxesQuery.Get
     public class GetAllTaxesQuery : IRequest<List<TaxDto>>
     {
         public int CompanyId { get; set; }
+        public DateTime? ModifiedAfter { get; set; }
 
         public class GetAllTaxesQueryHandler : IRequestHandler<GetAllTaxesQuery, List<TaxDto>>
         {
@@ -21,7 +22,7 @@ namespace Api.Queries.TaxesQuery.Get
 
             public async Task<List<TaxDto>> Handle(GetAllTaxesQuery request, CancellationToken cancellationToken)
             {
-                var taxes = await _repository.GetAllTaxesAsync(request.CompanyId);
+                var taxes = await _repository.GetAllTaxesAsync(request.CompanyId, request.ModifiedAfter);
                 return taxes.Select(MapperTax.MapToTaxDto).ToList();
             }
         }

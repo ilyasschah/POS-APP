@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Api.Domain
 {
     [Table("FloorPlan")]
-    public class FloorPlan
+    public class FloorPlan : ISyncableEntity
     {
         [Key]
         public int Id { get; private set; }
@@ -13,6 +13,9 @@ namespace Api.Domain
 
         public string Name { get; private set; }
         public string Color { get; private set; }
+
+        // Public set required by ISyncableEntity — stamped by DbContext, never by call sites.
+        public DateTime LastModified { get; set; } = DateTime.UtcNow;
 
         public FloorPlan() { }
 

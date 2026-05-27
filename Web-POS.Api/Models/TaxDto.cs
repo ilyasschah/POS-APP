@@ -10,6 +10,7 @@
         public bool? IsTaxOnTotal { get; set; }
         public bool? IsEnabled { get; set; }
         public int? CompanyId { get; set; }
+        public DateTime LastModified { get; set; }
     }
 
     public class CreateTaxRequestDto

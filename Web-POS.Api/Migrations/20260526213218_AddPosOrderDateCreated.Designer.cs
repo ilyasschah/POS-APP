@@ -4,6 +4,7 @@ using Api.DataBase;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260526213218_AddPosOrderDateCreated")]
+    partial class AddPosOrderDateCreated
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -32,9 +35,6 @@ namespace Api.Migrations
 
                     b.Property<int>("CompanyId")
                         .HasColumnType("int");
-
-                    b.Property<DateTime>("LastModified")
-                        .HasColumnType("datetime2");
 
                     b.Property<string>("Name")
                         .HasColumnType("nvarchar(max)");
@@ -305,9 +305,6 @@ namespace Api.Migrations
 
                     b.Property<bool>("IsTaxExempt")
                         .HasColumnType("bit");
-
-                    b.Property<DateTime>("LastModified")
-                        .HasColumnType("datetime2");
 
                     b.Property<string>("Name")
                         .HasColumnType("nvarchar(max)");
@@ -827,9 +824,6 @@ namespace Api.Migrations
                     b.Property<int>("CompanyId")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("LastModified")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -858,9 +852,6 @@ namespace Api.Migrations
 
                     b.Property<bool>("IsRound")
                         .HasColumnType("bit");
-
-                    b.Property<DateTime>("LastModified")
-                        .HasColumnType("datetime2");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -1218,9 +1209,6 @@ namespace Api.Migrations
 
                     b.Property<bool>("IsSlipRequired")
                         .HasColumnType("bit");
-
-                    b.Property<DateTime>("LastModified")
-                        .HasColumnType("datetime2");
 
                     b.Property<bool>("MarkAsPaid")
                         .HasColumnType("bit");
@@ -1731,9 +1719,6 @@ namespace Api.Migrations
                     b.Property<bool>("IsUsingDefaultQuantity")
                         .HasColumnType("bit");
 
-                    b.Property<DateTime>("LastModified")
-                        .HasColumnType("datetime2");
-
                     b.Property<decimal?>("LastPurchasePrice")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
@@ -1816,9 +1801,6 @@ namespace Api.Migrations
 
                     b.Property<byte[]>("Image")
                         .HasColumnType("varbinary(max)");
-
-                    b.Property<DateTime>("LastModified")
-                        .HasColumnType("datetime2");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -1929,9 +1911,6 @@ namespace Api.Migrations
 
                     b.Property<bool>("IsEnabled")
                         .HasColumnType("bit");
-
-                    b.Property<DateTime>("LastModified")
-                        .HasColumnType("datetime2");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -2874,9 +2853,6 @@ namespace Api.Migrations
                     b.Property<bool>("IsTaxOnTotal")
                         .HasColumnType("bit");
 
-                    b.Property<DateTime>("LastModified")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -3069,9 +3045,6 @@ namespace Api.Migrations
 
                     b.Property<bool>("IsEnabled")
                         .HasColumnType("bit");
-
-                    b.Property<DateTime>("LastModified")
-                        .HasColumnType("datetime2");
 
                     b.Property<string>("LastName")
                         .HasColumnType("nvarchar(max)");

@@ -13,11 +13,21 @@ namespace Api.Repository
             _db = db;
         }
 
-        public async Task<List<Product>> GetAllAsync(int companyId)
+        public async Task<List<Product>> GetAllAsync(int companyId, DateTime? modifiedAfter = null)
         {
-            return await _db.Products
+            var query = _db.Products
                 .AsNoTracking()
-                .Where(p => p.CompanyId == companyId)
+                .Where(p => p.CompanyId == companyId);
+
+            if (modifiedAfter.HasValue)
+            {
+                var watermark = modifiedAfter.Value.Kind == DateTimeKind.Utc
+                    ? modifiedAfter.Value
+                    : modifiedAfter.Value.ToUniversalTime();
+                query = query.Where(p => p.LastModified > watermark);
+            }
+
+            return await query
                 .Include(p => p.ProductGroup)
                 .Include(p => p.Currency)
                 .Include(p => p.Barcodes)

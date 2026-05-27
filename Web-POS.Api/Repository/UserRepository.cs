@@ -15,11 +15,21 @@ public class UserRepository
     }
 
     
-    public async Task<List<UserDto>> GetAllUsersAsync(int companyId, string? deviceId, bool includeDisabled = false)
+    public async Task<List<UserDto>> GetAllUsersAsync(int companyId, string? deviceId, bool includeDisabled = false, DateTime? modifiedAfter = null)
     {
-        return await _db.Users
+        var query = _db.Users
             .AsNoTracking()
-            .Where(u => u.CompanyId == companyId && (includeDisabled || u.IsEnabled))
+            .Where(u => u.CompanyId == companyId && (includeDisabled || u.IsEnabled));
+
+        if (modifiedAfter.HasValue)
+        {
+            var watermark = modifiedAfter.Value.Kind == DateTimeKind.Utc
+                ? modifiedAfter.Value
+                : modifiedAfter.Value.ToUniversalTime();
+            query = query.Where(u => u.LastModified > watermark);
+        }
+
+        return await query
             .Select(u => new
             {
                 User = u,
@@ -36,7 +46,8 @@ public class UserRepository
                 IsEnabled = x.User.IsEnabled,
                 Email = x.User.Email,
                 HasPinForThisDevice = x.Pin != null,
-                HashedPin = x.Pin != null ? x.Pin.HashedPin : null
+                HashedPin = x.Pin != null ? x.Pin.HashedPin : null,
+                LastModified = x.User.LastModified
             })
             .ToListAsync();
     }

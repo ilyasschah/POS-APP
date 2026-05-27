@@ -76,6 +76,7 @@ namespace Api.Models
         public decimal? LastPurchasePrice { get; set; }
         public int? Rank { get; set; }
         public List<string> Barcodes { get; set; } = new();
+        public DateTime LastModified { get; set; }
     }
 
     public class ImportProductRow

@@ -4,12 +4,15 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Api.Domain
 {
     [Table("FloorPlanTable")]
-    public class FloorPlanTable
+    public class FloorPlanTable : ISyncableEntity
     {
         [Key]
         public int Id { get; private set; }
         public int CompanyId { get; private set; }
         public int FloorPlanId { get; private set; }
+
+        // Public set required by ISyncableEntity — stamped by DbContext, never by call sites.
+        public DateTime LastModified { get; set; } = DateTime.UtcNow;
 
         [MaxLength(100)]
         public string Name { get; private set; }

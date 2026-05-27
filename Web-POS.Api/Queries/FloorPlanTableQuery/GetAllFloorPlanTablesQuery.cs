@@ -7,6 +7,7 @@ namespace Api.Queries.FloorPlanTableQuery
     public class GetAllFloorPlanTablesQuery : IRequest<List<FloorPlanTableDto>>
     {
         public int CompanyId { get; set; }
+        public DateTime? ModifiedAfter { get; set; }
     }
 
     public class GetAllFloorPlanTablesHandler : IRequestHandler<GetAllFloorPlanTablesQuery, List<FloorPlanTableDto>>
@@ -20,7 +21,7 @@ namespace Api.Queries.FloorPlanTableQuery
 
         public async Task<List<FloorPlanTableDto>> Handle(GetAllFloorPlanTablesQuery request, CancellationToken cancellationToken)
         {
-            return await _service.GetAllAsync(request.CompanyId);
+            return await _service.GetAllAsync(request.CompanyId, request.ModifiedAfter);
         }
     }
 }

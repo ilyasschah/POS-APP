@@ -18,6 +18,14 @@
               "type": "integer",
               "format": "int32"
             }
+          },
+          {
+            "name": "modifiedAfter",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
           }
         ],
         "responses": {
@@ -322,6 +330,14 @@
             "schema": {
               "type": "integer",
               "format": "int32"
+            }
+          },
+          {
+            "name": "modifiedAfter",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
             }
           }
         ],
@@ -852,6 +868,14 @@
               "type": "boolean",
               "default": false
             }
+          },
+          {
+            "name": "modifiedAfter",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
           }
         ],
         "responses": {
@@ -1252,6 +1276,10 @@
             "type": "integer",
             "format": "int32"
           },
+          "companyId": {
+            "type": "integer",
+            "format": "int32"
+          },
           "name": {
             "type": "string",
             "nullable": true
@@ -1263,6 +1291,10 @@
           "companyName": {
             "type": "string",
             "nullable": true
+          },
+          "lastModified": {
+            "type": "string",
+            "format": "date-time"
           }
         },
         "additionalProperties": false
@@ -1766,6 +1798,10 @@
               "type": "string"
             },
             "nullable": true
+          },
+          "lastModified": {
+            "type": "string",
+            "format": "date-time"
           }
         },
         "additionalProperties": false
@@ -2211,6 +2247,10 @@
           "hashedPin": {
             "type": "string",
             "nullable": true
+          },
+          "lastModified": {
+            "type": "string",
+            "format": "date-time"
           }
         },
         "additionalProperties": false

@@ -42,6 +42,11 @@
         "Name": "companyId",
         "Type": "System.Int32",
         "IsRequired": false
+      },
+      {
+        "Name": "modifiedAfter",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
@@ -2399,6 +2404,11 @@
         "Name": "companyId",
         "Type": "System.Int32",
         "IsRequired": false
+      },
+      {
+        "Name": "modifiedAfter",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
@@ -2549,6 +2559,11 @@
       {
         "Name": "companyId",
         "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "modifiedAfter",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
         "IsRequired": false
       }
     ],
@@ -3353,6 +3368,37 @@
     "ReturnTypes": [
       {
         "Type": "Api.Models.PaymentTypeDto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "Api.Controllers.PosOrderController",
+    "Method": "BatchSync",
+    "RelativePath": "api/PosOrder/BatchSync",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "request",
+        "Type": "Api.Models.BatchSyncPosOrdersRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "Api.Models.BatchSyncPosOrdersResponse",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -5033,6 +5079,11 @@
       {
         "Name": "companyId",
         "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "modifiedAfter",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
         "IsRequired": false
       }
     ],
@@ -7893,6 +7944,11 @@
         "Name": "companyId",
         "Type": "System.Int32",
         "IsRequired": false
+      },
+      {
+        "Name": "modifiedAfter",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
@@ -8343,6 +8399,11 @@
       {
         "Name": "includeDisabled",
         "Type": "System.Boolean",
+        "IsRequired": false
+      },
+      {
+        "Name": "modifiedAfter",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
         "IsRequired": false
       }
     ],

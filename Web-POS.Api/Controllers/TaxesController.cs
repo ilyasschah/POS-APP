@@ -15,10 +15,10 @@ namespace Api.Controllers
     public class TaxesController(IMediator mediator) : ControllerBase
     {
         [HttpGet("[action]")]
-        public async Task<ActionResult<List<TaxDto>>> GetAllTaxes([FromQuery] int companyId)
+        public async Task<ActionResult<List<TaxDto>>> GetAllTaxes([FromQuery] int companyId, [FromQuery] DateTime? modifiedAfter = null)
         {
             if (companyId <= 0) return BadRequest("Company ID is required");
-            return Ok(await mediator.Send(new GetAllTaxesQuery { CompanyId = companyId }));
+            return Ok(await mediator.Send(new GetAllTaxesQuery { CompanyId = companyId, ModifiedAfter = modifiedAfter }));
         }
 
         [HttpGet("[action]")]

@@ -4,11 +4,12 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Api.Domain
 {
     [Table("Tax")]
-    public class Tax
+    public class Tax : ISyncableEntity
     {
         [Key]
         public int Id { get;  set; }
         public int CompanyId { get;  set; }
+        public DateTime LastModified { get; set; } = DateTime.UtcNow;
         public string Name { get;  set; }
         public decimal Rate { get;  set; }
         public string? Code { get;  set; }

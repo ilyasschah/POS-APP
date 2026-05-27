@@ -5,11 +5,12 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Api.Domain
 {
     [Table("Promotion")]
-    public class Promotion
+    public class Promotion : ISyncableEntity
     {
         [Key]
         public int Id { get; set; }
         public int CompanyId { get; set; }
+        public DateTime LastModified { get; set; } = DateTime.UtcNow;
         public string Name { get; set; }
         public DateTime? StartDate { get; set; }
         public TimeSpan? StartTime { get; set; }
