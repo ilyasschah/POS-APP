@@ -1,5 +1,7 @@
+using Api.Commands.PosOrderCommands;
 using Api.Commands.PosOrderCommands.Add;
 using Api.Commands.PosOrderItemCommands.Add;
+using Api.Constants;
 using Api.Models;
 using FluentValidation;
 using MediatR;
@@ -63,6 +65,56 @@ namespace Api.Commands.PosOrderCommands.BatchSync
                 {
                     try
                     {
+                        if (item.ExistingServerId.HasValue)
+                        {
+                            // ── Complete an existing open order that was checked
+                            // out offline. Call Checkout on the known server order
+                            // instead of creating a duplicate. ──────────────────
+                            var checkoutRequest = new CheckoutPosOrderRequest
+                            {
+                                PosOrderId    = item.ExistingServerId.Value,
+                                PaymentTypeId = item.PaymentTypeId
+                                    ?? throw new InvalidOperationException(
+                                        $"PaymentTypeId is required when ExistingServerId is set (localId={item.LocalId})."),
+                                AmountPaid    = item.AmountPaid ?? item.OrderTotal,
+                                GrandTotal    = item.OrderTotal,
+                                DocumentTypeId = DocumentTypeConstants.Sales,
+                                WarehouseId   = item.Order.WarehouseId,
+                                OrderNumber   = item.Order.Number,
+                                Items = item.Items.Select(i => new CheckoutItemDto
+                                {
+                                    ProductId                   = i.ProductId,
+                                    PriceBeforeTaxAfterDiscount = i.Price - i.Discount,
+                                    PriceAfterDiscount          = i.Price - i.Discount,
+                                    Total                       = (i.Price - i.Discount) * i.Quantity,
+                                    TotalAfterDocumentDiscount  = (i.Price - i.Discount) * i.Quantity,
+                                    Taxes = i.Taxes.Select(t => new CheckoutItemTaxDto
+                                    {
+                                        TaxId  = t.TaxId,
+                                        Amount = t.Amount,
+                                    }).ToList(),
+                                }).ToList(),
+                            };
+
+                            var documentId = await _mediator.Send(
+                                new CheckoutPosOrderCommand(
+                                    command.CompanyId,
+                                    item.Order.UserId,
+                                    checkoutRequest),
+                                cancellationToken);
+
+                            response.Results.Add(new BatchSyncResult
+                            {
+                                LocalId  = item.LocalId,
+                                // Return the Document.Id so the Flutter client can
+                                // stamp its local Document row's serverId.
+                                ServerId = documentId,
+                                Success  = true,
+                            });
+                            continue;
+                        }
+
+                        // ── New order: create header then add items ────────────
                         // 1. Create the order header
                         var createdOrder = await _mediator.Send(
                             new CreatePosOrderCommand(item.Order, command.CompanyId),
@@ -103,11 +155,53 @@ namespace Api.Commands.PosOrderCommands.BatchSync
                             warnings = itemsResult.Warnings ?? new List<string>();
                         }
 
+                        // 3. Checkout: create Document + Payment and remove the PosOrder.
+                        //    Only runs when the offline order was paid (PaymentTypeId set).
+                        //    Open/saved orders (no PaymentTypeId) stay as PosOrders so
+                        //    they show up in the open-orders list on other devices.
+                        int resultId = createdOrder.Id; // fallback: PosOrder id if not paid
+
+                        if (item.PaymentTypeId.HasValue)
+                        {
+                            var checkoutRequest = new CheckoutPosOrderRequest
+                            {
+                                PosOrderId     = createdOrder.Id,
+                                PaymentTypeId  = item.PaymentTypeId.Value,
+                                AmountPaid     = item.AmountPaid ?? item.OrderTotal,
+                                GrandTotal     = item.OrderTotal,
+                                DocumentTypeId = DocumentTypeConstants.Sales,
+                                WarehouseId    = item.Order.WarehouseId,
+                                OrderNumber    = item.Order.Number,
+                                Items = item.Items.Select(i => new CheckoutItemDto
+                                {
+                                    ProductId                   = i.ProductId,
+                                    PriceBeforeTaxAfterDiscount = i.Price - i.Discount,
+                                    PriceAfterDiscount          = i.Price - i.Discount,
+                                    Total                       = (i.Price - i.Discount) * i.Quantity,
+                                    TotalAfterDocumentDiscount  = (i.Price - i.Discount) * i.Quantity,
+                                    Taxes = i.Taxes.Select(t => new CheckoutItemTaxDto
+                                    {
+                                        TaxId  = t.TaxId,
+                                        Amount = t.Amount,
+                                    }).ToList(),
+                                }).ToList(),
+                            };
+
+                            // Returns Document.Id so the client can stamp its local
+                            // Document row's serverId for linking history records.
+                            resultId = await _mediator.Send(
+                                new CheckoutPosOrderCommand(
+                                    command.CompanyId,
+                                    item.Order.UserId,
+                                    checkoutRequest),
+                                cancellationToken);
+                        }
+
                         response.Results.Add(new BatchSyncResult
                         {
-                            LocalId = item.LocalId,
-                            ServerId = createdOrder.Id,
-                            Success = true,
+                            LocalId  = item.LocalId,
+                            ServerId = resultId,
+                            Success  = true,
                             Warnings = warnings,
                         });
                     }

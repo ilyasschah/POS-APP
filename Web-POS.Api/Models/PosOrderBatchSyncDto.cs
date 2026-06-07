@@ -17,6 +17,18 @@ namespace Api.Models
         public required CreatePosOrderRequest Order { get; set; }
         public List<BulkAddPosOrderItemRequest> Items { get; set; } = new();
         public decimal OrderTotal { get; set; }
+
+        /// <summary>
+        /// Set when the client completed an existing open order that was
+        /// originally created on the server (e.g. the row whose local sentinel
+        /// id is "svr_3280").  The handler calls PosOrders/Checkout on this id
+        /// instead of creating a new PosOrder, preventing duplicate rows.
+        /// </summary>
+        public int? ExistingServerId { get; set; }
+
+        /// Payment details — required when ExistingServerId is set.
+        public int? PaymentTypeId { get; set; }
+        public decimal? AmountPaid { get; set; }
     }
 
     public class BatchSyncPosOrdersResponse

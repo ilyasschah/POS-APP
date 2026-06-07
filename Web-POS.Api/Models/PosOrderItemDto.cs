@@ -42,6 +42,12 @@ namespace Api.Models
         public string? Comment { get; set; }
         public string? Bundle { get; set; }
     }
+    public class BatchSyncItemTaxDto
+    {
+        public int TaxId { get; set; }
+        public decimal Amount { get; set; }
+    }
+
     public class BulkAddPosOrderItemRequest
     {
         public int PosOrderId { get; set; }
@@ -55,6 +61,10 @@ namespace Api.Models
         public string? Bundle { get; set; }
         public int DiscountAppliedType { get; set; }
         public List<int> AppliedTaxIds { get; set; } = new List<int>();
+        // Per-item tax amounts from offline checkout. Populated by the Flutter
+        // client so BatchSync can pass them to CheckoutItemDto.Taxes and create
+        // DocumentItemTax rows server-side.
+        public List<BatchSyncItemTaxDto> Taxes { get; set; } = new List<BatchSyncItemTaxDto>();
     }
 
     public class UpdatePosOrderItemRequest

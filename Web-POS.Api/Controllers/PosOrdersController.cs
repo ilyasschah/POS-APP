@@ -94,9 +94,9 @@ namespace Api.Controllers
             try
             {
                 var command = new CheckoutPosOrderCommand(companyId, userId, request);
-                await _mediator.Send(command);
+                var documentId = await _mediator.Send(command);
 
-                return Ok(new { message = "Payment successful! Order converted to Document." });
+                return Ok(new { message = "Payment successful! Order converted to Document.", documentId });
             }
             catch (InvalidOperationException ex)
             {
