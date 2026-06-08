@@ -87,6 +87,8 @@ builder.Services.AddScoped<PosPrinterSettingsRepository>();
 builder.Services.AddScoped<TemplateRepository>();
 builder.Services.AddScoped<BookingRepository>();
 builder.Services.AddScoped<UserDevicePinRepository>();
+builder.Services.AddScoped<ShiftRepository>();
+builder.Services.AddScoped<TimeClockRepository>();
 
 // ================== SERVICES ==================
 builder.Services.AddScoped<TokenService>();

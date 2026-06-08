@@ -158,11 +158,21 @@ namespace Api.Controllers
         {
             if (companyId <= 0) return BadRequest("Company ID is required");
 
-            var result = await mediator.Send(new DeleteDocumentCommand(id, companyId));
-
-            return result
-                ? Ok(new { Message = "Document deleted" })
-                : BadRequest(new { Message = "Failed to delete document" });
+            try
+            {
+                var result = await mediator.Send(new DeleteDocumentCommand(id, companyId));
+                return result
+                    ? Ok(new { success = true, message = "Document deleted" })
+                    : BadRequest(new { success = false, message = "Failed to delete document" });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { success = false, message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
         }
 
         [HttpGet("[action]")]

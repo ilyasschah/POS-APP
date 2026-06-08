@@ -30,6 +30,8 @@ namespace Api.DataBase
         public DbSet<Company> Companies { get; set; }
         public DbSet<StockControl> StockControls { get; set; }
         public DbSet<LoyaltyCard> LoyaltyCards { get; set; }
+        public DbSet<Shift> Shifts { get; set; }
+        public DbSet<TimeClockEntry> TimeClockEntries { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<PosOrder> PosOrders { get; set; }
         public DbSet<PosOrderItemTax> PosOrderItemTaxes { get; set; }

@@ -1,6 +1,7 @@
-﻿using MediatR;
+using MediatR;
 using Api.Models;
 using Api.Services;
+using Api.Repository;
 
 namespace Api.Queries.AuthQuery;
 
@@ -16,38 +17,41 @@ public class LoginQuery : IRequest<LoginResponse>
     public class LoginQueryHandler : IRequestHandler<LoginQuery, LoginResponse>
     {
         private readonly TokenService _tokenService;
+        private readonly UserRepository _userRepository;
 
-        // ---- TEMP credentials 
-        private const string DemoUsername = "admin";
-        private const string DemoPassword = "Admin@123";
-
-        public LoginQueryHandler(TokenService tokenService)
+        public LoginQueryHandler(TokenService tokenService, UserRepository userRepository)
         {
             _tokenService = tokenService;
+            _userRepository = userRepository;
         }
 
         public async Task<LoginResponse> Handle(LoginQuery request, CancellationToken cancellationToken)
         {
+            if (string.IsNullOrWhiteSpace(request.Request.Email) || string.IsNullOrWhiteSpace(request.Request.Password))
+                return new LoginResponse { Success = false, Message = "Email and password are required." };
 
-            if (string.IsNullOrWhiteSpace(request.Request.Username) || string.IsNullOrWhiteSpace(request.Request.Password))
-            {
-                return new LoginResponse { Success = false, Message = "Username and password are required." };
-            }
+            var user = await _userRepository.GetByEmailAnyCompanyAsync(request.Request.Email);
 
-            if (!string.Equals(request.Request.Username, DemoUsername, StringComparison.OrdinalIgnoreCase) ||
-                request.Request.Password != DemoPassword)
-            {
+            if (user == null || !user.IsEnabled)
                 return new LoginResponse { Success = false, Message = "Invalid credentials." };
-            }
 
-            var (token, expiresIn) = _tokenService.CreateJwt(request.Request.Username);
+            if (!BCrypt.Net.BCrypt.Verify(request.Request.Password, user.Password))
+                return new LoginResponse { Success = false, Message = "Invalid credentials." };
+
+            var (token, expiresIn) = _tokenService.CreateJwt(user.Email!);
 
             return new LoginResponse
             {
                 Success = true,
                 Token = token,
                 ExpiresIn = expiresIn,
-                User = new { Id = 1, Username = DemoUsername, Roles = new[] { "Admin" } }
+                User = new
+                {
+                    Id = user.Id,
+                    Email = user.Email,
+                    CompanyId = user.CompanyId,
+                    AccessLevel = user.AccessLevel,
+                },
             };
         }
     }

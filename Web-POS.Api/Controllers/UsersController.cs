@@ -9,7 +9,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;
 
-
 [SwaggerVisible]
 [Route("api/[controller]")]
 [ApiController]

@@ -9,11 +9,14 @@ namespace Api.Commands.LoyaltyCardCommands.Add;
 
 public class AddLoyaltyCardCommand : IRequest<bool>
 {
+    
     public CreateLoyaltyCardRequest Request { get; set; }
+    public int CompanyId { get; set; }
 
-    public AddLoyaltyCardCommand(CreateLoyaltyCardRequest request)
+    public AddLoyaltyCardCommand(CreateLoyaltyCardRequest request, int companyId)
     {
         Request = request;
+        CompanyId = companyId;
     }
 
     public class AddLoyaltyCardCommandHandler : IRequestHandler<AddLoyaltyCardCommand, bool>
@@ -27,7 +30,7 @@ public class AddLoyaltyCardCommand : IRequest<bool>
 
         public Task<bool> Handle(AddLoyaltyCardCommand request, CancellationToken cancellationToken)
         {
-            return _service.Create(request.Request);
+            return _service.Create(request.Request, request.CompanyId);
         }
     }
 

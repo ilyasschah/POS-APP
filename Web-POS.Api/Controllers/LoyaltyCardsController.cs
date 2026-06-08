@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Api.Commands.LoyaltyCardCommands.Add;
 using Api.Commands.LoyaltyCardCommands.Update;
 using Api.Commands.LoyaltyCardCommands.Delete;
+using Api.Commands.LoyaltyCardCommands.BatchSync;
 using Api.Queries.LoyaltyCardQuery;
 using Api.Models;
 
@@ -15,32 +16,41 @@ namespace Api.Controllers;
 public class LoyaltyCardsController(IMediator mediator) : ControllerBase
 {
     [HttpGet("[action]")]
-    public async Task<ActionResult<List<LoyaltyCardDto>>> GetAll()
+    public async Task<ActionResult<List<LoyaltyCardDto>>> GetAll([FromQuery] int companyId)
     {
-        return Ok(await mediator.Send(new GetAllLoyaltyCardsQuery()));
+        if (companyId <= 0) return BadRequest("Company ID is required.");
+        return Ok(await mediator.Send(new GetLoyaltyCardsByCompanyQuery(companyId)));
     }
 
     [HttpGet("[action]/{id}")]
-    public async Task<ActionResult<LoyaltyCardDto?>> GetById(int id)
+    public async Task<ActionResult<LoyaltyCardDto?>> GetById(int id, [FromQuery] int companyId)
     {
+        if (companyId <= 0) return BadRequest("Company ID is required.");
         return Ok(await mediator.Send(new GetLoyaltyCardByIdQuery(id)));
     }
 
     [HttpPost("[action]")]
-    public async Task<ActionResult> Add([FromQuery] CreateLoyaltyCardRequest createRequest)
+    public async Task<ActionResult> Add([FromBody] CreateLoyaltyCardRequest request, [FromQuery] int companyId)
     {
-        return Ok(await mediator.Send(new AddLoyaltyCardCommand(createRequest)));
+        if (companyId <= 0) return BadRequest("Company ID is required.");
+        return Ok(await mediator.Send(new AddLoyaltyCardCommand(request, companyId)));
     }
 
     [HttpPut("[action]")]
-    public async Task<IActionResult> Update([FromQuery] UpdateLoyaltyCardRequest updateRequest)
+    public async Task<IActionResult> Update([FromBody] UpdateLoyaltyCardRequest request, [FromQuery] int companyId)
     {
-        return Ok(await mediator.Send(new UpdateLoyaltyCardCommand(updateRequest)));
+        if (companyId <= 0) return BadRequest("Company ID is required.");
+        return Ok(await mediator.Send(new UpdateLoyaltyCardCommand(request)));
     }
 
-    //DELETE: api/LoyaltyCard/delete/5
-    //[HttpDelete("delete/{id}")]
-    //public async Task<IActionResult> Delete(int id)
-    //{
-    //    var command = new DeleteLoyaltyCardCommand(id);
+    // POST /api/loyaltycards/batchsync?companyId=5
+    [HttpPost("[action]")]
+    public async Task<ActionResult<BatchSyncLoyaltyCardsResponse>> BatchSync(
+        [FromBody] BatchSyncLoyaltyCardsRequest request,
+        [FromQuery] int companyId)
+    {
+        if (companyId <= 0) return BadRequest("Company ID is required.");
+        var result = await mediator.Send(new BatchSyncLoyaltyCardsCommand(request, companyId));
+        return Ok(result);
+    }
 }

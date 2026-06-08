@@ -2744,17 +2744,48 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "CustomerId",
-        "Type": "System.Int32",
-        "IsRequired": false
+        "Name": "request",
+        "Type": "Api.Models.CreateLoyaltyCardRequest",
+        "IsRequired": true
       },
       {
-        "Name": "CardNumber",
-        "Type": "System.String",
+        "Name": "companyId",
+        "Type": "System.Int32",
         "IsRequired": false
       }
     ],
     "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Api.Controllers.LoyaltyCardsController",
+    "Method": "BatchSync",
+    "RelativePath": "api/LoyaltyCards/BatchSync",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "Api.Models.BatchSyncLoyaltyCardsRequest",
+        "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "Api.Models.BatchSyncLoyaltyCardsResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
   },
   {
     "ContainingType": "Api.Controllers.LoyaltyCardsController",
@@ -2763,7 +2794,13 @@
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
+    "Parameters": [
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
     "ReturnTypes": [
       {
         "Type": "System.Collections.Generic.List\u00601[[Api.Models.LoyaltyCardDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
@@ -2788,6 +2825,11 @@
         "Name": "id",
         "Type": "System.Int32",
         "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
@@ -2811,13 +2853,13 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "Id",
-        "Type": "System.Int32",
-        "IsRequired": false
+        "Name": "request",
+        "Type": "Api.Models.UpdateLoyaltyCardRequest",
+        "IsRequired": true
       },
       {
-        "Name": "CardNumber",
-        "Type": "System.String",
+        "Name": "companyId",
+        "Type": "System.Int32",
         "IsRequired": false
       }
     ],
@@ -7385,6 +7427,63 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "Api.Controllers.ShiftsController",
+    "Method": "BatchSync",
+    "RelativePath": "api/Shifts/BatchSync",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "Api.Models.BatchSyncShiftsRequest",
+        "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "Api.Models.BatchSyncShiftsResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "Api.Controllers.ShiftsController",
+    "Method": "History",
+    "RelativePath": "api/Shifts/History",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.ShiftDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
     "ContainingType": "Api.Controllers.StartingCashController",
     "Method": "Add",
     "RelativePath": "api/StartingCash/Add",
@@ -8200,6 +8299,37 @@
       }
     ],
     "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Api.Controllers.TimeClockController",
+    "Method": "BatchSync",
+    "RelativePath": "api/TimeClock/BatchSync",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "Api.Models.BatchSyncTimeClockRequest",
+        "IsRequired": true
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "Api.Models.BatchSyncTimeClockResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
   },
   {
     "ContainingType": "Api.Controllers.UserDevicePinsController",

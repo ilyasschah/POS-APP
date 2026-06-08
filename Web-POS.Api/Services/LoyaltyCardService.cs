@@ -15,12 +15,12 @@ public class LoyaltyCardService
         _repository = repository;
     }
 
-    public async Task<bool> Create(CreateLoyaltyCardRequest req)
+    public async Task<bool> Create(CreateLoyaltyCardRequest req, int companyId)
     {
         if (_repository.ExistsForCustomer(req.CustomerId))
             throw new InvalidOperationException($"A LoyaltyCard for CustomerId '{req.CustomerId}' already exists.");
 
-        var newEntity = LoyaltyCard.Create(req.CustomerId, req.CardNumber);
+        var newEntity = LoyaltyCard.Create(companyId, req.CustomerId, req.CardNumber);
 
         await _repository.AddAsync(newEntity);
         return true;

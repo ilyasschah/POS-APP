@@ -14,7 +14,9 @@ public static class MapperLoyaltyCard
             Id = entity.Id,
             CustomerId = entity.CustomerId,
             CustomerName = entity.Customer?.Name ?? "N/A",
-            CardNumber = entity.CardNumber
+            CardNumber = entity.CardNumber,
+            Points = entity.Points,
+            LastModified = entity.LastModified
         };
     }
 }

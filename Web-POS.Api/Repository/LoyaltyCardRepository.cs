@@ -23,11 +23,33 @@ public class LoyaltyCardRepository
             .ToListAsync();
     }
 
+    public async Task<List<LoyaltyCard>> GetByCompanyIdAsync(int companyId)
+    {
+        return await _db.LoyaltyCards
+            .AsNoTracking()
+            .Include(lc => lc.Customer)
+            .Where(lc => lc.CompanyId == companyId)
+            .ToListAsync();
+    }
+
     public async Task<LoyaltyCard?> GetByIdAsync(int id)
     {
         return await _db.LoyaltyCards
             .Include(lc => lc.Customer)
             .FirstOrDefaultAsync(lc => lc.Id == id);
+    }
+
+    // Looks up a card by server Id first; falls back to CardNumber for cards
+    // that were created offline and don't have a server Id yet.
+    public async Task<LoyaltyCard?> GetByIdOrCardNumberAsync(int? id, string? cardNumber)
+    {
+        if (id.HasValue && id > 0)
+            return await _db.LoyaltyCards.FirstOrDefaultAsync(lc => lc.Id == id.Value);
+
+        if (!string.IsNullOrWhiteSpace(cardNumber))
+            return await _db.LoyaltyCards.FirstOrDefaultAsync(lc => lc.CardNumber == cardNumber);
+
+        return null;
     }
 
     public bool ExistsForCustomer(int customerId)

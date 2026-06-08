@@ -65,6 +65,17 @@ public class UserRepository
             .FirstOrDefaultAsync(u => u.Username == username && u.CompanyId == companyId);
     }
 
+    /// <summary>
+    /// Looks up a user by email across all companies. Used by device
+    /// registration login where no companyId is known yet.
+    /// </summary>
+    public async Task<User?> GetByEmailAnyCompanyAsync(string email)
+    {
+        return await _db.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Email == email);
+    }
+
     public async Task<bool> ExistsAsync(string username, int companyId)
     {
         return await _db.Users.AnyAsync(u => u.Username == username && u.CompanyId == companyId);
