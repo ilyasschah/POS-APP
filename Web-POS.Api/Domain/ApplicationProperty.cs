@@ -11,8 +11,6 @@ namespace Api.Domain
         public int CompanyId { get; private set; }
         public string? Name { get; private set; }
         public string? Value { get; private set; }
-
-        // Public set required by ISyncableEntity — stamped by DbContext, never by call sites.
         public DateTime LastModified { get; set; } = DateTime.UtcNow;
         [ForeignKey(nameof(CompanyId))]
         public virtual Company? Company { get; private set; }

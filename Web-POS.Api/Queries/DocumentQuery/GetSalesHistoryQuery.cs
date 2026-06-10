@@ -12,6 +12,9 @@ namespace Api.Queries.DocumentQuery
         public DateTime EndDate { get; set; }
         public int? UserId { get; set; }
         public int? CustomerId { get; set; }
+        // When true, each document also carries its line items (used by the
+        // offline sync pull so the local DB can compute dashboards/reports).
+        public bool IncludeItems { get; set; }
 
         public class Handler : IRequestHandler<GetSalesHistoryQuery, List<SalesHistoryDocumentDto>>
         {
@@ -55,19 +58,45 @@ namespace Api.Queries.DocumentQuery
                     .Include(p => p.PaymentType)
                     .ToListAsync(cancellationToken);
 
-                var itemTotals = await _db.DocumentItems
+                var items = await _db.DocumentItems
                     .AsNoTracking()
                     .Where(di => docIds.Contains(di.DocumentId))
-                    .Select(di => new { di.DocumentId, di.PriceBeforeTax, di.Quantity })
+                    .Select(di => new
+                    {
+                        di.DocumentId,
+                        di.ProductId,
+                        di.Quantity,
+                        di.Price,
+                        di.Discount,
+                        di.DiscountType,
+                        di.PriceBeforeTax,
+                        di.Total,
+                    })
                     .ToListAsync(cancellationToken);
 
                 var paymentsByDoc = payments
                     .GroupBy(p => p.DocumentId)
                     .ToDictionary(g => g.Key, g => g.ToList());
 
-                var taxByDoc = itemTotals
+                var taxByDoc = items
                     .GroupBy(i => i.DocumentId)
                     .ToDictionary(g => g.Key, g => g.Sum(i => i.PriceBeforeTax * i.Quantity));
+
+                var itemsByDoc = request.IncludeItems
+                    ? items
+                        .GroupBy(i => i.DocumentId)
+                        .ToDictionary(
+                            g => g.Key,
+                            g => g.Select(i => new SalesHistoryItemDto
+                            {
+                                ProductId    = i.ProductId,
+                                Quantity     = i.Quantity,
+                                UnitPrice    = i.Price,
+                                Discount     = i.Discount,
+                                DiscountType = i.DiscountType,
+                                Total        = i.Total,
+                            }).ToList())
+                    : new Dictionary<int, List<SalesHistoryItemDto>>();
 
                 return docs.Select(d =>
                 {
@@ -78,6 +107,7 @@ namespace Api.Queries.DocumentQuery
                         Id                       = d.Id,
                         Number                   = d.Number,
                         UserName                 = d.User?.Username ?? "N/A",
+                        CustomerId               = d.CustomerId,
                         CustomerName             = d.Customer?.Name,
                         WarehouseName            = d.Warehouse?.Name,
                         OrderNumber              = d.OrderNumber,
@@ -96,6 +126,7 @@ namespace Api.Queries.DocumentQuery
                                 .Where(n => n != null)
                                 .Distinct())
                             : "N/A",
+                        Items = itemsByDoc.GetValueOrDefault(d.Id) ?? [],
                     };
                 }).ToList();
             }

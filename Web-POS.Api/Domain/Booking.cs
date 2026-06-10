@@ -14,8 +14,6 @@ namespace Api.Domain
 
         [MaxLength(100)]
         public string? ReservationName { get; private set; }
-
-        // Stored as a JSON array column — see AppDbContext ValueConverter
         public List<int> TableIds { get; private set; } = new();
 
         public int? DocumentId { get; private set; }

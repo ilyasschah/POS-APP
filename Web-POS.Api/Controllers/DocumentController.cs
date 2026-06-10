@@ -70,17 +70,19 @@ namespace Api.Controllers
             [FromQuery] DateTime startDate,
             [FromQuery] DateTime endDate,
             [FromQuery] int? userId = null,
-            [FromQuery] int? customerId = null)
+            [FromQuery] int? customerId = null,
+            [FromQuery] bool includeItems = false)
         {
             if (companyId <= 0) return BadRequest("Company ID is required");
 
             return Ok(await mediator.Send(new GetSalesHistoryQuery
             {
-                CompanyId  = companyId,
-                StartDate  = startDate,
-                EndDate    = endDate,
-                UserId     = userId,
-                CustomerId = customerId,
+                CompanyId    = companyId,
+                StartDate    = startDate,
+                EndDate      = endDate,
+                UserId       = userId,
+                CustomerId   = customerId,
+                IncludeItems = includeItems,
             }));
         }
 
