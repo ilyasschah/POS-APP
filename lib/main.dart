@@ -1,8 +1,15 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
-import 'api_client.dart';
+
+import 'kds_models.dart';
+import 'kds_storage.dart';
 import 'kitchen_screen.dart';
+import 'lan_server.dart';
+import 'onboarding_screen.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const KitchenDisplayApp());
 }
 
@@ -17,118 +24,163 @@ class KitchenDisplayApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueGrey),
         useMaterial3: true,
       ),
-      home: const CompanySelectionScreen(),
+      home: const RootScreen(),
       debugShowCheckedModeBanner: false,
     );
   }
 }
 
-class CompanySelectionScreen extends StatefulWidget {
-  const CompanySelectionScreen({super.key});
+/// Owns the device's whole lifecycle: runs the LAN server, holds the pairing
+/// record + the current order snapshot, and swaps between the onboarding and
+/// kitchen screens. Everything is local — there is no backend API client.
+class RootScreen extends StatefulWidget {
+  const RootScreen({super.key});
 
   @override
-  State<CompanySelectionScreen> createState() => _CompanySelectionScreenState();
+  State<RootScreen> createState() => _RootScreenState();
 }
 
-class _CompanySelectionScreenState extends State<CompanySelectionScreen> {
-  final ApiClient _apiClient = ApiClient();
-  List<dynamic> _companies = [];
-  bool _isLoading = true;
+class _RootScreenState extends State<RootScreen> {
+  final KdsStorage _storage = KdsStorage();
+  KdsLanServer? _server;
+
+  PairingInfo _pairing = PairingInfo.empty;
+  List<KitchenOrder> _orders = [];
+
+  String _deviceName = '…';
+  String _deviceIp = '…';
+  bool _ready = false;
 
   @override
   void initState() {
     super.initState();
-    _loadCompanies();
+    _boot();
   }
 
-  Future<void> _loadCompanies() async {
+  Future<void> _boot() async {
+    _deviceName = _resolveDeviceName();
+    await _resolveDeviceIp();
+
+    _pairing = await _storage.loadPairing();
+    _orders = await _storage.loadOrders();
+
+    _server = KdsLanServer(
+      deviceName: _deviceName,
+      onPair: _handlePair,
+      onOrders: _handleOrders,
+      onUnpair: _handleUnpair,
+    );
+    await _server!.start();
+
+    if (mounted) setState(() => _ready = true);
+  }
+
+  @override
+  void dispose() {
+    _server?.stop();
+    super.dispose();
+  }
+
+  String _resolveDeviceName() {
     try {
-      final data = await _apiClient.getCompanies();
-      setState(() {
-        _companies = data;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() => _isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(e.toString())));
-      }
+      final h = Platform.localHostname;
+      return h.isNotEmpty ? h : 'Kitchen Display';
+    } catch (_) {
+      return 'Kitchen Display';
     }
+  }
+
+  Future<void> _resolveDeviceIp() async {
+    try {
+      final interfaces = await NetworkInterface.list(
+        type: InternetAddressType.IPv4,
+        includeLinkLocal: false,
+      );
+      for (final iface in interfaces) {
+        for (final addr in iface.addresses) {
+          if (!addr.isLoopback) {
+            _deviceIp = addr.address;
+            return;
+          }
+        }
+      }
+    } catch (_) {}
+  }
+
+  // ── LAN server callbacks (run on the main isolate) ────────────────────────
+
+  void _handlePair({
+    required int companyId,
+    required String token,
+    required String posName,
+    required String posIp,
+    required int posPort,
+  }) {
+    () async {
+      final info = await _storage.savePairing(
+        companyId: companyId,
+        token: token,
+        posName: posName,
+        posIp: posIp,
+        posPort: posPort,
+      );
+      if (mounted) setState(() => _pairing = info);
+    }();
+  }
+
+  void _handleOrders(List<KitchenOrder> orders) {
+    _orders = orders;
+    _storage.saveOrders(orders);
+    if (mounted) setState(() {});
+  }
+
+  void _handleUnpair() {
+    () async {
+      await _storage.clearPairing();
+      if (mounted) {
+        setState(() {
+          _pairing = PairingInfo.empty;
+          _orders = [];
+        });
+      }
+    }();
+  }
+
+  void _markReady(KitchenOrder order) {
+    // Optimistically drop the ticket and tell the paired POS it's ready.
+    setState(() => _orders =
+        _orders.where((o) => o.orderRef != order.orderRef).toList());
+    _storage.saveOrders(_orders);
+    notifyOrderReady(
+      posIp: _pairing.posIp,
+      posPort: _pairing.posPort,
+      orderRef: order.orderRef,
+      token: _pairing.token,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[200],
-      appBar: AppBar(
-        title: const Text(
-          "Kitchen Display Setup",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: Colors.blueGrey,
-        foregroundColor: Colors.white,
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Center(
-              child: Container(
-                constraints: const BoxConstraints(maxWidth: 600),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.kitchen, size: 80, color: Colors.blueGrey),
-                    const SizedBox(height: 20),
-                    const Text(
-                      "Select Your Restaurant",
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Expanded(
-                      child: ListView.builder(
-                        itemCount: _companies.length,
-                        itemBuilder: (context, index) {
-                          final company = _companies[index];
-                          return Card(
-                            margin: const EdgeInsets.symmetric(
-                              vertical: 8,
-                              horizontal: 16,
-                            ),
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.all(16),
-                              title: Text(
-                                company['name'] ?? company['Name'] ?? 'Unknown',
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              trailing: const Icon(Icons.arrow_forward_ios),
-                              onTap: () {
-                                final companyId =
-                                    company['id'] ?? company['Id'];
-                                // ✨ PASS THE ID DIRECTLY TO THE KITCHEN SCREEN!
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        KitchenScreen(companyId: companyId),
-                                  ),
-                                );
-                              },
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+    if (!_ready) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF546E7A),
+        body: Center(child: CircularProgressIndicator(color: Colors.white)),
+      );
+    }
+
+    if (!_pairing.paired) {
+      return OnboardingScreen(
+        deviceName: _deviceName,
+        ipAddress: _deviceIp,
+        port: kKdsPort,
+      );
+    }
+
+    return KitchenScreen(
+      orders: _orders,
+      posName: _pairing.posName.isEmpty ? 'POS' : _pairing.posName,
+      onMarkReady: _markReady,
+      onUnpair: _handleUnpair,
     );
   }
 }
