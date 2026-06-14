@@ -24,6 +24,13 @@ namespace Api.Controllers
         }
 
         [HttpGet("[action]")]
+        public async Task<ActionResult<List<StockControlDto>>> GetAll([FromQuery] int companyId)
+        {
+            if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
+            return Ok(await mediator.Send(new GetAllStockControlsQuery { CompanyId = companyId }));
+        }
+
+        [HttpGet("[action]")]
         public async Task<ActionResult<StockControlDto?>> GetByProductId([FromQuery] int productId, [FromQuery] int companyId)
         {
             if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });

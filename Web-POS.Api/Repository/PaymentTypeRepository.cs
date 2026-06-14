@@ -65,12 +65,23 @@ namespace Api.Repository
             if (entity == null)
                 throw new InvalidOperationException("Payment type not found or you do not have permission to delete it.");
 
-            bool isInUse = await _db.Payments.AnyAsync(p => p.PaymentTypeId == id);
-            if (isInUse)
-                throw new InvalidOperationException("This payment type cannot be deleted because it is already used in one or more transactions.");
+            bool usedInPayments = await _db.Payments.AnyAsync(p => p.PaymentTypeId == id);
+            bool usedInZReports = await _db.ZReportPaymentSummaries.AnyAsync(z => z.PaymentTypeId == id);
+            if (usedInPayments || usedInZReports)
+                throw new InvalidOperationException("This payment type cannot be deleted because it is already used in transactions or Z-reports.");
 
             _db.PaymentTypes.Remove(entity);
-            await _db.SaveChangesAsync();
+            try
+            {
+                await _db.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                // Defensive net: a foreign-key constraint (e.g. another table that
+                // still references this payment type) turns into a friendly 400
+                // instead of an unhandled 500.
+                throw new InvalidOperationException("This payment type cannot be deleted because it is still referenced by existing records.");
+            }
             return true;
         }
     }

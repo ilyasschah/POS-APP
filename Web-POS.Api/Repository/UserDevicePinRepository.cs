@@ -16,7 +16,12 @@ namespace Api.Repository
         }
         public async Task<List<UserDevicePinDto>> GetActiveDevicesAsync(int? userId,int companyId, CancellationToken cancellationToken = default)
         {
-            var query = _db.UserDevicePins.Where(p => p.CompanyId == companyId);
+            // Exclude revoked devices. RevokeDevicePinAsync blanks the HashedPin
+            // (it doesn't delete the row), so a revoked device must be filtered
+            // out here or it keeps showing as "active".
+            var query = _db.UserDevicePins.Where(p =>
+                p.CompanyId == companyId &&
+                p.HashedPin != null && p.HashedPin != "");
 
             if (userId.HasValue && userId > 0)
             {

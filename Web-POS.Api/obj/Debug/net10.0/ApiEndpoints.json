@@ -7763,6 +7763,32 @@
   },
   {
     "ContainingType": "Api.Controllers.StockControlsController",
+    "Method": "GetAll",
+    "RelativePath": "api/StockControls/GetAll",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.StockControlDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "Api.Controllers.StockControlsController",
     "Method": "GetById",
     "RelativePath": "api/StockControls/GetById",
     "HttpMethod": "GET",

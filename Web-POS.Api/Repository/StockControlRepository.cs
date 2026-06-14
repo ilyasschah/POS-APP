@@ -29,6 +29,16 @@ namespace Api.Repository
                 .FirstOrDefaultAsync(x => x.ProductId == productId && x.CompanyId == companyId);
         }
 
+        public async Task<List<StockControl>> GetAllByCompanyAsync(int companyId)
+        {
+            return await _db.StockControls
+                .Include(x => x.Product)
+                .Include(x => x.Customer)
+                .Where(x => x.CompanyId == companyId)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
         public async Task<bool> ExistsForProductAsync(int productId, int companyId)
         {
             return await _db.StockControls
