@@ -10,6 +10,11 @@
         public required int WarehouseId { get; set; }
         public required List<CheckoutItemDto> Items { get; set; }
         public string? OrderNumber { get; set; }
+
+        /// Device-local document number the client issued offline. When set,
+        /// checkout uses it verbatim instead of generating a YY-CCC-NNNNNN
+        /// number — so the offline receipt number survives sync unchanged.
+        public string? ClientDocumentNumber { get; set; }
     }
 
     public class CheckoutItemDto

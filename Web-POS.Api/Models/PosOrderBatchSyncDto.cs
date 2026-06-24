@@ -29,6 +29,12 @@ namespace Api.Models
         /// Payment details — required when ExistingServerId is set.
         public int? PaymentTypeId { get; set; }
         public decimal? AmountPaid { get; set; }
+
+        /// Device-local document number the client issued offline at checkout
+        /// (e.g. "CAISSE1-200-000045"). When present, checkout keeps it verbatim
+        /// instead of generating a server-side YY-CCC-NNNNNN number, so the
+        /// printed/scanned receipt number never changes after sync.
+        public string? ClientDocumentNumber { get; set; }
     }
 
     public class BatchSyncPosOrdersResponse

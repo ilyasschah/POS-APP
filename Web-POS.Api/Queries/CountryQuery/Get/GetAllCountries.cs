@@ -7,8 +7,6 @@ namespace Api.Queries.CountryQuery.Get
 {
     public class GetAllCountriesQuery : IRequest<List<CountryDto>>
     {
-        public int CompanyId { get; set; }
-
         public class GetAllCountriesQueryQueryHandler : IRequestHandler<GetAllCountriesQuery, List<CountryDto>>
         {
             private readonly CountryRepository _countryRepository;
@@ -18,7 +16,7 @@ namespace Api.Queries.CountryQuery.Get
             }
             public async Task<List<CountryDto>> Handle(GetAllCountriesQuery request, CancellationToken cancellationToken)
             {
-                var countries = await _countryRepository.GetAllCountries(request.CompanyId);
+                var countries = await _countryRepository.GetAllCountries();
                 return countries.Select(MapperCountry.MapToCountry).ToList();
             }
         }

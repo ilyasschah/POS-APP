@@ -19,6 +19,15 @@ namespace Api.Repository
                 .FirstOrDefaultAsync(d => d.DocumentItemId == documentItemId && d.CompanyId == companyId);
         }
 
+        /// <summary>All document-item expiration dates for a company (offline mirror pull).</summary>
+        public async Task<List<DocumentItemExpirationDate>> GetAllByCompanyAsync(int companyId)
+        {
+            return await _db.DocumentItemExpirationDates
+                .AsNoTracking()
+                .Where(d => d.CompanyId == companyId)
+                .ToListAsync();
+        }
+
         public async Task<bool> ExistsAsync(int documentItemId, int companyId)
         {
             return await _db.DocumentItemExpirationDates

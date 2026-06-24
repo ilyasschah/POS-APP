@@ -1,0 +1,118 @@
+@page
+@model Api.Pages.Admin.Companies.CreateModel
+@{
+    ViewData["Title"] = "New company";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">New company</h3>
+    <a class="btn btn-outline-secondary" asp-page="Index">Back</a>
+</div>
+
+<form method="post" class="bg-white shadow-sm p-4 rounded">
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label class="form-label">Name *</label>
+            <input class="form-control" asp-for="Input.Name" required />
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Country *</label>
+            @if (Model.Countries.Count > 0)
+            {
+                <select class="form-select" asp-for="Input.CountryId">
+                    @foreach (var c in Model.Countries)
+                    {
+                        <option value="@c.Id">@c.Name (@c.Id)</option>
+                    }
+                </select>
+            }
+            else
+            {
+                <input type="number" class="form-control" asp-for="Input.CountryId" />
+                <div class="form-text text-warning">No countries found — enter an existing CountryId (Country is company-scoped).</div>
+            }
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Email</label>
+            <input class="form-control" asp-for="Input.Email" />
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Phone</label>
+            <input class="form-control" asp-for="Input.PhoneNumber" />
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Address</label>
+            <input class="form-control" asp-for="Input.Address" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">City</label>
+            <input class="form-control" asp-for="Input.City" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Postal code</label>
+            <input class="form-control" asp-for="Input.PostalCode" />
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Tax number</label>
+            <input class="form-control" asp-for="Input.TaxNumber" />
+        </div>
+    </div>
+
+    <hr class="my-4" />
+
+    <h6 class="text-muted text-uppercase mb-3">Subscription</h6>
+    <div class="row g-3">
+        <div class="col-md-4">
+            <label class="form-label">Period</label>
+            <select class="form-select" asp-for="Input.SubscriptionDays">
+                <option value="14">14 days (trial)</option>
+                <option value="30" selected>1 month (30 days)</option>
+                <option value="90">3 months (90 days)</option>
+                <option value="180">6 months (180 days)</option>
+                <option value="365">1 year (365 days)</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Seats (terminals)</label>
+            <input type="number" min="1" class="form-control" asp-for="Input.SeatAllowance" />
+        </div>
+    </div>
+
+    <hr class="my-4" />
+
+    <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" asp-for="Input.CreateFirstUser" id="cfu" />
+        <label class="form-check-label" for="cfu"><strong>Also create the first admin user</strong></label>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-4">
+            <label class="form-label">Username</label>
+            <input class="form-control" asp-for="Input.Username" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Password</label>
+            <input type="password" class="form-control" asp-for="Input.Password" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Access level</label>
+            <input type="number" class="form-control" asp-for="Input.AccessLevel" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">First name</label>
+            <input class="form-control" asp-for="Input.FirstName" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Last name</label>
+            <input class="form-control" asp-for="Input.LastName" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">User email</label>
+            <input class="form-control" asp-for="Input.UserEmail" />
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <button type="submit" class="btn btn-primary">Create company</button>
+    </div>
+</form>

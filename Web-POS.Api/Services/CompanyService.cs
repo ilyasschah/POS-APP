@@ -1,18 +1,39 @@
+using Api.DataBase;
 using Api.Domain;
+using Api.Master.Services;
 using Api.Models;
 using Api.Repository;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Api.Services;
 
 public class CompanyService
 {
+    /// <summary>Defaults a brand-new (trialing) company is provisioned with when
+    /// the request doesn't specify them.</summary>
+    private const int DefaultTrialSeats = 5;
+    private const int DefaultTrialDays = 30;
+
     public readonly CompanyRepository _companyRepository;
     public readonly CountryRepository _countryRepository;
+    private readonly AppDbContext _db;
+    private readonly ITenantProvisioningService _provisioning;
+    private readonly ILogger<CompanyService> _logger;
 
-    public CompanyService(CompanyRepository companyRepository, CountryRepository countryRepository)
+    public CompanyService(
+        CompanyRepository companyRepository,
+        CountryRepository countryRepository,
+        AppDbContext db,
+        ITenantProvisioningService provisioning,
+        ILogger<CompanyService> logger)
     {
         _companyRepository = companyRepository;
         _countryRepository = countryRepository;
+        _db = db;
+        _provisioning = provisioning;
+        _logger = logger;
     }
 
     public async Task<CompanyDto> Create(CreateCompanyRequest req)
@@ -20,26 +41,54 @@ public class CompanyService
         if (await _companyRepository.GetByNameAsync(req.Name) != null)
             throw new InvalidOperationException($"A Company with the name '{req.Name}' already exists.");
 
-        var newEntity = Company.Create(
-            req.Name,
-            req.CountryId,
-            req.Address,
-            req.PostalCode,
-            req.City,
-            req.TaxNumber,
-            req.Email,
-            req.PhoneNumber,
-            req.BankAccountNumber,
-            req.BankDetails,
-            req.StreetName,
-            req.AdditionalStreetName,
-            req.BuildingNumber,
-            req.PlotIdentification,
-            req.CitySubdivisionName,
-            req.CountrySubentity
-        );
+        // Create the company AND its baseline data (default warehouse, C000
+        // walk-in customer, S000 supplier, payment types, settings, security
+        // keys, printer rows) atomically — a new company is never left without
+        // the defaults it needs to start up. Wrapped in the execution strategy
+        // because the context uses retry-on-failure (which forbids a bare user
+        // transaction). CRITICAL: the entity is built fresh and the change
+        // tracker cleared at the START of each attempt, so a retried attempt
+        // never re-saves entities left tracked by a previous failed attempt —
+        // that accumulation caused duplicate-key crashes (e.g. seeding the same
+        // SecurityKey / printer rows twice) under retry.
+        Company newEntity = null!;
+        var createStrategy = _db.Database.CreateExecutionStrategy();
+        await createStrategy.ExecuteAsync(async () =>
+        {
+            _db.ChangeTracker.Clear();
 
-        await _companyRepository.AddAsync(newEntity);
+            newEntity = Company.Create(
+                req.Name, req.CountryId, req.Address, req.PostalCode, req.City,
+                req.TaxNumber, req.Email, req.PhoneNumber, req.BankAccountNumber,
+                req.BankDetails, req.StreetName, req.AdditionalStreetName,
+                req.BuildingNumber, req.PlotIdentification, req.CitySubdivisionName,
+                req.CountrySubentity);
+
+            await using var tx = await _db.Database.BeginTransactionAsync();
+            await _companyRepository.AddAsync(newEntity);
+            await CompanyDefaultsSeeder.SeedAsync(_db, newEntity.Id);
+            await tx.CommitAsync();
+        });
+
+        // Provision the SaaS control-plane Tenant (+ trial subscription) in the
+        // Master DB. NON-FATAL and OUTSIDE the tenant-data transaction (separate
+        // database): a Master-DB outage must never fail company creation. It's
+        // idempotent, so it can be re-run later (e.g. via /Master/Provision).
+        try
+        {
+            await _provisioning.ProvisionTenantAsync(
+                newEntity.Id,
+                newEntity.Name,
+                seatAllowance: req.SeatAllowance ?? DefaultTrialSeats,
+                subscriptionDays: req.SubscriptionDays ?? DefaultTrialDays);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "Company {CompanyId} created but Master-DB tenant provisioning failed — retry later.",
+                newEntity.Id);
+        }
+
         return  new CompanyDto
         {
             Id = newEntity.Id,
@@ -122,13 +171,84 @@ public class CompanyService
         return true;
     }
 
+    /// <summary>
+    /// Deletes a company and ALL of its data. The schema has ~40 child tables
+    /// referencing Company with no cascade, so a plain delete fails on the first
+    /// FK. This purges every CompanyId-scoped row for the company in one
+    /// transaction. Constraint enforcement is toggled ONLY on the CompanyId-scoped
+    /// tables — global reference tables (Country, Currency, DocumentType,
+    /// DocumentCategory — none of which have a CompanyId column) are never
+    /// touched, so deleting a company can never affect global data.
+    /// </summary>
     public async Task<bool> DeleteAsync(int id)
     {
         var entityToDelete = await _companyRepository.GetByIdAsync(id);
         if (entityToDelete == null)
             throw new InvalidOperationException($"A Company with the ID '{id}' does not exist.");
 
-        await _companyRepository.DeleteAsync(entityToDelete);
+        var deleteStrategy = _db.Database.CreateExecutionStrategy();
+        await deleteStrategy.ExecuteAsync(async () =>
+        {
+            await using var tx = await _db.Database.BeginTransactionAsync();
+
+            // ZReportPaymentSummary has no CompanyId but references this company's
+            // ZReports/PaymentTypes — purge it first (the only such referencer).
+            await _db.Database.ExecuteSqlRawAsync(
+                "DELETE FROM dbo.ZReportPaymentSummary WHERE ZReportId IN " +
+                "(SELECT Id FROM dbo.ZReport WHERE CompanyId = @cid);",
+                new SqlParameter("@cid", id));
+
+            // Disable FK enforcement ONLY on CompanyId-scoped tables (so the delete
+            // order between them doesn't matter). Tables without a CompanyId column
+            // — i.e. the global reference tables — are deliberately excluded.
+            await _db.Database.ExecuteSqlRawAsync(@"
+                DECLARE @sql NVARCHAR(MAX) = N'';
+                SELECT @sql += 'ALTER TABLE ' + QUOTENAME(SCHEMA_NAME(t.schema_id)) + '.' + QUOTENAME(t.name)
+                             + ' NOCHECK CONSTRAINT ALL;' + CHAR(10)
+                FROM sys.tables t
+                WHERE EXISTS (SELECT 1 FROM sys.columns c WHERE c.object_id = t.object_id AND c.name = 'CompanyId');
+                EXEC sp_executesql @sql;");
+
+            // Delete every CompanyId-scoped row for this company.
+            await _db.Database.ExecuteSqlRawAsync(@"
+                DECLARE @sql NVARCHAR(MAX) = N'';
+                SELECT @sql += 'DELETE FROM ' + QUOTENAME(SCHEMA_NAME(t.schema_id)) + '.' + QUOTENAME(t.name)
+                             + ' WHERE CompanyId = @cid;' + CHAR(10)
+                FROM sys.tables t
+                WHERE EXISTS (SELECT 1 FROM sys.columns c WHERE c.object_id = t.object_id AND c.name = 'CompanyId')
+                  AND t.name <> 'Company';
+                EXEC sp_executesql @sql, N'@cid INT', @cid = @cid;",
+                new SqlParameter("@cid", id));
+
+            await _db.Database.ExecuteSqlRawAsync(
+                "DELETE FROM dbo.Company WHERE Id = @cid;",
+                new SqlParameter("@cid", id));
+
+            // Re-enable FK enforcement on the same CompanyId-scoped tables.
+            await _db.Database.ExecuteSqlRawAsync(@"
+                DECLARE @sql NVARCHAR(MAX) = N'';
+                SELECT @sql += 'ALTER TABLE ' + QUOTENAME(SCHEMA_NAME(t.schema_id)) + '.' + QUOTENAME(t.name)
+                             + ' CHECK CONSTRAINT ALL;' + CHAR(10)
+                FROM sys.tables t
+                WHERE EXISTS (SELECT 1 FROM sys.columns c WHERE c.object_id = t.object_id AND c.name = 'CompanyId');
+                EXEC sp_executesql @sql;");
+
+            await tx.CommitAsync();
+        });
+
+        // Also remove the company's SaaS control-plane tenant (separate Master DB
+        // → its own operation). Non-fatal: a Master-DB hiccup must not fail the
+        // company delete; the orphan tenant can be cleared later.
+        try
+        {
+            await _provisioning.DeprovisionTenantAsync(id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "Company {CompanyId} deleted but Master-DB tenant removal failed — clear it later.", id);
+        }
+
         return true;
     }
 }

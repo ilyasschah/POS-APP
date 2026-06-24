@@ -21,10 +21,6 @@ namespace Api.Domain
         public int DocumentCategoryId { get; private set; }
         public virtual DocumentCategory DocumentCategory { get; private set; }
 
-        [ForeignKey(nameof(Warehouse))]
-        public int WarehouseId { get; private set; }
-        public virtual Warehouse Warehouse { get; private set; }
-
         public int StockDirection { get; private set; } = 0;
 
         public int EditorType { get; private set; } = 0;
@@ -42,7 +38,6 @@ namespace Api.Domain
             string name,
             string code,
             int documentCategoryId,
-            int warehouseId,
             int stockDirection,
             int editorType,
             string? printTemplate,
@@ -52,7 +47,6 @@ namespace Api.Domain
             Name = name;
             Code = code;
             DocumentCategoryId = documentCategoryId;
-            WarehouseId = warehouseId;
             StockDirection = stockDirection;
             EditorType = editorType;
             PrintTemplate = printTemplate;
@@ -64,7 +58,6 @@ namespace Api.Domain
             string name,
             string code,
             int documentCategoryId,
-            int warehouseId,
             int stockDirection = 0,
             int editorType = 0,
             string? printTemplate = null,
@@ -80,14 +73,10 @@ namespace Api.Domain
             if (documentCategoryId <= 0)
                 throw new ArgumentException("DocumentCategoryId must be greater than zero.", nameof(documentCategoryId));
 
-            if (warehouseId <= 0)
-                throw new ArgumentException("WarehouseId must be greater than zero.", nameof(warehouseId));
-
             return new DocumentType(
                 name,
                 code,
                 documentCategoryId,
-                warehouseId,
                 stockDirection,
                 editorType,
                 printTemplate,

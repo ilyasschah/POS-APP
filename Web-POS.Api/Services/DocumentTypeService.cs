@@ -19,7 +19,6 @@ namespace Api.Services
                 request.Name,
                 request.Code,
                 request.DocumentCategoryId,
-                request.WarehouseId,
                 request.StockDirection,
                 request.EditorType,
                 request.PrintTemplate,

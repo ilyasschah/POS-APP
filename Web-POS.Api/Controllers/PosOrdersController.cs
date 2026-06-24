@@ -6,6 +6,7 @@ using Api.Commands.PosOrderCommands.Delete;
 using Api.Commands.PosOrderCommands.Update;
 using Api.Commands.PosOrderCommands.Void;
 using Api.Constants;
+using Api.Master.Services;
 using Api.Models;
 using Api.Queries.PosOrderQuery;
 using MediatR;
@@ -19,10 +20,20 @@ namespace Api.Controllers
     public class PosOrderController : ControllerBase
     {
         private readonly IMediator _mediator;
+        private readonly ITenantProvisioningService _provisioning;
+        private readonly ICloneAuditService _cloneAudit;
+        private readonly ILogger<PosOrderController> _logger;
 
-        public PosOrderController(IMediator mediator)
+        public PosOrderController(
+            IMediator mediator,
+            ITenantProvisioningService provisioning,
+            ICloneAuditService cloneAudit,
+            ILogger<PosOrderController> logger)
         {
             _mediator = mediator;
+            _provisioning = provisioning;
+            _cloneAudit = cloneAudit;
+            _logger = logger;
         }
 
         [HttpGet("[action]")]
@@ -200,6 +211,28 @@ namespace Api.Controllers
 
             if (request?.Orders is null || request.Orders.Count == 0)
                 return BadRequest(new { message = "Batch contains no orders." });
+
+            // ── Pillar 4: seat enforcement at sync ingress ──
+            var seatBlock = await SeatGuard.CheckAsync(Request, _provisioning, companyId);
+            if (seatBlock != null) return seatBlock;
+
+            // ── Pillar 5: clone / duplication audit (detection only, non-fatal) ──
+            // Records each order's client-minted LocalId; flags any first seen on a
+            // different device (a cloned terminal / restored backup).
+            try
+            {
+                var deviceId = Request.Headers["X-Device-Id"].ToString();
+                var audit = await _cloneAudit.RecordAndCheckAsync(
+                    companyId, deviceId, request.Orders.Select(o => "order:" + o.LocalId));
+                if (audit.HasAnomalies)
+                    _logger.LogWarning(
+                        "Pillar 5: clone signal for company {CompanyId} from device {DeviceId} — {Count} transaction(s) previously seen on another device: {TxnIds}",
+                        companyId, deviceId, audit.FlaggedTxnIds.Count, string.Join(",", audit.FlaggedTxnIds));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Pillar 5 clone audit skipped for company {CompanyId}", companyId);
+            }
 
             // Always returns 200 — partial failures are encoded inside the results array.
             // The client inspects each result.Success individually.

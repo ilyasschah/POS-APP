@@ -11,8 +11,7 @@ namespace Api.Helpers
             {
                 Id = documentCategory.Id,
                 Name = documentCategory.Name,
-                LanguageKey = documentCategory.LanguageKey,
-                CompanyId = documentCategory.CompanyId
+                LanguageKey = documentCategory.LanguageKey
             };
         }
     }

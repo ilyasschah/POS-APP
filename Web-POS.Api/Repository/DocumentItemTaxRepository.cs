@@ -22,6 +22,16 @@ namespace Api.Repository
                 .ToListAsync();
         }
 
+        /// <summary>All document-item taxes for a company (offline mirror pull).</summary>
+        public async Task<List<DocumentItemTax>> GetAllByCompanyAsync(int companyId)
+        {
+            return await _db.DocumentItemTaxes
+                .AsNoTracking()
+                .Include(dit => dit.Tax)
+                .Where(dit => dit.CompanyId == companyId)
+                .ToListAsync();
+        }
+
         public async Task<DocumentItemTax?> GetByIdsAsync(int documentItemId, int taxId, int companyId)
         {
             return await _db.DocumentItemTaxes

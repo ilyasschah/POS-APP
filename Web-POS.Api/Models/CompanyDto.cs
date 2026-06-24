@@ -41,6 +41,11 @@ public class CreateCompanyRequest
     public string? PlotIdentification { get; set; }
     public string? CitySubdivisionName { get; set; }
     public string? CountrySubentity { get; set; }
+
+    // SaaS provisioning (Pillar 1/2) — optional; the admin portal sets these.
+    // When omitted, sensible defaults apply (see CompanyService).
+    public int? SeatAllowance { get; set; }
+    public int? SubscriptionDays { get; set; }
 }
 
 public class UpdateCompanyRequest

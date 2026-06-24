@@ -1652,6 +1652,10 @@
           "password": {
             "type": "string",
             "nullable": true
+          },
+          "deviceId": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -1678,6 +1682,10 @@
             "nullable": true
           },
           "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "lease": {
             "type": "string",
             "nullable": true
           }

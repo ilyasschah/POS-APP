@@ -1,0 +1,80 @@
+using System.Net;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
+
+namespace Api.Middleware
+{
+    /// <summary>
+    /// Translates expected business-rule failures into the structured JSON error
+    /// contract <c>{ success: false, message }</c> with an appropriate status
+    /// code, instead of letting them bubble up as raw 500s.
+    ///
+    /// Per CLAUDE.md: "Business logic failures (like 'Out of Stock') must return a
+    /// 400 Bad Request with a structured JSON payload. Do not throw unhandled 500
+    /// exceptions for business logic." This middleware enforces that globally so
+    /// every command/service can just <c>throw new InvalidOperationException(...)</c>
+    /// and the client receives a clean, parseable error (which the offline-first
+    /// sync uses to decide whether an operation is permanently rejected).
+    /// </summary>
+    public class ExceptionHandlingMiddleware
+    {
+        private readonly RequestDelegate _next;
+        private readonly ILogger<ExceptionHandlingMiddleware> _logger;
+
+        public ExceptionHandlingMiddleware(
+            RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
+        {
+            _next = next;
+            _logger = logger;
+        }
+
+        public async Task Invoke(HttpContext context)
+        {
+            try
+            {
+                await _next(context);
+            }
+            catch (Exception ex)
+            {
+                var (status, message) = Map(ex);
+
+                if (status >= 500)
+                    _logger.LogError(ex, "Unhandled server error");
+                else
+                    _logger.LogWarning("Request rejected ({Status}): {Message}", status, message);
+
+                // A response already on the wire can't be rewritten — let it surface.
+                if (context.Response.HasStarted) throw;
+
+                context.Response.Clear();
+                context.Response.StatusCode = status;
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsJsonAsync(new { success = false, message });
+            }
+        }
+
+        private static (int status, string message) Map(Exception ex) => ex switch
+        {
+            // Business-rule rejections (duplicate name, "in use", out of stock…).
+            InvalidOperationException => ((int)HttpStatusCode.BadRequest, ex.Message),
+            // Validation failures from FluentValidation pipeline behaviours.
+            FluentValidation.ValidationException ve =>
+                ((int)HttpStatusCode.BadRequest,
+                 string.Join("; ", ve.Errors.Select(e => e.ErrorMessage))),
+            // Missing entity.
+            KeyNotFoundException => ((int)HttpStatusCode.NotFound, ex.Message),
+            // Authorisation / invalid reference guards.
+            UnauthorizedAccessException => ((int)HttpStatusCode.Forbidden, ex.Message),
+            // FK constraint (e.g. deleting a product still referenced by a sale).
+            DbUpdateException db when IsForeignKeyConflict(db) =>
+                ((int)HttpStatusCode.BadRequest,
+                 "This record can't be deleted because it is still referenced by other data (for example, it appears in a sale or order)."),
+            _ => ((int)HttpStatusCode.InternalServerError,
+                  "An unexpected server error occurred."),
+        };
+
+        // SQL Server error 547 == foreign-key / constraint conflict.
+        private static bool IsForeignKeyConflict(DbUpdateException ex)
+            => ex.GetBaseException() is SqlException { Number: 547 };
+    }
+}

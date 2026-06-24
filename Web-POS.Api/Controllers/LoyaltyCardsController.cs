@@ -7,13 +7,14 @@ using Api.Commands.LoyaltyCardCommands.Update;
 using Api.Commands.LoyaltyCardCommands.Delete;
 using Api.Commands.LoyaltyCardCommands.BatchSync;
 using Api.Queries.LoyaltyCardQuery;
+using Api.Master.Services;
 using Api.Models;
 
 namespace Api.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class LoyaltyCardsController(IMediator mediator) : ControllerBase
+public class LoyaltyCardsController(IMediator mediator, ITenantProvisioningService provisioning) : ControllerBase
 {
     [HttpGet("[action]")]
     public async Task<ActionResult<List<LoyaltyCardDto>>> GetAll([FromQuery] int companyId)
@@ -50,6 +51,11 @@ public class LoyaltyCardsController(IMediator mediator) : ControllerBase
         [FromQuery] int companyId)
     {
         if (companyId <= 0) return BadRequest("Company ID is required.");
+
+        // Pillar 4: seat enforcement at sync ingress.
+        var seatBlock = await SeatGuard.CheckAsync(Request, provisioning, companyId);
+        if (seatBlock != null) return seatBlock;
+
         var result = await mediator.Send(new BatchSyncLoyaltyCardsCommand(request, companyId));
         return Ok(result);
     }

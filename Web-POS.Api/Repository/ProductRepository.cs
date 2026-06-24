@@ -84,6 +84,17 @@ namespace Api.Repository
 
         public async Task DeleteAsync(Product entity)
         {
+            // Pre-check transactional references BEFORE attempting the delete.
+            // Otherwise EF Core runs the DELETE, SQL rejects it on the FK, and EF
+            // logs that failed SaveChangesAsync as an error — spamming the console
+            // even though we catch it below. Throwing up-front keeps the log clean
+            // and still returns a 400 via the exception middleware.
+            var inUse = await _db.PosOrderItems.AnyAsync(i => i.ProductId == entity.Id)
+                     || await _db.DocumentItems.AnyAsync(i => i.ProductId == entity.Id);
+            if (inUse)
+                throw new InvalidOperationException(
+                    "Cannot delete this product because it is currently linked to one or more orders or documents.");
+
             try
             {
                 _db.Products.Remove(entity);
@@ -91,6 +102,7 @@ namespace Api.Repository
             }
             catch (DbUpdateException ex) when (ex.InnerException is Microsoft.Data.SqlClient.SqlException sqlEx && sqlEx.Number == 547)
             {
+                // Safety net for any other FK we didn't pre-check (e.g. stock).
                 throw new InvalidOperationException("Cannot delete this product because it is currently linked to one or more documents or stock items.");
             }
         }

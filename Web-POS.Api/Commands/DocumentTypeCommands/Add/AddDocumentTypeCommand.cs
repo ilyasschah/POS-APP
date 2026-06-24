@@ -28,7 +28,6 @@ namespace Api.Commands.DocumentTypeCommands.Add
                 RuleFor(x => x.Request.Name).NotEmpty().MaximumLength(255);
                 RuleFor(x => x.Request.Code).NotEmpty().MaximumLength(50);
                 RuleFor(x => x.Request.DocumentCategoryId).GreaterThan(0);
-                RuleFor(x => x.Request.WarehouseId).GreaterThan(0);
             }
         }
     }

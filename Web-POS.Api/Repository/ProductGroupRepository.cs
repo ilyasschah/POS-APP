@@ -101,6 +101,15 @@ namespace Api.Repository
 
         public async Task<bool> DeleteAsync(ProductGroup entity)
         {
+            // Pre-check references before deleting so we never run a DELETE that
+            // SQL will reject on an FK (which EF logs as an error and spams the
+            // console). Throwing up-front keeps the log clean and returns a 400.
+            var inUse = await _db.Products.AnyAsync(p => p.ProductGroupId == entity.Id)
+                     || await _db.ProductGroups.AnyAsync(g => g.ParentGroupId == entity.Id);
+            if (inUse)
+                throw new InvalidOperationException(
+                    "Cannot delete this product group because it is being used by products or sub-groups.");
+
             try
             {
                 _db.ProductGroups.Remove(entity);

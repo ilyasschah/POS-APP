@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Api.Domain;
 using Api.DataBase;
 
@@ -8,47 +8,20 @@ namespace Api.Repository
     {
         public AppDbContext _db = db;
 
-        public async Task<List<Country>> GetAllCountries(int companyId)
+        // Global list — countries are shared across all companies.
+        public async Task<List<Country>> GetAllCountries()
         {
             return await _db.Countries
                 .AsNoTracking()
-                .Where(c => c.CompanyId == companyId)
+                .OrderBy(c => c.Name)
                 .ToListAsync();
-        }
-
-        public async Task<Country?> GetCountryId_byCompanyQuery(int id, int companyId)
-        {
-            return await _db.Countries
-            .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Id == id && c.CompanyId == companyId);
         }
 
         public async Task<Country?> GetCountryIdQuery(int id)
         {
             return await _db.Countries
-            .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Id == id);
-        }
-
-        public bool Exists(string name, int companyId)
-        {
-            return _db.Countries.Any(c => c.Name == name && c.CompanyId == companyId);
-        }
-
-        public async Task Add(Country newCountry)
-        {
-            _db.Countries.Add(newCountry);
-            await _db.SaveChangesAsync();
-        }        
-        public async Task Update(Country country)
-        {
-            _db.Countries.Update(country);
-            await _db.SaveChangesAsync();
-        }
-        public async Task DeleteAsync(Country country)
-        {
-            _db.Countries.Remove(country);
-            await _db.SaveChangesAsync();
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == id);
         }
     }
 }

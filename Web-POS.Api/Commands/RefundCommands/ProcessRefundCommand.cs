@@ -20,11 +20,40 @@ namespace Api.Commands.RefundCommands
     {
         private readonly AppDbContext _db;
         private readonly DocumentsCounterRepository _counterRepo;
+        private readonly ILogger<ProcessRefundCommandHandler> _logger;
 
-        public ProcessRefundCommandHandler(AppDbContext db, DocumentsCounterRepository counterRepo)
+        public ProcessRefundCommandHandler(
+            AppDbContext db,
+            DocumentsCounterRepository counterRepo,
+            ILogger<ProcessRefundCommandHandler> logger)
         {
             _db = db;
             _counterRepo = counterRepo;
+            _logger = logger;
+        }
+
+        /// Server fallback refund number (YY-220-NNNNNN). Used only when the
+        /// client did NOT send a device-local number — offline-first clients
+        /// always do, so this is the online/legacy path.
+        private async Task<string> GenerateServerRefundNumberAsync(int companyId)
+        {
+            string yy         = DateTime.UtcNow.ToString("yy");
+            string counterKey = $"DOC_{yy}_{DocumentTypeConstants.RefundCode}_{companyId}";
+            var counter       = await _counterRepo.GetByNameAsync(counterKey, trackEntity: true);
+            int nextValue;
+            if (counter == null)
+            {
+                nextValue = 1;
+                await _counterRepo.AddAsync(
+                    DocumentsCounter.Create(counterKey, nextValue, companyId));
+            }
+            else
+            {
+                nextValue = counter.Value + 1;
+                counter.UpdateValue(nextValue);
+                await _counterRepo.UpdateAsync(counter);
+            }
+            return $"{yy}-{DocumentTypeConstants.RefundCode}-{nextValue.ToString().PadLeft(6, '0')}";
         }
 
         public async Task<ProcessRefundResponse> Handle(
@@ -39,6 +68,13 @@ namespace Api.Commands.RefundCommands
                 try
                 {
                     var req = command.Request;
+
+                    if (req.IsBlind)
+                    {
+                        var blindResult = await HandleBlindRefundAsync(command, req, cancellationToken);
+                        await tx.CommitAsync(cancellationToken);
+                        return blindResult;
+                    }
 
                     // 1. Locate original sales document
                     var originalDoc = await _db.Documents
@@ -88,24 +124,12 @@ namespace Api.Commands.RefundCommands
                         totalRefunded += orig.PriceBeforeTaxAfterDiscount * ri.Quantity;
                     }
 
-                    // 6. Generate sequential refund document number (220 counter)
-                    string yy         = DateTime.UtcNow.ToString("yy");
-                    string counterKey = $"DOC_{yy}_{DocumentTypeConstants.RefundCode}_{command.CompanyId}";
-                    var counter       = await _counterRepo.GetByNameAsync(counterKey, trackEntity: true);
-                    int nextValue;
-                    if (counter == null)
-                    {
-                        nextValue = 1;
-                        await _counterRepo.AddAsync(
-                            DocumentsCounter.Create(counterKey, nextValue, command.CompanyId));
-                    }
-                    else
-                    {
-                        nextValue = counter.Value + 1;
-                        counter.UpdateValue(nextValue);
-                        await _counterRepo.UpdateAsync(counter);
-                    }
-                    string refundNumber = $"{yy}-{DocumentTypeConstants.RefundCode}-{nextValue.ToString().PadLeft(6, '0')}";
+                    // 6. Refund document number. Offline-first clients send a
+                    //    device-local number (e.g. CAISSE1-220-000012) we keep
+                    //    verbatim; otherwise fall back to the server sequence.
+                    string refundNumber = !string.IsNullOrWhiteSpace(req.ClientDocumentNumber)
+                        ? req.ClientDocumentNumber.Trim()
+                        : await GenerateServerRefundNumberAsync(command.CompanyId);
 
                     // 7. Create the refund Document
                     int warehouseId = req.WarehouseId > 0
@@ -120,6 +144,7 @@ namespace Api.Commands.RefundCommands
                         warehouseId:             warehouseId,
                         total:                   totalRefunded,
                         customerId:              originalDoc.CustomerId,
+                        orderNumber:             originalDoc.OrderNumber,
                         referenceDocumentNumber: req.OriginalDocumentNumber,
                         paidStatus:              1
                     );
@@ -201,6 +226,133 @@ namespace Api.Commands.RefundCommands
                     throw;
                 }
             });
+        }
+
+        /// Blind return — no original receipt to verify against. A manager
+        /// authorised it at the till; items + prices come from the request.
+        /// Runs inside the caller's transaction (does not commit).
+        private async Task<ProcessRefundResponse> HandleBlindRefundAsync(
+            ProcessRefundCommand command,
+            ProcessRefundRequest req,
+            CancellationToken cancellationToken)
+        {
+            if (!req.Items.Any())
+                throw new InvalidOperationException("A blind return needs at least one item.");
+
+            // Product catalogue (for IsService flag → skip stock reversal on services).
+            var productIds = req.Items.Select(i => i.ProductId).Distinct().ToList();
+            var products = await _db.Products
+                .Where(p => productIds.Contains(p.Id) && p.CompanyId == command.CompanyId)
+                .ToDictionaryAsync(p => p.Id, p => p, cancellationToken);
+
+            decimal totalRefunded = req.Items.Sum(i => (i.Price ?? 0m) * i.Quantity);
+            if (totalRefunded <= 0)
+                throw new InvalidOperationException("Blind return total must be greater than zero.");
+
+            // Same numbering rule as a verified refund: keep the client's
+            // device-local 220 number, else fall back to the server sequence.
+            string refundNumber = !string.IsNullOrWhiteSpace(req.ClientDocumentNumber)
+                ? req.ClientDocumentNumber.Trim()
+                : await GenerateServerRefundNumberAsync(command.CompanyId);
+
+            // Resolve a warehouse: the request's, else any belonging to the company.
+            int warehouseId = req.WarehouseId > 0
+                ? req.WarehouseId
+                : await _db.Warehouses.AsNoTracking()
+                    .Where(w => w.CompanyId == command.CompanyId)
+                    .Select(w => (int?)w.Id)
+                    .FirstOrDefaultAsync(cancellationToken)
+                  ?? throw new InvalidOperationException(
+                      $"No warehouse available for blind return in company {command.CompanyId}.");
+
+            // The customer's claimed paper-receipt number, or a BLIND marker so
+            // these are auditable/searchable as unverified returns.
+            string referenceNumber = string.IsNullOrWhiteSpace(req.OriginalDocumentNumber)
+                ? "BLIND"
+                : req.OriginalDocumentNumber.Trim();
+
+            _logger.LogWarning(
+                "BLIND REFUND {RefundNumber} (company {CompanyId}) authorised by manager {ApprovedBy}, " +
+                "cashier {UserId}, total {Total}, reference '{Reference}'.",
+                refundNumber, command.CompanyId, req.ApprovedByUserId, command.UserId,
+                totalRefunded, referenceNumber);
+
+            var refundDoc = Document.Create(
+                number:                  refundNumber,
+                userId:                  command.UserId,
+                companyId:               command.CompanyId,
+                documentTypeId:          DocumentTypeConstants.Refund,
+                warehouseId:             warehouseId,
+                total:                   totalRefunded,
+                customerId:              null,
+                referenceDocumentNumber: referenceNumber,
+                paidStatus:              1
+            );
+            _db.Documents.Add(refundDoc);
+            await _db.SaveChangesAsync(cancellationToken);
+
+            foreach (var ri in req.Items)
+            {
+                var product   = products.GetValueOrDefault(ri.ProductId);
+                var unitPrice = ri.Price ?? 0m;
+                var lineTotal = unitPrice * ri.Quantity;
+
+                var docItem = DocumentItem.Create(
+                    companyId:                   command.CompanyId,
+                    documentId:                  refundDoc.Id,
+                    productId:                   ri.ProductId,
+                    quantity:                    ri.Quantity,
+                    expectedQuantity:            ri.Quantity,
+                    priceBeforeTax:              unitPrice,
+                    price:                       unitPrice,
+                    discount:                    0,
+                    discountType:                0,
+                    productCost:                 product?.Cost ?? 0,
+                    priceBeforeTaxAfterDiscount: unitPrice,
+                    priceAfterDiscount:          unitPrice,
+                    total:                       lineTotal,
+                    totalAfterDocumentDiscount:  lineTotal,
+                    discountApplyRule:           false
+                );
+                _db.DocumentItems.Add(docItem);
+                await _db.SaveChangesAsync(cancellationToken);
+
+                // Return physical goods to stock (non-service products only).
+                if (product != null && !product.IsService)
+                {
+                    var stock = await _db.Stocks.FirstOrDefaultAsync(
+                        s => s.ProductId   == ri.ProductId
+                          && s.WarehouseId == warehouseId
+                          && s.CompanyId   == command.CompanyId,
+                        cancellationToken);
+
+                    if (stock != null)
+                    {
+                        stock.UpdateDetails(
+                            stock.Quantity + ri.Quantity,
+                            stock.WarehouseId,
+                            stock.ProductId);
+                        _db.Stocks.Update(stock);
+                    }
+                }
+            }
+
+            // Negative payment entry (reverses cash in the Z-Report).
+            var payment = Payment.Create(
+                companyId:     command.CompanyId,
+                documentId:    refundDoc.Id,
+                paymentTypeId: req.RefundPaymentTypeId,
+                amount:        -totalRefunded,
+                userId:        command.UserId
+            );
+            _db.Payments.Add(payment);
+            await _db.SaveChangesAsync(cancellationToken);
+
+            return new ProcessRefundResponse
+            {
+                RefundDocumentNumber = refundNumber,
+                TotalRefunded        = totalRefunded,
+            };
         }
     }
 }

@@ -15,12 +15,19 @@ namespace Api.Commands.PosOrderItemCommands.Add
         public decimal OrderTotal { get; set; }
         public List<BulkAddPosOrderItemRequest> Items { get; set; }
 
-        public BulkAddPosOrderItemsCommand(int companyId, int warehouseId, decimal orderTotal, List<BulkAddPosOrderItemRequest> items)
+        /// When true, the pre-save out-of-stock check is skipped (stock may go
+        /// negative). Used by offline sync (BatchSync): an offline sale already
+        /// happened — replaying it must not be blocked by current stock, or the
+        /// completed sale would be lost. The live cashier path leaves this false.
+        public bool AllowNegativeStock { get; set; }
+
+        public BulkAddPosOrderItemsCommand(int companyId, int warehouseId, decimal orderTotal, List<BulkAddPosOrderItemRequest> items, bool allowNegativeStock = false)
         {
             CompanyId = companyId;
             WarehouseId = warehouseId;
             OrderTotal = orderTotal;
             Items = items;
+            AllowNegativeStock = allowNegativeStock;
         }
 
         public class BulkAddPosOrderItemsCommandHandler : IRequestHandler<BulkAddPosOrderItemsCommand, BulkAddPosOrderItemsResponse>
@@ -83,7 +90,9 @@ namespace Api.Commands.PosOrderItemCommands.Add
                             .FirstOrDefaultAsync(cancellationToken);
                         bool preventNegativeInventory = !string.Equals(preventNegInvProp, "false", StringComparison.OrdinalIgnoreCase);
 
-                        if (preventNegativeInventory)
+                        // Offline replays (BatchSync) bypass the block: the sale already
+                        // happened offline, so it must post even if stock is now negative.
+                        if (preventNegativeInventory && !command.AllowNegativeStock)
                         {
                             foreach (var req in command.Items)
                             {

@@ -48,37 +48,51 @@ namespace Api.Services
 
                     decimal documentGrandTotal = req.GrandTotal;
 
-                    // Validate the requested warehouse exists; fall back to the
-                    // DocumentType's own warehouse so the FK never fails on
-                    // re-opened orders whose warehouse context was lost.
+                    // The client is responsible for sending a valid warehouse.
+                    // As a safety net (e.g. a re-opened order whose warehouse
+                    // context was lost), fall back to any warehouse belonging to
+                    // the company so the Document's FK never fails.
                     int warehouseId = req.WarehouseId;
                     if (warehouseId <= 0 || !await _db.Warehouses.AnyAsync(w => w.Id == warehouseId))
                     {
-                        var docType = await _db.DocumentTypes
+                        warehouseId = await _db.Warehouses
                             .AsNoTracking()
-                            .FirstOrDefaultAsync(d => d.Id == req.DocumentTypeId);
-                        warehouseId = docType?.WarehouseId
-                            ?? throw new InvalidOperationException($"Warehouse {req.WarehouseId} not found and DocumentType {req.DocumentTypeId} has no fallback warehouse.");
+                            .Where(w => w.CompanyId == companyId)
+                            .Select(w => (int?)w.Id)
+                            .FirstOrDefaultAsync()
+                            ?? throw new InvalidOperationException($"Warehouse {req.WarehouseId} not found and company {companyId} has no warehouse to fall back to.");
                     }
 
-                    // Enterprise document numbering: YY-CCC-NNNNNN
-                    string yy = DateTime.UtcNow.ToString("yy");
-                    string counterKey = $"DOC_{yy}_{DocumentTypeConstants.SalesCode}_{companyId}";
-                    var counter = await _counterRepo.GetByNameAsync(counterKey, trackEntity: true);
-                    int nextValue;
-                    if (counter == null)
+                    string documentNumber;
+                    if (!string.IsNullOrWhiteSpace(req.ClientDocumentNumber))
                     {
-                        nextValue = 1;
-                        var newCounter = DocumentsCounter.Create(counterKey, nextValue, companyId);
-                        await _counterRepo.AddAsync(newCounter);
+                        // Offline-first: the client issued a device-local number at
+                        // checkout (e.g. CAISSE1-200-000045). Keep it verbatim so the
+                        // printed/scanned receipt never changes after sync — and no
+                        // server counter is consumed (the device owns its sequence).
+                        documentNumber = req.ClientDocumentNumber.Trim();
                     }
                     else
                     {
-                        nextValue = counter.Value + 1;
-                        counter.UpdateValue(nextValue);
-                        await _counterRepo.UpdateAsync(counter);
+                        // Online / legacy path: generate the server sequence YY-CCC-NNNNNN.
+                        string yy = DateTime.UtcNow.ToString("yy");
+                        string counterKey = $"DOC_{yy}_{DocumentTypeConstants.SalesCode}_{companyId}";
+                        var counter = await _counterRepo.GetByNameAsync(counterKey, trackEntity: true);
+                        int nextValue;
+                        if (counter == null)
+                        {
+                            nextValue = 1;
+                            var newCounter = DocumentsCounter.Create(counterKey, nextValue, companyId);
+                            await _counterRepo.AddAsync(newCounter);
+                        }
+                        else
+                        {
+                            nextValue = counter.Value + 1;
+                            counter.UpdateValue(nextValue);
+                            await _counterRepo.UpdateAsync(counter);
+                        }
+                        documentNumber = $"{yy}-{DocumentTypeConstants.SalesCode}-{nextValue.ToString().PadLeft(6, '0')}";
                     }
-                    string documentNumber = $"{yy}-{DocumentTypeConstants.SalesCode}-{nextValue.ToString().PadLeft(6, '0')}";
 
                     // Default null customer to Walk-In (Code = "C000")
                     int? effectiveCustomerId = posOrder.CustomerId;

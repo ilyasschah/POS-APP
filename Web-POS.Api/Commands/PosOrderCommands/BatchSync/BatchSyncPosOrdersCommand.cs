@@ -1,5 +1,6 @@
 using Api.Commands.PosOrderCommands;
 using Api.Commands.PosOrderCommands.Add;
+using Api.Commands.PosOrderCommands.Delete;
 using Api.Commands.PosOrderItemCommands.Add;
 using Api.Constants;
 using Api.Models;
@@ -81,6 +82,7 @@ namespace Api.Commands.PosOrderCommands.BatchSync
                                 DocumentTypeId = DocumentTypeConstants.Sales,
                                 WarehouseId   = item.Order.WarehouseId,
                                 OrderNumber   = item.Order.Number,
+                                ClientDocumentNumber = item.ClientDocumentNumber,
                                 Items = item.Items.Select(i => new CheckoutItemDto
                                 {
                                     ProductId                   = i.ProductId,
@@ -121,9 +123,7 @@ namespace Api.Commands.PosOrderCommands.BatchSync
                             cancellationToken);
 
                         // 2. Add line items (stamps PosOrderId, runs inventory delta,
-                        //    syncs taxes, updates the order total). If this fails the
-                        //    header still exists — accepted V1 behaviour. A follow-up
-                        //    can compensate by deleting orphaned empty orders.
+                        //    syncs taxes, updates the order total).
                         var warnings = new List<string>();
                         if (item.Items.Any())
                         {
@@ -137,15 +137,39 @@ namespace Api.Commands.PosOrderCommands.BatchSync
                                     command.CompanyId,
                                     item.Order.WarehouseId,
                                     item.OrderTotal,
-                                    item.Items),
+                                    item.Items,
+                                    // Offline sale already happened — never block the
+                                    // replay on current stock; let inventory go negative.
+                                    allowNegativeStock: true),
                                 cancellationToken);
 
                             if (!itemsResult.Success)
                             {
+                                // Compensate: the header was created in step 1 but its
+                                // items failed (e.g. out of stock). Leaving it orphans an
+                                // empty order that gets pulled back as a ghost "open order"
+                                // with a total but no items. Delete it so a rejected offline
+                                // sale leaves nothing behind on the server.
+                                try
+                                {
+                                    await _mediator.Send(
+                                        new DeletePosOrderCommand(
+                                            createdOrder.Id,
+                                            command.CompanyId,
+                                            item.Order.WarehouseId),
+                                        cancellationToken);
+                                }
+                                catch (Exception delEx)
+                                {
+                                    _logger.LogWarning(delEx,
+                                        "BatchSync: could not clean up orphan header {OrderId} for {LocalId}",
+                                        createdOrder.Id, item.LocalId);
+                                }
+
                                 response.Results.Add(new BatchSyncResult
                                 {
                                     LocalId = item.LocalId,
-                                    ServerId = createdOrder.Id, // header still created
+                                    ServerId = null, // header removed — nothing to link
                                     Success = false,
                                     Error = itemsResult.Message ?? "Items failed to save.",
                                 });
@@ -172,6 +196,7 @@ namespace Api.Commands.PosOrderCommands.BatchSync
                                 DocumentTypeId = DocumentTypeConstants.Sales,
                                 WarehouseId    = item.Order.WarehouseId,
                                 OrderNumber    = item.Order.Number,
+                                ClientDocumentNumber = item.ClientDocumentNumber,
                                 Items = item.Items.Select(i => new CheckoutItemDto
                                 {
                                     ProductId                   = i.ProductId,

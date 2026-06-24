@@ -336,4 +336,6 @@ D:\repos\POS-APP\Back-End\Web-POS.Api\bin\Debug\net10.0\ru\Microsoft.CodeAnalysi
 D:\repos\POS-APP\Back-End\Web-POS.Api\bin\Debug\net10.0\tr\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
 D:\repos\POS-APP\Back-End\Web-POS.Api\bin\Debug\net10.0\zh-Hans\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
 D:\repos\POS-APP\Back-End\Web-POS.Api\bin\Debug\net10.0\zh-Hant\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+D:\repos\POS-APP\Back-End\Web-POS.Api\obj\Debug\net10.0\Web-POS.Api.RazorAssemblyInfo.cache
+D:\repos\POS-APP\Back-End\Web-POS.Api\obj\Debug\net10.0\Web-POS.Api.RazorAssemblyInfo.cs
 D:\repos\POS-APP\Back-End\Web-POS.Api\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt

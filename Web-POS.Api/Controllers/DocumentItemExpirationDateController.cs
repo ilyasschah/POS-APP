@@ -20,6 +20,13 @@ namespace Api.Controllers
         }
 
         [HttpGet("[action]")]
+        public async Task<ActionResult<List<DocumentItemExpirationDateDto>>> GetAll([FromQuery] int companyId)
+        {
+            if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
+            return Ok(await _mediator.Send(new GetAllDocumentItemExpirationDatesQuery(companyId)));
+        }
+
+        [HttpGet("[action]")]
         public async Task<ActionResult<DocumentItemExpirationDateDto?>> Get([FromQuery] int documentItemId, [FromQuery] int companyId)
         {
             if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });

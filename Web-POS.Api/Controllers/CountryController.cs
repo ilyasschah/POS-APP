@@ -1,62 +1,25 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Api.Commands.CountryCommands.Add;
-using Api.Commands.CountryCommands.Update;
-using Api.Commands.CountryCommands.Delete;
 using Api.Queries.CountryQuery.Get;
 using Api.Models;
-using Microsoft.EntityFrameworkCore;
 
 namespace Api.Controllers
 {
+    // Countries are a global, read-only reference list shared by all companies.
     [Route("api/[controller]")]
     [ApiController]
     public class CountryController(IMediator mediator) : ControllerBase
     {
         [HttpGet("[action]")]
-        public async Task<ActionResult<List<CountryDto>>> GetAllCountries([FromQuery] int companyId)
+        public async Task<ActionResult<List<CountryDto>>> GetAllCountries()
         {
-            if (companyId <= 0) return BadRequest("Company ID is required");
-            return Ok (await mediator.Send(new GetAllCountriesQuery { CompanyId = companyId }));
+            return Ok(await mediator.Send(new GetAllCountriesQuery()));
         }
 
         [HttpGet("[action]")]
-        public async Task<ActionResult<CountryDto>> GetById(int id, [FromQuery] int companyId)
+        public async Task<ActionResult<CountryDto>> GetById(int id)
         {
-            if (companyId <= 0) return BadRequest("Company ID is required");
-            return Ok(await mediator.Send(new GetCountryByIdQuery(id) { CompanyId = companyId }));
-        }
-
-        [HttpPost("[action]")]
-        public async Task<ActionResult<CountryDto>> Add([FromBody] CreateCountryRequest createrequest, [FromQuery] int companyId)
-        {
-            if (companyId <= 0) return BadRequest("Company ID is required");
-            var command = new AddCountryCommand(createrequest, companyId);
-            var result = await mediator.Send(command);
-            return CreatedAtAction(nameof(GetById), new { id = 0, companyId }, result);
-        }
-
-        [HttpPut("[action]")]
-        public async Task<IActionResult> Update(int id, [FromBody] UpdateCountryRequest req, [FromQuery] int companyId)
-        {
-            if (companyId <= 0) return BadRequest("Company ID is required");
-            var ok = await mediator.Send(new UpdateCountryCommand(id, req, companyId));
-            return ok ? NoContent() : NotFound();
-        }
-
-        [HttpDelete("[action]")]
-        public async Task<IActionResult> Delete(int id, [FromQuery] int companyId)
-        {
-            if (companyId <= 0) return BadRequest("Company ID is required");
-            try
-            {
-                var ok = await mediator.Send(new DeleteCountryCommand(id, companyId));
-                return ok ? NoContent() : NotFound();
-            }
-            catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FK_") == true)
-            {
-                return BadRequest(new { message = "Cannot delete this country because it is referenced by one or more companies." });
-            }
+            return Ok(await mediator.Send(new GetCountryByIdQuery(id)));
         }
     }
 }

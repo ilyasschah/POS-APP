@@ -13,6 +13,13 @@ namespace Api.Controllers
     public class DocumentItemTaxesController(IMediator mediator) : ControllerBase
     {
         [HttpGet("[action]")]
+        public async Task<ActionResult<List<DocumentItemTaxDto>>> GetAll([FromQuery] int companyId)
+        {
+            if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
+            return Ok(await mediator.Send(new Api.Queries.DocumentItemTaxQuery.GetAllDocumentItemTaxesQuery(companyId)));
+        }
+
+        [HttpGet("[action]")]
         public async Task<ActionResult<List<DocumentItemTaxDto>>> GetByDocumentItemId([FromQuery] int documentItemId, [FromQuery] int companyId)
         {
             if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });

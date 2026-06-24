@@ -18,7 +18,6 @@ namespace Api.Repository
             return await _context.DocumentTypes
                 .AsNoTracking()
                 .Include(dt => dt.DocumentCategory)
-                .Include(dt => dt.Warehouse)
                 .ToListAsync();
         }
 
@@ -27,7 +26,6 @@ namespace Api.Repository
             return await _context.DocumentTypes
                 .AsNoTracking()
                 .Include(dt => dt.DocumentCategory)
-                .Include(dt => dt.Warehouse)
                 .FirstOrDefaultAsync(x => x.Id == id);
         }
         public async Task AddAsync(DocumentType entity)
