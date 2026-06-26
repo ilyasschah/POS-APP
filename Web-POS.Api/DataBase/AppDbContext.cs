@@ -56,6 +56,7 @@ namespace Api.DataBase
         public DbSet<DocumentType> DocumentTypes { get; set; }
         public DbSet<DocumentItem> DocumentItems { get; set; }
         public DbSet<DocumentItemTax> DocumentItemTaxes { get; set; }
+        public DbSet<DiscountLine> DiscountLines { get; set; }
         public DbSet<DocumentItemExpirationDate> DocumentItemExpirationDates { get; set; }
         public DbSet<DocumentsCounter> DocumentsCounter { get; set; }
         public DbSet<ZReportPaymentSummary> ZReportPaymentSummaries { get; internal set; }

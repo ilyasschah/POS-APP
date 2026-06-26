@@ -18,6 +18,10 @@ namespace Api.Models
         public List<BulkAddPosOrderItemRequest> Items { get; set; } = new();
         public decimal OrderTotal { get; set; }
 
+        /// Normalized discount breakdown captured at checkout, forwarded into the
+        /// CheckoutPosOrderRequest so DiscountLine rows are persisted server-side.
+        public List<DiscountLineDto> Discounts { get; set; } = new();
+
         /// <summary>
         /// Set when the client completed an existing open order that was
         /// originally created on the server (e.g. the row whose local sentinel

@@ -83,6 +83,7 @@ namespace Api.Commands.PosOrderCommands.BatchSync
                                 WarehouseId   = item.Order.WarehouseId,
                                 OrderNumber   = item.Order.Number,
                                 ClientDocumentNumber = item.ClientDocumentNumber,
+                                Discounts = item.Discounts,
                                 Items = item.Items.Select(i => new CheckoutItemDto
                                 {
                                     ProductId                   = i.ProductId,
@@ -197,6 +198,7 @@ namespace Api.Commands.PosOrderCommands.BatchSync
                                 WarehouseId    = item.Order.WarehouseId,
                                 OrderNumber    = item.Order.Number,
                                 ClientDocumentNumber = item.ClientDocumentNumber,
+                                Discounts = item.Discounts,
                                 Items = item.Items.Select(i => new CheckoutItemDto
                                 {
                                     ProductId                   = i.ProductId,

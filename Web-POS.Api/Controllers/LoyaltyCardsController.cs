@@ -44,6 +44,17 @@ public class LoyaltyCardsController(IMediator mediator, ITenantProvisioningServi
         return Ok(await mediator.Send(new UpdateLoyaltyCardCommand(request)));
     }
 
+    // The Flutter client deletes via DELETE /api/LoyaltyCards/Delete?id=&companyId=.
+    // Without this action that call 404'd, and the offline-first rejection handler
+    // reverted the local delete (the card "came back").
+    [HttpDelete("[action]")]
+    public async Task<IActionResult> Delete([FromQuery] int id, [FromQuery] int companyId)
+    {
+        if (companyId <= 0) return BadRequest("Company ID is required.");
+        if (id <= 0) return BadRequest("Card ID is required.");
+        return Ok(await mediator.Send(new DeleteLoyaltyCardCommand(id)));
+    }
+
     // POST /api/loyaltycards/batchsync?companyId=5
     [HttpPost("[action]")]
     public async Task<ActionResult<BatchSyncLoyaltyCardsResponse>> BatchSync(

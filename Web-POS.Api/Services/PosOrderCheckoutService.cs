@@ -186,6 +186,28 @@ namespace Api.Services
 
                     await _db.SaveChangesAsync();
 
+                    // Normalized discount breakdown — one DiscountLine per source,
+                    // linked to the Document. Optional: legacy/online callers send
+                    // none, so the loop is simply skipped.
+                    if (req.Discounts != null && req.Discounts.Any())
+                    {
+                        foreach (var d in req.Discounts)
+                        {
+                            _db.Add(DiscountLine.Create(
+                                companyId: companyId,
+                                documentId: document.Id,
+                                productId: d.ProductId,
+                                source: d.Source,
+                                sourceRefId: d.SourceRefId,
+                                value: d.Value,
+                                valueType: d.ValueType,
+                                amount: d.Amount,
+                                sequence: d.Sequence,
+                                label: d.Label));
+                        }
+                        await _db.SaveChangesAsync();
+                    }
+
                     var payment = Payment.Create(
                         companyId: companyId,
                         documentId: document.Id,

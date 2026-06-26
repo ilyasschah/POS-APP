@@ -71,7 +71,7 @@ namespace Api.Controllers
             }
         }
         [HttpPost("[action]")]
-        public async Task<IActionResult> BulkAdd([FromQuery] int companyId, [FromQuery] int warehouseId, [FromQuery] decimal orderTotal, [FromBody] List<BulkAddPosOrderItemRequest> requests)
+        public async Task<IActionResult> BulkAdd([FromQuery] int companyId, [FromQuery] int warehouseId, [FromQuery] decimal orderTotal, [FromBody] List<BulkAddPosOrderItemRequest> requests, [FromQuery] bool allowNegativeStock = false)
         {
             if (companyId <= 0)
                 return BadRequest(new { message = "Company ID is required." });
@@ -84,7 +84,10 @@ namespace Api.Controllers
 
             try
             {
-                var command = new BulkAddPosOrderItemsCommand(companyId, warehouseId, orderTotal, requests);
+                // allowNegativeStock is set true by offline sync replays (a parked
+                // order whose cart-time stock guard already ran) so the post isn't
+                // re-blocked here. The live cashier path leaves it false/default.
+                var command = new BulkAddPosOrderItemsCommand(companyId, warehouseId, orderTotal, requests, allowNegativeStock);
                 var result = await _mediator.Send(command);
 
                 if (result.Success)

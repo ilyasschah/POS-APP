@@ -1169,6 +1169,32 @@
     ]
   },
   {
+    "ContainingType": "Api.Controllers.DiscountLinesController",
+    "Method": "GetAll",
+    "RelativePath": "api/DiscountLines/GetAll",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[Api.Models.DiscountLinePullDto, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
     "ContainingType": "Api.Controllers.DocumentController",
     "Method": "Add",
     "RelativePath": "api/Document/Add",
@@ -2710,6 +2736,27 @@
   },
   {
     "ContainingType": "Api.Controllers.LoyaltyCardsController",
+    "Method": "Delete",
+    "RelativePath": "api/LoyaltyCards/Delete",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "companyId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Api.Controllers.LoyaltyCardsController",
     "Method": "GetAll",
     "RelativePath": "api/LoyaltyCards/GetAll",
     "HttpMethod": "GET",
@@ -3748,6 +3795,11 @@
         "Name": "requests",
         "Type": "System.Collections.Generic.List\u00601[[Api.Models.BulkAddPosOrderItemRequest, Web-POS.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "IsRequired": true
+      },
+      {
+        "Name": "allowNegativeStock",
+        "Type": "System.Boolean",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []

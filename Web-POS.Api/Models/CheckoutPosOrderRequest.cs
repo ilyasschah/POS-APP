@@ -11,6 +11,11 @@
         public required List<CheckoutItemDto> Items { get; set; }
         public string? OrderNumber { get; set; }
 
+        /// Normalized discount breakdown for this sale (manual item/cart,
+        /// promotion, customer profile, loyalty points). Persisted as DiscountLine
+        /// rows linked to the created Document. Empty for legacy/online callers.
+        public List<DiscountLineDto> Discounts { get; set; } = new();
+
         /// Device-local document number the client issued offline. When set,
         /// checkout uses it verbatim instead of generating a YY-CCC-NNNNNN
         /// number — so the offline receipt number survives sync unchanged.
