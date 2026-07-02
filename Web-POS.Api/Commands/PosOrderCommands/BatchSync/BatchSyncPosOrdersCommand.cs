@@ -87,6 +87,7 @@ namespace Api.Commands.PosOrderCommands.BatchSync
                                 Items = item.Items.Select(i => new CheckoutItemDto
                                 {
                                     ProductId                   = i.ProductId,
+                                    LineLocalId                 = i.LineLocalId,
                                     PriceBeforeTaxAfterDiscount = i.Price - i.Discount,
                                     PriceAfterDiscount          = i.Price - i.Discount,
                                     Total                       = (i.Price - i.Discount) * i.Quantity,
@@ -99,7 +100,7 @@ namespace Api.Commands.PosOrderCommands.BatchSync
                                 }).ToList(),
                             };
 
-                            var documentId = await _mediator.Send(
+                            var checkoutResult = await _mediator.Send(
                                 new CheckoutPosOrderCommand(
                                     command.CompanyId,
                                     item.Order.UserId,
@@ -109,9 +110,11 @@ namespace Api.Commands.PosOrderCommands.BatchSync
                             response.Results.Add(new BatchSyncResult
                             {
                                 LocalId  = item.LocalId,
-                                // Return the Document.Id so the Flutter client can
-                                // stamp its local Document row's serverId.
-                                ServerId = documentId,
+                                // Return the Document.Id (+ per-line DocumentItem ids)
+                                // so the Flutter client can stamp its local Document
+                                // and document_items serverIds.
+                                ServerId = checkoutResult.DocumentId,
+                                ItemServerIds = checkoutResult.ItemServerIds,
                                 Success  = true,
                             });
                             continue;
@@ -185,6 +188,7 @@ namespace Api.Commands.PosOrderCommands.BatchSync
                         //    Open/saved orders (no PaymentTypeId) stay as PosOrders so
                         //    they show up in the open-orders list on other devices.
                         int resultId = createdOrder.Id; // fallback: PosOrder id if not paid
+                        var itemServerIds = new Dictionary<string, int>();
 
                         if (item.PaymentTypeId.HasValue)
                         {
@@ -202,6 +206,7 @@ namespace Api.Commands.PosOrderCommands.BatchSync
                                 Items = item.Items.Select(i => new CheckoutItemDto
                                 {
                                     ProductId                   = i.ProductId,
+                                    LineLocalId                 = i.LineLocalId,
                                     PriceBeforeTaxAfterDiscount = i.Price - i.Discount,
                                     PriceAfterDiscount          = i.Price - i.Discount,
                                     Total                       = (i.Price - i.Discount) * i.Quantity,
@@ -214,20 +219,24 @@ namespace Api.Commands.PosOrderCommands.BatchSync
                                 }).ToList(),
                             };
 
-                            // Returns Document.Id so the client can stamp its local
-                            // Document row's serverId for linking history records.
-                            resultId = await _mediator.Send(
+                            // Returns Document.Id (+ per-line DocumentItem ids) so the
+                            // client can stamp its local Document + document_items
+                            // serverIds for linking + later edit/delete sync.
+                            var checkoutResult = await _mediator.Send(
                                 new CheckoutPosOrderCommand(
                                     command.CompanyId,
                                     item.Order.UserId,
                                     checkoutRequest),
                                 cancellationToken);
+                            resultId = checkoutResult.DocumentId;
+                            itemServerIds = checkoutResult.ItemServerIds;
                         }
 
                         response.Results.Add(new BatchSyncResult
                         {
                             LocalId  = item.LocalId,
                             ServerId = resultId,
+                            ItemServerIds = itemServerIds,
                             Success  = true,
                             Warnings = warnings,
                         });

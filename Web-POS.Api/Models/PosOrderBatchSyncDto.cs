@@ -53,5 +53,10 @@ namespace Api.Models
         public bool Success { get; set; }
         public string? Error { get; set; }
         public List<string> Warnings { get; set; } = new();
+
+        /// Created DocumentItem server ids keyed by the client's per-line LineLocalId
+        /// (the Drift document_item localId). Empty for orders that stayed open
+        /// (no checkout) or whose items carried no LineLocalId.
+        public Dictionary<string, int> ItemServerIds { get; set; } = new();
     }
 }

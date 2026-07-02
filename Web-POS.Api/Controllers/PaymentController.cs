@@ -5,6 +5,7 @@ using Api.Commands.PaymentCommands.Update;
 using Api.Models;
 using Api.Queries.PaymentQuery;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers
@@ -49,6 +50,7 @@ namespace Api.Controllers
             return Ok(result);
         }
 
+        [Authorize]
         [HttpPost("[action]")]
         public async Task<IActionResult> Add([FromBody] CreatePaymentRequest req, [FromQuery] int companyId)
         {
@@ -65,6 +67,7 @@ namespace Api.Controllers
             }
         }
 
+        [Authorize]
         [HttpPatch("[action]")]
         public async Task<IActionResult> Update([FromBody] UpdatePaymentRequest req, [FromQuery] int companyId)
         {
@@ -81,6 +84,7 @@ namespace Api.Controllers
             }
         }
 
+        [Authorize]
         [HttpDelete("[action]")]
         public async Task<IActionResult> Delete([FromQuery] int id, [FromQuery] int companyId)
         {
@@ -100,6 +104,7 @@ namespace Api.Controllers
             }
         }
 
+        [Authorize]
         [HttpPost("[action]")]
         public async Task<IActionResult> ApplyCreditPayment(
             [FromBody] ApplyCreditPaymentRequest req,

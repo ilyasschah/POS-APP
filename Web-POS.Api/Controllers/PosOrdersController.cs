@@ -10,6 +10,7 @@ using Api.Master.Services;
 using Api.Models;
 using Api.Queries.PosOrderQuery;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers
@@ -75,6 +76,7 @@ namespace Api.Controllers
             return Ok(result);
         }
 
+        [Authorize]
         [HttpPost("[action]")]
         public async Task<IActionResult> Create( [FromBody] CreatePosOrderRequest request,[FromQuery] int companyId)
         {
@@ -96,6 +98,7 @@ namespace Api.Controllers
                 return BadRequest(ex.Message);
             }
         }
+        [Authorize]
         [HttpPost("Checkout")]
         public async Task<IActionResult> Checkout([FromQuery] int companyId, [FromQuery] int userId, [FromBody] CheckoutPosOrderRequest request)
         {
@@ -105,9 +108,9 @@ namespace Api.Controllers
             try
             {
                 var command = new CheckoutPosOrderCommand(companyId, userId, request);
-                var documentId = await _mediator.Send(command);
+                var result = await _mediator.Send(command);
 
-                return Ok(new { message = "Payment successful! Order converted to Document.", documentId });
+                return Ok(new { message = "Payment successful! Order converted to Document.", documentId = result.DocumentId });
             }
             catch (InvalidOperationException ex)
             {
@@ -119,6 +122,7 @@ namespace Api.Controllers
             }
         }
 
+        [Authorize]
         [HttpPatch("[action]")]
         public async Task<IActionResult> Update([FromBody] UpdatePosOrderRequest request, [FromQuery] int companyId)
         {
@@ -142,6 +146,7 @@ namespace Api.Controllers
                 return BadRequest(ex.Message);
             }
         }
+        [Authorize]
         [HttpPatch("UpdateStatus")]
         public async Task<IActionResult> UpdateStatus([FromQuery] int companyId, [FromBody] UpdatePosOrderStatusRequest req)
         {
@@ -158,6 +163,7 @@ namespace Api.Controllers
                 return BadRequest(ex.Message);
             }
         }
+        [Authorize]
         [HttpPost("Void")]
         public async Task<IActionResult> Void(
             [FromQuery] int posOrderId,
@@ -184,6 +190,7 @@ namespace Api.Controllers
             }
         }
 
+        [Authorize]
         [HttpDelete("[action]")]
         public async Task<IActionResult> Delete([FromQuery] int id, [FromQuery] int companyId, [FromQuery] int warehouseId)
         {

@@ -15,6 +15,11 @@ namespace Api.Queries.DocumentQuery
         // When true, each document also carries its line items (used by the
         // offline sync pull so the local DB can compute dashboards/reports).
         public bool IncludeItems { get; set; }
+        // Delta watermark for the offline sync pull: when set, only documents
+        // changed since this instant (DateUpdated) are returned, so a steady
+        // device re-pulls almost nothing instead of the whole 90-day window.
+        // The date-range filter still bounds the result. Null = full window.
+        public DateTime? ModifiedAfter { get; set; }
 
         public class Handler : IRequestHandler<GetSalesHistoryQuery, List<SalesHistoryDocumentDto>>
         {
@@ -40,6 +45,14 @@ namespace Api.Queries.DocumentQuery
 
                 if (request.CustomerId.HasValue)
                     docsQuery = docsQuery.Where(d => d.CustomerId == request.CustomerId.Value);
+
+                if (request.ModifiedAfter.HasValue)
+                {
+                    var watermark = request.ModifiedAfter.Value.Kind == DateTimeKind.Utc
+                        ? request.ModifiedAfter.Value
+                        : request.ModifiedAfter.Value.ToUniversalTime();
+                    docsQuery = docsQuery.Where(d => d.DateUpdated > watermark);
+                }
 
                 var docs = await docsQuery
                     .Include(d => d.User)

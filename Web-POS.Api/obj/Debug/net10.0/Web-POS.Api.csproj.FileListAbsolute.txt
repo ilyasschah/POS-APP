@@ -338,4 +338,13 @@ D:\repos\POS-APP\Back-End\Web-POS.Api\bin\Debug\net10.0\zh-Hans\Microsoft.CodeAn
 D:\repos\POS-APP\Back-End\Web-POS.Api\bin\Debug\net10.0\zh-Hant\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
 D:\repos\POS-APP\Back-End\Web-POS.Api\obj\Debug\net10.0\Web-POS.Api.RazorAssemblyInfo.cache
 D:\repos\POS-APP\Back-End\Web-POS.Api\obj\Debug\net10.0\Web-POS.Api.RazorAssemblyInfo.cs
+C:\Users\ILYASS\AppData\Local\Temp\posapi-build-check\appsettings.Development.json
+C:\Users\ILYASS\AppData\Local\Temp\posapi-build-check\appsettings.json
+C:\Users\ILYASS\AppData\Local\Temp\posapi-build-check\libman.json
+C:\Users\ILYASS\AppData\Local\Temp\posapi-build-check\Web-POS.Api.staticwebassets.endpoints.json
+C:\Users\ILYASS\AppData\Local\Temp\posapi-build-check\Web-POS.Api.exe
+C:\Users\ILYASS\AppData\Local\Temp\posapi-build-check\Web-POS.Api.deps.json
+C:\Users\ILYASS\AppData\Local\Temp\posapi-build-check\Web-POS.Api.runtimeconfig.json
+C:\Users\ILYASS\AppData\Local\Temp\posapi-build-check\Web-POS.Api.dll
+C:\Users\ILYASS\AppData\Local\Temp\posapi-build-check\Web-POS.Api.pdb
 D:\repos\POS-APP\Back-End\Web-POS.Api\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt

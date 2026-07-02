@@ -2,6 +2,7 @@
 using Api.Models;
 using Api.Queries.SecurityKeysQuery;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers
@@ -29,6 +30,9 @@ namespace Api.Controllers
             return Ok(result);
         }
 
+        // Manager-only: this endpoint configures the RBAC levels themselves, so a
+        // cashier must never be able to lower a key to Cashier-accessible.
+        [Authorize(Policy = "ManagerOnly")]
         [HttpPatch("[action]")]
         public async Task<ActionResult> Update([FromBody] UpdateSecurityKeyRequest request, [FromQuery] int companyId)
         {

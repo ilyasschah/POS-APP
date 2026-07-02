@@ -5,6 +5,7 @@ using Api.Commands.PromotionCommands.Update;
 using Api.Models;
 using Api.Queries.PromotionQuery;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Api.Attributes;
 
@@ -32,12 +33,14 @@ namespace Api.Controllers
             return Ok(await _mediator.Send(new GetActivePromotionsQuery { CompanyId = companyId }));
         }
 
+        [Authorize]
         [HttpPost("Add")]
         public async Task<IActionResult> Add([FromQuery] int companyId, [FromBody] CreatePromotionRequest req)
         {
             return Ok(await _mediator.Send(new CreatePromotionCommand(companyId, req)));
         }
 
+        [Authorize]
         [HttpPut("[action]")]
         public async Task<IActionResult> Update([FromQuery] int companyId, [FromBody] UpdatePromotionRequest req)
         {
@@ -45,6 +48,7 @@ namespace Api.Controllers
             return result ? NoContent() : NotFound();
         }
 
+        [Authorize]
         [HttpDelete("[action]")]
         public async Task<IActionResult> Delete(int id, [FromQuery] int companyId)
         {

@@ -18,7 +18,7 @@ namespace Api.Services
             _counterRepo = counterRepo;
         }
 
-        public async Task<Document> CheckoutAsync(int companyId, int userId, CheckoutPosOrderRequest req)
+        public async Task<CheckoutResult> CheckoutAsync(int companyId, int userId, CheckoutPosOrderRequest req)
         {
             var strategy = _db.Database.CreateExecutionStrategy();
 
@@ -143,10 +143,22 @@ namespace Api.Services
                     var productCosts = await _db.Products
                         .Where(p => productIds.Contains(p.Id) && p.CompanyId == companyId)
                         .ToDictionaryAsync(p => p.Id, p => p.Cost);
+                    // Map each created DocumentItem back to the client's stable line
+                    // id so the offline client can stamp its local document_items row.
+                    var itemServerIds = new Dictionary<string, int>();
+                    // Consume each PosOrderItem at most once. Matching by ProductId
+                    // alone collapsed duplicate-product / split-sourcing lines onto the
+                    // first row (wrong quantities, lost lines); claiming the first
+                    // UNUSED match keeps each cart line distinct. req.Items and
+                    // posOrderItems derive from the same client list, so same-product
+                    // lines stay in order.
+                    var consumedItemIds = new HashSet<int>();
                     foreach (var frontendItem in req.Items)
                     {
-                        var originalCartItem = posOrderItems.FirstOrDefault(i => i.ProductId == frontendItem.ProductId);
+                        var originalCartItem = posOrderItems.FirstOrDefault(
+                            i => i.ProductId == frontendItem.ProductId && !consumedItemIds.Contains(i.Id));
                         if (originalCartItem == null) continue;
+                        consumedItemIds.Add(originalCartItem.Id);
 
                         var docItem = DocumentItem.Create(
                             companyId: companyId,
@@ -168,6 +180,9 @@ namespace Api.Services
 
                         _db.DocumentItems.Add(docItem);
                         await _db.SaveChangesAsync();
+
+                        if (!string.IsNullOrEmpty(frontendItem.LineLocalId))
+                            itemServerIds[frontendItem.LineLocalId] = docItem.Id;
 
                         if (frontendItem.Taxes != null && frontendItem.Taxes.Any())
                         {
@@ -244,7 +259,11 @@ namespace Api.Services
                     await _db.SaveChangesAsync();
                     await transaction.CommitAsync();
 
-                    return document;
+                    return new CheckoutResult
+                    {
+                        DocumentId = document.Id,
+                        ItemServerIds = itemServerIds,
+                    };
                 }
                 catch (Exception)
                 {

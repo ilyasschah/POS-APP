@@ -43,7 +43,7 @@ public class LoginQuery : IRequest<LoginResponse>
             if (!BCrypt.Net.BCrypt.Verify(request.Request.Password, user.Password))
                 return new LoginResponse { Success = false, Message = "Invalid credentials." };
 
-            var (token, expiresIn) = _tokenService.CreateJwt(user.Email!);
+            var (token, expiresIn) = _tokenService.CreateJwt(user.Email!, user.Id, user.AccessLevel, user.CompanyId);
 
             // Pillar 2: issue the signed offline subscription lease for this
             // company so the terminal can enforce the subscription offline.

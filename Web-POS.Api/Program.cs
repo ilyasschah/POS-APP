@@ -192,9 +192,24 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // ================== AUTH ==================
-builder.Services.AddAuthorization();
+// "ManagerOnly" = accounts whose token carries role "Admin" (accessLevel 0).
+// Apply with [Authorize(Policy = "ManagerOnly")] on manager-only endpoints.
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("ManagerOnly", policy => policy.RequireRole("Admin"));
+});
 
-var jwtSecret = builder.Configuration["Jwt:Secret"] ?? "dev-only-very-long-secret-change-me-please";
+// Fail-closed on the signing secret: outside Development a missing Jwt:Secret
+// must abort startup rather than silently fall back to a public dev secret
+// (which would let anyone forge "Admin" tokens).
+var configuredSecret = builder.Configuration["Jwt:Secret"];
+if (string.IsNullOrWhiteSpace(configuredSecret) && !builder.Environment.IsDevelopment())
+{
+    throw new InvalidOperationException(
+        "Jwt:Secret is not configured. Set a strong secret (e.g. via environment " +
+        "variable or user-secrets) before running outside Development.");
+}
+var jwtSecret = configuredSecret ?? "dev-only-very-long-secret-change-me-please";
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "Products.Api";
 var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "Products.Clients";
 

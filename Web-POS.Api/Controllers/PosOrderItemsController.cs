@@ -5,6 +5,7 @@ using Api.Commands.PosOrderItemCommands.Update;
 using Api.Models;
 using Api.Queries.PosOrderItemQuery;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers
@@ -48,6 +49,7 @@ namespace Api.Controllers
             return Ok(result);
         }
 
+        [Authorize]
         [HttpPost("[action]")]
         public async Task<IActionResult> Create([FromQuery] int companyId, [FromBody] CreatePosOrderItemRequest request)
         {
@@ -70,6 +72,7 @@ namespace Api.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
+        [Authorize]
         [HttpPost("[action]")]
         public async Task<IActionResult> BulkAdd([FromQuery] int companyId, [FromQuery] int warehouseId, [FromQuery] decimal orderTotal, [FromBody] List<BulkAddPosOrderItemRequest> requests, [FromQuery] bool allowNegativeStock = false)
         {
@@ -101,6 +104,7 @@ namespace Api.Controllers
             }
         }
 
+        [Authorize]
         [HttpPatch("[action]")]
         public async Task<IActionResult> Update([FromQuery] int companyId, [FromBody] UpdatePosOrderItemRequest request)
         {
@@ -127,6 +131,7 @@ namespace Api.Controllers
             }
         }
 
+        [Authorize]
         [HttpDelete("[action]")]
         public async Task<IActionResult> Delete([FromQuery] int id, [FromQuery] int companyId)
         {

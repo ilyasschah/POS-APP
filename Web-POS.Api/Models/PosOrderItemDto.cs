@@ -52,6 +52,11 @@ namespace Api.Models
     {
         public int PosOrderId { get; set; }
         public int ProductId { get; set; }
+        // Client-generated stable line id (the Drift document_item localId, shared
+        // with the pos_order_item). Never persisted on PosOrderItem — it is only
+        // forwarded into CheckoutItemDto so checkout can echo the created
+        // DocumentItem's server id back, keyed by this line, for offline linking.
+        public string? LineLocalId { get; set; }
         public int RoundNumber { get; set; }
         public decimal Quantity { get; set; }
         public decimal Price { get; set; }

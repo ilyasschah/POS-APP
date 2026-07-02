@@ -4,7 +4,7 @@ using Api.Services;
 
 namespace Api.Commands.PosOrderCommands
 {
-    public class CheckoutPosOrderCommand : IRequest<int>
+    public class CheckoutPosOrderCommand : IRequest<CheckoutResult>
     {
         public int CompanyId { get; set; }
         public int UserId { get; set; }
@@ -17,7 +17,7 @@ namespace Api.Commands.PosOrderCommands
             Request = request;
         }
 
-        public class CheckoutPosOrderCommandHandler : IRequestHandler<CheckoutPosOrderCommand, int>
+        public class CheckoutPosOrderCommandHandler : IRequestHandler<CheckoutPosOrderCommand, CheckoutResult>
         {
             private readonly PosOrderCheckoutService _service;
 
@@ -26,14 +26,14 @@ namespace Api.Commands.PosOrderCommands
                 _service = service;
             }
 
-            // Returns the server-assigned Document.Id so callers (BatchSync,
-            // PosOrdersController) can echo it back to the client.  The client
-            // uses it to stamp the local Document row's serverId after sync.
-            public async Task<int> Handle(CheckoutPosOrderCommand command, CancellationToken cancellationToken)
+            // Returns the server-assigned Document.Id plus the per-line
+            // DocumentItem ids (keyed by client LineLocalId) so callers (BatchSync,
+            // PosOrdersController) can echo them back. The client uses them to stamp
+            // the local Document + document_items serverIds after sync.
+            public async Task<CheckoutResult> Handle(CheckoutPosOrderCommand command, CancellationToken cancellationToken)
             {
-                var document = await _service.CheckoutAsync(
+                return await _service.CheckoutAsync(
                     command.CompanyId, command.UserId, command.Request);
-                return document.Id;
             }
         }
     }

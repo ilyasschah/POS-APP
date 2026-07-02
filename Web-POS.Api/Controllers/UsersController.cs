@@ -5,6 +5,7 @@ using Api.Commands.UserCommands.Update;
 using Api.Models;
 using Api.Queries.UserQuery;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;
@@ -40,6 +41,7 @@ public class UsersController(IMediator mediator) : ControllerBase
         return Ok(result);
     }
 
+    [Authorize(Policy = "ManagerOnly")]
     [HttpPost("[action]")]
     public async Task<ActionResult<UserDto>> Add([FromBody] CreateUserRequest request, [FromQuery] int companyId)
     {
@@ -69,6 +71,7 @@ public class UsersController(IMediator mediator) : ControllerBase
             return BadRequest(new { Message = ex.Message });
         }
     }
+    [Authorize(Policy = "ManagerOnly")]
     [HttpPatch("[action]")]
     public async Task<ActionResult> AdminResetPassword([FromBody] AdminResetPasswordRequest request, [FromQuery] int companyId)
     {
@@ -83,6 +86,7 @@ public class UsersController(IMediator mediator) : ControllerBase
             return BadRequest(new { Message = ex.Message });
         }
     }
+    [Authorize(Policy = "ManagerOnly")]
     [HttpPatch("[action]")]
     public async Task<ActionResult<UserDto>> UpdateUser([FromBody] UpdateUserRequest updateRequest, [FromQuery] int companyId)
     {
@@ -92,6 +96,7 @@ public class UsersController(IMediator mediator) : ControllerBase
         return Ok(new {Id=updateRequest.Id, Message = updatedUser ? "User updated successfully" : "User update failed"});
     }
 
+    [Authorize(Policy = "ManagerOnly")]
     [HttpDelete("[action]")]
     public async Task<ActionResult<bool>> Delete([FromQuery] int id, [FromQuery] int companyId)
     {

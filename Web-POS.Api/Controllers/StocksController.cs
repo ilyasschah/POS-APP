@@ -6,6 +6,7 @@ using Api.Commands.StockCommands.Update;
 using Api.Commands.StockCommands.Delete;
 using Api.Attributes;
 using Api.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Api.Controllers
 {
@@ -35,6 +36,7 @@ namespace Api.Controllers
             return Ok(await _mediator.Send(new GetStockByIdQuery { Id = id, CompanyId = companyId }));
         }
 
+        [Authorize]
         [HttpPost("[action]")]
         public async Task<ActionResult<StockDto>> Add([FromBody] CreateStockRequest stockrequest, [FromQuery] int companyId)
         {
@@ -43,6 +45,7 @@ namespace Api.Controllers
             return CreatedAtAction(nameof(GetById), new { id = result.Id, companyId }, result);
         }
 
+        [Authorize]
         [HttpPatch("[action]")]
         public async Task<IActionResult> Update([FromBody] UpdateStockRequest stockrequest, [FromQuery] int companyId)
         {
@@ -52,6 +55,7 @@ namespace Api.Controllers
             return Ok(new { Success = result });
         }
 
+        [Authorize]
         [HttpDelete("[action]")]
         public async Task<IActionResult> Delete([FromQuery] int id, [FromQuery] int companyId)
         {
