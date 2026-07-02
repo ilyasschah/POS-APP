@@ -110,29 +110,34 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       barrierDismissible: false,
       builder: (_) => const Center(child: CircularProgressIndicator()),
     );
+    // Wait for any in-flight settings write (its Drift commit + the resulting
+    // provider rebuild) to fully settle, so our teardown below can't be
+    // scheduled in the same tick — Riverpod 3 asserts "one task at a time"
+    // otherwise. Settings persist live as they're changed, so there's nothing
+    // to "save" here; this is purely a session reset + restart.
+    try {
+      await ref.read(appSettingsProvider.notifier).settle();
+    } catch (_) {
+      /* settle never throws, but stay defensive */
+    }
+    if (!mounted) return;
+
+    // Best-effort local reset. The login flow re-initialises all of these, so a
+    // transient scheduler hiccup must never block the restart.
     try {
       ref.read(cartProvider.notifier).clearCart();
       ref.read(floorPlanTableProvider.notifier).state = null;
       ref.invalidate(currentUserProvider);
-
-      if (mounted) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
-          (_) => false,
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        Navigator.pop(context);
-        showAppSnackbar(
-          context,
-          ref,
-          'Failed to save settings: $e',
-          isError: true,
-        );
-      }
+    } catch (_) {
+      /* proceed to login regardless */
     }
+
+    if (!mounted) return;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (_) => false,
+    );
   }
 
   @override

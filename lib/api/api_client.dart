@@ -2,11 +2,18 @@ import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:pos_app/cart/checkout_models.dart';
 import 'package:pos_app/api/promotion_models.dart';
 import 'package:pos_app/api/customer_discount_models.dart';
 import 'package:pos_app/company/company_model.dart';
 import 'package:pos_app/document/document_type_constants.dart';
+
+/// Reused across every [createDio] instance so the device JWT (written once at
+/// master-login) is attached to all outgoing requests. Secured endpoints
+/// (e.g. the manager-only user/security-key writes) require it; open endpoints
+/// simply ignore it.
+const _kAuthSecureStorage = FlutterSecureStorage();
 
 Dio createDio() {
   final dio = Dio();
@@ -14,6 +21,21 @@ Dio createDio() {
   dio.options.baseUrl = 'http://192.168.11.103:5002/api';
   dio.options.connectTimeout = const Duration(seconds: 10);
   dio.options.receiveTimeout = const Duration(seconds: 10);
+
+  // Global auth: attach the stored device JWT to every request unless a caller
+  // has already set an explicit Authorization header. Reads from secure storage
+  // under the same 'jwt_token' key AuthStorage writes at master-login.
+  dio.interceptors.add(InterceptorsWrapper(
+    onRequest: (options, handler) async {
+      if (!options.headers.containsKey('Authorization')) {
+        final jwt = await _kAuthSecureStorage.read(key: 'jwt_token');
+        if (jwt != null && jwt.isNotEmpty) {
+          options.headers['Authorization'] = 'Bearer $jwt';
+        }
+      }
+      handler.next(options);
+    },
+  ));
 
   if (!kIsWeb) {
     (dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
@@ -525,29 +547,10 @@ class ApiClient {
       );
       return response.statusCode == 200 || response.statusCode == 204;
     } catch (e) {
-      print('Error deleting booking: $e');
-      return false;
-    }
-  }
-
-  Future<bool> linkBookingToPosOrder(
-    int companyId,
-    int bookingId,
-    int posOrderId,
-  ) async {
-    try {
-      final response = await _dio.patch(
-        '/Bookings/LinkPosOrder',
-        queryParameters: {
-          'companyId': companyId,
-          'bookingId': bookingId,
-          'posOrderId': posOrderId,
-        },
-      );
-      return response.statusCode == 200;
-    } catch (e) {
-      print('Error linking booking to POS Order: $e');
-      return false;
+      // Throw (don't swallow) so the caller can surface the failure and keep
+      // the booking on screen — returning false made offline deletes look
+      // successful, then the row reappeared on the next pull.
+      throw Exception('Failed to delete booking: $e');
     }
   }
 

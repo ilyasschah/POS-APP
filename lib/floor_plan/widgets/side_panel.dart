@@ -6,6 +6,8 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:pos_app/floor_plan/floor_plan_provider.dart';
 import 'package:pos_app/floor_plan/floor_plan_table.dart';
 import 'package:pos_app/floor_plan/floor_plan_table_provider.dart';
+import 'package:pos_app/security/security_guard.dart';
+import 'package:pos_app/security/security_keys.dart';
 
 class SidePanel extends ConsumerWidget {
   final bool isService;
@@ -141,10 +143,14 @@ class _ViewPanel extends StatelessWidget {
           icon: PhosphorIconsRegular.pencilSimple,
           title: isService ? 'Edit Resources & Rooms' : 'Edit Floor Plan',
           subtitle: 'Add, resize, and rename tables',
-          onTap: () {
-            ref.read(floorPlanProvider.notifier).toggleEditMode(true);
-            Navigator.pop(context);
-          },
+          onTap: () => ref.read(securityGuardProvider).guard(
+            context,
+            SecurityKeys.floorPlanDesign,
+            () {
+              ref.read(floorPlanProvider.notifier).toggleEditMode(true);
+              Navigator.pop(context);
+            },
+          ),
         ),
       ],
     );

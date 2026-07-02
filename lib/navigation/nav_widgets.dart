@@ -16,14 +16,14 @@ const kSidebarMiniW = 72.0;
 extension NavTheme on BuildContext {
   ColorScheme get _cs => Theme.of(this).colorScheme;
 
-  Color get navSidebarBg     => _cs.surfaceContainer;
-  Color get navHover         => _cs.surfaceContainerHigh;
-  Color get navActiveBg      => _cs.primaryContainer;
-  Color get navAccent        => _cs.primary;
-  Color get navText          => _cs.onSurface;
-  Color get navMuted         => _cs.onSurfaceVariant;
-  Color get navDivider       => _cs.outline.withValues(alpha: 0.3);
-  Color get navScaffoldBg    => Theme.of(this).scaffoldBackgroundColor;
+  Color get navSidebarBg => _cs.surfaceContainer;
+  Color get navHover => _cs.surfaceContainerHigh;
+  Color get navActiveBg => _cs.primaryContainer;
+  Color get navAccent => _cs.primary;
+  Color get navText => _cs.onSurface;
+  Color get navMuted => _cs.onSurfaceVariant;
+  Color get navDivider => _cs.outline.withValues(alpha: 0.3);
+  Color get navScaffoldBg => Theme.of(this).scaffoldBackgroundColor;
 }
 
 // ── Section label ─────────────────────────────────────────────────────────────
@@ -60,8 +60,8 @@ class NavSidebarHeader extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final company = ref.watch(selectedCompanyProvider);
-    final cs      = Theme.of(context).colorScheme;
-    final accent  = context.navAccent;
+    final cs = Theme.of(context).colorScheme;
+    final accent = context.navAccent;
 
     ImageProvider? logoProvider;
     if (company?.logo != null && company!.logo!.isNotEmpty) {
@@ -187,6 +187,7 @@ class NavItem extends StatefulWidget {
   final Color? iconColor;
   final bool isActive;
   final VoidCallback onTap;
+
   /// Mini "rail" mode: render only the centred icon (label + trailing hidden)
   /// and surface the label through a hover Tooltip instead.
   final bool isMini;
@@ -212,11 +213,11 @@ class _NavItemState extends State<NavItem> {
 
   @override
   Widget build(BuildContext context) {
-    final active    = widget.isActive;
-    final accent    = context.navAccent;
+    final active = widget.isActive;
+    final accent = context.navAccent;
     final textColor = widget.textColor ?? (active ? accent : context.navText);
     final iconColor = widget.iconColor ?? (active ? accent : context.navMuted);
-    final bg        = active
+    final bg = active
         ? context.navActiveBg
         : (_hovered ? context.navHover : Colors.transparent);
 
@@ -225,7 +226,7 @@ class _NavItemState extends State<NavItem> {
       return MouseRegion(
         cursor: SystemMouseCursors.click,
         onEnter: (_) => setState(() => _hovered = true),
-        onExit:  (_) => setState(() => _hovered = false),
+        onExit: (_) => setState(() => _hovered = false),
         child: Tooltip(
           message: widget.label,
           child: GestureDetector(
@@ -250,7 +251,7 @@ class _NavItemState extends State<NavItem> {
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hovered = true),
-      onExit:  (_) => setState(() => _hovered = false),
+      onExit: (_) => setState(() => _hovered = false),
       child: GestureDetector(
         onTap: widget.onTap,
         child: Padding(
@@ -329,7 +330,7 @@ class _NavIconButtonState extends State<NavIconButton> {
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
         onEnter: (_) => setState(() => _hovered = true),
-        onExit:  (_) => setState(() => _hovered = false),
+        onExit: (_) => setState(() => _hovered = false),
         child: GestureDetector(
           onTap: widget.onTap,
           child: Container(
@@ -343,6 +344,77 @@ class _NavIconButtonState extends State<NavIconButton> {
               size: 20,
               color: widget.iconColor ?? context.navMuted,
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Unified flat top bar ──────────────────────────────────────────────────────
+// The shared header used across the core POS tab screens (Menu, Floor Plan,
+// Bookings). Mirrors the Menu screen's bar: 62px tall, solid surface fill, a
+// crisp single-line bottom divider, zero shadow/tint. A leading hamburger opens
+// the global navigation drawer (wired from MainLayout via [onMenuPressed]); the
+// title sits left-middle and screen-specific [actions] stay pinned to the right.
+const kTopBarHeight = 62.0;
+
+class PosTopBar extends StatelessWidget implements PreferredSizeWidget {
+  /// Opens the global navigation drawer. When null the leading hamburger is
+  /// hidden (e.g. the screen is pushed as a standalone route, not a tab).
+  final VoidCallback? onMenuPressed;
+
+  /// Explicit leading widget (e.g. a back button for a pushed route). When set
+  /// it takes precedence over the [onMenuPressed] hamburger.
+  final Widget? leading;
+
+  /// Left-middle content — a plain title Text, or a horizontally scrolling row
+  /// of tabs. Rendered inside an [Expanded] so it absorbs the free space.
+  final Widget title;
+
+  /// Screen-specific action widgets, pinned to the right edge.
+  final List<Widget> actions;
+
+  const PosTopBar({
+    super.key,
+    required this.title,
+    this.onMenuPressed,
+    this.leading,
+    this.actions = const [],
+  });
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kTopBarHeight);
+
+  @override
+  Widget build(BuildContext context) {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    return Container(
+      decoration: BoxDecoration(
+        // Flat: solid surface, single divider line, no elevation/shadow/tint.
+        color: Theme.of(context).colorScheme.surface,
+        border: Border(bottom: BorderSide(color: context.navDivider)),
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: SizedBox(
+          height: kTopBarHeight,
+          child: Row(
+            children: [
+              if (leading != null)
+                leading!
+              else if (onMenuPressed != null)
+                IconButton(
+                  icon: Icon(Icons.menu, size: 26, color: onSurface),
+                  tooltip: 'Menu',
+                  onPressed: onMenuPressed,
+                )
+              else
+                const SizedBox(width: 12),
+              Expanded(child: title),
+              ...actions,
+              const SizedBox(width: 4),
+            ],
           ),
         ),
       ),

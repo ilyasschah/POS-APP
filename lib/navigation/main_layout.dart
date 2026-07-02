@@ -195,9 +195,15 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
         onToggleSidebar: _openSidebar,
       ),
       OpenOrdersScreen(onMenuPressed: _openSidebar),
-      bookingEnabled ? const BookingsScreen() : const SizedBox.shrink(),
-      bookingEnabled ? const BookingHistoryScreen() : const SizedBox.shrink(),
-      floorPlanEnabled ? const FloorPlanScreen() : const SizedBox.shrink(),
+      bookingEnabled
+          ? BookingsScreen(onMenuPressed: _openSidebar)
+          : const SizedBox.shrink(),
+      bookingEnabled
+          ? BookingHistoryScreen(onMenuPressed: _openSidebar)
+          : const SizedBox.shrink(),
+      floorPlanEnabled
+          ? FloorPlanScreen(onMenuPressed: _openSidebar)
+          : const SizedBox.shrink(),
       EndOfDayScreen(onMenuPressed: _openSidebar),
       UserInfoScreen(onMenuPressed: _openSidebar),
     ];
@@ -381,7 +387,11 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
                       icon: Icons.person_outline,
                       label: "User info",
                       isActive: selectedIndex == 6,
-                      onTap: () => handleNavTap(6),
+                      onTap: () => ref.read(securityGuardProvider).guard(
+                        context,
+                        SecurityKeys.userProfile,
+                        () => handleNavTap(6),
+                      ),
                     ),
                     NavItem(
                       icon: Icons.logout,

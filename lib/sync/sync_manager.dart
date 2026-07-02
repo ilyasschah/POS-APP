@@ -97,6 +97,23 @@ class SyncManager {
     // (orders, shifts, loyalty cards, time-clock).
     dio.options.headers['X-Device-Id'] = await authStorage.getOrCreateDeviceId();
 
+    // Sliding-window token refresh: exchange the still-valid device JWT for a
+    // fresh one so live terminals never hit expiry on the gated admin-write
+    // endpoints. Non-fatal — an expired token (offline > lifetime) just 401s here
+    // and the operator re-logins; offline sales never depend on this.
+    await _step('refreshToken', () async {
+      final res = await dio.post('/Auth/Refresh'); // interceptor attaches current token
+      final data = res.data;
+      final token = data is Map ? data['token'] as String? : null;
+      if (token != null && token.isNotEmpty) {
+        // Persist only — the interceptor reads the latest token from storage on
+        // every request, so the rest of this sync (and later ones) picks it up.
+        // Do NOT pin it onto this singleton Dio's base headers: that would make
+        // it sticky and a later user's sync would keep sending the prior token.
+        await authStorage.saveJwt(token);
+      }
+    });
+
     // ── PUSH phase (local → cloud) ─────────────────────────────────────────
     // Wrapped so a push failure (e.g. one stuck order whose BatchSync rethrows)
     // can never prevent the PULL phase below from running.
@@ -157,6 +174,8 @@ class SyncManager {
     await pushPendingUserOps(companyId);
     await pushPendingCustomerOps(companyId);
     await pushPendingCustomerDiscountOps(companyId);
+    // Bookings reference customers/users (now pushed) by id.
+    await pushPendingBookings(companyId);
     await pushPendingLoyaltyCardOps(companyId);
     await pushPendingShifts(companyId);
     await pushPendingTimeClockEntries(companyId);
@@ -865,28 +884,45 @@ class SyncManager {
   }
 
   // ==========================================================================
-  // BOOKINGS — full-replace pull.
+  // BOOKINGS — full-set MERGE pull (offline-first safe).
   //
-  // Unlike the delta pulls above, bookings are wiped and re-inserted for the
-  // company on every sync. Two reasons: the calendar must reflect server-side
-  // deletes (a `modifiedAfter` delta never reports a removed row), and the
-  // dataset is small (a day/week of reservations). The wipe + re-insert run in
-  // a single transaction so the Drift watch stream emits exactly once, with no
-  // empty-list flicker in between.
+  // /Bookings/GetAll returns the full set (no watermark), so we can still
+  // reflect server-side deletes — but unlike the old wipe-and-replace, local
+  // changes win until pushed: rows with a pending status are never overwritten
+  // or removed. We only (a) delete already-synced local rows the server no
+  // longer has, and (b) upsert server rows that aren't locally pending. All in
+  // one transaction so the Drift watch stream emits exactly once.
   // ==========================================================================
   Future<void> pullBookings(int companyId) async {
     final res = await dio.get<List<dynamic>>(
       '/Bookings/GetAll',
       queryParameters: {'companyId': companyId},
     );
-    final rows = res.data ?? const [];
+    final serverRows = (res.data ?? const []).cast<Map<String, dynamic>>();
+    final serverIds = serverRows.map((j) => j['id'] as int).toList();
+
+    // Rows with unpushed local changes — preserve them verbatim.
+    final pendingIds =
+        (await (db.select(db.bookingsTable)
+                  ..where((t) => t.companyId.equals(companyId))
+                  ..where((t) => t.syncStatus.isNotIn(const ['synced'])))
+                .get())
+            .map((r) => r.id)
+            .toSet();
 
     await db.transaction(() async {
+      // (a) Reflect server-side deletes — but only for clean (synced) rows.
       await (db.delete(db.bookingsTable)
-            ..where((t) => t.companyId.equals(companyId)))
+            ..where((t) => t.companyId.equals(companyId))
+            ..where((t) => t.syncStatus.equals('synced'))
+            ..where((t) => t.id.isNotIn(serverIds)))
           .go();
+
+      // (b) Upsert server rows, skipping anything locally pending.
       await db.batch((batch) {
-        for (final json in rows.cast<Map<String, dynamic>>()) {
+        for (final json in serverRows) {
+          final id = json['id'] as int;
+          if (pendingIds.contains(id)) continue;
           final tableIds = (json['tableIds'] as List<dynamic>?)
                   ?.map((e) => (e as num).toInt())
                   .toList() ??
@@ -894,7 +930,7 @@ class SyncManager {
           batch.insert(
             db.bookingsTable,
             BookingsTableCompanion(
-              id: Value(json['id'] as int),
+              id: Value(id),
               companyId: Value(json['companyId'] as int? ?? companyId),
               customerId: Value(json['customerId'] as int?),
               userId: Value(json['userId'] as int?),
@@ -905,15 +941,169 @@ class SyncManager {
               startTime: Value(DateTime.parse(json['startTime'] as String)),
               endTime: Value(DateTime.parse(json['endTime'] as String)),
               guestCount: Value(json['guestCount'] as int? ?? 1),
-              status: Value(json['status'] as int? ?? 0),
+              status: Value(json['status'] as int? ?? 1),
               note: Value(json['note'] as String?),
               lastModified: Value(_parseLastModified(json['lastModified'])),
+              syncStatus: const Value('synced'),
             ),
             mode: InsertMode.insertOrReplace,
           );
         }
       });
     });
+  }
+
+  // ==========================================================================
+  // BOOKINGS — push offline create / update / status / delete.
+  //  • pending_create (temp id) → POST /Add, then a status patch if it isn't
+  //    the default Scheduled; swap the temp row for the server id.
+  //  • pending_update (real id) → PATCH /Update (full edit) + /UpdateStatus
+  //    (covers both full edits and status-only changes made offline).
+  //  • pending_delete → DELETE on the server (real ids only); temp rows that
+  //    never synced are just dropped.
+  // ==========================================================================
+  Future<void> pushPendingBookings(int companyId) async {
+    final pending =
+        await (db.select(db.bookingsTable)
+              ..where((t) => t.companyId.equals(companyId))
+              ..where(
+                (t) => t.syncStatus.isIn([
+                  'pending_create',
+                  'pending_update',
+                  'pending_delete',
+                ]),
+              ))
+            .get();
+    if (pending.isEmpty) return;
+
+    // The booking delete endpoint requires a warehouse id; use the company's
+    // first known warehouse (falls back to 1).
+    final whRow = await (db.select(db.warehousesTable)
+          ..where((t) => t.companyId.equals(companyId))
+          ..limit(1))
+        .getSingleOrNull();
+    final warehouseId = whRow?.id ?? 1;
+
+    for (final b in pending) {
+      try {
+        final isTemp = b.id < 0;
+
+        // ── DELETE ──────────────────────────────────────────────────────────
+        if (b.syncStatus == 'pending_delete') {
+          if (!isTemp) {
+            await dio.delete<dynamic>(
+              '/Bookings/Delete',
+              queryParameters: {
+                'companyId': companyId,
+                'id': b.id,
+                'warehouseid': warehouseId,
+              },
+            );
+          }
+          await (db.delete(
+            db.bookingsTable,
+          )..where((x) => x.id.equals(b.id))).go();
+          continue;
+        }
+
+        final tableIds = (jsonDecode(b.tableIdsJson) as List<dynamic>)
+            .map((e) => (e as num).toInt())
+            .toList();
+        final payload = <String, dynamic>{
+          'reservationName': b.reservationName,
+          'guestCount': b.guestCount,
+          'startTime': b.startTime.toIso8601String(),
+          'endTime': b.endTime.toIso8601String(),
+          'userId': b.userId,
+          'tableIds': tableIds,
+          'customerId': b.customerId,
+          'note': b.note,
+        };
+
+        // ── CREATE (temp id always POSTs) ─────────────────────────────────
+        if (isTemp) {
+          final res = await dio.post<dynamic>(
+            '/Bookings/Add',
+            queryParameters: {'companyId': companyId},
+            data: payload,
+          );
+          final body =
+              res.data is Map ? ((res.data as Map)['data'] ?? res.data) : null;
+          final realId = (body is Map ? (body['id'] as num?) : null)?.toInt();
+          if (realId == null) {
+            throw Exception('Server returned no id for booking create');
+          }
+          // A status changed offline before the first sync (default is 1).
+          if (b.status != 1) {
+            await dio.patch<dynamic>(
+              '/Bookings/UpdateStatus',
+              queryParameters: {'companyId': companyId},
+              data: {
+                'bookingId': realId,
+                'status': b.status,
+                'documentId': b.documentId,
+              },
+            );
+          }
+          await db.transaction(() async {
+            await (db.delete(
+              db.bookingsTable,
+            )..where((x) => x.id.equals(b.id))).go();
+            await db.into(db.bookingsTable).insert(
+              BookingsTableCompanion(
+                id: Value(realId),
+                companyId: Value(b.companyId),
+                customerId: Value(b.customerId),
+                userId: Value(b.userId),
+                reservationName: Value(b.reservationName),
+                tableIdsJson: Value(b.tableIdsJson),
+                documentId: Value(b.documentId),
+                posOrderId: Value(b.posOrderId),
+                startTime: Value(b.startTime),
+                endTime: Value(b.endTime),
+                guestCount: Value(b.guestCount),
+                status: Value(b.status),
+                note: Value(b.note),
+                lastModified: Value(DateTime.now().toUtc()),
+                syncStatus: const Value('synced'),
+              ),
+              mode: InsertMode.insertOrReplace,
+            );
+          });
+        } else {
+          // ── UPDATE (real id): full edit + status ──────────────────────────
+          await dio.patch<dynamic>(
+            '/Bookings/Update',
+            queryParameters: {'companyId': companyId},
+            data: {'bookingId': b.id, ...payload},
+          );
+          await dio.patch<dynamic>(
+            '/Bookings/UpdateStatus',
+            queryParameters: {'companyId': companyId},
+            data: {
+              'bookingId': b.id,
+              'status': b.status,
+              'documentId': b.documentId,
+            },
+          );
+          await (db.update(
+            db.bookingsTable,
+          )..where((x) => x.id.equals(b.id))).write(
+            const BookingsTableCompanion(syncStatus: Value('synced')),
+          );
+        }
+      } catch (e) {
+        await _resolveRejection(
+          error: e,
+          syncStatus: b.syncStatus,
+          logLabel: 'pushPendingBookings: booking ${b.id} (${b.syncStatus})',
+          entityLabel: 'Booking "${b.reservationName}"',
+          apply: (s, _) =>
+              (db.update(db.bookingsTable)..where((x) => x.id.equals(b.id)))
+                  .write(BookingsTableCompanion(syncStatus: Value(s))),
+        );
+      }
+    }
   }
 
   Future<void> pushPendingOrders(int companyId) async {
@@ -966,6 +1156,21 @@ class SyncManager {
           final serverId = r['serverId'] as int?;
           if (serverId != null) {
             await db.linkDocumentToServer(localId, serverId);
+            // Stamp each local document_items row with the server-assigned id the
+            // checkout created (keyed by the shared line localId). Without this the
+            // origin device's checkout items keep serverId=null and their later
+            // edits/deletes can never sync. Survives deleteCompletedOrder below
+            // (that removes pos_orders/items only; document_items are separate).
+            final itemServerIds = r['itemServerIds'];
+            if (itemServerIds is Map) {
+              for (final entry in itemServerIds.entries) {
+                final lineLocalId = entry.key as String?;
+                final itemServerId = (entry.value as num?)?.toInt();
+                if (lineLocalId != null && itemServerId != null) {
+                  await db.markDocumentItemSynced(lineLocalId, itemServerId);
+                }
+              }
+            }
             // The server persisted this sale's DiscountLine rows — stamp the
             // local lines synced so they aren't re-pushed. (They survive the
             // order delete: they also link to the document by localId.)
@@ -1025,6 +1230,10 @@ class SyncManager {
         return {
           'posOrderId': 0,
           'productId': item.productId,
+          // Stable line id shared with the local document_item. The server echoes
+          // the created DocumentItem id back keyed by this, so we can stamp the
+          // local document_items.serverId for later edit/delete sync.
+          'lineLocalId': item.localId,
           'roundNumber': 1,
           'quantity': item.quantity,
           'price': item.unitPrice,
@@ -3743,6 +3952,12 @@ class SyncManager {
     final now = DateTime.now().toUtc();
     final from = now.subtract(const Duration(days: 90));
 
+    // Delta watermark: after the first full pull, only fetch documents changed
+    // (DateUpdated) since the last successful pull, so a steady device transfers
+    // almost nothing instead of the whole 90-day window every sync. The local DB
+    // is never pruned, so unreturned (unchanged) docs simply stay as they are.
+    final watermark = await _getLastSync(_kDocuments);
+
     try {
       final res = await dio.get<dynamic>(
         '/Document/GetSalesHistory',
@@ -3753,6 +3968,8 @@ class SyncManager {
           // Pull line items + customerId so the local DB can compute the
           // dashboard / item-level reports fully offline.
           'includeItems': true,
+          if (watermark != null)
+            'modifiedAfter': watermark.toUtc().toIso8601String(),
         },
       );
 
@@ -4371,42 +4588,51 @@ class SyncManager {
     );
     final rows = res.data ?? const [];
 
-    for (final json in rows.cast<Map<String, dynamic>>()) {
-      final id = json['id'] as int;
-      final serverLastModified = _parseLastModified(json['lastModified']);
+    // Apply every upsert/cleanup inside a SINGLE transaction so Drift notifies
+    // the watched query (behind rawAppPropertiesProvider) just once on commit,
+    // not once per row. Per-row emissions were re-running
+    // AppSettingsNotifier.build() in back-to-back ticks, which trips Riverpod
+    // 3's "Only one task can be scheduled at a time" scheduler assertion when a
+    // setting is saved — most visibly the first time a brand-new key such as
+    // App.DefaultScreen is created (that path is the only one that pulls).
+    await db.transaction(() async {
+      for (final json in rows.cast<Map<String, dynamic>>()) {
+        final id = json['id'] as int;
+        final serverLastModified = _parseLastModified(json['lastModified']);
 
-      final localRow = await (db.select(
-        db.appPropertiesTable,
-      )..where((t) => t.id.equals(id))).getSingleOrNull();
+        final localRow = await (db.select(
+          db.appPropertiesTable,
+        )..where((t) => t.id.equals(id))).getSingleOrNull();
 
-      if (localRow != null &&
-          !serverLastModified.isAfter(localRow.lastModified)) {
-        // Local copy is equal or newer — preserve it.
-        continue;
+        if (localRow != null &&
+            !serverLastModified.isAfter(localRow.lastModified)) {
+          // Local copy is equal or newer — preserve it.
+          continue;
+        }
+
+        final name = json['name'] as String? ?? '';
+        await db
+            .into(db.appPropertiesTable)
+            .insertOnConflictUpdate(
+              AppPropertiesTableCompanion(
+                id: Value(id),
+                companyId: Value(json['companyId'] as int? ?? companyId),
+                name: Value(name),
+                value: Value(json['value'] as String?),
+                lastModified: Value(serverLastModified),
+                // Authoritative server value — clears any local pending flag.
+                syncStatus: const Value('synced'),
+              ),
+            );
+
+        // Drop any offline-only temp row (negative id) for this key now that the
+        // server has assigned a real id — prevents a duplicate name row.
+        await (db.delete(db.appPropertiesTable)
+              ..where((t) => t.name.equals(name))
+              ..where((t) => t.id.isSmallerThanValue(0)))
+            .go();
       }
-
-      final name = json['name'] as String? ?? '';
-      await db
-          .into(db.appPropertiesTable)
-          .insertOnConflictUpdate(
-            AppPropertiesTableCompanion(
-              id: Value(id),
-              companyId: Value(json['companyId'] as int? ?? companyId),
-              name: Value(name),
-              value: Value(json['value'] as String?),
-              lastModified: Value(serverLastModified),
-              // Authoritative server value — clears any local pending flag.
-              syncStatus: const Value('synced'),
-            ),
-          );
-
-      // Drop any offline-only temp row (negative id) for this key now that the
-      // server has assigned a real id — prevents a duplicate name row.
-      await (db.delete(db.appPropertiesTable)
-            ..where((t) => t.name.equals(name))
-            ..where((t) => t.id.isSmallerThanValue(0)))
-          .go();
-    }
+    });
 
     await _setLastSync(_kAppProperties, startedAt);
   }

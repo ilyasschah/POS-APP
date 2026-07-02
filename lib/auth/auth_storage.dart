@@ -10,6 +10,10 @@ class AuthStorage {
   final _secureStorage = const FlutterSecureStorage();
 
   static const _keyJwt = 'jwt_token';
+  // The device's own token from master-login. Kept alongside the active token so
+  // that when a cashier logs in via PIN we can exchange it for a per-user token
+  // (POST /Auth/UserToken) — and revert to it on logout / offline.
+  static const _keyDeviceJwt = 'device_jwt';
   static const _keyDeviceId = 'device_id';
   static const _keyCompanyId = 'company_id';
   static const _keyCachedUsers = 'cached_users';
@@ -38,9 +42,24 @@ class AuthStorage {
   }
 
   Future<void> saveMasterSession(String jwt, int companyId) async {
+    // The master-login token is both the initial active token and the durable
+    // device token used to mint per-user tokens later.
     await _secureStorage.write(key: _keyJwt, value: jwt);
+    await _secureStorage.write(key: _keyDeviceJwt, value: jwt);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_keyCompanyId, companyId);
+  }
+
+  Future<String?> getDeviceJwt() async =>
+      _secureStorage.read(key: _keyDeviceJwt);
+
+  /// Reverts the active token to the durable device token — used on logout and
+  /// as the offline fallback when no per-user token could be minted.
+  Future<void> resetActiveToDevice() async {
+    final device = await getDeviceJwt();
+    if (device != null && device.isNotEmpty) {
+      await _secureStorage.write(key: _keyJwt, value: device);
+    }
   }
 
   /// Persists the signed subscription lease and its decoded `validUntil` so the
@@ -128,6 +147,14 @@ class AuthStorage {
     return await _secureStorage.read(key: _keyJwt);
   }
 
+  /// Overwrites just the stored JWT — used by the sliding-window refresh on sync
+  /// to keep the device token from expiring while online (leaves companyId/lease
+  /// untouched, unlike [saveMasterSession]).
+  Future<void> saveJwt(String jwt) async {
+    if (jwt.isEmpty) return;
+    await _secureStorage.write(key: _keyJwt, value: jwt);
+  }
+
   Future<int?> getCompanyId() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getInt(_keyCompanyId);
@@ -145,6 +172,7 @@ class AuthStorage {
 
   Future<void> unlinkDevice() async {
     await _secureStorage.delete(key: _keyJwt);
+    await _secureStorage.delete(key: _keyDeviceJwt);
     await _secureStorage.delete(key: _keyLease);
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_keyCompanyId);

@@ -133,11 +133,16 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                       return ListTile(
                         dense: true,
                         contentPadding: EdgeInsets.zero,
-                        leading: Icon(Icons.local_offer,
-                            color: theme.colorScheme.primary),
+                        leading: Icon(
+                          Icons.local_offer,
+                          color: theme.colorScheme.primary,
+                        ),
                         title: Text(promo.name),
-                        subtitle: Text(subtitle,
-                            maxLines: 2, overflow: TextOverflow.ellipsis),
+                        subtitle: Text(
+                          subtitle,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       );
                     }).toList(),
                   ),
@@ -175,16 +180,26 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
     final customServiceStatuses = ref
         .read(appSettingsProvider.notifier)
         .customServiceStatuses;
-    final showCustomerBtn  = settings[SettingKeys.showCustomerBtn]?.toLowerCase()  != 'false';
-    final showDiscountBtn  = settings[SettingKeys.showDiscountBtn]?.toLowerCase()  != 'false';
-    final showTransferBtn  = settings[SettingKeys.showTransferBtn]?.toLowerCase()  != 'false';
-    final showRefundBtn    = settings[SettingKeys.showRefundBtn]?.toLowerCase()    != 'false';
-    final showWarehouseBtn = settings[SettingKeys.showWarehouseBtn]?.toLowerCase() != 'false';
-    final showBookingBtn   = settings[SettingKeys.showBookingBtn]?.toLowerCase()   != 'false';
-    final showTablesBtn    = settings[SettingKeys.showTablesBtn]?.toLowerCase()    != 'false';
-    final showKitchenBtn   = settings[SettingKeys.showKitchenBtn]?.toLowerCase()   != 'false';
-    final showTaxBtn       = settings[SettingKeys.showTaxBtn]?.toLowerCase()       != 'false';
-    final showQuantityBtn  = settings[SettingKeys.showQuantityBtn]?.toLowerCase()  != 'false';
+    final showCustomerBtn =
+        settings[SettingKeys.showCustomerBtn]?.toLowerCase() != 'false';
+    final showDiscountBtn =
+        settings[SettingKeys.showDiscountBtn]?.toLowerCase() != 'false';
+    final showTransferBtn =
+        settings[SettingKeys.showTransferBtn]?.toLowerCase() != 'false';
+    final showRefundBtn =
+        settings[SettingKeys.showRefundBtn]?.toLowerCase() != 'false';
+    final showWarehouseBtn =
+        settings[SettingKeys.showWarehouseBtn]?.toLowerCase() != 'false';
+    final showBookingBtn =
+        settings[SettingKeys.showBookingBtn]?.toLowerCase() != 'false';
+    final showTablesBtn =
+        settings[SettingKeys.showTablesBtn]?.toLowerCase() != 'false';
+    final showKitchenBtn =
+        settings[SettingKeys.showKitchenBtn]?.toLowerCase() != 'false';
+    final showTaxBtn =
+        settings[SettingKeys.showTaxBtn]?.toLowerCase() != 'false';
+    final showQuantityBtn =
+        settings[SettingKeys.showQuantityBtn]?.toLowerCase() != 'false';
     ref.listen(allCustomersProvider, (previous, next) {
       next.whenData((all) {
         final customers = all.where((c) => c.isCustomer).toList();
@@ -247,8 +262,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
           // ready. Tapping it jumps to the Open Orders tab.
           Builder(
             builder: (context) {
-              final readyCount =
-                  ref.watch(readyOrdersCountProvider).value ?? 0;
+              final readyCount = ref.watch(readyOrdersCountProvider).value ?? 0;
               if (readyCount == 0) return const SizedBox.shrink();
               return Padding(
                 padding: const EdgeInsets.only(right: 4),
@@ -270,30 +284,33 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
           ),
           // --- Order Controls ---
           SizedBox(
-            height: 46,
+            height: 60,
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
                   if (showCustomerBtn)
                     asyncCustomers.when(
-                    loading: () => const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                    error: (_, __) => const SizedBox.shrink(),
-                    data: (all) {
-                      final customers = all.where((c) => c.isCustomer).toList();
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 6),
-                        child: IconButton(
-                          iconSize: 26,
-                          icon: const Icon(Icons.person),
-                          tooltip: currentCustomer?.name ?? "Select Customer",
-                          onPressed: () async {
-                            final selected =
-                                await showCustomerPickerDialog(
+                      loading: () => const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      error: (_, __) => const SizedBox.shrink(),
+                      data: (all) {
+                        final customers = all
+                            .where((c) => c.isCustomer)
+                            .toList();
+                        return _MenuHeaderActionBtn(
+                          // Reflect live state: show the selected customer's
+                          // name (highlighted) instead of a generic label.
+                          icon: currentCustomer != null
+                              ? Icons.person
+                              : Icons.person_outline,
+                          label: currentCustomer?.name ?? 'Customer',
+                          active: currentCustomer != null,
+                          onTap: () async {
+                            final selected = await showCustomerPickerDialog(
                               context,
                               customers,
                               selectedId: ref
@@ -305,28 +322,219 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                             ref
                                 .read(currentCustomerProvider.notifier)
                                 .setCustomer(selected);
-                            final companyId =
-                                ref.read(selectedCompanyProvider)?.id;
+                            final companyId = ref
+                                .read(selectedCompanyProvider)
+                                ?.id;
                             if (companyId != null) {
                               ref
                                   .read(cartProvider.notifier)
                                   .setCustomer(companyId, selected);
                             }
                           },
-                        ),
-                      );
-                    },
-                  ),
-                  // ── Dynamic Order Type button ──────────────────────────
+                        );
+                      },
+                    ),
+                  // ── Dynamic Order Type button (unified shape) ──────────
                   if (serviceTypeEnabled)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 6),
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          final val = await showDialog<int>(
-                            context: context,
-                            builder: (ctx) => AlertDialog(
-                              title: const Text('Select Order Type'),
+                    _MenuHeaderActionBtn(
+                      icon: Icons.restaurant_menu,
+                      label:
+                          customServiceTypes
+                              .where((t) => t.id == cartState.serviceType)
+                              .map((t) => t.name)
+                              .firstOrNull ??
+                          'Order Type',
+                      customTint:
+                          _kOrderTypePalette[customServiceTypes
+                              .indexWhere((t) => t.id == cartState.serviceType)
+                              .clamp(0, _kOrderTypePalette.length - 1)],
+                      onTap: () async {
+                        final val = await showDialog<int>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: const Text('Select Order Type'),
+                            contentPadding: const EdgeInsets.fromLTRB(
+                              16,
+                              16,
+                              16,
+                              16,
+                            ),
+                            content: SizedBox(
+                              width: 500,
+                              child: Row(
+                                children: customServiceTypes
+                                    .asMap()
+                                    .entries
+                                    .expand(
+                                      (e) => [
+                                        if (e.key > 0)
+                                          const SizedBox(width: 12),
+                                        Expanded(
+                                          child: ElevatedButton(
+                                            onPressed: () =>
+                                                Navigator.pop(ctx, e.value.id),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor:
+                                                  _kOrderTypePalette[e.key %
+                                                      _kOrderTypePalette
+                                                          .length],
+                                              minimumSize: const Size(0, 100),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    vertical: 16,
+                                                    horizontal: 8,
+                                                  ),
+                                            ),
+                                            child: Text(
+                                              e.value.name,
+                                              textAlign: TextAlign.center,
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                    .toList(),
+                              ),
+                            ),
+                          ),
+                        );
+                        if (val == null) return;
+                        final companyId = ref.read(selectedCompanyProvider)?.id;
+                        if (val != 0) {
+                          if (companyId != null) {
+                            await ref
+                                .read(cartProvider.notifier)
+                                .clearFloorPlanTable(val, companyId: companyId);
+                          }
+                          if (ref.read(cartProvider).activePosOrderId == null) {
+                            final user = ref.read(currentUserProvider);
+                            if (companyId != null && user != null) {
+                              try {
+                                await ref
+                                    .read(cartProvider.notifier)
+                                    .startTablelessOrder(
+                                      ApiClient(),
+                                      companyId,
+                                      user.id,
+                                      val,
+                                    );
+                              } catch (e) {
+                                if (context.mounted) {
+                                  showAppSnackbar(
+                                    context,
+                                    ref,
+                                    friendlyErrorMessage(e),
+                                    isError: true,
+                                  );
+                                }
+                              }
+                            }
+                          }
+                        } else {
+                          final cart = ref.read(cartProvider);
+                          final floorPlanOn =
+                              ref
+                                  .read(
+                                    appSettingsProvider,
+                                  )[SettingKeys.featureFloorPlanEnabled]
+                                  ?.toLowerCase() ==
+                              'true';
+
+                          if (cart.floorPlanTableId == null && floorPlanOn) {
+                            final selectedSpace =
+                                await showDialog<FloorPlanTable>(
+                                  context: context,
+                                  builder: (_) =>
+                                      const _SelectAvailableSpaceDialog(),
+                                );
+                            if (selectedSpace == null) return;
+                            if (!context.mounted) return;
+
+                            final cId = ref.read(selectedCompanyProvider)?.id;
+                            final uId = ref.read(currentUserProvider)?.id ?? 0;
+                            if (cId == null) return;
+
+                            final newOrderNumber = 'ORD- ${selectedSpace.name}';
+
+                            await ApiClient().updatePosOrder(cId, {
+                              'id': cart.activePosOrderId,
+                              'userId': uId,
+                              'number': newOrderNumber,
+                              'floorPlanTableId': selectedSpace.id,
+                              'serviceType': 0,
+                              'serviceStatus': cart.serviceStatus,
+                              'discount': cart.manualCartDiscount,
+                              'discountType': cart.manualCartDiscountType,
+                              'total': ref.read(cartTotalProvider),
+                              'customerId': cart.selectedCustomer?.id,
+                              'warehouseId': cart.activeWarehouseId ?? 1,
+                            });
+                            ref.read(kitchenSyncProvider).push();
+
+                            if (!context.mounted) return;
+
+                            ref
+                                .read(cartProvider.notifier)
+                                .setOrderContext(
+                                  cart.activePosOrderId!,
+                                  cart.activeWarehouseId ?? 1,
+                                  tableId: selectedSpace.id,
+                                  orderNumber: newOrderNumber,
+                                );
+                            ref.read(cartProvider.notifier).state = ref
+                                .read(cartProvider)
+                                .copyWith(serviceType: 0);
+                          } else {
+                            ref.read(cartProvider.notifier).setServiceType(val);
+                          }
+                        }
+                      },
+                    ),
+                  // ── Dynamic Service Status button (unified shape) ──────
+                  if (serviceStatusEnabled)
+                    _MenuHeaderActionBtn(
+                      icon: Icons.label,
+                      label:
+                          customServiceStatuses
+                              .where((s) => s.id == cartState.serviceStatus)
+                              .map((s) => s.name)
+                              .firstOrNull ??
+                          'Status #${cartState.serviceStatus}',
+                      customTint:
+                          customServiceStatuses
+                              .where((s) => s.id == cartState.serviceStatus)
+                              .map((s) => s.color)
+                              .firstOrNull ??
+                          Theme.of(context).colorScheme.primary,
+                      onTap: () {
+                        showDialog<int>(
+                          context: context,
+                          builder: (ctx) {
+                            if (customServiceStatuses.isEmpty) {
+                              return AlertDialog(
+                                title: const Text('Service Status'),
+                                content: const Text(
+                                  'No service statuses configured.',
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(ctx),
+                                    child: const Text('Close'),
+                                  ),
+                                ],
+                              );
+                            }
+                            return AlertDialog(
+                              title: const Text('Select Service Status'),
                               contentPadding: const EdgeInsets.fromLTRB(
                                 16,
                                 16,
@@ -336,24 +544,20 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                               content: SizedBox(
                                 width: 500,
                                 child: Row(
-                                  children: customServiceTypes
+                                  children: customServiceStatuses
                                       .asMap()
                                       .entries
-                                      .expand(
-                                        (e) => [
+                                      .expand((e) {
+                                        final s = e.value;
+                                        return [
                                           if (e.key > 0)
                                             const SizedBox(width: 12),
                                           Expanded(
                                             child: ElevatedButton(
-                                              onPressed: () => Navigator.pop(
-                                                ctx,
-                                                e.value.id,
-                                              ),
+                                              onPressed: () =>
+                                                  Navigator.pop(ctx, s.id),
                                               style: ElevatedButton.styleFrom(
-                                                backgroundColor:
-                                                    _kOrderTypePalette[e.key %
-                                                        _kOrderTypePalette
-                                                            .length],
+                                                backgroundColor: s.color,
                                                 minimumSize: const Size(0, 100),
                                                 shape: RoundedRectangleBorder(
                                                   borderRadius:
@@ -366,7 +570,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                                                     ),
                                               ),
                                               child: Text(
-                                                e.value.name,
+                                                s.name,
                                                 textAlign: TextAlign.center,
                                                 style: const TextStyle(
                                                   color: Colors.white,
@@ -376,284 +580,59 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                                               ),
                                             ),
                                           ),
-                                        ],
-                                      )
+                                        ];
+                                      })
                                       .toList(),
                                 ),
                               ),
-                            ),
-                          );
-                          if (val == null) return;
-                          final companyId = ref
-                              .read(selectedCompanyProvider)
-                              ?.id;
-                          if (val != 0) {
-                            if (companyId != null) {
-                              await ref
-                                  .read(cartProvider.notifier)
-                                  .clearFloorPlanTable(
-                                    val,
-                                    companyId: companyId,
-                                  );
-                            }
-                            if (ref.read(cartProvider).activePosOrderId ==
-                                null) {
-                              final user = ref.read(currentUserProvider);
-                              if (companyId != null && user != null) {
-                                try {
-                                  await ref
-                                      .read(cartProvider.notifier)
-                                      .startTablelessOrder(
-                                        ApiClient(),
-                                        companyId,
-                                        user.id,
-                                        val,
-                                      );
-                                } catch (e) {
-                                  if (context.mounted) {
-                                    showAppSnackbar(context, ref, friendlyErrorMessage(e), isError: true);
-                                  }
-                                }
-                              }
-                            }
-                          } else {
-                            final cart = ref.read(cartProvider);
-                            final floorPlanOn =
-                                ref
-                                    .read(
-                                      appSettingsProvider,
-                                    )[SettingKeys.featureFloorPlanEnabled]
-                                    ?.toLowerCase() ==
-                                'true';
-
-                            if (cart.floorPlanTableId == null && floorPlanOn) {
-                              final selectedSpace =
-                                  await showDialog<FloorPlanTable>(
-                                    context: context,
-                                    builder: (_) =>
-                                        const _SelectAvailableSpaceDialog(),
-                                  );
-                              if (selectedSpace == null) return;
-                              if (!context.mounted) return;
-
-                              final cId = ref.read(selectedCompanyProvider)?.id;
-                              final uId =
-                                  ref.read(currentUserProvider)?.id ?? 0;
-                              if (cId == null) return;
-
-                              final newOrderNumber =
-                                  'ORD- ${selectedSpace.name}';
-
-                              await ApiClient().updatePosOrder(cId, {
-                                'id': cart.activePosOrderId,
-                                'userId': uId,
-                                'number': newOrderNumber,
-                                'floorPlanTableId': selectedSpace.id,
-                                'serviceType': 0,
-                                'serviceStatus': cart.serviceStatus,
-                                'discount': cart.manualCartDiscount,
-                                'discountType': cart.manualCartDiscountType,
-                                'total': ref.read(cartTotalProvider),
-                                'customerId': cart.selectedCustomer?.id,
-                                'warehouseId': cart.activeWarehouseId ?? 1,
-                              });
-                              ref.read(kitchenSyncProvider).push();
-
-                              if (!context.mounted) return;
-
-                              ref
-                                  .read(cartProvider.notifier)
-                                  .setOrderContext(
-                                    cart.activePosOrderId!,
-                                    cart.activeWarehouseId ?? 1,
-                                    tableId: selectedSpace.id,
-                                    orderNumber: newOrderNumber,
-                                  );
-                              ref.read(cartProvider.notifier).state = ref
-                                  .read(cartProvider)
-                                  .copyWith(serviceType: 0);
-                            } else {
-                              ref
-                                  .read(cartProvider.notifier)
-                                  .setServiceType(val);
-                            }
+                            );
+                          },
+                        ).then((val) {
+                          if (val != null) {
+                            ref.read(cartProvider.notifier).state = cartState
+                                .copyWith(serviceStatus: val);
                           }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              _kOrderTypePalette[customServiceTypes
-                                  .indexWhere(
-                                    (t) => t.id == cartState.serviceType,
-                                  )
-                                  .clamp(0, _kOrderTypePalette.length - 1)],
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
-                          visualDensity: VisualDensity.compact,
-                        ),
-                        child: Text(
-                          customServiceTypes
-                                  .where((t) => t.id == cartState.serviceType)
-                                  .map((t) => t.name)
-                                  .firstOrNull ??
-                              'Order Type',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  // ── Dynamic Service Status button ──────────────────────
-                  if (serviceStatusEnabled)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 6),
-                      child: ElevatedButton.icon(
-                        icon: const Icon(
-                          Icons.label_outline,
-                          size: 15,
-                          color: Colors.white,
-                        ),
-                        label: Text(
-                          customServiceStatuses
-                                  .where((s) => s.id == cartState.serviceStatus)
-                                  .map((s) => s.name)
-                                  .firstOrNull ??
-                              'Status #${cartState.serviceStatus}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.white,
-                          ),
-                        ),
-                        onPressed: () {
-                          showDialog<int>(
-                            context: context,
-                            builder: (ctx) {
-                              if (customServiceStatuses.isEmpty) {
-                                return AlertDialog(
-                                  title: const Text('Service Status'),
-                                  content: const Text(
-                                    'No service statuses configured.',
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Navigator.pop(ctx),
-                                      child: const Text('Close'),
-                                    ),
-                                  ],
-                                );
-                              }
-                              return AlertDialog(
-                                title: const Text('Select Service Status'),
-                                contentPadding: const EdgeInsets.fromLTRB(
-                                  16,
-                                  16,
-                                  16,
-                                  16,
-                                ),
-                                content: SizedBox(
-                                  width: 500,
-                                  child: Row(
-                                    children: customServiceStatuses
-                                        .asMap()
-                                        .entries
-                                        .expand((e) {
-                                          final s = e.value;
-                                          return [
-                                            if (e.key > 0)
-                                              const SizedBox(width: 12),
-                                            Expanded(
-                                              child: ElevatedButton(
-                                                onPressed: () =>
-                                                    Navigator.pop(ctx, s.id),
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor: s.color,
-                                                  minimumSize: const Size(
-                                                    0,
-                                                    100,
-                                                  ),
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          12,
-                                                        ),
-                                                  ),
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                        vertical: 16,
-                                                        horizontal: 8,
-                                                      ),
-                                                ),
-                                                child: Text(
-                                                  s.name,
-                                                  textAlign: TextAlign.center,
-                                                  style: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 13,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ];
-                                        })
-                                        .toList(),
-                                  ),
-                                ),
-                              );
-                            },
-                          ).then((val) {
-                            if (val != null) {
-                              ref.read(cartProvider.notifier).state = cartState
-                                  .copyWith(serviceStatus: val);
-                            }
-                          });
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              customServiceStatuses
-                                  .where((s) => s.id == cartState.serviceStatus)
-                                  .map((s) => s.color)
-                                  .firstOrNull ??
-                              Theme.of(context).colorScheme.primary,
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
-                          visualDensity: VisualDensity.compact,
-                        ),
-                      ),
+                        });
+                      },
                     ),
                   if (showDiscountBtn)
-                    IconButton(
-                      iconSize: 26,
-                      icon: const Icon(Icons.percent),
-                      tooltip: "Discount",
-                      onPressed: () => ref.read(securityGuardProvider).guard(
-                        context,
-                        SecurityKeys.applyDiscount,
-                        () => showDialog(
-                          context: context,
-                          builder: (_) => const DiscountDialog(),
-                        ),
-                      ),
+                    _MenuHeaderActionBtn(
+                      icon: Icons.percent,
+                      label: 'Discount',
+                      onTap: () => ref
+                          .read(securityGuardProvider)
+                          .guard(
+                            context,
+                            SecurityKeys.applyDiscount,
+                            () => showDialog(
+                              context: context,
+                              builder: (_) => const DiscountDialog(),
+                            ),
+                          ),
                     ),
                   if (showQuantityBtn)
-                    IconButton(
-                      iconSize: 26,
-                      icon: const Icon(Icons.dialpad),
-                      tooltip: cartState.selectedCartItemId == null
-                          ? "Select a cart item to set its quantity"
-                          : "Change quantity",
+                    _MenuHeaderActionBtn(
+                      icon: Icons.dialpad,
+                      label: 'Quantity',
                       // Greyed out until a cart line is selected — same gating
                       // the Tax button uses.
-                      onPressed: cartState.selectedCartItemId == null
+                      onTap: cartState.selectedCartItemId == null
                           ? null
                           : () async {
                               final item = cartState.items
-                                  .where((i) =>
-                                      i.cartItemId ==
-                                      cartState.selectedCartItemId)
+                                  .where(
+                                    (i) =>
+                                        i.cartItemId ==
+                                        cartState.selectedCartItemId,
+                                  )
                                   .firstOrNull;
                               if (item == null) {
-                                showAppSnackbar(context, ref,
-                                    'Selected item not found.',
-                                    isError: true);
+                                showAppSnackbar(
+                                  context,
+                                  ref,
+                                  'Selected item not found.',
+                                  isError: true,
+                                );
                                 return;
                               }
                               final newQty = await showQuantityKeypad(
@@ -664,9 +643,12 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                               );
                               if (newQty == null || !context.mounted) return;
                               if (newQty < 0) {
-                                showAppSnackbar(context, ref,
-                                    'Quantity cannot be negative.',
-                                    isError: true);
+                                showAppSnackbar(
+                                  context,
+                                  ref,
+                                  'Quantity cannot be negative.',
+                                  isError: true,
+                                );
                                 return;
                               }
                               ref
@@ -675,25 +657,34 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                             },
                     ),
                   if (showTaxBtn)
-                    IconButton(
-                      iconSize: 26,
-                      icon: const Icon(Icons.receipt),
-                      tooltip: "Tax",
-                      onPressed: () => ref.read(securityGuardProvider).guard(
+                    _MenuHeaderActionBtn(
+                      icon: Icons.receipt,
+                      label: 'Tax',
+                      onTap: () => ref.read(securityGuardProvider).guard(
                         context,
                         SecurityKeys.taxOverride,
                         () {
                           final selectedCartItemId =
                               cartState.selectedCartItemId;
                           if (selectedCartItemId == null) {
-                            showAppSnackbar(context, ref, 'Please select an item first', isError: true);
+                            showAppSnackbar(
+                              context,
+                              ref,
+                              'Please select an item first',
+                              isError: true,
+                            );
                             return;
                           }
                           final item = cartState.items
                               .where((i) => i.cartItemId == selectedCartItemId)
                               .firstOrNull;
                           if (item == null) {
-                            showAppSnackbar(context, ref, 'Please add a product to the cart and select it', isError: true);
+                            showAppSnackbar(
+                              context,
+                              ref,
+                              'Please add a product to the cart and select it',
+                              isError: true,
+                            );
                             return;
                           }
                           showDialog(
@@ -704,112 +695,93 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                       ),
                     ),
                   if (showTransferBtn)
-                    IconButton(
-                      iconSize: 26,
-                      icon: const Icon(Icons.swap_horiz),
-                      tooltip: "Transfer",
-                      onPressed: cartState.activePosOrderId == null
+                    _MenuHeaderActionBtn(
+                      icon: Icons.swap_horiz,
+                      label: 'Transfer',
+                      onTap: cartState.activePosOrderId == null
                           ? null
-                          : () => ref.read(securityGuardProvider).guard(
-                              context,
-                              SecurityKeys.orderTransfer,
-                              () => showDialog(
-                                context: context,
-                                builder: (_) =>
-                                    _TransferDialog(cartState: cartState),
-                              ),
-                            ),
+                          : () => ref
+                                .read(securityGuardProvider)
+                                .guard(
+                                  context,
+                                  SecurityKeys.orderTransfer,
+                                  () => showDialog(
+                                    context: context,
+                                    builder: (_) =>
+                                        _TransferDialog(cartState: cartState),
+                                  ),
+                                ),
                     ),
                   if (showRefundBtn)
-                    IconButton(
-                      iconSize: 26,
-                      icon: const Icon(Icons.undo),
-                      tooltip: "Refund",
-                      onPressed: () => ref.read(securityGuardProvider).guard(
-                        context,
-                        SecurityKeys.refund,
-                        () => showDialog(
-                          context: context,
-                          builder: (_) => const RefundDialog(),
-                        ),
-                      ),
+                    _MenuHeaderActionBtn(
+                      icon: Icons.undo,
+                      label: 'Refund',
+                      onTap: () => ref
+                          .read(securityGuardProvider)
+                          .guard(
+                            context,
+                            SecurityKeys.refund,
+                            () => showDialog(
+                              context: context,
+                              builder: (_) => const RefundDialog(),
+                            ),
+                          ),
                     ),
 
                   if (showKitchenBtn)
-                    IconButton(
-                      iconSize: 26,
-                      icon: const Icon(Icons.soup_kitchen),
-                      tooltip: "Send to Kitchen",
-                      onPressed: cartState.items.isEmpty
-                        ? null
-                        : () async {
-                            try {
-                              final roleSettings = ref.read(appSettingsProvider);
-                              final cashier = ref.read(currentUserProvider);
-                              final cartItems = ref.read(cartProvider).items;
-                              final serviceLabel =
-                                  switch (cartState.serviceType) {
-                                    0 => 'Dine In',
-                                    1 => 'Takeaway',
-                                    _ => 'Order',
-                                  };
-                              final roundNum = cartItems.isNotEmpty
-                                  ? cartItems.first.roundNumber
-                                  : 1;
+                    _MenuHeaderActionBtn(
+                      icon: Icons.soup_kitchen,
+                      label: 'Kitchen',
+                      onTap: cartState.items.isEmpty
+                          ? null
+                          : () async {
+                              try {
+                                final roleSettings = ref.read(
+                                  appSettingsProvider,
+                                );
+                                final cashier = ref.read(currentUserProvider);
+                                final cartItems = ref.read(cartProvider).items;
+                                final serviceLabel =
+                                    switch (cartState.serviceType) {
+                                      0 => 'Dine In',
+                                      1 => 'Takeaway',
+                                      _ => 'Order',
+                                    };
+                                final roundNum = cartItems.isNotEmpty
+                                    ? cartItems.first.roundNumber
+                                    : 1;
 
-                              await ReceiptPrinterService().printKitchenTicket(
-                                orderNumber: cartState.orderNumber ?? 'WALK-IN',
-                                cashierName: cashier?.displayName ?? 'Unknown',
-                                serviceType: serviceLabel,
-                                roundNumber: roundNum,
-                                printTime: DateTime.now(),
-                                items: cartItems,
-                                roleSettings: roleSettings,
-                              );
-                            } catch (e) {
-                              if (context.mounted) {
-                                showAppSnackbar(context, ref, 'Kitchen print error: $e', isError: true);
+                                await ReceiptPrinterService()
+                                    .printKitchenTicket(
+                                      orderNumber:
+                                          cartState.orderNumber ?? 'WALK-IN',
+                                      cashierName:
+                                          cashier?.displayName ?? 'Unknown',
+                                      serviceType: serviceLabel,
+                                      roundNumber: roundNum,
+                                      printTime: DateTime.now(),
+                                      items: cartItems,
+                                      roleSettings: roleSettings,
+                                    );
+                              } catch (e) {
+                                if (context.mounted) {
+                                  showAppSnackbar(
+                                    context,
+                                    ref,
+                                    'Kitchen print error: $e',
+                                    isError: true,
+                                  );
+                                }
                               }
-                            }
-                          },
+                            },
                     ),
                 ],
               ),
             ),
           ),
           const SizedBox(width: 8),
-          if (_activePromos.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(right: 8.0),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(8),
-                onTap: () => _showActivePromosPopup(context),
-                child: Container(
-                  margin: const EdgeInsets.symmetric(vertical: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.amber.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.amber, width: 1),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.star, color: Colors.amber),
-                      const SizedBox(width: 8),
-                      Text(
-                        "${_activePromos.length}x Active Promotions",
-                        style: const TextStyle(
-                          color: Colors.amber,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
 
-          // --- Warehouse Switcher (Icon Only) ---
+          // --- Warehouse Switcher (labelled icon) ---
           if (showWarehouseBtn)
             Consumer(
               builder: (context, ref, child) {
@@ -817,11 +789,14 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                 final warehouses = ref.watch(allWarehousesProvider);
 
                 return Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 2),
                   child: PopupMenuButton<int>(
                     tooltip: selectedWarehouse?.name ?? "Select Warehouse",
-                    iconSize: 26,
-                    icon: const Icon(Icons.warehouse),
+                    child: _MenuActionVisual(
+                      icon: Icons.warehouse,
+                      label: selectedWarehouse?.name ?? 'Warehouse',
+                      tint: Theme.of(context).colorScheme.onSurface,
+                    ),
                     onSelected: (id) {
                       warehouses.whenData((list) {
                         final wh = list.firstWhere((w) => w.id == id);
@@ -844,8 +819,10 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
             ),
 
           if (bookingEnabled && showBookingBtn)
-            TextButton.icon(
-              onPressed: () {
+            _MenuHeaderActionBtn(
+              icon: Icons.calendar_month,
+              label: 'Bookings',
+              onTap: () {
                 ref.read(cartProvider.notifier).clearCart();
                 Navigator.pushAndRemoveUntil(
                   context,
@@ -855,16 +832,12 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                   (route) => false,
                 );
               },
-              icon: const Icon(Icons.calendar_month, size: 22),
-              label: const Text(
-                'Bookings',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
             ),
-          if (floorPlanEnabled && showTablesBtn) ...[
-            if (bookingEnabled && showBookingBtn) const SizedBox(width: 4),
-            TextButton.icon(
-              onPressed: () async {
+          if (floorPlanEnabled && showTablesBtn)
+            _MenuHeaderActionBtn(
+              icon: Icons.grid_view,
+              label: settings[SettingKeys.tablesButtonLabel] ?? 'Tables',
+              onTap: () async {
                 final cart = ref.read(cartProvider);
                 final companyId = ref.read(selectedCompanyProvider)?.id;
 
@@ -895,7 +868,12 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                           );
                     } catch (e) {
                       if (context.mounted) {
-                        showAppSnackbar(context, ref, 'Could not save order: $e', isError: true);
+                        showAppSnackbar(
+                          context,
+                          ref,
+                          'Could not save order: $e',
+                          isError: true,
+                        );
                       }
                       return;
                     }
@@ -912,16 +890,19 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                   );
                 }
               },
-              icon: const Icon(Icons.grid_view, size: 22),
-              label: Text(
-                settings[SettingKeys.tablesButtonLabel] ?? 'Tables',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
             ),
-          ],
+
+          // Promotion — special override action, pinned to the far right. Amber
+          // star icon with a count badge.
+          if (_activePromos.isNotEmpty)
+            _MenuHeaderActionBtn(
+              icon: Icons.star,
+              label: 'Promos',
+              iconColor: Colors.amber,
+              badgeCount: _activePromos.length,
+              onTap: () => _showActivePromosPopup(context),
+            ),
+
           const SizedBox(width: 8),
         ],
       ),
@@ -1029,7 +1010,8 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
       if (match == null) {
         if (mounted) {
           showAppSnackbar(
-            context, ref,
+            context,
+            ref,
             'Scale barcode: product "${scaleData.productCode}" not found.',
             isError: true,
           );
@@ -1042,7 +1024,8 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
         if (unitPrice <= 0) {
           if (mounted) {
             showAppSnackbar(
-              context, ref,
+              context,
+              ref,
               'Cannot calculate quantity: unit price is zero.',
               isError: true,
             );
@@ -1057,7 +1040,8 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
       if (quantity <= 0) {
         if (mounted) {
           showAppSnackbar(
-            context, ref,
+            context,
+            ref,
             'Parsed quantity is zero — check scale barcode configuration.',
             isError: true,
           );
@@ -1067,9 +1051,11 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
     } else {
       // Standard barcode path: exact match only; non-match leaves search text intact
       match = allProducts
-          .where((p) =>
-              p.isEnabled &&
-              p.barcodes.any((b) => b.toLowerCase() == trimmed.toLowerCase()))
+          .where(
+            (p) =>
+                p.isEnabled &&
+                p.barcodes.any((b) => b.toLowerCase() == trimmed.toLowerCase()),
+          )
           .firstOrNull;
       if (match == null) return;
       quantity = 1.0;
@@ -1079,23 +1065,39 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
     final cartState = ref.read(cartProvider);
     if (cartState.activePosOrderId == null) {
       final floorPlanOn =
-          settings[SettingKeys.featureFloorPlanEnabled]?.toLowerCase() == 'true';
+          settings[SettingKeys.featureFloorPlanEnabled]?.toLowerCase() ==
+          'true';
       if (cartState.serviceType != 0 || !floorPlanOn) {
         final companyId = ref.read(selectedCompanyProvider)?.id;
         final user = ref.read(currentUserProvider);
         if (companyId == null || user == null) return;
         try {
-          await ref.read(cartProvider.notifier).startTablelessOrder(
-            ApiClient(), companyId, user.id, cartState.serviceType,
-          );
+          await ref
+              .read(cartProvider.notifier)
+              .startTablelessOrder(
+                ApiClient(),
+                companyId,
+                user.id,
+                cartState.serviceType,
+              );
         } catch (e) {
           if (!mounted) return;
-          showAppSnackbar(context, ref, 'Error creating order: $e', isError: true);
+          showAppSnackbar(
+            context,
+            ref,
+            'Error creating order: $e',
+            isError: true,
+          );
           return;
         }
       } else {
         if (mounted) {
-          showAppSnackbar(context, ref, 'Please select a table first!', isError: true);
+          showAppSnackbar(
+            context,
+            ref,
+            'Please select a table first!',
+            isError: true,
+          );
         }
         return;
       }
@@ -1107,15 +1109,18 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
 
     // Age restriction check
     if (match.ageRestriction != null) {
-      final confirmed =
-          await _showAgeRestrictionDialog(context, match.ageRestriction!);
+      final confirmed = await _showAgeRestrictionDialog(
+        context,
+        match.ageRestriction!,
+      );
       if (!confirmed || !mounted) return;
     }
 
     // Resolve the product's assigned taxes so a scanned/searched item carries
     // its tax just like a tapped one.
-    final productTaxes =
-        await ref.read(cartProvider.notifier).resolveProductTaxes(match.id);
+    final productTaxes = await ref
+        .read(cartProvider.notifier)
+        .resolveProductTaxes(match.id);
     if (!mounted) return;
 
     // Add to cart and clear the search bar
@@ -1136,17 +1141,20 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
         measurementUnit: match.measurementUnit,
         isService: match.isService,
       );
-      ref.read(cartProvider.notifier).addItem(
-        menuProduct,
-        quantity: quantity,
-        measurementUnit: match.measurementUnit,
-      );
+      ref
+          .read(cartProvider.notifier)
+          .addItem(
+            menuProduct,
+            quantity: quantity,
+            measurementUnit: match.measurementUnit,
+          );
       _searchCtrl.clear();
       ref.read(searchQueryProvider.notifier).state = '';
     } catch (e) {
       if (mounted) {
         showAppSnackbar(
-          context, ref,
+          context,
+          ref,
           e.toString().replaceAll('Exception: ', ''),
           isError: true,
         );
@@ -1158,8 +1166,11 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
     if (sortBy == 'Code') {
       products.sort((a, b) => (a.code ?? '').compareTo(b.code ?? ''));
     } else if (sortBy == 'Barcode') {
-      products.sort((a, b) =>
-          (a.barcodes.firstOrNull ?? '').compareTo(b.barcodes.firstOrNull ?? ''));
+      products.sort(
+        (a, b) => (a.barcodes.firstOrNull ?? '').compareTo(
+          b.barcodes.firstOrNull ?? '',
+        ),
+      );
     } else {
       products.sort((a, b) => a.name.compareTo(b.name));
     }
@@ -1265,7 +1276,8 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
   Future<void> _showOutOfStockDialog(Product product) async {
     final cs = Theme.of(context).colorScheme;
     final byWarehouse =
-        ref.read(stockByWarehouseProvider).value ?? const <int, Map<int, double>>{};
+        ref.read(stockByWarehouseProvider).value ??
+        const <int, Map<int, double>>{};
     final warehouses = ref.read(allWarehousesProvider).value ?? const [];
     final selectedWh = ref.read(selectedWarehouseProvider);
     final whNames = {for (final w in warehouses) w.id: w.name};
@@ -1281,8 +1293,11 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
       builder: (ctx) {
         final tt = Theme.of(ctx).textTheme;
         return AlertDialog(
-          icon: PhosphorIcon(PhosphorIconsRegular.warningCircle,
-              color: cs.error, size: 32),
+          icon: PhosphorIcon(
+            PhosphorIconsRegular.warningCircle,
+            color: cs.error,
+            size: 32,
+          ),
           title: Text('${product.name} is out of stock'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -1307,15 +1322,15 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
                     elevation: 0,
                     color: cs.surfaceContainerHighest,
                     child: ListTile(
-                      leading: PhosphorIcon(PhosphorIconsRegular.warehouse,
-                          color: cs.primary),
+                      leading: PhosphorIcon(
+                        PhosphorIconsRegular.warehouse,
+                        color: cs.primary,
+                      ),
                       title: Text(whNames[e.key] ?? 'Warehouse ${e.key}'),
                       subtitle: Text('${_fmtQty(e.value)} in stock'),
                       trailing: FilledButton.tonal(
                         onPressed: () {
-                          ref
-                              .read(cartProvider.notifier)
-                              .setWarehouseId(e.key);
+                          ref.read(cartProvider.notifier).setWarehouseId(e.key);
                           Navigator.pop(ctx);
                           showAppSnackbar(
                             context,
@@ -1422,7 +1437,8 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
       itemsToDisplay = [...visibleGroups, ...visibleProducts];
     }
 
-    final showSearchBtn = settings[SettingKeys.showSearchBtn]?.toLowerCase() != 'false';
+    final showSearchBtn =
+        settings[SettingKeys.showSearchBtn]?.toLowerCase() != 'false';
     final cols = int.tryParse(settings[SettingKeys.menuGridCols] ?? '4') ?? 4;
     final rows = int.tryParse(settings[SettingKeys.menuGridRows] ?? '4') ?? 4;
     final itemsPerPage = cols * rows;
@@ -1452,16 +1468,21 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
                     decoration: InputDecoration(
                       hintText: 'Search products...',
                       prefixIcon: const PhosphorIcon(
-                          PhosphorIconsRegular.magnifyingGlass, size: 20),
+                        PhosphorIconsRegular.magnifyingGlass,
+                        size: 20,
+                      ),
                       fillColor: cs.surfaceContainer,
                       filled: true,
                       suffixIcon: searchQuery.isNotEmpty
                           ? IconButton(
                               icon: const PhosphorIcon(
-                                  PhosphorIconsRegular.x, size: 18),
+                                PhosphorIconsRegular.x,
+                                size: 18,
+                              ),
                               onPressed: () {
                                 _searchCtrl.clear();
-                                ref.read(searchQueryProvider.notifier).state = '';
+                                ref.read(searchQueryProvider.notifier).state =
+                                    '';
                               },
                             )
                           : null,
@@ -1470,7 +1491,9 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
                         borderSide: BorderSide.none,
                       ),
                       contentPadding: const EdgeInsets.symmetric(
-                          vertical: 14, horizontal: 16),
+                        vertical: 14,
+                        horizontal: 16,
+                      ),
                     ),
                     onChanged: (v) =>
                         ref.read(searchQueryProvider.notifier).state = v,
@@ -1503,7 +1526,9 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
                                   setState(() => _activeSearchMode = mode),
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 8),
+                                  horizontal: 10,
+                                  vertical: 8,
+                                ),
                                 decoration: BoxDecoration(
                                   color: effectiveMode == mode
                                       ? cs.primary.withValues(alpha: 0.15)
@@ -1537,7 +1562,9 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
               children: [
                 IconButton(
                   icon: const PhosphorIcon(
-                      PhosphorIconsRegular.arrowLeft, size: 20),
+                    PhosphorIconsRegular.arrowLeft,
+                    size: 20,
+                  ),
                   onPressed: () {
                     if (currentGroup.parentGroupId == null) {
                       ref.read(currentGroupProvider.notifier).state = null;
@@ -1554,14 +1581,18 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
                   },
                 ),
                 const Gap(4),
-                PhosphorIcon(PhosphorIconsRegular.folder,
-                    size: 18, color: cs.primary),
+                PhosphorIcon(
+                  PhosphorIconsRegular.folder,
+                  size: 18,
+                  color: cs.primary,
+                ),
                 const Gap(8),
                 Expanded(
                   child: Text(
                     currentGroup.name,
-                    style: tt.titleMedium
-                        ?.copyWith(fontWeight: FontWeight.bold),
+                    style: tt.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -1599,12 +1630,13 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
                 )
               : LayoutBuilder(
                   builder: (ctx, constraints) {
-                    final maxExtent =
-                        (constraints.maxWidth / cols).clamp(100.0, 240.0);
+                    final maxExtent = (constraints.maxWidth / cols).clamp(
+                      100.0,
+                      240.0,
+                    );
                     return GridView.builder(
                       padding: const EdgeInsets.all(12),
-                      gridDelegate:
-                          SliverGridDelegateWithMaxCrossAxisExtent(
+                      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                         maxCrossAxisExtent: maxExtent,
                         childAspectRatio: 0.82,
                         crossAxisSpacing: 10,
@@ -1649,9 +1681,9 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
     final tt = Theme.of(context).textTheme;
     final accent =
         (group.flutterColor == Colors.transparent ||
-                group.flutterColor == Colors.white)
-            ? cs.primary
-            : group.flutterColor;
+            group.flutterColor == Colors.white)
+        ? cs.primary
+        : group.flutterColor;
 
     return Card(
       margin: EdgeInsets.zero,
@@ -1675,10 +1707,18 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
               // 3-tier fallback: disk file (FileImage, cached by path) →
               // base64 bytes (legacy/admin-edit flow) → folder icon.
               child: group.imageFile != null
-                  ? Image.file(group.imageFile!, fit: BoxFit.cover, cacheWidth: 150)
+                  ? Image.file(
+                      group.imageFile!,
+                      fit: BoxFit.cover,
+                      cacheWidth: 150,
+                    )
                   : group.imageBytes != null
-                      ? Image.memory(group.imageBytes!, fit: BoxFit.cover, cacheWidth: 150)
-                      : Container(
+                  ? Image.memory(
+                      group.imageBytes!,
+                      fit: BoxFit.cover,
+                      cacheWidth: 150,
+                    )
+                  : Container(
                       color: accent.withValues(alpha: 0.1),
                       child: Center(
                         child: PhosphorIcon(
@@ -1690,8 +1730,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
                     ),
             ),
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
               color: accent.withValues(alpha: 0.1),
               child: Text(
                 group.name,
@@ -1718,8 +1757,13 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     final sym = ref.watch(currencySymbolProvider);
-    final showImages = ref.watch(appSettingsProvider)[SettingKeys.showProductImages]?.toLowerCase() != 'false';
-    final hasPromo = getActivePromotionCountForProduct(_activePromos, product.id) > 0;
+    final showImages =
+        ref
+            .watch(appSettingsProvider)[SettingKeys.showProductImages]
+            ?.toLowerCase() !=
+        'false';
+    final hasPromo =
+        getActivePromotionCountForProduct(_activePromos, product.id) > 0;
 
     return InkWell(
       onTap: () async {
@@ -1747,12 +1791,22 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
                   );
             } catch (e) {
               if (!context.mounted) return;
-              showAppSnackbar(context, ref, 'Error creating order: $e', isError: true);
+              showAppSnackbar(
+                context,
+                ref,
+                'Error creating order: $e',
+                isError: true,
+              );
               return;
             }
           } else {
             if (!context.mounted) return;
-            showAppSnackbar(context, ref, 'Please select a Table from the Floor Plan first!', isError: true);
+            showAppSnackbar(
+              context,
+              ref,
+              'Please select a Table from the Floor Plan first!',
+              isError: true,
+            );
             return;
           }
         }
@@ -1782,8 +1836,20 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
 
         double price = product.price;
         if (product.isPriceChangeAllowed) {
-          final preventBelowCost = ref.read(appSettingsProvider)[SettingKeys.preventSaleBelowCostPrice]?.toLowerCase() == 'true';
-          final p = await _showPriceInputDialog(context, product.price, product.cost, preventBelowCost, sym);
+          final preventBelowCost =
+              ref
+                  .read(
+                    appSettingsProvider,
+                  )[SettingKeys.preventSaleBelowCostPrice]
+                  ?.toLowerCase() ==
+              'true';
+          final p = await _showPriceInputDialog(
+            context,
+            product.price,
+            product.cost,
+            preventBelowCost,
+            sym,
+          );
           if (p == null) return;
           price = p;
         }
@@ -1799,11 +1865,12 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
           // deterministic and fully offline (the rows are pulled during sync).
           final db = ref.read(appDatabaseProvider);
           final companyId = ref.read(selectedCompanyProvider)?.id ?? 0;
-          final rows = await (db.select(db.productCommentsTable)
-                ..where((t) => t.companyId.equals(companyId))
-                ..where((t) => t.productId.equals(product.id))
-                ..where((t) => t.syncStatus.isNotIn(['pending_delete'])))
-              .get();
+          final rows =
+              await (db.select(db.productCommentsTable)
+                    ..where((t) => t.companyId.equals(companyId))
+                    ..where((t) => t.productId.equals(product.id))
+                    ..where((t) => t.syncStatus.isNotIn(['pending_delete'])))
+                  .get();
           final comments = rows.map(ProductComment.fromDrift).toList();
           if (comments.isNotEmpty) {
             if (!context.mounted) return;
@@ -1856,89 +1923,103 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
               );
         } catch (e) {
           if (!context.mounted) return;
-          showAppSnackbar(context, ref, e.toString().replaceAll("Exception: ", ""), isError: true);
+          showAppSnackbar(
+            context,
+            ref,
+            e.toString().replaceAll("Exception: ", ""),
+            isError: true,
+          );
         }
       },
       child: Card(
-          margin: EdgeInsets.zero,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(
-                color: cs.outlineVariant.withValues(alpha: 0.5), width: 1),
-          ),
-          color: cs.surfaceContainer,
-          clipBehavior: Clip.antiAlias,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                flex: 3,
-                // 3-tier fallback: disk file (fast, cached by path) →
-                // base64 bytes (legacy/edit-flow) → placeholder icon.
-                // Image.file is preferred for Drift-sourced products because
-                // Flutter's image cache reuses the decoded copy across the
-                // whole grid — Image.memory(Uint8List) bypasses that cache.
-                child: showImages && product.imageFile != null
-                    ? Image.file(product.imageFile!, fit: BoxFit.cover, cacheWidth: 150)
-                    : showImages && product.imageBytes != null
-                        ? Image.memory(product.imageBytes!, fit: BoxFit.cover, cacheWidth: 150)
-                        : Container(
-                            color: cs.surfaceContainerHighest,
-                            child: Center(
-                              child: PhosphorIcon(
-                                PhosphorIconsRegular.forkKnife,
-                                size: 44,
-                                color: cs.onSurface.withValues(alpha: 0.2),
-                              ),
-                            ),
-                          ),
-              ),
-              Container(
-                padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
-                color: cs.surface,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (hasPromo)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 2),
-                        child: PhosphorIcon(
-                          PhosphorIconsFill.star,
-                          size: 14,
-                          color: cs.tertiary,
-                        ),
-                      ),
-                    Text(
-                      product.name,
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: tt.labelLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: cs.onSurface,
-                      ),
-                    ),
-                    const Gap(4),
-                    Text(
-                      '${product.price.toStringAsFixed(2)} $sym',
-                      style: tt.labelMedium?.copyWith(
-                        color: cs.primary,
-                        fontWeight: FontWeight.w900,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-            ],
+        margin: EdgeInsets.zero,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+            color: cs.outlineVariant.withValues(alpha: 0.5),
+            width: 1,
           ),
         ),
+        color: cs.surfaceContainer,
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              flex: 3,
+              // 3-tier fallback: disk file (fast, cached by path) →
+              // base64 bytes (legacy/edit-flow) → placeholder icon.
+              // Image.file is preferred for Drift-sourced products because
+              // Flutter's image cache reuses the decoded copy across the
+              // whole grid — Image.memory(Uint8List) bypasses that cache.
+              child: showImages && product.imageFile != null
+                  ? Image.file(
+                      product.imageFile!,
+                      fit: BoxFit.cover,
+                      cacheWidth: 150,
+                    )
+                  : showImages && product.imageBytes != null
+                  ? Image.memory(
+                      product.imageBytes!,
+                      fit: BoxFit.cover,
+                      cacheWidth: 150,
+                    )
+                  : Container(
+                      color: cs.surfaceContainerHighest,
+                      child: Center(
+                        child: PhosphorIcon(
+                          PhosphorIconsRegular.forkKnife,
+                          size: 44,
+                          color: cs.onSurface.withValues(alpha: 0.2),
+                        ),
+                      ),
+                    ),
+            ),
+            Container(
+              padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+              color: cs.surface,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (hasPromo)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 2),
+                      child: PhosphorIcon(
+                        PhosphorIconsFill.star,
+                        size: 14,
+                        color: cs.tertiary,
+                      ),
+                    ),
+                  Text(
+                    product.name,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: tt.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: cs.onSurface,
+                    ),
+                  ),
+                  const Gap(4),
+                  Text(
+                    '${product.price.toStringAsFixed(2)} $sym',
+                    style: tt.labelMedium?.copyWith(
+                      color: cs.primary,
+                      fontWeight: FontWeight.w900,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
-
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PAGINATION BAR
@@ -1972,7 +2053,8 @@ class _PaginationBar extends StatelessWidget {
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest,
         border: Border(
-            top: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.3))),
+          top: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.3)),
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -1989,20 +2071,20 @@ class _PaginationBar extends StatelessWidget {
           ),
           const Gap(12),
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             decoration: BoxDecoration(
               color: cs.surface,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                  color: cs.outlineVariant.withValues(alpha: 0.5)),
+                color: cs.outlineVariant.withValues(alpha: 0.5),
+              ),
             ),
             child: Text(
               '${currentPage + 1} / $totalPages',
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: cs.onSurface,
-                  ),
+                fontWeight: FontWeight.w700,
+                color: cs.onSurface,
+              ),
             ),
           ),
           const Gap(12),
@@ -2070,19 +2152,23 @@ class _CartSectionState extends ConsumerState<CartSection> {
     final currentUser = ref.read(currentUserProvider);
 
     final wasBookingOrder = ref.read(cartProvider).bookingId != null;
-    final wasTableOrder   = ref.read(cartProvider).floorPlanTableId != null;
-    final savedSettings   = ref.read(appSettingsProvider);
-    final bookingEnabled  =
-        savedSettings[SettingKeys.featureBookingEnabled]?.toLowerCase() == 'true';
+    final wasTableOrder = ref.read(cartProvider).floorPlanTableId != null;
+    final savedSettings = ref.read(appSettingsProvider);
+    final bookingEnabled =
+        savedSettings[SettingKeys.featureBookingEnabled]?.toLowerCase() ==
+        'true';
     final floorPlanEnabled =
-        savedSettings[SettingKeys.featureFloorPlanEnabled]?.toLowerCase() == 'true';
+        savedSettings[SettingKeys.featureFloorPlanEnabled]?.toLowerCase() ==
+        'true';
 
     try {
       // Step 1: Save to local SQLite immediately — always works offline.
-      await ref.read(cartProvider.notifier).saveOrderLocally(
-        companyId: company.id,
-        userId: currentUser?.id ?? 0,
-      );
+      await ref
+          .read(cartProvider.notifier)
+          .saveOrderLocally(
+            companyId: company.id,
+            userId: currentUser?.id ?? 0,
+          );
 
       if (!context.mounted) return;
 
@@ -2166,12 +2252,16 @@ class _CartSectionState extends ConsumerState<CartSection> {
     if (confirmed != true || !context.mounted) return;
 
     final settings = ref.read(appSettingsProvider);
-    final requireReason = settings[SettingKeys.requireReasonOnVoid]?.toLowerCase() == 'true';
+    final requireReason =
+        settings[SettingKeys.requireReasonOnVoid]?.toLowerCase() == 'true';
 
     // Step 2: Reason dialog (if setting enabled)
     String? selectedReason;
     if (requireReason && cartItems.isNotEmpty) {
-      selectedReason = await _showVoidReasonDialog(context, cartState.orderNumber);
+      selectedReason = await _showVoidReasonDialog(
+        context,
+        cartState.orderNumber,
+      );
       if (selectedReason == null || !context.mounted) return; // user cancelled
     }
 
@@ -2180,28 +2270,34 @@ class _CartSectionState extends ConsumerState<CartSection> {
     if (companyId == null || cartState.activePosOrderId == null) return;
 
     final wasBookingOrder = cartState.bookingId != null;
-    final wasTableOrder   = cartState.floorPlanTableId != null;
+    final wasTableOrder = cartState.floorPlanTableId != null;
 
     try {
-      final db           = ref.read(appDatabaseProvider);
-      final serverId     = cartState.activePosOrderId ?? 0;
-      final warehouseId  = cartState.activeWarehouseId ?? 1;
-      final orderNumber  = cartState.orderNumber ?? 'UNKNOWN';
+      final db = ref.read(appDatabaseProvider);
+      final serverId = cartState.activePosOrderId ?? 0;
+      final warehouseId = cartState.activeWarehouseId ?? 1;
+      final orderNumber = cartState.orderNumber ?? 'UNKNOWN';
       final existLocalId = cartState.existingLocalOrderId;
 
       // Build the void items JSON payload (same shape used by /PosVoids/Add).
-      final itemsJson = jsonEncode(cartItems.map((item) => {
-        'productId':   item.productId,
-        'productName': item.productName,
-        'roundNumber': item.roundNumber,
-        'quantity':    item.quantity,
-        'price':       item.price,
-        'discount':    item.discount,
-        'discountType':item.discountType,
-        'total':       item.price * item.quantity,
-        'userName':    user?.displayName ?? 'Unknown',
-        if (item.bundle != null) 'bundle': item.bundle,
-      }).toList());
+      final itemsJson = jsonEncode(
+        cartItems
+            .map(
+              (item) => {
+                'productId': item.productId,
+                'productName': item.productName,
+                'roundNumber': item.roundNumber,
+                'quantity': item.quantity,
+                'price': item.price,
+                'discount': item.discount,
+                'discountType': item.discountType,
+                'total': item.price * item.quantity,
+                'userName': user?.displayName ?? 'Unknown',
+                if (item.bundle != null) 'bundle': item.bundle,
+              },
+            )
+            .toList(),
+      );
 
       if (serverId > 0) {
         // Order has a server record — queue the void for sync and delete
@@ -2209,25 +2305,27 @@ class _CartSectionState extends ConsumerState<CartSection> {
         // and DELETE /PosOrder/Delete when connectivity returns.
         final localId = existLocalId ?? 'svr_$serverId';
         await db.queueVoidAndDeleteOrder(
-          localId:       localId,
+          localId: localId,
           serverOrderId: serverId,
-          companyId:     companyId,
-          userId:        user?.id ?? 0,
-          orderNumber:   orderNumber,
-          warehouseId:   warehouseId,
-          itemsJson:     itemsJson,
-          reason:        selectedReason,
+          companyId: companyId,
+          userId: user?.id ?? 0,
+          orderNumber: orderNumber,
+          warehouseId: warehouseId,
+          itemsJson: itemsJson,
+          reason: selectedReason,
         );
         // Restore local stock for voided items.
         await db.deductStockForCheckout(
           items: cartItems
-              .map((item) => (
-                    productId:   item.productId,
-                    quantity:    -item.quantity,  // negative = add back to stock
-                    warehouseId: item.warehouseId ?? warehouseId,
-                    isService:   item.isService,
-                    productName: item.productName,
-                  ))
+              .map(
+                (item) => (
+                  productId: item.productId,
+                  quantity: -item.quantity, // negative = add back to stock
+                  warehouseId: item.warehouseId ?? warehouseId,
+                  isService: item.isService,
+                  productName: item.productName,
+                ),
+              )
               .toList(),
           allowNegative: true, // always allow restoring stock
         );
@@ -2236,22 +2334,24 @@ class _CartSectionState extends ConsumerState<CartSection> {
       } else {
         // Local-only order (never pushed to server) — just delete the row.
         if (existLocalId != null) {
-          await (db.delete(db.posOrdersTable)
-                ..where((t) => t.localId.equals(existLocalId)))
-              .go();
+          await (db.delete(
+            db.posOrdersTable,
+          )..where((t) => t.localId.equals(existLocalId))).go();
           // Remove its discount_lines too (they link by local id with no FK
           // cascade) so a voided order leaves no discount records behind.
           await db.purgeDiscountLinesFor(existLocalId);
           // Restore local stock.
           await db.deductStockForCheckout(
             items: cartItems
-                .map((item) => (
-                      productId:   item.productId,
-                      quantity:    -item.quantity,
-                      warehouseId: item.warehouseId ?? warehouseId,
-                      isService:   item.isService,
-                      productName: item.productName,
-                    ))
+                .map(
+                  (item) => (
+                    productId: item.productId,
+                    quantity: -item.quantity,
+                    warehouseId: item.warehouseId ?? warehouseId,
+                    isService: item.isService,
+                    productName: item.productName,
+                  ),
+                )
                 .toList(),
             allowNegative: true,
           );
@@ -2264,18 +2364,27 @@ class _CartSectionState extends ConsumerState<CartSection> {
       if (!context.mounted) return;
       showAppSnackbar(context, ref, 'Order Voided', isError: true);
 
-      final bookingEnabled   = settings[SettingKeys.featureBookingEnabled]?.toLowerCase()   == 'true';
-      final floorPlanEnabled = settings[SettingKeys.featureFloorPlanEnabled]?.toLowerCase() == 'true';
+      final bookingEnabled =
+          settings[SettingKeys.featureBookingEnabled]?.toLowerCase() == 'true';
+      final floorPlanEnabled =
+          settings[SettingKeys.featureFloorPlanEnabled]?.toLowerCase() ==
+          'true';
       int? navIndex;
-      if (wasBookingOrder && bookingEnabled)        navIndex = 2;
-      else if (wasTableOrder && floorPlanEnabled)   navIndex = 4;
-      else if (bookingEnabled)                      navIndex = 2;
-      else if (floorPlanEnabled)                    navIndex = 4;
+      if (wasBookingOrder && bookingEnabled)
+        navIndex = 2;
+      else if (wasTableOrder && floorPlanEnabled)
+        navIndex = 4;
+      else if (bookingEnabled)
+        navIndex = 2;
+      else if (floorPlanEnabled)
+        navIndex = 4;
 
       if (navIndex != null && context.mounted) {
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (_) => MainLayout(initialIndex: navIndex!)),
+          MaterialPageRoute(
+            builder: (_) => MainLayout(initialIndex: navIndex!),
+          ),
           (route) => false,
         );
       }
@@ -2286,7 +2395,10 @@ class _CartSectionState extends ConsumerState<CartSection> {
     }
   }
 
-  Future<String?> _showVoidReasonDialog(BuildContext context, String? orderNumber) async {
+  Future<String?> _showVoidReasonDialog(
+    BuildContext context,
+    String? orderNumber,
+  ) async {
     return showDialog<String>(
       context: context,
       barrierDismissible: false,
@@ -2296,7 +2408,8 @@ class _CartSectionState extends ConsumerState<CartSection> {
 
   // Gross line total for a cart item: net amount after discounts + item-level tax
   double _grossLineTotal(CartItem item) {
-    final net = (item.price - item.discount - item.promotionalDiscount) * item.quantity;
+    final net =
+        (item.price - item.discount - item.promotionalDiscount) * item.quantity;
     return item.appliedTaxes.fold(net, (sum, t) {
       if (t.isFixed) return sum + t.rate * item.quantity;
       return sum + net * (t.rate / 100);
@@ -2317,15 +2430,18 @@ class _CartSectionState extends ConsumerState<CartSection> {
     // Forward every cart change into the customer display state machine.
     ref.listen<CartState>(cartProvider, (_, next) {
       final n = ref.read(cartProvider.notifier);
-      ref.read(customerDisplayProvider.notifier).syncFromCart(
-        cartState: next,
-        subtotal: n.subtotal,
-        discount: n.discountTotal +
-            n.customerDiscountAmount +
-            n.manualCartDiscountAmount,
-        tax: n.taxTotal,
-        total: n.grandTotal,
-      );
+      ref
+          .read(customerDisplayProvider.notifier)
+          .syncFromCart(
+            cartState: next,
+            subtotal: n.subtotal,
+            discount:
+                n.discountTotal +
+                n.customerDiscountAmount +
+                n.manualCartDiscountAmount,
+            tax: n.taxTotal,
+            total: n.grandTotal,
+          );
     });
 
     final cartState = ref.watch(cartProvider);
@@ -2340,7 +2456,8 @@ class _CartSectionState extends ConsumerState<CartSection> {
     final sym = ref.watch(currencySymbolProvider);
     final settings = ref.watch(appSettingsProvider);
     final taxIncluded =
-        settings[SettingKeys.displayAndPrintTaxIncluded]?.toLowerCase() != 'false';
+        settings[SettingKeys.displayAndPrintTaxIncluded]?.toLowerCase() !=
+        'false';
     // Gross subtotal (after item discounts, including tax) used when taxIncluded=true.
     // Math: grossSubtotal - customerDiscount - cartDiscount = grandTotal ✓
     final grossSubtotal = subtotal - discountTotal + taxTotal;
@@ -2470,7 +2587,12 @@ class _CartSectionState extends ConsumerState<CartSection> {
                 ),
               ),
 
-              if (ref.read(appSettingsProvider)[SettingKeys.enableCustomOrderName]?.toLowerCase() == 'true')
+              if (ref
+                      .read(
+                        appSettingsProvider,
+                      )[SettingKeys.enableCustomOrderName]
+                      ?.toLowerCase() ==
+                  'true')
                 IconButton(
                   icon: Icon(
                     cartState.orderName?.isNotEmpty == true
@@ -2487,9 +2609,9 @@ class _CartSectionState extends ConsumerState<CartSection> {
                       cartState.orderName,
                     );
                     if (name != null) {
-                      ref.read(cartProvider.notifier).setOrderName(
-                            name.isEmpty ? null : name,
-                          );
+                      ref
+                          .read(cartProvider.notifier)
+                          .setOrderName(name.isEmpty ? null : name);
                     }
                   },
                 ),
@@ -2546,8 +2668,8 @@ class _CartSectionState extends ConsumerState<CartSection> {
                     final isSelected =
                         cartState.selectedCartItemId == item.cartItemId;
                     final cs = Theme.of(context).colorScheme;
-                    final hasDiscount = item.discount > 0 ||
-                        item.promotionalDiscount > 0;
+                    final hasDiscount =
+                        item.discount > 0 || item.promotionalDiscount > 0;
 
                     // Compact +/- stepper button — shrunk from the default 48px
                     // IconButton tap target so the controls row fits even a
@@ -2559,7 +2681,9 @@ class _CartSectionState extends ConsumerState<CartSection> {
                           visualDensity: VisualDensity.compact,
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(
-                              minWidth: 34, minHeight: 34),
+                            minWidth: 34,
+                            minHeight: 34,
+                          ),
                           onPressed: onTap,
                         );
 
@@ -2567,7 +2691,9 @@ class _CartSectionState extends ConsumerState<CartSection> {
                     Widget badge(IconData icon, String label, Color color) =>
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 4, vertical: 1),
+                            horizontal: 4,
+                            vertical: 1,
+                          ),
                           decoration: BoxDecoration(
                             color: color.withAlpha(38),
                             borderRadius: BorderRadius.circular(4),
@@ -2596,8 +2722,8 @@ class _CartSectionState extends ConsumerState<CartSection> {
                       child: Container(
                         color: isSelected
                             ? (isDark
-                                ? Colors.blue[900]?.withValues(alpha: 0.3)
-                                : Colors.blue[50])
+                                  ? Colors.blue[900]?.withValues(alpha: 0.3)
+                                  : Colors.blue[50])
                             : null,
                         padding: const EdgeInsets.fromLTRB(12, 8, 6, 8),
                         child: Column(
@@ -2612,20 +2738,24 @@ class _CartSectionState extends ConsumerState<CartSection> {
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
-                                        fontWeight: FontWeight.bold),
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
                                 IconButton(
                                   icon: Icon(
                                     Icons.close,
-                                    color:
-                                        isDark ? Colors.redAccent : Colors.red,
+                                    color: isDark
+                                        ? Colors.redAccent
+                                        : Colors.red,
                                     size: 20,
                                   ),
                                   visualDensity: VisualDensity.compact,
                                   padding: EdgeInsets.zero,
                                   constraints: const BoxConstraints(
-                                      minWidth: 34, minHeight: 34),
+                                    minWidth: 34,
+                                    minHeight: 34,
+                                  ),
                                   onPressed: () {
                                     void remove() => ref
                                         .read(cartProvider.notifier)
@@ -2637,7 +2767,9 @@ class _CartSectionState extends ConsumerState<CartSection> {
                                     if (cartState.activePosOrderId == null) {
                                       remove();
                                     } else {
-                                      ref.read(securityGuardProvider).guard(
+                                      ref
+                                          .read(securityGuardProvider)
+                                          .guard(
                                             context,
                                             SecurityKeys.orderItemVoid,
                                             remove,
@@ -2650,16 +2782,21 @@ class _CartSectionState extends ConsumerState<CartSection> {
                             // ── Badges (wrap so they never overflow) ───────
                             if (item.appliedTaxes.isNotEmpty || hasDiscount)
                               Padding(
-                                padding:
-                                    const EdgeInsets.only(top: 2, bottom: 2),
+                                padding: const EdgeInsets.only(
+                                  top: 2,
+                                  bottom: 2,
+                                ),
                                 child: Wrap(
                                   spacing: 6,
                                   runSpacing: 4,
                                   crossAxisAlignment: WrapCrossAlignment.center,
                                   children: [
                                     if (item.appliedTaxes.isNotEmpty)
-                                      badge(Icons.receipt_long, 'TAX',
-                                          Colors.blue),
+                                      badge(
+                                        Icons.receipt_long,
+                                        'TAX',
+                                        Colors.blue,
+                                      ),
                                     if (item.discount > 0)
                                       badge(
                                         Icons.sell,
@@ -2667,8 +2804,10 @@ class _CartSectionState extends ConsumerState<CartSection> {
                                         Colors.green,
                                       ),
                                     if (item.promotionalDiscount > 0)
-                                      const Text('⭐',
-                                          style: TextStyle(fontSize: 12)),
+                                      const Text(
+                                        '⭐',
+                                        style: TextStyle(fontSize: 12),
+                                      ),
                                   ],
                                 ),
                               ),
@@ -2694,8 +2833,10 @@ class _CartSectionState extends ConsumerState<CartSection> {
                                         title: const Text("Enter Quantity"),
                                         content: TextField(
                                           controller: controller,
-                                          keyboardType: const TextInputType
-                                              .numberWithOptions(decimal: true),
+                                          keyboardType:
+                                              const TextInputType.numberWithOptions(
+                                                decimal: true,
+                                              ),
                                           autofocus: true,
                                           decoration: InputDecoration(
                                             labelText: "Quantity",
@@ -2710,13 +2851,16 @@ class _CartSectionState extends ConsumerState<CartSection> {
                                           ElevatedButton(
                                             onPressed: () {
                                               final newQty = double.tryParse(
-                                                  controller.text);
+                                                controller.text,
+                                              );
                                               if (newQty != null &&
                                                   newQty >= 0) {
                                                 ref
                                                     .read(cartProvider.notifier)
                                                     .updateItemQuantity(
-                                                        item.cartItemId, newQty);
+                                                      item.cartItemId,
+                                                      newQty,
+                                                    );
                                               }
                                               Navigator.pop(ctx);
                                             },
@@ -2728,7 +2872,8 @@ class _CartSectionState extends ConsumerState<CartSection> {
                                   },
                                   child: Padding(
                                     padding: const EdgeInsets.symmetric(
-                                        horizontal: 4),
+                                      horizontal: 4,
+                                    ),
                                     child: Text(
                                       _formatCartQty(item),
                                       style: const TextStyle(
@@ -2801,190 +2946,148 @@ class _CartSectionState extends ConsumerState<CartSection> {
           ),
           child: Column(
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      taxIncluded ? "Subtotal (incl. tax)" : "Subtotal",
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    "${(taxIncluded ? grossSubtotal : subtotal).toStringAsFixed(2)} $sym",
-                    style: const TextStyle(fontSize: 16),
-                  ),
-                ],
+              _totalsRow(
+                Text(
+                  taxIncluded ? "Subtotal (incl. tax)" : "Subtotal",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 16),
+                ),
+                value: Text(
+                  "${(taxIncluded ? grossSubtotal : subtotal).toStringAsFixed(2)} $sym",
+                  textAlign: TextAlign.right,
+                  style: const TextStyle(fontSize: 16),
+                ),
               ),
               if (discountTotal > 0 && !taxIncluded)
                 Padding(
                   padding: const EdgeInsets.only(top: 6),
-                  child: Row(
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          "Item Discounts",
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontSize: 16, color: Colors.green),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        "-${discountTotal.toStringAsFixed(2)} $sym",
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.green,
-                        ),
-                      ),
-                    ],
+                  child: _totalsRow(
+                    const Text(
+                      "Item Discounts",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 16, color: Colors.green),
+                    ),
+                    value: Text(
+                      "-${discountTotal.toStringAsFixed(2)} $sym",
+                      textAlign: TextAlign.right,
+                      style: const TextStyle(fontSize: 16, color: Colors.green),
+                    ),
                   ),
                 ),
               if (cartState.customerDiscountValue != null &&
                   cartState.customerDiscountValue! > 0)
                 Padding(
                   padding: const EdgeInsets.only(top: 6),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          // The deducted amount is shown on the right, so the
-                          // label stays plain (no parenthetical value).
-                          "Customer Discount",
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: Colors.green,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        "-${cartNotifier.customerDiscountAmount.toStringAsFixed(2)} $sym",
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.green,
-                        ),
-                      ),
-                    ],
+                  child: _totalsRow(
+                    // The deducted amount is shown on the right, so the label
+                    // stays plain (no parenthetical value).
+                    const Text(
+                      "Customer Discount",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 16, color: Colors.green),
+                    ),
+                    value: Text(
+                      "-${cartNotifier.customerDiscountAmount.toStringAsFixed(2)} $sym",
+                      textAlign: TextAlign.right,
+                      style: const TextStyle(fontSize: 16, color: Colors.green),
+                    ),
                   ),
                 ),
               if (cartState.manualCartDiscount > 0)
                 Padding(
                   padding: const EdgeInsets.only(top: 6),
-                  child: Row(
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          "Cart Discount",
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontSize: 16, color: Colors.green),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        "-${cartNotifier.manualCartDiscountAmount.toStringAsFixed(2)} $sym",
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.green,
-                        ),
-                      ),
-                    ],
+                  child: _totalsRow(
+                    const Text(
+                      "Cart Discount",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 16, color: Colors.green),
+                    ),
+                    value: Text(
+                      "-${cartNotifier.manualCartDiscountAmount.toStringAsFixed(2)} $sym",
+                      textAlign: TextAlign.right,
+                      style: const TextStyle(fontSize: 16, color: Colors.green),
+                    ),
                   ),
                 ),
               if (cartNotifier.promotionalDiscountTotal > 0 && !taxIncluded)
                 Padding(
                   padding: const EdgeInsets.only(top: 6),
-                  child: Row(
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          "Total Promotional Discount",
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontSize: 16, color: Colors.amber),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        "-${cartNotifier.promotionalDiscountTotal.toStringAsFixed(2)} $sym",
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.amber,
-                        ),
-                      ),
-                    ],
+                  child: _totalsRow(
+                    const Text(
+                      "Total Promotional Discount",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 16, color: Colors.amber),
+                    ),
+                    value: Text(
+                      "-${cartNotifier.promotionalDiscountTotal.toStringAsFixed(2)} $sym",
+                      textAlign: TextAlign.right,
+                      style: const TextStyle(fontSize: 16, color: Colors.amber),
+                    ),
                   ),
                 ),
               const SizedBox(height: 6),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      taxIncluded ? "Tax (incl.)" : "Taxes",
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: taxIncluded
-                            ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.45)
-                            : null,
-                      ),
-                    ),
+              _totalsRow(
+                Text(
+                  taxIncluded ? "Tax (incl.)" : "Taxes",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: taxIncluded
+                        ? Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.45)
+                        : null,
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    "${taxTotal.toStringAsFixed(2)} $sym",
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: taxIncluded
-                          ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.45)
-                          : null,
-                    ),
+                ),
+                value: Text(
+                  "${taxTotal.toStringAsFixed(2)} $sym",
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: taxIncluded
+                        ? Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.45)
+                        : null,
                   ),
-                ],
+                ),
               ),
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 8),
                 child: Divider(height: 1, thickness: 1),
               ),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      "Total Due",
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.greenAccent[400] : Colors.green,
-                      ),
+              _totalsRow(
+                Text(
+                  "Total Due",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.greenAccent[400] : Colors.green,
+                  ),
+                ),
+                valueFlexible: true,
+                value: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    "${grandTotal.toStringAsFixed(2)} $sym",
+                    maxLines: 1,
+                    textAlign: TextAlign.right,
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.greenAccent[400] : Colors.green,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Flexible(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerRight,
-                      child: Text(
-                        "${grandTotal.toStringAsFixed(2)} $sym",
-                        maxLines: 1,
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: isDark
-                              ? Colors.greenAccent[400]
-                              : Colors.green,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
               if (dualEnabled && dualRate > 0)
                 Row(
@@ -2994,83 +3097,74 @@ class _CartSectionState extends ConsumerState<CartSection> {
                       '≈ ${(grandTotal * dualRate).toStringAsFixed(2)} $dualSym',
                       style: TextStyle(
                         fontSize: 13,
-                        color: Theme.of(context).colorScheme.onSurface
-                            .withValues(alpha: 0.55),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.55),
                       ),
                     ),
                   ],
                 ),
               const SizedBox(height: 16),
+              // Flat, touch-sized split: VOID (red) + PAY (green). Colours stay
+              // hard-coded; everything else matches the app's flat style — no
+              // shadow, consistent rounding + height.
               Row(
-                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  ElevatedButton(
-                    onPressed: cartState.activePosOrderId == null
-                        ? null
-                        : () => ref.read(securityGuardProvider).guard(
-                              context,
-                              SecurityKeys.orderVoid,
-                              () => _handleVoidOrder(
-                                  context, ref, cartState, cartItems),
-                            ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.redAccent,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 16,
-                      ),
-                    ),
-                    child: const Text(
-                      "VOID",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                  Expanded(
+                    flex: 2,
+                    child: _CartFooterButton(
+                      icon: Icons.block,
+                      label: 'VOID',
+                      color: Colors.redAccent,
+                      onTap: cartState.activePosOrderId == null
+                          ? null
+                          : () => ref
+                                .read(securityGuardProvider)
+                                .guard(
+                                  context,
+                                  SecurityKeys.orderVoid,
+                                  () => _handleVoidOrder(
+                                    context,
+                                    ref,
+                                    cartState,
+                                    cartItems,
+                                  ),
+                                ),
                     ),
                   ),
                   const SizedBox(width: 12),
-                  ElevatedButton(
-                    onPressed: cartItems.isEmpty
-                        ? null
-                        : () {
-                            final settings = ref.read(appSettingsProvider);
-                            final orderNameRequired = settings[SettingKeys.orderNameRequired]?.toLowerCase() == 'true';
-                            if (orderNameRequired &&
-                                (cartState.orderName == null ||
-                                    cartState.orderName!.isEmpty)) {
-                              showAppSnackbar(
-                                context,
-                                ref,
-                                'Order Name is required to complete this transaction.',
-                                isError: true,
+                  Expanded(
+                    flex: 3,
+                    child: _CartFooterButton(
+                      icon: Icons.payments,
+                      label: 'PAY',
+                      color: Colors.green,
+                      onTap: cartItems.isEmpty
+                          ? null
+                          : () {
+                              final settings = ref.read(appSettingsProvider);
+                              final orderNameRequired =
+                                  settings[SettingKeys.orderNameRequired]
+                                      ?.toLowerCase() ==
+                                  'true';
+                              if (orderNameRequired &&
+                                  (cartState.orderName == null ||
+                                      cartState.orderName!.isEmpty)) {
+                                showAppSnackbar(
+                                  context,
+                                  ref,
+                                  'Order Name is required to complete this transaction.',
+                                  isError: true,
+                                );
+                                return;
+                              }
+                              showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (context) =>
+                                    const PaymentCheckoutDialog(),
                               );
-                              return;
-                            }
-                            showDialog(
-                              context: context,
-                              barrierDismissible: false,
-                              builder: (context) =>
-                                  const PaymentCheckoutDialog(),
-                            );
-                          },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      disabledBackgroundColor: isDark
-                          ? Colors.grey[800]
-                          : Colors.grey[300],
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 16,
-                      ),
-                    ),
-                    child: const Text(
-                      "PAY",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                            },
                     ),
                   ),
                 ],
@@ -3081,6 +3175,193 @@ class _CartSectionState extends ConsumerState<CartSection> {
       ],
     );
   }
+}
+
+// ── Menu action-bar button ────────────────────────────────────────────────
+// Touch-sized icon+label button for the order-controls toolbar. Replaces the
+// old bare icon-only IconButtons so every action is clearly labelled and is an
+// easy finger target. [_MenuActionVisual] is the icon+label body, reused for
+// PopupMenuButton children (e.g. the warehouse switcher) where the menu itself
+// owns the tap.
+class _MenuActionVisual extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color tint;
+  // Optional explicit icon colour (e.g. the amber promotion star). Falls back
+  // to [tint] when null so labels + icons stay in sync.
+  final Color? iconColor;
+  // Optional count bubble drawn on the icon (e.g. active-promotion count).
+  final int? badgeCount;
+  // Tonal box fill (flat, no shadow). Transparent when null — used by the
+  // stateful service-type / service-status buttons to colour-code them.
+  final Color? highlight;
+  const _MenuActionVisual({
+    required this.icon,
+    required this.label,
+    required this.tint,
+    this.iconColor,
+    this.badgeCount,
+    this.highlight,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    Widget iconWidget = Icon(icon, size: 24, color: iconColor ?? tint);
+    if (badgeCount != null && badgeCount! > 0) {
+      iconWidget = Badge.count(count: badgeCount!, child: iconWidget);
+    }
+    return Container(
+      constraints: const BoxConstraints(minWidth: 64),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        // Flat: solid tonal highlight, no shadow/elevation.
+        color: highlight ?? Colors.transparent,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          iconWidget,
+          const SizedBox(height: 3),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: tint,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Unified, flat top-header action button: a centred icon over a small label,
+/// in a clean bounding box. Used for every order-control action so they share
+/// one consistent touch-sized style. Disabled (onTap == null) dims the tint.
+class _MenuHeaderActionBtn extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+  final bool active;
+  final Color? iconColor;
+  final int? badgeCount;
+  // Dynamic colour for stateful buttons (service type / status): drives both the
+  // icon+label tint and a flat tonal box fill, so they colour-code while sharing
+  // the exact same shape as every other action button.
+  final Color? customTint;
+  const _MenuHeaderActionBtn({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.active = false,
+    this.iconColor,
+    this.badgeCount,
+    this.customTint,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final enabled = onTap != null;
+    final tint = !enabled
+        ? cs.onSurface.withValues(alpha: 0.3)
+        : (customTint ?? (active ? cs.primary : cs.onSurface));
+    final highlight = !enabled
+        ? null
+        : (customTint != null
+              ? customTint!.withValues(alpha: 0.15)
+              : (active ? cs.primary.withValues(alpha: 0.12) : null));
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: Tooltip(
+        message: label,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(10),
+          child: _MenuActionVisual(
+            icon: icon,
+            label: label,
+            tint: tint,
+            iconColor: enabled ? iconColor : null,
+            badgeCount: badgeCount,
+            highlight: highlight,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Cart footer button (VOID / PAY) ────────────────────────────────────────
+// Flat, touch-sized primary action. Matches the app's flat style (no shadow,
+// consistent 56px height + rounded corners); the fill colour is passed in and
+// kept hard-coded (red for VOID, green for PAY). Disabled → neutral grey.
+class _CartFooterButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback? onTap;
+  const _CartFooterButton({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return SizedBox(
+      height: 56,
+      child: ElevatedButton.icon(
+        onPressed: onTap,
+        icon: Icon(icon, color: Colors.white, size: 22),
+        label: Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 17,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.5,
+          ),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          disabledBackgroundColor: isDark ? Colors.grey[800] : Colors.grey[300],
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Cart totals row ───────────────────────────────────────────────────────
+// One line of the totals panel: label hard-left, value hard-right (decimal
+// points line up cleanly down the column). The value keeps a guaranteed left
+// gap from the label and is right-aligned; pass [valueFlexible] for the big
+// grand-total so a long amount can scale-to-fit instead of overflowing.
+Widget _totalsRow(
+  Widget label, {
+  required Widget value,
+  bool valueFlexible = false,
+}) {
+  final v = Padding(padding: const EdgeInsets.only(left: 12), child: value);
+  return Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      Flexible(child: label),
+      valueFlexible ? Flexible(child: v) : v,
+    ],
+  );
 }
 
 // --- Quantity display helper
@@ -3198,7 +3479,9 @@ Future<double?> _showPriceInputDialog(
               final val = double.tryParse(controller.text);
               if (val == null || val < 0) return;
               if (preventBelowCost && val < costPrice) {
-                setState(() => errorText = 'Sale price cannot be below cost price.');
+                setState(
+                  () => errorText = 'Sale price cannot be below cost price.',
+                );
                 return;
               }
               Navigator.pop(ctx, val);
@@ -3772,11 +4055,18 @@ class _VoidReasonDialogState extends ConsumerState<_VoidReasonDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text('Enter void reason', style: TextStyle(fontWeight: FontWeight.bold)),
+          const Text(
+            'Enter void reason',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
           if (widget.orderNumber != null)
             Text(
               'Enter or select void reason for voiding "${widget.orderNumber}"',
-              style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant, fontWeight: FontWeight.normal),
+              style: TextStyle(
+                fontSize: 13,
+                color: cs.onSurfaceVariant,
+                fontWeight: FontWeight.normal,
+              ),
             ),
         ],
       ),
@@ -3787,7 +4077,12 @@ class _VoidReasonDialogState extends ConsumerState<_VoidReasonDialog> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             reasonsAsync.when(
-              loading: () => const Center(child: Padding(padding: EdgeInsets.all(8), child: CircularProgressIndicator())),
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(8),
+                  child: CircularProgressIndicator(),
+                ),
+              ),
               error: (_, __) => const SizedBox.shrink(),
               data: (reasons) {
                 if (reasons.isEmpty) return const SizedBox.shrink();
@@ -3846,11 +4141,15 @@ class _VoidReasonDialogState extends ConsumerState<_VoidReasonDialog> {
 
 // Lightweight provider just for the dialog — void reason names from the local
 // Drift cache so the void flow works offline.
-final _voidReasonsDialogProvider =
-    StreamProvider.autoDispose<List<String>>((ref) {
+final _voidReasonsDialogProvider = StreamProvider.autoDispose<List<String>>((
+  ref,
+) {
   final companyId = ref.watch(selectedCompanyProvider)?.id;
   if (companyId == null) return Stream.value(const <String>[]);
   final db = ref.watch(appDatabaseProvider);
-  return db.watchVoidReasons(companyId).map((rows) =>
-      rows.map((r) => r.name).where((n) => n.isNotEmpty).toList());
+  return db
+      .watchVoidReasons(companyId)
+      .map(
+        (rows) => rows.map((r) => r.name).where((n) => n.isNotEmpty).toList(),
+      );
 });

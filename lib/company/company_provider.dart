@@ -52,15 +52,15 @@ final allCompaniesProvider = FutureProvider<List<Company>>((ref) async {
   return (response.data as List).map((j) => Company.fromJson(j)).toList();
 });
 
-// Fetch countries based on selected company
-final countriesProvider = FutureProvider<List<Country>>((ref) async {
-  final company = ref.watch(selectedCompanyProvider);
-  if (company == null) return [];
-
-  final dio = createDio();
-  final response = await dio.get(
-    '/Country/GetAllCountries',
-    queryParameters: {'companyId': company.id},
-  );
-  return (response.data as List).map((j) => Country.fromJson(j)).toList();
+/// Offline-first: countries stream from the local Drift cache (kept fresh by
+/// `SyncManager.pullCountries`). Countries are global reference data (no company
+/// scoping), so no companyId filter. `id` maps from `serverId` to match the
+/// server-side `Company.countryId` / customer country FKs.
+final countriesProvider = StreamProvider<List<Country>>((ref) {
+  final db = ref.watch(appDatabaseProvider);
+  return db.select(db.countriesTable).watch().map(
+        (rows) => rows
+            .map((r) => Country(id: r.serverId ?? 0, name: r.name, code: r.code))
+            .toList(),
+      );
 });

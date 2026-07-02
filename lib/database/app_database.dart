@@ -992,9 +992,16 @@ class BookingsTable extends Table {
   IntColumn get status => integer().withDefault(const Constant(0))();
   TextColumn get note => text().nullable()();
   DateTimeColumn get lastModified => dateTime()();
+  // Offline-first queue: 'synced' | 'pending_create' | 'pending_update' |
+  // 'pending_delete'. pending_create rows use a temp NEGATIVE id until the
+  // server assigns the real one (mirrors warehouses/taxes).
+  TextColumn get syncStatus => text().withDefault(const Constant('synced'))();
+  TextColumn get syncError => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
+  // Legacy/unused column kept to avoid a destructive table-recreation
+  // migration; real table membership lives in [tableIdsJson].
   TextColumn get tableIds => text().nullable()();
 }
 
@@ -1452,12 +1459,23 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 47;
+  int get schemaVersion => 48;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) async => m.createAll(),
         onUpgrade: (m, from, to) async {
+          // v48: bookings become offline-first (create/update/status/delete
+          // while offline, pushed on sync) — needs a sync queue. pending_create
+          // rows use a temp negative id until the server assigns the real one.
+          if (from < 48) {
+            await customStatement(
+                "ALTER TABLE bookings ADD COLUMN sync_status "
+                "TEXT NOT NULL DEFAULT 'synced'");
+            await customStatement(
+                "ALTER TABLE bookings ADD COLUMN sync_error TEXT");
+          }
+
           // v47: normalized discount_lines table — one row per applied discount
           // (manual item/cart, promotion, customer profile, loyalty points) so
           // each source is stored discretely instead of merged into a single
@@ -2650,6 +2668,53 @@ class AppDatabase extends _$AppDatabase {
   Future<void> insertDocumentItemLocal(DocumentItemsTableCompanion item) =>
       into(documentItemsTable).insert(item);
 
+  /// Keeps the single `manual_item` discount line for an editor document item in
+  /// step with its discount, so the offline "Discounts by source" report counts
+  /// item discounts entered in the manual editor (checkout already records its
+  /// own). Resolves the parent doc from the item row and self-gates: it is a
+  /// NO-OP for checkout/POS documents (orderNumber set) — their discount lines
+  /// are written at checkout and reconciled from the server, so writing here
+  /// would double-count after a pull. Replaces any existing manual_item line for
+  /// [itemLocalId], then inserts a fresh `pending` one when [amount] > 0.
+  Future<void> syncManualItemDiscountLine({
+    required String itemLocalId,
+    required int companyId,
+    required int productId,
+    required double value,
+    required int valueType,
+    required double amount,
+  }) async {
+    final item = await (select(documentItemsTable)
+          ..where((t) => t.localId.equals(itemLocalId))
+          ..limit(1))
+        .getSingleOrNull();
+    if (item == null) return;
+    final doc = await getDocumentByLocalId(item.documentId);
+    if (doc == null) return;
+    if (doc.orderNumber != null && doc.orderNumber!.isNotEmpty) return;
+    await transaction(() async {
+      await (delete(discountLinesTable)
+            ..where((t) => t.itemLocalId.equals(itemLocalId))
+            ..where((t) => t.source.equals(DiscountSource.manualItem)))
+          .go();
+      if (amount <= 0) return;
+      await into(discountLinesTable).insert(DiscountLinesTableCompanion(
+        localId: Value(const Uuid().v4()),
+        companyId: Value(companyId),
+        documentLocalId: Value(item.documentId),
+        itemLocalId: Value(itemLocalId),
+        source: const Value(DiscountSource.manualItem),
+        sourceRefId: Value(productId),
+        value: Value(value),
+        valueType: Value(valueType),
+        amount: Value(double.parse(amount.toStringAsFixed(4))),
+        sequence: const Value(0),
+        syncStatus: const Value('pending'),
+        lastModified: Value(DateTime.now().toUtc()),
+      ));
+    });
+  }
+
   /// Edits an item offline-first. A never-synced row stays 'pending_create';
   /// a synced row becomes 'pending_update'.
   Future<void> updateDocumentItemLocal(
@@ -2675,6 +2740,16 @@ class AppDatabase extends _$AppDatabase {
           ..limit(1))
         .getSingleOrNull();
     if (current == null) return;
+    // Drop the item's manual_item discount line so the offline "Discounts by
+    // source" report doesn't keep counting a removed item. Manual docs only —
+    // checkout docs' lines are server-managed (a pull would re-add them anyway).
+    final doc = await getDocumentByLocalId(current.documentId);
+    if (doc != null && (doc.orderNumber == null || doc.orderNumber!.isEmpty)) {
+      await (delete(discountLinesTable)
+            ..where((t) => t.itemLocalId.equals(localId))
+            ..where((t) => t.source.equals(DiscountSource.manualItem)))
+          .go();
+    }
     if (current.serverId == null && current.syncStatus != 'synced') {
       await (delete(documentItemsTable)
             ..where((t) => t.localId.equals(localId)))
@@ -3640,6 +3715,118 @@ class AppDatabase extends _$AppDatabase {
   Future<void> remapTaxId(int tempId, int realId) async {
     await (update(productTaxesTable)..where((t) => t.taxId.equals(tempId)))
         .write(ProductTaxesTableCompanion(taxId: Value(realId)));
+  }
+
+  // ─── Offline-first BOOKINGS CRUD (mirrors taxes/warehouses) ────────────────
+
+  /// Next negative temp id for an offline-created booking row.
+  Future<int> _nextBookingTempId() async {
+    final row = await (selectOnly(bookingsTable)
+          ..addColumns([bookingsTable.id.min()]))
+        .getSingleOrNull();
+    final min = row?.read(bookingsTable.id.min());
+    return ((min != null && min < 0) ? min : 0) - 1;
+  }
+
+  /// Offline-first upsert of a booking. A null [id] creates a row with a temp
+  /// negative id (pending_create); a non-null id updates in place, keeping
+  /// pending_create if the row was never synced (so its first push is always a
+  /// create). Returns the row id (temp id for new rows).
+  Future<int> upsertBookingLocal({
+    int? id,
+    required int companyId,
+    int? customerId,
+    int? userId,
+    required String reservationName,
+    List<int> tableIds = const [],
+    int? documentId,
+    int? posOrderId,
+    required DateTime startTime,
+    required DateTime endTime,
+    int guestCount = 1,
+    int status = 1,
+    String? note,
+  }) async {
+    final idsJson = jsonEncode(tableIds);
+    if (id == null) {
+      final tempId = await _nextBookingTempId();
+      await into(bookingsTable).insert(
+        BookingsTableCompanion(
+          id: Value(tempId),
+          companyId: Value(companyId),
+          customerId: Value(customerId),
+          userId: Value(userId),
+          reservationName: Value(reservationName),
+          tableIdsJson: Value(idsJson),
+          documentId: Value(documentId),
+          posOrderId: Value(posOrderId),
+          startTime: Value(startTime),
+          endTime: Value(endTime),
+          guestCount: Value(guestCount),
+          status: Value(status),
+          note: Value(note),
+          lastModified: Value(DateTime.now().toUtc()),
+          syncStatus: const Value('pending_create'),
+        ),
+      );
+      return tempId;
+    }
+
+    final existing = await (select(
+      bookingsTable,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
+    final nextStatus = existing?.syncStatus == 'pending_create'
+        ? 'pending_create'
+        : 'pending_update';
+    await (update(bookingsTable)..where((t) => t.id.equals(id))).write(
+      BookingsTableCompanion(
+        customerId: Value(customerId),
+        userId: Value(userId),
+        reservationName: Value(reservationName),
+        tableIdsJson: Value(idsJson),
+        documentId: Value(documentId),
+        posOrderId: Value(posOrderId),
+        startTime: Value(startTime),
+        endTime: Value(endTime),
+        guestCount: Value(guestCount),
+        status: Value(status),
+        note: Value(note),
+        lastModified: Value(DateTime.now().toUtc()),
+        syncStatus: Value(nextStatus),
+      ),
+    );
+    return id;
+  }
+
+  /// Offline-first status change. Keeps a pending_create row as a create;
+  /// otherwise marks pending_update so the next sync pushes the new status.
+  Future<void> setBookingStatusLocal(int id, int status) async {
+    final existing = await (select(
+      bookingsTable,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
+    if (existing == null) return;
+    final nextStatus = existing.syncStatus == 'pending_create'
+        ? 'pending_create'
+        : 'pending_update';
+    await (update(bookingsTable)..where((t) => t.id.equals(id))).write(
+      BookingsTableCompanion(
+        status: Value(status),
+        lastModified: Value(DateTime.now().toUtc()),
+        syncStatus: Value(nextStatus),
+      ),
+    );
+  }
+
+  /// Offline-first delete. A never-synced temp row is hard-deleted; a real row
+  /// is tombstoned (pending_delete) so the next sync issues the server delete.
+  Future<void> deleteBookingLocal(int id) async {
+    if (id < 0) {
+      await (delete(bookingsTable)..where((t) => t.id.equals(id))).go();
+    } else {
+      await (update(bookingsTable)..where((t) => t.id.equals(id))).write(
+        const BookingsTableCompanion(syncStatus: Value('pending_delete')),
+      );
+    }
   }
 
   // ─── Offline-first PAYMENT TYPE CRUD (mirrors taxes) ───────────────────────

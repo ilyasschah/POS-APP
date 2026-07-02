@@ -163,7 +163,7 @@ class ReceiptPrinterService {
     // (matches the cart + payment screen). Tax base follows the discount rule.
     final taxIncluded =
         roleSettings[SettingKeys.displayAndPrintTaxIncluded]?.toLowerCase() !=
-            'false';
+        'false';
     final discountBeforeTax =
         roleSettings[SettingKeys.discountApplyRule] == 'Before tax';
     final fmt = _paperFmt(roleSettings['$role.PaperSize']);
@@ -287,7 +287,8 @@ class ReceiptPrinterService {
                   (discountBeforeTax ? unitNet : item.price) * item.quantity;
               final lineTax = item.appliedTaxes.fold<double>(
                 0,
-                (s, t) => s +
+                (s, t) =>
+                    s +
                     (t.isFixed
                         ? t.rate * item.quantity
                         : taxBase * (t.rate / 100)),
@@ -304,8 +305,17 @@ class ReceiptPrinterService {
                 style: ts(11, bold: true),
                 textDirection: dir,
               );
+
+              // 1. Safely grab the unit. If it exists, add a space before it (e.g. " Kg").
+              final unit =
+                  (item.measurementUnit != null &&
+                      item.measurementUnit!.trim().isNotEmpty)
+                  ? ' ${item.measurementUnit!.trim()}'
+                  : '';
+
+              // 2. Inject $unit right after $qty. The currency remains dynamic!
               final qtyPriceW = pw.Text(
-                '${rtl ? '' : '  '}$qty x ${unitPrice.toStringAsFixed(2)} $currencySymbol',
+                '${rtl ? '' : '  '}$qty$unit x ${unitPrice.toStringAsFixed(2)} $currencySymbol',
                 style: ts(10),
                 textDirection: dir,
               );
@@ -338,10 +348,12 @@ class ReceiptPrinterService {
             rowW('Subtotal:', '${subtotal.toStringAsFixed(2)} $currencySymbol'),
             // Itemized discounts when available; otherwise the single merged row.
             if (discountLines.isNotEmpty)
-              ...discountLines.map((d) => rowW(
-                    d.hint == null ? '${d.label}:' : '${d.label} (${d.hint}):',
-                    '-${d.amount.toStringAsFixed(2)} $currencySymbol',
-                  ))
+              ...discountLines.map(
+                (d) => rowW(
+                  d.hint == null ? '${d.label}:' : '${d.label} (${d.hint}):',
+                  '-${d.amount.toStringAsFixed(2)} $currencySymbol',
+                ),
+              )
             else if (totalDiscount > 0)
               rowW(
                 'Discount:',
@@ -363,7 +375,7 @@ class ReceiptPrinterService {
               rowW(
                 'Points Used:',
                 '-${(pointsUsed * pointValue).toStringAsFixed(2)} $currencySymbol'
-                ' (${pointsUsed.toInt()} pts)',
+                    ' (${pointsUsed.toInt()} pts)',
               ),
               // The actual amount owed once points are applied — otherwise the
               // receipt printed GRAND TOTAL but the cashier collected less.
@@ -385,8 +397,10 @@ class ReceiptPrinterService {
               // Change due, so the receipt is self-explanatory at the till.
               if (amountPaid != null &&
                   amountPaid >
-                      (grandTotal - pointsUsed * pointValue)
-                          .clamp(0.0, double.infinity))
+                      (grandTotal - pointsUsed * pointValue).clamp(
+                        0.0,
+                        double.infinity,
+                      ))
                 rowW(
                   'Change:',
                   '${(amountPaid - (grandTotal - pointsUsed * pointValue).clamp(0.0, double.infinity)).toStringAsFixed(2)} $currencySymbol',
@@ -450,16 +464,13 @@ class ReceiptPrinterService {
     final boldFont = await _fontBold(roleSettings, role);
     final printerName = roleSettings['$role.PrinterName'];
 
-    pw.TextStyle ts(
-      double size, {
-      bool bold = false,
-      bool italic = false,
-    }) => pw.TextStyle(
-      font: bold ? boldFont : font,
-      fontWeight: bold ? pw.FontWeight.bold : null,
-      fontStyle: italic ? pw.FontStyle.italic : null,
-      fontSize: size * fontScale,
-    );
+    pw.TextStyle ts(double size, {bool bold = false, bool italic = false}) =>
+        pw.TextStyle(
+          font: bold ? boldFont : font,
+          fontWeight: bold ? pw.FontWeight.bold : null,
+          fontStyle: italic ? pw.FontStyle.italic : null,
+          fontSize: size * fontScale,
+        );
 
     // Show just the counter portion (e.g. "005") large at the top.
     final ticketNum = orderNumber.contains('#')
@@ -483,10 +494,7 @@ class ReceiptPrinterService {
 
             // ── Meta info ─────────────────────────────────────────────
             pw.Text('User: $cashierName', style: ts(10)),
-            pw.Text(
-              'Order: $orderNumber   Round: $roundNumber',
-              style: ts(10),
-            ),
+            pw.Text('Order: $orderNumber   Round: $roundNumber', style: ts(10)),
             pw.Text('Time: ${_fmtDateTime(printTime)}', style: ts(10)),
             pw.SizedBox(height: 6),
 
@@ -556,10 +564,10 @@ class ReceiptPrinterService {
     final format = PdfPageFormat.roll80;
 
     pw.TextStyle ts(double size, {bool bold = false}) => pw.TextStyle(
-          font: bold ? boldFont : font,
-          fontWeight: bold ? pw.FontWeight.bold : pw.FontWeight.normal,
-          fontSize: size,
-        );
+      font: bold ? boldFont : font,
+      fontWeight: bold ? pw.FontWeight.bold : pw.FontWeight.normal,
+      fontSize: size,
+    );
 
     pdf.addPage(
       pw.Page(
@@ -570,11 +578,17 @@ class ReceiptPrinterService {
             crossAxisAlignment: pw.CrossAxisAlignment.stretch,
             mainAxisSize: pw.MainAxisSize.min,
             children: [
-              pw.Text('Z-REPORT',
-                  textAlign: pw.TextAlign.center, style: ts(16, bold: true)),
+              pw.Text(
+                'Z-REPORT',
+                textAlign: pw.TextAlign.center,
+                style: ts(16, bold: true),
+              ),
               pw.SizedBox(height: 8),
-              pw.Text('Report #${report.number}',
-                  textAlign: pw.TextAlign.center, style: ts(12)),
+              pw.Text(
+                'Report #${report.number}',
+                textAlign: pw.TextAlign.center,
+                style: ts(12),
+              ),
               pw.Text(
                 'Date: ${report.dateCreated.toIso8601String().split('T').first}'
                 '  Time: ${report.dateCreated.toIso8601String().split('T').last.split('.').first}',
@@ -585,49 +599,82 @@ class ReceiptPrinterService {
               pw.Divider(borderStyle: pw.BorderStyle.dashed),
               pw.SizedBox(height: 8),
 
-              pw.Text('SHIFT SUMMARY',
-                  textAlign: pw.TextAlign.center, style: ts(12, bold: true)),
+              pw.Text(
+                'SHIFT SUMMARY',
+                textAlign: pw.TextAlign.center,
+                style: ts(12, bold: true),
+              ),
               pw.SizedBox(height: 8),
-              _buildReceiptRow('Documents:',
-                  '#${report.fromDocumentId} to #${report.toDocumentId}',
-                  font: font, boldFont: boldFont),
-              _buildReceiptRow('Cash in:',
-                  '${report.totalCashIn.toStringAsFixed(2)} $currencySymbol',
-                  font: font, boldFont: boldFont),
-              _buildReceiptRow('Cash out:',
-                  '-${report.totalCashOut.toStringAsFixed(2)} $currencySymbol',
-                  font: font, boldFont: boldFont),
+              _buildReceiptRow(
+                'Documents:',
+                '#${report.fromDocumentId} to #${report.toDocumentId}',
+                font: font,
+                boldFont: boldFont,
+              ),
+              _buildReceiptRow(
+                'Cash in:',
+                '${report.totalCashIn.toStringAsFixed(2)} $currencySymbol',
+                font: font,
+                boldFont: boldFont,
+              ),
+              _buildReceiptRow(
+                'Cash out:',
+                '-${report.totalCashOut.toStringAsFixed(2)} $currencySymbol',
+                font: font,
+                boldFont: boldFont,
+              ),
               pw.SizedBox(height: 4),
-              _buildReceiptRow('Total Sales:',
-                  '${report.totalSales.toStringAsFixed(2)} $currencySymbol',
-                  font: font, boldFont: boldFont),
-              _buildReceiptRow('Total Returns:',
-                  '${report.totalReturns.toStringAsFixed(2)} $currencySymbol',
-                  font: font, boldFont: boldFont),
-              _buildReceiptRow('Discounts:',
-                  '${report.discountsGranted.toStringAsFixed(2)} $currencySymbol',
-                  font: font, boldFont: boldFont),
-              _buildReceiptRow('Taxable Total:',
-                  '${report.taxableTotal.toStringAsFixed(2)} $currencySymbol',
-                  font: font, boldFont: boldFont),
-              _buildReceiptRow('Total Tax:',
-                  '${report.totalTax.toStringAsFixed(2)} $currencySymbol',
-                  font: font, boldFont: boldFont),
+              _buildReceiptRow(
+                'Total Sales:',
+                '${report.totalSales.toStringAsFixed(2)} $currencySymbol',
+                font: font,
+                boldFont: boldFont,
+              ),
+              _buildReceiptRow(
+                'Total Returns:',
+                '${report.totalReturns.toStringAsFixed(2)} $currencySymbol',
+                font: font,
+                boldFont: boldFont,
+              ),
+              _buildReceiptRow(
+                'Discounts:',
+                '${report.discountsGranted.toStringAsFixed(2)} $currencySymbol',
+                font: font,
+                boldFont: boldFont,
+              ),
+              _buildReceiptRow(
+                'Taxable Total:',
+                '${report.taxableTotal.toStringAsFixed(2)} $currencySymbol',
+                font: font,
+                boldFont: boldFont,
+              ),
+              _buildReceiptRow(
+                'Total Tax:',
+                '${report.totalTax.toStringAsFixed(2)} $currencySymbol',
+                font: font,
+                boldFont: boldFont,
+              ),
 
               pw.SizedBox(height: 8),
               pw.Divider(borderStyle: pw.BorderStyle.dashed),
               pw.SizedBox(height: 8),
 
-              pw.Text('TENDER TYPES',
-                  textAlign: pw.TextAlign.center, style: ts(12, bold: true)),
+              pw.Text(
+                'TENDER TYPES',
+                textAlign: pw.TextAlign.center,
+                style: ts(12, bold: true),
+              ),
               pw.SizedBox(height: 8),
               if (report.paymentSummaries.isEmpty)
-                pw.Text('No payments recorded.',
-                    textAlign: pw.TextAlign.center,
-                    style: pw.TextStyle(
-                        font: font,
-                        fontStyle: pw.FontStyle.italic,
-                        fontSize: 10))
+                pw.Text(
+                  'No payments recorded.',
+                  textAlign: pw.TextAlign.center,
+                  style: pw.TextStyle(
+                    font: font,
+                    fontStyle: pw.FontStyle.italic,
+                    fontSize: 10,
+                  ),
+                )
               else
                 ...report.paymentSummaries.map(
                   (p) => _buildReceiptRow(
@@ -652,8 +699,11 @@ class ReceiptPrinterService {
               ),
 
               pw.SizedBox(height: 24),
-              pw.Text('*** END OF REPORT ***',
-                  textAlign: pw.TextAlign.center, style: ts(10)),
+              pw.Text(
+                '*** END OF REPORT ***',
+                textAlign: pw.TextAlign.center,
+                style: ts(10),
+              ),
             ],
           );
         },

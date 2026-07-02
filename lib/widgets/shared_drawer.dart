@@ -13,6 +13,8 @@ import 'package:pos_app/menu/open_orders_screen.dart';
 import 'package:pos_app/product/product_groups_screen.dart';
 import 'package:pos_app/product/products_screen.dart';
 import 'package:pos_app/promotions/promotions_list_screen.dart';
+import 'package:pos_app/security/security_guard.dart';
+import 'package:pos_app/security/security_keys.dart';
 import 'package:pos_app/dashboard/dashboard_screen.dart';
 import 'package:pos_app/reports/reports_screen.dart';
 import 'package:pos_app/reports/z_report_screen.dart';
@@ -114,11 +116,15 @@ class SharedDrawer extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.currency_exchange),
             title: const Text('Currencies'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const CurrenciesScreen()));
-            },
+            onTap: () => ref.read(securityGuardProvider).guard(
+              context,
+              SecurityKeys.currencies,
+              () {
+                Navigator.pop(context);
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => const CurrenciesScreen()));
+              },
+            ),
           ),
           ListTile(
             leading: const Icon(Icons.percent),

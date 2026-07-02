@@ -31756,6 +31756,29 @@ class $BookingsTableTable extends BookingsTable
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _syncStatusMeta = const VerificationMeta(
+    'syncStatus',
+  );
+  @override
+  late final GeneratedColumn<String> syncStatus = GeneratedColumn<String>(
+    'sync_status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('synced'),
+  );
+  static const VerificationMeta _syncErrorMeta = const VerificationMeta(
+    'syncError',
+  );
+  @override
+  late final GeneratedColumn<String> syncError = GeneratedColumn<String>(
+    'sync_error',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _tableIdsMeta = const VerificationMeta(
     'tableIds',
   );
@@ -31783,6 +31806,8 @@ class $BookingsTableTable extends BookingsTable
     status,
     note,
     lastModified,
+    syncStatus,
+    syncError,
     tableIds,
   ];
   @override
@@ -31898,6 +31923,18 @@ class $BookingsTableTable extends BookingsTable
     } else if (isInserting) {
       context.missing(_lastModifiedMeta);
     }
+    if (data.containsKey('sync_status')) {
+      context.handle(
+        _syncStatusMeta,
+        syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
+      );
+    }
+    if (data.containsKey('sync_error')) {
+      context.handle(
+        _syncErrorMeta,
+        syncError.isAcceptableOrUnknown(data['sync_error']!, _syncErrorMeta),
+      );
+    }
     if (data.containsKey('table_ids')) {
       context.handle(
         _tableIdsMeta,
@@ -31969,6 +32006,14 @@ class $BookingsTableTable extends BookingsTable
         DriftSqlType.dateTime,
         data['${effectivePrefix}last_modified'],
       )!,
+      syncStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sync_status'],
+      )!,
+      syncError: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sync_error'],
+      ),
       tableIds: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}table_ids'],
@@ -31998,6 +32043,8 @@ class BookingsTableData extends DataClass
   final int status;
   final String? note;
   final DateTime lastModified;
+  final String syncStatus;
+  final String? syncError;
   final String? tableIds;
   const BookingsTableData({
     required this.id,
@@ -32014,6 +32061,8 @@ class BookingsTableData extends DataClass
     required this.status,
     this.note,
     required this.lastModified,
+    required this.syncStatus,
+    this.syncError,
     this.tableIds,
   });
   @override
@@ -32043,6 +32092,10 @@ class BookingsTableData extends DataClass
       map['note'] = Variable<String>(note);
     }
     map['last_modified'] = Variable<DateTime>(lastModified);
+    map['sync_status'] = Variable<String>(syncStatus);
+    if (!nullToAbsent || syncError != null) {
+      map['sync_error'] = Variable<String>(syncError);
+    }
     if (!nullToAbsent || tableIds != null) {
       map['table_ids'] = Variable<String>(tableIds);
     }
@@ -32073,6 +32126,10 @@ class BookingsTableData extends DataClass
       status: Value(status),
       note: note == null && nullToAbsent ? const Value.absent() : Value(note),
       lastModified: Value(lastModified),
+      syncStatus: Value(syncStatus),
+      syncError: syncError == null && nullToAbsent
+          ? const Value.absent()
+          : Value(syncError),
       tableIds: tableIds == null && nullToAbsent
           ? const Value.absent()
           : Value(tableIds),
@@ -32099,6 +32156,8 @@ class BookingsTableData extends DataClass
       status: serializer.fromJson<int>(json['status']),
       note: serializer.fromJson<String?>(json['note']),
       lastModified: serializer.fromJson<DateTime>(json['lastModified']),
+      syncStatus: serializer.fromJson<String>(json['syncStatus']),
+      syncError: serializer.fromJson<String?>(json['syncError']),
       tableIds: serializer.fromJson<String?>(json['tableIds']),
     );
   }
@@ -32120,6 +32179,8 @@ class BookingsTableData extends DataClass
       'status': serializer.toJson<int>(status),
       'note': serializer.toJson<String?>(note),
       'lastModified': serializer.toJson<DateTime>(lastModified),
+      'syncStatus': serializer.toJson<String>(syncStatus),
+      'syncError': serializer.toJson<String?>(syncError),
       'tableIds': serializer.toJson<String?>(tableIds),
     };
   }
@@ -32139,6 +32200,8 @@ class BookingsTableData extends DataClass
     int? status,
     Value<String?> note = const Value.absent(),
     DateTime? lastModified,
+    String? syncStatus,
+    Value<String?> syncError = const Value.absent(),
     Value<String?> tableIds = const Value.absent(),
   }) => BookingsTableData(
     id: id ?? this.id,
@@ -32155,6 +32218,8 @@ class BookingsTableData extends DataClass
     status: status ?? this.status,
     note: note.present ? note.value : this.note,
     lastModified: lastModified ?? this.lastModified,
+    syncStatus: syncStatus ?? this.syncStatus,
+    syncError: syncError.present ? syncError.value : this.syncError,
     tableIds: tableIds.present ? tableIds.value : this.tableIds,
   );
   BookingsTableData copyWithCompanion(BookingsTableCompanion data) {
@@ -32187,6 +32252,10 @@ class BookingsTableData extends DataClass
       lastModified: data.lastModified.present
           ? data.lastModified.value
           : this.lastModified,
+      syncStatus: data.syncStatus.present
+          ? data.syncStatus.value
+          : this.syncStatus,
+      syncError: data.syncError.present ? data.syncError.value : this.syncError,
       tableIds: data.tableIds.present ? data.tableIds.value : this.tableIds,
     );
   }
@@ -32208,6 +32277,8 @@ class BookingsTableData extends DataClass
           ..write('status: $status, ')
           ..write('note: $note, ')
           ..write('lastModified: $lastModified, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('syncError: $syncError, ')
           ..write('tableIds: $tableIds')
           ..write(')'))
         .toString();
@@ -32229,6 +32300,8 @@ class BookingsTableData extends DataClass
     status,
     note,
     lastModified,
+    syncStatus,
+    syncError,
     tableIds,
   );
   @override
@@ -32249,6 +32322,8 @@ class BookingsTableData extends DataClass
           other.status == this.status &&
           other.note == this.note &&
           other.lastModified == this.lastModified &&
+          other.syncStatus == this.syncStatus &&
+          other.syncError == this.syncError &&
           other.tableIds == this.tableIds);
 }
 
@@ -32267,6 +32342,8 @@ class BookingsTableCompanion extends UpdateCompanion<BookingsTableData> {
   final Value<int> status;
   final Value<String?> note;
   final Value<DateTime> lastModified;
+  final Value<String> syncStatus;
+  final Value<String?> syncError;
   final Value<String?> tableIds;
   const BookingsTableCompanion({
     this.id = const Value.absent(),
@@ -32283,6 +32360,8 @@ class BookingsTableCompanion extends UpdateCompanion<BookingsTableData> {
     this.status = const Value.absent(),
     this.note = const Value.absent(),
     this.lastModified = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.syncError = const Value.absent(),
     this.tableIds = const Value.absent(),
   });
   BookingsTableCompanion.insert({
@@ -32300,6 +32379,8 @@ class BookingsTableCompanion extends UpdateCompanion<BookingsTableData> {
     this.status = const Value.absent(),
     this.note = const Value.absent(),
     required DateTime lastModified,
+    this.syncStatus = const Value.absent(),
+    this.syncError = const Value.absent(),
     this.tableIds = const Value.absent(),
   }) : companyId = Value(companyId),
        startTime = Value(startTime),
@@ -32320,6 +32401,8 @@ class BookingsTableCompanion extends UpdateCompanion<BookingsTableData> {
     Expression<int>? status,
     Expression<String>? note,
     Expression<DateTime>? lastModified,
+    Expression<String>? syncStatus,
+    Expression<String>? syncError,
     Expression<String>? tableIds,
   }) {
     return RawValuesInsertable({
@@ -32337,6 +32420,8 @@ class BookingsTableCompanion extends UpdateCompanion<BookingsTableData> {
       if (status != null) 'status': status,
       if (note != null) 'note': note,
       if (lastModified != null) 'last_modified': lastModified,
+      if (syncStatus != null) 'sync_status': syncStatus,
+      if (syncError != null) 'sync_error': syncError,
       if (tableIds != null) 'table_ids': tableIds,
     });
   }
@@ -32356,6 +32441,8 @@ class BookingsTableCompanion extends UpdateCompanion<BookingsTableData> {
     Value<int>? status,
     Value<String?>? note,
     Value<DateTime>? lastModified,
+    Value<String>? syncStatus,
+    Value<String?>? syncError,
     Value<String?>? tableIds,
   }) {
     return BookingsTableCompanion(
@@ -32373,6 +32460,8 @@ class BookingsTableCompanion extends UpdateCompanion<BookingsTableData> {
       status: status ?? this.status,
       note: note ?? this.note,
       lastModified: lastModified ?? this.lastModified,
+      syncStatus: syncStatus ?? this.syncStatus,
+      syncError: syncError ?? this.syncError,
       tableIds: tableIds ?? this.tableIds,
     );
   }
@@ -32422,6 +32511,12 @@ class BookingsTableCompanion extends UpdateCompanion<BookingsTableData> {
     if (lastModified.present) {
       map['last_modified'] = Variable<DateTime>(lastModified.value);
     }
+    if (syncStatus.present) {
+      map['sync_status'] = Variable<String>(syncStatus.value);
+    }
+    if (syncError.present) {
+      map['sync_error'] = Variable<String>(syncError.value);
+    }
     if (tableIds.present) {
       map['table_ids'] = Variable<String>(tableIds.value);
     }
@@ -32445,6 +32540,8 @@ class BookingsTableCompanion extends UpdateCompanion<BookingsTableData> {
           ..write('status: $status, ')
           ..write('note: $note, ')
           ..write('lastModified: $lastModified, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('syncError: $syncError, ')
           ..write('tableIds: $tableIds')
           ..write(')'))
         .toString();
@@ -53249,6 +53346,8 @@ typedef $$BookingsTableTableCreateCompanionBuilder =
       Value<int> status,
       Value<String?> note,
       required DateTime lastModified,
+      Value<String> syncStatus,
+      Value<String?> syncError,
       Value<String?> tableIds,
     });
 typedef $$BookingsTableTableUpdateCompanionBuilder =
@@ -53267,6 +53366,8 @@ typedef $$BookingsTableTableUpdateCompanionBuilder =
       Value<int> status,
       Value<String?> note,
       Value<DateTime> lastModified,
+      Value<String> syncStatus,
+      Value<String?> syncError,
       Value<String?> tableIds,
     });
 
@@ -53346,6 +53447,16 @@ class $$BookingsTableTableFilterComposer
 
   ColumnFilters<DateTime> get lastModified => $composableBuilder(
     column: $table.lastModified,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get syncError => $composableBuilder(
+    column: $table.syncError,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -53434,6 +53545,16 @@ class $$BookingsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get syncError => $composableBuilder(
+    column: $table.syncError,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get tableIds => $composableBuilder(
     column: $table.tableIds,
     builder: (column) => ColumnOrderings(column),
@@ -53505,6 +53626,14 @@ class $$BookingsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get syncError =>
+      $composableBuilder(column: $table.syncError, builder: (column) => column);
+
   GeneratedColumn<String> get tableIds =>
       $composableBuilder(column: $table.tableIds, builder: (column) => column);
 }
@@ -53558,6 +53687,8 @@ class $$BookingsTableTableTableManager
                 Value<int> status = const Value.absent(),
                 Value<String?> note = const Value.absent(),
                 Value<DateTime> lastModified = const Value.absent(),
+                Value<String> syncStatus = const Value.absent(),
+                Value<String?> syncError = const Value.absent(),
                 Value<String?> tableIds = const Value.absent(),
               }) => BookingsTableCompanion(
                 id: id,
@@ -53574,6 +53705,8 @@ class $$BookingsTableTableTableManager
                 status: status,
                 note: note,
                 lastModified: lastModified,
+                syncStatus: syncStatus,
+                syncError: syncError,
                 tableIds: tableIds,
               ),
           createCompanionCallback:
@@ -53592,6 +53725,8 @@ class $$BookingsTableTableTableManager
                 Value<int> status = const Value.absent(),
                 Value<String?> note = const Value.absent(),
                 required DateTime lastModified,
+                Value<String> syncStatus = const Value.absent(),
+                Value<String?> syncError = const Value.absent(),
                 Value<String?> tableIds = const Value.absent(),
               }) => BookingsTableCompanion.insert(
                 id: id,
@@ -53608,6 +53743,8 @@ class $$BookingsTableTableTableManager
                 status: status,
                 note: note,
                 lastModified: lastModified,
+                syncStatus: syncStatus,
+                syncError: syncError,
                 tableIds: tableIds,
               ),
           withReferenceMapper: (p0) => p0

@@ -87,6 +87,10 @@ class CartState {
     int? bookingStaffId,
     String? orderName,
     String? existingLocalOrderId,
+    // copyWith can't otherwise set the customer-discount fields back to null
+    // (the `?? this.x` pattern keeps the old value). Set this when switching to
+    // a customer with no discount / Walk-in so the previous discount is wiped.
+    bool clearCustomerDiscount = false,
   }) {
     return CartState(
       activePosOrderId: activePosOrderId ?? this.activePosOrderId,
@@ -94,14 +98,18 @@ class CartState {
       orderNumber: orderNumber ?? this.orderNumber,
       isLoading: isLoading ?? this.isLoading,
       selectedCustomer: selectedCustomer ?? this.selectedCustomer,
-      selectedCustomerDiscount:
-          selectedCustomerDiscount ?? this.selectedCustomerDiscount,
+      selectedCustomerDiscount: clearCustomerDiscount
+          ? null
+          : (selectedCustomerDiscount ?? this.selectedCustomerDiscount),
       manualCartDiscount: manualCartDiscount ?? this.manualCartDiscount,
       manualCartDiscountType:
           manualCartDiscountType ?? this.manualCartDiscountType,
-      customerDiscountValue:
-          customerDiscountValue ?? this.customerDiscountValue,
-      customerDiscountType: customerDiscountType ?? this.customerDiscountType,
+      customerDiscountValue: clearCustomerDiscount
+          ? null
+          : (customerDiscountValue ?? this.customerDiscountValue),
+      customerDiscountType: clearCustomerDiscount
+          ? null
+          : (customerDiscountType ?? this.customerDiscountType),
       selectedCartItemId: selectedCartItemId ?? this.selectedCartItemId,
       serviceType: serviceType ?? this.serviceType,
       serviceStatus: serviceStatus ?? this.serviceStatus,
@@ -168,7 +176,9 @@ class CartNotifier extends Notifier<CartState> {
   /// product has no assignment of its own.
   Future<List<MenuTax>> resolveProductTaxes(int productId) async {
     final db = ref.read(appDatabaseProvider);
-    final assigned = await db.getProductTaxes(productId); // excludes pending_delete
+    final assigned = await db.getProductTaxes(
+      productId,
+    ); // excludes pending_delete
     if (assigned.isEmpty) return _resolveDefaultTaxes();
 
     final taxIds = assigned.map((a) => a.taxId).toSet();
@@ -202,8 +212,10 @@ class CartNotifier extends Notifier<CartState> {
     // to the configured default warehouse (Order.DefaultWarehouseId) rather than
     // a hardcoded id 1 — otherwise the order targets the wrong warehouse and the
     // item shows as out of stock ("available in None") at sync.
-    final defaultId = int.tryParse(
-            ref.read(appSettingsProvider)[SettingKeys.defaultWarehouseId] ?? '') ??
+    final defaultId =
+        int.tryParse(
+          ref.read(appSettingsProvider)[SettingKeys.defaultWarehouseId] ?? '',
+        ) ??
         0;
     return defaultId > 0 ? defaultId : 1;
   }
@@ -318,7 +330,8 @@ class CartNotifier extends Notifier<CartState> {
     if (discountBeforeTax) {
       // Tax base = price minus all discounts (item + proportional cart share).
       final baseBeforeCartDiscounts = subtotal - discountTotal;
-      final totalCartDiscounts = customerDiscountAmount + manualCartDiscountAmount;
+      final totalCartDiscounts =
+          customerDiscountAmount + manualCartDiscountAmount;
       final discountFactor = baseBeforeCartDiscounts > 0
           ? (baseBeforeCartDiscounts - totalCartDiscounts) /
                 baseBeforeCartDiscounts
@@ -410,69 +423,78 @@ class CartNotifier extends Notifier<CartState> {
       String? itemLocalId,
       int? sourceRefId,
       String? label,
-    }) =>
-        DiscountLinesTableCompanion(
-          localId: Value(const Uuid().v4()),
-          companyId: Value(companyId),
-          orderLocalId: Value(orderLocalId),
-          documentLocalId: Value(documentLocalId),
-          itemLocalId: Value(itemLocalId),
-          source: Value(source),
-          sourceRefId: Value(sourceRefId),
-          value: Value(value),
-          valueType: Value(valueType),
-          amount: Value(double.parse(amount.toStringAsFixed(4))),
-          sequence: Value(seq++),
-          label: Value(label),
-          syncStatus: const Value('pending'),
-          lastModified: Value(now),
-        );
+    }) => DiscountLinesTableCompanion(
+      localId: Value(const Uuid().v4()),
+      companyId: Value(companyId),
+      orderLocalId: Value(orderLocalId),
+      documentLocalId: Value(documentLocalId),
+      itemLocalId: Value(itemLocalId),
+      source: Value(source),
+      sourceRefId: Value(sourceRefId),
+      value: Value(value),
+      valueType: Value(valueType),
+      amount: Value(double.parse(amount.toStringAsFixed(4))),
+      sequence: Value(seq++),
+      label: Value(label),
+      syncStatus: const Value('pending'),
+      lastModified: Value(now),
+    );
 
     // ── Item-level lines (manual + promotional), in cart order ──────────────
     for (final item in state.items) {
       final itemLocalId = itemLocalIds[item.cartItemId];
       if (item.discount > 0) {
-        lines.add(mk(
-          source: DiscountSource.manualItem,
-          // Record the figure as entered ("10%") when known, falling back to the
-          // resolved money value. `amount` is always the resolved currency.
-          value: item.discountInputValue ?? item.discount,
-          valueType: item.discountInputType ?? item.discountType,
-          amount: item.discount * item.quantity,
-          itemLocalId: itemLocalId,
-          sourceRefId: item.productId,
-        ));
+        lines.add(
+          mk(
+            source: DiscountSource.manualItem,
+            // Record the figure as entered ("10%") when known, falling back to the
+            // resolved money value. `amount` is always the resolved currency.
+            value: item.discountInputValue ?? item.discount,
+            valueType: item.discountInputType ?? item.discountType,
+            amount: item.discount * item.quantity,
+            itemLocalId: itemLocalId,
+            sourceRefId: item.productId,
+          ),
+        );
       }
       if (item.promotionalDiscount > 0) {
-        lines.add(mk(
-          source: DiscountSource.promotion,
-          value: item.promotionalDiscount,
-          valueType: 1, // already resolved to per-unit currency
-          amount: item.promotionalDiscount * item.quantity,
-          itemLocalId: itemLocalId,
-          sourceRefId: item.promotionId,
-          label: item.promotionId == null ? null : promoNames[item.promotionId],
-        ));
+        lines.add(
+          mk(
+            source: DiscountSource.promotion,
+            value: item.promotionalDiscount,
+            valueType: 1, // already resolved to per-unit currency
+            amount: item.promotionalDiscount * item.quantity,
+            itemLocalId: itemLocalId,
+            sourceRefId: item.promotionId,
+            label: item.promotionId == null
+                ? null
+                : promoNames[item.promotionId],
+          ),
+        );
       }
     }
 
     // ── Order-level lines, in application order (customer → manual cart) ─────
     if (customerDiscountAmount > 0) {
-      lines.add(mk(
-        source: DiscountSource.customerProfile,
-        value: state.customerDiscountValue ?? 0,
-        valueType: state.customerDiscountType ?? 0,
-        amount: customerDiscountAmount,
-        sourceRefId: state.selectedCustomer?.id,
-      ));
+      lines.add(
+        mk(
+          source: DiscountSource.customerProfile,
+          value: state.customerDiscountValue ?? 0,
+          valueType: state.customerDiscountType ?? 0,
+          amount: customerDiscountAmount,
+          sourceRefId: state.selectedCustomer?.id,
+        ),
+      );
     }
     if (manualCartDiscountAmount > 0) {
-      lines.add(mk(
-        source: DiscountSource.manualCart,
-        value: state.manualCartDiscount,
-        valueType: state.manualCartDiscountType,
-        amount: manualCartDiscountAmount,
-      ));
+      lines.add(
+        mk(
+          source: DiscountSource.manualCart,
+          value: state.manualCartDiscount,
+          valueType: state.manualCartDiscountType,
+          amount: manualCartDiscountAmount,
+        ),
+      );
     }
 
     return lines;
@@ -531,12 +553,21 @@ class CartNotifier extends Notifier<CartState> {
       companyId,
       customer.id,
     );
+    // A customer with no discount (or a Walk-in) must wipe any discount left
+    // over from the previously-selected customer — otherwise the old -X line
+    // stays stuck on the order. copyWith can't null these fields normally, so
+    // signal an explicit clear when there's no usable discount value.
+    final hasDiscount = discount?.value != null;
     state = state.copyWith(
       selectedCustomer: customer,
-      selectedCustomerDiscount: discount,
-      customerDiscountValue: discount?.value,
-      customerDiscountType: discount?.type,
+      selectedCustomerDiscount: hasDiscount ? discount : null,
+      customerDiscountValue: hasDiscount ? discount!.value : null,
+      customerDiscountType: hasDiscount ? discount!.type : null,
+      clearCustomerDiscount: !hasDiscount,
     );
+    // Derived totals (customerDiscountAmount, cartTotalProvider, …) are getters
+    // off this state, so assigning state above recalculates them immediately;
+    // watchers rebuild and the stale discount line disappears at once.
     ref.read(currentCustomerProvider.notifier).setCustomer(customer);
   }
 
@@ -546,14 +577,15 @@ class CartNotifier extends Notifier<CartState> {
   /// read the `customer_profile` line's value/type back. Returns nulls when the
   /// order carried no customer discount.
   Future<({Customer? customer, double? value, int? type})>
-      _restoreCustomerDiscount(String orderLocalId, int? customerId) async {
+  _restoreCustomerDiscount(String orderLocalId, int? customerId) async {
     final db = ref.read(appDatabaseProvider);
     Customer? customer;
     if (customerId != null) {
-      final row = await (db.select(db.customersTable)
-            ..where((t) => t.id.equals(customerId))
-            ..limit(1))
-          .getSingleOrNull();
+      final row =
+          await (db.select(db.customersTable)
+                ..where((t) => t.id.equals(customerId))
+                ..limit(1))
+              .getSingleOrNull();
       if (row != null) customer = Customer.fromDrift(row);
     }
     final lines = await db.getDiscountLinesForOrder(orderLocalId);
@@ -766,8 +798,9 @@ class CartNotifier extends Notifier<CartState> {
       }
       // Fall back to the configured default tax rates when the product brings
       // none of its own, so taxes are applied automatically on add.
-      final appliedTaxes =
-          product.taxes.isNotEmpty ? product.taxes : _resolveDefaultTaxes();
+      final appliedTaxes = product.taxes.isNotEmpty
+          ? product.taxes
+          : _resolveDefaultTaxes();
       items.add(
         CartItem(
           cartItemId: newCartItemId,
@@ -1200,8 +1233,7 @@ class CartNotifier extends Notifier<CartState> {
 
       // Restore the customer + their profile discount from the saved lines, so
       // the reopened total matches what was parked (offline, no API call).
-      final restored =
-          await _restoreCustomerDiscount(localId, row.customerId);
+      final restored = await _restoreCustomerDiscount(localId, row.customerId);
 
       state = state.copyWith(
         activePosOrderId: row.serverId,

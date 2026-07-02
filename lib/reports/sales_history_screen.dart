@@ -17,6 +17,8 @@ import 'package:pos_app/currency/currencies_provider.dart';
 import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/document/document_model.dart';
 import 'package:pos_app/customer/customer_model.dart';
+import 'package:pos_app/navigation/nav_widgets.dart';
+import 'package:pos_app/settings/settings_provider.dart';
 import 'package:pos_app/sync/sync_notifier.dart';
 import 'package:pos_app/refund/refund_dialog.dart';
 import 'package:pos_app/security/security_guard.dart';
@@ -123,7 +125,7 @@ class _FlexTable extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final cs    = theme.colorScheme;
+    final cs = theme.colorScheme;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -131,22 +133,28 @@ class _FlexTable extends StatelessWidget {
         // ── Sticky header ──────────────────────────────────────────────────
         Container(
           decoration: BoxDecoration(
-            color:  cs.surfaceContainerHighest.withValues(alpha: 0.45),
-            border: Border(bottom: BorderSide(color: theme.dividerColor, width: 0.5)),
+            color: cs.surfaceContainerHighest.withValues(alpha: 0.45),
+            border: Border(
+              bottom: BorderSide(color: theme.dividerColor, width: 0.5),
+            ),
           ),
           child: _buildRow(
-            columns.map((c) => Text(
-              c.label,
-              style: TextStyle(
-                fontSize:      10,
-                fontWeight:    FontWeight.w700,
-                color:         cs.onSurface.withValues(alpha: 0.55),
-                letterSpacing: 0.4,
-              ),
-              textAlign: c.numeric ? TextAlign.right : TextAlign.left,
-              overflow:  TextOverflow.ellipsis,
-              maxLines:  1,
-            )).toList(),
+            columns
+                .map(
+                  (c) => Text(
+                    c.label,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: cs.onSurface.withValues(alpha: 0.55),
+                      letterSpacing: 0.4,
+                    ),
+                    textAlign: c.numeric ? TextAlign.right : TextAlign.left,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                )
+                .toList(),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
           ),
         ),
@@ -155,14 +163,18 @@ class _FlexTable extends StatelessWidget {
           child: rows.isEmpty
               ? (emptyWidget ?? const SizedBox.shrink())
               : ListView.separated(
-                  itemCount:        rows.length,
-                  separatorBuilder: (_, __) =>
-                      Divider(height: 0.5, color: theme.dividerColor.withValues(alpha: 0.4)),
+                  itemCount: rows.length,
+                  separatorBuilder: (_, __) => Divider(
+                    height: 0.5,
+                    color: theme.dividerColor.withValues(alpha: 0.4),
+                  ),
                   itemBuilder: (ctx, i) {
                     final selected = isRowSelected?.call(i) ?? false;
                     return InkWell(
-                      onTap:            onRowTap == null ? null : () => onRowTap!(i),
-                      mouseCursor:      onRowTap == null ? null : SystemMouseCursors.click,
+                      onTap: onRowTap == null ? null : () => onRowTap!(i),
+                      mouseCursor: onRowTap == null
+                          ? null
+                          : SystemMouseCursors.click,
                       child: Container(
                         color: selected
                             ? cs.primary.withValues(alpha: 0.14)
@@ -170,7 +182,9 @@ class _FlexTable extends StatelessWidget {
                         child: _buildRow(
                           rows[i],
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 9),
+                            horizontal: 12,
+                            vertical: 9,
+                          ),
                         ),
                       ),
                     );
@@ -215,31 +229,63 @@ class SalesHistoryScreen extends ConsumerStatefulWidget {
 
 class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
   // ── filter state ──────────────────────────────────────────────────────────
-  DateTime _startDate      = DateTime.now();
-  DateTime _endDate        = DateTime.now();
-  bool _showAllUsers       = true;
+  DateTime _startDate = DateTime.now();
+  DateTime _endDate = DateTime.now();
+  bool _showAllUsers = true;
   Customer? _filterCustomer;
-  final _docNumCtrl        = TextEditingController();
+  final _docNumCtrl = TextEditingController();
 
   // ── data state ────────────────────────────────────────────────────────────
   List<SalesHistoryDocument> _documents = [];
-  List<DocumentItem> _items             = [];
+  List<DocumentItem> _items = [];
   String? _selectedDocLocalId;
-  bool _loading      = false;
+  bool _loading = false;
   bool _itemsLoading = false;
   String? _error;
 
   // ── split pane ────────────────────────────────────────────────────────────
   double _splitFraction = 0.55;
 
+  // ── column visibility (per-device, persisted in SharedPreferences) ──────────
+  // Which columns each table shows. Seeded from prefs (falling back to "all");
+  // the "Columns" pickers toggle entries and at least one column always stays
+  // visible (the picker forbids clearing the last one).
+  static const _prefsMasterColsKey = 'sales_history_master_cols';
+  static const _prefsDetailColsKey = 'sales_history_detail_cols';
+  late Set<String> _visibleMasterColIds;
+  late Set<String> _visibleDetailColIds;
+
   final _dateFmt = DateFormat('dd/MM/yyyy');
-  final _numFmt  = NumberFormat('#,##0.00');
+  final _numFmt = NumberFormat('#,##0.00');
 
   @override
   void initState() {
     super.initState();
     tz_data.initializeTimeZones();
+    _visibleMasterColIds = _loadCols(
+      _prefsMasterColsKey,
+      _masterColumns.map((c) => c.id),
+    );
+    _visibleDetailColIds = _loadCols(
+      _prefsDetailColsKey,
+      _detailColumns.map((c) => c.id),
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) => _fetchDocuments());
+  }
+
+  /// Reads a persisted set of visible column ids, dropping any stale ids no
+  /// longer present in [allIds] and falling back to "all visible" when nothing
+  /// valid is stored (first run, or a saved set that's been fully invalidated).
+  Set<String> _loadCols(String prefsKey, Iterable<String> allIds) {
+    final all = allIds.toSet();
+    final stored = ref.read(sharedPreferencesProvider).getStringList(prefsKey);
+    if (stored == null || stored.isEmpty) return all;
+    final valid = stored.where(all.contains).toSet();
+    return valid.isEmpty ? all : valid;
+  }
+
+  void _saveCols(String prefsKey, Set<String> ids) {
+    ref.read(sharedPreferencesProvider).setStringList(prefsKey, ids.toList());
   }
 
   @override
@@ -253,21 +299,34 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
   String _fmt(String? iso) {
     if (iso == null || iso.isEmpty) return '-';
     try {
-      final dt  = DateTime.parse(iso);
+      final dt = DateTime.parse(iso);
       final isTs = iso.contains('T') || iso.contains(' ');
       if (isTs) {
         final utc = dt.isUtc
             ? dt
-            : DateTime.utc(dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second);
-        final tzId = ref.read(appSettingsProvider)[SettingKeys.timezone] ?? 'UTC';
+            : DateTime.utc(
+                dt.year,
+                dt.month,
+                dt.day,
+                dt.hour,
+                dt.minute,
+                dt.second,
+              );
+        final tzId =
+            ref.read(appSettingsProvider)[SettingKeys.timezone] ?? 'UTC';
         DateTime disp;
-        try { disp = tz.TZDateTime.from(utc, tz.getLocation(tzId)); }
-        catch (_) { disp = utc; }
+        try {
+          disp = tz.TZDateTime.from(utc, tz.getLocation(tzId));
+        } catch (_) {
+          disp = utc;
+        }
         return '${_pad(disp.day)}/${_pad(disp.month)}/${disp.year} '
-               '${_pad(disp.hour)}:${_pad(disp.minute)}';
+            '${_pad(disp.hour)}:${_pad(disp.minute)}';
       }
       return '${_pad(dt.day)}/${_pad(dt.month)}/${dt.year}';
-    } catch (_) { return iso; }
+    } catch (_) {
+      return iso;
+    }
   }
 
   String _pad(int v) => v.toString().padLeft(2, '0');
@@ -278,7 +337,12 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     final company = ref.read(selectedCompanyProvider);
     if (company == null) return;
 
-    setState(() { _loading = true; _error = null; _selectedDocLocalId = null; _items = []; });
+    setState(() {
+      _loading = true;
+      _error = null;
+      _selectedDocLocalId = null;
+      _items = [];
+    });
 
     try {
       // Offline-first: read sales documents straight from the local Drift store
@@ -299,7 +363,13 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       // Inclusive end-of-day bound for the date filter.
       final from = DateTime(_startDate.year, _startDate.month, _startDate.day);
       final to = DateTime(
-          _endDate.year, _endDate.month, _endDate.day, 23, 59, 59);
+        _endDate.year,
+        _endDate.month,
+        _endDate.day,
+        23,
+        59,
+        59,
+      );
 
       final rows = await db.getDocuments(
         companyId: company.id,
@@ -315,41 +385,47 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
         final taxTotal = items.fold<double>(0, (s, i) => s + i.taxAmount);
 
         final payments = await db.getPayments(row.localId);
-        final visiblePayments =
-            payments.where((p) => p.syncStatus != 'pending_delete');
+        final visiblePayments = payments.where(
+          (p) => p.syncStatus != 'pending_delete',
+        );
         final paymentSummary = visiblePayments.isEmpty
             ? null
             : visiblePayments
-                .map((p) =>
-                    '${payTypeMap[p.paymentTypeId] ?? 'Payment'}: ${p.amount.toStringAsFixed(2)}')
-                .join(', ');
+                  .map(
+                    (p) =>
+                        '${payTypeMap[p.paymentTypeId] ?? 'Payment'}: ${p.amount.toStringAsFixed(2)}',
+                  )
+                  .join(', ');
 
-        docs.add(SalesHistoryDocument(
-          id: row.serverId ?? 0,
-          localId: row.localId,
-          number: row.number?.isNotEmpty == true
-              ? row.number!
-              : (row.syncStatus == 'pending' ||
-                      row.syncStatus == 'pending_create'
-                  ? '(Pending sync)'
-                  : '—'),
-          userName: userMap[row.userId],
-          customerName:
-              row.customerId != null ? customerMap[row.customerId] : null,
-          warehouseName: warehouseMap[row.warehouseId],
-          orderNumber: row.orderNumber,
-          referenceDocumentNumber: row.referenceDocumentNumber,
-          date: row.date.toIso8601String(),
-          stockDate: (row.stockDate ?? row.date).toIso8601String(),
-          dateCreated: (row.stockDate ?? row.date).toIso8601String(),
-          total: row.total,
-          totalBeforeTax: row.total - taxTotal,
-          taxTotal: taxTotal,
-          discount: row.discount,
-          discountType: row.discountType,
-          paidStatus: row.paidStatus,
-          paymentSummary: paymentSummary,
-        ));
+        docs.add(
+          SalesHistoryDocument(
+            id: row.serverId ?? 0,
+            localId: row.localId,
+            number: row.number?.isNotEmpty == true
+                ? row.number!
+                : (row.syncStatus == 'pending' ||
+                          row.syncStatus == 'pending_create'
+                      ? '(Pending sync)'
+                      : '—'),
+            userName: userMap[row.userId],
+            customerName: row.customerId != null
+                ? customerMap[row.customerId]
+                : null,
+            warehouseName: warehouseMap[row.warehouseId],
+            orderNumber: row.orderNumber,
+            referenceDocumentNumber: row.referenceDocumentNumber,
+            date: row.date.toIso8601String(),
+            stockDate: (row.stockDate ?? row.date).toIso8601String(),
+            dateCreated: (row.stockDate ?? row.date).toIso8601String(),
+            total: row.total,
+            totalBeforeTax: row.total - taxTotal,
+            taxTotal: taxTotal,
+            discount: row.discount,
+            discountType: row.discountType,
+            paidStatus: row.paidStatus,
+            paymentSummary: paymentSummary,
+          ),
+        );
       }
 
       var filtered = docs;
@@ -359,19 +435,33 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
             .where((d) => d.number.toLowerCase().contains(search))
             .toList();
       }
-      setState(() { _documents = filtered; });
+      setState(() {
+        _documents = filtered;
+      });
     } catch (e) {
-      setState(() { _error = e.toString(); });
+      setState(() {
+        _error = e.toString();
+      });
     } finally {
-      setState(() { _loading = false; });
+      setState(() {
+        _loading = false;
+      });
     }
   }
 
   Future<void> _fetchItems(SalesHistoryDocument doc) async {
     final localId = doc.localId;
-    if (localId == null) { setState(() { _items = []; }); return; }
+    if (localId == null) {
+      setState(() {
+        _items = [];
+      });
+      return;
+    }
 
-    setState(() { _itemsLoading = true; _items = []; });
+    setState(() {
+      _itemsLoading = true;
+      _items = [];
+    });
     try {
       // Offline-first: line items from the local Drift store, with product
       // names resolved from the local product cache.
@@ -398,8 +488,9 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
             discount: r.discount,
             discountType: r.discountType,
             productCost: p?.cost ?? 0,
-            priceBeforeTaxAfterDiscount:
-                r.taxRate > 0 ? r.total / (1 + r.taxRate / 100) : r.total,
+            priceBeforeTaxAfterDiscount: r.taxRate > 0
+                ? r.total / (1 + r.taxRate / 100)
+                : r.total,
             priceAfterDiscount: r.unitPrice,
             total: r.total,
             totalAfterDocumentDiscount: r.total,
@@ -408,9 +499,13 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
         }).toList();
       });
     } catch (_) {
-      setState(() { _items = []; });
+      setState(() {
+        _items = [];
+      });
     } finally {
-      setState(() { _itemsLoading = false; });
+      setState(() {
+        _itemsLoading = false;
+      });
     }
   }
 
@@ -421,16 +516,17 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title:   const Text('Delete Document'),
+        title: const Text('Delete Document'),
         content: Text("Delete '${doc.number}'? This cannot be undone."),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
-            style:     FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.pop(ctx, true),
-            child:     const Text('Delete'),
+            child: const Text('Delete'),
           ),
         ],
       ),
@@ -449,8 +545,10 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
         await db.deleteDocumentLocal(localId);
         ref.read(syncStateProvider.notifier).sync().catchError((_) {});
       } else if (doc.id > 0) {
-        await createDio().delete('/Document/Delete',
-            queryParameters: {'id': doc.id, 'companyId': company.id});
+        await createDio().delete(
+          '/Document/Delete',
+          queryParameters: {'id': doc.id, 'companyId': company.id},
+        );
       }
       if (!mounted) return;
       showAppSnackbar(context, ref, 'Document deleted');
@@ -458,11 +556,9 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     } on DioException catch (e) {
       if (!mounted) return;
       final data = e.response?.data;
-      final msg = (data is Map ? data['message'] : data?.toString()) ?? 'Delete failed';
-      showAppSnackbar(
-        context, ref, msg,
-        isError: true,
-      );
+      final msg =
+          (data is Map ? data['message'] : data?.toString()) ?? 'Delete failed';
+      showAppSnackbar(context, ref, msg, isError: true);
     }
   }
 
@@ -476,22 +572,24 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     Uint8List? logoBytes;
     final logoBase64 = ref.read(selectedCompanyProvider)?.logo;
     if (logoBase64 != null && logoBase64.isNotEmpty) {
-      try { logoBytes = base64Decode(logoBase64); } catch (_) {}
+      try {
+        logoBytes = base64Decode(logoBase64);
+      } catch (_) {}
     }
     return {
-      'company':        ref.read(selectedCompanyProvider)!,
-      'invoiceNumber':  doc.number,
-      'date':           doc.stockDate,
-      'customerName':   doc.customerName,
-      'isPaid':         doc.paidStatus != 0,
-      'items':          _items,
-      'total':          doc.total,
+      'company': ref.read(selectedCompanyProvider)!,
+      'invoiceNumber': doc.number,
+      'date': doc.stockDate,
+      'customerName': doc.customerName,
+      'isPaid': doc.paidStatus != 0,
+      'items': _items,
+      'total': doc.total,
       'totalBeforeTax': doc.totalBeforeTax,
-      'taxTotal':       doc.taxTotal,
-      'discount':       doc.discount,
+      'taxTotal': doc.taxTotal,
+      'discount': doc.discount,
       'paymentSummary': doc.paymentSummary,
       'currencySymbol': ref.read(currencySymbolProvider),
-      'logoBytes':      logoBytes,
+      'logoBytes': logoBytes,
     };
   }
 
@@ -505,11 +603,12 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     final companyId = ref.read(selectedCompanyProvider)?.id;
     if (companyId == null) return const [];
     final db = ref.read(appDatabaseProvider);
-    final row = await (db.select(db.documentsTable)
-          ..where((t) => t.companyId.equals(companyId))
-          ..where((t) => t.number.equals(doc.number))
-          ..limit(1))
-        .getSingleOrNull();
+    final row =
+        await (db.select(db.documentsTable)
+              ..where((t) => t.companyId.equals(companyId))
+              ..where((t) => t.number.equals(doc.number))
+              ..limit(1))
+            .getSingleOrNull();
     if (row == null) return const [];
     return toReceiptDiscountLines(
       await db.getDiscountLinesForDocument(row.localId),
@@ -524,20 +623,20 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     final a = _invoiceArgs(doc);
     final discountLines = await _discountLinesFor(doc);
     await InvoicePdfService.printDocument(
-      company:        a['company'],
-      invoiceNumber:  a['invoiceNumber'],
-      date:           a['date'],
-      customerName:   a['customerName'],
-      isPaid:         a['isPaid'],
-      items:          a['items'],
-      total:          a['total'],
+      company: a['company'],
+      invoiceNumber: a['invoiceNumber'],
+      date: a['date'],
+      customerName: a['customerName'],
+      isPaid: a['isPaid'],
+      items: a['items'],
+      total: a['total'],
       totalBeforeTax: a['totalBeforeTax'],
-      taxTotal:       a['taxTotal'],
-      discount:       a['discount'],
+      taxTotal: a['taxTotal'],
+      discount: a['discount'],
       paymentSummary: a['paymentSummary'],
       currencySymbol: a['currencySymbol'],
-      discountLines:  discountLines,
-      logoBytes:      a['logoBytes'],
+      discountLines: discountLines,
+      logoBytes: a['logoBytes'],
     );
   }
 
@@ -547,20 +646,20 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     final a = _invoiceArgs(doc);
     final discountLines = await _discountLinesFor(doc);
     await InvoicePdfService.saveAsPdf(
-      company:        a['company'],
-      invoiceNumber:  a['invoiceNumber'],
-      date:           a['date'],
-      customerName:   a['customerName'],
-      isPaid:         a['isPaid'],
-      items:          a['items'],
-      total:          a['total'],
+      company: a['company'],
+      invoiceNumber: a['invoiceNumber'],
+      date: a['date'],
+      customerName: a['customerName'],
+      isPaid: a['isPaid'],
+      items: a['items'],
+      total: a['total'],
       totalBeforeTax: a['totalBeforeTax'],
-      taxTotal:       a['taxTotal'],
-      discount:       a['discount'],
+      taxTotal: a['taxTotal'],
+      discount: a['discount'],
       paymentSummary: a['paymentSummary'],
       currencySymbol: a['currencySymbol'],
-      discountLines:  discountLines,
-      logoBytes:      a['logoBytes'],
+      discountLines: discountLines,
+      logoBytes: a['logoBytes'],
     );
   }
 
@@ -578,33 +677,40 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     final cartItems = <CartItem>[];
     for (int i = 0; i < items.length; i++) {
       final item = items[i];
-      cartItems.add(CartItem(
-        cartItemId:          '${item.productId}_$i',
-        posOrderId:          0,
-        productId:           item.productId,
-        productName:         item.productName ?? '-',
-        quantity:            item.quantity,
-        price:               item.price,
-        discount:            item.discount,
-        discountType:        item.discountType,
-        promotionalDiscount: 0,
-        appliedTaxes:        [],
-        measurementUnit:     item.measurementUnit,
-        isService:           false,
-      ));
+      cartItems.add(
+        CartItem(
+          cartItemId: '${item.productId}_$i',
+          posOrderId: 0,
+          productId: item.productId,
+          productName: item.productName ?? '-',
+          quantity: item.quantity,
+          price: item.price,
+          discount: item.discount,
+          discountType: item.discountType,
+          promotionalDiscount: 0,
+          appliedTaxes: [],
+          measurementUnit: item.measurementUnit,
+          isService: false,
+        ),
+      );
     }
 
     // Decode logo
     Uint8List? logoBytes;
     final logoBase64 = company.logo;
     if (logoBase64 != null && logoBase64.isNotEmpty) {
-      try { logoBytes = base64Decode(logoBase64); } catch (_) {}
+      try {
+        logoBytes = base64Decode(logoBase64);
+      } catch (_) {}
     }
 
     // Parse stockDate for printTime
     DateTime printTime;
-    try { printTime = DateTime.parse(doc.stockDate); }
-    catch (_) { printTime = DateTime.now(); }
+    try {
+      printTime = DateTime.parse(doc.stockDate);
+    } catch (_) {
+      printTime = DateTime.now();
+    }
 
     // Item-level discount total. An item's `discount` is always stored as an
     // absolute currency amount (the entry dialog converts a % to money before
@@ -619,21 +725,21 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     final discountLines = await _discountLinesFor(doc, includeLoyalty: false);
 
     await ReceiptPrinterService().printCartReceipt(
-      company:         company,
-      cashier:         ref.read(currentUserProvider),
-      orderNumber:     doc.number,
-      printTime:       printTime,
-      items:           cartItems,
-      subtotal:        doc.totalBeforeTax,
-      totalDiscount:   totalDiscount,
-      discountLines:   discountLines,
-      totalTax:        doc.taxTotal,
-      grandTotal:      doc.total,
-      currencySymbol:  sym,
+      company: company,
+      cashier: ref.read(currentUserProvider),
+      orderNumber: doc.number,
+      printTime: printTime,
+      items: cartItems,
+      subtotal: doc.totalBeforeTax,
+      totalDiscount: totalDiscount,
+      discountLines: discountLines,
+      totalTax: doc.taxTotal,
+      grandTotal: doc.total,
+      currencySymbol: sym,
       paymentTypeName: doc.paymentSummary,
-      amountPaid:      doc.total,
-      logoBytes:       logoBytes,
-      roleSettings:    ref.read(appSettingsProvider),
+      amountPaid: doc.total,
+      logoBytes: logoBytes,
+      roleSettings: ref.read(appSettingsProvider),
     );
   }
 
@@ -656,41 +762,28 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final cs    = theme.colorScheme;
-    final sym   = ref.watch(currencySymbolProvider);
+    final cs = theme.colorScheme;
+    final sym = ref.watch(currencySymbolProvider);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: Column(
         children: [
-          _buildTitleBar(theme, cs),
+          PosTopBar(
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              tooltip: 'Back',
+              onPressed: () => Navigator.pop(context),
+            ),
+            title: const Text(
+              'Sales history',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
           _buildToolbar(theme, cs),
           Expanded(child: _buildBody(theme, cs, sym)),
           _buildFooter(theme, cs, sym),
-        ],
-      ),
-    );
-  }
-
-  // ── title bar ─────────────────────────────────────────────────────────────
-
-  Widget _buildTitleBar(ThemeData theme, ColorScheme cs) {
-    return Container(
-      height:  44,
-      color:   cs.surfaceContainerHighest,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          Text('Sales history',
-              style: theme.textTheme.titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w700)),
-          const Spacer(),
-          IconButton(
-            icon:      const Icon(Icons.close),
-            iconSize:  20,
-            tooltip:   'Close',
-            onPressed: () => Navigator.pop(context),
-          ),
         ],
       ),
     );
@@ -704,10 +797,12 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
         : null;
 
     return Container(
-      height:     56,
+      height: 56,
       decoration: BoxDecoration(
-        color:  cs.surface,
-        border: Border(bottom: BorderSide(color: theme.dividerColor, width: 0.5)),
+        color: cs.surface,
+        border: Border(
+          bottom: BorderSide(color: theme.dividerColor, width: 0.5),
+        ),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Row(
@@ -718,19 +813,21 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
             child: TextField(
               controller: _docNumCtrl,
               decoration: InputDecoration(
-                hintText:        'Document nu...',
-                isDense:         true,
-                prefixIcon:      const Icon(Icons.search, size: 16),
-                filled:          true,
-                fillColor:       cs.surfaceContainerHighest,
-                border:          OutlineInputBorder(
+                hintText: 'Document nu...',
+                isDense: true,
+                prefixIcon: const Icon(Icons.search, size: 16),
+                filled: true,
+                fillColor: cs.surfaceContainerHighest,
+                border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(6),
-                  borderSide:   BorderSide.none,
+                  borderSide: BorderSide.none,
                 ),
                 contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 8, vertical: 8),
+                  horizontal: 8,
+                  vertical: 8,
+                ),
               ),
-              style:       TextStyle(fontSize: 13, color: cs.onSurface),
+              style: TextStyle(fontSize: 13, color: cs.onSurface),
               onSubmitted: (_) => _fetchDocuments(),
             ),
           ),
@@ -738,26 +835,30 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
 
           // Date range
           InkWell(
-            onTap:        _pickDateRange,
+            onTap: _pickDateRange,
             borderRadius: BorderRadius.circular(6),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               decoration: BoxDecoration(
-                color:        cs.surfaceContainerHighest,
+                color: cs.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.calendar_month_outlined,
-                      size: 15, color: cs.primary),
+                  Icon(
+                    Icons.calendar_month_outlined,
+                    size: 15,
+                    color: cs.primary,
+                  ),
                   const Gap(6),
                   Text(
                     '${_dateFmt.format(_startDate)} – ${_dateFmt.format(_endDate)}',
                     style: TextStyle(
-                        fontSize:   12,
-                        color:      cs.onSurface,
-                        fontWeight: FontWeight.w500),
+                      fontSize: 12,
+                      color: cs.onSurface,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ],
               ),
@@ -768,7 +869,6 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
           const VerticalDivider(width: 1),
           const Gap(2),
 
-          _toolBtn(Icons.sync, 'Refresh', () => _fetchDocuments()),
           _toolBtn(
             _showAllUsers ? Icons.group : Icons.person_outline,
             _showAllUsers ? 'All users' : 'My sales',
@@ -788,42 +888,114 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
           const VerticalDivider(width: 1),
           const Gap(2),
 
-          _toolBtn(Icons.print_outlined, 'Print',
-              sel == null ? null : () => _printInvoice(sel)),
-          _toolBtn(Icons.picture_as_pdf_outlined, 'Save as PDF',
-              sel == null ? null : () => _saveInvoicePdf(sel)),
-          _toolBtn(Icons.receipt_outlined, 'Receipt',
-              sel == null ? null : () => ref.read(securityGuardProvider).guard(
-                    context,
-                    SecurityKeys.reprintReceipt,
-                    () => _reprintReceipt(sel),
-                  )),
-          _toolBtn(Icons.mail_outline, 'Send email',
-              sel == null ? null : () => _notImplemented('Send email')),
+          _toolBtn(
+            Icons.print_outlined,
+            'Print',
+            sel == null ? null : () => _printInvoice(sel),
+          ),
+          _toolBtn(
+            Icons.picture_as_pdf_outlined,
+            'Save as PDF',
+            sel == null ? null : () => _saveInvoicePdf(sel),
+          ),
+          _toolBtn(
+            Icons.receipt_outlined,
+            'Receipt',
+            sel == null
+                ? null
+                : () => ref
+                      .read(securityGuardProvider)
+                      .guard(
+                        context,
+                        SecurityKeys.reprintReceipt,
+                        () => _reprintReceipt(sel),
+                      ),
+          ),
+          _toolBtn(
+            Icons.mail_outline,
+            'Send email',
+            sel == null ? null : () => _notImplemented('Send email'),
+          ),
 
           const VerticalDivider(width: 1),
           const Gap(2),
 
-          _toolBtn(Icons.undo_outlined, 'Refund',
-              sel == null ? null : () => ref.read(securityGuardProvider).guard(
-                    context,
-                    SecurityKeys.refund,
-                    () => showDialog(
-                      context: context,
-                      builder: (_) => RefundDialog(
-                          initialDocumentNumber: sel.number),
-                    ),
-                  )),
-          _toolBtn(Icons.delete_outline, 'Delete',
-              sel == null ? null : () => ref.read(securityGuardProvider).guard(
-                    context,
-                    SecurityKeys.invoicesDelete,
-                    () => _deleteDocument(sel),
-                  ),
-              color: Colors.redAccent),
+          _toolBtn(
+            Icons.undo_outlined,
+            'Refund',
+            sel == null
+                ? null
+                : () => ref
+                      .read(securityGuardProvider)
+                      .guard(
+                        context,
+                        SecurityKeys.refund,
+                        () => showDialog(
+                          context: context,
+                          builder: (_) =>
+                              RefundDialog(initialDocumentNumber: sel.number),
+                        ),
+                      ),
+          ),
+          _toolBtn(
+            Icons.delete_outline,
+            'Delete',
+            sel == null
+                ? null
+                : () => ref
+                      .read(securityGuardProvider)
+                      .guard(
+                        context,
+                        SecurityKeys.invoicesDelete,
+                        () => _deleteDocument(sel),
+                      ),
+            color: Colors.redAccent,
+          ),
+
+          // Right-aligned utilities: Documents column picker + refresh.
+          const Spacer(),
+          _toolBtn(
+            Icons.view_column_outlined,
+            'Columns',
+            () => _pickColumns(
+              title: 'Documents columns',
+              columns: _masterColumns
+                  .map((c) => (id: c.id, label: c.label))
+                  .toList(),
+              visible: _visibleMasterColIds,
+              prefsKey: _prefsMasterColsKey,
+              onApply: (s) => setState(() => _visibleMasterColIds = s),
+            ),
+          ),
+          _toolBtn(Icons.sync, 'Refresh', () => _fetchDocuments()),
         ],
       ),
     );
+  }
+
+  // ── column selector ─────────────────────────────────────────────────────────
+
+  /// Shared picker for either table. Persists the chosen set to SharedPreferences
+  /// and pushes it back into state via [onApply].
+  Future<void> _pickColumns({
+    required String title,
+    required List<({String id, String label})> columns,
+    required Set<String> visible,
+    required String prefsKey,
+    required ValueChanged<Set<String>> onApply,
+  }) async {
+    final result = await showDialog<Set<String>>(
+      context: context,
+      builder: (_) => _ColumnSelectorDialog(
+        title: title,
+        columns: columns,
+        visible: visible,
+      ),
+    );
+    if (result != null && result.isNotEmpty) {
+      _saveCols(prefsKey, result);
+      onApply(result);
+    }
   }
 
   Widget _toolBtn(
@@ -833,7 +1005,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     bool active = false,
     Color? color,
   }) {
-    final cs  = Theme.of(context).colorScheme;
+    final cs = Theme.of(context).colorScheme;
     final col = onTap == null
         ? cs.onSurface.withValues(alpha: 0.28)
         : (active ? cs.primary : (color ?? cs.onSurface));
@@ -841,7 +1013,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     return Tooltip(
       message: label,
       child: InkWell(
-        onTap:        onTap,
+        onTap: onTap,
         borderRadius: BorderRadius.circular(6),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 6),
@@ -850,11 +1022,14 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
             children: [
               Icon(icon, size: 20, color: col),
               const Gap(2),
-              Text(label,
-                  style: TextStyle(
-                      fontSize:   9,
-                      color:      col,
-                      fontWeight: FontWeight.w500)),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 9,
+                  color: col,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ],
           ),
         ),
@@ -867,11 +1042,14 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
   Future<void> _pickDateRange() async {
     final range = await showDialog<DateTimeRange>(
       context: context,
-      builder: (_) => _DateRangePickerDialog(
-          startDate: _startDate, endDate: _endDate),
+      builder: (_) =>
+          _DateRangePickerDialog(startDate: _startDate, endDate: _endDate),
     );
     if (range != null) {
-      setState(() { _startDate = range.start; _endDate = range.end; });
+      setState(() {
+        _startDate = range.start;
+        _endDate = range.end;
+      });
       _fetchDocuments();
     }
   }
@@ -891,69 +1069,135 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
             const Gap(16),
             FilledButton.icon(
               onPressed: _fetchDocuments,
-              icon:      const Icon(Icons.refresh),
-              label:     const Text('Retry'),
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
             ),
           ],
         ),
       );
     }
 
-    return LayoutBuilder(builder: (context, constraints) {
-      final totalH  = constraints.maxHeight;
-      final masterH = (totalH * _splitFraction).clamp(120.0, totalH - 120.0);
-      final dividerH = 12.0;
-      final headerH  = 28.0;
-      final detailH  = totalH - masterH - dividerH - (headerH * 2);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final totalH = constraints.maxHeight;
+        final masterH = (totalH * _splitFraction).clamp(120.0, totalH - 120.0);
+        final dividerH = 12.0;
+        final headerH = 28.0;
+        final detailH = totalH - masterH - dividerH - (headerH * 2);
 
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _sectionHeader(theme, cs, 'Documents'),
-          SizedBox(height: masterH - headerH, child: _buildMasterTable(theme, cs, sym)),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _sectionHeader(theme, cs, 'Documents'),
+            SizedBox(
+              height: masterH - headerH,
+              child: _buildMasterTable(theme, cs, sym),
+            ),
 
-          // Draggable divider
-          GestureDetector(
-            onVerticalDragUpdate: (d) => setState(() {
-              _splitFraction =
-                  (_splitFraction + d.delta.dy / totalH).clamp(0.25, 0.75);
-            }),
-            child: Container(
-              height: dividerH,
-              color:  cs.surfaceContainerHighest,
-              child: Center(
-                child: Container(
-                  width:       40,
-                  height:      4,
-                  decoration: BoxDecoration(
-                    color:        cs.onSurface.withValues(alpha: 0.22),
-                    borderRadius: BorderRadius.circular(2),
+            // Draggable divider
+            GestureDetector(
+              onVerticalDragUpdate: (d) => setState(() {
+                _splitFraction = (_splitFraction + d.delta.dy / totalH).clamp(
+                  0.25,
+                  0.75,
+                );
+              }),
+              child: Container(
+                height: dividerH,
+                color: cs.surfaceContainerHighest,
+                child: Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: cs.onSurface.withValues(alpha: 0.22),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
 
-          _sectionHeader(theme, cs, 'Document items'),
-          SizedBox(height: detailH, child: _buildDetailTable(theme, cs, sym)),
-        ],
-      );
-    });
+            _sectionHeader(
+              theme,
+              cs,
+              'Document items',
+              trailing: _columnsHeaderButton(
+                cs,
+                () => _pickColumns(
+                  title: 'Document items columns',
+                  columns: _detailColumns
+                      .map((c) => (id: c.id, label: c.label))
+                      .toList(),
+                  visible: _visibleDetailColIds,
+                  prefsKey: _prefsDetailColsKey,
+                  onApply: (s) => setState(() => _visibleDetailColIds = s),
+                ),
+              ),
+            ),
+            SizedBox(height: detailH, child: _buildDetailTable(theme, cs, sym)),
+          ],
+        );
+      },
+    );
   }
 
-  Widget _sectionHeader(ThemeData theme, ColorScheme cs, String title) {
+  Widget _sectionHeader(
+    ThemeData theme,
+    ColorScheme cs,
+    String title, {
+    Widget? trailing,
+  }) {
     return Container(
-      height:    28,
-      padding:   const EdgeInsets.symmetric(horizontal: 12),
-      color:     cs.surfaceContainerHighest.withValues(alpha: 0.45),
-      alignment: Alignment.centerLeft,
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize:      11,
-          fontWeight:    FontWeight.w700,
-          color:         cs.onSurface.withValues(alpha: 0.65),
-          letterSpacing: 0.4,
+      height: 28,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      color: cs.surfaceContainerHighest.withValues(alpha: 0.45),
+      child: Row(
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: cs.onSurface.withValues(alpha: 0.65),
+              letterSpacing: 0.4,
+            ),
+          ),
+          const Spacer(),
+          if (trailing != null) trailing,
+        ],
+      ),
+    );
+  }
+
+  /// Compact "Columns" affordance used inside a section header.
+  Widget _columnsHeaderButton(ColorScheme cs, VoidCallback onTap) {
+    return Tooltip(
+      message: 'Choose columns',
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(4),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.view_column_outlined,
+                size: 14,
+                color: cs.onSurface.withValues(alpha: 0.65),
+              ),
+              const Gap(4),
+              Text(
+                'Columns',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: cs.onSurface.withValues(alpha: 0.65),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -961,76 +1205,131 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
 
   // ── master table ──────────────────────────────────────────────────────────
 
-  static const _masterCols = [
-    _ColDef('ID',            flex: 0.4, numeric: true),
-    _ColDef('Document type', flex: 0.8),
-    _ColDef('User',          flex: 0.7),
-    _ColDef('Number',        flex: 1.2),
-    _ColDef('External...',   flex: 0.7),
-    _ColDef('Customer',      flex: 1.1),
-    _ColDef('Date',          flex: 1.0),
-    _ColDef('Created',       flex: 1.3),
-    _ColDef('POS',           flex: 0.9),
-    _ColDef('Ord...',        flex: 0.9),
-    _ColDef('Payment...',    flex: 0.9),
-    _ColDef('Discount',      flex: 0.5, numeric: true),
-    _ColDef('Total bef...',  flex: 0.7, numeric: true),
-    _ColDef('Tax',           flex: 0.5, numeric: true),
-    _ColDef('Total',         flex: 0.7, numeric: true),
-  ];
+  // Master-table column metadata (stable id + display label + layout). The
+  // "Columns" picker toggles these on/off; the cell builders in
+  // [_buildMasterTable] are keyed by the same ids so header and body stay in
+  // lock-step regardless of which columns are hidden.
+  static const _masterColumns =
+      <({String id, String label, double flex, bool numeric})>[
+        (id: 'id', label: 'ID', flex: 0.4, numeric: true),
+        (id: 'type', label: 'Document type', flex: 0.8, numeric: false),
+        (id: 'user', label: 'User', flex: 0.7, numeric: false),
+        (id: 'number', label: 'Number', flex: 1.2, numeric: false),
+        (id: 'external', label: 'External ref', flex: 0.7, numeric: false),
+        (id: 'customer', label: 'Customer', flex: 1.1, numeric: false),
+        (id: 'date', label: 'Date', flex: 1.0, numeric: false),
+        (id: 'created', label: 'Created', flex: 1.3, numeric: false),
+        (id: 'pos', label: 'POS', flex: 0.9, numeric: false),
+        (id: 'order', label: 'Order #', flex: 0.9, numeric: false),
+        (id: 'payment', label: 'Payment', flex: 0.9, numeric: false),
+        (id: 'discount', label: 'Discount', flex: 0.5, numeric: true),
+        (
+          id: 'totalBefore',
+          label: 'Total before tax',
+          flex: 0.7,
+          numeric: true,
+        ),
+        (id: 'tax', label: 'Tax', flex: 0.5, numeric: true),
+        (id: 'total', label: 'Total', flex: 0.7, numeric: true),
+      ];
 
   Widget _buildMasterTable(ThemeData theme, ColorScheme cs, String sym) {
     final ts = const TextStyle(fontSize: 12);
-    final dimTs = TextStyle(fontSize: 12, color: cs.onSurface.withValues(alpha: 0.45));
+    final dimTs = TextStyle(
+      fontSize: 12,
+      color: cs.onSurface.withValues(alpha: 0.45),
+    );
 
-    final rows = _documents.map((doc) => [
-      Text('${doc.id}', style: dimTs),
-      Text('Sales', style: ts),
-      Text(doc.userName ?? '-', style: ts),
-      Text(doc.number,
-          style: ts.copyWith(fontWeight: FontWeight.bold),
-          overflow: TextOverflow.ellipsis),
-      Text(doc.referenceDocumentNumber ?? '-', style: ts),
-      Text(doc.customerName ?? 'Unknown', style: ts, overflow: TextOverflow.ellipsis),
-      Text(_fmt(doc.date), style: ts),
-      Text(_fmt(doc.stockDate), style: ts),
-      Text(doc.warehouseName ?? 'N/A', style: ts, overflow: TextOverflow.ellipsis),
-      Text(doc.orderNumber ?? 'N/A', style: ts, overflow: TextOverflow.ellipsis),
-      Text(doc.paymentSummary ?? 'N/A', style: ts, overflow: TextOverflow.ellipsis),
-      Text(
+    // Per-column cell builders, keyed to the metadata ids above.
+    final cellBuilders = <String, Widget Function(SalesHistoryDocument)>{
+      'id': (doc) => Text('${doc.id}', style: dimTs),
+      'type': (doc) => Text('Sales', style: ts),
+      'user': (doc) => Text(doc.userName ?? '-', style: ts),
+      'number': (doc) => Text(
+        doc.number,
+        style: ts.copyWith(fontWeight: FontWeight.bold),
+        overflow: TextOverflow.ellipsis,
+      ),
+      'external': (doc) => Text(doc.referenceDocumentNumber ?? '-', style: ts),
+      'customer': (doc) => Text(
+        doc.customerName ?? 'Unknown',
+        style: ts,
+        overflow: TextOverflow.ellipsis,
+      ),
+      'date': (doc) => Text(_fmt(doc.date), style: ts),
+      'created': (doc) => Text(_fmt(doc.stockDate), style: ts),
+      'pos': (doc) => Text(
+        doc.warehouseName ?? 'N/A',
+        style: ts,
+        overflow: TextOverflow.ellipsis,
+      ),
+      'order': (doc) => Text(
+        doc.orderNumber ?? 'N/A',
+        style: ts,
+        overflow: TextOverflow.ellipsis,
+      ),
+      'payment': (doc) => Text(
+        doc.paymentSummary ?? 'N/A',
+        style: ts,
+        overflow: TextOverflow.ellipsis,
+      ),
+      'discount': (doc) => Text(
         doc.discount <= 0
             ? '-'
             : (doc.discountType == 1
-                ? '-${_numFmt.format(doc.discount)}'
-                : '${doc.discount.toStringAsFixed(0)}%'),
+                  ? '-${_numFmt.format(doc.discount)}'
+                  : '${doc.discount.toStringAsFixed(0)}%'),
         style: ts,
       ),
-      Text(_numFmt.format(doc.totalBeforeTax), style: ts),
-      Text(_numFmt.format(doc.taxTotal), style: ts),
-      Text('${_numFmt.format(doc.total)} $sym',
-          style: ts.copyWith(
-              fontWeight: FontWeight.w900, color: cs.primary)),
-    ] as List<Widget>).toList();
+      'totalBefore': (doc) =>
+          Text(_numFmt.format(doc.totalBeforeTax), style: ts),
+      'tax': (doc) => Text(_numFmt.format(doc.taxTotal), style: ts),
+      'total': (doc) => Text(
+        '${_numFmt.format(doc.total)} $sym',
+        style: ts.copyWith(fontWeight: FontWeight.w900, color: cs.primary),
+      ),
+    };
+
+    final visibleCols = _masterColumns
+        .where((c) => _visibleMasterColIds.contains(c.id))
+        .toList();
+    final columns = visibleCols
+        .map((c) => _ColDef(c.label, flex: c.flex, numeric: c.numeric))
+        .toList();
+
+    final rows = _documents
+        .map((doc) => visibleCols.map((c) => cellBuilders[c.id]!(doc)).toList())
+        .toList();
 
     return _FlexTable(
-      columns:       _masterCols,
-      rows:          rows,
+      columns: columns,
+      rows: rows,
       isRowSelected: (i) => _documents[i].localId == _selectedDocLocalId,
-      onRowTap:      (i) {
+      onRowTap: (i) {
         final doc = _documents[i];
-        setState(() { _selectedDocLocalId = doc.localId; _items = []; });
+        setState(() {
+          _selectedDocLocalId = doc.localId;
+          _items = [];
+        });
         _fetchItems(doc);
       },
       emptyWidget: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.receipt_long_outlined,
-                size: 48, color: cs.onSurface.withValues(alpha: 0.18)),
+            Icon(
+              Icons.receipt_long_outlined,
+              size: 48,
+              color: cs.onSurface.withValues(alpha: 0.18),
+            ),
             const Gap(12),
-            Text('No sales documents for the selected period.',
-                style: TextStyle(
-                    color: cs.onSurface.withValues(alpha: 0.45), fontSize: 13)),
+            Text(
+              'No sales documents for the selected period.',
+              style: TextStyle(
+                color: cs.onSurface.withValues(alpha: 0.45),
+                fontSize: 13,
+              ),
+            ),
           ],
         ),
       ),
@@ -1039,26 +1338,43 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
 
   // ── detail table ──────────────────────────────────────────────────────────
 
-  static const _detailCols = [
-    _ColDef('ID',                   flex: 0.35, numeric: true),
-    _ColDef('Code',                 flex: 0.7),
-    _ColDef('Name',                 flex: 1.6),
-    _ColDef('Unit of measure',      flex: 0.8),
-    _ColDef('Quantity',             flex: 0.7,  numeric: true),
-    _ColDef('Price before tax',     flex: 0.9,  numeric: true),
-    _ColDef('Tax',                  flex: 0.45, numeric: true),
-    _ColDef('Price',                flex: 0.7,  numeric: true),
-    _ColDef('Total bef. discount',  flex: 1.0,  numeric: true),
-    _ColDef('Discount',             flex: 0.55, numeric: true),
-    _ColDef('Total',                flex: 0.7,  numeric: true),
-  ];
+  // Document-items column metadata — same id-keyed pattern as the master table
+  // so the "Columns" picker can hide any of them.
+  static const _detailColumns =
+      <({String id, String label, double flex, bool numeric})>[
+        (id: 'id', label: 'ID', flex: 0.35, numeric: true),
+        (id: 'code', label: 'Code', flex: 0.7, numeric: false),
+        (id: 'name', label: 'Name', flex: 1.6, numeric: false),
+        (id: 'unit', label: 'Unit of measure', flex: 0.8, numeric: false),
+        (id: 'qty', label: 'Quantity', flex: 0.7, numeric: true),
+        (
+          id: 'priceBeforeTax',
+          label: 'Price before tax',
+          flex: 0.9,
+          numeric: true,
+        ),
+        (id: 'tax', label: 'Tax', flex: 0.45, numeric: true),
+        (id: 'price', label: 'Price', flex: 0.7, numeric: true),
+        (
+          id: 'totalBeforeDiscount',
+          label: 'Total bef. discount',
+          flex: 1.0,
+          numeric: true,
+        ),
+        (id: 'discount', label: 'Discount', flex: 0.55, numeric: true),
+        (id: 'total', label: 'Total', flex: 0.7, numeric: true),
+      ];
 
   Widget _buildDetailTable(ThemeData theme, ColorScheme cs, String sym) {
     if (_selectedDocLocalId == null) {
       return Center(
-        child: Text('Select a document above to view its items.',
-            style: TextStyle(
-                color: cs.onSurface.withValues(alpha: 0.38), fontSize: 13)),
+        child: Text(
+          'Select a document above to view its items.',
+          style: TextStyle(
+            color: cs.onSurface.withValues(alpha: 0.38),
+            fontSize: 13,
+          ),
+        ),
       );
     }
     if (_itemsLoading) {
@@ -1066,47 +1382,72 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     }
 
     final ts = const TextStyle(fontSize: 12);
-    final dimTs = TextStyle(fontSize: 12, color: cs.onSurface.withValues(alpha: 0.45));
+    final dimTs = TextStyle(
+      fontSize: 12,
+      color: cs.onSurface.withValues(alpha: 0.45),
+    );
 
-    final rows = _items.map((item) {
-      final taxPct = item.priceBeforeTax > 0
-          ? ((item.price - item.priceBeforeTax) / item.priceBeforeTax * 100)
-          : 0.0;
-      final totalBeforeDiscount = item.price * item.quantity;
+    // Per-column cell builders, keyed to [_detailColumns]. taxPct and the
+    // pre-discount total are derived per item inside their builders.
+    final cellBuilders = <String, Widget Function(DocumentItem)>{
+      'id': (item) => Text('${item.id}', style: dimTs),
+      'code': (item) => Text(item.productCode ?? '-', style: ts),
+      'name': (item) => Text(
+        item.productName ?? '-',
+        style: ts,
+        overflow: TextOverflow.ellipsis,
+      ),
+      'unit': (item) => Text(item.measurementUnit ?? '-', style: ts),
+      'qty': (item) => Text(_numFmt.format(item.quantity), style: ts),
+      'priceBeforeTax': (item) =>
+          Text(_numFmt.format(item.priceBeforeTax), style: ts),
+      'tax': (item) {
+        final taxPct = item.priceBeforeTax > 0
+            ? ((item.price - item.priceBeforeTax) / item.priceBeforeTax * 100)
+            : 0.0;
+        return Text('${taxPct.toStringAsFixed(0)}%', style: ts);
+      },
+      'price': (item) => Text(_numFmt.format(item.price), style: ts),
+      'totalBeforeDiscount': (item) =>
+          Text(_numFmt.format(item.price * item.quantity), style: ts),
+      // Item discounts are always stored as an absolute currency amount (the
+      // entry dialog converts a % to money before saving), so show the money
+      // taken off — never a '%', which would misrepresent a fixed -5.
+      'discount': (item) => Text(
+        item.discount > 0
+            ? '-${_numFmt.format(item.discount * item.quantity)}'
+            : '-',
+        style: ts,
+      ),
+      'total': (item) => Text(
+        _numFmt.format(item.total),
+        style: ts.copyWith(fontWeight: FontWeight.w700, color: cs.primary),
+      ),
+    };
 
-      return [
-        Text('${item.id}', style: dimTs),
-        Text(item.productCode ?? '-', style: ts),
-        Text(item.productName ?? '-',
-            style: ts, overflow: TextOverflow.ellipsis),
-        Text(item.measurementUnit ?? '-', style: ts),
-        Text(_numFmt.format(item.quantity), style: ts),
-        Text(_numFmt.format(item.priceBeforeTax), style: ts),
-        Text('${taxPct.toStringAsFixed(0)}%', style: ts),
-        Text(_numFmt.format(item.price), style: ts),
-        Text(_numFmt.format(totalBeforeDiscount), style: ts),
-        // Item discounts are always stored as an absolute currency amount
-        // (the entry dialog converts a % to money before saving), so show the
-        // money taken off — never a '%', which would misrepresent a fixed -5.
-        Text(
-          item.discount > 0
-              ? '-${_numFmt.format(item.discount * item.quantity)}'
-              : '-',
-          style: ts,
-        ),
-        Text(_numFmt.format(item.total),
-            style: ts.copyWith(
-                fontWeight: FontWeight.w700, color: cs.primary)),
-      ] as List<Widget>;
-    }).toList();
+    final visibleCols = _detailColumns
+        .where((c) => _visibleDetailColIds.contains(c.id))
+        .toList();
+    final columns = visibleCols
+        .map((c) => _ColDef(c.label, flex: c.flex, numeric: c.numeric))
+        .toList();
+    final rows = _items
+        .map(
+          (item) => visibleCols.map((c) => cellBuilders[c.id]!(item)).toList(),
+        )
+        .toList();
 
     return _FlexTable(
-      columns:    _detailCols,
-      rows:       rows,
+      columns: columns,
+      rows: rows,
       emptyWidget: Center(
-        child: Text('No items found for this document.',
-            style: TextStyle(
-                color: cs.onSurface.withValues(alpha: 0.38), fontSize: 13)),
+        child: Text(
+          'No items found for this document.',
+          style: TextStyle(
+            color: cs.onSurface.withValues(alpha: 0.38),
+            fontSize: 13,
+          ),
+        ),
       ),
     );
   }
@@ -1114,14 +1455,13 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
   // ── footer ────────────────────────────────────────────────────────────────
 
   Widget _buildFooter(ThemeData theme, ColorScheme cs, String sym) {
-    final totalAmount =
-        _documents.fold<double>(0, (sum, d) => sum + d.total);
+    final totalAmount = _documents.fold<double>(0, (sum, d) => sum + d.total);
 
     return Container(
-      height:  44,
+      height: 44,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color:  cs.surfaceContainerHighest,
+        color: cs.surfaceContainerHighest,
         border: Border(top: BorderSide(color: theme.dividerColor, width: 0.5)),
       ),
       child: Row(
@@ -1129,31 +1469,141 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
           Text(
             'Documents count: ${_documents.length}',
             style: TextStyle(
-                fontSize: 12, color: cs.onSurface.withValues(alpha: 0.65)),
+              fontSize: 12,
+              color: cs.onSurface.withValues(alpha: 0.65),
+            ),
           ),
           const Gap(24),
           Text(
             'Total amount: ${_numFmt.format(totalAmount)} $sym',
             style: TextStyle(
-                fontSize:   12,
-                fontWeight: FontWeight.w700,
-                color:      cs.onSurface),
-          ),
-          const Spacer(),
-          SizedBox(
-            height: 30,
-            child: FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: Colors.redAccent,
-                padding:         const EdgeInsets.symmetric(horizontal: 24),
-                shape:           RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(6)),
-              ),
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Close', style: TextStyle(fontSize: 13)),
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: cs.onSurface,
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Column selector dialog ──────────────────────────────────────────────────
+// Lets the user pick which Documents-table columns are shown. Toggles a local
+// working set and returns it on "Apply"; the last remaining column can't be
+// unchecked so the table is never left with zero columns.
+class _ColumnSelectorDialog extends StatefulWidget {
+  final String title;
+  final List<({String id, String label})> columns;
+  final Set<String> visible;
+  const _ColumnSelectorDialog({
+    required this.title,
+    required this.columns,
+    required this.visible,
+  });
+
+  @override
+  State<_ColumnSelectorDialog> createState() => _ColumnSelectorDialogState();
+}
+
+class _ColumnSelectorDialogState extends State<_ColumnSelectorDialog> {
+  late final Set<String> _sel = {...widget.visible};
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    return Dialog(
+      backgroundColor: theme.cardColor,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      child: SizedBox(
+        width: 320,
+        height: 520,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Title bar
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: cs.surfaceContainerHighest,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(10),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.view_column_outlined, size: 18, color: cs.primary),
+                  const Gap(8),
+                  Text(
+                    widget.title,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 18),
+                    onPressed: () => Navigator.pop(context),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+            ),
+
+            // Column checklist
+            Expanded(
+              child: ListView(
+                children: widget.columns.map((c) {
+                  final checked = _sel.contains(c.id);
+                  // Forbid clearing the final column.
+                  final lockLast = checked && _sel.length == 1;
+                  return CheckboxListTile(
+                    dense: true,
+                    value: checked,
+                    title: Text(c.label, style: const TextStyle(fontSize: 13)),
+                    controlAffinity: ListTileControlAffinity.leading,
+                    onChanged: lockLast
+                        ? null
+                        : (v) => setState(() {
+                            if (v == true) {
+                              _sel.add(c.id);
+                            } else {
+                              _sel.remove(c.id);
+                            }
+                          }),
+                  );
+                }).toList(),
+              ),
+            ),
+
+            Divider(height: 1, color: theme.dividerColor),
+
+            // Footer actions
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              child: Row(
+                children: [
+                  TextButton(
+                    onPressed: () => setState(
+                      () => _sel
+                        ..clear()
+                        ..addAll(widget.columns.map((c) => c.id)),
+                    ),
+                    child: const Text('Select all'),
+                  ),
+                  const Spacer(),
+                  FilledButton(
+                    onPressed: () => Navigator.pop(context, _sel),
+                    child: const Text('Apply'),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1176,8 +1626,7 @@ class _CustomerPickerDialog extends ConsumerStatefulWidget {
       _CustomerPickerDialogState();
 }
 
-class _CustomerPickerDialogState
-    extends ConsumerState<_CustomerPickerDialog> {
+class _CustomerPickerDialogState extends ConsumerState<_CustomerPickerDialog> {
   final _searchCtrl = TextEditingController();
   String _query = '';
 
@@ -1190,7 +1639,7 @@ class _CustomerPickerDialogState
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final cs    = theme.colorScheme;
+    final cs = theme.colorScheme;
 
     final customersAsync = ref.watch(allCustomersProvider);
 
@@ -1198,7 +1647,7 @@ class _CustomerPickerDialogState
       backgroundColor: theme.cardColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       child: SizedBox(
-        width:  360,
+        width: 360,
         height: 500,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1207,23 +1656,30 @@ class _CustomerPickerDialogState
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color:        cs.surfaceContainerHighest,
+                color: cs.surfaceContainerHighest,
                 borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(10)),
+                  top: Radius.circular(10),
+                ),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.person_search_outlined,
-                      size: 18, color: cs.primary),
+                  Icon(
+                    Icons.person_search_outlined,
+                    size: 18,
+                    color: cs.primary,
+                  ),
                   const Gap(8),
-                  Text('Filter by customer',
-                      style: theme.textTheme.titleSmall
-                          ?.copyWith(fontWeight: FontWeight.w700)),
+                  Text(
+                    'Filter by customer',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                   const Spacer(),
                   IconButton(
-                    icon:      const Icon(Icons.close, size: 18),
+                    icon: const Icon(Icons.close, size: 18),
                     onPressed: () => Navigator.pop(context),
-                    padding:   EdgeInsets.zero,
+                    padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                   ),
                 ],
@@ -1234,44 +1690,55 @@ class _CustomerPickerDialogState
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 12, 12, 6),
               child: TextField(
-                controller:  _searchCtrl,
-                autofocus:   true,
+                controller: _searchCtrl,
+                autofocus: true,
                 decoration: InputDecoration(
-                  hintText:    'Search customer...',
-                  isDense:     true,
-                  prefixIcon:  const Icon(Icons.search, size: 16),
-                  filled:      true,
-                  fillColor:   cs.surfaceContainerHighest,
-                  border:      OutlineInputBorder(
+                  hintText: 'Search customer...',
+                  isDense: true,
+                  prefixIcon: const Icon(Icons.search, size: 16),
+                  filled: true,
+                  fillColor: cs.surfaceContainerHighest,
+                  border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(6),
-                    borderSide:   BorderSide.none,
+                    borderSide: BorderSide.none,
                   ),
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 8,
+                  ),
                 ),
                 style: TextStyle(fontSize: 13, color: cs.onSurface),
-                onChanged: (v) => setState(() => _query = v.trim().toLowerCase()),
+                onChanged: (v) =>
+                    setState(() => _query = v.trim().toLowerCase()),
               ),
             ),
 
             // "All customers" clear row
             if (widget.current != null)
               InkWell(
-                onTap: () => Navigator.pop(
-                    context, const _CustomerPickerResult(null)),
+                onTap: () =>
+                    Navigator.pop(context, const _CustomerPickerResult(null)),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 10),
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
                   child: Row(
                     children: [
-                      Icon(Icons.clear, size: 16,
-                          color: cs.onSurface.withValues(alpha: 0.55)),
+                      Icon(
+                        Icons.clear,
+                        size: 16,
+                        color: cs.onSurface.withValues(alpha: 0.55),
+                      ),
                       const Gap(10),
-                      Text('All customers',
-                          style: TextStyle(
-                              fontSize:   13,
-                              color:      cs.onSurface.withValues(alpha: 0.7),
-                              fontStyle:  FontStyle.italic)),
+                      Text(
+                        'All customers',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: cs.onSurface.withValues(alpha: 0.7),
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -1282,64 +1749,75 @@ class _CustomerPickerDialogState
             // Customer list
             Expanded(
               child: customersAsync.when(
-                loading: () =>
-                    const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                loading: () => const Center(
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
                 error: (e, _) => Center(
-                  child: Text('Failed to load customers',
-                      style: TextStyle(color: cs.error, fontSize: 13)),
+                  child: Text(
+                    'Failed to load customers',
+                    style: TextStyle(color: cs.error, fontSize: 13),
+                  ),
                 ),
                 data: (customers) {
                   final filtered = _query.isEmpty
                       ? customers
                       : customers
-                          .where((c) =>
-                              c.name.toLowerCase().contains(_query) ||
-                              (c.code?.toLowerCase().contains(_query) ?? false))
-                          .toList();
+                            .where(
+                              (c) =>
+                                  c.name.toLowerCase().contains(_query) ||
+                                  (c.code?.toLowerCase().contains(_query) ??
+                                      false),
+                            )
+                            .toList();
 
                   if (filtered.isEmpty) {
                     return Center(
-                      child: Text('No customers found',
-                          style: TextStyle(
-                              color:    cs.onSurface.withValues(alpha: 0.45),
-                              fontSize: 13)),
+                      child: Text(
+                        'No customers found',
+                        style: TextStyle(
+                          color: cs.onSurface.withValues(alpha: 0.45),
+                          fontSize: 13,
+                        ),
+                      ),
                     );
                   }
 
                   return ListView.separated(
-                    itemCount:        filtered.length,
-                    separatorBuilder: (_, __) =>
-                        Divider(height: 0.5, color: theme.dividerColor
-                            .withValues(alpha: 0.4)),
+                    itemCount: filtered.length,
+                    separatorBuilder: (_, __) => Divider(
+                      height: 0.5,
+                      color: theme.dividerColor.withValues(alpha: 0.4),
+                    ),
                     itemBuilder: (_, i) {
-                      final c        = filtered[i];
+                      final c = filtered[i];
                       final isActive = c.id == widget.current?.id;
                       return InkWell(
-                        onTap: () => Navigator.pop(
-                            context, _CustomerPickerResult(c)),
+                        onTap: () =>
+                            Navigator.pop(context, _CustomerPickerResult(c)),
                         child: Container(
                           color: isActive
                               ? cs.primary.withValues(alpha: 0.1)
                               : null,
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 10),
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
                           child: Row(
                             children: [
-                              Icon(Icons.person_outline,
-                                  size:  16,
-                                  color: isActive
-                                      ? cs.primary
-                                      : cs.onSurface
-                                          .withValues(alpha: 0.45)),
+                              Icon(
+                                Icons.person_outline,
+                                size: 16,
+                                color: isActive
+                                    ? cs.primary
+                                    : cs.onSurface.withValues(alpha: 0.45),
+                              ),
                               const Gap(10),
                               Expanded(
                                 child: Text(
                                   c.name,
                                   style: TextStyle(
-                                    fontSize:   13,
-                                    color:      isActive
-                                        ? cs.primary
-                                        : cs.onSurface,
+                                    fontSize: 13,
+                                    color: isActive ? cs.primary : cs.onSurface,
                                     fontWeight: isActive
                                         ? FontWeight.w600
                                         : null,
@@ -1348,11 +1826,13 @@ class _CustomerPickerDialogState
                                 ),
                               ),
                               if (c.code != null)
-                                Text(c.code!,
-                                    style: TextStyle(
-                                        fontSize: 11,
-                                        color: cs.onSurface
-                                            .withValues(alpha: 0.4))),
+                                Text(
+                                  c.code!,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: cs.onSurface.withValues(alpha: 0.4),
+                                  ),
+                                ),
                               if (isActive) ...[
                                 const Gap(6),
                                 Icon(Icons.check, size: 16, color: cs.primary),
@@ -1385,8 +1865,10 @@ class _DatePreset {
 class _DateRangePickerDialog extends StatefulWidget {
   final DateTime startDate;
   final DateTime endDate;
-  const _DateRangePickerDialog(
-      {required this.startDate, required this.endDate});
+  const _DateRangePickerDialog({
+    required this.startDate,
+    required this.endDate,
+  });
 
   @override
   State<_DateRangePickerDialog> createState() => _DateRangePickerDialogState();
@@ -1401,60 +1883,74 @@ class _DateRangePickerDialogState extends State<_DateRangePickerDialog> {
   static const _dayLabels = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 
   static DateTime _d(DateTime dt) => DateTime(dt.year, dt.month, dt.day);
-  static DateTime _today()        => _d(DateTime.now());
+  static DateTime _today() => _d(DateTime.now());
 
   static DateTime _weekStart(DateTime d) =>
       d.subtract(Duration(days: d.weekday - 1));
-  static DateTime _weekEnd(DateTime d) =>
-      d.add(Duration(days: 7 - d.weekday));
+  static DateTime _weekEnd(DateTime d) => d.add(Duration(days: 7 - d.weekday));
 
   @override
   void initState() {
     super.initState();
-    _start     = _d(widget.startDate);
-    _end       = _d(widget.endDate);
+    _start = _d(widget.startDate);
+    _end = _d(widget.endDate);
     _viewMonth = DateTime(_start.year, _start.month);
   }
 
   List<_DatePreset> _presets() {
-    final now  = _today();
-    final wS   = _weekStart(now);
-    final lwS  = _weekStart(now.subtract(const Duration(days: 7)));
+    final now = _today();
+    final wS = _weekStart(now);
+    final lwS = _weekStart(now.subtract(const Duration(days: 7)));
     return [
-      _DatePreset('Today',      now, now),
-      _DatePreset('Yesterday',  now.subtract(const Duration(days: 1)),
-                                now.subtract(const Duration(days: 1))),
-      _DatePreset('This week',  wS, _weekEnd(now)),
-      _DatePreset('Last week',  lwS, _weekEnd(lwS)),
-      _DatePreset('This month', DateTime(now.year, now.month, 1),
-                                DateTime(now.year, now.month + 1, 0)),
-      _DatePreset('Last month', DateTime(now.year, now.month - 1, 1),
-                                DateTime(now.year, now.month, 0)),
-      _DatePreset('This year',  DateTime(now.year, 1, 1),
-                                DateTime(now.year, 12, 31)),
-      _DatePreset('Last year',  DateTime(now.year - 1, 1, 1),
-                                DateTime(now.year - 1, 12, 31)),
+      _DatePreset('Today', now, now),
+      _DatePreset(
+        'Yesterday',
+        now.subtract(const Duration(days: 1)),
+        now.subtract(const Duration(days: 1)),
+      ),
+      _DatePreset('This week', wS, _weekEnd(now)),
+      _DatePreset('Last week', lwS, _weekEnd(lwS)),
+      _DatePreset(
+        'This month',
+        DateTime(now.year, now.month, 1),
+        DateTime(now.year, now.month + 1, 0),
+      ),
+      _DatePreset(
+        'Last month',
+        DateTime(now.year, now.month - 1, 1),
+        DateTime(now.year, now.month, 0),
+      ),
+      _DatePreset(
+        'This year',
+        DateTime(now.year, 1, 1),
+        DateTime(now.year, 12, 31),
+      ),
+      _DatePreset(
+        'Last year',
+        DateTime(now.year - 1, 1, 1),
+        DateTime(now.year - 1, 12, 31),
+      ),
     ];
   }
 
   void _applyPreset(_DatePreset p) => setState(() {
-    _start     = p.start;
-    _end       = p.end;
+    _start = p.start;
+    _end = p.end;
     _pickingEnd = false;
-    _viewMonth  = DateTime(p.start.year, p.start.month);
+    _viewMonth = DateTime(p.start.year, p.start.month);
   });
 
   void _onDayTap(DateTime day) => setState(() {
     if (!_pickingEnd || _end != null) {
-      _start      = day;
-      _end        = null;
+      _start = day;
+      _end = null;
       _pickingEnd = true;
     } else {
       if (day.isBefore(_start)) {
         _start = day;
-        _end   = null;
+        _end = null;
       } else {
-        _end        = day;
+        _end = day;
         _pickingEnd = false;
       }
     }
@@ -1462,10 +1958,10 @@ class _DateRangePickerDialogState extends State<_DateRangePickerDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final theme   = Theme.of(context);
-    final cs      = theme.colorScheme;
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     final presets = _presets();
-    final fmt     = DateFormat('dd/MM/yyyy');
+    final fmt = DateFormat('dd/MM/yyyy');
     final endForOk = _end ?? _start;
 
     return Dialog(
@@ -1481,7 +1977,6 @@ class _DateRangePickerDialogState extends State<_DateRangePickerDialog> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-
                   // Left – predefined periods
                   SizedBox(
                     width: 238,
@@ -1490,11 +1985,14 @@ class _DateRangePickerDialogState extends State<_DateRangePickerDialog> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Predefined period',
-                              style: TextStyle(
-                                  fontSize:   13,
-                                  fontWeight: FontWeight.w700,
-                                  color:      cs.primary)),
+                          Text(
+                            'Predefined period',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: cs.primary,
+                            ),
+                          ),
                           const SizedBox(height: 12),
                           ...List.generate((presets.length / 2).ceil(), (row) {
                             final a = presets[row * 2];
@@ -1503,14 +2001,16 @@ class _DateRangePickerDialogState extends State<_DateRangePickerDialog> {
                                 : null;
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 6),
-                              child: Row(children: [
-                                Expanded(child: _presetBtn(cs, a)),
-                                if (b != null) ...[
-                                  const SizedBox(width: 6),
-                                  Expanded(child: _presetBtn(cs, b)),
-                                ] else
-                                  const Expanded(child: SizedBox()),
-                              ]),
+                              child: Row(
+                                children: [
+                                  Expanded(child: _presetBtn(cs, a)),
+                                  if (b != null) ...[
+                                    const SizedBox(width: 6),
+                                    Expanded(child: _presetBtn(cs, b)),
+                                  ] else
+                                    const Expanded(child: SizedBox()),
+                                ],
+                              ),
                             );
                           }),
                         ],
@@ -1519,7 +2019,10 @@ class _DateRangePickerDialogState extends State<_DateRangePickerDialog> {
                   ),
 
                   VerticalDivider(
-                      width: 1, color: theme.dividerColor, thickness: 0.5),
+                    width: 1,
+                    color: theme.dividerColor,
+                    thickness: 0.5,
+                  ),
 
                   // Right – calendar
                   Expanded(
@@ -1529,39 +2032,60 @@ class _DateRangePickerDialogState extends State<_DateRangePickerDialog> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           // Month navigation
-                          Row(children: [
-                            _navBtn(Icons.chevron_left, () => setState(() {
-                              _viewMonth = DateTime(
-                                  _viewMonth.year, _viewMonth.month - 1);
-                            })),
-                            Expanded(
-                              child: Text(
-                                DateFormat('MMMM yyyy').format(_viewMonth),
-                                textAlign:  TextAlign.center,
-                                style: const TextStyle(
-                                    fontSize:   13,
-                                    fontWeight: FontWeight.w600),
+                          Row(
+                            children: [
+                              _navBtn(
+                                Icons.chevron_left,
+                                () => setState(() {
+                                  _viewMonth = DateTime(
+                                    _viewMonth.year,
+                                    _viewMonth.month - 1,
+                                  );
+                                }),
                               ),
-                            ),
-                            _navBtn(Icons.chevron_right, () => setState(() {
-                              _viewMonth = DateTime(
-                                  _viewMonth.year, _viewMonth.month + 1);
-                            })),
-                          ]),
+                              Expanded(
+                                child: Text(
+                                  DateFormat('MMMM yyyy').format(_viewMonth),
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              _navBtn(
+                                Icons.chevron_right,
+                                () => setState(() {
+                                  _viewMonth = DateTime(
+                                    _viewMonth.year,
+                                    _viewMonth.month + 1,
+                                  );
+                                }),
+                              ),
+                            ],
+                          ),
                           const SizedBox(height: 10),
 
                           // Day-name row
                           Row(
-                            children: _dayLabels.map((d) => Expanded(
-                              child: Center(
-                                child: Text(d,
-                                    style: TextStyle(
-                                        fontSize:   10,
-                                        fontWeight: FontWeight.w600,
-                                        color: cs.onSurface
-                                            .withValues(alpha: 0.45))),
-                              ),
-                            )).toList(),
+                            children: _dayLabels
+                                .map(
+                                  (d) => Expanded(
+                                    child: Center(
+                                      child: Text(
+                                        d,
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w600,
+                                          color: cs.onSurface.withValues(
+                                            alpha: 0.45,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                )
+                                .toList(),
                           ),
                           const SizedBox(height: 4),
 
@@ -1575,14 +2099,15 @@ class _DateRangePickerDialogState extends State<_DateRangePickerDialog> {
                               _end != null
                                   ? '${fmt.format(_start)}  →  ${fmt.format(_end!)}'
                                   : _pickingEnd
-                                      ? 'Now select an end date'
-                                      : '${fmt.format(_start)}',
+                                  ? 'Now select an end date'
+                                  : '${fmt.format(_start)}',
                               style: TextStyle(
-                                  fontSize:   12,
-                                  fontWeight: FontWeight.w500,
-                                  color: _end != null || !_pickingEnd
-                                      ? cs.onSurface
-                                      : cs.onSurface.withValues(alpha: 0.5)),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: _end != null || !_pickingEnd
+                                    ? cs.onSurface
+                                    : cs.onSurface.withValues(alpha: 0.5),
+                              ),
                             ),
                           ),
                         ],
@@ -1602,22 +2127,29 @@ class _DateRangePickerDialogState extends State<_DateRangePickerDialog> {
                 children: [
                   OutlinedButton.icon(
                     onPressed: () => Navigator.pop(context),
-                    icon:  const Icon(Icons.close, size: 14),
+                    icon: const Icon(Icons.close, size: 14),
                     label: const Text('Cancel'),
                     style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 10),
                   FilledButton.icon(
                     onPressed: () => Navigator.pop(
-                        context,
-                        DateTimeRange(start: _start, end: endForOk)),
-                    icon:  const Icon(Icons.check, size: 14),
+                      context,
+                      DateTimeRange(start: _start, end: endForOk),
+                    ),
+                    icon: const Icon(Icons.check, size: 14),
                     label: const Text('OK'),
                     style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -1638,69 +2170,74 @@ class _DateRangePickerDialogState extends State<_DateRangePickerDialog> {
           foregroundColor: isActive ? cs.onPrimary : cs.onSurface,
           backgroundColor: isActive ? cs.primary : null,
           side: BorderSide(
-              color: isActive ? cs.primary : cs.outlineVariant, width: 0.8),
+            color: isActive ? cs.primary : cs.outlineVariant,
+            width: 0.8,
+          ),
           padding: EdgeInsets.zero,
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(6)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         ),
-        child: Text(p.label,
-            style: const TextStyle(fontSize: 12),
-            overflow: TextOverflow.ellipsis),
+        child: Text(
+          p.label,
+          style: const TextStyle(fontSize: 12),
+          overflow: TextOverflow.ellipsis,
+        ),
       ),
     );
   }
 
   Widget _navBtn(IconData icon, VoidCallback onTap) => InkWell(
-        onTap:        onTap,
-        borderRadius: BorderRadius.circular(4),
-        child: Padding(
-          padding: const EdgeInsets.all(4),
-          child: Icon(icon, size: 18),
-        ),
-      );
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(4),
+    child: Padding(
+      padding: const EdgeInsets.all(4),
+      child: Icon(icon, size: 18),
+    ),
+  );
 
   Widget _buildGrid(ColorScheme cs) {
-    final now        = _today();
-    final firstDay   = DateTime(_viewMonth.year, _viewMonth.month, 1);
-    final lastDay    = DateTime(_viewMonth.year, _viewMonth.month + 1, 0);
-    final startOff   = firstDay.weekday - 1;
+    final now = _today();
+    final firstDay = DateTime(_viewMonth.year, _viewMonth.month, 1);
+    final lastDay = DateTime(_viewMonth.year, _viewMonth.month + 1, 0);
+    final startOff = firstDay.weekday - 1;
     final totalCells = startOff + lastDay.day;
-    final rows       = (totalCells / 7).ceil();
+    final rows = (totalCells / 7).ceil();
 
     return Column(
-      children: List.generate(rows, (r) => Row(
-        children: List.generate(7, (c) {
-          final idx    = r * 7 + c;
-          final dayNum = idx - startOff + 1;
-          if (dayNum < 1 || dayNum > lastDay.day) {
-            return const Expanded(child: SizedBox(height: 32));
-          }
-          final date = DateTime(_viewMonth.year, _viewMonth.month, dayNum);
-          return Expanded(child: _buildDay(cs, date, now));
-        }),
-      )),
+      children: List.generate(
+        rows,
+        (r) => Row(
+          children: List.generate(7, (c) {
+            final idx = r * 7 + c;
+            final dayNum = idx - startOff + 1;
+            if (dayNum < 1 || dayNum > lastDay.day) {
+              return const Expanded(child: SizedBox(height: 32));
+            }
+            final date = DateTime(_viewMonth.year, _viewMonth.month, dayNum);
+            return Expanded(child: _buildDay(cs, date, now));
+          }),
+        ),
+      ),
     );
   }
 
   Widget _buildDay(ColorScheme cs, DateTime date, DateTime now) {
-    final isStart  = date == _start;
-    final isEnd    = _end != null && date == _end;
-    final inRange  = _end != null &&
-        date.isAfter(_start) && date.isBefore(_end!);
-    final isToday  = date == now;
-    final isSel    = isStart || isEnd;
+    final isStart = date == _start;
+    final isEnd = _end != null && date == _end;
+    final inRange =
+        _end != null && date.isAfter(_start) && date.isBefore(_end!);
+    final isToday = date == now;
+    final isSel = isStart || isEnd;
 
     // Range band decoration (fills between start and end)
     BoxDecoration rangeDeco = const BoxDecoration();
     if (inRange) {
-      rangeDeco = BoxDecoration(
-          color: cs.primary.withValues(alpha: 0.15));
+      rangeDeco = BoxDecoration(color: cs.primary.withValues(alpha: 0.15));
     } else if (_end != null && (isStart || isEnd)) {
       rangeDeco = BoxDecoration(
         color: cs.primary.withValues(alpha: 0.15),
         borderRadius: BorderRadius.horizontal(
-          left:  isStart ? const Radius.circular(16) : Radius.zero,
-          right: isEnd   ? const Radius.circular(16) : Radius.zero,
+          left: isStart ? const Radius.circular(16) : Radius.zero,
+          right: isEnd ? const Radius.circular(16) : Radius.zero,
         ),
       );
     }
@@ -1712,7 +2249,7 @@ class _DateRangePickerDialogState extends State<_DateRangePickerDialog> {
         decoration: rangeDeco,
         child: Center(
           child: Container(
-            width:  28,
+            width: 28,
             height: 28,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
@@ -1725,13 +2262,13 @@ class _DateRangePickerDialogState extends State<_DateRangePickerDialog> {
               child: Text(
                 '${date.day}',
                 style: TextStyle(
-                  fontSize:   12,
+                  fontSize: 12,
                   fontWeight: isSel ? FontWeight.bold : null,
-                  color:      isSel
+                  color: isSel
                       ? cs.onPrimary
                       : isToday
-                          ? cs.primary
-                          : cs.onSurface,
+                      ? cs.primary
+                      : cs.onSurface,
                 ),
               ),
             ),

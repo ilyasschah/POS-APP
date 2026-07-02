@@ -15,6 +15,9 @@ class Booking {
   final int guestCount;
   final int status;
   final String? note;
+  // Offline-first sync state of the local row: 'synced' | 'pending_create' |
+  // 'pending_update' | 'pending_delete'. Server-sourced bookings are 'synced'.
+  final String syncStatus;
 
   const Booking({
     required this.id,
@@ -27,9 +30,13 @@ class Booking {
     required this.startTime,
     required this.endTime,
     this.guestCount = 1,
-    this.status = 0,
+    this.status = 1, // 1 = Scheduled (statuses are 1–5; 0 rendered as "Unknown")
     this.note,
+    this.syncStatus = 'synced',
   });
+
+  /// Whether this booking has local changes not yet pushed to the server.
+  bool get isPendingSync => syncStatus != 'synced';
 
   factory Booking.fromJson(Map<String, dynamic> json) {
     return Booking(
@@ -46,7 +53,7 @@ class Booking {
       startTime: DateTime.parse(json['startTime']),
       endTime: DateTime.parse(json['endTime']),
       guestCount: json['guestCount'] ?? 1,
-      status: json['status'] ?? 0,
+      status: json['status'] ?? 1,
       note: json['note'],
     );
   }
@@ -68,6 +75,7 @@ class Booking {
       guestCount: row.guestCount,
       status: row.status,
       note: row.note,
+      syncStatus: row.syncStatus,
     );
   }
 }

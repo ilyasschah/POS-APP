@@ -9,9 +9,12 @@ import 'package:pos_app/bookings/booking_model.dart';
 import 'package:pos_app/bookings/bookings_provider.dart';
 import 'package:pos_app/cart/cart_provider.dart';
 import 'package:pos_app/company/company_provider.dart';
+import 'package:pos_app/database/database_provider.dart';
+import 'package:pos_app/sync/sync_notifier.dart';
 import 'package:pos_app/floor_plan/floor_plan_screen.dart';
 import 'package:pos_app/floor_plan/floor_plan_table.dart';
 import 'package:pos_app/menu/menu_screen.dart';
+import 'package:pos_app/navigation/nav_widgets.dart';
 import 'package:pos_app/stock/warehouse_provider.dart';
 import 'package:pos_app/sync/sync_provider.dart';
 import 'package:pos_app/app_settings/app_settings_provider.dart';
@@ -85,7 +88,12 @@ enum _PostSaveAction { stay, open }
 // BookingsScreen
 // ────────────────────────────────────────────────────────────────────────────
 class BookingsScreen extends ConsumerStatefulWidget {
-  const BookingsScreen({super.key});
+  /// Opens the global navigation drawer (supplied by MainLayout). When null —
+  /// e.g. the screen is pushed as a standalone route — the leading hamburger is
+  /// hidden, matching the other POS tab screens.
+  final VoidCallback? onMenuPressed;
+
+  const BookingsScreen({super.key, this.onMenuPressed});
 
   @override
   ConsumerState<BookingsScreen> createState() => _BookingsScreenState();
@@ -213,144 +221,164 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
         bookingsAsync.hasError || usersAsync.hasError || roomsAsync.hasError;
 
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: const Text('Bookings'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.table_restaurant),
-            tooltip: 'Floor Plan',
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const FloorPlanScreen()),
+      body: Column(
+        children: [
+          // Unified flat top bar (replaces the legacy Material AppBar): title
+          // left-middle, the day navigation + "Add Booking" actions pinned right.
+          PosTopBar(
+            onMenuPressed: widget.onMenuPressed,
+            title: const Text(
+              'Bookings',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              overflow: TextOverflow.ellipsis,
             ),
-          ),
-          const SizedBox(width: 4),
-          IconButton(
-            icon: const Icon(Icons.chevron_left),
-            tooltip: 'Previous day',
-            onPressed: () =>
-                ref.read(selectedBookingDateProvider.notifier).state =
-                    selectedDate.subtract(const Duration(days: 1)),
-          ),
-          TextButton(
-            onPressed: () async {
-              final picked = await showDatePicker(
-                context: context,
-                initialDate: selectedDate,
-                firstDate: DateTime(2020),
-                lastDate: DateTime(2030),
-              );
-              if (picked != null && mounted) {
-                ref.read(selectedBookingDateProvider.notifier).state = picked;
-              }
-            },
-            child: Text(
-              _fmtHeaderDate(selectedDate),
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.chevron_right),
-            tooltip: 'Next day',
-            onPressed: () =>
-                ref.read(selectedBookingDateProvider.notifier).state =
-                    selectedDate.add(const Duration(days: 1)),
-          ),
-          const SizedBox(width: 8),
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: ElevatedButton.icon(
-              icon: const Icon(Icons.add),
-              label: const Text('Add Booking'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                foregroundColor: Colors.white,
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.table_restaurant),
+                tooltip: 'Floor Plan',
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const FloorPlanScreen()),
+                ),
               ),
-              onPressed: isLoading
-                  ? null
-                  : () => _showAddDialog(
-                      context,
-                      users:
-                          usersAsync.value
-                              ?.where((u) => u.isEnabled)
-                              .toList() ??
-                          [],
-                      tables: roomsAsync.value ?? [],
-                      resourceMode: resourceMode,
-                      defaultDurationMinutes: defaultDuration,
-                      prefilledDate: selectedDate,
+              const SizedBox(width: 4),
+              IconButton(
+                icon: const Icon(Icons.chevron_left),
+                tooltip: 'Previous day',
+                onPressed: () =>
+                    ref.read(selectedBookingDateProvider.notifier).state =
+                        selectedDate.subtract(const Duration(days: 1)),
+              ),
+              TextButton(
+                onPressed: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: selectedDate,
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime(2030),
+                  );
+                  if (picked != null && mounted) {
+                    ref.read(selectedBookingDateProvider.notifier).state =
+                        picked;
+                  }
+                },
+                child: Text(
+                  _fmtHeaderDate(selectedDate),
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.chevron_right),
+                tooltip: 'Next day',
+                onPressed: () =>
+                    ref.read(selectedBookingDateProvider.notifier).state =
+                        selectedDate.add(const Duration(days: 1)),
+              ),
+              const SizedBox(width: 8),
+              Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.add),
+                  label: const Text('Add Booking'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: isLoading
+                      ? null
+                      : () => _showAddDialog(
+                          context,
+                          users:
+                              usersAsync.value
+                                  ?.where((u) => u.isEnabled)
+                                  .toList() ??
+                              [],
+                          tables: roomsAsync.value ?? [],
+                          resourceMode: resourceMode,
+                          defaultDurationMinutes: defaultDuration,
+                          prefilledDate: selectedDate,
+                        ),
+                ),
+              ),
+            ],
+          ),
+          Expanded(
+            child: isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : hasError
+                ? Center(
+                    child: Text(
+                      'Error loading data: '
+                      '${bookingsAsync.error ?? usersAsync.error ?? roomsAsync.error}',
                     ),
-            ),
+                  )
+                : Builder(
+                    builder: (context) {
+                      final allBookings = bookingsAsync.value!;
+                      _maybeShowAlerts(allBookings);
+                      final staff = usersAsync.value!
+                          .where((u) => u.isEnabled)
+                          .toList();
+                      final tables = roomsAsync.value!;
+                      final dayBookings = allBookings
+                          .where((b) => isSameDay(b.startTime, selectedDate))
+                          .toList();
+
+                      if (!_calendarScrolled) {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (!mounted || !_calendarScrollController.hasClients)
+                            return;
+                          final now = DateTime.now();
+                          final mins = (now.hour - _dayStart) * 60 + now.minute;
+                          if (mins > 0) {
+                            final offset =
+                                (mins / 30) * _slotHeight + _headerRowHeight;
+                            final max = _calendarScrollController
+                                .position
+                                .maxScrollExtent;
+                            _calendarScrollController.jumpTo(
+                              offset.clamp(0.0, max),
+                            );
+                          }
+                          _calendarScrolled = true;
+                        });
+                      }
+
+                      return _CalendarView(
+                        bookings: dayBookings,
+                        staff: staff,
+                        tables: tables,
+                        resourceMode: resourceMode,
+                        timeSnappingMinutes: timeSnapping,
+                        selectedDate: selectedDate,
+                        scrollController: _calendarScrollController,
+                        onEmptySlotTap: (staffMember, table, time) =>
+                            _showAddDialog(
+                              context,
+                              users: staff,
+                              tables: tables,
+                              resourceMode: resourceMode,
+                              defaultDurationMinutes: defaultDuration,
+                              prefilledDate: selectedDate,
+                              prefilledStaff: staffMember,
+                              prefilledTime: time,
+                            ),
+                        onBookingTap: (booking) => _showDetailDialog(
+                          context,
+                          booking,
+                          staff,
+                          tables,
+                          resourceMode,
+                        ),
+                      );
+                    },
+                  ),
           ),
         ],
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : hasError
-          ? Center(
-              child: Text(
-                'Error loading data: '
-                '${bookingsAsync.error ?? usersAsync.error ?? roomsAsync.error}',
-              ),
-            )
-          : Builder(
-              builder: (context) {
-                final allBookings = bookingsAsync.value!;
-                _maybeShowAlerts(allBookings);
-                final staff = usersAsync.value!
-                    .where((u) => u.isEnabled)
-                    .toList();
-                final tables = roomsAsync.value!;
-                final dayBookings = allBookings
-                    .where((b) => isSameDay(b.startTime, selectedDate))
-                    .toList();
-
-                if (!_calendarScrolled) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (!mounted || !_calendarScrollController.hasClients)
-                      return;
-                    final now = DateTime.now();
-                    final mins = (now.hour - _dayStart) * 60 + now.minute;
-                    if (mins > 0) {
-                      final offset =
-                          (mins / 30) * _slotHeight + _headerRowHeight;
-                      final max =
-                          _calendarScrollController.position.maxScrollExtent;
-                      _calendarScrollController.jumpTo(offset.clamp(0.0, max));
-                    }
-                    _calendarScrolled = true;
-                  });
-                }
-
-                return _CalendarView(
-                  bookings: dayBookings,
-                  staff: staff,
-                  tables: tables,
-                  resourceMode: resourceMode,
-                  timeSnappingMinutes: timeSnapping,
-                  selectedDate: selectedDate,
-                  scrollController: _calendarScrollController,
-                  onEmptySlotTap: (staffMember, table, time) => _showAddDialog(
-                    context,
-                    users: staff,
-                    tables: tables,
-                    resourceMode: resourceMode,
-                    defaultDurationMinutes: defaultDuration,
-                    prefilledDate: selectedDate,
-                    prefilledStaff: staffMember,
-                    prefilledTime: time,
-                  ),
-                  onBookingTap: (booking) => _showDetailDialog(
-                    context,
-                    booking,
-                    staff,
-                    tables,
-                    resourceMode,
-                  ),
-                );
-              },
-            ),
     );
   }
 
@@ -454,7 +482,9 @@ class _CalendarView extends StatelessWidget {
     // calendar body (same coordinate space as booking chips).
     final now = DateTime.now();
     final showNow =
-        isSameDay(now, selectedDate) && now.hour >= _dayStart && now.hour < _dayEnd;
+        isSameDay(now, selectedDate) &&
+        now.hour >= _dayStart &&
+        now.hour < _dayEnd;
     final nowOffset =
         ((now.hour - _dayStart) * 60 + now.minute) / 30 * _slotHeight;
     final nowColor = theme.colorScheme.error;
@@ -492,7 +522,10 @@ class _CalendarView extends StatelessWidget {
                             child: Align(
                               alignment: Alignment.topRight,
                               child: Padding(
-                                padding: const EdgeInsets.only(right: 8, top: 4),
+                                padding: const EdgeInsets.only(
+                                  right: 8,
+                                  top: 4,
+                                ),
                                 child: Text(
                                   _slotLabel(i),
                                   style: TextStyle(
@@ -986,8 +1019,12 @@ class _AddBookingDialogState extends ConsumerState<_AddBookingDialog> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     if (widget.resourceMode != 'staff' && _selectedTableIds.isEmpty) {
-      showAppSnackbar(context, ref, 'Please select at least one table.',
-          isError: true);
+      showAppSnackbar(
+        context,
+        ref,
+        'Please select at least one table.',
+        isError: true,
+      );
       return;
     }
     final allowPast = ref
@@ -995,13 +1032,21 @@ class _AddBookingDialogState extends ConsumerState<_AddBookingDialog> {
         .bookingSettings
         .allowPastBookings;
     if (!allowPast && _toDateTime(_startTime).isBefore(DateTime.now())) {
-      showAppSnackbar(context, ref, 'Cannot create a booking in the past.',
-          isError: true);
+      showAppSnackbar(
+        context,
+        ref,
+        'Cannot create a booking in the past.',
+        isError: true,
+      );
       return;
     }
     if (!_toDateTime(_endTime).isAfter(_toDateTime(_startTime))) {
-      showAppSnackbar(context, ref, 'End time must be after start time.',
-          isError: true);
+      showAppSnackbar(
+        context,
+        ref,
+        'End time must be after start time.',
+        isError: true,
+      );
       return;
     }
     setState(() => _saving = true);
@@ -1010,34 +1055,70 @@ class _AddBookingDialogState extends ConsumerState<_AddBookingDialog> {
     if (companyId == null) return;
 
     try {
-      final payload = {
-        'reservationName': _nameController.text.trim(),
-        'guestCount': int.tryParse(_guestController.text) ?? 1,
-        'startTime': _toDateTime(_startTime).toIso8601String(),
-        'endTime': _toDateTime(_endTime).toIso8601String(),
-        'userId': _selectedStaff?.id,
-        'tableIds': _selectedTableIds.toList(),
-        'customerId': _selectedCustomerId,
-        'note': _noteController.text.trim().isEmpty
-            ? null
-            : _noteController.text.trim(),
-      };
+      // Offline-first: write to local Drift (instant UI via the stream) and
+      // queue the change; SyncManager.pushPendingBookings sends it on reconnect.
+      final db = ref.read(appDatabaseProvider);
+      final start = _toDateTime(_startTime);
+      final end = _toDateTime(_endTime);
+      final name = _nameController.text.trim();
+      final guests = int.tryParse(_guestController.text) ?? 1;
+      final note = _noteController.text.trim().isEmpty
+          ? null
+          : _noteController.text.trim();
+      final tableIds = _selectedTableIds.toList();
 
       if (widget.existingBooking != null) {
-        // Edit mode
-        await ApiClient().updateBooking(companyId, {
-          'bookingId': widget.existingBooking!.id,
-          ...payload,
-        });
+        // Edit mode — update in place (preserve document/order links + status).
+        await db.upsertBookingLocal(
+          id: widget.existingBooking!.id,
+          companyId: companyId,
+          customerId: _selectedCustomerId,
+          userId: _selectedStaff?.id,
+          reservationName: name,
+          tableIds: tableIds,
+          documentId: widget.existingBooking!.documentId,
+          posOrderId: widget.existingBooking!.posOrderId,
+          startTime: start,
+          endTime: end,
+          guestCount: guests,
+          status: widget.existingBooking!.status,
+          note: note,
+        );
+        ref.read(syncStateProvider.notifier).sync().catchError((_) {});
         widget.onSaved();
         if (!mounted) return;
         Navigator.pop(context);
       } else {
-        // Create mode
-        final createdMap = await ApiClient().createBooking(companyId, payload);
-        final created = Booking.fromJson(createdMap);
+        // Create mode — local create with a temp id (pending_create).
+        final tempId = await db.upsertBookingLocal(
+          companyId: companyId,
+          customerId: _selectedCustomerId,
+          userId: _selectedStaff?.id,
+          reservationName: name,
+          tableIds: tableIds,
+          startTime: start,
+          endTime: end,
+          guestCount: guests,
+          status: 1,
+          note: note,
+        );
+        ref.read(syncStateProvider.notifier).sync().catchError((_) {});
         widget.onSaved();
         if (!mounted) return;
+
+        final created = Booking(
+          id: tempId,
+          customerId: _selectedCustomerId,
+          userId: _selectedStaff?.id,
+          reservationName: name,
+          tableIds: tableIds,
+          startTime: start,
+          endTime: end,
+          guestCount: guests,
+          status: 1,
+          note: note,
+          syncStatus: 'pending_create',
+        );
 
         final action = await showDialog<_PostSaveAction>(
           context: context,
@@ -1108,10 +1189,7 @@ class _AddBookingDialogState extends ConsumerState<_AddBookingDialog> {
       final endTotal = t.hour * 60 + t.minute + widget.defaultDurationMinutes;
       // Cap at 23:59 to avoid midnight overflow making end ≤ start.
       final clampedTotal = endTotal.clamp(0, 23 * 60 + 59);
-      _endTime = TimeOfDay(
-        hour: clampedTotal ~/ 60,
-        minute: clampedTotal % 60,
-      );
+      _endTime = TimeOfDay(hour: clampedTotal ~/ 60, minute: clampedTotal % 60);
     });
   }
 
@@ -1491,11 +1569,11 @@ class _BookingDetailDialogState extends ConsumerState<_BookingDetailDialog> {
     final companyId = ref.read(selectedCompanyProvider)?.id;
     if (companyId == null) return;
     try {
-      await ApiClient().updateBookingStatus(
-        companyId,
-        widget.booking.id,
-        newStatus,
-      );
+      // Offline-first: flip the status locally (instant) + queue the push.
+      await ref
+          .read(appDatabaseProvider)
+          .setBookingStatusLocal(widget.booking.id, newStatus);
+      ref.read(syncStateProvider.notifier).sync().catchError((_) {});
       widget.onUpdated();
       if (mounted) Navigator.pop(context);
     } catch (e) {
@@ -1543,7 +1621,9 @@ class _BookingDetailDialogState extends ConsumerState<_BookingDetailDialog> {
 
     setState(() => _saving = true);
     try {
-      // Creates order + links posOrderId + marks booking In Service — all in one backend transaction
+      // Seeds the cart with this booking's context (carries bookingId so the
+      // backend links the order + flips the booking to In Service when the
+      // order is saved/checked out). This call is local-only — no network.
       await ref
           .read(cartProvider.notifier)
           .startBookingOrder(
@@ -1598,9 +1678,12 @@ class _BookingDetailDialogState extends ConsumerState<_BookingDetailDialog> {
           );
       if (!mounted) return;
       if (!loaded) {
-        showAppSnackbar(context, ref,
-            'Order not found. It may have been completed or voided.',
-            isError: true);
+        showAppSnackbar(
+          context,
+          ref,
+          'Order not found. It may have been completed or voided.',
+          isError: true,
+        );
         return;
       }
       Navigator.pushAndRemoveUntil(
@@ -1670,18 +1753,18 @@ class _BookingDetailDialogState extends ConsumerState<_BookingDetailDialog> {
 
     setState(() => _saving = true);
     final companyId = ref.read(selectedCompanyProvider)?.id;
-    final warehouseId = ref.read(selectedWarehouseProvider)?.id ?? 1;
 
     if (companyId == null) {
       setState(() => _saving = false);
       return;
     }
     try {
-      await ApiClient().deleteBooking(
-        companyId,
-        widget.booking.id,
-        warehouseId,
-      );
+      // Offline-first: tombstone locally (drops off the calendar at once) and
+      // queue the server delete for the next sync.
+      await ref
+          .read(appDatabaseProvider)
+          .deleteBookingLocal(widget.booking.id);
+      ref.read(syncStateProvider.notifier).sync().catchError((_) {});
       widget.onUpdated();
       if (mounted) Navigator.pop(context);
     } catch (e) {
@@ -1693,26 +1776,179 @@ class _BookingDetailDialogState extends ConsumerState<_BookingDetailDialog> {
     }
   }
 
+  // ── Touch-sized status pill ────────────────────────────────────────────────
+  // The active status keeps a saturated fill + check + white ring; the others
+  // are tappable to switch. Tall (54px) so it's an easy finger target.
   Widget _statusBtn(int currentStatus, int s) {
-    return ElevatedButton(
-      onPressed: (currentStatus == s || _saving)
-          ? null
-          : () => _updateStatus(s),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: _statusColor(s),
-        disabledBackgroundColor: _statusColor(s).withValues(alpha: 0.3),
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        minimumSize: Size.zero,
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      ),
-      child: Text(
-        _statusLabel(s),
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
+    final isCurrent = currentStatus == s;
+    final color = _statusColor(s);
+    return SizedBox(
+      height: 54,
+      child: ElevatedButton(
+        onPressed: (isCurrent || _saving) ? null : () => _updateStatus(s),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          // Current stays full colour (it's disabled); others only fade while a
+          // save is in flight.
+          disabledBackgroundColor: color.withValues(
+            alpha: isCurrent ? 1.0 : 0.35,
+          ),
+          foregroundColor: Colors.white,
+          disabledForegroundColor: Colors.white,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 6),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: isCurrent
+                ? const BorderSide(color: Colors.white, width: 2)
+                : BorderSide.none,
+          ),
         ),
-        textAlign: TextAlign.center,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (isCurrent) ...[
+              const Icon(Icons.check_circle, size: 17, color: Colors.white),
+              const SizedBox(width: 5),
+            ],
+            Flexible(
+              child: Text(
+                _statusLabel(s),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _onEdit() {
+    final bs = ref.read(appSettingsProvider.notifier).bookingSettings;
+    Navigator.pop(context);
+    showDialog(
+      context: context,
+      builder: (_) => _AddBookingDialog(
+        users: widget.staff,
+        tables: widget.tables,
+        resourceMode: widget.resourceMode,
+        date: widget.booking.startTime,
+        defaultDurationMinutes: bs.defaultDurationMinutes,
+        existingBooking: widget.booking,
+        onSaved: widget.onUpdated,
+      ),
+    );
+  }
+
+  /// Full-width primary call-to-action (height 56). Returns null when the
+  /// booking has no primary action (e.g. a No-Show, or a completed booking with
+  /// no document).
+  Widget? _primaryCta() {
+    final b = widget.booking;
+    if (b.status == 4) {
+      if (b.documentId == null) return null;
+      return _bigButton(
+        icon: Icons.receipt,
+        label: 'Open Document',
+        color: Colors.teal,
+        onTap: _openDocument,
+      );
+    }
+    if (b.status == 5) return null; // No Show — nothing to start
+    if (b.posOrderId != null) {
+      return _bigButton(
+        icon: Icons.receipt_long,
+        label: 'Open Order',
+        color: Colors.indigo,
+        onTap: _openOrder,
+      );
+    }
+    return _bigButton(
+      icon: Icons.play_arrow,
+      label: 'Start Service',
+      color: Colors.teal,
+      onTap: _startService,
+    );
+  }
+
+  Widget _bigButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: ElevatedButton.icon(
+        icon: Icon(icon, color: Colors.white, size: 22),
+        label: Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          disabledBackgroundColor: color.withValues(alpha: 0.4),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+        onPressed: _saving ? null : onTap,
+      ),
+    );
+  }
+
+  /// Large outlined secondary button (height 50) for the footer row.
+  Widget _secondaryButton({
+    required IconData icon,
+    required String label,
+    Color? color,
+    VoidCallback? onTap,
+  }) {
+    final c = color ?? Theme.of(context).colorScheme.onSurface;
+    return SizedBox(
+      height: 50,
+      child: OutlinedButton(
+        onPressed: onTap,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: c,
+          side: BorderSide(color: c.withValues(alpha: 0.45)),
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 19, color: c),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w600,
+                  color: c,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1722,20 +1958,28 @@ class _BookingDetailDialogState extends ConsumerState<_BookingDetailDialog> {
     final theme = Theme.of(context);
     final b = widget.booking;
     final statusColor = _statusColor(b.status);
+    final canModify = b.status != 4;
+    final primary = _primaryCta();
 
     return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      titlePadding: const EdgeInsets.fromLTRB(24, 22, 24, 8),
+      contentPadding: const EdgeInsets.fromLTRB(24, 4, 24, 22),
       title: Row(
         children: [
           Expanded(
             child: Text(
               b.reservationName,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
+          const SizedBox(width: 12),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
             decoration: ShapeDecoration(
-              color: statusColor.withValues(alpha: 0.15),
+              color: statusColor.withValues(alpha: 0.16),
               shape: const StadiumBorder(),
             ),
             child: Text(
@@ -1743,178 +1987,146 @@ class _BookingDetailDialogState extends ConsumerState<_BookingDetailDialog> {
               style: TextStyle(
                 color: statusColor,
                 fontWeight: FontWeight.bold,
-                fontSize: 12,
+                fontSize: 13,
               ),
             ),
           ),
         ],
       ),
       content: SizedBox(
-        width: 400,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _DetailRow(
-              icon: Icons.access_time,
-              text: '${_fmtDateTime(b.startTime)} – ${_fmtDateTime(b.endTime)}',
-            ),
-            _DetailRow(icon: Icons.people, text: '${b.guestCount} guest(s)'),
-            _DetailRow(icon: Icons.badge, text: _staffName(b.userId)),
-            if (b.note != null && b.note!.isNotEmpty)
-              _DetailRow(icon: Icons.notes, text: b.note!),
-            if (b.tableIds.isNotEmpty)
+        width: 440,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               _DetailRow(
-                icon: Icons.table_restaurant,
-                text: b.tableIds
-                    .map((id) {
-                      final t = widget.tables
-                          .where((x) => x.id == id)
-                          .firstOrNull;
-                      return t?.name ?? 'Table #$id';
-                    })
-                    .join(', '),
+                icon: Icons.access_time,
+                text:
+                    '${_fmtDateTime(b.startTime)} – ${_fmtDateTime(b.endTime)}',
               ),
-            if (b.status == 4) ...[
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
+              _DetailRow(icon: Icons.people, text: '${b.guestCount} guest(s)'),
+              _DetailRow(icon: Icons.badge, text: _staffName(b.userId)),
+              if (b.note != null && b.note!.isNotEmpty)
+                _DetailRow(icon: Icons.notes, text: b.note!),
+              if (b.tableIds.isNotEmpty)
+                _DetailRow(
+                  icon: Icons.table_restaurant,
+                  text: b.tableIds
+                      .map((id) {
+                        final t = widget.tables
+                            .where((x) => x.id == id)
+                            .firstOrNull;
+                        return t?.name ?? 'Table #$id';
+                      })
+                      .join(', '),
                 ),
-                decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: Colors.green.withValues(alpha: 0.4),
+              if (b.status == 4) ...[
+                const SizedBox(height: 18),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: Colors.green.withValues(alpha: 0.4),
+                    ),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.lock, size: 16, color: Colors.green),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'This booking is completed and cannot be modified.',
+                          style: TextStyle(color: Colors.green, fontSize: 13),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.lock, size: 14, color: Colors.green),
-                    SizedBox(width: 8),
-                    Text(
-                      'This booking is completed and cannot be modified.',
-                      style: TextStyle(color: Colors.green, fontSize: 12),
-                    ),
-                  ],
+              ] else ...[
+                const SizedBox(height: 18),
+                Text(
+                  'UPDATE STATUS',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.6,
+                  ),
                 ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [1, 2, 3]
+                      .expand(
+                        (s) => [
+                          if (s > 1) const SizedBox(width: 10),
+                          Expanded(child: _statusBtn(b.status, s)),
+                        ],
+                      )
+                      .toList(),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [4, 5]
+                      .expand(
+                        (s) => [
+                          if (s > 4) const SizedBox(width: 10),
+                          Expanded(child: _statusBtn(b.status, s)),
+                        ],
+                      )
+                      .toList(),
+                ),
+              ],
+
+              const SizedBox(height: 22),
+              Divider(
+                height: 1,
+                color: theme.dividerColor.withValues(alpha: 0.5),
               ),
-            ] else ...[
               const SizedBox(height: 16),
-              Text(
-                'Update Status',
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                ),
-              ),
-              const SizedBox(height: 8),
+
+              // ── Primary call-to-action (full width) ──────────────────────
+              if (primary != null) ...[primary, const SizedBox(height: 12)],
+
+              // ── Secondary actions row (big touch targets) ────────────────
               Row(
-                children: [1, 2, 3]
-                    .expand(
-                      (s) => [
-                        if (s > 1) const SizedBox(width: 6),
-                        Expanded(child: _statusBtn(b.status, s)),
-                      ],
-                    )
-                    .toList(),
-              ),
-              const SizedBox(height: 6),
-              Row(
-                children: [4, 5]
-                    .expand(
-                      (s) => [
-                        if (s > 4) const SizedBox(width: 6),
-                        Expanded(child: _statusBtn(b.status, s)),
-                      ],
-                    )
-                    .toList(),
+                children: [
+                  if (canModify) ...[
+                    Expanded(
+                      child: _secondaryButton(
+                        icon: Icons.delete_outline,
+                        label: 'Delete',
+                        color: Colors.red,
+                        onTap: _saving ? null : _delete,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _secondaryButton(
+                        icon: Icons.edit_outlined,
+                        label: 'Edit',
+                        onTap: _saving ? null : _onEdit,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                  ],
+                  Expanded(
+                    child: _secondaryButton(
+                      icon: Icons.close,
+                      label: 'Close',
+                      onTap: () => Navigator.pop(context),
+                    ),
+                  ),
+                ],
               ),
             ],
-          ],
+          ),
         ),
       ),
-      actions: [
-        if (b.status != 4)
-          TextButton.icon(
-            icon: const Icon(Icons.delete, color: Colors.red),
-            label: const Text('Delete', style: TextStyle(color: Colors.red)),
-            onPressed: _saving ? null : _delete,
-          ),
-        if (b.status != 4)
-          TextButton.icon(
-            icon: const Icon(Icons.edit),
-            label: const Text('Edit'),
-            onPressed: _saving
-                ? null
-                : () {
-                    final bs = ref
-                        .read(appSettingsProvider.notifier)
-                        .bookingSettings;
-                    Navigator.pop(context);
-                    showDialog(
-                      context: context,
-                      builder: (_) => _AddBookingDialog(
-                        users: widget.staff,
-                        tables: widget.tables,
-                        resourceMode: widget.resourceMode,
-                        date: widget.booking.startTime,
-                        defaultDurationMinutes: bs.defaultDurationMinutes,
-                        existingBooking: widget.booking,
-                        onSaved: widget.onUpdated,
-                      ),
-                    );
-                  },
-          ),
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Close'),
-        ),
-        if (b.status != 4 && b.status != 5) ...[
-          const SizedBox(width: 8),
-          if (b.posOrderId != null)
-            ElevatedButton.icon(
-              icon: const Icon(Icons.receipt_long, color: Colors.white),
-              label: const Text(
-                'Open Order',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo),
-              onPressed: _saving ? null : _openOrder,
-            )
-          else
-            ElevatedButton.icon(
-              icon: const Icon(Icons.play_arrow, color: Colors.white),
-              label: const Text(
-                'Start Service',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
-              onPressed: _saving ? null : _startService,
-            ),
-        ],
-        if (b.status == 4 && b.documentId != null) ...[
-          const SizedBox(width: 8),
-          ElevatedButton.icon(
-            icon: const Icon(Icons.receipt, color: Colors.white),
-            label: const Text(
-              'Open Document',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
-            onPressed: _saving ? null : _openDocument,
-          ),
-        ],
-      ],
     );
   }
 }
@@ -1957,22 +2169,22 @@ class _DetailRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
           Icon(
             icon,
-            size: 14,
+            size: 19,
             color: Theme.of(
               context,
-            ).colorScheme.onSurface.withValues(alpha: 0.6),
+            ).colorScheme.onSurface.withValues(alpha: 0.65),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
               text,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 15,
                 color: Theme.of(context).colorScheme.onSurface,
               ),
             ),

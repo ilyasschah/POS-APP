@@ -365,8 +365,17 @@ class _PinPadModalState extends ConsumerState<_PinPadModal> {
     //
     // Capture the manager before navigating so the future outlives this screen,
     // and swallow errors (we're already running on cache).
+    //
+    // First mint a per-user backend token (best-effort) so the backend sees THIS
+    // cashier's identity + role, THEN sync so its refresh step slides that token
+    // forward. Both run in the background — login never blocks, and offline the
+    // device token keeps being used unchanged.
+    final authService = ref.read(authServiceProvider);
     final sync = ref.read(syncManagerProvider);
-    sync.sync(widget.user.companyId).catchError((Object _) => <String>[]);
+    Future(() async {
+      await authService.exchangeUserToken(widget.user.id);
+      await sync.sync(widget.user.companyId);
+    }).catchError((Object _) {});
 
     if (!mounted) return;
 

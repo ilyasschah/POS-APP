@@ -64,7 +64,8 @@ class _TableWidgetState extends ConsumerState<TableWidget> {
         (settings[SettingKeys.showAllOccupiedTablesInFloorPlan] ?? 'true')
             .toLowerCase() !=
         'false';
-    final isLocked = !showAllOccupied &&
+    final isLocked =
+        !showAllOccupied &&
         widget.table.status > 0 &&
         widget.table.assignedUserId != null &&
         widget.table.assignedUserId != widget.userId;
@@ -99,10 +100,14 @@ class _TableWidgetState extends ConsumerState<TableWidget> {
                       widget.warehouseId,
                     );
                 if (success && mounted) {
-                  Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const MainLayout(initialIndex: 0)));
+                  ref.read(mainNavigationIndexProvider.notifier).state = 0;
                 } else if (mounted) {
-                  showAppSnackbar(context, ref, 'Could not find active order.',
-                      isError: true);
+                  showAppSnackbar(
+                    context,
+                    ref,
+                    'Could not find active order.',
+                    isError: true,
+                  );
                 }
               } else {
                 final types = ref
@@ -208,7 +213,9 @@ class _TableWidgetState extends ConsumerState<TableWidget> {
                         widget.userId,
                         serviceType,
                       );
-                  if (mounted) Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const MainLayout(initialIndex: 0)));
+                  if (mounted) {
+                    ref.read(mainNavigationIndexProvider.notifier).state = 0;
+                  }
                 } else {
                   // OFFLINE-FIRST: no /PosOrder/Create call. The order is
                   // materialised in Drift at checkout time with a UUID;
@@ -217,7 +224,9 @@ class _TableWidgetState extends ConsumerState<TableWidget> {
                   // can't block table selection.
                   try {
                     ref.read(kitchenSyncProvider).push();
-                  } catch (_) {/* kitchen push is non-critical */}
+                  } catch (_) {
+                    /* kitchen push is non-critical */
+                  }
                   if (mounted) {
                     ref
                         .read(cartProvider.notifier)
@@ -230,7 +239,7 @@ class _TableWidgetState extends ConsumerState<TableWidget> {
                     ref.read(cartProvider.notifier).state = ref
                         .read(cartProvider)
                         .copyWith(serviceType: 0);
-                    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const MainLayout(initialIndex: 0)));
+                    ref.read(mainNavigationIndexProvider.notifier).state = 0;
                   }
                 }
               }
@@ -265,8 +274,9 @@ class _TableWidgetState extends ConsumerState<TableWidget> {
                 ? LinearGradient(
                     colors: [
                       theme.colorScheme.surfaceContainerHighest,
-                      theme.colorScheme.surfaceContainerHighest
-                          .withValues(alpha: 0.7),
+                      theme.colorScheme.surfaceContainerHighest.withValues(
+                        alpha: 0.7,
+                      ),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -280,8 +290,8 @@ class _TableWidgetState extends ConsumerState<TableWidget> {
               color: isSelected
                   ? Colors.white
                   : isLocked
-                      ? theme.colorScheme.outline
-                      : Colors.black.withValues(alpha: 0.1),
+                  ? theme.colorScheme.outline
+                  : Colors.black.withValues(alpha: 0.1),
               width: isSelected ? 4 : 1,
             ),
             boxShadow: [

@@ -4,10 +4,16 @@ import 'package:intl/intl.dart';
 import 'package:pos_app/bookings/booking_model.dart';
 import 'package:pos_app/bookings/bookings_provider.dart';
 import 'package:pos_app/company/company_provider.dart';
+import 'package:pos_app/navigation/nav_widgets.dart';
 import 'package:pos_app/sync/sync_provider.dart';
 
 class BookingHistoryScreen extends ConsumerStatefulWidget {
-  const BookingHistoryScreen({super.key});
+  /// Opens the global navigation drawer (supplied by MainLayout). When null —
+  /// e.g. the screen is pushed as a standalone route — the leading hamburger is
+  /// hidden, matching the other POS tab screens.
+  final VoidCallback? onMenuPressed;
+
+  const BookingHistoryScreen({super.key, this.onMenuPressed});
 
   @override
   ConsumerState<BookingHistoryScreen> createState() =>
@@ -44,26 +50,42 @@ class _BookingHistoryScreenState extends ConsumerState<BookingHistoryScreen>
   Widget build(BuildContext context) {
     final asyncBookings = ref.watch(allBookingsProvider);
 
+    final cs = Theme.of(context).colorScheme;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Booking History'),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(icon: Icon(Icons.upcoming), text: 'Upcoming'),
-            Tab(icon: Icon(Icons.history), text: 'History'),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh',
-            onPressed: _refresh,
-          ),
-        ],
-      ),
       body: Column(
         children: [
+          // Unified flat top bar (replaces the legacy Material AppBar): title
+          // left-middle, refresh pinned right. The TabBar drops just beneath it.
+          PosTopBar(
+            onMenuPressed: widget.onMenuPressed,
+            title: const Text(
+              'Booking History',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              overflow: TextOverflow.ellipsis,
+            ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.refresh),
+                tooltip: 'Refresh',
+                onPressed: _refresh,
+              ),
+            ],
+          ),
+          // Flat tab strip: solid surface fill, crisp bottom divider, no shadow.
+          Container(
+            decoration: BoxDecoration(
+              color: cs.surface,
+              border: Border(bottom: BorderSide(color: context.navDivider)),
+            ),
+            child: TabBar(
+              controller: _tabController,
+              tabs: const [
+                Tab(icon: Icon(Icons.upcoming), text: 'Upcoming'),
+                Tab(icon: Icon(Icons.history), text: 'History'),
+              ],
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
             child: TextField(
@@ -81,28 +103,34 @@ class _BookingHistoryScreenState extends ConsumerState<BookingHistoryScreen>
           ),
           Expanded(
             child: asyncBookings.when(
-              loading: () =>
-                  const Center(child: CircularProgressIndicator()),
+              loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, _) =>
                   Center(child: Text('Error loading bookings: $e')),
               data: (bookings) {
                 final filtered = _search.isEmpty
                     ? bookings
                     : bookings
-                        .where((b) => b.reservationName
-                            .toLowerCase()
-                            .contains(_search))
-                        .toList();
+                          .where(
+                            (b) => b.reservationName.toLowerCase().contains(
+                              _search,
+                            ),
+                          )
+                          .toList();
 
-                final upcoming = filtered
-                    .where((b) => b.status == 1 || b.status == 2 || b.status == 3)
-                    .toList()
-                  ..sort((a, b) => a.startTime.compareTo(b.startTime));
+                final upcoming =
+                    filtered
+                        .where(
+                          (b) =>
+                              b.status == 1 || b.status == 2 || b.status == 3,
+                        )
+                        .toList()
+                      ..sort((a, b) => a.startTime.compareTo(b.startTime));
 
-                final history = filtered
-                    .where((b) => b.status == 4 || b.status == 5)
-                    .toList()
-                  ..sort((a, b) => b.startTime.compareTo(a.startTime));
+                final history =
+                    filtered
+                        .where((b) => b.status == 4 || b.status == 5)
+                        .toList()
+                      ..sort((a, b) => b.startTime.compareTo(a.startTime));
 
                 return TabBarView(
                   controller: _tabController,
@@ -146,20 +174,22 @@ class _BookingList extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(emptyIcon,
-                size: 56,
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurface
-                    .withValues(alpha: 0.25)),
+            Icon(
+              emptyIcon,
+              size: 56,
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.25),
+            ),
             const SizedBox(height: 12),
-            Text(emptyMessage,
-                style: TextStyle(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.5),
-                )),
+            Text(
+              emptyMessage,
+              style: TextStyle(
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.5),
+              ),
+            ),
           ],
         ),
       );
@@ -242,8 +272,9 @@ class _BookingCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           booking.reservationName,
-                          style: tt.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w700),
+                          style: tt.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -255,9 +286,11 @@ class _BookingCard extends StatelessWidget {
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      Icon(Icons.calendar_today,
-                          size: 13,
-                          color: cs.onSurface.withValues(alpha: 0.5)),
+                      Icon(
+                        Icons.calendar_today,
+                        size: 13,
+                        color: cs.onSurface.withValues(alpha: 0.5),
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         dateFmt.format(booking.startTime),
@@ -266,9 +299,11 @@ class _BookingCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      Icon(Icons.schedule,
-                          size: 13,
-                          color: cs.onSurface.withValues(alpha: 0.5)),
+                      Icon(
+                        Icons.schedule,
+                        size: 13,
+                        color: cs.onSurface.withValues(alpha: 0.5),
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         '${timeFmt.format(booking.startTime)} – ${timeFmt.format(booking.endTime)} ($durationLabel)',
@@ -281,9 +316,11 @@ class _BookingCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(Icons.people,
-                          size: 13,
-                          color: cs.onSurface.withValues(alpha: 0.5)),
+                      Icon(
+                        Icons.people,
+                        size: 13,
+                        color: cs.onSurface.withValues(alpha: 0.5),
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         '${booking.guestCount} guest${booking.guestCount == 1 ? '' : 's'}',
@@ -293,9 +330,11 @@ class _BookingCard extends StatelessWidget {
                       ),
                       if (booking.tableIds.isNotEmpty) ...[
                         const SizedBox(width: 12),
-                        Icon(Icons.table_restaurant,
-                            size: 13,
-                            color: cs.onSurface.withValues(alpha: 0.5)),
+                        Icon(
+                          Icons.table_restaurant,
+                          size: 13,
+                          color: cs.onSurface.withValues(alpha: 0.5),
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           '${booking.tableIds.length} table${booking.tableIds.length == 1 ? '' : 's'}',
@@ -306,13 +345,15 @@ class _BookingCard extends StatelessWidget {
                       ],
                       if (booking.posOrderId != null) ...[
                         const SizedBox(width: 12),
-                        Icon(Icons.receipt,
-                            size: 13, color: cs.primary.withValues(alpha: 0.8)),
+                        Icon(
+                          Icons.receipt,
+                          size: 13,
+                          color: cs.primary.withValues(alpha: 0.8),
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           'Order #${booking.posOrderId}',
-                          style: tt.bodySmall
-                              ?.copyWith(color: cs.primary),
+                          style: tt.bodySmall?.copyWith(color: cs.primary),
                         ),
                       ],
                     ],
@@ -322,9 +363,11 @@ class _BookingCard extends StatelessWidget {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.notes,
-                            size: 13,
-                            color: cs.onSurface.withValues(alpha: 0.5)),
+                        Icon(
+                          Icons.notes,
+                          size: 13,
+                          color: cs.onSurface.withValues(alpha: 0.5),
+                        ),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(

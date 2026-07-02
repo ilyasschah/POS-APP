@@ -489,13 +489,13 @@ class _CustomerFormDialogState extends ConsumerState<_CustomerFormDialog> {
 
   Future<void> _loadCountries() async {
     try {
-      final dio = createDio();
-      final response = await dio.get(
-        '/Country/GetAllCountries',
-        queryParameters: {'companyId': widget.companyId},
-      );
-      final countries = (response.data as List)
-          .map((j) => Country.fromJson(j))
+      // Offline-first: countries come from the local Drift cache (kept fresh by
+      // SyncManager.pullCountries), so the dropdown works with no connection.
+      // serverId → model id to match the customer's stored countryId FK.
+      final db = ref.read(appDatabaseProvider);
+      final rows = await db.select(db.countriesTable).get();
+      final countries = rows
+          .map((r) => Country(id: r.serverId ?? 0, name: r.name, code: r.code))
           .toList();
       setState(() {
         _countries = countries;

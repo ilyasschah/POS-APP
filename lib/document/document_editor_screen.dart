@@ -297,27 +297,38 @@ class _DocumentEditorDialogState extends ConsumerState<_DocumentEditorDialog> {
     final db = ref.read(appDatabaseProvider);
     double finalTotal = itemsSubtotal;
 
-    // Prefer the normalized discount_lines: subtract every ORDER-level discount
-    // (customer profile, manual cart, loyalty points). Item-level discounts
-    // (manual item / promotion) are already baked into itemsSubtotal, so they
-    // must NOT be subtracted again. Key off the SOURCE, not `itemLocalId`:
-    // pulled-back lines all return with a null itemLocalId, so that column
-    // would wrongly pull promotions into the order-level set and double-count.
+    // Subtract every ORDER-level discount (customer profile, manual cart,
+    // loyalty points) from discount_lines. Item-level discounts (manual item /
+    // promotion) are already baked into itemsSubtotal, so they must NOT be
+    // subtracted again. Key off the SOURCE, not `itemLocalId`: pulled-back lines
+    // all return with a null itemLocalId, which would wrongly pull promotions
+    // into the order-level set and double-count.
     final lines = await db.getDiscountLinesForDocument(localId);
     final orderLevel = lines
         .where((l) => DiscountSource.orderLevel.contains(l.source))
         .toList();
-    if (orderLevel.isNotEmpty) {
-      // Checkout document. itemsSubtotal is the ex-tax items base (after item
-      // discounts), so add the document's tax — summed from the items' stored
-      // taxAmount, which already reflects the Before/After-tax rule — BEFORE
-      // subtracting the order-level discounts. Without the +tax the total came
-      // out negative (clamped to 0), which is why "Remaining" went -5.
+
+    // A POS/checkout document stores each line `total` EX-tax (the tax lives in
+    // the item's `taxAmount`), so its tax must be added back here. A manual
+    // editor document stores `total` tax-INCLUSIVE, so no tax is added.
+    // Distinguish by ORIGIN — checkout stamps `orderNumber`, manual docs leave
+    // it null — NOT by "has an order-level discount". The old proxy dropped the
+    // tax from a taxed cash sale that simply had no discount, understating the
+    // total the moment any item was edited.
+    final doc = await db.getDocumentByLocalId(localId);
+    final isCheckoutDoc =
+        doc?.orderNumber != null && doc!.orderNumber!.isNotEmpty;
+
+    if (isCheckoutDoc) {
       final docItems = await db.getActiveDocumentItems(localId);
       finalTotal += docItems.fold<double>(0, (s, i) => s + i.taxAmount);
       finalTotal -= orderLevel.fold<double>(0, (s, l) => s + l.amount);
+    } else if (orderLevel.isNotEmpty) {
+      // Manual document that nonetheless carries order-level discount_lines:
+      // `total` is already tax-inclusive, so just subtract the discounts.
+      finalTotal -= orderLevel.fold<double>(0, (s, l) => s + l.amount);
     } else if (_discountType == 1) {
-      // Legacy document (no discount_lines) — fall back to the header discount.
+      // Manual document with a header discount only (no discount_lines).
       finalTotal -= _discount;
     } else if (_discountType == 0) {
       finalTotal -= finalTotal * (_discount / 100);
@@ -1867,12 +1878,14 @@ class _AddItemDialogState extends ConsumerState<_AddItemDialog> {
       _errorMessage = null;
     });
     try {
+      final db = ref.read(appDatabaseProvider);
+      final itemLocalId = const Uuid().v4();
       // Offline-first: write the line item to local SQLite. The selected tax +
       // expiration travel on the row and SyncManager pushes them to
       // /DocumentItems(+Taxes/+ExpirationDates) on the next sync.
-      await ref.read(appDatabaseProvider).insertDocumentItemLocal(
+      await db.insertDocumentItemLocal(
             DocumentItemsTableCompanion(
-              localId: Value(const Uuid().v4()),
+              localId: Value(itemLocalId),
               documentId: Value(widget.documentLocalId),
               productId: Value(_selectedProductId!),
               quantity: Value(_qty),
@@ -1888,6 +1901,17 @@ class _AddItemDialogState extends ConsumerState<_AddItemDialog> {
               syncStatus: const Value('pending_create'),
             ),
           );
+
+      // Record the item discount as a manual_item discount line so the offline
+      // sales "Discounts by source" report counts it (no-op on checkout docs).
+      await db.syncManualItemDiscountLine(
+        itemLocalId: itemLocalId,
+        companyId: widget.companyId,
+        productId: _selectedProductId!,
+        value: _disc,
+        valueType: _discountType,
+        amount: _discountTaxed * _qty,
+      );
 
       if (!mounted) return;
       if (widget.isPurchase && _selectedProductId != null) {
@@ -2274,7 +2298,8 @@ class _EditItemDialogState extends ConsumerState<_EditItemDialog> {
       // Offline-first: write the edit to local SQLite. The row carries the
       // single selected tax + expiration; SyncManager reconciles them with the
       // server's /DocumentItems(+Taxes/+ExpirationDates) on the next sync.
-      await ref.read(appDatabaseProvider).updateDocumentItemLocal(
+      final db = ref.read(appDatabaseProvider);
+      await db.updateDocumentItemLocal(
             localId,
             DocumentItemsTableCompanion(
               quantity: Value(_qty),
@@ -2289,6 +2314,18 @@ class _EditItemDialogState extends ConsumerState<_EditItemDialog> {
               expirationDate: Value(_expirationDate),
             ),
           );
+
+      // Keep this item's manual_item discount line in step with the edit so the
+      // offline "Discounts by source" report stays accurate (no-op on checkout
+      // docs; clears the line when the discount is removed).
+      await db.syncManualItemDiscountLine(
+        itemLocalId: localId,
+        companyId: widget.companyId,
+        productId: widget.item.productId,
+        value: _disc,
+        valueType: _discountType,
+        amount: _discTaxed * _qty,
+      );
       ref.read(syncStateProvider.notifier).sync().catchError((_) {});
       if (!mounted) return;
       Navigator.of(context).pop();

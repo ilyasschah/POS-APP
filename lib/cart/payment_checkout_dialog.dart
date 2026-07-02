@@ -318,6 +318,16 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
       final existingLocalId = cartState.existingLocalOrderId;
       final orderLocalId = existingLocalId ?? const Uuid().v4();
 
+      // One stable line id per cart line, SHARED by the pos_order_item, the
+      // document_item, and the discount_lines.itemLocalId. BatchSync echoes each
+      // created DocumentItem's server id back keyed by this id, so the local
+      // document_items row gets its serverId stamped (without which its later
+      // edits/deletes could never sync). It also keeps duplicate-product lines
+      // distinct end-to-end.
+      final lineLocalIds = {
+        for (final item in _cartItems) item.cartItemId: const Uuid().v4(),
+      };
+
       // Build items first — orderId is the same whether we insert or update.
       final itemCompanions = _cartItems.map((item) {
         final lineTotal =
@@ -336,7 +346,7 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
         final taxesJsonStr =
             taxEntries.isEmpty ? null : jsonEncode(taxEntries);
         return PosOrderItemsTableCompanion(
-          localId: Value(const Uuid().v4()),
+          localId: Value(lineLocalIds[item.cartItemId]!),
           orderId: Value(orderLocalId),
           productId: Value(item.productId),
           quantity: Value(item.quantity),
@@ -429,7 +439,9 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
       // permanent document record (the source of truth for receipts/reports).
       final docItemLocalIds = <String, String>{};
       final docItems = _cartItems.map((item) {
-        final docItemLocalId = const Uuid().v4();
+        // Same id as this line's pos_order_item, so BatchSync can stamp the
+        // returned DocumentItem serverId onto this exact row.
+        final docItemLocalId = lineLocalIds[item.cartItemId]!;
         docItemLocalIds[item.cartItemId] = docItemLocalId;
         final lineTotal =
             (item.price - item.discount - item.promotionalDiscount) *
@@ -452,11 +464,16 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
           quantity:     Value(item.quantity),
           unitPrice:    Value(item.price),
           priceBeforeTax: Value(item.price),
-          // The stored discount is the RESOLVED per-unit currency (manual +
-          // promotion), so its type is Fixed (1) — not the manual item's entry
-          // mode. Stamping the manual type made a fixed promo show as "1%".
-          discount:     Value(item.discount + item.promotionalDiscount),
-          discountType: const Value(1),
+          // Store ONLY the manual item discount here — exactly what the server's
+          // CheckoutAsync persists (from pos_order_items.discount), so the column
+          // is identical on the originating device and on devices that pull the
+          // doc back. The promotion is NOT baked in: it lives in discount_lines
+          // and surfaces in the Discount Breakdown. Baking it in here made the
+          // promotion show twice (item "Item Disc." column + breakdown) and made
+          // local docs disagree with pulled ones. `total`/`taxAmount` already net
+          // out the promotion via `lineTotal`, so they're unaffected.
+          discount:     Value(item.discount),
+          discountType: Value(item.discountType),
           total:        Value(lineTotal),
           taxAmount:    Value(taxAmt),
           taxRate:      Value(combinedRate),

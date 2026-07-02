@@ -1,17 +1,19 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pos_app/api/api_client.dart';
 import 'package:pos_app/currency/currency_model.dart';
 import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/app_settings/app_settings_provider.dart';
+import 'package:pos_app/database/database_provider.dart';
 
-final currenciesProvider = FutureProvider<List<Currency>>((ref) async {
-  try {
-    final dio = createDio();
-    final response = await dio.get('/Currencies/GetAll');
-    return (response.data as List).map((j) => Currency.fromJson(j)).toList();
-  } catch (_) {
-    return [];
-  }
+/// Offline-first: currencies stream from the local Drift cache (kept fresh by
+/// `SyncManager.pullCurrencies`), so dropdowns are populated even offline.
+/// `id` maps from `serverId` so it matches server-side currency FKs.
+final currenciesProvider = StreamProvider<List<Currency>>((ref) {
+  final db = ref.watch(appDatabaseProvider);
+  return db.select(db.currenciesTable).watch().map(
+        (rows) => rows
+            .map((r) => Currency(id: r.serverId ?? 0, name: r.name, code: r.code))
+            .toList(),
+      );
 });
 
 final currencySymbolProvider = Provider<String>((ref) {

@@ -21,6 +21,9 @@ final allBookingsProvider = StreamProvider.autoDispose<List<Booking>>((ref) {
 
   final query = db.select(db.bookingsTable)
     ..where((t) => t.companyId.equals(companyId))
+    // Hide rows tombstoned for an offline delete (pending_delete) so they
+    // disappear from the calendar instantly, before the server delete syncs.
+    ..where((t) => t.syncStatus.isNotIn(const ['pending_delete']))
     ..orderBy([(t) => OrderingTerm.asc(t.startTime)]);
 
   return query.watch().map((rows) => rows.map(Booking.fromDrift).toList());

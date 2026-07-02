@@ -16,7 +16,12 @@ class CurrentUserNotifier extends Notifier<User?> {
   User? build() => null;
 
   void setUser(User user) => state = user;
-  void logout() => state = null;
+  void logout() {
+    state = null;
+    // Drop the per-user token and revert to the device token so the next login
+    // starts clean and no stale cashier identity lingers on outgoing requests.
+    ref.read(authStorageProvider).resetActiveToDevice();
+  }
 }
 
 final currentUserProvider = NotifierProvider<CurrentUserNotifier, User?>(
@@ -256,6 +261,34 @@ class AuthService {
     final db = _ref.read(appDatabaseProvider);
     await (db.update(db.usersTable)..where((t) => t.id.equals(userId)))
         .write(UsersTableCompanion(pinHash: Value(hashedPin)));
+  }
+
+  /// Exchanges the durable device token for a per-user token so the backend sees
+  /// the CURRENT cashier's identity + role (not the device owner's). Best-effort:
+  /// offline / no device token / any error leaves the active token unchanged, so
+  /// the app keeps working on the device token as before. Call at PIN login.
+  Future<void> exchangeUserToken(int userId) async {
+    final storage = _ref.read(authStorageProvider);
+    final deviceJwt = await storage.getDeviceJwt();
+    if (deviceJwt == null || deviceJwt.isEmpty) return; // nothing to exchange with
+
+    try {
+      final dio = createDio();
+      // Present the device token explicitly (overrides the interceptor's active
+      // token, which may still be a previous user's).
+      dio.options.headers['Authorization'] = 'Bearer $deviceJwt';
+      final res = await dio.post(
+        '/Auth/UserToken',
+        queryParameters: {'userId': userId},
+      );
+      final data = res.data;
+      final token = data is Map ? data['token'] as String? : null;
+      if (token != null && token.isNotEmpty) {
+        await storage.saveJwt(token); // becomes the active token for all requests
+      }
+    } on DioException {
+      // Offline or server unavailable — keep the current active token.
+    }
   }
 }
 

@@ -18,8 +18,8 @@ void main() async {
   // window_manager only exists on desktop — skip on Android/iOS.
   if (!kIsWeb &&
       (defaultTargetPlatform == TargetPlatform.windows ||
-       defaultTargetPlatform == TargetPlatform.macOS ||
-       defaultTargetPlatform == TargetPlatform.linux)) {
+          defaultTargetPlatform == TargetPlatform.macOS ||
+          defaultTargetPlatform == TargetPlatform.linux)) {
     await windowManager.ensureInitialized();
   }
   final prefs = await SharedPreferences.getInstance();
@@ -154,8 +154,7 @@ class _MyAppState extends ConsumerState<MyApp> {
   }
 
   Future<_BootDecision> _decideBoot() async {
-    final registered =
-        await ref.read(authStorageProvider).isDeviceRegistered();
+    final registered = await ref.read(authStorageProvider).isDeviceRegistered();
     if (!registered) return const _BootDecision(false, null);
     // Registered terminal: enforce the offline subscription lease before
     // letting the operator into the POS.
@@ -176,10 +175,21 @@ class _MyAppState extends ConsumerState<MyApp> {
   @override
   Widget build(BuildContext context) {
     final settings = ref.watch(appSettingsProvider);
+    final prefs = ref.watch(sharedPreferencesProvider);
+
     final isRtl =
         settings[SettingKeys.writingDirection]?.toUpperCase() == 'RTL';
-    final seed = _parseAccentColor(settings[SettingKeys.themeAccentColor]);
-    final themeString = settings[SettingKeys.themeMode] ?? 'dark';
+
+    // Read synchronously from SharedPreferences first to stop the brown flash
+    final savedHex =
+        prefs.getString('boot_theme_color') ??
+        settings[SettingKeys.themeAccentColor];
+    final themeString =
+        prefs.getString('boot_theme_mode') ??
+        settings[SettingKeys.themeMode] ??
+        'dark';
+
+    final seed = _parseAccentColor(savedHex);
     final themeData = _buildTheme(themeString, seed);
 
     // Global font scale — a per-terminal preference stored locally (NOT cloud
@@ -195,9 +205,9 @@ class _MyAppState extends ConsumerState<MyApp> {
       themeMode: ThemeMode.light,
       theme: themeData,
       builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(context).copyWith(
-          textScaler: TextScaler.linear(fontScale),
-        ),
+        data: MediaQuery.of(
+          context,
+        ).copyWith(textScaler: TextScaler.linear(fontScale)),
         child: Directionality(
           textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
           child: child!,
