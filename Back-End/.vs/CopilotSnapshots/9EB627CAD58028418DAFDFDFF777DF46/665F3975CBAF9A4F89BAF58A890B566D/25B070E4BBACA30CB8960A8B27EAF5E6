@@ -1,0 +1,46 @@
+﻿using FluentValidation;
+using MediatR;
+using Products.Api.Models;
+using Products.Api.Services;
+
+namespace Products.Api.Commands.BarcodesCommands.Update
+{
+    public class UpdateBarcodecommand : IRequest<bool>
+    {
+        public UpdateBarcodeByIdRequest Request { get; set; }
+        public int CompanyId { get; }
+        public UpdateBarcodecommand(UpdateBarcodeByIdRequest updatebarcodebyidRequest, int companyId)
+        {
+            Request = updatebarcodebyidRequest;
+            CompanyId = companyId;
+        }
+        public class UpdateBarcodeByProductNamecommandHandler : IRequestHandler<UpdateBarcodecommand, bool>
+        {
+            private readonly BarcodeService _barcodeservice;
+            public UpdateBarcodeByProductNamecommandHandler(BarcodeService barcodeservice)
+            {
+                _barcodeservice = barcodeservice;
+            }
+            public async Task<bool> Handle(UpdateBarcodecommand request, CancellationToken cancellationToken)
+            {
+                try
+                {
+                    return await _barcodeservice.Update(request.Request.Id, request.Request.NewBarcodeValue, request.CompanyId);
+                }
+                catch (Exception)
+                {
+
+                    throw;
+                }
+            }
+            public class UpdateBarcodecommandValidator : AbstractValidator<UpdateBarcodecommand>
+            {
+                public UpdateBarcodecommandValidator()
+                {
+                    RuleFor(bcv => bcv.Request.NewBarcodeValue).NotNull().NotEmpty().WithMessage("mut not be null.");
+                    RuleFor(bcid => bcid.Request.Id).NotNull().NotEmpty().WithMessage("product ID must be entred ");
+                }
+            }
+        }
+    }
+}

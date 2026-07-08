@@ -1,0 +1,77 @@
+﻿using Microsoft.EntityFrameworkCore;
+using Products.Api.DataBase;
+using Products.Api.Domain;
+
+namespace Products.Api.Repository
+{
+    public class DocumentRepository
+    {
+        public readonly AppDbContext _db;
+
+        public DocumentRepository(AppDbContext db)
+        {
+            _db = db;
+        }
+
+        public async Task<List<Document>> GetAllAsync(int companyId)
+        {
+            return await _db.Documents
+                .Where(d => d.CompanyId == companyId)
+                .Include(d => d.User)
+                .Include(d => d.Customer)
+                .Include(d => d.DocumentType)
+                .Include(d => d.Warehouse)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+        public async Task<Document?> GetByIdAsync(int id, int companyId, bool trackEntity = false)
+        {
+            var query = _db.Documents.AsQueryable();
+            if (!trackEntity)
+            {
+                query = query.AsNoTracking();
+            }
+            return await query
+                .Include(d => d.User)
+                .Include(d => d.Customer)
+                .Include(d => d.DocumentType)
+                .Include(d => d.Warehouse)
+                .FirstOrDefaultAsync(d => d.Id == id && d.CompanyId == companyId);
+        }
+
+        public async Task<Document?> GetByNumberAsync(string number, int companyId)
+        {
+            return await _db.Documents
+                .Include(d => d.User)
+                .Include(d => d.Customer)
+                .Include(d => d.DocumentType)
+                .Include(d => d.Warehouse)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(d => d.Number.ToLower() == number.ToLower() && d.CompanyId == companyId);
+        }
+
+        public async Task<bool> ExistsAsync(string number)
+        {
+            return await _db.Documents.AnyAsync(d => d.Number.ToLower() == number.ToLower());
+        }
+
+        public async Task AddAsync(Document entity)
+        {
+            _db.Documents.Add(entity);
+            await _db.SaveChangesAsync();
+        }
+
+        public async Task UpdateAsync(Document entity)
+        {
+            _db.Documents.Update(entity);
+            await _db.SaveChangesAsync();
+        }
+
+        public async Task DeleteAsync(Document entity)
+        {
+            _db.Documents.Remove(entity);
+            await _db.SaveChangesAsync();
+        }
+    }
+}

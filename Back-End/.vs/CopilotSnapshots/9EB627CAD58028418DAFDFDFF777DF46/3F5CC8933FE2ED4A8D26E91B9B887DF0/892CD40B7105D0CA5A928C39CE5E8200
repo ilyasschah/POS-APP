@@ -1,0 +1,76 @@
+﻿using Products.Api.Commands.DocumentsCommands.Add;
+using Products.Api.Commands.DocumentsCommands.Delete;
+using Products.Api.Commands.DocumentsCommands.Update;
+using Products.Api.Queries.DocumentQuery;
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
+using Products.Api.Models;
+
+namespace Products.Api.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class DocumentController (IMediator mediator) : ControllerBase
+    {
+        [HttpGet("[action]")]
+        public async Task<ActionResult<List<DocumentDto>>> GetAll([FromQuery] int companyId)
+        {
+            if (companyId == 0)
+                return BadRequest("Company ID is required");
+
+            return Ok(await mediator.Send(new GetAllDocumentsQuery { CompanyId = companyId }));
+        }
+
+        [HttpGet("[action]/{id:int}")]
+        public async Task<ActionResult<DocumentDto?>> GetById(int id, [FromQuery] int companyId)
+        {
+            if (companyId == 0)
+                return BadRequest("Company ID is required");
+
+            return Ok(await mediator.Send(new GetDocumentByIdQuery(id) { CompanyId = companyId }));
+        }
+
+        [HttpGet("[action]/{number}")]
+        public async Task<ActionResult<DocumentDto>> GetByNumber(string number, [FromQuery] int companyId)
+        {
+            if (companyId == 0)
+                return BadRequest("Company ID is required");
+
+            return Ok(await mediator.Send(new GetDocumentByNumberQuery(number) { CompanyId = companyId }));
+        }
+
+        [HttpPost("[action]")]
+        public async Task<ActionResult<DocumentDto>> Add(
+            [FromBody] CreateDocumentRequest req,
+            [FromQuery] int companyId)
+        {
+            if (companyId == 0) return BadRequest("Company ID is required");
+
+            var command = new AddDocumentCommand(req, companyId);
+
+            var result = await mediator.Send(command);
+            return CreatedAtAction(nameof(GetById), new { id = result.Id, companyId }, result);
+        }
+
+        [HttpPut("[action]/{id:int}")]
+        public async Task<IActionResult> Update(
+            int id,
+            [FromBody] UpdateDocumentRequest req,
+            [FromQuery] int companyId)
+        {
+            if (companyId == 0) return BadRequest("Company ID is required");
+
+            var ok = await mediator.Send(new UpdateDocumentCommand(req, companyId));
+            return ok ? NoContent() : NotFound();
+        }
+
+        [HttpDelete("[action]/{id:int}")]
+        public async Task<IActionResult> Delete(int id, [FromQuery] int companyId)
+        {
+            if (companyId == 0) return BadRequest("Company ID is required");
+
+            var ok = await mediator.Send(new DeleteDocumentCommand(id, companyId));
+            return ok ? NoContent() : NotFound();
+        }
+    }
+}

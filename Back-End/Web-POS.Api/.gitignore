@@ -1,0 +1,3 @@
+
+# Pillar 2 — locally generated lease signing key (supply via secret store in prod)
+lease_signing_key.pem

@@ -1,0 +1,47 @@
+@page
+@model Api.Pages.Admin.Users.EditModel
+@{
+    ViewData["Title"] = "Edit user";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">Edit user #@Model.Input.UserId</h3>
+    <a class="btn btn-outline-secondary" asp-page="/Admin/Companies/Details" asp-route-id="@Model.Input.CompanyId">Back</a>
+</div>
+
+<form method="post" class="bg-white shadow-sm p-4 rounded">
+    <input type="hidden" asp-for="Input.CompanyId" />
+    <input type="hidden" asp-for="Input.UserId" />
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label class="form-label">Username</label>
+            <input class="form-control" asp-for="Input.Username" />
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Email</label>
+            <input class="form-control" asp-for="Input.Email" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">First name</label>
+            <input class="form-control" asp-for="Input.FirstName" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Last name</label>
+            <input class="form-control" asp-for="Input.LastName" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Access level</label>
+            <input type="number" class="form-control" asp-for="Input.AccessLevel" />
+        </div>
+        <div class="col-12">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" asp-for="Input.IsEnabled" id="enabled" />
+                <label class="form-check-label" for="enabled">Enabled</label>
+            </div>
+        </div>
+    </div>
+    <div class="mt-4">
+        <button type="submit" class="btn btn-primary">Save changes</button>
+    </div>
+    <p class="text-muted mt-3 mb-0">To change this user's password, use the <strong>Reset</strong> action on the company page.</p>
+</form>

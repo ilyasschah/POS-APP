@@ -1,0 +1,32 @@
+﻿using MediatR;
+using Products.Api.Services;
+
+namespace Products.Api.Commands.PaymentTypeCommands.Delete
+{
+    public class DeletePaymentTypeCommand : IRequest<bool>
+    {
+        public int Id { get; }
+        public int CompanyId { get; }
+
+        public DeletePaymentTypeCommand(int id, int companyId)
+        {
+            Id = id;
+            CompanyId = companyId;
+        }
+
+        public class DeletePaymentTypeCommandHandler : IRequestHandler<DeletePaymentTypeCommand, bool>
+        {
+            private readonly PaymentTypeService _service;
+
+            public DeletePaymentTypeCommandHandler(PaymentTypeService service)
+            {
+                _service = service;
+            }
+
+            public Task<bool> Handle(DeletePaymentTypeCommand request, CancellationToken cancellationToken)
+            {
+                return _service.Delete(request.Id, request.CompanyId);
+            }
+        }
+    }
+}

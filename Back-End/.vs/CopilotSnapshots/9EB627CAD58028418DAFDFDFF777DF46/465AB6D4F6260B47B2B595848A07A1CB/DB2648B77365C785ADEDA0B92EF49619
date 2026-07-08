@@ -1,0 +1,52 @@
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Products.Api.Domain
+{
+    [Table("PromotionItem")]
+    public class PromotionItem
+    {
+        [Key]
+        public int Id { get; set; }
+        public int CompanyId { get; set; }
+        public int PromotionId { get; set; }
+        public int Uid { get; set; }
+        public int DiscountType { get; set; }
+        public int PriceType { get; set; }
+        public decimal Value { get; set; }
+        public bool IsConditional { get; set; }
+        public decimal Quantity { get; set; }
+        public int ConditionType { get; set; }
+        public decimal QuantityLimit { get; set; }
+
+        [ForeignKey(nameof(PromotionId))]
+        public virtual Promotion Promotion { get; set; }
+
+        private PromotionItem(int promotionId, int uid, decimal value)
+        {
+            PromotionId = promotionId;
+            Uid = uid;
+            Value = value;
+            IsConditional = true;
+        }
+
+        public PromotionItem() { }
+
+        public static PromotionItem Create(int promotionId, int uid, decimal value)
+        {
+            return new PromotionItem(promotionId, uid, value);
+        }
+
+        public void Update(int uid, int discountType, int priceType, decimal value, bool isConditional, decimal quantity, int conditionType, decimal quantityLimit)
+        {
+            Uid = uid;
+            DiscountType = discountType;
+            PriceType = priceType;
+            Value = value;
+            IsConditional = isConditional;
+            Quantity = quantity;
+            ConditionType = conditionType;
+            QuantityLimit = quantityLimit;
+        }
+    }
+}

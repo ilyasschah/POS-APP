@@ -1,0 +1,88 @@
+﻿using Microsoft.EntityFrameworkCore;
+using Products.Api.DataBase;
+using Products.Api.Domain;
+
+namespace Products.Api.Repository
+{
+    public class PromotionRepository
+    {
+        public readonly AppDbContext _db;
+
+        public PromotionRepository(AppDbContext db)
+        {
+            _db = db;
+        }
+
+        public async Task<List<Promotion>> GetAllAsync(int companyId)
+        {
+            return await _db.Promotions
+                .Where(p => p.CompanyId == companyId)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+        public async Task<Promotion?> GetByIdAsync(int id, int companyId, bool trackEntity = false)
+        {
+            var query = _db.Promotions.AsQueryable();
+            if (!trackEntity)
+            {
+                query = query.AsNoTracking();
+            }
+            return await query.FirstOrDefaultAsync(p => p.Id == id && p.CompanyId == companyId);
+        }
+
+        public async Task<Promotion?> GetByNameAsync(string name, int companyId)
+        {
+            return await _db.Promotions.AsNoTracking().FirstOrDefaultAsync(p => p.Name == name && p.CompanyId == companyId);
+        }
+
+        public async Task<bool> ExistsAsync(string name, int companyId)
+        {
+            return await _db.Promotions.AnyAsync(p => p.Name.ToLower() == name.ToLower() && p.CompanyId == companyId);
+        }
+
+        // Backwards-compatible non-scoped overloads
+        public async Task<List<Promotion>> GetAllAsync()
+        {
+            return await _db.Promotions.AsNoTracking().ToListAsync();
+        }
+
+        public async Task<Promotion?> GetByIdAsync(int id, bool trackEntity = false)
+        {
+            var query = _db.Promotions.AsQueryable();
+            if (!trackEntity)
+            {
+                query = query.AsNoTracking();
+            }
+            return await query.FirstOrDefaultAsync(p => p.Id == id);
+        }
+
+        public async Task<Promotion?> GetByNameAsync(string name)
+        {
+            return await _db.Promotions.AsNoTracking().FirstOrDefaultAsync(p => p.Name == name);
+        }
+
+        public async Task<bool> ExistsAsync(string name)
+        {
+            return await _db.Promotions.AnyAsync(p => p.Name.ToLower() == name.ToLower());
+        }
+
+        public async Task AddAsync(Promotion entity)
+        {
+            _db.Promotions.Add(entity);
+            await _db.SaveChangesAsync();
+        }
+
+        public async Task UpdateAsync(Promotion entity)
+        {
+            _db.Promotions.Update(entity);
+            await _db.SaveChangesAsync();
+        }
+
+        public async Task DeleteAsync(Promotion entity)
+        {
+            _db.Promotions.Remove(entity);
+            await _db.SaveChangesAsync();
+        }
+    }
+}

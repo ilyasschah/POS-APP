@@ -1,0 +1,41 @@
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Api.Domain
+{
+    [Table("PosPrinterSelection")]
+    public class PosPrinterSelection
+    {
+        [Key]
+        public int Id { get; set; }
+        public int CompanyId { get; set; }
+
+        [Required]
+        [MaxLength(100)]
+        public string Key { get; set; } = default!;
+
+        [MaxLength(255)]
+        public string? PrinterName { get; set; }
+
+        public bool IsEnabled { get; set; }
+
+        public PosPrinterSelection() { }
+
+        private PosPrinterSelection(string key, string? printerName, bool isEnabled)
+        {
+            Key = key;
+            PrinterName = printerName;
+            IsEnabled = isEnabled;
+        }
+
+        public static PosPrinterSelection Create(string key, string? printerName, bool isEnabled = false)
+            => new(key, printerName, isEnabled);
+
+        public void Update(string key, string? printerName, bool isEnabled)
+        {
+            Key = key;
+            PrinterName = printerName;
+            IsEnabled = isEnabled;
+        }
+    }
+}

@@ -1,0 +1,55 @@
+﻿using Products.Api.Commands.PaymentCommands.Add;
+using Products.Api.Commands.PaymentCommands.Delete;
+using Products.Api.Commands.PaymentCommands.Update;
+using Products.Api.Queries.PaymentQuery;
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
+using Products.Api.Models;
+
+namespace Products.Api.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class PaymentsController(IMediator mediator) : ControllerBase
+    {
+        [HttpGet("[action]")]
+        public async Task<ActionResult<List<PaymentDto>>> GetAll([FromQuery] int companyId)
+        {
+            if (companyId == 0) return BadRequest("Company ID is required");
+            return Ok(await mediator.Send(new GetAllPaymentsQuery { CompanyId = companyId }));
+        }
+
+        [HttpGet("[action]/{id:int}")]
+        public async Task<ActionResult<PaymentDto>> GetById(int id, [FromQuery] int companyId)
+        {
+            if (companyId == 0) return BadRequest("Company ID is required");
+            return Ok(await mediator.Send(new GetPaymentByIdQuery { Id = id, CompanyId = companyId }));
+        }
+
+        //[HttpGet("[action]/ByDocument/{documentId:int}")]
+        //public async Task<ActionResult<List<PaymentDto>>> GetByDocumentId(int documentId)
+        //{                                                                                             rkia
+        //    return Ok(await mediator.Send(new GetPaymentsByDocumentIdQuery (documentId)));
+        //}
+
+        [HttpPost("[action]")]
+        public async Task<ActionResult<PaymentDto>> Add([FromBody] CreatePaymentRequest request)
+        {
+            var result = await mediator.Send(new AddPaymentCommand(request));
+            return Ok(new { Id = result.Id, Message = "Payment added successfully" });
+        }
+
+        [HttpPost("[action]/{id}")]
+        public async Task<IActionResult> Update(int id, [FromBody] UpdatePaymentRequest request)
+        {
+            return Ok(await mediator.Send(new UpdatePaymentCommand(id, request)));
+        }
+
+        [HttpDelete("[action]/{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var result = await mediator.Send(new DeletePaymentCommand { Id = id });
+            return Ok(new { Id = id, Message = "Payment deleted successfully" });
+        }
+    }
+}
