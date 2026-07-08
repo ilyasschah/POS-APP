@@ -69,6 +69,34 @@ namespace Api.Commands.RefundCommands
                 {
                     var req = command.Request;
 
+                    // Idempotency guard. Offline clients issue a device-local refund
+                    // number (ClientDocumentNumber) and re-send the SAME payload when a
+                    // push is retried after an ambiguous failure (a response lost after
+                    // the server already committed, a 5xx, a queued re-push). If a refund
+                    // with that number already exists, return it instead of creating a
+                    // second one — without this, the retry double-reverses stock and
+                    // writes a second negative payment (a real double-refund of money).
+                    if (!string.IsNullOrWhiteSpace(req.ClientDocumentNumber))
+                    {
+                        var clientNumber = req.ClientDocumentNumber.Trim();
+                        var existing = await _db.Documents
+                            .AsNoTracking()
+                            .FirstOrDefaultAsync(
+                                d => d.Number == clientNumber
+                                  && d.CompanyId == command.CompanyId
+                                  && d.DocumentTypeId == DocumentTypeConstants.Refund,
+                                cancellationToken);
+                        if (existing != null)
+                        {
+                            await tx.CommitAsync(cancellationToken);
+                            return new ProcessRefundResponse
+                            {
+                                RefundDocumentNumber = existing.Number ?? clientNumber,
+                                TotalRefunded        = existing.Total,
+                            };
+                        }
+                    }
+
                     if (req.IsBlind)
                     {
                         var blindResult = await HandleBlindRefundAsync(command, req, cancellationToken);

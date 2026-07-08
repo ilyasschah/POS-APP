@@ -46,15 +46,39 @@ namespace Api.Master.Services
             }
 
             var now = DateTime.UtcNow;
-            var periodEnd = sub?.CurrentPeriodEnd ?? now.AddDays(_fallbackTrialDays);
-            var validUntil = periodEnd.AddDays(_graceDays).ToUniversalTime();
+
+            DateTime validUntil;
+            string billingStatus;
+            if (sub != null)
+            {
+                // Normal path: honour the subscription's period end (+ grace).
+                var periodEnd = sub.CurrentPeriodEnd ?? now;
+                validUntil = periodEnd.AddDays(_graceDays).ToUniversalTime();
+                billingStatus = sub.BillingStatus ?? "active";
+            }
+            else if (tenant == null)
+            {
+                // Never provisioned (fresh company, or a Master-DB hiccup): a short
+                // trial so a brand-new company is never locked out before its tenant
+                // is provisioned.
+                validUntil = now.AddDays(_fallbackTrialDays + _graceDays).ToUniversalTime();
+                billingStatus = "none";
+            }
+            else
+            {
+                // Tenant exists but its subscription was deleted → REVOKED. Issue an
+                // already-expired lease and do NOT re-grant a trial — otherwise a
+                // cancelled account would silently re-license itself on every sync.
+                validUntil = now;
+                billingStatus = "revoked";
+            }
 
             var claims = new List<Claim>
             {
                 new("companyId",     companyId.ToString()),
                 new("tenantId",      (tenant?.Id ?? 0).ToString()),
                 new("seatAllowance", (sub?.SeatAllowance ?? 0).ToString()),
-                new("billingStatus", sub?.BillingStatus ?? "none"),
+                new("billingStatus", billingStatus),
                 new("validUntil",    validUntil.ToString("o")),
                 new("issuedAt",      now.ToString("o")),
             };
@@ -62,8 +86,11 @@ namespace Api.Master.Services
             var creds = new SigningCredentials(_keys.SigningKey, SecurityAlgorithms.RsaSha256);
             var jwt = new JwtSecurityToken(
                 claims: claims,
-                notBefore: now,
-                expires: validUntil,
+                // nbf a minute back so a 'revoked' lease (validUntil == now) still
+                // has expires > notBefore and constructs cleanly. The device enforces
+                // the validUntil CLAIM, not the JWT exp.
+                notBefore: now.AddMinutes(-1),
+                expires: validUntil > now ? validUntil : now.AddMinutes(1),
                 signingCredentials: creds);
 
             return new JwtSecurityTokenHandler().WriteToken(jwt);

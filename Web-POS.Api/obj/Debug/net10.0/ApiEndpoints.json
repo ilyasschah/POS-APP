@@ -2996,6 +2996,22 @@
   },
   {
     "ContainingType": "Api.Controllers.MasterController",
+    "Method": "ReleaseDevice",
+    "RelativePath": "api/Master/ReleaseDevice",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "deviceId",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Api.Controllers.MasterController",
     "Method": "Subscriptions",
     "RelativePath": "api/Master/Subscriptions",
     "HttpMethod": "GET",

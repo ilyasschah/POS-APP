@@ -1,7 +1,9 @@
 using Api.Master;
 using Api.Master.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace Api.Controllers
 {
@@ -67,6 +69,24 @@ namespace Api.Controllers
         {
             var result = await provisioning.RegisterOrValidateDeviceAsync(companyId, deviceId, deviceName);
             return result.Allowed ? Ok(result) : StatusCode(StatusCodes.Status403Forbidden, result);
+        }
+
+        /// <summary>
+        /// Releases this device's seat on sign-out (Pillar 4). CompanyId comes from
+        /// the caller's token so a device can only release itself within its own
+        /// tenant; the device re-activates automatically on its next login/sync.
+        /// </summary>
+        [Authorize]
+        [HttpPost("[action]")]
+        public async Task<IActionResult> ReleaseDevice([FromQuery] string deviceId)
+        {
+            if (string.IsNullOrWhiteSpace(deviceId))
+                return BadRequest(new { message = "deviceId is required." });
+            if (!int.TryParse(User.FindFirstValue("companyId"), out var companyId) || companyId <= 0)
+                return Unauthorized();
+
+            await provisioning.ReleaseDeviceAsync(companyId, deviceId);
+            return Ok(new { success = true });
         }
     }
 }
