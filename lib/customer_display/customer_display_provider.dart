@@ -35,7 +35,9 @@ class CustomerDisplayNotifier extends Notifier<CustomerDisplayState> {
   }) {
     // Guard: never overwrite paymentPending or checkoutSuccess mid-flow.
     if (state.status == CustomerDisplayStatus.paymentPending ||
-        state.status == CustomerDisplayStatus.checkoutSuccess) return;
+        state.status == CustomerDisplayStatus.checkoutSuccess) {
+      return;
+    }
 
     final company  = ref.read(selectedCompanyProvider);
     final currency = ref.read(currencySymbolProvider);

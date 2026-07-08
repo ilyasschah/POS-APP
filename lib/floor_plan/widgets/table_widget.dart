@@ -19,12 +19,12 @@ class TableWidget extends ConsumerStatefulWidget {
   final int warehouseId;
 
   const TableWidget({
-    Key? key,
+    super.key,
     required this.table,
     required this.companyId,
     required this.userId,
     required this.warehouseId,
-  }) : super(key: key);
+  });
 
   @override
   ConsumerState<TableWidget> createState() => _TableWidgetState();
@@ -244,8 +244,9 @@ class _TableWidgetState extends ConsumerState<TableWidget> {
                 }
               }
             } catch (e) {
-              if (mounted)
+              if (mounted) {
                 showAppSnackbar(context, ref, 'Error: $e', isError: true);
+              }
             } finally {
               if (mounted) setState(() => isCreatingOrder = false);
             }

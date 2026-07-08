@@ -4,6 +4,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
+import 'package:pos_app/auth/auth_token_cache.dart';
+
 final authStorageProvider = Provider<AuthStorage>((ref) => AuthStorage());
 
 class AuthStorage {
@@ -46,6 +48,7 @@ class AuthStorage {
     // device token used to mint per-user tokens later.
     await _secureStorage.write(key: _keyJwt, value: jwt);
     await _secureStorage.write(key: _keyDeviceJwt, value: jwt);
+    AuthTokenCache.set(jwt);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_keyCompanyId, companyId);
   }
@@ -59,6 +62,7 @@ class AuthStorage {
     final device = await getDeviceJwt();
     if (device != null && device.isNotEmpty) {
       await _secureStorage.write(key: _keyJwt, value: device);
+      AuthTokenCache.set(device);
     }
   }
 
@@ -153,6 +157,7 @@ class AuthStorage {
   Future<void> saveJwt(String jwt) async {
     if (jwt.isEmpty) return;
     await _secureStorage.write(key: _keyJwt, value: jwt);
+    AuthTokenCache.set(jwt);
   }
 
   Future<int?> getCompanyId() async {
@@ -171,6 +176,7 @@ class AuthStorage {
   }
 
   Future<void> unlinkDevice() async {
+    AuthTokenCache.clear();
     await _secureStorage.delete(key: _keyJwt);
     await _secureStorage.delete(key: _keyDeviceJwt);
     await _secureStorage.delete(key: _keyLease);

@@ -6,6 +6,7 @@ import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/cart/checkout_models.dart';
 import 'package:pos_app/cart/discount_display.dart';
 import 'package:pos_app/company/company_model.dart';
+import 'package:pos_app/customer/customer_model.dart';
 import 'package:pos_app/reports/z_report_model.dart';
 import 'package:printing/printing.dart';
 
@@ -62,6 +63,84 @@ class ReceiptPrinterService {
 
   static bool _flag(Map<String, String> s, String key) =>
       (s[key] ?? 'false').toLowerCase() == 'true';
+
+  /// Merges identical cart lines into one (summing quantity) for the receipt
+  /// display. Lines are "identical" only when every per-unit value matches
+  /// (product, price, discounts, taxes, unit, comment), so the line math stays
+  /// correct. Copies are made so the live cart is never mutated.
+  static List<CartItem> _mergeReceiptItems(List<CartItem> items) {
+    final map = <String, CartItem>{};
+    final order = <String>[];
+    for (final it in items) {
+      final key = [
+        it.productId,
+        it.price,
+        it.discount,
+        it.promotionalDiscount,
+        it.measurementUnit ?? '',
+        it.comment ?? '',
+        it.appliedTaxes.map((t) => t.id).join(','),
+      ].join('|');
+      final existing = map[key];
+      if (existing == null) {
+        map[key] = CartItem(
+          cartItemId: it.cartItemId,
+          posOrderId: it.posOrderId,
+          productId: it.productId,
+          roundNumber: it.roundNumber,
+          quantity: it.quantity,
+          price: it.price,
+          cost: it.cost,
+          discount: it.discount,
+          discountType: it.discountType,
+          discountInputValue: it.discountInputValue,
+          discountInputType: it.discountInputType,
+          promotionalDiscount: it.promotionalDiscount,
+          promotionId: it.promotionId,
+          comment: it.comment,
+          bundle: it.bundle,
+          isSaved: it.isSaved,
+          productName: it.productName,
+          appliedTaxes: it.appliedTaxes,
+          warehouseId: it.warehouseId,
+          measurementUnit: it.measurementUnit,
+          isService: it.isService,
+        );
+        order.add(key);
+      } else {
+        existing.quantity += it.quantity;
+      }
+    }
+    return [for (final k in order) map[k]!];
+  }
+
+  /// Renders a customer address from the configured template, substituting the
+  /// %PLACEHOLDER% tokens with the customer's fields. Falls back to the plain
+  /// `address` field when the template is empty or yields nothing. Newlines are
+  /// collapsed to ", " so it fits on a single receipt line.
+  static String _formatCustomerAddress(Customer c, String? template) {
+    final tpl = (template ?? '').trim();
+    final out = tpl.isEmpty
+        ? (c.address ?? '')
+        : tpl
+            .replaceAll('%STREET_NAME%', c.streetName ?? '')
+            .replaceAll('%ADDITIONAL_STREET_NAME%', c.additionalStreetName ?? '')
+            .replaceAll('%BUILDING_NUMBER%', c.buildingNumber ?? '')
+            .replaceAll('%PLOT_IDENTIFICATION%', c.plotIdentification ?? '')
+            .replaceAll('%CITY_SUBDIVISION%', c.citySubdivisionName ?? '')
+            .replaceAll('%CITY%', c.city ?? '')
+            .replaceAll('%POSTAL_CODE%', c.postalCode ?? '');
+    final joined = out
+        .split('\n')
+        .map((l) => l.trim())
+        .where((l) => l.replaceAll(RegExp(r'[\s,]+'), '').isNotEmpty)
+        .join(', ');
+    // Template produced nothing (customer only has the plain address field).
+    if (joined.isEmpty && (c.address?.trim().isNotEmpty ?? false)) {
+      return c.address!.trim();
+    }
+    return joined;
+  }
 
   // ── Print dispatcher ──────────────────────────────────────────────────────
 
@@ -134,6 +213,7 @@ class ReceiptPrinterService {
   Future<void> printCartReceipt({
     required Company company,
     required User? cashier,
+    Customer? customer,
     required String orderNumber,
     required DateTime printTime,
     required List<CartItem> items,
@@ -177,6 +257,58 @@ class ReceiptPrinterService {
     final showBarcode = _flag(roleSettings, '$role.PrintBarcode');
     final printerName = roleSettings['$role.PrinterName'];
 
+    // Receipt content toggles. The default-ON ones treat a missing key as 'show'
+    // (so an un-synced install isn't unexpectedly blanked); the measurement-unit
+    // toggle defaults OFF, matching kSettingDefaults.
+    bool onToggle(String key) =>
+        (roleSettings[key] ?? 'true').toLowerCase() != 'false';
+    final printOrderNumber = onToggle(SettingKeys.receiptPrintOrderNumber);
+    final printTaxTotals = onToggle(SettingKeys.receiptPrintTaxTotals);
+    final printItemsCount = onToggle(SettingKeys.receiptPrintItemsCount);
+    final printUnit = _flag(roleSettings, SettingKeys.receiptPrintMeasurementUnit);
+
+    // Customer detail toggles (all default OFF, matching kSettingDefaults).
+    final showCustName = _flag(roleSettings, SettingKeys.receiptCustomerName);
+    final showCustCode = _flag(roleSettings, SettingKeys.receiptCustomerCode);
+    final showCustTax = _flag(roleSettings, SettingKeys.receiptCustomerTaxNumber);
+    final showCustPhone = _flag(roleSettings, SettingKeys.receiptCustomerPhone);
+    final showCustEmail = _flag(roleSettings, SettingKeys.receiptCustomerEmail);
+    final showCustAddr = _flag(roleSettings, SettingKeys.receiptCustomerAddress);
+
+    final printLargeOrderNo =
+        _flag(roleSettings, SettingKeys.printLargeOrderNumberInReceipt); // default OFF
+    final printBalance =
+        _flag(roleSettings, SettingKeys.receiptPrintOutstandingBalance); // default OFF
+    final printTotalQty = onToggle(SettingKeys.receiptPrintTotalQuantity); // default ON
+    final printTaxName = onToggle(SettingKeys.receiptPrintTaxName); // default ON
+
+    // Per-tax breakdown for Receipt.PrintTaxName: sum each named tax over items
+    // (mirrors the per-line tax math used below).
+    final taxByName = <String, double>{};
+    if (printTaxName) {
+      for (final item in items) {
+        final unitNet = item.price - item.discount - item.promotionalDiscount;
+        final taxBase =
+            (discountBeforeTax ? unitNet : item.price) * item.quantity;
+        for (final t in item.appliedTaxes) {
+          final amt =
+              t.isFixed ? t.rate * item.quantity : taxBase * (t.rate / 100);
+          taxByName[t.name] = (taxByName[t.name] ?? 0) + amt;
+        }
+      }
+    }
+
+    // Outstanding balance for Receipt.PrintOutstandingBalance.
+    final owedAmount =
+        (grandTotal - pointsUsed * pointValue).clamp(0.0, double.infinity);
+    final balanceDue =
+        (owedAmount - (amountPaid ?? owedAmount)).clamp(0.0, double.infinity);
+
+    // Receipt.MergeItems: collapse identical lines into one (summing qty). Totals
+    // are unaffected — this only changes the per-line DISPLAY.
+    final mergeItems = onToggle(SettingKeys.mergeItemsOnReceipt); // default ON
+    final renderItems = mergeItems ? _mergeReceiptItems(items) : items;
+
     final headerText = (roleSettings['$role.Header'] ?? '').isNotEmpty
         ? roleSettings['$role.Header']!
         : company.name;
@@ -208,6 +340,19 @@ class ReceiptPrinterService {
         ? itemCount.toInt().toString()
         : itemCount.toStringAsFixed(2);
 
+    // Localize Text: each label falls back to its current wording, so any label
+    // the operator hasn't customised keeps the receipt exactly as before.
+    String lbl(String key, String fallback) {
+      final v = roleSettings[key]?.trim();
+      return (v != null && v.isNotEmpty) ? v : fallback;
+    }
+
+    // Money formatting honours Receipt.DecimalPlaces (default 2).
+    final decimals =
+        (int.tryParse(roleSettings[SettingKeys.receiptDecimalPlaces] ?? '2') ?? 2)
+            .clamp(0, 6);
+    String money(double v) => v.toStringAsFixed(decimals);
+
     pw.Widget rowW(
       String l,
       String v, {
@@ -223,6 +368,37 @@ class ReceiptPrinterService {
       boldFont: boldFont,
       rtl: rtl,
     );
+
+    // Optional customer block — each line gated by its receiptCustomer* toggle,
+    // shown only when a customer is attached and the field has a value.
+    List<pw.Widget> customerBlock() {
+      final c = customer;
+      if (c == null) return const [];
+      final rows = <pw.Widget>[];
+      void add(bool on, String label, String? val) {
+        if (on && (val?.trim().isNotEmpty ?? false)) {
+          rows.add(rowW('$label:', val!.trim()));
+        }
+      }
+
+      add(showCustName, 'Customer', c.name);
+      add(showCustCode, 'Code', c.code);
+      add(showCustTax, lbl(SettingKeys.labelCompanyTaxNumber, 'Tax No'),
+          c.taxNumber);
+      add(showCustPhone, 'Phone', c.phoneNumber);
+      add(showCustEmail, 'Email', c.email);
+      if (showCustAddr) {
+        add(true, 'Address',
+            _formatCustomerAddress(c, roleSettings[SettingKeys.receiptAddressFormat]));
+      }
+      if (rows.isEmpty) return const [];
+      return [
+        ...rows,
+        pw.SizedBox(height: 4),
+        pw.Divider(borderStyle: pw.BorderStyle.dashed),
+        pw.SizedBox(height: 6),
+      ];
+    }
 
     final pdf = pw.Document();
     pdf.addPage(
@@ -268,16 +444,37 @@ class ReceiptPrinterService {
               pw.SizedBox(height: 4),
             ],
 
+            // ── Large order number (optional) ──────────────────────────────
+            if (printLargeOrderNo) ...[
+              pw.Center(
+                child: pw.Text(
+                  orderNumber.contains('#')
+                      ? orderNumber.split('#').last.trim()
+                      : orderNumber,
+                  style: ts(28, bold: true),
+                ),
+              ),
+              pw.SizedBox(height: 4),
+              pw.Divider(borderStyle: pw.BorderStyle.dashed),
+              pw.SizedBox(height: 4),
+            ],
+
             // ── Transaction info ───────────────────────────────────────────
-            rowW('Receipt:', orderNumber),
+            if (printOrderNumber)
+              rowW('${lbl(SettingKeys.labelReceiptNumber, 'Receipt')}:',
+                  orderNumber),
             rowW('Date:', _fmtDateTime(printTime)),
-            if (cashier != null) rowW('Cashier:', cashier.displayName),
+            if (cashier != null)
+              rowW('${lbl(SettingKeys.labelUser, 'Cashier')}:',
+                  cashier.displayName),
             pw.SizedBox(height: 4),
             pw.Divider(borderStyle: pw.BorderStyle.dashed),
             pw.SizedBox(height: 6),
 
+            ...customerBlock(),
+
             // ── Items ──────────────────────────────────────────────────────
-            ...items.map((item) {
+            ...renderItems.map((item) {
               final qty = item.quantity % 1 == 0
                   ? item.quantity.toInt().toString()
                   : item.quantity.toStringAsFixed(2);
@@ -306,21 +503,23 @@ class ReceiptPrinterService {
                 textDirection: dir,
               );
 
-              // 1. Safely grab the unit. If it exists, add a space before it (e.g. " Kg").
+              // 1. Safely grab the unit (when the toggle is on). If it exists,
+              //    add a space before it (e.g. " Kg").
               final unit =
-                  (item.measurementUnit != null &&
+                  (printUnit &&
+                      item.measurementUnit != null &&
                       item.measurementUnit!.trim().isNotEmpty)
                   ? ' ${item.measurementUnit!.trim()}'
                   : '';
 
               // 2. Inject $unit right after $qty. The currency remains dynamic!
               final qtyPriceW = pw.Text(
-                '${rtl ? '' : '  '}$qty$unit x ${unitPrice.toStringAsFixed(2)} $currencySymbol',
+                '${rtl ? '' : '  '}$qty$unit x ${money(unitPrice)} $currencySymbol',
                 style: ts(10),
                 textDirection: dir,
               );
               final lineTotalW = pw.Text(
-                '${lineTotal.toStringAsFixed(2)} $currencySymbol',
+                '${money(lineTotal)} $currencySymbol',
                 style: ts(10),
                 textDirection: dir,
               );
@@ -345,28 +544,35 @@ class ReceiptPrinterService {
             pw.SizedBox(height: 4),
 
             // ── Totals ─────────────────────────────────────────────────────
-            rowW('Subtotal:', '${subtotal.toStringAsFixed(2)} $currencySymbol'),
+            rowW('${lbl(SettingKeys.labelSubtotal, 'Subtotal')}:',
+                '${money(subtotal)} $currencySymbol'),
             // Itemized discounts when available; otherwise the single merged row.
             if (discountLines.isNotEmpty)
               ...discountLines.map(
                 (d) => rowW(
                   d.hint == null ? '${d.label}:' : '${d.label} (${d.hint}):',
-                  '-${d.amount.toStringAsFixed(2)} $currencySymbol',
+                  '-${money(d.amount)} $currencySymbol',
                 ),
               )
             else if (totalDiscount > 0)
               rowW(
-                'Discount:',
-                '-${totalDiscount.toStringAsFixed(2)} $currencySymbol',
+                '${lbl(SettingKeys.labelDiscount, 'Discount')}:',
+                '-${money(totalDiscount)} $currencySymbol',
               ),
-            if (totalTax > 0)
-              rowW('Tax:', '${totalTax.toStringAsFixed(2)} $currencySymbol'),
+            if (totalTax > 0 && printTaxTotals)
+              if (printTaxName && taxByName.isNotEmpty)
+                ...taxByName.entries.map(
+                  (e) => rowW('${e.key}:', '${money(e.value)} $currencySymbol'),
+                )
+              else
+                rowW('${lbl(SettingKeys.labelTaxRate, 'Tax')}:',
+                    '${money(totalTax)} $currencySymbol'),
             pw.SizedBox(height: 4),
             pw.Divider(),
             pw.SizedBox(height: 4),
             rowW(
-              'GRAND TOTAL:',
-              '${grandTotal.toStringAsFixed(2)} $currencySymbol',
+              '${lbl(SettingKeys.labelTotal, 'GRAND TOTAL')}:',
+              '${money(grandTotal)} $currencySymbol',
               bold: true,
               fontSize: 13,
             ),
@@ -374,14 +580,14 @@ class ReceiptPrinterService {
               pw.SizedBox(height: 2),
               rowW(
                 'Points Used:',
-                '-${(pointsUsed * pointValue).toStringAsFixed(2)} $currencySymbol'
+                '-${money(pointsUsed * pointValue)} $currencySymbol'
                     ' (${pointsUsed.toInt()} pts)',
               ),
               // The actual amount owed once points are applied — otherwise the
               // receipt printed GRAND TOTAL but the cashier collected less.
               rowW(
-                'To Pay:',
-                '${(grandTotal - pointsUsed * pointValue).clamp(0.0, double.infinity).toStringAsFixed(2)} $currencySymbol',
+                '${lbl(SettingKeys.labelAmountDue, 'To Pay')}:',
+                '${money((grandTotal - pointsUsed * pointValue).clamp(0.0, double.infinity))} $currencySymbol',
                 bold: true,
               ),
             ],
@@ -392,7 +598,7 @@ class ReceiptPrinterService {
             if (!isGuestCheck && paymentTypeName != null) ...[
               rowW(
                 '$paymentTypeName:',
-                '${(amountPaid ?? grandTotal).toStringAsFixed(2)} $currencySymbol',
+                '${money(amountPaid ?? grandTotal)} $currencySymbol',
               ),
               // Change due, so the receipt is self-explanatory at the till.
               if (amountPaid != null &&
@@ -402,11 +608,17 @@ class ReceiptPrinterService {
                         double.infinity,
                       ))
                 rowW(
-                  'Change:',
-                  '${(amountPaid - (grandTotal - pointsUsed * pointValue).clamp(0.0, double.infinity)).toStringAsFixed(2)} $currencySymbol',
+                  '${lbl(SettingKeys.labelChange, 'Change')}:',
+                  '${money(amountPaid - (grandTotal - pointsUsed * pointValue).clamp(0.0, double.infinity))} $currencySymbol',
                 ),
             ],
-            rowW('Items:', itemCountStr),
+            if (printBalance && balanceDue > 0.005)
+              rowW('Balance Due:', '${money(balanceDue)} $currencySymbol',
+                  bold: true),
+            if (printItemsCount)
+              rowW('${lbl(SettingKeys.labelItemsCount, 'Items')}:',
+                  renderItems.length.toString()),
+            if (printTotalQty) rowW('Total Qty:', itemCountStr),
             if (!isGuestCheck && pointsEarned > 0)
               rowW('Points Earned:', '+${pointsEarned.toInt()} pts'),
             if (!isGuestCheck && (pointsEarned > 0 || pointsUsed > 0))
@@ -561,7 +773,7 @@ class ReceiptPrinterService {
     final pdf = pw.Document();
 
     // Standard 80mm thermal receipt format
-    final format = PdfPageFormat.roll80;
+    const format = PdfPageFormat.roll80;
 
     pw.TextStyle ts(double size, {bool bold = false}) => pw.TextStyle(
       font: bold ? boldFont : font,

@@ -206,7 +206,7 @@ class _PromotionItemEditDialogState extends State<_PromotionItemEditDialog> {
   final _uidController = TextEditingController(text: '0');
   final _valueController = TextEditingController(text: '0');
   int _discountType = 0;
-  int _priceType = 0;
+  final int _priceType = 0;
 
   @override
   Widget build(BuildContext context) {

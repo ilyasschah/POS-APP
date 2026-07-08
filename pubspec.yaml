@@ -87,6 +87,9 @@ dev_dependencies:
   # Offline-first / Drift
   drift_dev: ^2.22.0
 
+  # Lints (OPT-4: re-enable the recommended Flutter lint set)
+  flutter_lints: ^4.0.0
+
 flutter:
   uses-material-design: true
   assets:

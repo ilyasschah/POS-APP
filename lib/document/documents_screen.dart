@@ -237,7 +237,9 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
       if (_filterWarehouseId  != null && d.warehouseId   != _filterWarehouseId)  return false;
       if (docNum.isNotEmpty && !d.number.toLowerCase().contains(docNum))        return false;
       if (refNum.isNotEmpty &&
-          !(d.referenceDocumentNumber?.toLowerCase().contains(refNum) ?? false)) return false;
+          !(d.referenceDocumentNumber?.toLowerCase().contains(refNum) ?? false)) {
+        return false;
+      }
       if (_filterDateRange != null) {
         try {
           final dt  = DateTime.parse(d.date);

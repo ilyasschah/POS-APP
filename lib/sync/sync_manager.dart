@@ -6,8 +6,10 @@ import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:uuid/uuid.dart';
 
 import 'package:pos_app/auth/auth_storage.dart';
+import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/sync/image_sync_helper.dart';
+import 'package:pos_app/sync/sync_status.dart';
 
 /// Pulls master data from the C# API into local Drift tables.
 ///
@@ -160,6 +162,9 @@ class SyncManager {
     // carries its server id when those are pushed.
     await pushPendingDocuments(companyId);
     await pushPendingDocumentItems(companyId);
+    // Offline refunds (device-local /Document/Refund). Runs after orders +
+    // documents so a verified refund's original sale already exists server-side.
+    await pushPendingRefundOps(companyId);
     // Paid-status + standalone payment edits made in the document editor. Run
     // after pushPendingOrders so locally-created documents already carry their
     // server id before their payments are pushed.
@@ -774,8 +779,9 @@ class SyncManager {
           final body =
               res.data is Map ? ((res.data as Map)['data'] ?? res.data) : null;
           final realId = (body is Map ? (body['id'] as num?) : null)?.toInt();
-          if (realId == null)
+          if (realId == null) {
             throw Exception('Server returned no id for void reason create');
+          }
 
           await db.transaction(() async {
             await (db.delete(
@@ -1750,8 +1756,9 @@ class SyncManager {
           );
           final body = res.data?['data'] ?? res.data;
           final realId = (body['id'] as num?)?.toInt();
-          if (realId == null)
+          if (realId == null) {
             throw Exception('Server returned no id for product create');
+          }
 
           // Replace the temp row: delete by temp id, insert with real id, and
           // cascade the id swap to product-keyed tables (taxes, stock rules,
@@ -2100,8 +2107,9 @@ class SyncManager {
           final body =
               res.data is Map ? ((res.data as Map)['data'] ?? res.data) : null;
           final realId = (body is Map ? (body['id'] as num?) : null)?.toInt();
-          if (realId == null)
+          if (realId == null) {
             throw Exception('Server returned no id for tax create');
+          }
 
           await db.transaction(() async {
             await (db.delete(
@@ -2570,8 +2578,9 @@ class SyncManager {
           final body =
               res.data is Map ? ((res.data as Map)['data'] ?? res.data) : null;
           final realId = (body is Map ? (body['id'] as num?) : null)?.toInt();
-          if (realId == null)
+          if (realId == null) {
             throw Exception('Server returned no id for payment type create');
+          }
 
           await db.transaction(() async {
             await (db.delete(
@@ -2732,12 +2741,14 @@ class SyncManager {
             );
             final data = res.data;
             int realId = 0;
-            if (data is int)
+            if (data is int) {
               realId = data;
-            else if (data is Map)
+            } else if (data is Map) {
               realId = ((data['id'] ?? data['Id']) as num?)?.toInt() ?? 0;
-            if (realId <= 0)
+            }
+            if (realId <= 0) {
               throw Exception('Server returned no id for customer create');
+            }
 
             // Replace temp row with real id; also update any pending discounts
             // that reference the old temp customer id.
@@ -2884,8 +2895,9 @@ class SyncManager {
             );
             final data = res.data;
             int realId = 0;
-            if (data is Map)
+            if (data is Map) {
               realId = ((data['id'] ?? data['Id']) as num?)?.toInt() ?? 0;
+            }
             await db.transaction(() async {
               await (db.delete(
                 db.customerDiscountsTable,
@@ -3597,9 +3609,93 @@ class SyncManager {
   // remove the local row. Line items are pushed separately so the document
   // always has a server id first.
   // ==========================================================================
+  // Drains offline refunds straight from Drift — the refund outbox now lives in
+  // the DB (no shared_preferences queue), so a refund survives a device
+  // backup/restore and syncs like every other entity. A refund is a local
+  // Document (document_type_id 4, syncStatus `pending`) whose items + payment we
+  // rebuild the /Document/Refund payload from. The server keeps
+  // clientDocumentNumber verbatim and dedups on it (ProcessRefundCommand), so a
+  // re-push after an ambiguous failure is idempotent — never a second refund.
+  Future<void> pushPendingRefundOps(int companyId) async {
+    const refundTypeId = 4; // DocumentTypeConstants.Refund
+    final pending = await (db.select(db.documentsTable)
+          ..where((t) => t.companyId.equals(companyId))
+          ..where((t) => t.documentTypeId.equals(refundTypeId))
+          ..where((t) => t.syncStatus.equals(SyncStatuses.pending)))
+        .get();
+
+    for (final doc in pending) {
+      try {
+        final items = await (db.select(db.documentItemsTable)
+              ..where((t) => t.documentId.equals(doc.localId)))
+            .get();
+        final payment = await (db.select(db.paymentsTable)
+              ..where((t) => t.documentId.equals(doc.localId))
+              ..limit(1))
+            .getSingleOrNull();
+        // Can't rebuild a refund with no payment row — skip (defensive).
+        if (payment == null) continue;
+
+        final payload = <String, dynamic>{
+          'originalDocumentNumber': doc.referenceDocumentNumber ?? '',
+          'refundPaymentTypeId': payment.paymentTypeId,
+          'warehouseId': doc.warehouseId,
+          // Quantities/totals are stored negative locally; the API wants positives.
+          'items': items
+              .map((it) => {
+                    'productId': it.productId,
+                    'quantity': it.quantity.abs(),
+                    'price': it.unitPrice,
+                  })
+              .toList(),
+          'isBlind': doc.isBlind,
+          if (doc.approvedByUserId != null)
+            'approvedByUserId': doc.approvedByUserId,
+          // Kept verbatim by the server so the offline number never changes.
+          'clientDocumentNumber': doc.number,
+        };
+
+        await dio.post<dynamic>(
+          '/Document/Refund',
+          queryParameters: {'companyId': companyId, 'userId': doc.userId},
+          data: payload,
+        );
+
+        // Flip the document + its items + its payment to synced. pullDocuments
+        // reconciles server ids by (device-local) number afterward.
+        await db.transaction(() async {
+          await (db.update(db.documentsTable)
+                ..where((t) => t.localId.equals(doc.localId)))
+              .write(DocumentsTableCompanion(
+            syncStatus: const Value(SyncStatuses.synced),
+            lastModified: Value(DateTime.now().toUtc()),
+          ));
+          await (db.update(db.documentItemsTable)
+                ..where((t) => t.documentId.equals(doc.localId)))
+              .write(const DocumentItemsTableCompanion(
+                  syncStatus: Value(SyncStatuses.synced)));
+          await (db.update(db.paymentsTable)
+                ..where((t) => t.documentId.equals(doc.localId)))
+              .write(const PaymentsTableCompanion(
+                  syncStatus: Value(SyncStatuses.synced)));
+        });
+      } catch (e) {
+        // 4xx (definitive rejection) or transient (offline/5xx): leave it pending;
+        // it shows on the Documents screen and retries next sync (idempotent).
+        debugPrint('pushPendingRefundOps: ${doc.localId} failed — $e');
+      }
+    }
+  }
+
+  // Drains MANUALLY created/edited/deleted documents (the document editor).
+  // By design this only handles pending_create/update/delete and NEVER
+  // [SyncStatuses.pending]: checkout & refund documents use `pending` and are
+  // created server-side via the BatchSync / Refund command path, so pushing them
+  // here too would double-create them. See [SyncStatuses] for the full invariant.
   Future<void> pushPendingDocuments(int companyId) async {
     // ── Deletes ────────────────────────────────────────────────────────────
-    for (final doc in await db.getDocumentsBySyncStatus(companyId, 'pending_delete')) {
+    for (final doc in await db.getDocumentsBySyncStatus(
+        companyId, SyncStatuses.pendingDelete)) {
       try {
         if (doc.serverId != null) {
           await dio.delete<dynamic>(
@@ -3616,7 +3712,8 @@ class SyncManager {
     }
 
     // ── Creates ────────────────────────────────────────────────────────────
-    for (final doc in await db.getDocumentsBySyncStatus(companyId, 'pending_create')) {
+    for (final doc in await db.getDocumentsBySyncStatus(
+        companyId, SyncStatuses.pendingCreate)) {
       try {
         final res = await dio.post<dynamic>(
           '/Document/Add',
@@ -3632,7 +3729,8 @@ class SyncManager {
     }
 
     // ── Header updates ─────────────────────────────────────────────────────
-    for (final doc in await db.getDocumentsBySyncStatus(companyId, 'pending_update')) {
+    for (final doc in await db.getDocumentsBySyncStatus(
+        companyId, SyncStatuses.pendingUpdate)) {
       if (doc.serverId == null) continue;
       try {
         await dio.patch<dynamic>(
@@ -3713,9 +3811,10 @@ class SyncManager {
       final docServerId = doc?.serverId;
       if (docServerId == null) continue;
 
-      // Step 1: create the line item. This is the ONLY stock-affecting call
-      // (the server's DocumentItem insert trigger adjusts inventory). If it
-      // throws, the item was not created — leave it pending and retry next sync.
+      // Step 1: create the line item. This is the ONLY stock-affecting call —
+      // the server adjusts inventory in DocumentItemService.CreateAsync (keyed on
+      // the document type), NOT via a DB trigger (there is no stock trigger). If
+      // it throws, the item was not created — leave it pending and retry next sync.
       final int? itemServerId;
       try {
         final res = await dio.post<dynamic>(
@@ -3742,8 +3841,8 @@ class SyncManager {
       // Step 2: the item now exists server-side (stock already adjusted), so
       // mark it synced IMMEDIATELY. Critical: a failure in the best-effort tax /
       // expiration attachments below must never leave it 'pending_create',
-      // otherwise the next sync re-creates the item and re-triggers the stock
-      // adjustment — the cause of the "+N every sync" inventory drift.
+      // otherwise the next sync re-creates the item and re-runs the server-side
+      // stock adjustment — the cause of the "+N every sync" inventory drift.
       await db.markDocumentItemSynced(it.localId, itemServerId);
 
       // Step 3: best-effort attachments — isolated so neither can re-create the
@@ -3868,9 +3967,14 @@ class SyncManager {
   // A create whose parent document isn't on the server yet is skipped until it
   // is (its document syncs first via pushPendingOrders / linkDocumentToServer).
   // ==========================================================================
+  // Drains MANUALLY added/edited/deleted payments. Like pushPendingDocuments,
+  // this only handles pending_create/update/delete and NEVER
+  // [SyncStatuses.pending]: a checkout/refund payment uses `pending` and is
+  // created server-side by the BatchSync / Refund command, so pushing it here too
+  // would write a duplicate payment. See [SyncStatuses] for the full invariant.
   Future<void> pushPendingPayments(int companyId) async {
     // ── Creates ────────────────────────────────────────────────────────────
-    for (final p in await db.getPaymentsBySyncStatus('pending_create')) {
+    for (final p in await db.getPaymentsBySyncStatus(SyncStatuses.pendingCreate)) {
       final doc = await db.getDocumentByLocalId(p.documentId);
       final docServerId = doc?.serverId;
       if (docServerId == null) continue; // wait for the document to sync first
@@ -3892,7 +3996,7 @@ class SyncManager {
     }
 
     // ── Updates ────────────────────────────────────────────────────────────
-    for (final p in await db.getPaymentsBySyncStatus('pending_update')) {
+    for (final p in await db.getPaymentsBySyncStatus(SyncStatuses.pendingUpdate)) {
       if (p.serverId == null) continue;
       try {
         await dio.patch<dynamic>(
@@ -3911,7 +4015,7 @@ class SyncManager {
     }
 
     // ── Deletes ────────────────────────────────────────────────────────────
-    for (final p in await db.getPaymentsBySyncStatus('pending_delete')) {
+    for (final p in await db.getPaymentsBySyncStatus(SyncStatuses.pendingDelete)) {
       try {
         if (p.serverId != null) {
           await dio.delete<dynamic>(
@@ -4635,6 +4739,52 @@ class SyncManager {
     });
 
     await _setLastSync(_kAppProperties, startedAt);
+
+    // Materialise any settings that still have NO row after the pull, so the DB
+    // ends up with an explicit row for EVERY setting (with its default value) on
+    // first open — instead of only the ones the operator has touched.
+    await _seedMissingAppPropertyDefaults(companyId);
+  }
+
+  /// Writes a `pending` row (using each setting's built-in default) for every
+  /// [kSettingDefaults] key that has no local row yet. Runs only after a
+  /// successful AppProperties pull, so keys the server already has are present
+  /// locally and never re-seeded (no duplicates). Idempotent and non-destructive:
+  /// existing keys — in ANY sync state — are left untouched, so a user's saved
+  /// value is never overwritten. The seeded rows push to the server on next sync.
+  Future<void> _seedMissingAppPropertyDefaults(int companyId) async {
+    final existing = await (db.select(db.appPropertiesTable)
+          ..where((t) => t.companyId.equals(companyId)))
+        .get();
+    final existingKeys = existing.map((r) => r.name).toSet();
+
+    final missing = kSettingDefaults.entries
+        .where((e) => !existingKeys.contains(e.key))
+        .toList();
+    if (missing.isEmpty) return;
+
+    final now = DateTime.now().toUtc();
+    await db.batch((b) {
+      for (final e in missing) {
+        b.insert(
+          db.appPropertiesTable,
+          AppPropertiesTableCompanion(
+            // Same deterministic (companyId, key) temp-id scheme as
+            // AppSettingsNotifier._tempIdForKey, so a later manual edit of the
+            // same key updates this row, not a 2nd one — and it stays unique per
+            // company on the app_properties.id primary key (a key-only id threw a
+            // UNIQUE constraint when a 2nd company seeded the same key).
+            id: Value(-((Object.hash(companyId, e.key) & 0x7fffffff) + 1)),
+            companyId: Value(companyId),
+            name: Value(e.key),
+            value: Value(e.value),
+            lastModified: Value(now),
+            syncStatus: const Value('pending'),
+          ),
+        );
+      }
+    });
+    debugPrint('Seeded ${missing.length} default app property row(s).');
   }
 
   // ==========================================================================

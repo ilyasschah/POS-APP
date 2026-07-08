@@ -11,7 +11,7 @@ import 'package:pos_app/security/security_keys.dart';
 
 class SidePanel extends ConsumerWidget {
   final bool isService;
-  const SidePanel({Key? key, this.isService = false}) : super(key: key);
+  const SidePanel({super.key, this.isService = false});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -189,7 +189,7 @@ class _EditPanelState extends ConsumerState<_EditPanel> {
       padding: const EdgeInsets.all(16),
       children: [
         // Grid settings
-        _SectionLabel('View Settings'),
+        const _SectionLabel('View Settings'),
         const Gap(8),
         _SettingsCard(
           children: [
@@ -506,7 +506,7 @@ class _TablePropertiesEditorState
                   ),
                   const Gap(8),
                   IconButton.filled(
-                    icon: PhosphorIcon(PhosphorIconsRegular.check, size: 16),
+                    icon: const PhosphorIcon(PhosphorIconsRegular.check, size: 16),
                     onPressed: _applyName,
                     tooltip: 'Apply name',
                     style: IconButton.styleFrom(
@@ -934,7 +934,7 @@ class _SizeRow extends StatelessWidget {
         ),
         const Gap(8),
         IconButton.outlined(
-          icon: PhosphorIcon(PhosphorIconsRegular.minus, size: 14),
+          icon: const PhosphorIcon(PhosphorIconsRegular.minus, size: 14),
           onPressed: onDecrement,
           style: IconButton.styleFrom(
             minimumSize: const Size(32, 32),
@@ -949,7 +949,7 @@ class _SizeRow extends StatelessWidget {
           ),
         ),
         IconButton.outlined(
-          icon: PhosphorIcon(PhosphorIconsRegular.plus, size: 14),
+          icon: const PhosphorIcon(PhosphorIconsRegular.plus, size: 14),
           onPressed: onIncrement,
           style: IconButton.styleFrom(
             minimumSize: const Size(32, 32),

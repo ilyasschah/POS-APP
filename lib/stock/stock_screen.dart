@@ -377,14 +377,14 @@ class _StockScreenState extends ConsumerState<StockScreen> {
 
           // ── Data table ────────────────────────────────────────────────────
           pw.Table(
-            border: pw.TableBorder(
-              top:    const pw.BorderSide(color: borderClr, width: 0.5),
-              bottom: const pw.BorderSide(color: borderClr, width: 0.5),
-              left:   const pw.BorderSide(color: borderClr, width: 0.5),
-              right:  const pw.BorderSide(color: borderClr, width: 0.5),
-              horizontalInside: const pw.BorderSide(
+            border: const pw.TableBorder(
+              top:    pw.BorderSide(color: borderClr, width: 0.5),
+              bottom: pw.BorderSide(color: borderClr, width: 0.5),
+              left:   pw.BorderSide(color: borderClr, width: 0.5),
+              right:  pw.BorderSide(color: borderClr, width: 0.5),
+              horizontalInside: pw.BorderSide(
                   color: borderClr, width: 0.4),
-              verticalInside: const pw.BorderSide(
+              verticalInside: pw.BorderSide(
                   color: borderClr, width: 0.4),
             ),
             columnWidths: {
@@ -811,9 +811,9 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                     border: Border.all(
                         color: Colors.red.withValues(alpha: 0.3)),
                   ),
-                  child: Row(
+                  child: const Row(
                     mainAxisSize: MainAxisSize.min,
-                    children: const [
+                    children: [
                       Icon(Icons.warning_amber,
                           size: 14, color: Colors.red),
                       SizedBox(width: 4),

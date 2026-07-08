@@ -907,8 +907,8 @@ class _DashedCirclePainter extends CustomPainter {
     const dashCount = 24;
     const gapFraction = 0.4;
     const totalAngle = 2 * 3.141592653589793;
-    final dashAngle = (totalAngle / dashCount) * (1 - gapFraction);
-    final gapAngle = (totalAngle / dashCount) * gapFraction;
+    const dashAngle = (totalAngle / dashCount) * (1 - gapFraction);
+    const gapAngle = (totalAngle / dashCount) * gapFraction;
 
     double startAngle = 0;
     for (int i = 0; i < dashCount; i++) {

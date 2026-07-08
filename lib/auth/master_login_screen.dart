@@ -11,6 +11,7 @@ import 'package:pos_app/auth/login_screen.dart';
 import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/license/license_service.dart';
 import 'package:pos_app/settings/settings_provider.dart';
+import 'package:pos_app/sync/sync_provider.dart';
 import 'package:pos_app/utils/api_error_parser.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
 
@@ -93,6 +94,14 @@ class _MasterLoginScreenState extends ConsumerState<MasterLoginScreen> {
 
       try {
         await ref.read(seedUsersFromApiProvider(companyId).future);
+      } catch (_) {}
+
+      // Materialise ALL app settings in the DB right at master-login (we're
+      // online here), so a fresh install has every setting seeded before the
+      // operator even reaches the PIN screen. pullAppProperties ends with the
+      // default-seed; best-effort — the normal per-login sync also does this.
+      try {
+        await ref.read(syncManagerProvider).pullAppProperties(companyId);
       } catch (_) {}
 
       if (mounted) {

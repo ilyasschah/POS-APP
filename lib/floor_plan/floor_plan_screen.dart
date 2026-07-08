@@ -20,7 +20,7 @@ class FloorPlanScreen extends ConsumerStatefulWidget {
   /// hidden, matching the other POS tab screens.
   final VoidCallback? onMenuPressed;
 
-  const FloorPlanScreen({Key? key, this.onMenuPressed}) : super(key: key);
+  const FloorPlanScreen({super.key, this.onMenuPressed});
 
   @override
   ConsumerState<FloorPlanScreen> createState() => _FloorPlanScreenState();

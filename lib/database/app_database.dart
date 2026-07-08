@@ -662,6 +662,11 @@ class DocumentsTable extends Table {
   TextColumn get internalNote => text().nullable()();
   TextColumn get note => text().nullable()();
   TextColumn get referenceDocumentNumber => text().nullable()();
+  // Refund-only (document_type_id 4): retained so SyncManager.pushPendingRefundOps
+  // can rebuild the /Document/Refund payload from the local rows — the refund
+  // outbox now lives entirely in Drift (no shared_preferences queue).
+  BoolColumn get isBlind => boolean().withDefault(const Constant(false))();
+  IntColumn get approvedByUserId => integer().nullable()();
   BoolColumn get discountApplyRule =>
       boolean().withDefault(const Constant(true))();
   DateTimeColumn get date => dateTime()();
@@ -1459,12 +1464,24 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 48;
+  int get schemaVersion => 49;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) async => m.createAll(),
         onUpgrade: (m, from, to) async {
+          // v49: refunds become fully offline-first via the Drift outbox (the
+          // shared_preferences refund queue is gone). Store the two refund-only
+          // fields the /Document/Refund push needs so pushPendingRefundOps can
+          // rebuild the payload from the local rows.
+          if (from < 49) {
+            await customStatement(
+                "ALTER TABLE documents ADD COLUMN is_blind "
+                "INTEGER NOT NULL DEFAULT 0");
+            await customStatement(
+                "ALTER TABLE documents ADD COLUMN approved_by_user_id INTEGER");
+          }
+
           // v48: bookings become offline-first (create/update/status/delete
           // while offline, pushed on sync) — needs a sync queue. pending_create
           // rows use a temp negative id until the server assigns the real one.
@@ -1782,7 +1799,7 @@ class AppDatabase extends _$AppDatabase {
                 product_id INTEGER NOT NULL,
                 company_id INTEGER NOT NULL,
                 value TEXT NOT NULL,
-                sync_status TEXT NOT NULL DEFAULT \'synced\'
+                sync_status TEXT NOT NULL DEFAULT 'synced'
               )
             ''');
           }
@@ -1899,7 +1916,7 @@ class AppDatabase extends _$AppDatabase {
                 uid INTEGER NOT NULL DEFAULT 0,
                 value REAL NOT NULL DEFAULT 0.0,
                 last_modified INTEGER NOT NULL DEFAULT 0,
-                sync_status TEXT NOT NULL DEFAULT \'synced\',
+                sync_status TEXT NOT NULL DEFAULT 'synced',
                 sync_error TEXT
               )
             ''');
@@ -1919,7 +1936,7 @@ class AppDatabase extends _$AppDatabase {
                 card_number TEXT,
                 points REAL NOT NULL DEFAULT 0,
                 last_modified INTEGER NOT NULL,
-                sync_status TEXT NOT NULL DEFAULT \'synced\',
+                sync_status TEXT NOT NULL DEFAULT 'synced',
                 sync_error TEXT
               )
             ''');
@@ -1983,7 +2000,7 @@ class AppDatabase extends _$AppDatabase {
                   type TEXT NOT NULL,
                   note TEXT,
                   created_at INTEGER NOT NULL,
-                  sync_status TEXT NOT NULL DEFAULT \'pending\',
+                  sync_status TEXT NOT NULL DEFAULT 'pending',
                   sync_error TEXT
                 )
               ''');
@@ -2144,7 +2161,7 @@ class AppDatabase extends _$AppDatabase {
                 user_id INTEGER NOT NULL,
                 clock_in_time INTEGER NOT NULL,
                 clock_out_time INTEGER,
-                sync_status TEXT NOT NULL DEFAULT \'pending\',
+                sync_status TEXT NOT NULL DEFAULT 'pending',
                 sync_error TEXT
               )
             ''');
@@ -2172,7 +2189,7 @@ class AppDatabase extends _$AppDatabase {
                 opened_at INTEGER NOT NULL,
                 closed_at INTEGER,
                 last_modified INTEGER NOT NULL,
-                sync_status TEXT NOT NULL DEFAULT \'pending\',
+                sync_status TEXT NOT NULL DEFAULT 'pending',
                 sync_error TEXT
               )
             ''');

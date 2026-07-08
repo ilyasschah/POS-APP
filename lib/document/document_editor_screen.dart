@@ -689,7 +689,7 @@ class _DocumentEditorDialogState extends ConsumerState<_DocumentEditorDialog> {
           ),
         );
 
-    final List<Widget> dialogTabs = const [
+    const List<Widget> dialogTabs = [
       Tab(text: "Document Info"),
       Tab(text: "Parties & Logistics"),
       Tab(text: "Financials & Notes"),
@@ -1040,10 +1040,10 @@ class _HeaderForm extends ConsumerWidget {
                 flex: 1,
                 child: TextFormField(
                   controller: numberCtrl,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     labelText: "Number",
-                    prefixIcon: const Icon(Icons.tag),
-                    border: const OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.tag),
+                    border: OutlineInputBorder(),
                   ),
                 ),
               ),
@@ -1173,10 +1173,10 @@ class _HeaderForm extends ConsumerWidget {
         _buildCard('Financials & Notes', Icons.request_quote_outlined, [
           TextFormField(
             controller: refDocCtrl,
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               labelText: "Reference Document",
-              prefixIcon: const Icon(Icons.link),
-              border: const OutlineInputBorder(),
+              prefixIcon: Icon(Icons.link),
+              border: OutlineInputBorder(),
             ),
           ),
           const SizedBox(height: 16),
@@ -1186,10 +1186,10 @@ class _HeaderForm extends ConsumerWidget {
                 flex: 2,
                 child: TextFormField(
                   initialValue: discount.toString(),
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     labelText: "Discount",
-                    prefixIcon: const Icon(Icons.percent),
-                    border: const OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.percent),
+                    border: OutlineInputBorder(),
                   ),
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
@@ -1382,11 +1382,11 @@ class _ItemsView extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
+                const Row(
                   children: [
-                    const Icon(Icons.inventory_2_outlined, size: 24),
-                    const SizedBox(width: 12),
-                    const Text(
+                    Icon(Icons.inventory_2_outlined, size: 24),
+                    SizedBox(width: 12),
+                    Text(
                       "Document Items",
                       style: TextStyle(
                         fontSize: 16,
@@ -1922,6 +1922,7 @@ class _AddItemDialogState extends ConsumerState<_AddItemDialog> {
         );
       }
       ref.read(syncStateProvider.notifier).sync().catchError((_) {});
+      if (!mounted) return;
       Navigator.of(context).pop();
     } catch (e) {
       setState(() {
@@ -1982,7 +1983,7 @@ class _AddItemDialogState extends ConsumerState<_AddItemDialog> {
     final asyncTaxes = ref.watch(allTaxesProvider);
     final theme = Theme.of(context);
     final sym = ref.watch(currencySymbolProvider);
-    final fmt = (double v) => v.toStringAsFixed(2);
+    String fmt(double v) => v.toStringAsFixed(2);
 
     return AlertDialog(
       title: const Text("Add Product"),
@@ -2346,7 +2347,7 @@ class _EditItemDialogState extends ConsumerState<_EditItemDialog> {
     // Live preview computation (single selected tax)
     final previewPrice = _price;
     final previewTotal = _total;
-    final fmt = (double v) => v.toStringAsFixed(2);
+    String fmt(double v) => v.toStringAsFixed(2);
 
     return AlertDialog(
       title: Text("Edit — ${widget.item.productName ?? ''}"),
@@ -3485,8 +3486,8 @@ class _DiscountBreakdownCard extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: const [
+                  const Row(
+                    children: [
                       Icon(Icons.sell_outlined, size: 24),
                       SizedBox(width: 12),
                       Text('Discount Breakdown',

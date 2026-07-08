@@ -277,7 +277,7 @@ class _PinPadModalState extends ConsumerState<_PinPadModal> {
   String _confirmPin = "";
   bool _isConfirming = false;
   bool _isLoading = false;
-  bool _isSyncing = false;
+  final bool _isSyncing = false;
 
   void _onKeyPress(String value) {
     if (_pin.length < 4) {

@@ -263,6 +263,25 @@ class AuthService {
         .write(UsersTableCompanion(pinHash: Value(hashedPin)));
   }
 
+  /// Best-effort seat release on device sign-out (Pillar 4). Tells the control
+  /// plane this terminal is signing out so it stops counting against the seat cap
+  /// (admin portal Devices drops e.g. 1/1 → 0/1). MUST run BEFORE `unlinkDevice()`
+  /// wipes the token. Offline → skip; the server-side stale-device reaper reclaims
+  /// the seat later. companyId is taken server-side from the token claim.
+  Future<void> releaseDeviceSeat() async {
+    final storage = _ref.read(authStorageProvider);
+    final deviceId = await storage.getOrCreateDeviceId();
+    try {
+      final dio = createDio(); // interceptor attaches the still-present device token
+      await dio.post(
+        '/Master/ReleaseDevice',
+        queryParameters: {'deviceId': deviceId},
+      );
+    } catch (_) {
+      // Offline / server down — the reaper will reclaim this seat.
+    }
+  }
+
   /// Exchanges the durable device token for a per-user token so the backend sees
   /// the CURRENT cashier's identity + role (not the device owner's). Best-effort:
   /// offline / no device token / any error leaves the active token unchanged, so

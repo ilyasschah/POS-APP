@@ -8,6 +8,7 @@ import 'package:pos_app/auth/user_model.dart';
 import 'package:pos_app/bookings/booking_model.dart';
 import 'package:pos_app/bookings/bookings_provider.dart';
 import 'package:pos_app/cart/cart_provider.dart';
+import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/sync/sync_notifier.dart';
@@ -161,11 +162,11 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Row(
+          title: Row(
             children: [
-              Icon(Icons.notifications_active, color: Colors.orange),
-              SizedBox(width: 8),
-              Text('Booking Alerts'),
+              Icon(Icons.notifications_active, color: ctx.warningColor),
+              const SizedBox(width: 8),
+              const Text('Booking Alerts'),
             ],
           ),
           content: Column(
@@ -175,7 +176,7 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
               ...arriving.map(
                 (b) => _AlertRow(
                   icon: Icons.schedule,
-                  color: Colors.orange,
+                  color: ctx.warningColor,
                   message:
                       '${b.reservationName} is arriving soon '
                       '(${_fmtDateTime(b.startTime)}).',
@@ -184,7 +185,7 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
               ...overstaying.map(
                 (b) => _AlertRow(
                   icon: Icons.timer_off,
-                  color: Colors.red,
+                  color: ctx.dangerColor,
                   message:
                       '${b.reservationName}\'s time is up '
                       '(ended ${_fmtDateTime(b.endTime)}).',
@@ -284,8 +285,8 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
                   icon: const Icon(Icons.add),
                   label: const Text('Add Booking'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
+                    backgroundColor: context.successColor,
+                    foregroundColor: context.onStatusColor,
                   ),
                   onPressed: isLoading
                       ? null
@@ -329,8 +330,9 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
 
                       if (!_calendarScrolled) {
                         WidgetsBinding.instance.addPostFrameCallback((_) {
-                          if (!mounted || !_calendarScrollController.hasClients)
+                          if (!mounted || !_calendarScrollController.hasClients) {
                             return;
+                          }
                           final now = DateTime.now();
                           final mins = (now.hour - _dayStart) * 60 + now.minute;
                           if (mins > 0) {
@@ -515,7 +517,7 @@ class _CalendarView extends StatelessWidget {
                   children: [
                     Column(
                       children: [
-                        SizedBox(height: _headerRowHeight),
+                        const SizedBox(height: _headerRowHeight),
                         for (int i = 0; i < _totalSlots; i++)
                           SizedBox(
                             height: _slotHeight,
@@ -781,7 +783,9 @@ class _CalendarView extends StatelessWidget {
           .map((o) => laneOf[o]!)
           .toSet();
       int lane = 0;
-      while (occupied.contains(lane)) lane++;
+      while (occupied.contains(lane)) {
+        lane++;
+      }
       laneOf[b] = lane;
     }
 
@@ -1355,16 +1359,16 @@ class _AddBookingDialogState extends ConsumerState<_AddBookingDialog> {
         ElevatedButton(
           onPressed: _saving ? null : _save,
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.green,
-            foregroundColor: Colors.white,
+            backgroundColor: context.successColor,
+            foregroundColor: context.onStatusColor,
           ),
           child: _saving
-              ? const SizedBox(
+              ? SizedBox(
                   width: 16,
                   height: 16,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Colors.white,
+                    color: context.onStatusColor,
                   ),
                 )
               : const Text('Save'),
@@ -1429,7 +1433,7 @@ class _TableAvailabilityPicker extends StatelessWidget {
                 '${selectedIds.length} selected',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.green.shade400,
+                  color: context.successColor,
                   fontWeight: FontWeight.w600,
                 ),
               )
@@ -1438,7 +1442,7 @@ class _TableAvailabilityPicker extends StatelessWidget {
                 '${available.length} available',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.green.shade400,
+                  color: context.successColor,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -1489,9 +1493,9 @@ class _TableChip extends StatelessWidget {
     final theme = Theme.of(context);
     final Color bg, border, fg;
     if (selected) {
-      bg = Colors.green.withValues(alpha: 0.15);
-      border = Colors.green;
-      fg = Colors.green;
+      bg = context.successColor.withValues(alpha: 0.15);
+      border = context.successColor;
+      fg = context.successColor;
     } else {
       bg = theme.colorScheme.surface;
       border = theme.colorScheme.outline;
@@ -1740,8 +1744,8 @@ class _BookingDetailDialogState extends ConsumerState<_BookingDetailDialog> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
+              backgroundColor: ctx.dangerColor,
+              foregroundColor: ctx.onStatusColor,
             ),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Delete'),
@@ -2029,20 +2033,21 @@ class _BookingDetailDialogState extends ConsumerState<_BookingDetailDialog> {
                     vertical: 12,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.12),
+                    color: context.successColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: Colors.green.withValues(alpha: 0.4),
+                      color: context.successColor.withValues(alpha: 0.4),
                     ),
                   ),
-                  child: const Row(
+                  child: Row(
                     children: [
-                      Icon(Icons.lock, size: 16, color: Colors.green),
-                      SizedBox(width: 10),
+                      Icon(Icons.lock, size: 16, color: context.successColor),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: Text(
                           'This booking is completed and cannot be modified.',
-                          style: TextStyle(color: Colors.green, fontSize: 13),
+                          style: TextStyle(
+                              color: context.successColor, fontSize: 13),
                         ),
                       ),
                     ],
@@ -2100,7 +2105,7 @@ class _BookingDetailDialogState extends ConsumerState<_BookingDetailDialog> {
                       child: _secondaryButton(
                         icon: Icons.delete_outline,
                         label: 'Delete',
-                        color: Colors.red,
+                        color: context.dangerColor,
                         onTap: _saving ? null : _delete,
                       ),
                     ),

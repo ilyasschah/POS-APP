@@ -39,7 +39,7 @@ class _UnpaidDoc {
   });
 
   factory _UnpaidDoc.fromJson(Map<String, dynamic> j) {
-    String _fmt(String? raw) {
+    String fmt(String? raw) {
       if (raw == null || raw.isEmpty) return '';
       try {
         final dt = DateTime.parse(raw).toLocal();
@@ -49,7 +49,7 @@ class _UnpaidDoc {
       }
     }
 
-    String _fmtFull(String? raw) {
+    String fmtFull(String? raw) {
       if (raw == null || raw.isEmpty) return '';
       try {
         final dt = DateTime.parse(raw).toLocal();
@@ -63,11 +63,11 @@ class _UnpaidDoc {
       id:               j['id'] as int? ?? 0,
       number:           j['number'] as String? ?? '',
       documentTypeName: j['documentTypeName'] as String?,
-      dateStr:          _fmt(j['date'] as String?),
+      dateStr:          fmt(j['date'] as String?),
       userName:         j['userName'] as String?,
       total:            (j['total'] as num?)?.toDouble() ?? 0,
       balance:          (j['balance'] as num?)?.toDouble() ?? 0,
-      dateCreatedStr:   _fmtFull(j['dateCreated'] as String?),
+      dateCreatedStr:   fmtFull(j['dateCreated'] as String?),
       internalNote:     j['internalNote'] as String?,
       note:             j['note'] as String?,
     );
@@ -532,10 +532,10 @@ class _LeftPanel extends StatelessWidget {
                     ],
                     textAlign: TextAlign.right,
                     style: theme.textTheme.bodyMedium,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       isDense: true,
-                      border: const OutlineInputBorder(),
-                      contentPadding: const EdgeInsets.symmetric(
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(
                           horizontal: 8, vertical: 8),
                     ),
                   ),
@@ -864,10 +864,10 @@ class _ContentArea extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircleAvatar(
+            const CircleAvatar(
               radius: 28,
               backgroundColor: _kCyan,
-              child: const Icon(Icons.info_outline,
+              child: Icon(Icons.info_outline,
                   size: 28, color: Colors.white),
             ),
             const SizedBox(height: 14),

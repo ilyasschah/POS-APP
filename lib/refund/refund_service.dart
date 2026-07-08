@@ -3,7 +3,6 @@ import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import 'package:pos_app/api/api_client.dart';
 import 'package:pos_app/company/company_provider.dart';
@@ -12,8 +11,6 @@ import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/document/document_type_constants.dart';
 import 'package:pos_app/settings/device_identity.dart';
-
-const _pendingRefundsKey = 'pending_refunds';
 
 /// Server `DocumentTypeConstants.Refund`. Refund documents written locally must
 /// carry this type so the documents list / reports classify them correctly and
@@ -234,10 +231,10 @@ class RefundService {
     );
   }
 
-  // Submit a refund. Writes the refund Document/items/payment to local Drift
-  // first (instant visibility on the Documents screen) then pushes to the
-  // server. If offline, the local row stays 'pending' and the API payload is
-  // queued to shared_preferences; [syncPendingRefunds] flips it to 'synced'.
+  // Submit a refund. Tries an immediate push; on any ambiguous failure it writes
+  // the refund Document/items/payment to local Drift as `pending` (instant
+  // visibility on the Documents screen) and SyncManager.pushPendingRefundOps
+  // drains it from Drift on the next sync. No shared_preferences queue.
   Future<({String refundNumber, bool queued})> submitRefund(
     RefundPayload payload, {
     FetchedDocument? source,
@@ -275,22 +272,27 @@ class RefundService {
       await _restoreLocalStock(payload);
       return (refundNumber: refundNumber, queued: false);
     } on DioException catch (e) {
-      // Network unavailable — persist locally as pending + queue for later sync.
-      if (e.type == DioExceptionType.connectionError ||
-          e.type == DioExceptionType.connectionTimeout ||
-          e.type == DioExceptionType.receiveTimeout) {
-        await _saveRefundLocally(
-          localId: refundLocalId,
-          payload: payload,
-          source: source,
-          number: refundNumber,
-          synced: false,
-        );
-        await _enqueueRefund(payload, localId: refundLocalId, number: refundNumber);
-        await _restoreLocalStock(payload);
-        return (refundNumber: refundNumber, queued: true);
-      }
-      rethrow;
+      // A definitive 4xx business rejection (receipt not found, product not on
+      // the original, blind-return validation…) means the server did NOT create
+      // the refund — surface it and write nothing locally.
+      final status = e.response?.statusCode ?? 0;
+      if (status >= 400 && status < 500) rethrow;
+
+      // Anything else is AMBIGUOUS: no response at all (offline / timeout) or a
+      // 5xx — the refund may already have committed server-side. Persist it
+      // locally as `pending`; SyncManager.pushPendingRefundOps drains pending
+      // refunds straight from Drift on the next sync (no separate outbox). The
+      // server keeps clientDocumentNumber verbatim and dedups on it, so the
+      // re-push is idempotent and can never double-refund.
+      await _saveRefundLocally(
+        localId: refundLocalId,
+        payload: payload,
+        source: source,
+        number: refundNumber,
+        synced: false,
+      );
+      await _restoreLocalStock(payload);
+      return (refundNumber: refundNumber, queued: true);
     }
   }
 
@@ -308,6 +310,9 @@ class RefundService {
   }) async {
     final db = _ref.read(appDatabaseProvider);
     final now = DateTime.now().toUtc();
+    // `'pending'` (NOT `'pending_create'`): the refund document/items/payment are
+    // created server-side by the /Document/Refund push, so the generic
+    // pushPendingDocuments/Payments must skip them. See `lib/sync/sync_status.dart`.
     final status = synced ? 'synced' : 'pending';
 
     // Verified refund: prices come from the original receipt. Blind return:
@@ -347,6 +352,11 @@ class RefundService {
         customerId:              Value(source?.customerId),
         orderNumber:             Value(source?.orderNumber),
         referenceDocumentNumber: Value(payload.originalDocumentNumber),
+        // Refund-only: kept so SyncManager.pushPendingRefundOps can rebuild the
+        // /Document/Refund payload from this row (a blind return has no original
+        // receipt to look the details up from).
+        isBlind:                 Value(payload.isBlind),
+        approvedByUserId:        Value(payload.approvedByUserId),
         paidStatus:              const Value(1),
         date:                    Value(now),
         syncStatus:              Value(status),
@@ -385,74 +395,19 @@ class RefundService {
         .toList();
     await db.deductStockForCheckout(items: items, allowNegative: true);
   }
-
-  Future<void> _enqueueRefund(
-    RefundPayload payload, {
-    required String localId,
-    required String number,
-  }) async {
-    final prefs = await SharedPreferences.getInstance();
-    final queue = prefs.getStringList(_pendingRefundsKey) ?? [];
-    queue.add(jsonEncode({
-      ...payload.toJson(),
-      // The device-local refund number the server must keep verbatim on replay.
-      'clientDocumentNumber': number,
-      'companyId':       _companyId,
-      'userId':          _userId,
-      // Local Drift Document.localId so syncPendingRefunds can flip the row to
-      // 'synced' (and stamp its server number) once the queued push succeeds.
-      'localId':         localId,
-      'queuedAt':        DateTime.now().toIso8601String(),
-    }));
-    await prefs.setStringList(_pendingRefundsKey, queue);
-  }
-
-  // Call this on app start or when connectivity is restored. Pushes the queued
-  // /Document/Refund payloads and, on success, marks the matching local Drift
-  // refund Document 'synced' with its server-assigned number.
-  Future<void> syncPendingRefunds() async {
-    final prefs = await SharedPreferences.getInstance();
-    final queue = prefs.getStringList(_pendingRefundsKey) ?? [];
-    if (queue.isEmpty) return;
-
-    final dio       = createDio();
-    final db        = _ref.read(appDatabaseProvider);
-    final remaining = <String>[];
-
-    for (final raw in queue) {
-      try {
-        final json      = jsonDecode(raw) as Map<String, dynamic>;
-        final companyId = json['companyId'] as int;
-        final userId    = json['userId'] as int;
-        final localId   = json['localId'] as String?;
-        await dio.post(
-          '/Document/Refund',
-          queryParameters: {'companyId': companyId, 'userId': userId},
-          data: json,
-        );
-        // Flip the local row to 'synced'. The number is the device-local one we
-        // already stamped (the server kept it verbatim via clientDocumentNumber),
-        // so we leave it untouched — pullDocuments reconciles by number.
-        if (localId != null) {
-          await (db.update(db.documentsTable)
-                ..where((t) => t.localId.equals(localId)))
-              .write(DocumentsTableCompanion(
-            syncStatus:   const Value('synced'),
-            lastModified: Value(DateTime.now().toUtc()),
-          ));
-        }
-      } catch (_) {
-        remaining.add(raw); // Keep failed ones for next attempt
-      }
-    }
-
-    await prefs.setStringList(_pendingRefundsKey, remaining);
-  }
 }
 
 final refundServiceProvider = Provider<RefundService>((ref) => RefundService(ref));
 
+/// Count of unsynced (pending) refunds — sourced from Drift, the single source
+/// of truth now that the shared_preferences refund queue is gone.
 final pendingRefundsCountProvider = FutureProvider<int>((ref) async {
-  final prefs = await SharedPreferences.getInstance();
-  return (prefs.getStringList(_pendingRefundsKey) ?? []).length;
+  final db = ref.read(appDatabaseProvider);
+  final companyId = ref.read(selectedCompanyProvider)?.id ?? 0;
+  final rows = await (db.select(db.documentsTable)
+        ..where((t) => t.companyId.equals(companyId))
+        ..where((t) => t.documentTypeId.equals(kRefundDocumentTypeId))
+        ..where((t) => t.syncStatus.equals('pending')))
+      .get();
+  return rows.length;
 });

@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/company/company_model.dart';
 import 'package:pos_app/document/document_model.dart';
 import 'package:pos_app/cart/discount_display.dart';
@@ -39,6 +40,7 @@ class InvoicePdfService {
     required String currencySymbol,
     List<ReceiptDiscountLine> discountLines = const [],
     Uint8List? logoBytes,
+    Map<String, String> settings = const {},
   }) async {
     final bytes = await generate(
       company: company,
@@ -55,6 +57,7 @@ class InvoicePdfService {
       currencySymbol: currencySymbol,
       discountLines: discountLines,
       logoBytes: logoBytes,
+      settings: settings,
     );
     await Printing.layoutPdf(onLayout: (_) async => bytes, name: invoiceNumber);
   }
@@ -74,6 +77,7 @@ class InvoicePdfService {
     required String currencySymbol,
     List<ReceiptDiscountLine> discountLines = const [],
     Uint8List? logoBytes,
+    Map<String, String> settings = const {},
   }) async {
     final bytes = await generate(
       company: company,
@@ -90,6 +94,7 @@ class InvoicePdfService {
       currencySymbol: currencySymbol,
       discountLines: discountLines,
       logoBytes: logoBytes,
+      settings: settings,
     );
     final path = await FilePicker.platform.saveFile(
       dialogTitle: 'Save Invoice PDF',
@@ -119,7 +124,29 @@ class InvoicePdfService {
     required String currencySymbol,
     List<ReceiptDiscountLine> discountLines = const [],
     Uint8List? logoBytes,
+    Map<String, String> settings = const {},
   }) async {
+    // ── Invoice.* settings (editable in Settings › Invoice / Templates) ────────
+    // Read defensively: an empty map (a caller that passes nothing) falls back to
+    // the same kSettingDefaults the AppSettingsNotifier merges in-memory, so the
+    // rendered invoice matches what the settings screen shows.
+    final titleRaw = (settings[SettingKeys.invoiceTitle] ?? '').trim();
+    final title = titleRaw.isEmpty ? 'TAX INVOICE' : titleRaw;
+    final printA5 =
+        (settings[SettingKeys.invoicePrintA5] ?? 'false').trim().toLowerCase() ==
+            'true';
+    // Tax column defaults ON, Discount column defaults OFF (matches kSettingDefaults).
+    final showTaxColumn =
+        (settings[SettingKeys.invoiceColumnTax] ?? 'true').trim().toLowerCase() !=
+            'false';
+    final showDiscountColumn =
+        (settings[SettingKeys.invoiceColumnDiscount] ?? 'false')
+                .trim()
+                .toLowerCase() ==
+            'true';
+    final globalHeader = (settings[SettingKeys.invoiceGlobalHeader] ?? '').trim();
+    final globalFooter = (settings[SettingKeys.invoiceGlobalFooter] ?? '').trim();
+
     pw.Font font;
     pw.Font boldFont;
     try {
@@ -157,11 +184,75 @@ class InvoicePdfService {
     // Build the totals section
     final amountDue = isPaid ? 0.0 : total;
 
+    // Item table columns — the Tax and Discount columns are toggleable, so build
+    // the column set first, then derive the widths, header and body rows from it
+    // (dropping a column has to re-index every row, hence the shared model).
+    final columns = <_InvColumn>[
+      _InvColumn(
+        '#',
+        const pw.FixedColumnWidth(26),
+        pw.Alignment.center,
+        (item, idx) => '${idx + 1}',
+      ),
+      _InvColumn(
+        'Item',
+        const pw.FlexColumnWidth(3.5),
+        pw.Alignment.centerLeft,
+        (item, idx) => item.productName ?? '-',
+      ),
+      _InvColumn(
+        'Quantity',
+        const pw.FixedColumnWidth(58),
+        pw.Alignment.centerRight,
+        (item, idx) =>
+            item.measurementUnit != null &&
+                    item.measurementUnit!.trim().isNotEmpty
+                ? '${_numFmt.format(item.quantity)} ${item.measurementUnit!.trim()}'
+                : _numFmt.format(item.quantity),
+      ),
+      _InvColumn(
+        'Unit price',
+        const pw.FixedColumnWidth(62),
+        pw.Alignment.centerRight,
+        (item, idx) => _numFmt.format(item.price),
+      ),
+      if (showTaxColumn)
+        _InvColumn(
+          'Tax',
+          const pw.FixedColumnWidth(50),
+          pw.Alignment.centerRight,
+          (item, idx) {
+            final taxPct = item.priceBeforeTax > 0
+                ? (item.price - item.priceBeforeTax) / item.priceBeforeTax * 100
+                : 0.0;
+            return taxPct == 0 ? '---' : '${taxPct.toStringAsFixed(0)}%';
+          },
+        ),
+      if (showDiscountColumn)
+        _InvColumn(
+          'Discount',
+          const pw.FixedColumnWidth(55),
+          pw.Alignment.centerRight,
+          (item, idx) => item.discount == 0
+              ? '0.00%'
+              : '${item.discount.toStringAsFixed(2)}%',
+        ),
+      _InvColumn(
+        'Total',
+        const pw.FixedColumnWidth(65),
+        pw.Alignment.centerRight,
+        (item, idx) => _numFmt.format(item.total),
+      ),
+    ];
+    final columnWidths = {
+      for (var i = 0; i < columns.length; i++) i: columns[i].width,
+    };
+
     final pdf = pw.Document();
 
     pdf.addPage(
       pw.MultiPage(
-        pageFormat: PdfPageFormat.a4,
+        pageFormat: printA5 ? PdfPageFormat.a5 : PdfPageFormat.a4,
         margin: const pw.EdgeInsets.symmetric(horizontal: 36, vertical: 36),
         footer: (ctx) => pw.Padding(
           padding: const pw.EdgeInsets.only(top: 8),
@@ -181,6 +272,12 @@ class InvoicePdfService {
           ),
         ),
         build: (ctx) => [
+          // ── GLOBAL HEADER (user-defined banner, e.g. letterhead note) ─────────
+          if (globalHeader.isNotEmpty) ...[
+            pw.Text(globalHeader, style: ts(9, color: _kTextMuted)),
+            pw.SizedBox(height: 10),
+          ],
+
           // ── HEADER ───────────────────────────────────────────────────────────
           pw.Row(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -190,7 +287,7 @@ class InvoicePdfService {
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    pw.Text('INVOICE', style: ts(22, bold: true)),
+                    pw.Text(title, style: ts(22, bold: true)),
                     pw.SizedBox(height: 8),
                     pw.Text(company.name, style: ts(12, bold: true)),
                     if (_companyAddress(company).isNotEmpty)
@@ -290,80 +387,27 @@ class InvoicePdfService {
           // ── ITEMS TABLE ───────────────────────────────────────────────────────
           pw.Table(
             border: pw.TableBorder.all(color: _kBorder, width: 0.5),
-            columnWidths: const {
-              0: pw.FixedColumnWidth(26), // #
-              1: pw.FlexColumnWidth(3.5), // Item
-              2: pw.FixedColumnWidth(58), // Quantity
-              3: pw.FixedColumnWidth(62), // Unit price
-              4: pw.FixedColumnWidth(50), // Tax
-              5: pw.FixedColumnWidth(55), // Discount
-              6: pw.FixedColumnWidth(65), // Total
-            },
+            columnWidths: columnWidths,
             children: [
               // Header
               pw.TableRow(
                 decoration: const pw.BoxDecoration(color: _kHeaderBg),
-                children: [
-                  '#',
-                  'Item',
-                  'Quantity',
-                  'Unit price',
-                  'Tax',
-                  'Discount',
-                  'Total',
-                ].map((h) => _cell(h, ts: ts, header: true)).toList(),
+                children: columns
+                    .map((c) => _cell(c.header, ts: ts, header: true))
+                    .toList(),
               ),
               // Rows
               ...items.asMap().entries.map((e) {
                 final idx = e.key;
                 final item = e.value;
-                final taxPct = item.priceBeforeTax > 0
-                    ? (item.price - item.priceBeforeTax) /
-                          item.priceBeforeTax *
-                          100
-                    : 0.0;
                 return pw.TableRow(
                   decoration: pw.BoxDecoration(
                     color: idx.isEven ? PdfColors.white : _kRowAlt,
                   ),
-                  children: [
-                    _cell('${idx + 1}', ts: ts, align: pw.Alignment.center),
-                    _cell(
-                      item.productName ?? '-',
-                      ts: ts,
-                      align: pw.Alignment.centerLeft,
-                    ),
-                    _cell(
-                      item.measurementUnit != null &&
-                              item.measurementUnit!.trim().isNotEmpty
-                          ? '${_numFmt.format(item.quantity)} ${item.measurementUnit!.trim()}'
-                          : _numFmt.format(item.quantity),
-                      ts: ts,
-                      align: pw.Alignment.centerRight,
-                    ),
-                    _cell(
-                      _numFmt.format(item.price),
-                      ts: ts,
-                      align: pw.Alignment.centerRight,
-                    ),
-                    _cell(
-                      taxPct == 0 ? '---' : '${taxPct.toStringAsFixed(0)}%',
-                      ts: ts,
-                      align: pw.Alignment.centerRight,
-                    ),
-                    _cell(
-                      item.discount == 0
-                          ? '0.00%'
-                          : '${item.discount.toStringAsFixed(2)}%',
-                      ts: ts,
-                      align: pw.Alignment.centerRight,
-                    ),
-                    _cell(
-                      _numFmt.format(item.total),
-                      ts: ts,
-                      align: pw.Alignment.centerRight,
-                    ),
-                  ],
+                  children: columns
+                      .map((c) =>
+                          _cell(c.value(item, idx), ts: ts, align: c.align))
+                      .toList(),
                 );
               }),
             ],
@@ -441,6 +485,14 @@ class InvoicePdfService {
               ),
             ),
           ),
+
+          // ── GLOBAL FOOTER (user-defined note, e.g. terms / bank details) ──────
+          if (globalFooter.isNotEmpty) ...[
+            pw.SizedBox(height: 18),
+            pw.Divider(color: _kBorder, thickness: 0.5),
+            pw.SizedBox(height: 6),
+            pw.Text(globalFooter, style: ts(9, color: _kTextMuted)),
+          ],
         ],
       ),
     );
@@ -506,4 +558,16 @@ class InvoicePdfService {
       ],
     ),
   );
+}
+
+/// One column of the invoice items table. Kept as a model (not inline widgets)
+/// so optional columns (Tax, Discount) can be dropped without hand-re-indexing
+/// the header, the per-row cells, and the column-width map.
+class _InvColumn {
+  final String header;
+  final pw.TableColumnWidth width;
+  final pw.Alignment align;
+  final String Function(DocumentItem item, int idx) value;
+
+  const _InvColumn(this.header, this.width, this.align, this.value);
 }

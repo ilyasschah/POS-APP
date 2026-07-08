@@ -109,14 +109,19 @@ class _ColDef {
 
 class _FlexTable extends StatelessWidget {
   final List<_ColDef> columns;
-  final List<List<Widget>> rows;
+  final int rowCount;
+  // Builds one row's cells on demand. Called from the ListView's itemBuilder so
+  // cells are only constructed for visible rows — a large sales history no
+  // longer instantiates every cell widget up front on each rebuild.
+  final List<Widget> Function(int index) rowBuilder;
   final bool Function(int index)? isRowSelected;
   final void Function(int index)? onRowTap;
   final Widget? emptyWidget;
 
   const _FlexTable({
     required this.columns,
-    required this.rows,
+    required this.rowCount,
+    required this.rowBuilder,
     this.isRowSelected,
     this.onRowTap,
     this.emptyWidget,
@@ -160,10 +165,10 @@ class _FlexTable extends StatelessWidget {
         ),
         // ── Body ──────────────────────────────────────────────────────────
         Expanded(
-          child: rows.isEmpty
+          child: rowCount == 0
               ? (emptyWidget ?? const SizedBox.shrink())
               : ListView.separated(
-                  itemCount: rows.length,
+                  itemCount: rowCount,
                   separatorBuilder: (_, __) => Divider(
                     height: 0.5,
                     color: theme.dividerColor.withValues(alpha: 0.4),
@@ -180,7 +185,7 @@ class _FlexTable extends StatelessWidget {
                             ? cs.primary.withValues(alpha: 0.14)
                             : null,
                         child: _buildRow(
-                          rows[i],
+                          rowBuilder(i),
                           padding: const EdgeInsets.symmetric(
                             horizontal: 12,
                             vertical: 9,
@@ -637,6 +642,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       currencySymbol: a['currencySymbol'],
       discountLines: discountLines,
       logoBytes: a['logoBytes'],
+      settings: ref.read(appSettingsProvider),
     );
   }
 
@@ -660,6 +666,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       currencySymbol: a['currencySymbol'],
       discountLines: discountLines,
       logoBytes: a['logoBytes'],
+      settings: ref.read(appSettingsProvider),
     );
   }
 
@@ -1081,8 +1088,8 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       builder: (context, constraints) {
         final totalH = constraints.maxHeight;
         final masterH = (totalH * _splitFraction).clamp(120.0, totalH - 120.0);
-        final dividerH = 12.0;
-        final headerH = 28.0;
+        const dividerH = 12.0;
+        const headerH = 28.0;
         final detailH = totalH - masterH - dividerH - (headerH * 2);
 
         return Column(
@@ -1234,7 +1241,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       ];
 
   Widget _buildMasterTable(ThemeData theme, ColorScheme cs, String sym) {
-    final ts = const TextStyle(fontSize: 12);
+    const ts = TextStyle(fontSize: 12);
     final dimTs = TextStyle(
       fontSize: 12,
       color: cs.onSurface.withValues(alpha: 0.45),
@@ -1243,7 +1250,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     // Per-column cell builders, keyed to the metadata ids above.
     final cellBuilders = <String, Widget Function(SalesHistoryDocument)>{
       'id': (doc) => Text('${doc.id}', style: dimTs),
-      'type': (doc) => Text('Sales', style: ts),
+      'type': (doc) => const Text('Sales', style: ts),
       'user': (doc) => Text(doc.userName ?? '-', style: ts),
       'number': (doc) => Text(
         doc.number,
@@ -1297,13 +1304,13 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
         .map((c) => _ColDef(c.label, flex: c.flex, numeric: c.numeric))
         .toList();
 
-    final rows = _documents
-        .map((doc) => visibleCols.map((c) => cellBuilders[c.id]!(doc)).toList())
-        .toList();
-
     return _FlexTable(
       columns: columns,
-      rows: rows,
+      rowCount: _documents.length,
+      rowBuilder: (i) {
+        final doc = _documents[i];
+        return visibleCols.map((c) => cellBuilders[c.id]!(doc)).toList();
+      },
       isRowSelected: (i) => _documents[i].localId == _selectedDocLocalId,
       onRowTap: (i) {
         final doc = _documents[i];
@@ -1381,7 +1388,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       return const Center(child: CircularProgressIndicator(strokeWidth: 2));
     }
 
-    final ts = const TextStyle(fontSize: 12);
+    const ts = TextStyle(fontSize: 12);
     final dimTs = TextStyle(
       fontSize: 12,
       color: cs.onSurface.withValues(alpha: 0.45),
@@ -1431,15 +1438,13 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     final columns = visibleCols
         .map((c) => _ColDef(c.label, flex: c.flex, numeric: c.numeric))
         .toList();
-    final rows = _items
-        .map(
-          (item) => visibleCols.map((c) => cellBuilders[c.id]!(item)).toList(),
-        )
-        .toList();
-
     return _FlexTable(
       columns: columns,
-      rows: rows,
+      rowCount: _items.length,
+      rowBuilder: (i) {
+        final item = _items[i];
+        return visibleCols.map((c) => cellBuilders[c.id]!(item)).toList();
+      },
       emptyWidget: Center(
         child: Text(
           'No items found for this document.',
@@ -2100,7 +2105,7 @@ class _DateRangePickerDialogState extends State<_DateRangePickerDialog> {
                                   ? '${fmt.format(_start)}  →  ${fmt.format(_end!)}'
                                   : _pickingEnd
                                   ? 'Now select an end date'
-                                  : '${fmt.format(_start)}',
+                                  : fmt.format(_start),
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,

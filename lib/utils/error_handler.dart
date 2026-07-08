@@ -31,6 +31,8 @@ String friendlyErrorMessage(Object error) {
       case DioExceptionType.unknown:
         // `unknown` covers SocketException etc. — almost always offline.
         return 'Cannot connect to server. Working offline.';
+      case DioExceptionType.transformTimeout:
+        return 'Request timed out.';
     }
   }
 

@@ -212,7 +212,7 @@ class _RefundDialogState extends ConsumerState<RefundDialog> {
       if (!mounted) return;
       ref.invalidate(allDocumentsProvider);
       if (result.queued) {
-        _showSnack('Offline – blind refund queued for sync.', success: true);
+        _showSnack('Blind refund queued — will sync automatically.', success: true);
       } else {
         _showSnack('Blind refund ${result.refundNumber} processed.', success: true);
       }
@@ -270,7 +270,7 @@ class _RefundDialogState extends ConsumerState<RefundDialog> {
       ref.invalidate(allDocumentsProvider);
 
       if (result.queued) {
-        _showSnack('Offline – refund queued for sync.', success: true);
+        _showSnack('Refund queued — will sync automatically.', success: true);
       } else {
         _showSnack('Refund ${result.refundNumber} processed.', success: true);
       }

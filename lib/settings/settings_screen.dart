@@ -814,8 +814,9 @@ class _CustomServiceStatusesEditorState
       );
     } else {
       final i = updated.indexWhere((s) => s.id == existing.id);
-      if (i >= 0)
+      if (i >= 0) {
         updated[i] = existing.copyWith(name: name, colorValue: colorValue);
+      }
     }
     await _save(updated);
   }
@@ -1165,8 +1166,9 @@ class _BookingSettingsCardState extends ConsumerState<_BookingSettingsCard> {
                         )
                         .toList(),
                     onChanged: (v) {
-                      if (v != null)
+                      if (v != null) {
                         _save(s.copyWith(defaultDurationMinutes: v));
+                      }
                     },
                   ),
                 ],
@@ -2643,31 +2645,31 @@ final _kSearchableSettings = <SearchableSetting>[
   ),
 
   // ── Whole-screen panels (tap the row to open the tab) ────────────────────────
-  SearchableSetting(
+  const SearchableSetting(
     title: 'Kitchen Display',
     tabName: 'Kitchen Display',
     tabIndex: 5,
     navigational: true,
   ),
-  SearchableSetting(
+  const SearchableSetting(
     title: 'Printer & Receipt Settings',
     tabName: 'Print',
     tabIndex: 7,
     navigational: true,
   ),
-  SearchableSetting(
+  const SearchableSetting(
     title: 'Database & Backup',
     tabName: 'Database',
     tabIndex: 9,
     navigational: true,
   ),
-  SearchableSetting(
+  const SearchableSetting(
     title: 'License',
     tabName: 'License',
     tabIndex: 10,
     navigational: true,
   ),
-  SearchableSetting(
+  const SearchableSetting(
     title: 'About',
     tabName: 'About',
     tabIndex: 11,
@@ -2899,47 +2901,47 @@ class _ThemeModePicker extends ConsumerWidget {
   const _ThemeModePicker();
 
   static final _options = <_ThemeOpt>[
-    _ThemeOpt(
+    const _ThemeOpt(
       'light',
       'Light',
       PhosphorIconsRegular.sun,
-      const Color(0xFFF5F7FA),
-      const Color(0xFF2196F3),
+      Color(0xFFF5F7FA),
+      Color(0xFF2196F3),
     ),
-    _ThemeOpt(
+    const _ThemeOpt(
       'dark',
       'Dark',
       PhosphorIconsRegular.moon,
-      const Color(0xFF1E2530),
-      const Color(0xFF90CAF9),
+      Color(0xFF1E2530),
+      Color(0xFF90CAF9),
     ),
-    _ThemeOpt(
+    const _ThemeOpt(
       'dimmed',
       'Dimmed',
       PhosphorIconsRegular.moonStars,
-      const Color(0xFF15202B),
-      const Color(0xFF64B5F6),
+      Color(0xFF15202B),
+      Color(0xFF64B5F6),
     ),
-    _ThemeOpt(
+    const _ThemeOpt(
       'night',
       'Night',
       PhosphorIconsRegular.eye,
-      const Color(0xFF000000),
-      const Color(0xFF82B1FF),
+      Color(0xFF000000),
+      Color(0xFF82B1FF),
     ),
-    _ThemeOpt(
+    const _ThemeOpt(
       'gray',
       'Gray',
       PhosphorIconsRegular.circleHalf,
-      const Color(0xFF1E1E1E),
-      const Color(0xFFBDBDBD),
+      Color(0xFF1E1E1E),
+      Color(0xFFBDBDBD),
     ),
-    _ThemeOpt(
+    const _ThemeOpt(
       'high_contrast',
       'High Contrast',
       PhosphorIconsRegular.circleHalfTilt,
-      const Color(0xFF000000),
-      const Color(0xFFFFFFFF),
+      Color(0xFF000000),
+      Color(0xFFFFFFFF),
     ),
   ];
 
@@ -3132,8 +3134,8 @@ class _ThemePickerDialog extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 8, 16, 6),
               child: Row(
                 children: [
                   Icon(
@@ -3141,8 +3143,8 @@ class _ThemePickerDialog extends StatelessWidget {
                     size: 14,
                     color: Colors.white38,
                   ),
-                  const SizedBox(width: 7),
-                  const Text(
+                  SizedBox(width: 7),
+                  Text(
                     'CHOOSE THEME',
                     style: TextStyle(
                       color: Colors.white38,
@@ -3287,6 +3289,9 @@ class _DeviceCardState extends ConsumerState<_DeviceCard> {
     );
     if (confirmed != true || !mounted) return;
 
+    // Release this terminal's seat BEFORE wiping the token (the call needs it).
+    // Best-effort — offline sign-out is reclaimed by the server-side reaper.
+    await ref.read(authServiceProvider).releaseDeviceSeat();
     await ref.read(authStorageProvider).unlinkDevice();
 
     if (!mounted) return;
@@ -3428,32 +3433,32 @@ class _GeneralTab extends ConsumerWidget {
             ),
           ],
         ),
-        _SettingsCard(
+        const _SettingsCard(
           title: 'REGIONAL',
           children: [
-            const _CurrencyDropdown(),
-            const _SettingDropdown(
+            _CurrencyDropdown(),
+            _SettingDropdown(
               settingKey: SettingKeys.language,
               label: 'Language',
               options: ['en', 'fr', 'ar', 'es', 'de', 'it', 'pt'],
             ),
-            const _SettingDropdown(
+            _SettingDropdown(
               settingKey: SettingKeys.dateFormat,
               label: 'Date Format',
               options: ['dd-MM-yyyy', 'MM/dd/yyyy', 'yyyy-MM-dd', 'dd/MM/yyyy'],
             ),
-            const _TimezoneCard(),
-            const _SettingDropdown(
+            _TimezoneCard(),
+            _SettingDropdown(
               settingKey: SettingKeys.industryMode,
               label: 'Industry Mode',
               options: ['FB', 'Service'],
             ),
           ],
         ),
-        _SettingsCard(
+        const _SettingsCard(
           title: 'TAX',
           children: [
-            const _SettingSwitch(
+            _SettingSwitch(
               settingKey: SettingKeys.taxIncludedByDefault,
               label: 'Tax Included in Price by Default',
               subtitle:
@@ -3461,17 +3466,17 @@ class _GeneralTab extends ConsumerWidget {
             ),
           ],
         ),
-        _SettingsCard(
+        const _SettingsCard(
           title: 'APPEARANCE',
-          children: const [
+          children: [
             _ThemeModePicker(),
             _AccentColorPicker(),
             _FontScalePicker(),
           ],
         ),
-        _SettingsCard(
+        const _SettingsCard(
           title: 'APPLICATION STYLE',
-          children: const [
+          children: [
             _SettingDropdown(
               settingKey: SettingKeys.writingDirection,
               label: 'Writing Direction',
@@ -3488,9 +3493,9 @@ class _GeneralTab extends ConsumerWidget {
             ),
           ],
         ),
-        _SettingsCard(
+        const _SettingsCard(
           title: 'MESSAGES (NOTIFICATIONS)',
-          children: const [
+          children: [
             _StepperRow(
               label: 'Message Duration (seconds)',
               settingKey: SettingKeys.messageDuration,
@@ -3504,9 +3509,9 @@ class _GeneralTab extends ConsumerWidget {
             ),
           ],
         ),
-        _SettingsCard(
+        const _SettingsCard(
           title: 'BUSINESS DAY',
-          children: const [
+          children: [
             _SettingSwitch(
               settingKey: SettingKeys.showCashInOnStart,
               label: 'Show cash in on application start',
@@ -3591,10 +3596,10 @@ class _GeneralTab extends ConsumerWidget {
             ),
           ],
         ),
-        _SettingsCard(
+        const _SettingsCard(
           title: 'API',
           children: [
-            const _SettingTextField(
+            _SettingTextField(
               settingKey: SettingKeys.apiBaseUrl,
               label: 'API Base URL',
               hint: 'http://192.168.1.1:5002/api',
@@ -3659,18 +3664,18 @@ class _OrderPaymentTab extends ConsumerWidget {
           ],
         ),
         const _BookingSettingsCard(),
-        _SettingsCard(
+        const _SettingsCard(
           title: 'BASIC OPERATIONS',
-          children: const [
+          children: [
             _SettingSwitch(
               settingKey: SettingKeys.enableSounds,
               label: 'Sounds',
             ),
           ],
         ),
-        _SettingsCard(
+        const _SettingsCard(
           title: 'ITEMS',
-          children: const [
+          children: [
             _SettingDropdown(
               settingKey: SettingKeys.defaultSearch,
               label: 'Default search',
@@ -3699,19 +3704,19 @@ class _OrderPaymentTab extends ConsumerWidget {
             ),
           ],
         ),
-        _SettingsCard(
+        const _SettingsCard(
           title: 'USERS',
-          children: const [
+          children: [
             _SettingSwitch(
               settingKey: SettingKeys.singleUser,
               label: 'Single user',
             ),
           ],
         ),
-        _SettingsCard(
+        const _SettingsCard(
           title: 'PAYMENT',
           children: [
-            const _SettingSwitch(
+            _SettingSwitch(
               settingKey: SettingKeys.displayReceiptPrintDialog,
               label: 'Display receipt print dialog',
             ),
@@ -3721,23 +3726,23 @@ class _OrderPaymentTab extends ConsumerWidget {
               min: 0,
               max: 90,
             ),
-            const _SettingSwitch(
+            _SettingSwitch(
               settingKey: SettingKeys.mergeItemsOnReceipt,
               label: 'Merge items on receipt',
             ),
-            const _SettingSwitch(
+            _SettingSwitch(
               settingKey: SettingKeys.singleItemDiscountAllowed,
               label: 'Single item discount allowed',
             ),
-            const _SettingSwitch(
+            _SettingSwitch(
               settingKey: SettingKeys.shortcutKeysPaymentConfirmation,
               label: 'Shortcut keys payment confirmation',
             ),
           ],
         ),
-        _SettingsCard(
+        const _SettingsCard(
           title: 'VOID ITEMS',
-          children: const [
+          children: [
             _SettingSwitch(
               settingKey: SettingKeys.requireReasonOnVoid,
               label: 'Require reason on void',
@@ -3748,9 +3753,9 @@ class _OrderPaymentTab extends ConsumerWidget {
             ),
           ],
         ),
-        _SettingsCard(
+        const _SettingsCard(
           title: 'ORDER NAME',
-          children: const [
+          children: [
             _SettingSwitch(
               settingKey: SettingKeys.enableCustomOrderName,
               label: 'Enable custom order name',
@@ -3808,14 +3813,14 @@ class _OrderPaymentTab extends ConsumerWidget {
             ),
           ],
         ),
-        _SettingsCard(
+        const _SettingsCard(
           title: 'ADVANCED SETTINGS',
           children: [
-            const _SettingSwitch(
+            _SettingSwitch(
               settingKey: SettingKeys.resetOrderNumberOnDayClose,
               label: 'Reset order number on day close',
             ),
-            const _SettingSwitch(
+            _SettingSwitch(
               settingKey: SettingKeys.showItemsOnPaymentForm,
               label: 'Show items on payment form',
             ),
@@ -3825,7 +3830,7 @@ class _OrderPaymentTab extends ConsumerWidget {
               min: 0,
               max: 10,
             ),
-            const _SettingSwitch(
+            _SettingSwitch(
               settingKey: SettingKeys.showAllOccupiedTablesInFloorPlan,
               label: 'Show all occupied tables in floor plan',
             ),
@@ -4081,9 +4086,9 @@ class _ProductsTab extends ConsumerWidget {
 
     return _TabScrollView(
       cards: [
-        _SettingsCard(
+        const _SettingsCard(
           title: 'GENERAL',
-          children: const [
+          children: [
             _SettingSwitch(
               settingKey: SettingKeys.displayAndPrintTaxIncluded,
               label: 'Display and print items with tax included',
@@ -4150,18 +4155,18 @@ class _ProductsTab extends ConsumerWidget {
             ),
           ],
         ),
-        _SettingsCard(
+        const _SettingsCard(
           title: 'MOVING AVERAGE PRICE',
-          children: const [
+          children: [
             _SettingSwitch(
               settingKey: SettingKeys.enableMovingAveragePrice,
               label: 'Enable moving average price',
             ),
           ],
         ),
-        _SettingsCard(
+        const _SettingsCard(
           title: 'MENU GRID',
-          children: const [
+          children: [
             _SettingDropdown(
               settingKey: SettingKeys.menuGridCols,
               label: 'Columns',
@@ -4204,32 +4209,32 @@ class _WeighingScaleTab extends ConsumerWidget {
               opacity: barcodeOn ? 1.0 : 0.4,
               child: IgnorePointer(
                 ignoring: !barcodeOn,
-                child: Column(
+                child: const Column(
                   children: [
-                    const _SettingTextField(
+                    _SettingTextField(
                       settingKey: SettingKeys.scaleBarcodePrefix,
                       label: 'First two digits / prefix',
                       hint: 'e.g. 21',
                     ),
-                    const _StepperRow(
+                    _StepperRow(
                       label: 'Number of digits for product code',
                       settingKey: SettingKeys.scaleBarcodeCodeLength,
                       min: 1,
                       max: 10,
                     ),
-                    const _StepperRow(
+                    _StepperRow(
                       label: 'Number of decimal places',
                       settingKey: SettingKeys.scaleBarcodeDecimalPlaces,
                       min: 0,
                       max: 5,
                     ),
-                    const _SettingSwitch(
+                    _SettingSwitch(
                       settingKey: SettingKeys.scaleBarcodeTrimZeros,
                       label: 'Remove zeros from product code (trim zeros)',
                       subtitle:
                           'Strip leading zeros before looking up the product',
                     ),
-                    const _SettingSwitch(
+                    _SettingSwitch(
                       settingKey: SettingKeys.scaleBarcodePrintsPrice,
                       label: 'Scale prints price instead of quantity',
                       subtitle:
@@ -4364,11 +4369,11 @@ class _CustomerDisplayTabState extends ConsumerState<_CustomerDisplayTab> {
                       ),
                       child: Row(
                         children: [
-                          Expanded(
+                          const Expanded(
                             child: _SettingDropdown(
                               settingKey: SettingKeys.customerDisplayPort,
                               label: 'COM port',
-                              options: const [
+                              options: [
                                 'COM1',
                                 'COM2',
                                 'COM3',
@@ -5178,24 +5183,27 @@ class _KitchenDisplayTabState extends ConsumerState<_KitchenDisplayTab> {
                     Expanded(
                       child: TextFormField(
                         controller: _ipController,
-                        decoration: InputDecoration(
+                        decoration: const InputDecoration(
                           labelText: 'KDS IP address',
                           hintText: '192.168.1.100',
-                          border: const OutlineInputBorder(),
+                          border: OutlineInputBorder(),
                           isDense: true,
-                          prefixIcon: const Icon(Icons.lan_outlined, size: 18),
+                          prefixIcon: Icon(Icons.lan_outlined, size: 18),
                         ),
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
                         ),
                         validator: (v) {
-                          if (v == null || v.trim().isEmpty)
+                          if (v == null || v.trim().isEmpty) {
                             return 'Enter an IP address';
+                          }
                           final parts = v.trim().split('.');
-                          if (parts.length != 4)
+                          if (parts.length != 4) {
                             return 'Invalid IP (e.g. 192.168.1.100)';
-                          if (parts.any((p) => int.tryParse(p) == null))
+                          }
+                          if (parts.any((p) => int.tryParse(p) == null)) {
                             return 'Invalid IP';
+                          }
                           return null;
                         },
                         onFieldSubmitted: (_) => _addIp(),
@@ -5224,18 +5232,18 @@ class _EmailTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return _TabScrollView(
+    return const _TabScrollView(
       cards: [
         _SettingsCard(
           title: 'SMTP SERVER',
           children: [
-            const _SettingTextField(
+            _SettingTextField(
               settingKey: SettingKeys.emailSmtpHost,
               label: 'SMTP Host',
               hint: 'smtp.gmail.com',
               keyboardType: TextInputType.url,
             ),
-            const _SettingTextField(
+            _SettingTextField(
               settingKey: SettingKeys.emailSmtpPort,
               label: 'SMTP Port',
               hint: '587',
@@ -5246,18 +5254,18 @@ class _EmailTab extends ConsumerWidget {
         _SettingsCard(
           title: 'SENDER',
           children: [
-            const _SettingTextField(
+            _SettingTextField(
               settingKey: SettingKeys.emailFromAddress,
               label: 'From Email Address',
               hint: 'pos@yourbusiness.com',
               keyboardType: TextInputType.emailAddress,
             ),
-            const _SettingTextField(
+            _SettingTextField(
               settingKey: SettingKeys.emailFromName,
               label: 'From Name',
               hint: 'POS System',
             ),
-            const _SettingTextField(
+            _SettingTextField(
               settingKey: SettingKeys.emailUserEmail,
               label: 'Account / User Email',
               hint: 'your@email.com',
@@ -5493,23 +5501,23 @@ class _DualCurrencyTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return _TabScrollView(
+    return const _TabScrollView(
       cards: [
         _SettingsCard(
           title: 'DUAL CURRENCY',
           children: [
-            const _SettingSwitch(
+            _SettingSwitch(
               settingKey: SettingKeys.dualCurrencyEnabled,
               label: 'Dual Currency Enabled',
               subtitle:
                   'Display prices and totals in a second currency simultaneously',
             ),
-            const _SettingTextField(
+            _SettingTextField(
               settingKey: SettingKeys.dualCurrencySymbol,
               label: 'Secondary Currency Symbol',
               hint: 'e.g. €',
             ),
-            const _SettingTextField(
+            _SettingTextField(
               settingKey: SettingKeys.dualCurrencyRate,
               label: 'Exchange Rate',
               hint: 'e.g. 1.08  (1 primary = X secondary)',
@@ -5867,16 +5875,16 @@ class _LicenseTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return _TabScrollView(
       cards: [
-        _SettingsCard(
+        const _SettingsCard(
           title: 'LICENSE',
           children: [
-            const _SettingTextField(
+            _SettingTextField(
               settingKey: SettingKeys.licenseEmail,
               label: 'License Email',
               hint: 'your@email.com',
               keyboardType: TextInputType.emailAddress,
             ),
-            const _SettingTextField(
+            _SettingTextField(
               settingKey: SettingKeys.licenseKey,
               label: 'License Key',
               hint: 'XXXX-XXXX-XXXX-XXXX',
@@ -6098,9 +6106,9 @@ class _AboutTab extends ConsumerWidget {
 
           // ── Database ──────────────────────────────────────────────────────
           statsAsync.when(
-            loading: () => _SettingsCard(
+            loading: () => const _SettingsCard(
               title: 'DATABASE',
-              children: const [
+              children: [
                 Padding(
                   padding: EdgeInsets.symmetric(vertical: 24),
                   child: Center(child: CircularProgressIndicator()),

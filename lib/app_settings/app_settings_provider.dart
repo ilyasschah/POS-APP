@@ -126,6 +126,11 @@ class AppSettingsNotifier extends Notifier<Map<String, String>> {
       ref.read(sharedPreferencesProvider).setString('boot_theme_color', value);
     } else if (key == SettingKeys.themeMode) {
       ref.read(sharedPreferencesProvider).setString('boot_theme_mode', value);
+    } else if (key == SettingKeys.apiBaseUrl) {
+      // Per-device connection setting: persist locally + apply immediately so the
+      // next createDio() targets the new endpoint (it's not cloud-synced).
+      ref.read(sharedPreferencesProvider).setString(kApiBaseUrlPrefKey, value);
+      setApiBaseUrl(value);
     }
 
     final company = ref.read(selectedCompanyProvider);
@@ -139,7 +144,7 @@ class AppSettingsNotifier extends Notifier<Map<String, String>> {
     // A negative id means it's a temp row we wrote offline for a brand-new key
     // that the server hasn't acknowledged yet.
     final hasServerRow = existing != null && existing.id > 0;
-    final rowId = hasServerRow ? existing.id : _tempIdForKey(key);
+    final rowId = hasServerRow ? existing.id : _tempIdForKey(company.id, key);
 
     // Optimistic Drift write for BOTH existing and new keys, so the value
     // persists across restart offline-first (the previous code only wrote the
@@ -221,10 +226,16 @@ class AppSettingsNotifier extends Notifier<Map<String, String>> {
     }
   }
 
-  /// Deterministic negative id for an offline-only (not-yet-synced) property
-  /// row, derived from its key so re-setting the same key updates one row and
-  /// never collides with positive server ids.
-  int _tempIdForKey(String key) => -(key.hashCode & 0x7fffffff) - 1;
+  /// Deterministic negative id for an offline-only (not-yet-synced) property row.
+  /// Derived from (companyId, key) so re-setting the same key updates one row,
+  /// never collides with positive server ids, AND never collides across companies
+  /// on the `app_properties.id` primary key. (A key-only id threw a UNIQUE
+  /// constraint — and, via insertOnConflictUpdate here, could have silently
+  /// overwritten another company's row — when a 2nd company seeded the same key.)
+  /// MUST stay identical to `SyncManager._seedMissingAppPropertyDefaults` so a
+  /// seed + a later edit of the same (company, key) resolve to the same row.
+  int _tempIdForKey(int companyId, String key) =>
+      -((Object.hash(companyId, key) & 0x7fffffff) + 1);
 
   Future<void> setBool(String key, bool value) =>
       set(key, value ? 'true' : 'false');

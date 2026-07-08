@@ -188,7 +188,9 @@ final hoursReportProvider =
       if (params.userId != null && s.userId != params.userId) continue;
       final openedAt = s.openedAt.toUtc();
       if (openedAt.isAfter(params.rangeEnd) ||
-          openedAt.isBefore(params.rangeStart)) continue;
+          openedAt.isBefore(params.rangeStart)) {
+        continue;
+      }
       final closedAt = (s.closedAt ?? DateTime.now()).toUtc();
       final mins = closedAt.difference(openedAt).inMinutes.clamp(0, 24 * 60);
       minutesByUser[s.userId] = (minutesByUser[s.userId] ?? 0) + mins;
@@ -268,7 +270,9 @@ final shiftSessionsProvider =
         if (params.userId != null && s.userId != params.userId) continue;
         final openedAtUtc = s.openedAt.toUtc();
         if (openedAtUtc.isAfter(params.rangeEnd) ||
-            openedAtUtc.isBefore(params.rangeStart)) continue;
+            openedAtUtc.isBefore(params.rangeStart)) {
+          continue;
+        }
         results.add(ShiftSessionRow(
           employeeName: namesById[s.userId] ?? 'User #${s.userId}',
           clockIn: s.openedAt.toLocal(),

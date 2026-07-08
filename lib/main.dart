@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pos_app/api/api_client.dart';
 import 'package:pos_app/auth/auth_storage.dart';
 import 'package:pos_app/auth/master_login_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -23,6 +24,10 @@ void main() async {
     await windowManager.ensureInitialized();
   }
   final prefs = await SharedPreferences.getInstance();
+  // Seed the API endpoint from the device-local override BEFORE any request
+  // (master-login/sync need it, and it can't come from the cloud-synced settings
+  // because you need the endpoint to reach the cloud in the first place).
+  initApiBaseUrl(prefs.getString(kApiBaseUrlPrefKey));
 
   runApp(
     ProviderScope(

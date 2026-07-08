@@ -88,7 +88,7 @@ class _CustomerDisplayScreenState extends State<CustomerDisplayScreen> {
       stale?.close();
     } catch (_) {}
 
-    final uri = 'ws://localhost:${CustomerDisplayWebServer.port}/ws';
+    const uri = 'ws://localhost:${CustomerDisplayWebServer.port}/ws';
     try {
       final ws = await WebSocket.connect(uri);
 

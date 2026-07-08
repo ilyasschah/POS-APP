@@ -131,11 +131,11 @@ class DashboardScreen extends ConsumerWidget {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+      body: const SingleChildScrollView(
+        padding: EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
+          children: [
             _YearlyOverviewCard(),
             SizedBox(height: 28),
             _PeriodicFilterBar(),
@@ -263,13 +263,13 @@ class _YearlyContent extends StatelessWidget {
                       ),
                       borderData: FlBorderData(show: false),
                       titlesData: FlTitlesData(
-                        leftTitles: AxisTitles(
+                        leftTitles: const AxisTitles(
                           sideTitles: SideTitles(showTitles: false),
                         ),
-                        rightTitles: AxisTitles(
+                        rightTitles: const AxisTitles(
                           sideTitles: SideTitles(showTitles: false),
                         ),
-                        topTitles: AxisTitles(
+                        topTitles: const AxisTitles(
                           sideTitles: SideTitles(showTitles: false),
                         ),
                         bottomTitles: AxisTitles(
@@ -566,7 +566,7 @@ class _PeriodicGrid extends StatelessWidget {
       builder: (context, constraints) {
         final w = constraints.maxWidth;
         final cols = w >= 1100 ? 3 : (w >= 680 ? 2 : 1);
-        final gap = 16.0;
+        const gap = 16.0;
         final cardW = (w - gap * (cols - 1)) / cols;
 
         Widget sized(Widget child) =>

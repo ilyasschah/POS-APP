@@ -97,7 +97,7 @@ class CustomerDisplayWebServer {
           req.response..statusCode = 404..close();
         }
       } catch (_) {
-        try { req.response..statusCode = 500; await req.response.close(); } catch (_) {}
+        try { req.response.statusCode = 500; await req.response.close(); } catch (_) {}
       }
     }
   }

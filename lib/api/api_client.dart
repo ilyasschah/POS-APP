@@ -2,33 +2,53 @@ import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:pos_app/auth/auth_token_cache.dart';
 import 'package:pos_app/cart/checkout_models.dart';
 import 'package:pos_app/api/promotion_models.dart';
 import 'package:pos_app/api/customer_discount_models.dart';
 import 'package:pos_app/company/company_model.dart';
 import 'package:pos_app/document/document_type_constants.dart';
 
-/// Reused across every [createDio] instance so the device JWT (written once at
-/// master-login) is attached to all outgoing requests. Secured endpoints
-/// (e.g. the manager-only user/security-key writes) require it; open endpoints
-/// simply ignore it.
-const _kAuthSecureStorage = FlutterSecureStorage();
+/// Compiled-in default API endpoint, used until a device-local override is set.
+const String kDefaultApiBaseUrl = 'http://192.168.11.103:5002/api';
+
+/// The active API base URL. Held in memory (seeded from SharedPreferences at
+/// boot via [initApiBaseUrl]) so the sync/synchronous [createDio] never awaits.
+/// It's a PER-DEVICE connection setting — you need it before you can sync — so
+/// it lives in local prefs, not the cloud-synced app_properties.
+String _apiBaseUrl = kDefaultApiBaseUrl;
+
+const String kApiBaseUrlPrefKey = 'api_base_url';
+
+/// Seed the base URL from SharedPreferences. Call once at boot BEFORE the first
+/// network request. A blank/absent override falls back to [kDefaultApiBaseUrl].
+void initApiBaseUrl(String? stored) {
+  final v = stored?.trim();
+  if (v != null && v.isNotEmpty) _apiBaseUrl = v;
+}
+
+/// Update the active base URL at runtime (when the operator edits the setting).
+void setApiBaseUrl(String url) {
+  final v = url.trim();
+  _apiBaseUrl = v.isEmpty ? kDefaultApiBaseUrl : v;
+}
+
+String get apiBaseUrl => _apiBaseUrl;
 
 Dio createDio() {
   final dio = Dio();
 
-  dio.options.baseUrl = 'http://192.168.11.103:5002/api';
+  dio.options.baseUrl = _apiBaseUrl;
   dio.options.connectTimeout = const Duration(seconds: 10);
   dio.options.receiveTimeout = const Duration(seconds: 10);
 
-  // Global auth: attach the stored device JWT to every request unless a caller
-  // has already set an explicit Authorization header. Reads from secure storage
-  // under the same 'jwt_token' key AuthStorage writes at master-login.
+  // Global auth: attach the active JWT to every request unless a caller has
+  // already set an explicit Authorization header. Reads from an in-memory cache
+  // (loaded from secure storage once) — never per-request file I/O.
   dio.interceptors.add(InterceptorsWrapper(
     onRequest: (options, handler) async {
       if (!options.headers.containsKey('Authorization')) {
-        final jwt = await _kAuthSecureStorage.read(key: 'jwt_token');
+        final jwt = await AuthTokenCache.get();
         if (jwt != null && jwt.isNotEmpty) {
           options.headers['Authorization'] = 'Bearer $jwt';
         }
@@ -584,7 +604,7 @@ class ApiClient {
               try {
                 return PromotionDto.fromJson(json);
               } catch (e) {
-                print("Error parsing promotion: $e");
+                debugPrint("Error parsing promotion: $e");
                 return null;
               }
             })
@@ -593,7 +613,7 @@ class ApiClient {
       }
       return [];
     } catch (e) {
-      print('Error fetching all promotions: $e');
+      debugPrint('Error fetching all promotions: $e');
       return [];
     }
   }

@@ -181,7 +181,7 @@ String _buildXmlExport(List<ProductExportRow> rows) {
         sb.writeln('$indent      <string>${_xmlEsc(c)}</string>');
       }
       sb
-        ..writeln('$indent    </Comments>');
+        .writeln('$indent    </Comments>');
       if (p.description != null && p.description!.isNotEmpty) {
         sb.writeln(
             '$indent    <Description>${_xmlEsc(p.description)}</Description>');
@@ -279,20 +279,20 @@ Future<void> _showExportDialog(BuildContext context, WidgetRef ref) async {
               value: 'csv',
               groupValue: selected,
               onChanged: (v) => setState(() => selected = v!),
-              title: Row(children: [
-                const Icon(Icons.table_chart, color: Colors.green, size: 20),
-                const SizedBox(width: 10),
-                const Text('CSV (Excel)'),
+              title: const Row(children: [
+                Icon(Icons.table_chart, color: Colors.green, size: 20),
+                SizedBox(width: 10),
+                Text('CSV (Excel)'),
               ]),
             ),
             RadioListTile<String>(
               value: 'xml',
               groupValue: selected,
               onChanged: (v) => setState(() => selected = v!),
-              title: Row(children: [
-                const Icon(Icons.code, color: Colors.blue, size: 20),
-                const SizedBox(width: 10),
-                const Text('XML'),
+              title: const Row(children: [
+                Icon(Icons.code, color: Colors.blue, size: 20),
+                SizedBox(width: 10),
+                Text('XML'),
               ]),
             ),
           ],
@@ -319,10 +319,12 @@ Future<void> _showExportDialog(BuildContext context, WidgetRef ref) async {
 String _parseApiError(dynamic e) {
   if (e is DioException && e.response?.data != null) {
     final data = e.response!.data;
-    if (data is Map && data.containsKey('message'))
+    if (data is Map && data.containsKey('message')) {
       return data['message'].toString();
-    if (data is String && !data.contains('<html') && data.length < 150)
+    }
+    if (data is String && !data.contains('<html') && data.length < 150) {
       return data;
+    }
   }
   return "A server error occurred. Please check your inputs.";
 }
@@ -777,10 +779,11 @@ class _ProductListContent extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text("Error: ${_parseApiError(e)}")),
         data: (products) {
-          if (products.isEmpty)
+          if (products.isEmpty) {
             return const Center(
                 child: Text("No products found.",
                     style: TextStyle(color: Colors.grey, fontSize: 18)));
+          }
 
           final effectiveSelected =
               selectedIds.intersection(products.map((p) => p.id).toSet());
@@ -1908,7 +1911,9 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                   ),
                   onPressed: () async {
                     if (_newCommentCtrl.text.trim().isEmpty ||
-                        companyId == null) return;
+                        companyId == null) {
+                      return;
+                    }
 
                     try {
                       final commentText = _newCommentCtrl.text.trim();
@@ -1932,9 +1937,10 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                           .sync(companyId)
                           .catchError((Object _) => <String>[]));
                     } catch (e) {
-                      if (mounted)
+                      if (mounted) {
                         showAppSnackbar(context, ref, _parseApiError(e),
                             isError: true);
+                      }
                     }
                   })
             ],
@@ -1950,11 +1956,12 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                     child: Text("Error: ${_parseApiError(e)}",
                         style: const TextStyle(color: Colors.red))),
                 data: (comments) {
-                  if (comments.isEmpty)
+                  if (comments.isEmpty) {
                     return Center(
                         child: Text("No comments added yet.",
                             style:
                                 TextStyle(color: theme.hintColor, fontSize: 16)));
+                  }
 
                   return Container(
                     decoration: BoxDecoration(
@@ -1993,9 +2000,10 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                                     .sync(companyId)
                                     .catchError((Object _) => <String>[]));
                               } catch (e) {
-                                if (mounted)
+                                if (mounted) {
                                   showAppSnackbar(context, ref, _parseApiError(e),
                                       isError: true);
+                                }
                               }
                             },
                           ),

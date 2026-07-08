@@ -17,10 +17,12 @@ final allCurrenciesProvider =
 String _parseApiError(dynamic e) {
   if (e is DioException && e.response?.data != null) {
     final data = e.response!.data;
-    if (data is Map && data.containsKey('message'))
+    if (data is Map && data.containsKey('message')) {
       return data['message'].toString();
-    if (data is String && !data.contains('<html') && data.length < 150)
+    }
+    if (data is String && !data.contains('<html') && data.length < 150) {
       return data;
+    }
   }
   return "A server error occurred. Please check your inputs.";
 }
@@ -57,11 +59,13 @@ class CurrenciesScreen extends ConsumerWidget {
       await dio
           .delete('/Currencies/Delete', queryParameters: {'id': currency.id});
       ref.invalidate(allCurrenciesProvider);
-      if (context.mounted)
+      if (context.mounted) {
         showAppSnackbar(context, ref, "Currency deleted");
+      }
     } catch (e) {
-      if (context.mounted)
+      if (context.mounted) {
         showAppSnackbar(context, ref, _parseApiError(e), isError: true);
+      }
     }
   }
 

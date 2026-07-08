@@ -151,10 +151,12 @@ class _SecurityKeysTab extends ConsumerWidget {
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text("Error loading security rules: $e")),
       data: (keys) {
-        if (company == null)
+        if (company == null) {
           return const Center(child: Text("No company selected."));
-        if (keys.isEmpty)
+        }
+        if (keys.isEmpty) {
           return const Center(child: Text("No security rules found."));
+        }
 
         final groupedKeys = {
           'General': <SecurityKeyModel>[],
@@ -385,8 +387,9 @@ class _UsersListTab extends ConsumerWidget {
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text("Error loading users: $e")),
       data: (users) {
-        if (company == null)
+        if (company == null) {
           return const Center(child: Text("No company selected."));
+        }
         final int companyId = company.id;
 
         if (users.isEmpty) {
@@ -639,12 +642,13 @@ class _EnableToggleState extends ConsumerState<_EnableToggle> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loading)
+    if (_loading) {
       return const SizedBox(
         width: 24,
         height: 24,
         child: CircularProgressIndicator(strokeWidth: 2),
       );
+    }
     return Switch(
       value: widget.user.isEnabled,
       onChanged: (_) => _toggle(),

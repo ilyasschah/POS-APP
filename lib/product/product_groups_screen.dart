@@ -44,7 +44,9 @@ List<_TreeNode> _buildTree(List<ProductGroup> flat) {
   }
   void sort(List<_TreeNode> nodes) {
     nodes.sort((a, b) => a.group.rank.compareTo(b.group.rank));
-    for (final n in nodes) sort(n.children);
+    for (final n in nodes) {
+      sort(n.children);
+    }
   }
   sort(roots);
   return roots;
@@ -347,7 +349,7 @@ class _WideLayout extends StatelessWidget {
                       : null,
                   onSaved: onSaved,
                 )
-              : _SelectionPlaceholder(
+              : const _SelectionPlaceholder(
                   message: "Select a group to edit, or create a new one."),
         ),
       ],
@@ -1047,7 +1049,7 @@ class _DetailsTab extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Name
-            _SectionLabel("Group Name"),
+            const _SectionLabel("Group Name"),
             const SizedBox(height: 8),
             TextFormField(
               controller: nameCtrl,
@@ -1058,7 +1060,7 @@ class _DetailsTab extends StatelessWidget {
             const SizedBox(height: 20),
 
             // Parent
-            _SectionLabel("Parent Folder"),
+            const _SectionLabel("Parent Folder"),
             const SizedBox(height: 8),
             allGroupsAsync.when(
               loading: () => const LinearProgressIndicator(),
@@ -1085,7 +1087,7 @@ class _DetailsTab extends StatelessWidget {
             const SizedBox(height: 20),
 
             // Rank
-            _SectionLabel("Display Rank"),
+            const _SectionLabel("Display Rank"),
             const SizedBox(height: 8),
             TextFormField(
               controller: rankCtrl,
@@ -1095,7 +1097,7 @@ class _DetailsTab extends StatelessWidget {
             const SizedBox(height: 20),
 
             // Image
-            _SectionLabel("Folder Image"),
+            const _SectionLabel("Folder Image"),
             const SizedBox(height: 12),
             Row(children: [
               Container(
@@ -1144,7 +1146,7 @@ class _DetailsTab extends StatelessWidget {
             const SizedBox(height: 20),
 
             // Color palette
-            _SectionLabel("Folder Color"),
+            const _SectionLabel("Folder Color"),
             const SizedBox(height: 12),
             Wrap(
               spacing: 10,

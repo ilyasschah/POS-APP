@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:drift/drift.dart' show Value;
+import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:uuid/uuid.dart';
@@ -230,72 +230,81 @@ class CartNotifier extends Notifier<CartState> {
   }
 
   static final Map<int, int> _highestSeenSequence = {};
+  /// Reseeds [dailyOrderNumberProvider] from the LOCAL Drift DB — offline-first,
+  /// no network — so the per-day order-name counter keeps working with no
+  /// connection and re-derives correctly after an app restart (the local DB
+  /// persists). "Today" is bucketed on the DEVICE's LOCAL day, not UTC, so orders
+  /// placed near local midnight aren't mis-grouped in non-UTC venues.
   Future<void> syncOrderNumber(int companyId) async {
     try {
-      final client = ApiClient();
-      final results = await Future.wait([
-        client.getAllPosOrders(companyId).catchError((_) => <dynamic>[]),
-        client.getAllDocuments(companyId).catchError((_) => <dynamic>[]),
-      ]);
+      final db = ref.read(appDatabaseProvider);
 
-      final todayUtc = DateTime.now().toUtc();
+      // Local business-day window. Drift stores DateTime as an absolute epoch, so
+      // comparing the stored (UTC) instant against LOCAL-midnight boundaries
+      // selects exactly the local calendar day.
+      final now = DateTime.now();
+      final dayStart = DateTime(now.year, now.month, now.day);
+      final dayEnd = dayStart.add(const Duration(days: 1));
+
+      // POS names are '{prefix} #{NNN}'. Match ONLY the '#' delimiter so foreign
+      // schemes ('PUR-1052', timestamp fallbacks 'DOC-1750…') can't poison the
+      // counter and wreck the next order number.
+      int seqOf(String? raw) {
+        if (raw == null || raw.isEmpty) return 0;
+        final m = RegExp(r'#\s*(\d+)$').firstMatch(raw);
+        return m == null ? 0 : (int.tryParse(m.group(1)!) ?? 0);
+      }
+
       int absoluteMax = 0;
 
-      // POS sequence numbers are always '{prefix} #{NNN}'. Match ONLY the '#'
-      // delimiter — never a bare '-' — so foreign document numbering schemes
-      // (purchases like 'PUR-1052', timestamp fallbacks 'DOC-1750…') can't
-      // poison the counter and wreck the next order number.
-      for (final o in results[0]) {
-        final raw = (o['number'] ?? o['Number'] ?? '') as String;
-        final match = RegExp(r'#\s*(\d+)$').firstMatch(raw);
-        if (match != null) {
-          final parsed = int.tryParse(match.group(1)!);
-          if (parsed != null && parsed > absoluteMax) absoluteMax = parsed;
-        }
+      // Open orders (active table sessions) currently holding a '#NNN' name.
+      final openOrders = await (db.select(db.posOrdersTable)
+            ..where((t) => t.companyId.equals(companyId))
+            ..where((t) => t.status.equals(0)))
+          .get();
+      for (final o in openOrders) {
+        final s = seqOf(o.orderName);
+        if (s > absoluteMax) absoluteMax = s;
       }
 
-      for (final d in results[1]) {
-        final rawDate =
-            (d['dateCreated'] ??
-                    d['DateCreated'] ??
-                    d['date'] ??
-                    d['Date'] ??
-                    '')
-                as String;
-        if (rawDate.isNotEmpty) {
-          final created = DateTime.tryParse(rawDate)?.toUtc();
-          if (created != null) {
-            if (created.year != todayUtc.year ||
-                created.month != todayUtc.month ||
-                created.day != todayUtc.day)
-              continue;
-          }
-        }
-
-        final raw = (d['orderNumber'] ?? d['OrderNumber'] ?? '') as String;
-        if (raw.isEmpty) continue;
-        final match = RegExp(r'#\s*(\d+)$').firstMatch(raw);
-        if (match != null) {
-          final parsed = int.tryParse(match.group(1)!);
-          if (parsed != null && parsed > absoluteMax) absoluteMax = parsed;
-        }
+      // Today's completed documents (local day).
+      final todaysDocs = await (db.select(db.documentsTable)
+            ..where((t) => t.companyId.equals(companyId))
+            ..where((t) => t.date.isBiggerOrEqualValue(dayStart))
+            ..where((t) => t.date.isSmallerThanValue(dayEnd)))
+          .get();
+      for (final d in todaysDocs) {
+        final s = seqOf(d.orderNumber);
+        if (s > absoluteMax) absoluteMax = s;
       }
+
+      // High-water guard (per company, per session): never hand back a number
+      // lower than one already issued this session, even if a row is mid-write.
       final currentHighWater = _highestSeenSequence[companyId] ?? 0;
       if (absoluteMax > currentHighWater) {
         _highestSeenSequence[companyId] = absoluteMax;
       }
-      final nextNumber = _highestSeenSequence[companyId]! + 1;
+      final nextNumber = (_highestSeenSequence[companyId] ?? 0) + 1;
 
       ref.read(dailyOrderNumberProvider.notifier).state = nextNumber;
     } catch (_) {}
   }
 
-  void setServiceType(int newType) {
+  /// Sets the service type. By default the order number is re-prefixed to match
+  /// the new type; pass [regenerateOrderName] `false` when a bespoke name was
+  /// already set (e.g. a table assignment that named the order after the space)
+  /// and must be preserved.
+  void setServiceType(int newType, {bool regenerateOrderName = true}) {
     final settings = ref.read(appSettingsProvider);
     final typeEnabled =
         settings[SettingKeys.featureServiceTypeEnabled]?.toLowerCase() ==
         'true';
     if (newType != 0 && !typeEnabled) return;
+
+    if (!regenerateOrderName) {
+      state = state.copyWith(serviceType: newType);
+      return;
+    }
 
     final numMatch = RegExp(r'[#-](\d+)$').firstMatch(state.orderNumber ?? '');
     final num = numMatch?.group(1) ?? '001';
@@ -304,6 +313,10 @@ class CartNotifier extends Notifier<CartState> {
       serviceType: newType,
       orderNumber: '${_getPrefix(newType)} #$num',
     );
+  }
+
+  void setServiceStatus(int newStatus) {
+    state = state.copyWith(serviceStatus: newStatus);
   }
 
   double get subtotal =>
@@ -607,16 +620,16 @@ class CartNotifier extends Notifier<CartState> {
         );
       } catch (_) {}
     }
-    final _existingNum = RegExp(
+    final existingNum = RegExp(
       r'[#-](\d+)$',
     ).firstMatch(state.orderNumber ?? '')?.group(1);
-    final _newOrderNumber = _existingNum != null
-        ? '${_getPrefix(newServiceType)} #$_existingNum'
+    final newOrderNumber = existingNum != null
+        ? '${_getPrefix(newServiceType)} #$existingNum'
         : '${_getPrefix(newServiceType)} #${ref.read(dailyOrderNumberProvider).toString().padLeft(3, '0')}';
     state = CartState(
       activePosOrderId: state.activePosOrderId,
       items: state.items,
-      orderNumber: _newOrderNumber,
+      orderNumber: newOrderNumber,
       isLoading: state.isLoading,
       selectedCustomer: state.selectedCustomer,
       selectedCustomerDiscount: state.selectedCustomerDiscount,
@@ -918,12 +931,12 @@ class CartNotifier extends Notifier<CartState> {
           order['floorPlanTableId'] ?? order['FloorPlanTableId'];
 
       final List<CartItem> loadedItems = [];
-      for (int _li = 0; _li < itemsData.length; _li++) {
-        final item = itemsData[_li];
+      for (int li = 0; li < itemsData.length; li++) {
+        final item = itemsData[li];
         final serverId = (item['id'] ?? item['Id']) as int?;
         final cartItemId = (serverId != null && serverId > 0)
             ? serverId.toString()
-            : '${item['productId'] ?? item['ProductId']}_$_li';
+            : '${item['productId'] ?? item['ProductId']}_$li';
         loadedItems.add(
           CartItem(
             cartItemId: cartItemId,
@@ -1304,12 +1317,12 @@ class CartNotifier extends Notifier<CartState> {
           order['floorPlanTableId'] ?? order['FloorPlanTableId'];
 
       final List<CartItem> loadedItems = [];
-      for (int _li = 0; _li < itemsData.length; _li++) {
-        final item = itemsData[_li];
+      for (int li = 0; li < itemsData.length; li++) {
+        final item = itemsData[li];
         final serverId = (item['id'] ?? item['Id']) as int?;
         final cartItemId = (serverId != null && serverId > 0)
             ? serverId.toString()
-            : '${item['productId'] ?? item['ProductId']}_$_li';
+            : '${item['productId'] ?? item['ProductId']}_$li';
         loadedItems.add(
           CartItem(
             cartItemId: cartItemId,
@@ -1390,13 +1403,13 @@ class CartNotifier extends Notifier<CartState> {
 
       final activeTableId =
           state.floorPlanTableId ?? ref.read(floorPlanTableProvider);
-      final _checkoutOrderNum = ref
+      final checkoutOrderNum = ref
           .read(dailyOrderNumberProvider)
           .toString()
           .padLeft(3, '0');
       String orderNumber =
           state.orderNumber ??
-          '${_getPrefix(state.serviceType)} #$_checkoutOrderNum';
+          '${_getPrefix(state.serviceType)} #$checkoutOrderNum';
       if (state.orderNumber == null && activeTableId != null) {
         final tables = ref.read(tablesByFloorPlanProvider).value ?? const [];
         final table = tables.where((t) => t.id == activeTableId).firstOrNull;

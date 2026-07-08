@@ -18,7 +18,11 @@ import 'package:pos_app/settings/settings_screen.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:pos_app/auth/user_info_screen.dart';
 import 'package:pos_app/auth/auth_provider.dart';
+import 'package:pos_app/auth/auth_storage.dart';
 import 'package:pos_app/auth/login_screen.dart';
+import 'package:pos_app/auth/master_login_screen.dart';
+import 'package:pos_app/sync/account_status_provider.dart';
+import 'package:pos_app/database/backup_scheduler.dart';
 import 'package:pos_app/cash/cash_movement_screen.dart';
 import 'package:pos_app/time_clock/time_clock_screen.dart';
 import 'package:pos_app/reports/sales_history_screen.dart';
@@ -101,8 +105,20 @@ class MainLayout extends ConsumerStatefulWidget {
   ConsumerState<MainLayout> createState() => _MainLayoutState();
 }
 
-class _MainLayoutState extends ConsumerState<MainLayout> {
+class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  // Guards the window-close hook against re-entry (double-clicking the close
+  // button) so the on-close backup + destroy only run once.
+  bool _closing = false;
+
+  // window_manager only exists on desktop; the on-close backup hook is a no-op
+  // on Android/iOS (mirrors the guard in main()).
+  bool get _isDesktop =>
+      !kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.windows ||
+          defaultTargetPlatform == TargetPlatform.macOS ||
+          defaultTargetPlatform == TargetPlatform.linux);
 
   // The POS sidebar is a true overlay drawer: hidden by default, slid in over
   // the content by the top-left hamburger, and dismissed the instant a cashier
@@ -136,6 +152,37 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
         );
       }
     });
+
+    // Desktop only: intercept the window close button so an on-close DB backup
+    // (Database.Backup.OnClose) can finish before the app exits. Prevention is
+    // scoped to the post-login shell — released in dispose — so the login /
+    // master-login screens still close normally.
+    if (_isDesktop) {
+      windowManager.addListener(this);
+      windowManager.setPreventClose(true);
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_isDesktop) {
+      windowManager.removeListener(this);
+      // Release the interception so screens after logout close normally.
+      windowManager.setPreventClose(false);
+    }
+    super.dispose();
+  }
+
+  @override
+  void onWindowClose() async {
+    if (_closing) return;
+    _closing = true;
+    // Best-effort: runCloseBackup + _runBackup swallow errors internally, but
+    // guard anyway so destroy() always runs and the window can never get stuck.
+    try {
+      await ref.read(backupSchedulerProvider.notifier).runCloseBackup();
+    } catch (_) {}
+    await windowManager.destroy();
   }
 
   @override
@@ -156,6 +203,25 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
     // live even while the cashier is on the POS menu. Kept alive for the
     // session like the watchers above.
     ref.watch(kitchenStatusWatcherProvider);
+
+    // Automatic DB backups (on-start + interval), driven by the Database backup
+    // settings. Kept alive for the session like the watchers above.
+    ref.watch(backupSchedulerProvider);
+
+    // Deleted-account guard: when a sync definitively reports this terminal's
+    // company/tenant no longer exists (deleted in the admin portal), unlink the
+    // device and return to the master login. Fires only on a real server "gone"
+    // signal (see SyncNotifier) — never on an offline/transient error.
+    ref.listen<bool>(accountRevokedProvider, (prev, next) async {
+      if (next != true) return;
+      ref.read(accountRevokedProvider.notifier).reset();
+      await ref.read(authStorageProvider).unlinkDevice();
+      if (!context.mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const MasterLoginScreen()),
+        (_) => false,
+      );
+    });
 
     // LAN listener: paired Kitchen Displays POST here when an order is marked
     // ready, flipping its local serviceStatus → drives the same badge offline.

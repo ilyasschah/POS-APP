@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/menu/open_orders_screen.dart';
 import 'package:pos_app/navigation/main_layout.dart';
 import 'package:pos_app/product/product_provider.dart';
@@ -109,10 +110,10 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
         final theme = Theme.of(ctx);
         return AlertDialog(
           title: Row(
-            children: const [
-              Icon(Icons.star, color: Colors.amber),
-              SizedBox(width: 8),
-              Text('Active Promotions'),
+            children: [
+              Icon(Icons.star, color: ctx.warningColor),
+              const SizedBox(width: 8),
+              const Text('Active Promotions'),
             ],
           ),
           content: SizedBox(
@@ -160,7 +161,20 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final cartState = ref.watch(cartProvider);
+    // Narrow the cart dependency: this header shell only re-renders when a field
+    // it actually shows changes (service type/status, the selected line, the
+    // empty-state, the active order) — NOT on every item add / quantity / discount
+    // edit, which the CartSection owns. cartState is read (not watched) so the
+    // render conditions below stay fresh via that rebuild; the tap handlers read
+    // the live cart via ref.read so they never act on stale state.
+    ref.watch(cartProvider.select((c) => (
+          c.serviceType,
+          c.serviceStatus,
+          c.selectedCartItemId,
+          c.items.isEmpty,
+          c.activePosOrderId,
+        )));
+    final cartState = ref.read(cartProvider);
     final currentCustomer = ref.watch(currentCustomerProvider);
     final asyncCustomers = ref.watch(allCustomersProvider);
     final settings = ref.watch(appSettingsProvider);
@@ -450,6 +464,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                               'true';
 
                           if (cart.floorPlanTableId == null && floorPlanOn) {
+                            if (!context.mounted) return;
                             final selectedSpace =
                                 await showDialog<FloorPlanTable>(
                                   context: context,
@@ -490,9 +505,9 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                                   tableId: selectedSpace.id,
                                   orderNumber: newOrderNumber,
                                 );
-                            ref.read(cartProvider.notifier).state = ref
-                                .read(cartProvider)
-                                .copyWith(serviceType: 0);
+                            ref
+                                .read(cartProvider.notifier)
+                                .setServiceType(0, regenerateOrderName: false);
                           } else {
                             ref.read(cartProvider.notifier).setServiceType(val);
                           }
@@ -589,8 +604,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                           },
                         ).then((val) {
                           if (val != null) {
-                            ref.read(cartProvider.notifier).state = cartState
-                                .copyWith(serviceStatus: val);
+                            ref.read(cartProvider.notifier).setServiceStatus(val);
                           }
                         });
                       },
@@ -619,11 +633,11 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                       onTap: cartState.selectedCartItemId == null
                           ? null
                           : () async {
-                              final item = cartState.items
+                              final cart = ref.read(cartProvider);
+                              final item = cart.items
                                   .where(
                                     (i) =>
-                                        i.cartItemId ==
-                                        cartState.selectedCartItemId,
+                                        i.cartItemId == cart.selectedCartItemId,
                                   )
                                   .firstOrNull;
                               if (item == null) {
@@ -664,8 +678,8 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                         context,
                         SecurityKeys.taxOverride,
                         () {
-                          final selectedCartItemId =
-                              cartState.selectedCartItemId;
+                          final cart = ref.read(cartProvider);
+                          final selectedCartItemId = cart.selectedCartItemId;
                           if (selectedCartItemId == null) {
                             showAppSnackbar(
                               context,
@@ -675,7 +689,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                             );
                             return;
                           }
-                          final item = cartState.items
+                          final item = cart.items
                               .where((i) => i.cartItemId == selectedCartItemId)
                               .firstOrNull;
                           if (item == null) {
@@ -707,8 +721,9 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                                   SecurityKeys.orderTransfer,
                                   () => showDialog(
                                     context: context,
-                                    builder: (_) =>
-                                        _TransferDialog(cartState: cartState),
+                                    builder: (_) => _TransferDialog(
+                                      cartState: ref.read(cartProvider),
+                                    ),
                                   ),
                                 ),
                     ),
@@ -740,9 +755,10 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                                   appSettingsProvider,
                                 );
                                 final cashier = ref.read(currentUserProvider);
-                                final cartItems = ref.read(cartProvider).items;
+                                final cart = ref.read(cartProvider);
+                                final cartItems = cart.items;
                                 final serviceLabel =
-                                    switch (cartState.serviceType) {
+                                    switch (cart.serviceType) {
                                       0 => 'Dine In',
                                       1 => 'Takeaway',
                                       _ => 'Order',
@@ -754,7 +770,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                                 await ReceiptPrinterService()
                                     .printKitchenTicket(
                                       orderNumber:
-                                          cartState.orderNumber ?? 'WALK-IN',
+                                          cart.orderNumber ?? 'WALK-IN',
                                       cashierName:
                                           cashier?.displayName ?? 'Unknown',
                                       serviceType: serviceLabel,
@@ -898,7 +914,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
             _MenuHeaderActionBtn(
               icon: Icons.star,
               label: 'Promos',
-              iconColor: Colors.amber,
+              iconColor: context.warningColor,
               badgeCount: _activePromos.length,
               onTap: () => _showActivePromosPopup(context),
             ),
@@ -1109,6 +1125,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
 
     // Age restriction check
     if (match.ageRestriction != null) {
+      if (!mounted) return;
       final confirmed = await _showAgeRestrictionDialog(
         context,
         match.ageRestriction!,
@@ -1385,14 +1402,17 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
     final selectedCompany = ref.watch(selectedCompanyProvider);
     final settings = ref.watch(appSettingsProvider);
 
-    if (selectedCompany == null)
+    if (selectedCompany == null) {
       return const Center(
         child: Text("No company selected. Open the menu and pick a company."),
       );
-    if (asyncGroups.isLoading || asyncProducts.isLoading)
+    }
+    if (asyncGroups.isLoading || asyncProducts.isLoading) {
       return const Center(child: CircularProgressIndicator());
-    if (asyncGroups.hasError || asyncProducts.hasError)
+    }
+    if (asyncGroups.hasError || asyncProducts.hasError) {
       return const Center(child: Text("Error loading data"));
+    }
 
     final allGroups = asyncGroups.value ?? [];
     final allProducts = asyncProducts.value ?? [];
@@ -1812,6 +1832,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
         }
 
         if (product.ageRestriction != null) {
+          if (!context.mounted) return;
           final confirmed = await _showAgeRestrictionDialog(
             context,
             product.ageRestriction!,
@@ -1821,6 +1842,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
 
         double quantity = 1.0;
         if (!product.isUsingDefaultQuantity) {
+          if (!context.mounted) return;
           final qty = await _showQuantityInputDialog(
             context,
             product.measurementUnit,
@@ -1843,6 +1865,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
                   )[SettingKeys.preventSaleBelowCostPrice]
                   ?.toLowerCase() ==
               'true';
+          if (!context.mounted) return;
           final p = await _showPriceInputDialog(
             context,
             product.price,
@@ -2230,10 +2253,11 @@ class _CartSectionState extends ConsumerState<CartSection> {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        icon: const CircleAvatar(
+        icon: CircleAvatar(
           radius: 32,
-          backgroundColor: Colors.grey,
-          child: Icon(Icons.question_mark, size: 32, color: Colors.white),
+          backgroundColor: Theme.of(ctx).colorScheme.surfaceContainerHighest,
+          child: Icon(Icons.question_mark,
+              size: 32, color: Theme.of(ctx).colorScheme.onSurfaceVariant),
         ),
         title: const Text('Void order'),
         content: const Text('Are you sure you want to void this order?'),
@@ -2370,14 +2394,15 @@ class _CartSectionState extends ConsumerState<CartSection> {
           settings[SettingKeys.featureFloorPlanEnabled]?.toLowerCase() ==
           'true';
       int? navIndex;
-      if (wasBookingOrder && bookingEnabled)
+      if (wasBookingOrder && bookingEnabled) {
         navIndex = 2;
-      else if (wasTableOrder && floorPlanEnabled)
+      } else if (wasTableOrder && floorPlanEnabled) {
         navIndex = 4;
-      else if (bookingEnabled)
+      } else if (bookingEnabled) {
         navIndex = 2;
-      else if (floorPlanEnabled)
+      } else if (floorPlanEnabled) {
         navIndex = 4;
+      }
 
       if (navIndex != null && context.mounted) {
         Navigator.pushAndRemoveUntil(
@@ -2745,9 +2770,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
                                 IconButton(
                                   icon: Icon(
                                     Icons.close,
-                                    color: isDark
-                                        ? Colors.redAccent
-                                        : Colors.red,
+                                    color: context.dangerColor,
                                     size: 20,
                                   ),
                                   visualDensity: VisualDensity.compact,
@@ -2795,13 +2818,13 @@ class _CartSectionState extends ConsumerState<CartSection> {
                                       badge(
                                         Icons.receipt_long,
                                         'TAX',
-                                        Colors.blue,
+                                        context.infoColor,
                                       ),
                                     if (item.discount > 0)
                                       badge(
                                         Icons.sell,
                                         "-${item.discountType == 0 ? item.discount.toInt() : item.discount.toStringAsFixed(1)}",
-                                        Colors.green,
+                                        context.successColor,
                                       ),
                                     if (item.promotionalDiscount > 0)
                                       const Text(
@@ -2916,7 +2939,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
                                           fontSize: 15,
                                           fontWeight: FontWeight.bold,
                                           color: hasDiscount
-                                              ? Colors.green
+                                              ? context.successColor
                                               : null,
                                         ),
                                       ),
@@ -2963,16 +2986,16 @@ class _CartSectionState extends ConsumerState<CartSection> {
                 Padding(
                   padding: const EdgeInsets.only(top: 6),
                   child: _totalsRow(
-                    const Text(
+                    Text(
                       "Item Discounts",
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 16, color: Colors.green),
+                      style: TextStyle(fontSize: 16, color: context.successColor),
                     ),
                     value: Text(
                       "-${discountTotal.toStringAsFixed(2)} $sym",
                       textAlign: TextAlign.right,
-                      style: const TextStyle(fontSize: 16, color: Colors.green),
+                      style: TextStyle(fontSize: 16, color: context.successColor),
                     ),
                   ),
                 ),
@@ -2983,16 +3006,16 @@ class _CartSectionState extends ConsumerState<CartSection> {
                   child: _totalsRow(
                     // The deducted amount is shown on the right, so the label
                     // stays plain (no parenthetical value).
-                    const Text(
+                    Text(
                       "Customer Discount",
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 16, color: Colors.green),
+                      style: TextStyle(fontSize: 16, color: context.successColor),
                     ),
                     value: Text(
                       "-${cartNotifier.customerDiscountAmount.toStringAsFixed(2)} $sym",
                       textAlign: TextAlign.right,
-                      style: const TextStyle(fontSize: 16, color: Colors.green),
+                      style: TextStyle(fontSize: 16, color: context.successColor),
                     ),
                   ),
                 ),
@@ -3000,16 +3023,16 @@ class _CartSectionState extends ConsumerState<CartSection> {
                 Padding(
                   padding: const EdgeInsets.only(top: 6),
                   child: _totalsRow(
-                    const Text(
+                    Text(
                       "Cart Discount",
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 16, color: Colors.green),
+                      style: TextStyle(fontSize: 16, color: context.successColor),
                     ),
                     value: Text(
                       "-${cartNotifier.manualCartDiscountAmount.toStringAsFixed(2)} $sym",
                       textAlign: TextAlign.right,
-                      style: const TextStyle(fontSize: 16, color: Colors.green),
+                      style: TextStyle(fontSize: 16, color: context.successColor),
                     ),
                   ),
                 ),
@@ -3017,16 +3040,16 @@ class _CartSectionState extends ConsumerState<CartSection> {
                 Padding(
                   padding: const EdgeInsets.only(top: 6),
                   child: _totalsRow(
-                    const Text(
+                    Text(
                       "Total Promotional Discount",
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 16, color: Colors.amber),
+                      style: TextStyle(fontSize: 16, color: context.warningColor),
                     ),
                     value: Text(
                       "-${cartNotifier.promotionalDiscountTotal.toStringAsFixed(2)} $sym",
                       textAlign: TextAlign.right,
-                      style: const TextStyle(fontSize: 16, color: Colors.amber),
+                      style: TextStyle(fontSize: 16, color: context.warningColor),
                     ),
                   ),
                 ),
@@ -3070,7 +3093,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.greenAccent[400] : Colors.green,
+                    color: context.successColor,
                   ),
                 ),
                 valueFlexible: true,
@@ -3084,7 +3107,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.greenAccent[400] : Colors.green,
+                      color: context.successColor,
                     ),
                   ),
                 ),
@@ -3105,9 +3128,9 @@ class _CartSectionState extends ConsumerState<CartSection> {
                   ],
                 ),
               const SizedBox(height: 16),
-              // Flat, touch-sized split: VOID (red) + PAY (green). Colours stay
-              // hard-coded; everything else matches the app's flat style — no
-              // shadow, consistent rounding + height.
+              // Flat, touch-sized split: VOID (danger) + PAY (success), via the
+              // theme-aware StatusColors tokens; everything else matches the app's
+              // flat style — no shadow, consistent rounding + height.
               Row(
                 children: [
                   Expanded(
@@ -3115,7 +3138,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
                     child: _CartFooterButton(
                       icon: Icons.block,
                       label: 'VOID',
-                      color: Colors.redAccent,
+                      color: context.dangerColor,
                       onTap: cartState.activePosOrderId == null
                           ? null
                           : () => ref
@@ -3138,7 +3161,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
                     child: _CartFooterButton(
                       icon: Icons.payments,
                       label: 'PAY',
-                      color: Colors.green,
+                      color: context.successColor,
                       onTap: cartItems.isEmpty
                           ? null
                           : () {
@@ -3501,7 +3524,7 @@ Future<bool> _showAgeRestrictionDialog(BuildContext context, int minAge) async {
     builder: (ctx) => AlertDialog(
       title: Row(
         children: [
-          Icon(Icons.warning_amber_rounded, color: Colors.orange[700]),
+          Icon(Icons.warning_amber_rounded, color: ctx.warningColor),
           const SizedBox(width: 8),
           const Text('Age Restriction'),
         ],
@@ -3631,8 +3654,9 @@ class _ItemTaxDialogState extends ConsumerState<_ItemTaxDialog> {
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => Text("Error: $e"),
           data: (taxes) {
-            if (taxes.isEmpty)
+            if (taxes.isEmpty) {
               return const Text("No taxes available in system.");
+            }
             return ListView.builder(
               shrinkWrap: true,
               itemCount: taxes.length,

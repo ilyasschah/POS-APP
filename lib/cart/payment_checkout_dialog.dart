@@ -9,6 +9,7 @@ import 'package:pos_app/app_settings/app_settings_provider.dart';
 import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/auth/login_screen.dart';
 import 'package:pos_app/cart/cart_provider.dart';
+import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/cart/checkout_models.dart';
 import 'package:pos_app/cart/payment_type_model.dart';
 import 'package:pos_app/cart/payment_type_provider.dart';
@@ -259,7 +260,7 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
           await showDialog<void>(
             context: ctx,
             builder: (c) => AlertDialog(
-              icon: const Icon(Icons.block, color: Colors.red, size: 36),
+              icon: Icon(Icons.block, color: context.dangerColor, size: 36),
               title: const Text('Transaction Blocked'),
               content: const Text(
                 'Credit payment requires a selected customer.\n\n'
@@ -294,6 +295,12 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
       // No Dio. No network. The order + items go straight into local SQLite
       // as `syncStatus: 'pending'`. Phase 5's BatchSync push reconciles with
       // the server when connectivity returns.
+      //
+      // INVARIANT: the order / document / payment / discount rows below are all
+      // written as `'pending'` — NOT `'pending_create'`. They are created
+      // server-side by the BatchSync push, so pushPendingDocuments /
+      // pushPendingPayments deliberately skip them; writing `'pending_create'`
+      // here would double-create them. See `lib/sync/sync_status.dart`.
       final cartState = ref.read(cartProvider);
       final cartNotifier = ref.read(cartProvider.notifier);
       final db = ref.read(appDatabaseProvider);
@@ -616,6 +623,7 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
           .printCartReceipt(
             company: company,
             cashier: user,
+            customer: ref.read(cartProvider).selectedCustomer,
             orderNumber: orderNum ?? 'WALK-IN',
             printTime: DateTime.now(),
             items: _cartItems,
@@ -643,9 +651,9 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
           context: ctx,
           barrierDismissible: false,
           builder: (c) => AlertDialog(
-            icon: const Icon(
+            icon: Icon(
               Icons.check_circle_outline,
-              color: Colors.green,
+              color: context.successColor,
               size: 36,
             ),
             title: const Text('Transaction Successful'),
@@ -668,7 +676,12 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
       if (!mounted) return;
 
       // ── Close checkout dialog ─────────────────────────────────────
-      Navigator.pop(ctx);
+      // Capture the navigator BEFORE popping. Once the dialog closes, `ctx` is
+      // being torn down, so reusing it for the post-checkout navigation below
+      // (multi-user auto-logout) risks a "deactivated widget's ancestor" throw.
+      // The NavigatorState itself outlives the dialog route, so it's safe to hold.
+      final navigator = Navigator.of(ctx);
+      navigator.pop();
 
       // ── Background sync — create Document + Payment on server immediately ─
       // Fire-and-forget: the local order row is already saved as 'pending'.
@@ -692,8 +705,7 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
       if (!singleUser && mounted) {
         ref.invalidate(currentUserProvider);
         ref.read(cartProvider.notifier).clearCart();
-        Navigator.pushAndRemoveUntil(
-          ctx,
+        navigator.pushAndRemoveUntil(
           MaterialPageRoute(builder: (_) => const LoginScreen()),
           (r) => false,
         );
@@ -705,7 +717,7 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
       // of the post-checkout black screen.
       final nextIndex = resolveDefaultScreenIndex(appSettings);
 
-      // The checkout dialog was already closed above (Navigator.pop(ctx)).
+      // The checkout dialog was already closed above (navigator.pop()).
       // Just swap the underlying MainLayout tab reactively — no extra pop (a
       // second pop would remove MainLayout itself → black screen) and no
       // MainLayout rebuild, so the startup cash-in hook never re-fires.
@@ -1035,7 +1047,7 @@ class _OrderSummaryColumn extends ConsumerWidget {
                           detail(
                             'Item discount',
                             '- $sym ${(item.discount * item.quantity).toStringAsFixed(2)}',
-                            color: Colors.green,
+                            color: context.successColor,
                           ),
                         if (item.promotionalDiscount > 0)
                           detail(
@@ -1043,7 +1055,7 @@ class _OrderSummaryColumn extends ConsumerWidget {
                                 ? (promoNames[item.promotionId] ?? 'Promotion')
                                 : 'Promotion',
                             '- $sym ${(item.promotionalDiscount * item.quantity).toStringAsFixed(2)}',
-                            color: Colors.green,
+                            color: context.successColor,
                           ),
                         // ── Per-item taxes (informational when tax-included) ──
                         ...item.appliedTaxes.map((t) {
@@ -1083,10 +1095,10 @@ class _OrderSummaryColumn extends ConsumerWidget {
                   if (customerDiscount > 0)
                     _SummaryRow(
                         'Customer discount', -customerDiscount, sym, theme,
-                        color: Colors.green),
+                        color: context.successColor),
                   if (cartDiscount > 0)
                     _SummaryRow('Cart discount', -cartDiscount, sym, theme,
-                        color: Colors.green),
+                        color: context.successColor),
                   if (taxTotal > 0)
                     _SummaryRow('Tax (incl.)', taxTotal, sym, theme,
                         color: muted),
@@ -1095,14 +1107,14 @@ class _OrderSummaryColumn extends ConsumerWidget {
                   _SummaryRow('Subtotal', subtotal, sym, theme),
                   if (itemDiscount > 0)
                     _SummaryRow('Item discounts', -itemDiscount, sym, theme,
-                        color: Colors.green),
+                        color: context.successColor),
                   if (customerDiscount > 0)
                     _SummaryRow(
                         'Customer discount', -customerDiscount, sym, theme,
-                        color: Colors.green),
+                        color: context.successColor),
                   if (cartDiscount > 0)
                     _SummaryRow('Cart discount', -cartDiscount, sym, theme,
-                        color: Colors.green),
+                        color: context.successColor),
                   if (taxTotal > 0) _SummaryRow('Taxes', taxTotal, sym, theme),
                 ],
                 if (pointsDiscount > 0)
@@ -1111,7 +1123,7 @@ class _OrderSummaryColumn extends ConsumerWidget {
                     -pointsDiscount,
                     sym,
                     theme,
-                    color: Colors.green,
+                    color: context.successColor,
                   ),
                 const SizedBox(height: 8),
                 Row(
@@ -1154,6 +1166,8 @@ class _OrderSummaryColumn extends ConsumerWidget {
   }
 }
 
+// Widget-factory function, intentionally PascalCase so call sites read like a widget.
+// ignore: non_constant_identifier_names
 Widget _SummaryRow(
   String label,
   double amount,
@@ -1360,10 +1374,12 @@ class _PaymentTypeButton extends StatelessWidget {
 
   IconData _iconForPayment(String name) {
     final n = name.toLowerCase();
-    if (n.contains('cash') || n.contains('espèce') || n.contains('espece'))
+    if (n.contains('cash') || n.contains('espèce') || n.contains('espece')) {
       return Icons.payments_rounded;
-    if (n.contains('credit') || n.contains('card') || n.contains('carte'))
+    }
+    if (n.contains('credit') || n.contains('card') || n.contains('carte')) {
       return Icons.credit_card;
+    }
     if (n.contains('debit')) return Icons.credit_card_outlined;
     if (n.contains('check') || n.contains('chèque')) return Icons.receipt_long;
     if (n.contains('voucher')) return Icons.confirmation_number;
@@ -1502,7 +1518,7 @@ class _TotalsDisplay extends StatelessWidget {
                       label: 'Remaining',
                       value: '$sym ${remaining.toStringAsFixed(2)}',
                       style: theme.textTheme.headlineSmall?.copyWith(
-                        color: Colors.orange,
+                        color: context.warningColor,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -1512,7 +1528,7 @@ class _TotalsDisplay extends StatelessWidget {
                       value: '$sym ${change.toStringAsFixed(2)}',
                       style: theme.textTheme.headlineSmall?.copyWith(
                         color: change > 0
-                            ? Colors.green
+                            ? context.successColor
                             : theme.colorScheme.onSurface.withAlpha(100),
                         fontWeight: FontWeight.bold,
                       ),
@@ -1747,15 +1763,15 @@ class _CompleteButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Material(
-      color: canPay ? Colors.green : theme.colorScheme.surfaceContainerHighest,
+      color: canPay ? context.successColor : theme.colorScheme.surfaceContainerHighest,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Center(
           child: isProcessing
-              ? const CircularProgressIndicator(
-                  color: Colors.white,
+              ? CircularProgressIndicator(
+                  color: context.onStatusColor,
                   strokeWidth: 3,
                 )
               : Column(
@@ -1765,7 +1781,7 @@ class _CompleteButton extends StatelessWidget {
                       Icons.check_circle_outline,
                       size: 36,
                       color: canPay
-                          ? Colors.white
+                          ? context.onStatusColor
                           : theme.colorScheme.onSurface.withAlpha(80),
                     ),
                     const SizedBox(height: 8),
@@ -1774,7 +1790,7 @@ class _CompleteButton extends StatelessWidget {
                       textAlign: TextAlign.center,
                       style: theme.textTheme.titleMedium?.copyWith(
                         color: canPay
-                            ? Colors.white
+                            ? context.onStatusColor
                             : theme.colorScheme.onSurface.withAlpha(80),
                         fontWeight: FontWeight.bold,
                       ),
@@ -1811,12 +1827,12 @@ class _CustomerDetailCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHigh,
-        border: const Border(left: BorderSide(color: Colors.blue, width: 4)),
+        border: Border(left: BorderSide(color: context.infoColor, width: 4)),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Row(
         children: [
-          const Icon(Icons.person, color: Colors.blue, size: 20),
+          Icon(Icons.person, color: context.infoColor, size: 20),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -1896,14 +1912,14 @@ class _LoyaltyInfoRow extends StatelessWidget {
           color: hasRedeemed
               ? cs.tertiaryContainer.withValues(alpha: 0.35)
               : cs.surfaceContainerHigh,
-          border: const Border(
-            left: BorderSide(color: Colors.amber, width: 3),
+          border: Border(
+            left: BorderSide(color: context.warningColor, width: 3),
           ),
           borderRadius: BorderRadius.circular(4),
         ),
         child: Row(
           children: [
-            const Icon(Icons.loyalty, color: Colors.amber, size: 20),
+            Icon(Icons.loyalty, color: context.warningColor, size: 20),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
@@ -1924,7 +1940,7 @@ class _LoyaltyInfoRow extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       color: hasRedeemed
-                          ? Colors.green
+                          ? context.successColor
                           : cs.onSurface.withValues(alpha: 0.55),
                     ),
                   ),

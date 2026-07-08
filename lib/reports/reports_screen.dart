@@ -844,7 +844,7 @@ class _HomeView extends StatelessWidget {
       leading: Icon(r.icon, size: 18,
           color: active ? cs.primary : cs.onSurfaceVariant),
       title: Text(
-        prefixLabel != null ? prefixLabel : r.label,
+        prefixLabel ?? r.label,
         style: TextStyle(
           fontSize: 14,
           color: active ? cs.primary : cs.onSurface,
@@ -3102,7 +3102,7 @@ Future<Uint8List> _buildVoidedItemsPdf({
 
   final grandTotal = rows.fold(0.0, (s, r) => s + r.total);
 
-  pw.Widget _hdrRow(String label, String value) => pw.RichText(
+  pw.Widget hdrRow(String label, String value) => pw.RichText(
       text: pw.TextSpan(children: [
         pw.TextSpan(text: '$label  ', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9)),
         pw.TextSpan(text: value, style: const pw.TextStyle(fontSize: 9)),
@@ -3130,16 +3130,16 @@ Future<Uint8List> _buildVoidedItemsPdf({
           pw.Expanded(child: pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              _hdrRow('Period:', '${hdrFmt.format(filter.startDate)} - ${hdrFmt.format(filter.endDate)}'),
-              _hdrRow('User:', userLabel),
-              _hdrRow('Product:', productLabel),
+              hdrRow('Period:', '${hdrFmt.format(filter.startDate)} - ${hdrFmt.format(filter.endDate)}'),
+              hdrRow('User:', userLabel),
+              hdrRow('Product:', productLabel),
             ],
           )),
           pw.Expanded(child: pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              _hdrRow('Company:', companyName ?? ''),
-              _hdrRow('Address:', companyAddress ?? ''),
+              hdrRow('Company:', companyName ?? ''),
+              hdrRow('Address:', companyAddress ?? ''),
             ],
           )),
         ],
@@ -3301,11 +3301,11 @@ Future<Uint8List> _buildStartingCashPdf({
             crossAxisAlignment: pw.CrossAxisAlignment.end,
             children: [
               pw.RichText(text: pw.TextSpan(children: [
-                pw.TextSpan(text: 'Cash In:   ', style: pw.TextStyle(fontSize: 9)),
+                const pw.TextSpan(text: 'Cash In:   ', style: pw.TextStyle(fontSize: 9)),
                 pw.TextSpan(text: fmt.format(totalCashIn),  style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
               ])),
               pw.RichText(text: pw.TextSpan(children: [
-                pw.TextSpan(text: 'Cash Out:  ', style: pw.TextStyle(fontSize: 9)),
+                const pw.TextSpan(text: 'Cash Out:  ', style: pw.TextStyle(fontSize: 9)),
                 pw.TextSpan(text: '-${fmt.format(totalCashOut)}', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
               ])),
               pw.RichText(text: pw.TextSpan(children: [
@@ -4902,7 +4902,7 @@ pw.Widget _pdfHeader(
   String productLabel, {
   String customerRowLabel = 'Customer',
 }) {
-  final ts = const pw.TextStyle(fontSize: 9);
+  const ts = pw.TextStyle(fontSize: 9);
   final tb = pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold);
 
   row(String lbl, String val) => pw.Row(children: [
@@ -5386,7 +5386,7 @@ class _FilterPanel extends ConsumerWidget {
             if (reportId != 'transaction_history' &&
                 reportId != 'reorder_list' &&
                 reportId != 'low_stock_warning') ...[
-              _FilterLabel('User'),
+              const _FilterLabel('User'),
               const Gap(4),
               _FilterDropdown<int?>(
                 value: filter.userId,
@@ -5406,7 +5406,7 @@ class _FilterPanel extends ConsumerWidget {
               ),
               const Gap(12),
 
-              _FilterLabel('Cash register'),
+              const _FilterLabel('Cash register'),
               const Gap(4),
               _FilterDropdown<int?>(
                 value: filter.warehouseId,
@@ -5421,7 +5421,7 @@ class _FilterPanel extends ConsumerWidget {
               ),
               const Gap(12),
 
-              _FilterLabel('Product'),
+              const _FilterLabel('Product'),
               const Gap(4),
               _FilterDropdown<int?>(
                 value: filter.productId,
@@ -5435,7 +5435,7 @@ class _FilterPanel extends ConsumerWidget {
               ),
               const Gap(12),
 
-              _FilterLabel('Product group'),
+              const _FilterLabel('Product group'),
               const Gap(4),
               _FilterDropdown<int?>(
                 value: filter.productGroupId,
@@ -5468,7 +5468,7 @@ class _FilterPanel extends ConsumerWidget {
             const Gap(8),
 
             if (reportId != 'reorder_list' && reportId != 'low_stock_warning') ...[
-              _FilterLabel('Period'),
+              const _FilterLabel('Period'),
               const Gap(6),
               Row(
                 children: [

@@ -25482,6 +25482,32 @@ class $DocumentsTableTable extends DocumentsTable
         type: DriftSqlType.string,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _isBlindMeta = const VerificationMeta(
+    'isBlind',
+  );
+  @override
+  late final GeneratedColumn<bool> isBlind = GeneratedColumn<bool>(
+    'is_blind',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_blind" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _approvedByUserIdMeta = const VerificationMeta(
+    'approvedByUserId',
+  );
+  @override
+  late final GeneratedColumn<int> approvedByUserId = GeneratedColumn<int>(
+    'approved_by_user_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _discountApplyRuleMeta = const VerificationMeta(
     'discountApplyRule',
   );
@@ -25587,6 +25613,8 @@ class $DocumentsTableTable extends DocumentsTable
     internalNote,
     note,
     referenceDocumentNumber,
+    isBlind,
+    approvedByUserId,
     discountApplyRule,
     date,
     syncStatus,
@@ -25759,6 +25787,21 @@ class $DocumentsTableTable extends DocumentsTable
         ),
       );
     }
+    if (data.containsKey('is_blind')) {
+      context.handle(
+        _isBlindMeta,
+        isBlind.isAcceptableOrUnknown(data['is_blind']!, _isBlindMeta),
+      );
+    }
+    if (data.containsKey('approved_by_user_id')) {
+      context.handle(
+        _approvedByUserIdMeta,
+        approvedByUserId.isAcceptableOrUnknown(
+          data['approved_by_user_id']!,
+          _approvedByUserIdMeta,
+        ),
+      );
+    }
     if (data.containsKey('discount_apply_rule')) {
       context.handle(
         _discountApplyRuleMeta,
@@ -25909,6 +25952,14 @@ class $DocumentsTableTable extends DocumentsTable
         DriftSqlType.string,
         data['${effectivePrefix}reference_document_number'],
       ),
+      isBlind: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_blind'],
+      )!,
+      approvedByUserId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}approved_by_user_id'],
+      ),
       discountApplyRule: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}discount_apply_rule'],
@@ -25968,6 +26019,8 @@ class DocumentsTableData extends DataClass
   final String? internalNote;
   final String? note;
   final String? referenceDocumentNumber;
+  final bool isBlind;
+  final int? approvedByUserId;
   final bool discountApplyRule;
   final DateTime date;
   final String syncStatus;
@@ -25996,6 +26049,8 @@ class DocumentsTableData extends DataClass
     this.internalNote,
     this.note,
     this.referenceDocumentNumber,
+    required this.isBlind,
+    this.approvedByUserId,
     required this.discountApplyRule,
     required this.date,
     required this.syncStatus,
@@ -26046,6 +26101,10 @@ class DocumentsTableData extends DataClass
       map['reference_document_number'] = Variable<String>(
         referenceDocumentNumber,
       );
+    }
+    map['is_blind'] = Variable<bool>(isBlind);
+    if (!nullToAbsent || approvedByUserId != null) {
+      map['approved_by_user_id'] = Variable<int>(approvedByUserId);
     }
     map['discount_apply_rule'] = Variable<bool>(discountApplyRule);
     map['date'] = Variable<DateTime>(date);
@@ -26101,6 +26160,10 @@ class DocumentsTableData extends DataClass
       referenceDocumentNumber: referenceDocumentNumber == null && nullToAbsent
           ? const Value.absent()
           : Value(referenceDocumentNumber),
+      isBlind: Value(isBlind),
+      approvedByUserId: approvedByUserId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(approvedByUserId),
       discountApplyRule: Value(discountApplyRule),
       date: Value(date),
       syncStatus: Value(syncStatus),
@@ -26145,6 +26208,8 @@ class DocumentsTableData extends DataClass
       referenceDocumentNumber: serializer.fromJson<String?>(
         json['referenceDocumentNumber'],
       ),
+      isBlind: serializer.fromJson<bool>(json['isBlind']),
+      approvedByUserId: serializer.fromJson<int?>(json['approvedByUserId']),
       discountApplyRule: serializer.fromJson<bool>(json['discountApplyRule']),
       date: serializer.fromJson<DateTime>(json['date']),
       syncStatus: serializer.fromJson<String>(json['syncStatus']),
@@ -26180,6 +26245,8 @@ class DocumentsTableData extends DataClass
       'referenceDocumentNumber': serializer.toJson<String?>(
         referenceDocumentNumber,
       ),
+      'isBlind': serializer.toJson<bool>(isBlind),
+      'approvedByUserId': serializer.toJson<int?>(approvedByUserId),
       'discountApplyRule': serializer.toJson<bool>(discountApplyRule),
       'date': serializer.toJson<DateTime>(date),
       'syncStatus': serializer.toJson<String>(syncStatus),
@@ -26211,6 +26278,8 @@ class DocumentsTableData extends DataClass
     Value<String?> internalNote = const Value.absent(),
     Value<String?> note = const Value.absent(),
     Value<String?> referenceDocumentNumber = const Value.absent(),
+    bool? isBlind,
+    Value<int?> approvedByUserId = const Value.absent(),
     bool? discountApplyRule,
     DateTime? date,
     String? syncStatus,
@@ -26241,6 +26310,10 @@ class DocumentsTableData extends DataClass
     referenceDocumentNumber: referenceDocumentNumber.present
         ? referenceDocumentNumber.value
         : this.referenceDocumentNumber,
+    isBlind: isBlind ?? this.isBlind,
+    approvedByUserId: approvedByUserId.present
+        ? approvedByUserId.value
+        : this.approvedByUserId,
     discountApplyRule: discountApplyRule ?? this.discountApplyRule,
     date: date ?? this.date,
     syncStatus: syncStatus ?? this.syncStatus,
@@ -26291,6 +26364,10 @@ class DocumentsTableData extends DataClass
       referenceDocumentNumber: data.referenceDocumentNumber.present
           ? data.referenceDocumentNumber.value
           : this.referenceDocumentNumber,
+      isBlind: data.isBlind.present ? data.isBlind.value : this.isBlind,
+      approvedByUserId: data.approvedByUserId.present
+          ? data.approvedByUserId.value
+          : this.approvedByUserId,
       discountApplyRule: data.discountApplyRule.present
           ? data.discountApplyRule.value
           : this.discountApplyRule,
@@ -26336,6 +26413,8 @@ class DocumentsTableData extends DataClass
           ..write('internalNote: $internalNote, ')
           ..write('note: $note, ')
           ..write('referenceDocumentNumber: $referenceDocumentNumber, ')
+          ..write('isBlind: $isBlind, ')
+          ..write('approvedByUserId: $approvedByUserId, ')
           ..write('discountApplyRule: $discountApplyRule, ')
           ..write('date: $date, ')
           ..write('syncStatus: $syncStatus, ')
@@ -26369,6 +26448,8 @@ class DocumentsTableData extends DataClass
     internalNote,
     note,
     referenceDocumentNumber,
+    isBlind,
+    approvedByUserId,
     discountApplyRule,
     date,
     syncStatus,
@@ -26401,6 +26482,8 @@ class DocumentsTableData extends DataClass
           other.internalNote == this.internalNote &&
           other.note == this.note &&
           other.referenceDocumentNumber == this.referenceDocumentNumber &&
+          other.isBlind == this.isBlind &&
+          other.approvedByUserId == this.approvedByUserId &&
           other.discountApplyRule == this.discountApplyRule &&
           other.date == this.date &&
           other.syncStatus == this.syncStatus &&
@@ -26431,6 +26514,8 @@ class DocumentsTableCompanion extends UpdateCompanion<DocumentsTableData> {
   final Value<String?> internalNote;
   final Value<String?> note;
   final Value<String?> referenceDocumentNumber;
+  final Value<bool> isBlind;
+  final Value<int?> approvedByUserId;
   final Value<bool> discountApplyRule;
   final Value<DateTime> date;
   final Value<String> syncStatus;
@@ -26460,6 +26545,8 @@ class DocumentsTableCompanion extends UpdateCompanion<DocumentsTableData> {
     this.internalNote = const Value.absent(),
     this.note = const Value.absent(),
     this.referenceDocumentNumber = const Value.absent(),
+    this.isBlind = const Value.absent(),
+    this.approvedByUserId = const Value.absent(),
     this.discountApplyRule = const Value.absent(),
     this.date = const Value.absent(),
     this.syncStatus = const Value.absent(),
@@ -26490,6 +26577,8 @@ class DocumentsTableCompanion extends UpdateCompanion<DocumentsTableData> {
     this.internalNote = const Value.absent(),
     this.note = const Value.absent(),
     this.referenceDocumentNumber = const Value.absent(),
+    this.isBlind = const Value.absent(),
+    this.approvedByUserId = const Value.absent(),
     this.discountApplyRule = const Value.absent(),
     required DateTime date,
     this.syncStatus = const Value.absent(),
@@ -26525,6 +26614,8 @@ class DocumentsTableCompanion extends UpdateCompanion<DocumentsTableData> {
     Expression<String>? internalNote,
     Expression<String>? note,
     Expression<String>? referenceDocumentNumber,
+    Expression<bool>? isBlind,
+    Expression<int>? approvedByUserId,
     Expression<bool>? discountApplyRule,
     Expression<DateTime>? date,
     Expression<String>? syncStatus,
@@ -26556,6 +26647,8 @@ class DocumentsTableCompanion extends UpdateCompanion<DocumentsTableData> {
       if (note != null) 'note': note,
       if (referenceDocumentNumber != null)
         'reference_document_number': referenceDocumentNumber,
+      if (isBlind != null) 'is_blind': isBlind,
+      if (approvedByUserId != null) 'approved_by_user_id': approvedByUserId,
       if (discountApplyRule != null) 'discount_apply_rule': discountApplyRule,
       if (date != null) 'date': date,
       if (syncStatus != null) 'sync_status': syncStatus,
@@ -26588,6 +26681,8 @@ class DocumentsTableCompanion extends UpdateCompanion<DocumentsTableData> {
     Value<String?>? internalNote,
     Value<String?>? note,
     Value<String?>? referenceDocumentNumber,
+    Value<bool>? isBlind,
+    Value<int?>? approvedByUserId,
     Value<bool>? discountApplyRule,
     Value<DateTime>? date,
     Value<String>? syncStatus,
@@ -26619,6 +26714,8 @@ class DocumentsTableCompanion extends UpdateCompanion<DocumentsTableData> {
       note: note ?? this.note,
       referenceDocumentNumber:
           referenceDocumentNumber ?? this.referenceDocumentNumber,
+      isBlind: isBlind ?? this.isBlind,
+      approvedByUserId: approvedByUserId ?? this.approvedByUserId,
       discountApplyRule: discountApplyRule ?? this.discountApplyRule,
       date: date ?? this.date,
       syncStatus: syncStatus ?? this.syncStatus,
@@ -26695,6 +26792,12 @@ class DocumentsTableCompanion extends UpdateCompanion<DocumentsTableData> {
         referenceDocumentNumber.value,
       );
     }
+    if (isBlind.present) {
+      map['is_blind'] = Variable<bool>(isBlind.value);
+    }
+    if (approvedByUserId.present) {
+      map['approved_by_user_id'] = Variable<int>(approvedByUserId.value);
+    }
     if (discountApplyRule.present) {
       map['discount_apply_rule'] = Variable<bool>(discountApplyRule.value);
     }
@@ -26745,6 +26848,8 @@ class DocumentsTableCompanion extends UpdateCompanion<DocumentsTableData> {
           ..write('internalNote: $internalNote, ')
           ..write('note: $note, ')
           ..write('referenceDocumentNumber: $referenceDocumentNumber, ')
+          ..write('isBlind: $isBlind, ')
+          ..write('approvedByUserId: $approvedByUserId, ')
           ..write('discountApplyRule: $discountApplyRule, ')
           ..write('date: $date, ')
           ..write('syncStatus: $syncStatus, ')
@@ -46363,10 +46468,7 @@ final class $$PosOrdersTableTableReferences
   _posOrderItemsTableRefsTable(_$AppDatabase db) =>
       MultiTypedResultKey.fromTable(
         db.posOrderItemsTable,
-        aliasName: $_aliasNameGenerator(
-          db.posOrdersTable.localId,
-          db.posOrderItemsTable.orderId,
-        ),
+        aliasName: 'pos_orders__local_id__pos_order_items__order_id',
       );
 
   $$PosOrderItemsTableTableProcessedTableManager get posOrderItemsTableRefs {
@@ -46393,10 +46495,7 @@ final class $$PosOrdersTableTableReferences
   _posOrderItemTaxesTableRefsTable(_$AppDatabase db) =>
       MultiTypedResultKey.fromTable(
         db.posOrderItemTaxesTable,
-        aliasName: $_aliasNameGenerator(
-          db.posOrdersTable.localId,
-          db.posOrderItemTaxesTable.orderId,
-        ),
+        aliasName: 'pos_orders__local_id__pos_order_item_taxes__order_id',
       );
 
   $$PosOrderItemTaxesTableTableProcessedTableManager
@@ -47196,13 +47295,9 @@ final class $$PosOrderItemsTableTableReferences
     super.$_typedResult,
   );
 
-  static $PosOrdersTableTable _orderIdTable(_$AppDatabase db) =>
-      db.posOrdersTable.createAlias(
-        $_aliasNameGenerator(
-          db.posOrderItemsTable.orderId,
-          db.posOrdersTable.localId,
-        ),
-      );
+  static $PosOrdersTableTable _orderIdTable(_$AppDatabase db) => db
+      .posOrdersTable
+      .createAlias('pos_order_items__order_id__pos_orders__local_id');
 
   $$PosOrdersTableTableProcessedTableManager get orderId {
     final $_column = $_itemColumn<String>('order_id')!;
@@ -47847,13 +47942,9 @@ final class $$PosOrderItemTaxesTableTableReferences
     super.$_typedResult,
   );
 
-  static $PosOrdersTableTable _orderIdTable(_$AppDatabase db) =>
-      db.posOrdersTable.createAlias(
-        $_aliasNameGenerator(
-          db.posOrderItemTaxesTable.orderId,
-          db.posOrdersTable.localId,
-        ),
-      );
+  static $PosOrdersTableTable _orderIdTable(_$AppDatabase db) => db
+      .posOrdersTable
+      .createAlias('pos_order_item_taxes__order_id__pos_orders__local_id');
 
   $$PosOrdersTableTableProcessedTableManager get orderId {
     final $_column = $_itemColumn<String>('order_id')!;
@@ -49863,6 +49954,8 @@ typedef $$DocumentsTableTableCreateCompanionBuilder =
       Value<String?> internalNote,
       Value<String?> note,
       Value<String?> referenceDocumentNumber,
+      Value<bool> isBlind,
+      Value<int?> approvedByUserId,
       Value<bool> discountApplyRule,
       required DateTime date,
       Value<String> syncStatus,
@@ -49894,6 +49987,8 @@ typedef $$DocumentsTableTableUpdateCompanionBuilder =
       Value<String?> internalNote,
       Value<String?> note,
       Value<String?> referenceDocumentNumber,
+      Value<bool> isBlind,
+      Value<int?> approvedByUserId,
       Value<bool> discountApplyRule,
       Value<DateTime> date,
       Value<String> syncStatus,
@@ -49924,10 +50019,7 @@ final class $$DocumentsTableTableReferences
   _documentItemsTableRefsTable(_$AppDatabase db) =>
       MultiTypedResultKey.fromTable(
         db.documentItemsTable,
-        aliasName: $_aliasNameGenerator(
-          db.documentsTable.localId,
-          db.documentItemsTable.documentId,
-        ),
+        aliasName: 'documents__local_id__document_items__document_id',
       );
 
   $$DocumentItemsTableTableProcessedTableManager get documentItemsTableRefs {
@@ -49951,10 +50043,7 @@ final class $$DocumentsTableTableReferences
   static MultiTypedResultKey<$PaymentsTableTable, List<PaymentsTableData>>
   _paymentsTableRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.paymentsTable,
-    aliasName: $_aliasNameGenerator(
-      db.documentsTable.localId,
-      db.paymentsTable.documentId,
-    ),
+    aliasName: 'documents__local_id__payments__document_id',
   );
 
   $$PaymentsTableTableProcessedTableManager get paymentsTableRefs {
@@ -50077,6 +50166,16 @@ class $$DocumentsTableTableFilterComposer
 
   ColumnFilters<String> get referenceDocumentNumber => $composableBuilder(
     column: $table.referenceDocumentNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isBlind => $composableBuilder(
+    column: $table.isBlind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get approvedByUserId => $composableBuilder(
+    column: $table.approvedByUserId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -50275,6 +50374,16 @@ class $$DocumentsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isBlind => $composableBuilder(
+    column: $table.isBlind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get approvedByUserId => $composableBuilder(
+    column: $table.approvedByUserId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get discountApplyRule => $composableBuilder(
     column: $table.discountApplyRule,
     builder: (column) => ColumnOrderings(column),
@@ -50397,6 +50506,14 @@ class $$DocumentsTableTableAnnotationComposer
 
   GeneratedColumn<String> get referenceDocumentNumber => $composableBuilder(
     column: $table.referenceDocumentNumber,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isBlind =>
+      $composableBuilder(column: $table.isBlind, builder: (column) => column);
+
+  GeneratedColumn<int> get approvedByUserId => $composableBuilder(
+    column: $table.approvedByUserId,
     builder: (column) => column,
   );
 
@@ -50538,6 +50655,8 @@ class $$DocumentsTableTableTableManager
                 Value<String?> internalNote = const Value.absent(),
                 Value<String?> note = const Value.absent(),
                 Value<String?> referenceDocumentNumber = const Value.absent(),
+                Value<bool> isBlind = const Value.absent(),
+                Value<int?> approvedByUserId = const Value.absent(),
                 Value<bool> discountApplyRule = const Value.absent(),
                 Value<DateTime> date = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
@@ -50567,6 +50686,8 @@ class $$DocumentsTableTableTableManager
                 internalNote: internalNote,
                 note: note,
                 referenceDocumentNumber: referenceDocumentNumber,
+                isBlind: isBlind,
+                approvedByUserId: approvedByUserId,
                 discountApplyRule: discountApplyRule,
                 date: date,
                 syncStatus: syncStatus,
@@ -50598,6 +50719,8 @@ class $$DocumentsTableTableTableManager
                 Value<String?> internalNote = const Value.absent(),
                 Value<String?> note = const Value.absent(),
                 Value<String?> referenceDocumentNumber = const Value.absent(),
+                Value<bool> isBlind = const Value.absent(),
+                Value<int?> approvedByUserId = const Value.absent(),
                 Value<bool> discountApplyRule = const Value.absent(),
                 required DateTime date,
                 Value<String> syncStatus = const Value.absent(),
@@ -50627,6 +50750,8 @@ class $$DocumentsTableTableTableManager
                 internalNote: internalNote,
                 note: note,
                 referenceDocumentNumber: referenceDocumentNumber,
+                isBlind: isBlind,
+                approvedByUserId: approvedByUserId,
                 discountApplyRule: discountApplyRule,
                 date: date,
                 syncStatus: syncStatus,
@@ -50790,13 +50915,9 @@ final class $$DocumentItemsTableTableReferences
     super.$_typedResult,
   );
 
-  static $DocumentsTableTable _documentIdTable(_$AppDatabase db) =>
-      db.documentsTable.createAlias(
-        $_aliasNameGenerator(
-          db.documentItemsTable.documentId,
-          db.documentsTable.localId,
-        ),
-      );
+  static $DocumentsTableTable _documentIdTable(_$AppDatabase db) => db
+      .documentsTable
+      .createAlias('document_items__document_id__documents__local_id');
 
   $$DocumentsTableTableProcessedTableManager get documentId {
     final $_column = $_itemColumn<String>('document_id')!;
@@ -51466,13 +51587,9 @@ final class $$PaymentsTableTableReferences
     super.$_typedResult,
   );
 
-  static $DocumentsTableTable _documentIdTable(_$AppDatabase db) =>
-      db.documentsTable.createAlias(
-        $_aliasNameGenerator(
-          db.paymentsTable.documentId,
-          db.documentsTable.localId,
-        ),
-      );
+  static $DocumentsTableTable _documentIdTable(_$AppDatabase db) => db
+      .documentsTable
+      .createAlias('payments__document_id__documents__local_id');
 
   $$DocumentsTableTableProcessedTableManager get documentId {
     final $_column = $_itemColumn<String>('document_id')!;
