@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/company/company_provider.dart';
+import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/database/database_provider.dart';
 
@@ -117,13 +118,13 @@ class _CashMovementDialogState extends ConsumerState<_CashMovementDialog> {
               style: ButtonStyle(
                 backgroundColor: WidgetStateProperty.resolveWith((states) {
                   if (states.contains(WidgetState.selected)) {
-                    return isCashIn ? Colors.green : theme.colorScheme.error;
+                    return isCashIn ? context.successColor : theme.colorScheme.error;
                   }
                   return null;
                 }),
                 foregroundColor: WidgetStateProperty.resolveWith((states) {
                   if (states.contains(WidgetState.selected)) {
-                    return Colors.white;
+                    return context.onStatusColor;
                   }
                   return null;
                 }),
@@ -143,7 +144,7 @@ class _CashMovementDialogState extends ConsumerState<_CashMovementDialog> {
                 labelText: 'Amount',
                 prefixIcon: Icon(
                   isCashIn ? Icons.arrow_upward : Icons.arrow_downward,
-                  color: isCashIn ? Colors.green : theme.colorScheme.error,
+                  color: isCashIn ? context.successColor : theme.colorScheme.error,
                 ),
                 border: const OutlineInputBorder(),
               ),
@@ -180,7 +181,7 @@ class _CashMovementDialogState extends ConsumerState<_CashMovementDialog> {
           onPressed: _saving ? null : _save,
           style: FilledButton.styleFrom(
             backgroundColor:
-                isCashIn ? Colors.green : theme.colorScheme.error,
+                isCashIn ? context.successColor : theme.colorScheme.error,
           ),
           child: _saving
               ? const SizedBox(

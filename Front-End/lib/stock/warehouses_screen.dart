@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/company/company_provider.dart';
+import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/stock/stock_model.dart';
 import 'package:pos_app/stock/warehouse_model.dart';
 import 'package:pos_app/stock/warehouse_provider.dart';
@@ -108,7 +109,7 @@ class WarehousesScreen extends ConsumerWidget {
                     ),
                     // Delete
                     IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
+                      icon: Icon(Icons.delete, color: context.dangerColor),
                       tooltip: "Delete",
                       onPressed: () => _handleDelete(
                           context, ref, w, companyId, warehouses),
@@ -155,10 +156,10 @@ class WarehousesScreen extends ConsumerWidget {
                 onPressed: () => Navigator.pop(ctx, false),
                 child: const Text("Cancel")),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              style: ElevatedButton.styleFrom(backgroundColor: ctx.dangerColor),
               onPressed: () => Navigator.pop(ctx, true),
               child:
-                  const Text("Delete", style: TextStyle(color: Colors.white)),
+                  Text("Delete", style: TextStyle(color: ctx.onStatusColor)),
             ),
           ],
         ),
@@ -187,8 +188,8 @@ class WarehousesScreen extends ConsumerWidget {
               child: const Text("Cancel")),
           TextButton(
             onPressed: () => Navigator.pop(ctx, 'revoke'),
-            child: const Text("Revoke stock",
-                style: TextStyle(color: Colors.red)),
+            child: Text("Revoke stock",
+                style: TextStyle(color: ctx.dangerColor)),
           ),
           if (others.isNotEmpty)
             FilledButton(
@@ -349,7 +350,7 @@ class _WarehouseFormDialogState extends ConsumerState<_WarehouseFormDialog> {
               if (_errorMessage != null) ...[
                 const SizedBox(height: 12),
                 Text(_errorMessage!,
-                    style: const TextStyle(color: Colors.red, fontSize: 13)),
+                    style: TextStyle(color: context.dangerColor, fontSize: 13)),
               ],
             ],
           ),

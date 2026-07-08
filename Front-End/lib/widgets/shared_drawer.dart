@@ -4,6 +4,7 @@ import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/auth/users_screen.dart';
 import 'package:pos_app/cart/cart_provider.dart';
 import 'package:pos_app/cart/payment_types_screen.dart';
+import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/company/my_company_screen.dart';
 import 'package:pos_app/currency/currencies_screen.dart';
@@ -221,8 +222,8 @@ class SharedDrawer extends ConsumerWidget {
           ),
           const Divider(),
           ListTile(
-            leading: const Icon(Icons.logout, color: Colors.red),
-            title: const Text('Logout', style: TextStyle(color: Colors.red)),
+            leading: Icon(Icons.logout, color: context.dangerColor),
+            title: Text('Logout', style: TextStyle(color: context.dangerColor)),
             onTap: () {
               ref.invalidate(currentUserProvider);
               ref.read(cartProvider.notifier).clearCart();

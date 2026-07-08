@@ -19,6 +19,7 @@ import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:pos_app/app_settings/app_settings_model.dart';
+import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/settings/local_ui_prefs.dart';
 import 'package:pos_app/app_settings/app_settings_provider.dart';
 import 'package:pos_app/app_settings/service_type_model.dart';
@@ -659,8 +660,8 @@ class _CustomServiceTypesEditorState
                     radius: 14,
                     child: Text(
                       '${t.id}',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: context.onStatusColor,
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
                       ),
@@ -883,8 +884,8 @@ class _CustomServiceStatusesEditorState
                     radius: 14,
                     child: Text(
                       '${s.id}',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: context.onStatusColor,
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
                       ),
@@ -1259,9 +1260,9 @@ class _CurrencyDropdown extends ConsumerWidget {
             Text('Loading currencies…'),
           ],
         ),
-        error: (_, __) => const Text(
+        error: (_, __) => Text(
           'Could not load currencies',
-          style: TextStyle(color: Colors.red),
+          style: TextStyle(color: context.dangerColor),
         ),
         data: (currencies) {
           if (currencies.isEmpty) return const SizedBox.shrink();
@@ -5660,12 +5661,12 @@ class _DatabaseTabState extends ConsumerState<_DatabaseTab> {
               child: FilledButton.icon(
                 onPressed: _isBackingUp ? null : _doBackup,
                 icon: _isBackingUp
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 18,
                         height: 18,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onPrimary,
                         ),
                       )
                     : const Icon(Icons.backup_outlined),
@@ -5905,22 +5906,22 @@ class _LicenseTab extends ConsumerWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.green.withValues(alpha: 0.2),
+                      color: context.successColor.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: Colors.greenAccent),
+                      border: Border.all(color: context.successColor),
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
                         Icon(
                           Icons.check_circle,
-                          color: Colors.greenAccent,
+                          color: context.successColor,
                           size: 18,
                         ),
-                        SizedBox(width: 6),
+                        const SizedBox(width: 6),
                         Text(
                           'Valid License',
                           style: TextStyle(
-                            color: Colors.greenAccent,
+                            color: context.successColor,
                             fontWeight: FontWeight.bold,
                           ),
                         ),

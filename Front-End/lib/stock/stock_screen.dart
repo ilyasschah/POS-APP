@@ -5,6 +5,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:pos_app/company/company_provider.dart';
+import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/product/product_group_provider.dart';
 import 'package:pos_app/stock/warehouse_provider.dart';
@@ -611,8 +612,8 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                       onSelected: (v) =>
                           setState(() => _showUnassigned = v),
                       selectedColor:
-                          Colors.orange.withValues(alpha: 0.2),
-                      checkmarkColor: Colors.orange,
+                          context.warningColor.withValues(alpha: 0.2),
+                      checkmarkColor: context.warningColor,
                     ),
                     const SizedBox(width: 8),
                     FilterChip(
@@ -621,8 +622,8 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                       onSelected: (v) =>
                           setState(() => _showLowStock = v),
                       selectedColor:
-                          Colors.red.withValues(alpha: 0.2),
-                      checkmarkColor: Colors.red,
+                          context.dangerColor.withValues(alpha: 0.2),
+                      checkmarkColor: context.dangerColor,
                     ),
                     const SizedBox(width: 8),
                     FilterChip(
@@ -631,8 +632,8 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                       onSelected: (v) =>
                           setState(() => _showReorder = v),
                       selectedColor:
-                          Colors.orange.withValues(alpha: 0.2),
-                      checkmarkColor: Colors.orange,
+                          context.warningColor.withValues(alpha: 0.2),
+                      checkmarkColor: context.warningColor,
                     ),
                   ],
                 ),
@@ -786,12 +787,12 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 4, vertical: 2),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withValues(alpha: 0.15),
+                    color: context.infoColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(4),
                   ),
-                  child: const Text('SVC',
+                  child: Text('SVC',
                       style: TextStyle(
-                          color: Colors.blue,
+                          color: context.infoColor,
                           fontSize: 8,
                           fontWeight: FontWeight.bold)),
                 ),
@@ -806,20 +807,20 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.red.withValues(alpha: 0.1),
+                    color: context.dangerColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(
-                        color: Colors.red.withValues(alpha: 0.3)),
+                        color: context.dangerColor.withValues(alpha: 0.3)),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(Icons.warning_amber,
-                          size: 14, color: Colors.red),
-                      SizedBox(width: 4),
+                          size: 14, color: context.dangerColor),
+                      const SizedBox(width: 4),
                       Text("Unassigned",
                           style: TextStyle(
-                              color: Colors.red,
+                              color: context.dangerColor,
                               fontWeight: FontWeight.bold,
                               fontSize: 12)),
                     ],
@@ -855,10 +856,10 @@ class _StockScreenState extends ConsumerState<StockScreen> {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _tblBtn(Icons.add_box, Colors.green, "Assign / Add Stock",
+              _tblBtn(Icons.add_box, context.successColor, "Assign / Add Stock",
                   () => _showAssignDialog(context, product)),
               const SizedBox(width: 4),
-              _tblBtn(Icons.tune, Colors.amber, "Stock Control Rules",
+              _tblBtn(Icons.tune, context.warningColor, "Stock Control Rules",
                   () => _showStockControlDialog(context, product)),
             ],
           ),
@@ -1152,7 +1153,7 @@ class _StockControlDialogState
         return AlertDialog(
           title: Row(
             children: [
-              const Icon(Icons.tune, color: Colors.amber),
+              Icon(Icons.tune, color: context.warningColor),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -1174,9 +1175,9 @@ class _StockControlDialogState
                     child: Chip(
                       label: const Text("Rule exists — editing"),
                       backgroundColor:
-                          Colors.green.withValues(alpha: 0.15),
+                          context.successColor.withValues(alpha: 0.15),
                       side: BorderSide(
-                          color: Colors.green.withValues(alpha: 0.4)),
+                          color: context.successColor.withValues(alpha: 0.4)),
                     ),
                   ),
                 TextField(
@@ -1230,7 +1231,7 @@ class _StockControlDialogState
             if (control != null)
               TextButton(
                 style: TextButton.styleFrom(
-                    foregroundColor: Colors.red),
+                    foregroundColor: context.dangerColor),
                 onPressed: _isSaving ? null : _delete,
                 child: const Text("Delete Rule"),
               ),
@@ -1341,7 +1342,7 @@ class _ProductDetailPanelState
               child: const Text("Cancel")),
           TextButton(
             style:
-                TextButton.styleFrom(foregroundColor: Colors.red),
+                TextButton.styleFrom(foregroundColor: ctx.dangerColor),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text("Remove"),
           ),
@@ -1458,7 +1459,7 @@ class _ProductDetailPanelState
                   // Tags
                   Wrap(spacing: 6, children: [
                     if (product.isService)
-                      _tag("Service", Colors.blue),
+                      _tag("Service", context.infoColor),
                     if (product.measurementUnit != null)
                       _tag("UOM: ${product.measurementUnit}",
                           Colors.teal),
@@ -1484,7 +1485,7 @@ class _ProductDetailPanelState
                     _emptyBox(
                       context,
                       icon: Icons.warning_amber,
-                      color: Colors.orange,
+                      color: context.warningColor,
                       message: "No stock assigned to this"
                           "${widget.warehouseId != null ? " warehouse" : " product"}",
                     )
@@ -1753,7 +1754,7 @@ class _StockEntry extends StatelessWidget {
               _iconBtn(Icons.edit_outlined, theme.colorScheme.primary,
                   "Edit quantity", onEditTap),
               const SizedBox(width: 2),
-              _iconBtn(Icons.delete_outline, Colors.red,
+              _iconBtn(Icons.delete_outline, context.dangerColor,
                   "Remove", isSaving ? null : onDelete),
             ],
           ]),
@@ -1780,9 +1781,9 @@ class _StockEntry extends StatelessWidget {
                     child: CircularProgressIndicator(
                         strokeWidth: 2))
               else ...[
-                _iconBtn(Icons.check, Colors.green, "Save",
+                _iconBtn(Icons.check, context.successColor, "Save",
                     onSave),
-                _iconBtn(Icons.close, Colors.red, "Cancel",
+                _iconBtn(Icons.close, context.dangerColor, "Cancel",
                     onCancel),
               ],
             ])

@@ -5,6 +5,7 @@ import 'package:pos_app/cart/payment_model.dart';
 import 'package:pos_app/cart/discount_display.dart';
 import 'package:pos_app/api/api_client.dart';
 import 'package:pos_app/company/company_provider.dart';
+import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/document/document_model.dart';
 import 'package:pos_app/customer/customer_provider.dart';
 import 'package:pos_app/auth/auth_provider.dart';
@@ -1344,7 +1345,6 @@ class _ItemsView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final sym = ref.watch(currencySymbolProvider);
     final itemsArgs = LocalItemsArgs(
       docLocalId: documentLocalId,
@@ -1670,9 +1670,7 @@ class _ItemsView extends ConsumerWidget {
                                     textAlign: TextAlign.right,
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
-                                      color: isDark
-                                          ? Colors.greenAccent
-                                          : Colors.green,
+                                      color: context.successColor,
                                     ),
                                   ),
                                 ),
@@ -1807,7 +1805,7 @@ class _ItemsView extends ConsumerWidget {
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.greenAccent : Colors.green,
+                            color: context.successColor,
                           ),
                         ),
                       ],
@@ -2695,7 +2693,6 @@ class _PaymentsView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     // documentLocalId is resolved by the editor right after the header saves.
     // Until then there is nothing to attach payments to.
@@ -2750,7 +2747,7 @@ class _PaymentsView extends ConsumerWidget {
                             ),
                             FilledButton(
                               style: FilledButton.styleFrom(
-                                  backgroundColor: Colors.red),
+                                  backgroundColor: ctx.dangerColor),
                               onPressed: () => Navigator.pop(ctx, true),
                               child: const Text('Yes, delete payments'),
                             ),
@@ -2813,13 +2810,13 @@ class _PaymentsView extends ConsumerWidget {
                       _SummaryCard(
                         "Total Paid",
                         totalPaid,
-                        isDark ? Colors.greenAccent : Colors.green,
+                        context.successColor,
                       ),
                       _SummaryCard(
                         "Remaining Balance",
                         remaining,
                         remaining > 0
-                            ? (isDark ? Colors.orangeAccent : Colors.orange)
+                            ? context.warningColor
                             : theme.disabledColor,
                       ),
                     ],
@@ -2869,7 +2866,7 @@ class _PaymentsView extends ConsumerWidget {
                                         ? theme.disabledColor
                                         : isPending
                                             ? theme.colorScheme.tertiary
-                                            : Colors.green,
+                                            : context.successColor,
                                     size: 20,
                                   ),
                                 ),

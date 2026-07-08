@@ -127,11 +127,11 @@ class _LoyaltyCardsScreenState extends ConsumerState<LoyaltyCardsScreen> {
                   cardNumber: cardNumber.isEmpty ? null : cardNumber,
                   points: points,
                 );
-            if (mounted) {
+            if (context.mounted) {
               showAppSnackbar(context, ref, 'Loyalty card added');
             }
           } catch (e) {
-            if (mounted) {
+            if (context.mounted) {
               showAppSnackbar(context, ref, 'Failed to add card: $e',
                   isError: true);
             }
@@ -155,11 +155,11 @@ class _LoyaltyCardsScreenState extends ConsumerState<LoyaltyCardsScreen> {
                   cardNumber: cardNumber.isEmpty ? null : cardNumber,
                   points: points,
                 );
-            if (mounted) {
+            if (context.mounted) {
               showAppSnackbar(context, ref, 'Loyalty card updated');
             }
           } catch (e) {
-            if (mounted) {
+            if (context.mounted) {
               showAppSnackbar(context, ref, 'Failed to update card: $e',
                   isError: true);
             }
@@ -194,11 +194,11 @@ class _LoyaltyCardsScreenState extends ConsumerState<LoyaltyCardsScreen> {
                 await ref
                     .read(loyaltyCardNotifierProvider.notifier)
                     .deleteCard(card.id);
-                if (mounted) {
+                if (context.mounted) {
                   showAppSnackbar(context, ref, 'Loyalty card deleted');
                 }
               } catch (e) {
-                if (mounted) {
+                if (context.mounted) {
                   showAppSnackbar(context, ref, 'Failed to delete: $e',
                       isError: true);
                 }

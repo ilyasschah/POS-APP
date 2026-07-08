@@ -2026,15 +2026,15 @@ entity:
 > The original audit is preserved below as the record. This block tracks what has
 > since been fixed vs what remains. **Full running detail is in `handoff.md`.**
 
-**DONE (all CRITICALs + all OPT/UP except the two in-progress below):**
+**DONE (all CRITICALs + all OPT/UP; only the optional OPT-4 lint cleanup + UPGRADE-1 caveat remain below):**
 - **CRITICAL-1** refund idempotency — FIXED (server dedups on `ClientDocumentNumber`; client persists+queues on ambiguous failures).
 - **CRITICAL-2** refund double stock reversal — CLOSED as a **false alarm** (no stock trigger exists; stock is adjusted in C#, not triggers). The misleading `sync_manager.dart` comment was corrected.
 - **OPT-1** eager table rows → lazy `rowBuilder`. · **OPT-2** MenuScreen narrows its `cartProvider` watch. · **OPT-3** no more raw `Notifier.state` mutation. · **OPT-6** refund outbox fully on Drift (schema **v49**; `shared_preferences` queue removed). · **OPT-7** `'pending'` vs `'pending_create'` invariant made explicit (`SyncStatuses`).
 - **UP-1** the 3 DB triggers scripted into `DataBase/SQL/`. · **UP-4** daily order counter → Drift + local-day bucketing. · **UP-5** checkout captures the Navigator before popping.
 - **OPT-4** `flutter_lints` re-enabled; 154 auto-fixes + 5 real `use_build_context_synchronously` bugs fixed (0 errors/warnings).
+- **OPT-5 / UP-6 (hardcoded colours) — DONE (2026-07-09).** `StatusColors` extension applied app-wide: after the initial `payment_checkout_dialog`/`menu_screen`/`bookings_screen`, the remaining 21 screens/dialogs were migrated (products, settings, stock, document_editor, documents, promotions, product_import, currencies, users, user_info, warehouses, tax_rates, time_clock, product_groups, credit/cash/refund/sync dialogs, z_report, power_modal, shared_drawer, company_selection, sales_history). `dart analyze lib` still **0 errors / 0 warnings**. Confirming the "dark mode isn't broken" finding, deliberate constructs were intentionally left: domain **status→colour maps/selectors** (booking `_statusColors`, payment Paid/Partial/Unpaid, stock low/reorder/healthy), **fixed data palettes**, **`isDark`-conditional banners**, **accents** (indigo/blueGrey, admin-orange, gradient header), and the **QR white background**.
 
 **IN PROGRESS / REMAINING:**
-- **OPT-5 / UP-6 (hardcoded colours)** — `StatusColors` extension built; `payment_checkout_dialog` + `menu_screen` + `bookings_screen` migrated. **Key finding: dark mode is NOT actually broken** (0 unconditional grey/black backgrounds/text; the big counts are `PdfColors`, `isDark`-conditional, shadows, deliberate accents). So the remaining files (`products_screen`, `settings_screen`, dialogs) are **consistency polish, not a legibility fix**. Deliberate palettes/accents stay.
 - **OPT-4 residual** — 24 `use_build_context_synchronously` remain, all *guarded-but-imprecise* (functionally safe; the passed `ctx` is the State's `context`). Optional zero-lint cleanup.
 - **UPGRADE-1 caveat** — triggers are now scripted, but EF's `HasTrigger("…")` labels are still fictional names (harmless; renaming needs an EF migration — deferred).
 

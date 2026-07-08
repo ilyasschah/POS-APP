@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
+import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/sync/sync_notifier.dart';
 import 'package:pos_app/sync/sync_status_provider.dart';
 
@@ -129,7 +130,7 @@ class _StatusBody extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
-            color: (allClean ? Colors.green : Colors.orange)
+            color: (allClean ? context.successColor : context.warningColor)
                 .withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(10),
           ),
@@ -139,7 +140,7 @@ class _StatusBody extends StatelessWidget {
                 allClean
                     ? PhosphorIcons.checkCircle(PhosphorIconsStyle.fill)
                     : PhosphorIcons.cloudArrowUp(),
-                color: allClean ? Colors.green : Colors.orange,
+                color: allClean ? context.successColor : context.warningColor,
                 size: 22,
               ),
               const SizedBox(width: 10),
@@ -199,11 +200,11 @@ class _EntityRow extends StatelessWidget {
           : '${entity.failed} failed';
     } else if (entity.pending > 0) {
       icon = PhosphorIcons.arrowsClockwise();
-      color = Colors.orange;
+      color = context.warningColor;
       trailing = '${entity.pending} pending';
     } else {
       icon = PhosphorIcons.checkCircle(PhosphorIconsStyle.fill);
-      color = Colors.green;
+      color = context.successColor;
       trailing = 'Synced';
     }
 

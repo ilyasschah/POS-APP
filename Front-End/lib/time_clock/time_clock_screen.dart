@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import 'package:pos_app/company/company_provider.dart';
+import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/navigation/nav_widgets.dart';
@@ -206,7 +207,7 @@ class _TimeClockScreenState extends ConsumerState<TimeClockScreen> {
                                 horizontal: 16, vertical: 8),
                             decoration: BoxDecoration(
                               color: isFeedbackPositive
-                                  ? Colors.green.withValues(alpha: 0.12)
+                                  ? context.successColor.withValues(alpha: 0.12)
                                   : cs.errorContainer,
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -214,7 +215,7 @@ class _TimeClockScreenState extends ConsumerState<TimeClockScreen> {
                               _feedback!,
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 color: isFeedbackPositive
-                                    ? Colors.green
+                                    ? context.successColor
                                     : cs.onErrorContainer,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -264,7 +265,7 @@ class _ModeToggle extends StatelessWidget {
           label: 'CLOCK IN',
           icon: Icons.login,
           selected: mode == 0,
-          selectedColor: Colors.green,
+          selectedColor: context.successColor,
           onTap: () => onChanged(0),
         ),
         const SizedBox(width: 12),

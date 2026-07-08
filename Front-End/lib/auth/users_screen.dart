@@ -7,6 +7,7 @@ import 'package:dio/dio.dart';
 import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/auth/user_model.dart';
+import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/security/security_key_model.dart';
@@ -652,7 +653,7 @@ class _EnableToggleState extends ConsumerState<_EnableToggle> {
     return Switch(
       value: widget.user.isEnabled,
       onChanged: (_) => _toggle(),
-      activeThumbColor: Colors.green,
+      activeThumbColor: context.successColor,
     );
   }
 }
@@ -722,7 +723,6 @@ class _AddUserDialogState extends ConsumerState<_AddUserDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return AlertDialog(
       title: const Text("Add New User"),
       content: SizedBox(
@@ -793,7 +793,7 @@ class _AddUserDialogState extends ConsumerState<_AddUserDialog> {
                 Text(
                   _errorMessage!,
                   style: TextStyle(
-                    color: isDark ? Colors.redAccent : Colors.red,
+                    color: context.dangerColor,
                     fontSize: 13,
                   ),
                 ),
@@ -962,7 +962,6 @@ class _EditUserDialogState extends ConsumerState<_EditUserDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return AlertDialog(
       title: Text("Edit ${widget.user.displayName}"),
       content: SizedBox(
@@ -1019,7 +1018,7 @@ class _EditUserDialogState extends ConsumerState<_EditUserDialog> {
                 Text(
                   _errorMessage!,
                   style: TextStyle(
-                    color: isDark ? Colors.redAccent : Colors.red,
+                    color: context.dangerColor,
                     fontSize: 13,
                   ),
                 ),
@@ -1075,7 +1074,7 @@ Future<void> _adminResetPassword(
             child: const Text("Cancel"),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(backgroundColor: context.dangerColor),
             onPressed: isSaving
                 ? null
                 : () async {
@@ -1150,7 +1149,7 @@ Future<void> _adminResetPin(
             child: const Text("Cancel"),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(backgroundColor: context.dangerColor),
             onPressed: isSaving
                 ? null
                 : () async {

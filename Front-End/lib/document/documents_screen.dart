@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:pos_app/api/api_client.dart';
+import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/security/security_guard.dart';
 import 'package:pos_app/security/security_keys.dart';
 import 'package:pos_app/app_settings/app_settings_model.dart';
@@ -824,8 +825,8 @@ class _DocumentTable extends ConsumerWidget {
             onPressed: () => showDocumentEditor(context, ref, existingDocument: d),
           ),
           IconButton(
-            icon: const Icon(Icons.delete_outline_rounded,
-                color: Colors.redAccent, size: 20),
+            icon: Icon(Icons.delete_outline_rounded,
+                color: context.dangerColor, size: 20),
             tooltip:  "Delete",
             onPressed: () => ref.read(securityGuardProvider).guard(
               context,
@@ -851,7 +852,8 @@ class _DocumentTable extends ConsumerWidget {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
+                backgroundColor: ctx.dangerColor,
+                foregroundColor: ctx.onStatusColor),
             onPressed: () => Navigator.of(ctx).pop(true),
             child: const Text("Delete"),
           ),

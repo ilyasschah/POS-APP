@@ -10,6 +10,7 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:pos_app/api/api_client.dart';
 import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/app_settings/app_settings_provider.dart';
+import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/cart/checkout_models.dart';
 import 'package:pos_app/company/company_provider.dart';
@@ -529,7 +530,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
             child: const Text('Cancel'),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(backgroundColor: ctx.dangerColor),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Delete'),
           ),
@@ -956,7 +957,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
                         SecurityKeys.invoicesDelete,
                         () => _deleteDocument(sel),
                       ),
-            color: Colors.redAccent,
+            color: context.dangerColor,
           ),
 
           // Right-aligned utilities: Documents column picker + refresh.

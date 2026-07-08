@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pos_app/api/api_client.dart';
 import 'package:pos_app/company/company_provider.dart';
+import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/product/product_group_model.dart';
@@ -127,10 +128,10 @@ class _ProductGroupsScreenState extends ConsumerState<ProductGroupsScreen> {
           builder: (c) => AlertDialog(
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            title: const Row(children: [
-              Icon(Icons.warning_amber_rounded, color: Colors.orange),
-              SizedBox(width: 8),
-              Text("Cannot Delete"),
+            title: Row(children: [
+              Icon(Icons.warning_amber_rounded, color: c.warningColor),
+              const SizedBox(width: 8),
+              const Text("Cannot Delete"),
             ]),
             content: const Text(
                 "This group has products or sub-groups and cannot be deleted."),
@@ -1330,7 +1331,7 @@ class _ProductsTab extends StatelessWidget {
                       height: 8,
                       decoration: BoxDecoration(
                         color: (product.isEnabled as bool)
-                            ? Colors.green
+                            ? context.successColor
                             : theme.colorScheme.outline,
                         shape: BoxShape.circle,
                       ),

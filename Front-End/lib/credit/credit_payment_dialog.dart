@@ -7,6 +7,7 @@ import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/cart/payment_type_model.dart';
 import 'package:pos_app/cart/payment_type_provider.dart';
 import 'package:pos_app/company/company_provider.dart';
+import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/customer/customer_model.dart';
 import 'package:pos_app/customer/customer_provider.dart';
 
@@ -1121,8 +1122,8 @@ class _DocRow extends StatelessWidget {
                 textAlign: TextAlign.right,
                 style: s?.copyWith(
                   color: doc.balance > 0
-                      ? Colors.red.shade400
-                      : Colors.green,
+                      ? context.dangerColor
+                      : context.successColor,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -1175,17 +1176,17 @@ class _ActionBar extends StatelessWidget {
           FilledButton.icon(
             onPressed: hasCustomer && !isSubmitting ? onOk : null,
             icon: isSubmitting
-                ? const SizedBox(
+                ? SizedBox(
                     width: 16,
                     height: 16,
                     child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white),
+                        strokeWidth: 2, color: context.onStatusColor),
                   )
                 : const Icon(Icons.check, size: 18),
             label: const Text('OK'),
             style: FilledButton.styleFrom(
-              backgroundColor: Colors.green,
-              foregroundColor: Colors.white,
+              backgroundColor: context.successColor,
+              foregroundColor: context.onStatusColor,
               padding:
                   const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
@@ -1196,8 +1197,8 @@ class _ActionBar extends StatelessWidget {
             icon: const Icon(Icons.close, size: 18),
             label: const Text('Close'),
             style: FilledButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
+              backgroundColor: context.dangerColor,
+              foregroundColor: context.onStatusColor,
               padding:
                   const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),

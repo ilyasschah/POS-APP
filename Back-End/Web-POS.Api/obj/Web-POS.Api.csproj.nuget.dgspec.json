@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\repos\\POS-APP-fresh\\Back-End\\Web-POS.Api\\Web-POS.Api.csproj": {}
+    "D:\\POS-APP\\Back-End\\Web-POS.Api\\Web-POS.Api.csproj": {}
   },
   "projects": {
-    "D:\\repos\\POS-APP-fresh\\Back-End\\Web-POS.Api\\Web-POS.Api.csproj": {
+    "D:\\POS-APP\\Back-End\\Web-POS.Api\\Web-POS.Api.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\repos\\POS-APP-fresh\\Back-End\\Web-POS.Api\\Web-POS.Api.csproj",
+        "projectUniqueName": "D:\\POS-APP\\Back-End\\Web-POS.Api\\Web-POS.Api.csproj",
         "projectName": "Web-POS.Api",
-        "projectPath": "D:\\repos\\POS-APP-fresh\\Back-End\\Web-POS.Api\\Web-POS.Api.csproj",
+        "projectPath": "D:\\POS-APP\\Back-End\\Web-POS.Api\\Web-POS.Api.csproj",
         "packagesPath": "C:\\Users\\ILYASS\\.nuget\\packages\\",
-        "outputPath": "D:\\repos\\POS-APP-fresh\\Back-End\\Web-POS.Api\\obj\\",
+        "outputPath": "D:\\POS-APP\\Back-End\\Web-POS.Api\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

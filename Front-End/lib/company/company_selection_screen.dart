@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:pos_app/settings/settings_provider.dart';
 import 'package:pos_app/company/company_provider.dart';
+import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/api/api_client.dart';
 import 'package:pos_app/auth/user_model.dart';
 
@@ -224,7 +225,7 @@ class _CreateFirstUserDialogState
               if (_errorMessage != null) ...[
                 const SizedBox(height: 12),
                 Text(_errorMessage!,
-                    style: const TextStyle(color: Colors.red, fontSize: 13)),
+                    style: TextStyle(color: context.dangerColor, fontSize: 13)),
               ],
             ],
           ),

@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/api/api_client.dart';
 import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/company/company_provider.dart';
+import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
 import 'package:xml/xml.dart' as xml;
 
@@ -388,9 +389,12 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _ResultRow(Icons.add_circle_outline, 'Created', created, Colors.green),
-            _ResultRow(Icons.edit_outlined, 'Updated', updated, Colors.blue),
-            _ResultRow(Icons.skip_next, 'Skipped', skipped, Colors.orange),
+            _ResultRow(Icons.add_circle_outline, 'Created', created,
+                context.successColor),
+            _ResultRow(
+                Icons.edit_outlined, 'Updated', updated, context.infoColor),
+            _ResultRow(
+                Icons.skip_next, 'Skipped', skipped, context.warningColor),
             if (documentNumber != null) ...[
               const SizedBox(height: 8),
               Row(children: [
@@ -406,7 +410,7 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
             if (errors.isNotEmpty) ...[
               const SizedBox(height: 12),
               Text('${errors.length} error(s):',
-                  style: const TextStyle(color: Colors.red)),
+                  style: TextStyle(color: context.dangerColor)),
               ...errors.take(5).map((e) => Text('• $e',
                   style: const TextStyle(fontSize: 12))),
             ],
@@ -464,7 +468,7 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
             ),
             if (_csvPath != null) ...[
               const SizedBox(width: 12),
-              const Icon(Icons.check_circle, color: Colors.green, size: 18),
+              Icon(Icons.check_circle, color: context.successColor, size: 18),
               const SizedBox(width: 6),
               Flexible(
                 child: Text(_csvPath!,
@@ -648,7 +652,7 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
               : const Icon(Icons.download_rounded, size: 18),
           label: const Text('Import'),
           style: FilledButton.styleFrom(
-              backgroundColor: _csvReady ? Colors.green : null),
+              backgroundColor: _csvReady ? context.successColor : null),
           onPressed: _csvReady ? _importCsv : null,
         ),
       ]),
@@ -733,7 +737,7 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
             ),
             if (_xmlPath != null) ...[
               const SizedBox(width: 12),
-              const Icon(Icons.check_circle, color: Colors.green, size: 18),
+              Icon(Icons.check_circle, color: context.successColor, size: 18),
               const SizedBox(width: 6),
               Flexible(
                 child: Text(_xmlPath!,
@@ -755,8 +759,9 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
                 : const Icon(Icons.download_rounded, size: 18),
             label: const Text('Import'),
             style: FilledButton.styleFrom(
-                backgroundColor:
-                    _xmlPath != null && !_isImportingXml ? Colors.green : null),
+                backgroundColor: _xmlPath != null && !_isImportingXml
+                    ? context.successColor
+                    : null),
             onPressed:
                 _xmlPath != null && !_isImportingXml ? _importXml : null,
           ),

@@ -5,6 +5,7 @@ import 'package:gap/gap.dart';
 import 'package:intl/intl.dart';
 import 'package:pos_app/cart/payment_type_model.dart';
 import 'package:pos_app/cart/payment_type_provider.dart';
+import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/refund/refund_service.dart';
 import 'package:pos_app/stock/warehouse_provider.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
@@ -708,16 +709,16 @@ class _RefundDialogState extends ConsumerState<RefundDialog> {
                   const Gap(10),
                   FilledButton.icon(
                     icon: _submitting
-                        ? const SizedBox(
+                        ? SizedBox(
                             width: 14,
                             height: 14,
                             child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.white))
+                                strokeWidth: 2, color: context.onStatusColor))
                         : const Icon(Icons.check, size: 16),
                     label: const Text('OK'),
                     onPressed: _submitting ? null : _submit,
                     style: FilledButton.styleFrom(
-                        backgroundColor: Colors.green.shade700),
+                        backgroundColor: context.successColor),
                   ),
                 ],
               ),

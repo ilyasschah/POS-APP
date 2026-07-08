@@ -56,8 +56,8 @@ class PowerModal extends StatelessWidget {
                 _PowerOptionCard(
                   icon: Icons.power_settings_new,
                   label: "Turn off PC",
-                  iconColor: Colors.redAccent,
-                  textColor: Colors.redAccent,
+                  iconColor: cs.error,
+                  textColor: cs.error,
                   onTap: () async {
                     try {
                       if (Platform.isWindows) {

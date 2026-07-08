@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/cart/payment_provider.dart';
 import 'package:pos_app/company/company_provider.dart';
+import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/currency/currencies_provider.dart';
 import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/database/database_provider.dart';
@@ -630,7 +631,7 @@ class _CurrentShiftTab extends ConsumerWidget {
                           "Shift is Open",
                           Icons.lock_open,
                           theme,
-                          iconColor: Colors.green,
+                          iconColor: context.successColor,
                         ),
                         const SizedBox(height: 32),
                         Text(

@@ -15,6 +15,7 @@ import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:pos_app/api/api_client.dart';
 import 'package:pos_app/company/company_provider.dart';
+import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/product/product_group_provider.dart';
 import 'package:pos_app/currency/currencies_provider.dart';
 import 'package:pos_app/product/product_model.dart';
@@ -279,20 +280,20 @@ Future<void> _showExportDialog(BuildContext context, WidgetRef ref) async {
               value: 'csv',
               groupValue: selected,
               onChanged: (v) => setState(() => selected = v!),
-              title: const Row(children: [
-                Icon(Icons.table_chart, color: Colors.green, size: 20),
-                SizedBox(width: 10),
-                Text('CSV (Excel)'),
+              title: Row(children: [
+                Icon(Icons.table_chart, color: ctx.successColor, size: 20),
+                const SizedBox(width: 10),
+                const Text('CSV (Excel)'),
               ]),
             ),
             RadioListTile<String>(
               value: 'xml',
               groupValue: selected,
               onChanged: (v) => setState(() => selected = v!),
-              title: const Row(children: [
-                Icon(Icons.code, color: Colors.blue, size: 20),
-                SizedBox(width: 10),
-                Text('XML'),
+              title: Row(children: [
+                Icon(Icons.code, color: ctx.infoColor, size: 20),
+                const SizedBox(width: 10),
+                const Text('XML'),
               ]),
             ),
           ],
@@ -367,9 +368,9 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
               onPressed: () => Navigator.pop(ctx, false),
               child: const Text("Cancel")),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(backgroundColor: ctx.dangerColor),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text("Delete", style: TextStyle(color: Colors.white)),
+            child: Text("Delete", style: TextStyle(color: ctx.onStatusColor)),
           ),
         ],
       ),
@@ -513,11 +514,12 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
         actions: [
           TextButton.icon(
             icon: Icon(Icons.delete_rounded,
-                color: hasSelection ? Colors.red : theme.disabledColor),
+                color: hasSelection ? context.dangerColor : theme.disabledColor),
             label: Text(
               hasSelection ? "Delete (${_selectedIds.length})" : "Delete",
               style: TextStyle(
-                  color: hasSelection ? Colors.red : theme.disabledColor),
+                  color:
+                      hasSelection ? context.dangerColor : theme.disabledColor),
             ),
             onPressed: hasSelection ? _bulkDelete : null,
           ),
@@ -801,7 +803,7 @@ class _ProductListContent extends ConsumerWidget {
           Widget boolCell(bool v) => Icon(
                 v ? Icons.check_circle : Icons.remove_circle_outline,
                 size: 18,
-                color: v ? Colors.green : theme.disabledColor,
+                color: v ? context.successColor : theme.disabledColor,
               );
 
           DataCell cellFor(ProductColumnDef col, Product p) {
@@ -874,11 +876,12 @@ class _ProductListContent extends ConsumerWidget {
                 ));
               case 'price':
                 return DataCell(Text("${p.price.toStringAsFixed(2)} $sym",
-                    style: const TextStyle(
-                        color: Colors.green, fontWeight: FontWeight.bold)));
+                    style: TextStyle(
+                        color: context.successColor,
+                        fontWeight: FontWeight.bold)));
               case 'cost':
                 return DataCell(Text("${p.cost.toStringAsFixed(2)} $sym",
-                    style: const TextStyle(color: Colors.redAccent)));
+                    style: TextStyle(color: context.dangerColor)));
               case 'plu':
                 return DataCell(Text(p.plu?.toString() ?? '-'));
               case 'unit':
@@ -1493,8 +1496,9 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                     child: Text(_errorMessage!,
-                        style: const TextStyle(
-                            color: Colors.red, fontWeight: FontWeight.bold)),
+                        style: TextStyle(
+                            color: context.dangerColor,
+                            fontWeight: FontWeight.bold)),
                   )
               ],
             ),
@@ -1726,7 +1730,7 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                       SwitchListTile(
                           title: const Text("Is Enabled (Visible)"),
                           value: _isEnabled,
-                          activeThumbColor: Colors.green,
+                          activeThumbColor: context.successColor,
                           onChanged: (v) => setState(() => _isEnabled = v),
                           visualDensity: VisualDensity.compact),
                     ],
@@ -1813,8 +1817,8 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                           TextButton(
                               onPressed: () =>
                                   setState(() => _selectedImageBase64 = null),
-                              child: const Text("Remove Image",
-                                  style: TextStyle(color: Colors.red))),
+                              child: Text("Remove Image",
+                                  style: TextStyle(color: context.dangerColor))),
                         ]
                       ],
                     )
@@ -1954,7 +1958,7 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (e, _) => Center(
                     child: Text("Error: ${_parseApiError(e)}",
-                        style: const TextStyle(color: Colors.red))),
+                        style: TextStyle(color: context.dangerColor))),
                 data: (comments) {
                   if (comments.isEmpty) {
                     return Center(
@@ -1980,8 +1984,7 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                               style:
                                   const TextStyle(fontWeight: FontWeight.bold)),
                           trailing: IconButton(
-                            icon: const Icon(Icons.delete,
-                                color: Colors.redAccent),
+                            icon: Icon(Icons.delete, color: context.dangerColor),
                             tooltip: "Delete Comment",
                             onPressed: () async {
                               if (companyId == null) return;
@@ -2117,8 +2120,8 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                             DateTime.now().millisecondsSinceEpoch.toString();
                         _isBarcodeChipActive = true;
                       }),
-                      child: const Text("Generate barcode",
-                          style: TextStyle(color: Colors.lightBlue)),
+                      child: Text("Generate barcode",
+                          style: TextStyle(color: context.infoColor)),
                     ),
                   ],
                 ),
@@ -2186,7 +2189,7 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                   const Center(child: CircularProgressIndicator()),
               error: (e, _) => Center(
                   child: Text("Error: $e",
-                      style: const TextStyle(color: Colors.red))),
+                      style: TextStyle(color: context.dangerColor))),
               data: (barcodes) {
                 if (barcodes.isEmpty) {
                   return Center(
@@ -2220,8 +2223,7 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                                     color: theme.colorScheme.tertiary))
                             : null,
                         trailing: IconButton(
-                          icon: const Icon(Icons.delete,
-                              color: Colors.redAccent),
+                          icon: Icon(Icons.delete, color: context.dangerColor),
                           tooltip: "Delete Barcode",
                           onPressed: () async {
                             if (companyId == null) return;

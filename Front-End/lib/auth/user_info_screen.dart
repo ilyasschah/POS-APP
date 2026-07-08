@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/api/api_client.dart';
 import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/auth/auth_storage.dart';
+import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/utils/api_error_parser.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
 
@@ -154,8 +155,8 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
                               'newPassword': newPasswordCtrl.text,
                             },
                           );
-                          if (mounted) {
-                            Navigator.pop(ctx);
+                          if (context.mounted) {
+                            Navigator.pop(context);
                             showAppSnackbar(
                                 context, ref, "Password updated successfully");
                           }
@@ -233,8 +234,8 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
                               'pin': pinCtrl.text,
                             },
                           );
-                          if (mounted) {
-                            Navigator.pop(ctx);
+                          if (context.mounted) {
+                            Navigator.pop(context);
                             showAppSnackbar(
                                 context, ref, "PIN updated successfully");
                             ref.invalidate(allUsersProvider);
@@ -455,7 +456,7 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
                                       ? Icons.tablet_mac
                                       : Icons.devices,
                                   color: isCurrentDevice
-                                      ? Colors.green
+                                      ? context.successColor
                                       : Colors.grey,
                                 ),
                                 title: Text(device['deviceId']),
@@ -470,9 +471,9 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
                                         ),
                                       )
                                     : IconButton(
-                                        icon: const Icon(
+                                        icon: Icon(
                                           Icons.delete_outline,
-                                          color: Colors.red,
+                                          color: context.dangerColor,
                                         ),
                                         onPressed: () =>
                                             _revokeDevice(device['deviceId']),

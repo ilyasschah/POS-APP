@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/company/company_provider.dart';
+import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/sync/sync_notifier.dart';
 import 'package:pos_app/tax/tax_model.dart';
@@ -875,25 +876,25 @@ class _SwitchTaxesDialogState extends ConsumerState<_SwitchTaxesDialog> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: 0.1),
+                  color: context.successColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: Colors.green.withValues(alpha: 0.3),
+                    color: context.successColor.withValues(alpha: 0.3),
                   ),
                 ),
                 child: Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.check_circle_outline,
-                      color: Colors.green,
+                      color: context.successColor,
                       size: 20,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         _successMessage!,
-                        style: const TextStyle(
-                          color: Colors.green,
+                        style: TextStyle(
+                          color: context.successColor,
                           fontSize: 13,
                         ),
                       ),

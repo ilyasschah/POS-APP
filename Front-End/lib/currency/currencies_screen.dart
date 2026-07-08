@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:pos_app/api/api_client.dart';
+import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/currency/currency_model.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
 
@@ -43,9 +44,9 @@ class CurrenciesScreen extends ConsumerWidget {
               onPressed: () => Navigator.pop(ctx, false),
               child: const Text("Cancel")),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(backgroundColor: ctx.dangerColor),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text("Delete", style: TextStyle(color: Colors.white)),
+            child: Text("Delete", style: TextStyle(color: ctx.onStatusColor)),
           ),
         ],
       ),
@@ -90,7 +91,7 @@ class CurrenciesScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
             child: Text("Error: ${_parseApiError(e)}",
-                style: const TextStyle(color: Colors.red))),
+                style: TextStyle(color: context.dangerColor))),
         data: (currencies) {
           if (currencies.isEmpty) {
             return const Center(
@@ -128,7 +129,7 @@ class CurrenciesScreen extends ConsumerWidget {
                         ).then((_) => ref.invalidate(allCurrenciesProvider)),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.redAccent),
+                        icon: Icon(Icons.delete, color: context.dangerColor),
                         onPressed: () =>
                             _deleteCurrency(context, ref, currency),
                       ),
@@ -252,18 +253,19 @@ class _CurrencyEditorDialogState extends State<_CurrencyEditorDialog> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                      color: Colors.red[50],
+                      color: context.dangerColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: Colors.red.shade300)),
+                      border: Border.all(
+                          color: context.dangerColor.withValues(alpha: 0.4))),
                   child: Row(
                     children: [
-                      const Icon(Icons.error_outline,
-                          color: Colors.red, size: 20),
+                      Icon(Icons.error_outline,
+                          color: context.dangerColor, size: 20),
                       const SizedBox(width: 8),
                       Expanded(
                           child: Text(_errorMessage!,
-                              style: const TextStyle(
-                                  color: Colors.red, fontSize: 13))),
+                              style: TextStyle(
+                                  color: context.dangerColor, fontSize: 13))),
                     ],
                   ),
                 )

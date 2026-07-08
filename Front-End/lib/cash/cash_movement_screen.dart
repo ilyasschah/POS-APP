@@ -96,7 +96,7 @@ class _CashMovementScreenState extends ConsumerState<CashMovementScreen> {
       // MainLayout's startup flow this simply pops back; if the screen was ever
       // shown as a root route, redirect into MainLayout so the user is never
       // stranded on this canvas.
-      if (!context.mounted) return;
+      if (!mounted) return;
       if (Navigator.canPop(context)) {
         Navigator.pop(context);
       } else {

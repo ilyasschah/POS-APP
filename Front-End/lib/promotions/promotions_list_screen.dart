@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/promotions/promotion_provider.dart';
@@ -100,8 +101,8 @@ class PromotionsListScreen extends ConsumerWidget {
                     icon: const Icon(Icons.add),
                     label: const Text("Add Promotion"),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
+                      backgroundColor: context.successColor,
+                      foregroundColor: context.onStatusColor,
                     ),
                     // No post-pop refresh needed: allPromotionsProvider streams
                     // live from Drift and updates the instant the editor writes.
@@ -227,7 +228,7 @@ class PromotionsListScreen extends ConsumerWidget {
                                             mainAxisAlignment: MainAxisAlignment.end,
                                             children: [
                                               IconButton(
-                                                icon: const Icon(Icons.edit, color: Colors.blue),
+                                                icon: Icon(Icons.edit, color: context.infoColor),
                                                 tooltip: "Edit",
                                                 padding: const EdgeInsets.all(10),
                                                 onPressed: () => Navigator.push(
@@ -238,7 +239,7 @@ class PromotionsListScreen extends ConsumerWidget {
                                                 ),
                                               ),
                                               IconButton(
-                                                icon: const Icon(Icons.delete, color: Colors.red),
+                                                icon: Icon(Icons.delete, color: context.dangerColor),
                                                 tooltip: "Delete",
                                                 padding: const EdgeInsets.all(10),
                                                 onPressed: () async {
@@ -254,8 +255,8 @@ class PromotionsListScreen extends ConsumerWidget {
                                                         ),
                                                         ElevatedButton(
                                                           style: ElevatedButton.styleFrom(
-                                                            backgroundColor: Colors.red,
-                                                            foregroundColor: Colors.white,
+                                                            backgroundColor: ctx.dangerColor,
+                                                            foregroundColor: ctx.onStatusColor,
                                                           ),
                                                           onPressed: () => Navigator.pop(ctx, true),
                                                           child: const Text('Delete'),
