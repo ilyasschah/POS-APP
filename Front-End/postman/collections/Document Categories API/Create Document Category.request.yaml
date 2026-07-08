@@ -1,0 +1,15 @@
+$kind: http-request
+url: "{{baseUrl}}/api/DocumentCategory/Create?companyId=2"
+method: POST
+headers:
+  Content-Type: application/json
+queryParams:
+  companyId: "2"
+body:
+  type: text
+  content: |-
+    {
+      "name": "22",
+      "languageKey": "Document222.Category.Loss"
+    }
+order: 3000

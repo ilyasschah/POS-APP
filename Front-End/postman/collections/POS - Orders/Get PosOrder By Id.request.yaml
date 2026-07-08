@@ -1,0 +1,9 @@
+$kind: http-request
+name: Get PosOrder By Id
+description: Replace '1' in the URL path with the actual ID you want to retrieve.
+url: "{{baseUrl}}/api/PosOrder/GetById?id=1&companyId={{companyId}}"
+method: GET
+queryParams:
+  id: "16"
+  companyId: "{{companyId}}"
+order: 2000

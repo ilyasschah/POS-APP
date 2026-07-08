@@ -1,0 +1,8 @@
+$kind: http-request
+name: Get Discount by Customer ID
+url: http://192.168.11.103:5002/api/CustomerDiscounts/GetByCustomerId?companyId=2&customerId=4
+method: GET
+queryParams:
+  companyId: "2"
+  customerId: "4"
+order: 1000

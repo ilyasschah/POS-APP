@@ -1,0 +1,23 @@
+$kind: http-request
+url: "{{baseUrl}}/api/DocumentItems/Add?companyId=2"
+method: POST
+headers:
+  Content-Type: application/json
+queryParams:
+  companyId: "2"
+body:
+  type: text
+  content: |-
+    {
+      "documentId": 23,
+      "productId": 14,
+      "quantity": 5,
+      "expectedQuantity": 5,
+      "priceBeforeTax": 100.00,
+      "price": 120.00,
+      "discount": 10,
+      "discountType": 1,
+      "productCost": 80.00,
+      "discountApplyRule": true
+    }
+order: 4000

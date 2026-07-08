@@ -1,0 +1,8 @@
+$kind: http-request
+name: 4. Get User By Username
+url: "{{baseUrl}}/api/Users/GetByUsername?username=admin&companyId={{companyId}}"
+method: GET
+queryParams:
+  username: admin
+  companyId: "{{companyId}}"
+order: 4000

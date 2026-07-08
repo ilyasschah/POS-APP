@@ -1,0 +1,7 @@
+$kind: http-request
+url: "{{baseUrl}}/DeleteCustomercommand?id=6&companyId={{companyId}}"
+method: DELETE
+queryParams:
+  id: "6"
+  companyId: "{{companyId}}"
+order: 6000

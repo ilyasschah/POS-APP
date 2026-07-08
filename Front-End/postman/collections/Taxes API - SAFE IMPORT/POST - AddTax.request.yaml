@@ -1,0 +1,19 @@
+$kind: http-request
+url: http://192.168.11.103:5002/api/Taxes/AddTax?companyId={{companyId}}
+method: POST
+headers:
+  Content-Type: application/json
+queryParams:
+  companyId: "{{companyId}}"
+body:
+  type: text
+  content: |-
+    {
+      "name": "TVA 20%",
+      "rate": 20,
+      "code": "TVA20",
+      "isFixed": false,
+      "isTaxOnTotal": true,
+      "isEnabled": true
+    }
+order: 4000

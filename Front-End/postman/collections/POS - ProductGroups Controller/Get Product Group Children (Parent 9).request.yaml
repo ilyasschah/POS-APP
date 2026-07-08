@@ -1,0 +1,7 @@
+$kind: http-request
+url: "{{baseUrl}}/api/ProductGroups/GetChildren?parentId=9&companyId=2"
+method: GET
+queryParams:
+  parentId: "9"
+  companyId: "2"
+order: 3000

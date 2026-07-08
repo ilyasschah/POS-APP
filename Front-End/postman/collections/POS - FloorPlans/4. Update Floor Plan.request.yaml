@@ -1,0 +1,20 @@
+$kind: http-request
+name: 4. Update Floor Plan
+url: "{{baseUrl}}/api/FloorPlans/Update?companyId={{companyId}}"
+method: PATCH
+headers:
+  Content-Type: application/json
+queryParams:
+  companyId: "{{companyId}}"
+body:
+  type: json
+  content: "{\r
+
+    \  \"id\": 1,\r
+
+    \  \"name\": \"Outdoor Patio\",\r
+
+    \  \"color\": \"#90EE90\"\r
+
+    }"
+order: 4000

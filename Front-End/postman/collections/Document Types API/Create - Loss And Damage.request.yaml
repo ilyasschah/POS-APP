@@ -1,0 +1,20 @@
+$kind: http-request
+url: "{{baseUrl}}/api/DocumentType/Create"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "name": "Loss And Damage",
+      "code": "400",
+      "documentCategoryId": 8,
+      "warehouseId": 10,
+      "stockDirection": 2,
+      "editorType": 2,
+      "printTemplate": "LossAndDamage",
+      "priceType": 0,
+      "languageKey": "Document.Category.Loss.LossAndDamage"
+    }
+order: 8000

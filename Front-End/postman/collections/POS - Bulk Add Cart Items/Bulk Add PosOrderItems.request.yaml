@@ -1,0 +1,38 @@
+$kind: http-request
+name: Bulk Add PosOrderItems
+description: Sends an array of items to be saved to the database. Ensure the
+  posOrderId and productIds exist in your DB before testing.
+url: "{{baseUrl}}/api/PosOrderItems/bulk?companyId={{companyId}}"
+method: POST
+headers:
+  Content-Type: application/json
+queryParams:
+  companyId: "{{companyId}}"
+body:
+  type: json
+  content: |-
+    [
+      {
+        "posOrderId": 15,
+        "productId": 2025,
+        "roundNumber": 1,
+        "quantity": 1,
+        "price": 12.50,
+        "discount": 0,
+        "discountType": 0,
+        "comment": "No onions",
+        "bundle": null
+      },
+      {
+        "posOrderId": 15,
+        "productId": 2019,
+        "roundNumber": 1,
+        "quantity": 2,
+        "price": 2.50,
+        "discount": 0.50,
+        "discountType": 1,
+        "comment": "Extra ice",
+        "bundle": null
+      }
+    ]
+order: 1000

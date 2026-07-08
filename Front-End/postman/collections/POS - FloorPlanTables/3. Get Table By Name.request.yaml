@@ -1,0 +1,9 @@
+$kind: http-request
+name: 3. Get Table By Name
+url: "{{baseUrl}}/api/FloorPlanTables/GetByName?name=Table
+  101&companyId={{companyId}}"
+method: GET
+queryParams:
+  name: Table 101
+  companyId: "{{companyId}}"
+order: 3000

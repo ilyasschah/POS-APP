@@ -1,0 +1,7 @@
+$kind: http-request
+url: "{{baseUrl}}/api/DocumentItems/GetByDocumentId?documentId=23&companyId=2"
+method: GET
+queryParams:
+  documentId: "23"
+  companyId: "2"
+order: 3000

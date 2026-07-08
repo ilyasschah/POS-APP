@@ -1,0 +1,8 @@
+$kind: http-request
+name: Delete Barcode
+url: "{{baseUrl}}/api/Barcodes/Delete?id=11&companyId={{companyId}}"
+method: DELETE
+queryParams:
+  id: "11"
+  companyId: "{{companyId}}"
+order: 6000

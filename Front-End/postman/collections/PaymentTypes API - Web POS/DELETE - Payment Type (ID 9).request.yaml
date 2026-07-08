@@ -1,0 +1,11 @@
+$kind: http-request
+url: "{{baseUrl}}/Delete/?companyId={{companyId}}"
+method: DELETE
+headers:
+  Content-Type: application/json
+queryParams:
+  companyId: "{{companyId}}"
+body:
+  type: text
+  content: "17"
+order: 6000

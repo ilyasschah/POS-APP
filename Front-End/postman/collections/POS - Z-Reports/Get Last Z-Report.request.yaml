@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{baseUrl}}/api/ZReports/GetLast?companyId={{companyId}}"
+method: GET
+queryParams:
+  companyId: "{{companyId}}"
+order: 4000

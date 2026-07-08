@@ -1,0 +1,5 @@
+$kind: collection
+description: Endpoints for managing taxes applied to specific document items.
+variables:
+  baseUrl: http://192.168.11.103:5002
+  companyId: "2"

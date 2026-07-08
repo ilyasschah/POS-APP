@@ -1,0 +1,17 @@
+$kind: http-request
+name: Update Stock Control (PATCH)
+url: "{{baseUrl}}/api/StockControls/Update?companyId=2"
+method: PATCH
+headers:
+  Content-Type: application/json
+queryParams:
+  companyId: "2"
+body:
+  type: json
+  content: |-
+    {
+      "id": 8,
+      "reorderPoint": 25,
+      "customerId": 9
+    }
+order: 4000

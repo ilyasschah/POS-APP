@@ -1,0 +1,16 @@
+$kind: http-request
+name: Add Document Item Tax
+url: "{{baseUrl}}/api/DocumentItemTaxes/Add?companyId={{companyId}}"
+method: POST
+headers:
+  Content-Type: application/json
+queryParams:
+  companyId: "{{companyId}}"
+body:
+  type: json
+  content: |-
+    {
+      "documentItemId": 36,
+      "taxId": 8
+    }
+order: 3000

@@ -1,0 +1,5 @@
+$kind: collection
+description: Testing CustomerController endpoints
+variables:
+  baseUrl: http://192.168.11.103:5002/api/Customer
+  companyId: "2"

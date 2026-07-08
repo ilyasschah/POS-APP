@@ -1,0 +1,15 @@
+$kind: http-request
+url: http://192.168.11.103:5002/api/Warehouses/Update?companyId={{companyId}}
+method: PATCH
+headers:
+  Content-Type: application/json
+queryParams:
+  companyId: "{{companyId}}"
+body:
+  type: text
+  content: |-
+    {
+      "id": 6,
+      "name": "magaza casa updated"
+    }
+order: 4000

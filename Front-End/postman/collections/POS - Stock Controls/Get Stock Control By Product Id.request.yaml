@@ -1,0 +1,8 @@
+$kind: http-request
+name: Get Stock Control By Product Id
+url: "{{baseUrl}}/api/StockControls/GetByProductId?productId=14&companyId=2"
+method: GET
+queryParams:
+  productId: "14"
+  companyId: "2"
+order: 2000

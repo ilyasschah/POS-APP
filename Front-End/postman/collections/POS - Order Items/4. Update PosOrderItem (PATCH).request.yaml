@@ -1,0 +1,18 @@
+$kind: http-request
+name: 4. Update PosOrderItem (PATCH)
+description: Updates an existing item. Make sure to change the 'id' in the JSON
+  body to a real item ID!
+url: "{{baseUrl}}/api/PosOrderItem?companyId={{companyId}}"
+method: PATCH
+headers:
+  Content-Type: application/json
+queryParams:
+  companyId: "{{companyId}}"
+body:
+  type: json
+  content: |-
+    {
+      "id": 15,
+      "IsLocked" : "True"
+    }
+order: 4000

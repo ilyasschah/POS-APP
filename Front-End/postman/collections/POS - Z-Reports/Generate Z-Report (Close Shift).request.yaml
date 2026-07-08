@@ -1,0 +1,7 @@
+$kind: http-request
+url: "{{baseUrl}}/api/ZReports/Generate?companyId={{companyId}}&userId={{userId}}"
+method: POST
+queryParams:
+  companyId: "{{companyId}}"
+  userId: "{{userId}}"
+order: 1000

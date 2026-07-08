@@ -1,0 +1,28 @@
+$kind: http-request
+name: 1. Add User
+url: "{{baseUrl}}/api/Users/Add?companyId={{companyId}}"
+method: POST
+headers:
+  Content-Type: application/json
+queryParams:
+  companyId: "{{companyId}}"
+body:
+  type: json
+  content: "{\r
+
+    \  \"username\": \"johndoe\",\r
+
+    \  \"password\": \"SecurePassword123!\",\r
+
+    \  \"firstName\": \"John\",\r
+
+    \  \"lastName\": \"Doe\",\r
+
+    \  \"accessLevel\": 1,\r
+
+    \  \"isEnabled\": true,\r
+
+    \  \"email\": \"john.e@example.com\"\r
+
+    }"
+order: 1000

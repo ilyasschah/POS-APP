@@ -1,0 +1,24 @@
+$kind: http-request
+url: "{{baseUrl}}/api/Products/Add?companyId=2"
+method: POST
+headers:
+  Content-Type: application/json
+queryParams:
+  companyId: "2"
+body:
+  type: text
+  content: |-
+    {
+      "name": "Premium Coffee Blend",
+      "code": "COF-001",
+      "productGroupId": 9,
+      "price": 45.00,
+      "isTaxInclusivePrice": true,
+      "currencyId": 7,
+      "cost": 15.00,
+      "isEnabled": true,
+      "color": "#795548",
+      "isService": false,
+      "isUsingDefaultQuantity": true
+    }
+order: 4000

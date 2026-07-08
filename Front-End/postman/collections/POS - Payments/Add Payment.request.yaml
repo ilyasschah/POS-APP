@@ -1,0 +1,18 @@
+$kind: http-request
+name: Add Payment
+url: "{{baseUrl}}/api/Payments/Add?companyId={{companyId}}"
+method: POST
+headers:
+  Content-Type: application/json
+queryParams:
+  companyId: "{{companyId}}"
+body:
+  type: json
+  content: |-
+    {
+      "documentId": 35,
+      "paymentTypeId": 11,
+      "amount": 3.00,
+      "userId": 5
+    }
+order: 4000

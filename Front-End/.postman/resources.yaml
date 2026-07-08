@@ -1,0 +1,44 @@
+# Use this workspace to collaborate
+workspace:
+  id: 608fe7fd-a706-421a-86ea-fe83a69f36e6
+
+localResources:
+  collections:
+    - ..\postman.json
+
+# Each entry here maps a local resource to one or more corresponding objects in Postman Cloud
+
+cloudResources:
+  collections:
+    ..\postman\collections\Warehouses API - SAFE IMPORT: 41814350-1bb971e1-1600-44ff-81be-18678404f3b6
+    ..\postman\collections\Document Types API: 41814350-27b61632-566e-43a2-bfd8-74ddba9bed8a
+    ..\postman\collections\Document Categories API: 41814350-2b823257-246b-4c7b-b768-86945f924046
+    ..\postman\collections\POS - ProductGroups Controller: 41814350-635a91c6-7656-4bfe-9f56-3bb83819a3c1
+    ..\postman\collections\POS - DocumentItems Controller: 41814350-6ec9300b-4500-45f2-ae6a-727a043fa5ae
+    ..\postman\collections\Taxes API - SAFE IMPORT: 41814350-7d41b7f8-0e6b-448e-a656-934273866882
+    ..\postman\collections\Customer API - Web POS: 41814350-8eece70d-31ed-4fae-8b03-653b804773cc
+    ..\postman\collections\PaymentTypes API - Web POS: 41814350-a6ecf566-8243-4a0d-8437-b1848dcc854f
+    ..\postman\collections\Stocks API: 41814350-c3a81e84-f018-42c3-b889-196d7de2b2ba
+    ..\postman\collections\Documents: 41814350-fe9212ba-c021-4022-9515-da26fc9f004c
+    ..\postman\collections\POS - Currencies Controller: 41814350-6089cac7-3d47-43a0-8fae-aabe49157e21
+    ..\postman\collections\POS - Products Controller: 41814350-29c0ea0b-0ede-487e-989a-4cc86023472f
+    ..\postman\collections\POS - Stock Controls: 41814350-ab542113-a189-48f0-b0ee-532d063156e1
+    ..\postman\collections\POS - Product Taxes: 41814350-f712a588-c7c2-4b20-838a-2a79c707e4b7
+    ..\postman\collections\POS - Barcodes: 41814350-1da14cf3-a1a4-440d-a8c2-c572bb1dc0fd
+    ..\postman\collections\POS - Product Comments: 41814350-5f8f46a1-abbb-472b-ab13-f86101c2c9fc
+    ..\postman\collections\POS - Checkout Flow: 41814350-4c48d89a-2c34-4291-8c28-ab90526ebba3
+    ..\postman\collections\POS - Bulk Add Cart Items: 41814350-3870ce01-1cde-4aee-b5e4-75ee6684bda1
+    ..\postman\collections\POS - SecurityKeys: 41814350-bfe25296-72be-45ce-a37d-45c96fc8f900
+    ..\postman\collections\POS - Document Item Expiration Dates: 41814350-ceee8054-5210-40ab-88d6-c1da60485df0
+    ..\postman\collections\POS - Z-Reports: 41814350-01ced2d8-fb05-40b3-ad48-ae1ff365ebb6
+    ..\postman\collections\POS - Document Item Taxes: 41814350-ea40986e-f99e-4800-bd4b-c5878ecb3924
+    ..\postman\collections\POS - Order Items: 41814350-3131be60-263b-4638-990f-d06f62cd6956
+    ..\postman\collections\POS - FloorPlans: 41814350-de811e37-2423-414e-a7ba-743f937bb369
+    ..\postman\collections\POS - Payments: 41814350-68345b0d-77e6-4fb6-87e9-09ea281d0dda
+    ..\postman\collections\POS - Orders: 41814350-487e83b6-fb99-4e10-aa0d-8a7e7fc16404
+    ..\postman\collections\POS - Users: 41814350-db5c0078-e0d2-47bd-91c8-1d395a449861
+    ..\postman\collections\POS - FloorPlanTables: 41814350-c57d8d3e-a1b7-478c-bf70-f2522769ed88
+    ..\postman\collections\Promotion Items API: 41814350-b0e220bd-cf53-473c-859e-07eecfb50b20
+    ..\postman\collections\Discounts & Promotions API: 41814350-ab4f1303-0cc6-422a-8304-64c69358ae17
+  environments:
+    ..\postman\environments\New Environment.environment.yaml: 0ff322dd-64bf-472c-93d0-3e882d21cd5f

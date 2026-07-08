@@ -1,0 +1,99 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Flutter Web Dev Server",
+      "type": "shell",
+      "command": "flutter",
+      "args": [
+        "run",
+        "-d",
+        "web-server",
+        "--web-port",
+        "8080",
+        "--web-hostname",
+        "localhost"
+      ],
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": [
+          {
+            "regexp": ".",
+            "file": 1,
+            "location": 2,
+            "message": 3
+          }
+        ],
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Launching",
+          "endsPattern": "To hot restart"
+        }
+      }
+    },
+    {
+      "type": "flutter",
+      "command": "dart",
+      "args": [
+        "run",
+        "build_runner",
+        "build"
+      ],
+      "problemMatcher": [
+        "$dart-build_runner"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "label": "flutter: dart run build_runner build",
+      "detail": ""
+    },
+    {
+      "label": "📱 Run Android (Debug)",
+      "type": "shell",
+      "command": "flutter",
+      "args": [
+        "run",
+        "-d",
+        "android"
+      ],
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "📦 Build Android APK (Release)",
+      "type": "shell",
+      "command": "flutter",
+      "args": [
+        "build",
+        "apk"
+      ],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "💻 Run Windows (Debug)",
+      "type": "shell",
+      "command": "flutter",
+      "args": [
+        "run",
+        "-d",
+        "windows"
+      ],
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "🚀 Build Windows .exe (Release)",
+      "type": "shell",
+      "command": "flutter",
+      "args": [
+        "build",
+        "windows"
+      ],
+      "group": "build",
+      "problemMatcher": []
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+$kind: http-request
+name: Get Z-Report By Id
+url: "{{baseUrl}}/api/ZReports/GetById?id=4&companyId={{companyId}}"
+method: GET
+queryParams:
+  id: "4"
+  companyId: "{{companyId}}"
+order: 2000

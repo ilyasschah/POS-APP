@@ -1,0 +1,9 @@
+$kind: http-request
+name: Get Payments By Document Id
+url: "{{baseUrl}}/api/Payments/GetByDocumentId?documentId=35&companyId={{compan\
+  yId}}"
+method: GET
+queryParams:
+  documentId: "35"
+  companyId: "{{companyId}}"
+order: 2000

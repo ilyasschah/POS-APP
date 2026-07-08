@@ -1,0 +1,20 @@
+$kind: http-request
+url: "{{baseUrl}}/api/DocumentType/Create"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "name": "Purchase",
+      "code": "100",
+      "documentCategoryId": 5,
+      "warehouseId": 5,
+      "stockDirection": 1,
+      "editorType": 0,
+      "printTemplate": "Purchase",
+      "priceType": 2,
+      "languageKey": "Document.Category.Expenses.Purchase"
+    }
+order: 3000

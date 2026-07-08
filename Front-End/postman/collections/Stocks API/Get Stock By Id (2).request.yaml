@@ -1,0 +1,7 @@
+$kind: http-request
+url: "{{baseUrl}}/api/Stocks/GetById?id=2&companyId=2"
+method: GET
+queryParams:
+  id: "2"
+  companyId: "2"
+order: 2000

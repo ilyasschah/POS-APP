@@ -1,0 +1,6 @@
+$kind: collection
+description: Tests the transaction that converts a PosOrder into a Document and Payment.
+variables:
+  baseUrl: http://192.168.11.103:5002
+  companyId: "2"
+  userId: "5"

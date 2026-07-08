@@ -1,0 +1,14 @@
+$kind: http-request
+name: Add Currency (New Zealand Dollar)
+url: "{{baseUrl}}/api/Currencies/Add"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "name": "N2w Zealand Dollar",
+      "code": "2ZD"
+    }
+order: 4000

@@ -1,0 +1,7 @@
+$kind: http-request
+url: "{{baseUrl}}/api/ProductComments/Delete?id=1&companyId=2"
+method: DELETE
+queryParams:
+  id: "1"
+  companyId: "2"
+order: 6000

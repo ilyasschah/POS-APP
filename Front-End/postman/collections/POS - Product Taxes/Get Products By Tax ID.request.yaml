@@ -1,0 +1,8 @@
+$kind: http-request
+name: Get Products By Tax ID
+url: "{{baseUrl}}/api/ProductTaxes/GetByTaxId?taxId=5&companyId=2"
+method: GET
+queryParams:
+  taxId: "5"
+  companyId: "2"
+order: 3000

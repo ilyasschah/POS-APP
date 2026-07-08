@@ -1,0 +1,9 @@
+$kind: http-request
+name: Unlink Tax from Product (Delete)
+url: "{{baseUrl}}/api/ProductTaxes/Delete?productId=7&taxId=7&companyId=2"
+method: DELETE
+queryParams:
+  productId: "7"
+  taxId: "7"
+  companyId: "2"
+order: 5000

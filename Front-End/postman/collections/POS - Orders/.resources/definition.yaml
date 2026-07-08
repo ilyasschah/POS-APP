@@ -1,0 +1,6 @@
+$kind: collection
+description: Endpoints for managing POS Orders (temporary carts) before they
+  become Documents.
+variables:
+  baseUrl: http://192.168.11.103:5002
+  companyId: "2"

@@ -1,0 +1,10 @@
+$kind: http-request
+name: Get PosOrder By Number
+description: Replace 'ORD-0001' in the URL path with the actual Order Number.
+url: "{{baseUrl}}/api/PosOrder/Number/ORD-0001?number=ORD-2025-0001&companyId={\
+  {companyId}}"
+method: GET
+queryParams:
+  number: ORD-2025-0001
+  companyId: "{{companyId}}"
+order: 3000

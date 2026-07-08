@@ -1,0 +1,17 @@
+$kind: http-request
+name: Update Payment (PATCH)
+url: "{{baseUrl}}/api/Payments/Update?companyId={{companyId}}"
+method: PATCH
+headers:
+  Content-Type: application/json
+queryParams:
+  companyId: "{{companyId}}"
+body:
+  type: json
+  content: |-
+    {
+      "id": 13,
+      "amount": 15.00,
+      "date": "2026-03-29T00:00:00"
+    }
+order: 5000

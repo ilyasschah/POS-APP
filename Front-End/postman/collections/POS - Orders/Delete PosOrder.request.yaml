@@ -1,0 +1,9 @@
+$kind: http-request
+name: Delete PosOrder
+description: Replace '1' in the URL path with the actual ID you want to delete.
+url: "{{baseUrl}}/api/PosOrder/Delete?id=16&companyId={{companyId}}"
+method: DELETE
+queryParams:
+  id: "16"
+  companyId: "{{companyId}}"
+order: 6000

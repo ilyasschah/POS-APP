@@ -1,0 +1,16 @@
+$kind: http-request
+url: "{{baseUrl}}/api/Stocks/Add?companyId=2"
+method: POST
+headers:
+  Content-Type: application/json
+queryParams:
+  companyId: "2"
+body:
+  type: text
+  content: |-
+    {
+      "quantity": 10,
+      "warehouseId": 6,
+      "productId": 16
+    }
+order: 3000

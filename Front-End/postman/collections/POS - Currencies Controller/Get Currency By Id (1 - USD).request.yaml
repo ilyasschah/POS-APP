@@ -1,0 +1,7 @@
+$kind: http-request
+name: Get Currency By Id (1 - USD)
+url: "{{baseUrl}}/api/Currencies/GetById?id=5"
+method: GET
+queryParams:
+  id: "5"
+order: 2000

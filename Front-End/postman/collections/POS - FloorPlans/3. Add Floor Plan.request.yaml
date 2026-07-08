@@ -1,0 +1,18 @@
+$kind: http-request
+name: 3. Add Floor Plan
+url: "{{baseUrl}}/api/FloorPlans/Add?companyId={{companyId}}"
+method: POST
+headers:
+  Content-Type: application/json
+queryParams:
+  companyId: "{{companyId}}"
+body:
+  type: json
+  content: "{\r
+
+    \  \"name\": \"Main Room\",\r
+
+    \  \"color\": \"Transparent\"\r
+
+    }"
+order: 3000

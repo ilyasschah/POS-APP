@@ -1,0 +1,4 @@
+$kind: http-request
+url: "{{baseUrl}}/api/Currencies/GetAll"
+method: GET
+order: 1000

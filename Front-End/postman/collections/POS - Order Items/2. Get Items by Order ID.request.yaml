@@ -1,0 +1,7 @@
+$kind: http-request
+description: Fetches all items inside a specific cart.
+url: "{{baseUrl}}/api/PosOrderItem/Order?posOrderId={{posOrderId}}"
+method: GET
+queryParams:
+  posOrderId: "{{posOrderId}}"
+order: 2000

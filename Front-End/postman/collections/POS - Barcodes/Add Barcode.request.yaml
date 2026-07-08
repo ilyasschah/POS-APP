@@ -1,0 +1,16 @@
+$kind: http-request
+name: Add Barcode
+url: "{{baseUrl}}/api/Barcodes/Add?companyId={{companyId}}"
+method: POST
+headers:
+  Content-Type: application/json
+queryParams:
+  companyId: "{{companyId}}"
+body:
+  type: json
+  content: |-
+    {
+      "productId": 5,
+      "value": "890123456789"
+    }
+order: 4000

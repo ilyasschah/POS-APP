@@ -1,0 +1,18 @@
+$kind: http-request
+name: 5. Update User
+url: "{{baseUrl}}/api/Users/UpdateUser?companyId={{companyId}}"
+method: PATCH
+headers:
+  Content-Type: application/json
+queryParams:
+  companyId: "{{companyId}}"
+body:
+  type: json
+  content: "{\r
+
+    \  \"id\": 5,\r
+
+    \  \"accessLevel\": 1\r
+
+    }"
+order: 5000

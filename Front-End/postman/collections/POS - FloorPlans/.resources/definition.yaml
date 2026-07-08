@@ -1,0 +1,6 @@
+$kind: collection
+name: POS - FloorPlans
+description: Endpoints for managing Floor Plans (canvases/rooms) in the POS system.
+variables:
+  baseUrl: http://192.168.11.103:5002
+  companyId: "2"

@@ -1,0 +1,9 @@
+$kind: http-request
+name: Delete Expiration Date
+url: "{{baseUrl}}/api/DocumentItemExpirationDates/Delete?documentItemId=34&comp\
+  anyId={{companyId}}"
+method: DELETE
+queryParams:
+  documentItemId: "34"
+  companyId: "{{companyId}}"
+order: 4000

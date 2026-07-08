@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{baseUrl}}/api/DocumentType/GetById?id=3"
+method: GET
+queryParams:
+  id: "3"
+order: 2000

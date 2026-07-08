@@ -1,0 +1,6 @@
+$kind: collection
+name: POS - Users
+description: Endpoints for managing Users in the POS system.
+variables:
+  baseUrl: http://192.168.11.103:5002
+  companyId: "1"

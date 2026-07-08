@@ -1,0 +1,7 @@
+$kind: http-request
+url: http://192.168.11.103:5002/api/Taxes/GetTaxByName?name=TVA&companyId={{companyId}}
+method: GET
+queryParams:
+  name: TVA
+  companyId: "{{companyId}}"
+order: 3000

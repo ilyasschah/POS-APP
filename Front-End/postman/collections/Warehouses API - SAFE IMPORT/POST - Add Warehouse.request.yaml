@@ -1,0 +1,14 @@
+$kind: http-request
+url: http://192.168.11.103:5002/api/Warehouses/Add?companyId={{companyId}}
+method: POST
+headers:
+  Content-Type: application/json
+queryParams:
+  companyId: "{{companyId}}"
+body:
+  type: text
+  content: |-
+    {
+      "name": "New Warehouse"
+    }
+order: 3000

@@ -1,0 +1,4 @@
+$kind: collection
+description: Document API endpoints - companyId=2
+variables:
+  baseUrl: http://192.168.11.103:5002

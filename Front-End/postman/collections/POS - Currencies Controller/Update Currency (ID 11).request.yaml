@@ -1,0 +1,15 @@
+$kind: http-request
+url: "{{baseUrl}}/api/Currencies/Update?id=11"
+method: PATCH
+headers:
+  Content-Type: application/json
+queryParams:
+  id: "11"
+body:
+  type: text
+  content: |-
+    {
+      "name": "New Zealand Dollar Updated",
+      "code": "NZD"
+    }
+order: 5000

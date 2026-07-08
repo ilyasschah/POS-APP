@@ -1,0 +1,26 @@
+$kind: http-request
+url: "{{baseUrl}}/Update/?companyId={{companyId}}"
+method: PATCH
+headers:
+  Content-Type: application/json
+queryParams:
+  companyId: "{{companyId}}"
+body:
+  type: text
+  content: |-
+    {
+      "id": 17,
+      "name": "Cash Updated",
+      "code": "CASH",
+      "isCustomerRequired": false,
+      "isFiscal": true,
+      "isSlipRequired": true,
+      "isChangeAllowed": true,
+      "ordinal": 2,
+      "isEnabled": true,
+      "isQuickPayment": true,
+      "openCashDrawer": true,
+      "shortcutKey": "F1",
+      "markAsPaid": true
+    }
+order: 5000

@@ -1,0 +1,22 @@
+$kind: http-request
+name: Checkout PosOrder
+description: "Finalizes the order. NOTE: Ensure posOrderId, paymentTypeId,
+  documentTypeId, and warehouseId exist in your DB!"
+url: "{{baseUrl}}/api/PosOrder/Checkout?companyId={{companyId}}&userId={{userId}}"
+method: POST
+headers:
+  Content-Type: application/json
+queryParams:
+  companyId: "{{companyId}}"
+  userId: "{{userId}}"
+body:
+  type: json
+  content: |-
+    {
+      "posOrderId": 1,
+      "paymentTypeId": 10,
+      "amountPaid": 50.00,
+      "documentTypeId": 3,
+      "warehouseId": 5
+    }
+order: 1000

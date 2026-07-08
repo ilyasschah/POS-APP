@@ -1,0 +1,6 @@
+$kind: collection
+description: Tests the bulk addition of order items to a PosOrder in a single
+  database transaction.
+variables:
+  baseUrl: http://192.168.11.103:5002
+  companyId: "2"

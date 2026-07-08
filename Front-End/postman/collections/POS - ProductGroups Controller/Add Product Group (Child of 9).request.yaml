@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{baseUrl}}/api/ProductGroups/Add?companyId=2"
+method: POST
+headers:
+  Content-Type: application/json
+queryParams:
+  companyId: "2"
+body:
+  type: text
+  content: |-
+    {
+      "name": "Green Tea",
+      "parentGroupId": 9,
+      "color": "#00FF00",
+      "rank": 1
+    }
+order: 4000

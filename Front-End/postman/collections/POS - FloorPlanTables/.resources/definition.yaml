@@ -1,0 +1,6 @@
+$kind: collection
+description: Endpoints for managing Floor Plan Tables (restaurant layout
+  resources) in the POS system.
+variables:
+  baseUrl: http://192.168.11.103:5002
+  companyId: "2"

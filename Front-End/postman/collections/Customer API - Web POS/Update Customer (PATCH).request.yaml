@@ -1,0 +1,34 @@
+$kind: http-request
+url: "{{baseUrl}}/UpdateCustomercommand?companyId={{companyId}}"
+method: PATCH
+headers:
+  Content-Type: application/json
+queryParams:
+  companyId: "{{companyId}}"
+body:
+  type: text
+  content: |-
+    {
+      "id": 8,
+      "code": "C001",
+      "name": "Updated Customer",
+      "taxNumber": "123456",
+      "address": "New Address",
+      "postalCode": "20000",
+      "city": "Casablanca",
+      "countryId": 24,
+      "dateUpdated": "2026-03-21T01:22:25.401Z",
+      "email": "updated@test.com",
+      "phoneNumber": "0611111111",
+      "isEnabled": true,
+      "isCustomer": true,
+      "isSupplier": false,
+      "dueDatePeriod": 45,
+      "streetName": "Main",
+      "additionalStreetName": "Block B",
+      "buildingNumber": "20",
+      "plotIdentification": "P2",
+      "citySubdivisionName": "Center",
+      "isTaxExempt": false
+    }
+order: 5000

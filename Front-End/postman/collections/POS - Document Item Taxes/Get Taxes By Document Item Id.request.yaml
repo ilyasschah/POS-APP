@@ -1,0 +1,9 @@
+$kind: http-request
+name: Get Taxes By Document Item Id
+url: "{{baseUrl}}/api/DocumentItemTaxes/GetByDocumentItemId?documentItemId=34&c\
+  ompanyId={{companyId}}"
+method: GET
+queryParams:
+  documentItemId: "34"
+  companyId: "{{companyId}}"
+order: 1000

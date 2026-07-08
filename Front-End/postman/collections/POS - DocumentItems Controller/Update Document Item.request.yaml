@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{baseUrl}}/api/DocumentItems/Update?companyId=2"
+method: PATCH
+headers:
+  Content-Type: application/json
+queryParams:
+  companyId: "2"
+body:
+  type: text
+  content: |-
+    {
+      "id": 1,
+      "quantity": 10,
+      "discount": 15,
+      "discountType": 0
+    }
+order: 5000

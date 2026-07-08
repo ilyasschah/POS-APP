@@ -1,0 +1,20 @@
+$kind: http-request
+url: "{{baseUrl}}/api/DocumentType/Create"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "name": "Refund",
+      "code": "220",
+      "documentCategoryId": 6,
+      "warehouseId": 5,
+      "stockDirection": 1,
+      "editorType": 0,
+      "printTemplate": "Refund",
+      "priceType": 1,
+      "languageKey": "Document.Category.Sales.Refund"
+    }
+order: 6000

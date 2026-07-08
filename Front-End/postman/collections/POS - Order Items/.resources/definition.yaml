@@ -1,0 +1,7 @@
+$kind: collection
+description: Endpoints for managing products (items) inside a POS Order.
+variables:
+  baseUrl: http://192.168.11.103:5002
+  companyId: "2"
+  posOrderId: "1"
+  productId: "2031"

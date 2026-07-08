@@ -1,0 +1,7 @@
+$kind: collection
+name: POS - Z-Reports
+description: Endpoints for generating and retrieving Z-Reports.
+variables:
+  baseUrl: http://192.168.11.103:5002
+  companyId: "1"
+  userId: "1"

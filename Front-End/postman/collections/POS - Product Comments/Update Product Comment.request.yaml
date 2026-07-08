@@ -1,0 +1,17 @@
+$kind: http-request
+name: Update Product Comment
+url: "{{baseUrl}}/api/ProductComments/Update?companyId=2"
+method: PATCH
+headers:
+  Content-Type: application/json
+queryParams:
+  companyId: "2"
+body:
+  type: json
+  content: |-
+    {
+      "id": 1,
+      "productId": 2021,
+      "comment": "Contains peanuts and tree nuts. Severe allergy warning."
+    }
+order: 5000

@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{baseUrl}}/api/FloorPlans/GetAll?companyId={{companyId}}"
+method: GET
+queryParams:
+  companyId: "{{companyId}}"
+order: 1000

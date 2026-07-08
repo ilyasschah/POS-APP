@@ -1,0 +1,24 @@
+$kind: http-request
+name: Create PosOrder
+url: "{{baseUrl}}/api/PosOrder?companyId={{companyId}}"
+method: POST
+headers:
+  Content-Type: application/json
+queryParams:
+  companyId: "{{companyId}}"
+body:
+  type: json
+  content: |-
+    {
+      "userId": 11,
+      "number": "ORD-0001",
+      "discount": 0,
+      "discountType": 0,
+      "total": 50.00,
+      "customerId": null,
+      "serviceType": 0,
+      "serviceStatus": 0,
+      "floorPlanTableId": null,
+      "bookingId": null
+    }
+order: 4000

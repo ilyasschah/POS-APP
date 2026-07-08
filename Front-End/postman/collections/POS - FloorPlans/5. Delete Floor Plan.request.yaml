@@ -1,0 +1,7 @@
+$kind: http-request
+url: "{{baseUrl}}/api/FloorPlans/Delete?id=1&companyId={{companyId}}"
+method: DELETE
+queryParams:
+  id: "1"
+  companyId: "{{companyId}}"
+order: 5000

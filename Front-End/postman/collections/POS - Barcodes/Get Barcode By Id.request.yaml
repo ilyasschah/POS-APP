@@ -1,0 +1,8 @@
+$kind: http-request
+name: Get Barcode By Id
+url: "{{baseUrl}}/api/Barcodes/GetById/1?id=15&companyId={{companyId}}"
+method: GET
+queryParams:
+  id: "15"
+  companyId: "{{companyId}}"
+order: 2000

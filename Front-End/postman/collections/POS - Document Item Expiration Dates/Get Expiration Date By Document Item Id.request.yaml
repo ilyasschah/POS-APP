@@ -1,0 +1,9 @@
+$kind: http-request
+name: Get Expiration Date By Document Item Id
+url: "{{baseUrl}}/api/DocumentItemExpirationDates/Get?documentItemId=34&company\
+  Id={{companyId}}"
+method: GET
+queryParams:
+  documentItemId: "34"
+  companyId: "{{companyId}}"
+order: 1000

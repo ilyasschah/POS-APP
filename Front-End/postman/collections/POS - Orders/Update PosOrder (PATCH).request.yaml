@@ -1,0 +1,26 @@
+$kind: http-request
+name: Update PosOrder (PATCH)
+description: Replace '1' in the URL path with the actual ID you want to update.
+url: "{{baseUrl}}/api/PosOrder/Update?companyId={{companyId}}"
+method: PATCH
+headers:
+  Content-Type: application/json
+queryParams:
+  companyId: "{{companyId}}"
+body:
+  type: json
+  content: |-
+    {
+      "id": 16,
+      "userId": 11,
+      "number": "ORD-1001",
+      "discount": 5.00,
+      "discountType": 1,
+      "total": 45.00,
+      "customerId": 4,
+      "serviceType": 0,
+      "serviceStatus": 1,
+      "floorPlanTableId": 3,
+      "bookingId": null
+    }
+order: 5000

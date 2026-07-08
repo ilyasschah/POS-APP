@@ -1,0 +1,7 @@
+$kind: http-request
+url: "{{baseUrl}}/api/Stocks/Delete?id=4&companyId=2"
+method: DELETE
+queryParams:
+  id: "4"
+  companyId: "2"
+order: 5000

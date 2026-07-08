@@ -1,0 +1,16 @@
+$kind: http-request
+name: Add Product Comment
+url: "{{baseUrl}}/api/ProductComments/Add?companyId=2"
+method: POST
+headers:
+  Content-Type: application/json
+queryParams:
+  companyId: "2"
+body:
+  type: json
+  content: |-
+    {
+      "productId": 2021,
+      "comment": "Contains nuts. Allergy warning."
+    }
+order: 4000

@@ -1,0 +1,11 @@
+$kind: http-request
+name: 3. Get User By Id
+url: "{{baseUrl}}/api/Users/GetUserById?id=5&companyId={{companyId}}"
+method: GET
+queryParams:
+  - key: id
+    value: "5"
+    description: Change this to the ID of the user you just created
+  - key: companyId
+    value: "{{companyId}}"
+order: 3000

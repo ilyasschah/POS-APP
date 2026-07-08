@@ -1,0 +1,7 @@
+$kind: http-request
+url: http://192.168.11.103:5002/api/PromotionItems/Delete?companyId=2&id=1
+method: DELETE
+queryParams:
+  companyId: "2"
+  id: "1"
+order: 4000

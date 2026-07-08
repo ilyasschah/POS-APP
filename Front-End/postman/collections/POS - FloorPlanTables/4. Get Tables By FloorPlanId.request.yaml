@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{baseUrl}}/api/FloorPlanTables/GetByFloorPlanId?floorPlanId=1&companyId=\
+  {{companyId}}"
+method: GET
+queryParams:
+  floorPlanId: "1"
+  companyId: "{{companyId}}"
+order: 4000

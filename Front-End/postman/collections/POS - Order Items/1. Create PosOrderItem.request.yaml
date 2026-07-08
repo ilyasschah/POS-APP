@@ -1,0 +1,25 @@
+$kind: http-request
+name: 1. Create PosOrderItem
+description: Adds a new product to an existing Order.
+url: "{{baseUrl}}/api/PosOrderItem?companyId={{companyId}}"
+method: POST
+headers:
+  Content-Type: application/json
+queryParams:
+  companyId: "{{companyId}}"
+body:
+  type: json
+  content: |-
+    {
+      "posOrderId": {{posOrderId}},
+      "productId": {{productId}},
+      "roundNumber": 1,
+      "quantity": 2.0,
+      "price": 15.50,
+      "discount": 0.0,
+      "discountType": 0,
+      "discountAppliedType": 0,
+      "comment": "No onions please",
+      "bundle": null
+    }
+order: 1000

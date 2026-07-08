@@ -1,0 +1,25 @@
+$kind: http-request
+url: "{{baseUrl}}/Add/?companyId={{companyId}}"
+method: POST
+headers:
+  Content-Type: application/json
+queryParams:
+  companyId: "{{companyId}}"
+body:
+  type: text
+  content: |-
+    {
+      "name": "Cash3",
+      "code": "CASH",
+      "isCustomerRequired": false,
+      "isFiscal": true,
+      "isSlipRequired": true,
+      "isChangeAllowed": true,
+      "ordinal": 1,
+      "isEnabled": true,
+      "isQuickPayment": true,
+      "openCashDrawer": true,
+      "shortcutKey": "F1",
+      "markAsPaid": true
+    }
+order: 4000

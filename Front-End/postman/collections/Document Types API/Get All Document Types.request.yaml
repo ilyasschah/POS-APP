@@ -1,0 +1,4 @@
+$kind: http-request
+url: "{{baseUrl}}/api/DocumentType/GetAll"
+method: GET
+order: 1000

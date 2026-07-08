@@ -1,0 +1,6 @@
+check the settigns if they realy work and effect the application
+
+client screen like odoo
+
+
+time for notification 

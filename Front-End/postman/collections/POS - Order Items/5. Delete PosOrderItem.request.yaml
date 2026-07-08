@@ -1,0 +1,11 @@
+$kind: http-request
+name: 5. Delete PosOrderItem
+url: "{{baseUrl}}/api/PosOrderItem?id=8&companyId={{companyId}}"
+method: DELETE
+queryParams:
+  - key: id
+    value: "8"
+    description: Replace '1' with the actual item ID.
+  - key: companyId
+    value: "{{companyId}}"
+order: 5000

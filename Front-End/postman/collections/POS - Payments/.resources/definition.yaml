@@ -1,0 +1,7 @@
+$kind: collection
+name: POS - Payments
+description: Endpoints for managing payments applied to documents. Includes
+  queries for Z-Report logic.
+variables:
+  baseUrl: http://192.168.11.103:5002
+  companyId: "1"

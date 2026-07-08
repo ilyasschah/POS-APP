@@ -1,0 +1,20 @@
+$kind: http-request
+name: Add Stock Control
+url: "{{baseUrl}}/api/StockControls/Add?companyId=2"
+method: POST
+headers:
+  Content-Type: application/json
+queryParams:
+  companyId: "2"
+body:
+  type: json
+  content: |-
+    {
+      "productId": 2026,
+      "customerId": null,
+      "reorderPoint": 10,
+      "preferredQuantity": 50,
+      "isLowStockWarningEnabled": true,
+      "lowStockWarningQuantity": 15
+    }
+order: 3000

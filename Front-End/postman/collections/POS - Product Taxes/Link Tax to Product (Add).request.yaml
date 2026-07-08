@@ -1,0 +1,16 @@
+$kind: http-request
+name: Link Tax to Product (Add)
+url: "{{baseUrl}}/api/ProductTaxes/Add?companyId=2"
+method: POST
+headers:
+  Content-Type: application/json
+queryParams:
+  companyId: "2"
+body:
+  type: json
+  content: |-
+    {
+        "productId": 7,
+        "taxId": 7
+    }
+order: 4000

@@ -1,0 +1,12 @@
+$kind: http-request
+name: Get Comments By Product Id (2021)
+url: "{{baseUrl}}/api/ProductComments/GetByProductId?productId=2021&companyId=2"
+method: GET
+queryParams:
+  - key: productId
+    value: "2021"
+    $type: ""
+  - key: companyId
+    value: "2"
+    $type: ""
+order: 3000

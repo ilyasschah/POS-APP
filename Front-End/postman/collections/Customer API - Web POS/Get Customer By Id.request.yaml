@@ -1,0 +1,7 @@
+$kind: http-request
+url: "{{baseUrl}}/GetCustomerById?Id=8&companyId={{companyId}}"
+method: GET
+queryParams:
+  Id: "8"
+  companyId: "{{companyId}}"
+order: 2000

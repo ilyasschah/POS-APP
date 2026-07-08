@@ -1,0 +1,20 @@
+$kind: http-request
+url: "{{baseUrl}}/api/Products/Update?companyId=2"
+method: PATCH
+headers:
+  Content-Type: application/json
+queryParams:
+  companyId: "2"
+body:
+  type: text
+  content: |-
+    {
+      "id": 1,
+      "name": "Premium Coffee Blend (Large)",
+      "code": "COF-002",
+      "productGroupId": 9,
+      "price": 55.00,
+      "currencyId": 7,
+      "color": "#3E2723"
+    }
+order: 5000

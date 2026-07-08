@@ -1,0 +1,28 @@
+$kind: http-request
+name: 5. Add Table
+url: "{{baseUrl}}/api/FloorPlanTables/Add?companyId={{companyId}}"
+method: POST
+headers:
+  Content-Type: application/json
+queryParams:
+  companyId: "{{companyId}}"
+body:
+  type: json
+  content: "{\r
+
+    \  \"floorPlanId\": 1,\r
+
+    \  \"name\": \"Table 1\",\r
+
+    \  \"positionX\": 10.5,\r
+
+    \  \"positionY\": 20.0,\r
+
+    \  \"width\": 60.0,\r
+
+    \  \"height\": 60.0,\r
+
+    \  \"isRound\": true\r
+
+    }"
+order: 5000

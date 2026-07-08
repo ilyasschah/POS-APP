@@ -1,0 +1,32 @@
+$kind: http-request
+name: Add Single Promotion Item
+url: http://192.168.11.103:5002/api/PromotionItems/Add?companyId=2
+method: POST
+headers:
+  Content-Type: application/json
+queryParams:
+  companyId: "2"
+body:
+  type: json
+  content: "{\r
+
+    \  \"promotionId\": 1,\r
+
+    \  \"uid\": 7,\r
+
+    \  \"discountType\": 0,\r
+
+    \  \"priceType\": 0,\r
+
+    \  \"value\": 20.0,\r
+
+    \  \"isConditional\": true,\r
+
+    \  \"quantity\": 2,\r
+
+    \  \"conditionType\": 1,\r
+
+    \  \"quantityLimit\": 5\r
+
+    }"
+order: 2000

@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{baseUrl}}/api/SecurityKeys/GetByName?name=Order.Void&companyId={{compan\
+  yId}}"
+method: GET
+queryParams:
+  name: Order.Void
+  companyId: "{{companyId}}"
+order: 2000

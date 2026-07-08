@@ -1,0 +1,15 @@
+$kind: http-request
+url: "{{baseUrl}}/api/Document/Update?companyId=2"
+method: PATCH
+headers:
+  Content-Type: application/json
+queryParams:
+  companyId: "2"
+body:
+  type: text
+  content: |-
+    {
+      "id": 18,
+      "total": 22
+    }
+order: 5000

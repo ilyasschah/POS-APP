@@ -1,0 +1,7 @@
+$kind: http-request
+url: http://192.168.11.103:5002/api/PromotionItems/GetByPromotionId?companyId=2&promotionId=1
+method: GET
+queryParams:
+  companyId: "2"
+  promotionId: "1"
+order: 1000

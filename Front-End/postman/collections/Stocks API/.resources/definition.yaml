@@ -1,0 +1,5 @@
+$kind: collection
+description: Postman collection for testing StocksController endpoints
+variables:
+  baseUrl: https://192.168.11.103:5001
+  companyid: ""

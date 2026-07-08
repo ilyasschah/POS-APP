@@ -1,0 +1,8 @@
+$kind: http-request
+name: Get Payment By Id
+url: "{{baseUrl}}/api/Payments/GetById?id=2&companyId={{companyId}}"
+method: GET
+queryParams:
+  id: "2"
+  companyId: "{{companyId}}"
+order: 1000

@@ -1,0 +1,10 @@
+$kind: http-request
+name: Delete Document Item Tax
+url: "{{baseUrl}}/api/DocumentItemTaxes/Delete?documentItemId=36&taxId=8&compan\
+  yId={{companyId}}"
+method: DELETE
+queryParams:
+  documentItemId: "36"
+  taxId: "8"
+  companyId: "{{companyId}}"
+order: 5000

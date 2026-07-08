@@ -1,0 +1,8 @@
+$kind: http-request
+name: Get Product By Id (1)
+url: "{{baseUrl}}/api/Products/GetById?id=5&companyId=2"
+method: GET
+queryParams:
+  id: "5"
+  companyId: "2"
+order: 2000

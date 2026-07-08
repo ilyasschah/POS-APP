@@ -1,0 +1,16 @@
+$kind: http-request
+name: Update Expiration Date (PATCH)
+url: "{{baseUrl}}/api/DocumentItemExpirationDates/Update?companyId={{companyId}}"
+method: PATCH
+headers:
+  Content-Type: application/json
+queryParams:
+  companyId: "{{companyId}}"
+body:
+  type: json
+  content: |-
+    {
+      "documentItemId": 34,
+      "expirationDate": "2026-06-30T00:00:00"
+    }
+order: 3000

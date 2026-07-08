@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{baseUrl}}/api/Currencies/Delete?id=11"
+method: DELETE
+queryParams:
+  id: "11"
+order: 6000
