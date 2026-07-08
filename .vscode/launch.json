@@ -1,0 +1,68 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Front-End",
+            "cwd": "Front-End",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "Front-End (profile mode)",
+            "cwd": "Front-End",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "Front-End (release mode)",
+            "cwd": "Front-End",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        },
+        {
+            "name": "kitchen_display",
+            "cwd": "kitchen_display",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "kitchen_display (profile mode)",
+            "cwd": "kitchen_display",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "kitchen_display (release mode)",
+            "cwd": "kitchen_display",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        },
+        {
+            "name": "phosphor_flutter",
+            "cwd": "Front-End\\patches\\phosphor_flutter",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "phosphor_flutter (profile mode)",
+            "cwd": "Front-End\\patches\\phosphor_flutter",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "phosphor_flutter (release mode)",
+            "cwd": "Front-End\\patches\\phosphor_flutter",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        }
+    ]
+}
