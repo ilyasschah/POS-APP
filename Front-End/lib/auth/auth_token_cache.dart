@@ -18,6 +18,11 @@ class AuthTokenCache {
   static bool _loaded = false;
   static Future<String?>? _loading;
 
+  /// Fired whenever a real (non-empty) token becomes active. `main.dart` wires
+  /// this to `SessionExpiry.reset` so a later expiry can re-trigger the login
+  /// flow. Kept as a hook so this cache stays free of UI / navigation imports.
+  static void Function()? onTokenSet;
+
   /// The current token, loading it from storage once on first use. Crash-proof:
   /// a corrupt/locked storage file yields `null` (proceed unauthenticated) rather
   /// than throwing.
@@ -41,6 +46,7 @@ class AuthTokenCache {
   static void set(String? token) {
     _token = (token != null && token.isNotEmpty) ? token : null;
     _loaded = true;
+    if (_token != null) onTokenSet?.call();
   }
 
   /// Drop the cached token (logout / device unlink).

@@ -208,7 +208,7 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
         .read(loyaltyCardNotifierProvider.notifier)
         .findByCustomerId(customer.id);
     if (card == null || card.points <= 0) return;
-    if (!mounted) return;
+    if (!ctx.mounted) return;
 
     final result = await showDialog<double>(
       context: ctx,
@@ -256,7 +256,7 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
       final customer = ref.read(cartProvider).selectedCustomer;
       if (customer == null || customer.code == 'C000') {
         setState(() => _isProcessing = false);
-        if (mounted) {
+        if (ctx.mounted) {
           await showDialog<void>(
             context: ctx,
             builder: (c) => AlertDialog(
@@ -646,7 +646,7 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
 
       if (autoprint) {
         doPrint();
-      } else if (showPrintDialog && mounted) {
+      } else if (showPrintDialog && ctx.mounted) {
         final wantsPrint = await showDialog<bool>(
           context: ctx,
           barrierDismissible: false,
@@ -673,7 +673,7 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
         if (wantsPrint == true) doPrint();
       }
 
-      if (!mounted) return;
+      if (!ctx.mounted) return;
 
       // ── Close checkout dialog ─────────────────────────────────────
       // Capture the navigator BEFORE popping. Once the dialog closes, `ctx` is
@@ -727,7 +727,7 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
     } catch (e) {
       if (mounted) {
         setState(() => _isProcessing = false);
-        showAppSnackbar(ctx, ref, 'Checkout error: $e', isError: true);
+        showAppSnackbar(context, ref, 'Checkout error: $e', isError: true);
       }
     }
   }

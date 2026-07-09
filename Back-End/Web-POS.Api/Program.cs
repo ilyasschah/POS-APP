@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.EntityFrameworkCore;
@@ -168,8 +169,11 @@ builder.Services.AddMediatR(cfg =>
 
 // ================== MVC / SWAGGER ==================
 builder.Services.AddControllers();
-// Admin SaaS portal (server-rendered Razor Pages under /admin).
-builder.Services.AddRazorPages();
+// Admin SaaS portal (server-rendered Razor Pages under /admin). The portal has
+// its own shared-secret gate (AdminPortalGate middleware), not JWT, so its pages
+// must opt out of the global FallbackPolicy below or they'd demand a bearer token.
+builder.Services.AddRazorPages(options =>
+    options.Conventions.AllowAnonymousToFolder("/Admin"));
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -197,17 +201,41 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("ManagerOnly", policy => policy.RequireRole("Admin"));
+
+    // Fail-closed: every endpoint requires an authenticated user UNLESS it opts out
+    // with [AllowAnonymous]. This is the safety net — a newly-added controller is
+    // protected by default instead of silently shipping open (which is how ~45
+    // controllers ended up unauthenticated). The deliberate anonymous surface is:
+    // POST /api/Auth/Login, GET /api/Master/LeasePublicKey, GET /api/Master/Lease,
+    // the /Admin portal pages (gated by AdminPortalGate), and the "/" redirect.
+    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
 });
 
-// Fail-closed on the signing secret: outside Development a missing Jwt:Secret
-// must abort startup rather than silently fall back to a public dev secret
-// (which would let anyone forge "Admin" tokens).
+// Fail-closed on the signing secret: outside Development a missing, too-short, or
+// still-a-placeholder Jwt:Secret must abort startup rather than sign tokens with a
+// value an attacker could guess (or read straight from the committed
+// appsettings.json) and use to forge "Admin" tokens. Supply the real secret
+// out-of-band via the Jwt__Secret environment variable or user-secrets.
 var configuredSecret = builder.Configuration["Jwt:Secret"];
-if (string.IsNullOrWhiteSpace(configuredSecret) && !builder.Environment.IsDevelopment())
+if (!builder.Environment.IsDevelopment())
 {
-    throw new InvalidOperationException(
-        "Jwt:Secret is not configured. Set a strong secret (e.g. via environment " +
-        "variable or user-secrets) before running outside Development.");
+    string[] knownPlaceholders =
+    {
+        "change-this-to-a-long-random-secret-32plus-characters",
+        "dev-only-very-long-secret-change-me-please",
+    };
+    if (string.IsNullOrWhiteSpace(configuredSecret) ||
+        configuredSecret.Length < 32 ||
+        knownPlaceholders.Contains(configuredSecret))
+    {
+        throw new InvalidOperationException(
+            "Jwt:Secret is missing, shorter than 32 characters, or still a " +
+            "placeholder. Set a strong random secret via the Jwt__Secret " +
+            "environment variable (or user-secrets) before running outside " +
+            "Development.");
+    }
 }
 var jwtSecret = configuredSecret ?? "dev-only-very-long-secret-change-me-please";
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "Products.Api";
@@ -333,8 +361,9 @@ app.UseMiddleware<Api.Middleware.AdminPortalGate>();
 app.MapControllers();
 app.MapRazorPages();
 
-// Hitting the site root lands you on the admin portal.
-app.MapGet("/", () => Results.Redirect("/admin/companies"));
+// Hitting the site root lands you on the admin portal. Anonymous — the portal
+// itself is gated downstream by AdminPortalGate; this is just a redirect.
+app.MapGet("/", () => Results.Redirect("/admin/companies")).AllowAnonymous();
 
 // On startup, open the admin portal in the default browser already authorised
 // with the access key (sets the cookie) — so there's no manual key step.

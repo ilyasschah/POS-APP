@@ -60,6 +60,10 @@ dependencies:
   lottie: ^3.1.2
   # Pillar 2 — verify the RS256 offline subscription lease signature on-device.
   dart_jsonwebtoken: ^2.14.0
+  # Serial weighing scale. The plugin declares an Android class so the APK still
+  # builds, but a COM/tty scale is only reachable on Windows in practice — the
+  # scale UI and ScaleService are capability-gated to Windows (see lib/scale/).
+  flutter_libserialport: ^0.6.0
 
 dependency_overrides:
   phosphor_flutter:

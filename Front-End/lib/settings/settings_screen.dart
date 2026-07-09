@@ -20,6 +20,7 @@ import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/core/status_colors.dart';
+import 'package:pos_app/scale/scale_service.dart';
 import 'package:pos_app/settings/local_ui_prefs.dart';
 import 'package:pos_app/app_settings/app_settings_provider.dart';
 import 'package:pos_app/app_settings/service_type_model.dart';
@@ -4194,6 +4195,8 @@ class _WeighingScaleTab extends ConsumerWidget {
     final settings = ref.watch(appSettingsProvider);
     final barcodeOn =
         settings[SettingKeys.scaleBarcodeEnabled]?.toLowerCase() == 'true';
+    final serialOn =
+        settings[SettingKeys.scaleEnabled]?.toLowerCase() == 'true';
 
     return _TabScrollView(
       cards: [
@@ -4247,7 +4250,169 @@ class _WeighingScaleTab extends ConsumerWidget {
             ),
           ],
         ),
+        _SettingsCard(
+          title: 'SERIAL CONNECTION',
+          children: [
+            if (!kScaleSupported)
+              const _ScaleUnsupportedNotice()
+            else ...[
+              const _SettingSwitch(
+                settingKey: SettingKeys.scaleEnabled,
+                label: 'Read live weight from a serial scale',
+                subtitle:
+                    'Streams the weight from a scale on a COM port into the quantity keypad',
+              ),
+              Opacity(
+                opacity: serialOn ? 1.0 : 0.4,
+                child: IgnorePointer(
+                  ignoring: !serialOn,
+                  child: const Column(
+                    children: [
+                      _ScalePortDropdown(),
+                      _SettingDropdown(
+                        settingKey: SettingKeys.scaleBaudRate,
+                        label: 'Baud rate',
+                        options: _kBaudRates,
+                      ),
+                      _ScaleLiveTest(),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
       ],
+    );
+  }
+}
+
+const _kBaudRates = [
+  '1200',
+  '2400',
+  '4800',
+  '9600',
+  '19200',
+  '38400',
+  '57600',
+  '115200',
+];
+
+/// Serial scales need a COM port, which only Windows exposes here. Say so
+/// plainly rather than showing controls that could never work.
+class _ScaleUnsupportedNotice extends StatelessWidget {
+  const _ScaleUnsupportedNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.info_outline, size: 20, color: context.infoColor),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Serial scales are supported on Windows only. On this device, use '
+              'the barcode parsing option above with a label-printing scale.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Port picker over the ports actually present, with a rescan button.
+///
+/// The saved port is always offered even when absent, so an unplugged scale
+/// shows the port the operator configured instead of silently displaying some
+/// other machine port (and `_SettingDropdown` would throw on an empty list).
+class _ScalePortDropdown extends ConsumerWidget {
+  const _ScalePortDropdown();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final detected = ref.watch(availableSerialPortsProvider);
+    final saved = ref.watch(
+          appSettingsProvider.select((s) => s[SettingKeys.scalePort]),
+        ) ??
+        kSettingDefaults[SettingKeys.scalePort]!;
+
+    final options = <String>{...detected, saved}.toList()..sort();
+
+    return Row(
+      children: [
+        Expanded(
+          child: _SettingDropdown(
+            settingKey: SettingKeys.scalePort,
+            label: detected.isEmpty
+                ? 'Serial port (none detected)'
+                : 'Serial port',
+            options: options,
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(right: 12),
+          child: IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Rescan ports',
+            onPressed: () => ref.invalidate(availableSerialPortsProvider),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Live read from the configured port, so the operator can confirm the wiring
+/// and baud rate here rather than discovering it mid-sale at the till.
+class _ScaleLiveTest extends ConsumerWidget {
+  const _ScaleLiveTest();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final reading = ref.watch(scaleReadingProvider);
+
+    final (Color color, IconData icon, String text) = switch (reading) {
+      AsyncError(:final error) => (
+          context.dangerColor,
+          Icons.error_outline,
+          error is ScaleException ? error.message : 'Scale error: $error',
+        ),
+      AsyncData(:final value) => (
+          value.stable ? context.successColor : context.warningColor,
+          value.stable ? Icons.check_circle_outline : Icons.hourglass_empty,
+          '${value.weight}${value.unit ?? ''}'
+              '${value.stable ? '' : '  (settling…)'}',
+        ),
+      _ => (
+          theme.colorScheme.onSurfaceVariant,
+          Icons.hourglass_empty,
+          'Waiting for the scale to send a weight…',
+        ),
+    };
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: color),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: theme.textTheme.bodySmall?.copyWith(color: color),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -4555,7 +4720,7 @@ class _CustomerDisplayTabState extends ConsumerState<_CustomerDisplayTab> {
                         settings[SettingKeys.customerDisplayWelcomeMessage] ??
                         'WELCOME!',
                   });
-                  if (!mounted) return;
+                  if (!context.mounted) return;
                   Navigator.push(
                     context,
                     MaterialPageRoute(

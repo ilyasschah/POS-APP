@@ -286,9 +286,13 @@ namespace Api.DataBase
                 entity.Property(x => x.Debit).HasPrecision(18, 2);
             });
 
+            // Trigger names below are verified against sys.triggers. EF only needs to
+            // know that *a* trigger exists on the table (so it omits the OUTPUT clause
+            // on write); it never resolves the name. Do not infer a trigger's existence
+            // or behaviour from these labels — query sys.triggers instead.
             b.Entity<Document>(e =>
             {
-                e.ToTable(table => table.HasTrigger("Document_Insert_Trigger"));
+                e.ToTable(table => table.HasTrigger("trg_Document_CompanyConsistency"));
                 e.Property(x => x.Discount).HasPrecision(18, 2);
                 e.Property(x => x.Total).HasPrecision(18, 2);
             });
@@ -314,7 +318,7 @@ namespace Api.DataBase
                 e.HasKey(dit => new { dit.DocumentItemId, dit.TaxId });
             });
             b.Entity<FloorPlanTable>()
-                .ToTable("FloorPlanTable", tb => tb.HasTrigger("SomeTrigger"));
+                .ToTable("FloorPlanTable", tb => tb.HasTrigger("trg_FloorPlanTable_CompanyConsistency"));
 
             b.Entity<Booking>(e =>
             {
@@ -346,7 +350,7 @@ namespace Api.DataBase
             });
             b.Entity<Barcode>(e =>
             {
-                e.ToTable(tb => tb.HasTrigger("Tr_Barcode_Audit"));
+                e.ToTable(tb => tb.HasTrigger("trg_Barcode_CompanyMatch"));
             });
             b.Entity<PosOrder>(e => 
             { 

@@ -562,7 +562,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                     const _ProductEditorDialog(isPostCreation: false),
               );
               ref.invalidate(productsByGroupProvider);
-              if (result is Product && mounted) {
+              if (result is Product && context.mounted) {
                 if (result.isPendingCreate) {
                   // Product has a temp id — it doesn't exist on the server yet.
                   // Tax/barcode/stock setup requires a real server id; skip Phase 2
@@ -2003,7 +2003,7 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                                     .sync(companyId)
                                     .catchError((Object _) => <String>[]));
                               } catch (e) {
-                                if (mounted) {
+                                if (context.mounted) {
                                   showAppSnackbar(context, ref, _parseApiError(e),
                                       isError: true);
                                 }

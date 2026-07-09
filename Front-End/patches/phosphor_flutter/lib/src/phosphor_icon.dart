@@ -7,32 +7,20 @@ import 'package:flutter/material.dart';
 // icon usage, so this is a no-op loss of functionality.
 class PhosphorIcon extends Icon {
   const PhosphorIcon(
-    IconData icon, {
-    Key? key,
-    double? size,
-    double? fill,
-    double? weight,
-    double? grade,
-    double? opticalSize,
-    Color? color,
-    List<Shadow>? shadows,
-    String? semanticLabel,
-    TextDirection? textDirection,
+    IconData super.icon, {
+    super.key,
+    super.size,
+    super.fill,
+    super.weight,
+    super.grade,
+    super.opticalSize,
+    super.color,
+    super.shadows,
+    super.semanticLabel,
+    super.textDirection,
     this.duotoneSecondaryOpacity = 0.20,
     this.duotoneSecondaryColor,
-  }) : super(
-          icon,
-          color: color,
-          fill: fill,
-          grade: grade,
-          key: key,
-          opticalSize: opticalSize,
-          semanticLabel: semanticLabel,
-          shadows: shadows,
-          size: size,
-          textDirection: textDirection,
-          weight: weight,
-        );
+  });
 
   final double duotoneSecondaryOpacity;
   final Color? duotoneSecondaryColor;

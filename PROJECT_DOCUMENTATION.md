@@ -4,7 +4,12 @@
 > This file consolidates what were previously six separate documents. For active, harness-loaded
 > engineering rules see `CLAUDE.md` (kept separate on purpose — it is auto-loaded each session).
 >
-> **Last consolidated:** 2026-07-04
+> **Last consolidated:** 2026-07-04 · **Last updated:** 2026-07-09
+>
+> **2026-07-09 update:** the §6 audit is **fully closed** (all CRITICAL/OPT/UP items + the deferred
+> `HasTrigger` cleanup); `dart analyze lib` reports *"No issues found!"*. The serial weighing scale
+> is now wired — see §4.6. Sections 1–5 below are **preserved source documents** merged on
+> 2026-07-04; where they disagree with §6 or with `handoff.md`, the later document wins.
 
 ## Table of Contents
 
@@ -66,7 +71,7 @@ The system covers the full restaurant/retail cycle: user authentication, product
 | Framework | C# .NET 8/9 Web API |
 | ORM | Entity Framework Core + SQL Server |
 | Pattern | CQRS via **MediatR** — thin controllers, business logic in Services, data in Repositories |
-| Auth | JWT (`TokenService`), BCrypt (passwords), SHA-256 (PINs) |
+| Auth | JWT (`TokenService`), BCrypt (passwords), SHA-256 (PINs). **Fail-closed** `FallbackPolicy` — every endpoint needs a token unless `[AllowAnonymous]` (see §3 · hardened 2026-07-09) |
 | Error Contract | Business failures → `400 Bad Request` with `{ success, message, fallbackWarehouses?, failedProductId? }` |
 
 ---
@@ -170,6 +175,8 @@ Defined in `lib/app_settings/app_settings_model.dart`. Key groups:
 | Receipt Toggles | `receiptPrintTaxTotals`, `receiptPrintOrderNumber`, `receiptDecimalPlaces`, etc. |
 | Theme | `themeMode` (light/dark/dimmed/night/gray/high_contrast), `themeAccentColor` (hex string) |
 | Kitchen Display | `kitchenDisplayIps` (comma-separated IP list) |
+| Weighing Scale — serial | `Scale.Enabled`, `Scale.Port` (e.g. `COM2`), `Scale.BaudRate` (e.g. `9600`) — see §4.6 |
+| Weighing Scale — barcode | `Scale.Barcode.Enabled`, `Scale.Barcode.Prefix`, `Scale.Barcode.CodeLength`, `Scale.Barcode.DecimalPlaces`, `Scale.Barcode.TrimZeros`, `Scale.Barcode.PrintsPrice` — see §4.6 |
 | Button Bar | `showSearchBtn`, `showTransferBtn`, `showCustomerBtn`, `showDiscountBtn`, ... |
 
 **`kSettingDefaults`** in the same file provides fallback values for every key. Always check there first if a setting behaves unexpectedly.
@@ -201,6 +208,21 @@ Always gate F&B-only UI on: `(settings[SettingKeys.industryMode] ?? 'FB') == 'FB
 ---
 
 ## 3. Backend Architecture & Database
+
+### Authentication & authorization (hardened 2026-07-09)
+
+The API is **fail-closed**: `Program.cs` sets an authorization `FallbackPolicy` of `RequireAuthenticatedUser()`, so **every endpoint requires a valid JWT unless it carries `[AllowAnonymous]`**. A newly-added controller is therefore protected by default. This replaced a dangerous prior state where ~45 of 54 controllers had no `[Authorize]` and no fallback, leaving product/document/customer/tenant endpoints callable with no token.
+
+The **entire** anonymous allowlist is:
+- `POST /api/Auth/Login` — the only token-less client call.
+- `GET /api/Master/LeasePublicKey`, `GET /api/Master/Lease` — the licensing bootstrap. Their security is the RS256 lease signature (Pillar 2), and the app fetches them around token-refresh boundaries.
+- The `/Admin` Razor pages + the `/` redirect — the admin portal has its own shared-secret gate (`AdminPortalGate`), so its pages are exempted via `AllowAnonymousToFolder("/Admin")` and `/` via `.AllowAnonymous()`.
+
+`[Authorize(Policy = "ManagerOnly")]` (role `Admin`) exists for manager-only actions. **Follow-up:** the `/api/Master/*` control-plane endpoints currently require only *any* authenticated user and should be tightened to `ManagerOnly`.
+
+**Secrets** are **not** committed. `Jwt:Secret` and `AdminPortal:AccessKey` are blank in `appsettings.json`; real values come from the `Jwt__Secret` / `AdminPortal__AccessKey` environment variables (dev machine: user-level `setx`, recorded in the git-ignored `SECRETS.local.txt`). Outside Development the startup guard aborts if `Jwt:Secret` is empty, `<32` chars, or a known placeholder. **Rotating the JWT secret invalidates all live sessions** (every device must re-login). The DB password is still in the committed connection string — a known follow-up.
+
+**Client side — graceful session expiry.** The Flutter app's Dio layer (`lib/auth/session_expiry.dart` + the `api_client.dart` `onError` interceptor) treats a 401 on a *token-bearing* request as "our token is dead": it clears the token and routes to the login screen **once** (debounced) with a "session expired" message, instead of looping. A 401 with no token (bad credentials on `/Auth/Login`) is left to the caller, and being offline is a connection error (not a 401), so the redirect never fires when merely offline.
 
 ### Controller → Service → Repository Pattern
 ```
@@ -335,6 +357,21 @@ Receipt.RightToLeft     Kitchen.RightToLeft
 **Android virtual device (emulator):** Use ADB port forwarding: `adb forward tcp:9090 tcp:9090`. The emulator's IP `10.0.2.2` maps to the Windows host.
 
 **Scroll UX:** If more than 4 orders exist, left/right arrow buttons and a `Scrollbar` appear. Managed via `ScrollController` + `_updateScrollArrows()` called in `addPostFrameCallback`.
+
+### 4.6 Weighing Scales (added 2026-07-09)
+
+There are **two independent, unrelated** scale integrations. Don't conflate them — they share only the `Scale.` settings prefix.
+
+**(a) Barcode scale (label-printing).** The scale prints a barcode encoding the product code plus a weight *or* a price. The cashier scans it like any other barcode. Decoded by `lib/utils/scale_barcode_parser.dart` (`parseScaleBarcode`) and consumed on the scan path in `menu_screen.dart`. Works on **both Windows and Android** (it is just a barcode). Format: `[prefix][codeLength digits][value digits][1 control digit]`; the value width is *derived* from the barcode rather than hard-coded, so any prefix/code-length combination decodes. When `Scale.Barcode.PrintsPrice` is on, the encoded value is a price and `quantity = price ÷ unit price`.
+
+**(b) Serial scale (live weight).** A scale streams its weight continuously over a COM port; the POS reads it live.
+
+- **`lib/scale/scale_weight_parser.dart`** — a pure, unit-tested (`test/scale/`) tolerant parser. Handles `ST,GS,+  1.234kg` (CAS/Toledo), `US,NT,-  0.100 kg`, `1.234kg`, and a bare `1.234`. It strips STX/ETX/CR/LF framing, honours the `ST`/`US` stability flag, and returns `null` for frames carrying no number — which is *normal* when first attaching to a port, so callers ignore nulls rather than treating them as errors.
+- **`lib/scale/scale_service.dart`** — `SerialScaleService` opens the port and buffers the trailing partial line (serial delivers arbitrary chunks, not whole frames), emitting one `ScaleReading` per complete frame. Exposes `scaleConfigProvider`, `availableSerialPortsProvider` and `scaleReadingProvider`.
+- **`scaleReadingProvider` is `autoDispose` by design.** The COM port is held open *only* while a widget is listening (the quantity keypad, or the settings live-test). The POS never keeps a port locked in the background, and nothing polls.
+- **Windows-only, capability-gated.** `kScaleSupported == Platform.isWindows`. `flutter_libserialport` registers an Android plugin class (so the **APK still builds**, and `libserialport.so` even ships), but a scale is unreachable on Android without root/OTG. The settings card therefore renders an explanatory notice there instead of dead controls. **Never construct `SerialScaleService` when `kScaleSupported` is false.**
+- **UI.** Settings → Weighing Scale → `SERIAL CONNECTION`: enable switch, a port dropdown over *detected* ports with a rescan button, a baud dropdown, and a live read-out so wiring and baud can be proven there rather than mid-sale. `menu/quantity_keypad_dialog.dart` shows the live weight with a **"Use weight"** button that is **disabled until the reading is stable**, so a swinging pan can't be banked. The manual keypad always remains — an offline scale never blocks a sale.
+- **No unit conversion is ever applied.** The parser returns the scale's own number and unit. If the scale reads `g` on a line priced per `kg`, the keypad shows an explicit mismatch warning rather than guessing; silently converting would be a **1000× pricing bug**.
 
 ---
 
@@ -2026,19 +2063,21 @@ entity:
 > The original audit is preserved below as the record. This block tracks what has
 > since been fixed vs what remains. **Full running detail is in `handoff.md`.**
 
-**DONE (all CRITICALs + all OPT/UP; only the optional OPT-4 lint cleanup + UPGRADE-1 caveat remain below):**
+**DONE — the audit is fully closed: every CRITICAL, OPT and UP item, plus the UPGRADE-1 caveat. `dart analyze lib` = "No issues found!"**
 - **CRITICAL-1** refund idempotency — FIXED (server dedups on `ClientDocumentNumber`; client persists+queues on ambiguous failures).
 - **CRITICAL-2** refund double stock reversal — CLOSED as a **false alarm** (no stock trigger exists; stock is adjusted in C#, not triggers). The misleading `sync_manager.dart` comment was corrected.
 - **OPT-1** eager table rows → lazy `rowBuilder`. · **OPT-2** MenuScreen narrows its `cartProvider` watch. · **OPT-3** no more raw `Notifier.state` mutation. · **OPT-6** refund outbox fully on Drift (schema **v49**; `shared_preferences` queue removed). · **OPT-7** `'pending'` vs `'pending_create'` invariant made explicit (`SyncStatuses`).
 - **UP-1** the 3 DB triggers scripted into `DataBase/SQL/`. · **UP-4** daily order counter → Drift + local-day bucketing. · **UP-5** checkout captures the Navigator before popping.
 - **OPT-4** `flutter_lints` re-enabled; 154 auto-fixes + 5 real `use_build_context_synchronously` bugs fixed (0 errors/warnings).
 - **OPT-5 / UP-6 (hardcoded colours) — DONE (2026-07-09).** `StatusColors` extension applied app-wide: after the initial `payment_checkout_dialog`/`menu_screen`/`bookings_screen`, the remaining 21 screens/dialogs were migrated (products, settings, stock, document_editor, documents, promotions, product_import, currencies, users, user_info, warehouses, tax_rates, time_clock, product_groups, credit/cash/refund/sync dialogs, z_report, power_modal, shared_drawer, company_selection, sales_history). `dart analyze lib` still **0 errors / 0 warnings**. Confirming the "dark mode isn't broken" finding, deliberate constructs were intentionally left: domain **status→colour maps/selectors** (booking `_statusColors`, payment Paid/Partial/Unpaid, stock low/reorder/healthy), **fixed data palettes**, **`isDark`-conditional banners**, **accents** (indigo/blueGrey, admin-orange, gradient header), and the **QR white background**.
+- **OPT-4 residual — DONE (2026-07-09).** All 24 `use_build_context_synchronously` fixed across `loyalty_cards` (6), `payment_checkout` (5), `user_info` (4), `cash_movement` (3), `products` (3), `table_widget` (2), `settings` (1). The guard must match the context: a **local/parameter** `BuildContext` needs `context.mounted`; **`State.context`** needs the State's `mounted`. `dart analyze lib` now reports **No issues found!**
+- **UPGRADE-1 caveat — RESOLVED (2026-07-09).** The 3 real triggers (verified via `sys.triggers`, not the scripts) are now named correctly in `AppDbContext.cs`: `Document` → `trg_Document_CompanyConsistency`, `FloorPlanTable` → `trg_FloorPlanTable_CompanyConsistency`, `Barcode` → `trg_Barcode_CompanyMatch`. **No EF migration was required** — contrary to the earlier note, EF's differ emits no operations for trigger metadata (`has-pending-model-changes` reports none after the rename), so the rename is not a schema change. 4 *phantom* `HasTrigger` declarations (`DocumentItem`, `Booking`, `Payment`, `StartingCash`) were deliberately left: EF only uses them to omit the `OUTPUT` clause on write, so they merely cost a slower insert path; removing them would break inserts with SQL error 334 if a trigger is ever added to those tables. See `handoff.md`.
 
-**IN PROGRESS / REMAINING:**
-- **OPT-4 residual** — 24 `use_build_context_synchronously` remain, all *guarded-but-imprecise* (functionally safe; the passed `ctx` is the State's `context`). Optional zero-lint cleanup.
-- **UPGRADE-1 caveat** — triggers are now scripted, but EF's `HasTrigger("…")` labels are still fictional names (harmless; renaming needs an EF migration — deferred).
+**IN PROGRESS / REMAINING:** *(none — the audit is fully closed)*
 
-**PLANNED (not audit items, tracked in `handoff.md`):** LAN Sync Hub (design in §… of handoff, OPT-6 was its prerequisite); remaining inert settings (email/SMTP, serial scale, localization); broader backend `[Authorize]` + per-user audit/PIN salt; production secrets + API restart.
+**PLANNED (not audit items, tracked in `handoff.md` §6):** LAN Sync Hub (design in `handoff.md` §7; OPT-6 was its prerequisite); the still-inert settings — **email/SMTP and localization** (the **serial scale is now wired**, see §4.6). Backend hardening: the blanket `[Authorize]` gap is **closed** (fail-closed FallbackPolicy, §3, live-proven 2026-07-09); remaining = tighten `/api/Master/*` to `ManagerOnly`, per-user audit / PIN salt, move the DB password to env, and set the (already-rotated) secrets in the deployment environment.
+
+**Outstanding verification (untested surface, not known bugs):** the serial scale has never met physical hardware (parser is unit-tested; port/baud/frame layout need one real scale); the OPT-4 `mounted`-guard changes all live inside dialogs that a plain app boot never opens; and `test/widget_test.dart` is stale Flutter boilerplate that could never pass.
 
 ---
 

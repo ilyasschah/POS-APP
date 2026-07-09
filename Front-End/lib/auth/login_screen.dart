@@ -19,7 +19,10 @@ import 'package:pos_app/sync/sync_provider.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
-  const LoginScreen({super.key});
+  /// Set when we landed here because the server rejected our token (see
+  /// `SessionExpiry`); shows a "session expired" prompt on arrival.
+  final bool sessionExpired;
+  const LoginScreen({super.key, this.sessionExpired = false});
 
   @override
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
@@ -30,6 +33,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (widget.sessionExpired && mounted) {
+        showAppSnackbar(
+          context,
+          ref,
+          'Your session expired. Please sign in again.',
+          isError: true,
+        );
+      }
       final selectedCo = ref.read(selectedCompanyProvider);
       final defaultCoId = ref.read(defaultCompanyIdProvider);
       if (selectedCo == null) {

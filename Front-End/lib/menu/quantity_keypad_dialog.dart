@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pos_app/core/status_colors.dart';
+import 'package:pos_app/scale/scale_service.dart';
 
 /// Touch-friendly numeric keypad for entering a custom (decimal) quantity for a
 /// cart line — e.g. weighing out `0.5 kg` without a scale barcode. Returns the
@@ -7,6 +10,10 @@ import 'package:flutter/material.dart';
 /// The price scales automatically: the cart stores a per-unit price, so a line
 /// total is always `price × quantity`. Entering `0.5` therefore charges half,
 /// whatever the product's measurement unit (kg, L, pcs, …).
+///
+/// When a serial scale is configured (Windows only), a live weight readout sits
+/// above the keypad and can fill the quantity in one tap. The keypad always
+/// remains usable, so an unplugged or misconfigured scale never blocks a sale.
 Future<double?> showQuantityKeypad(
   BuildContext context, {
   required String itemName,
@@ -23,7 +30,7 @@ Future<double?> showQuantityKeypad(
   );
 }
 
-class _QuantityKeypadDialog extends StatefulWidget {
+class _QuantityKeypadDialog extends ConsumerStatefulWidget {
   final String itemName;
   final double initialQuantity;
   final String? unit;
@@ -35,10 +42,11 @@ class _QuantityKeypadDialog extends StatefulWidget {
   });
 
   @override
-  State<_QuantityKeypadDialog> createState() => _QuantityKeypadDialogState();
+  ConsumerState<_QuantityKeypadDialog> createState() =>
+      _QuantityKeypadDialogState();
 }
 
-class _QuantityKeypadDialogState extends State<_QuantityKeypadDialog> {
+class _QuantityKeypadDialogState extends ConsumerState<_QuantityKeypadDialog> {
   late String _input;
   // The seed value is shown but replaced on the first digit press, so the
   // cashier can just start typing the new quantity without clearing first.
@@ -47,8 +55,19 @@ class _QuantityKeypadDialogState extends State<_QuantityKeypadDialog> {
   @override
   void initState() {
     super.initState();
-    final q = widget.initialQuantity;
-    _input = q == q.roundToDouble() ? q.toInt().toString() : q.toString();
+    _input = _fmt(widget.initialQuantity);
+  }
+
+  /// Renders a captured weight exactly the way a typed one reads, so `12.0 kg`
+  /// off the scale shows as `12`, not `12.0`.
+  static String _fmt(double v) =>
+      v == v.roundToDouble() ? v.toInt().toString() : v.toString();
+
+  void _useWeight(double weight) {
+    setState(() {
+      _input = _fmt(weight);
+      _replaceOnNextKey = false;
+    });
   }
 
   String get _display => _input.isEmpty ? '0' : _input;
@@ -131,6 +150,13 @@ class _QuantityKeypadDialogState extends State<_QuantityKeypadDialog> {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
+              if (kScaleSupported && ref.watch(scaleConfigProvider).enabled) ...[
+                const SizedBox(height: 10),
+                _ScaleWeightBar(
+                  productUnit: widget.unit,
+                  onUse: _useWeight,
+                ),
+              ],
               const SizedBox(height: 12),
               // ── Value display ──────────────────────────────────────────────
               Container(
@@ -264,6 +290,137 @@ class _QuantityKeypadDialogState extends State<_QuantityKeypadDialog> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Live weight from the serial scale, with a one-tap capture into the keypad.
+///
+/// Capture is withheld until the scale reports a settled reading, so a cashier
+/// can't bank a weight while the pan is still swinging. Scales that stream no
+/// stability flag report every reading as settled (see [parseScaleWeight]).
+class _ScaleWeightBar extends ConsumerWidget {
+  const _ScaleWeightBar({required this.productUnit, required this.onUse});
+
+  /// The cart line's measurement unit (`kg`, `L`, …), used only to warn on a
+  /// mismatch — no unit conversion is ever applied to the scale's number.
+  final String? productUnit;
+  final ValueChanged<double> onUse;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final reading = ref.watch(scaleReadingProvider);
+
+    return switch (reading) {
+      AsyncError(:final error) => _shell(
+          context,
+          color: context.dangerColor,
+          icon: Icons.error_outline,
+          child: Text(
+            error is ScaleException ? error.message : 'Scale error: $error',
+            style: TextStyle(color: context.dangerColor, fontSize: 12),
+          ),
+        ),
+      AsyncData(:final value) => _shell(
+          context,
+          color: value.stable ? context.successColor : context.warningColor,
+          icon: value.stable
+              ? Icons.monitor_weight_outlined
+              : Icons.hourglass_empty,
+          child: _reading(context, value.weight, value.unit, value.stable),
+        ),
+      _ => _shell(
+          context,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+          icon: Icons.hourglass_empty,
+          child: Text(
+            'Waiting for the scale…',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontSize: 12,
+            ),
+          ),
+        ),
+    };
+  }
+
+  Widget _reading(
+    BuildContext context,
+    double weight,
+    String? scaleUnit,
+    bool stable,
+  ) {
+    final color = stable ? context.successColor : context.warningColor;
+    // The parser never converts, so grams-on-a-kg-product would silently charge
+    // 1000×. Surface it rather than guessing what the operator meant.
+    final mismatch = scaleUnit != null &&
+        productUnit != null &&
+        productUnit!.isNotEmpty &&
+        scaleUnit.toLowerCase() != productUnit!.toLowerCase();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                '$weight${scaleUnit ?? ''}'
+                '${stable ? '' : '   settling…'}',
+                style: TextStyle(
+                  color: color,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            FilledButton(
+              onPressed: stable ? () => onUse(weight) : null,
+              style: FilledButton.styleFrom(
+                backgroundColor: color,
+                foregroundColor: context.onStatusColor,
+                minimumSize: const Size(0, 44),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+              ),
+              child: const Text('Use weight'),
+            ),
+          ],
+        ),
+        if (mismatch)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              'Scale reads $scaleUnit but this item is priced per '
+              '$productUnit — no conversion is applied.',
+              style: TextStyle(color: context.warningColor, fontSize: 11),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _shell(
+    BuildContext context, {
+    required Color color,
+    required IconData icon,
+    required Widget child,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: color),
+          const SizedBox(width: 10),
+          Expanded(child: child),
+        ],
       ),
     );
   }

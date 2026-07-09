@@ -101,7 +101,7 @@ class _TableWidgetState extends ConsumerState<TableWidget> {
                     );
                 if (success && mounted) {
                   ref.read(mainNavigationIndexProvider.notifier).state = 0;
-                } else if (mounted) {
+                } else if (context.mounted) {
                   showAppSnackbar(
                     context,
                     ref,
@@ -244,7 +244,7 @@ class _TableWidgetState extends ConsumerState<TableWidget> {
                 }
               }
             } catch (e) {
-              if (mounted) {
+              if (context.mounted) {
                 showAppSnackbar(context, ref, 'Error: $e', isError: true);
               }
             } finally {

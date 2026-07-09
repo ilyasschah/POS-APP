@@ -3,6 +3,7 @@ import 'package:dio/io.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:pos_app/auth/auth_token_cache.dart';
+import 'package:pos_app/auth/session_expiry.dart';
 import 'package:pos_app/cart/checkout_models.dart';
 import 'package:pos_app/api/promotion_models.dart';
 import 'package:pos_app/api/customer_discount_models.dart';
@@ -54,6 +55,19 @@ Dio createDio() {
         }
       }
       handler.next(options);
+    },
+    onError: (e, handler) {
+      // A 401 on a request that CARRIED our token means the token is dead
+      // (expired / revoked / signing-secret rotated) — clear it and route to
+      // login once (see SessionExpiry). A 401 with no token is an ordinary auth
+      // failure (e.g. bad credentials on /Auth/Login) and is left to the caller;
+      // being offline surfaces as a connection error, not a 401.
+      final carriedToken = e.requestOptions.headers.containsKey('Authorization');
+      final isLoginCall = e.requestOptions.path.contains('Auth/Login');
+      if (e.response?.statusCode == 401 && carriedToken && !isLoginCall) {
+        SessionExpiry.onUnauthorized();
+      }
+      handler.next(e); // still surface the error — offline-first keeps local data
     },
   ));
 

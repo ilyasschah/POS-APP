@@ -683,7 +683,6 @@ D:\POS-APP\Back-End\Web-POS.Api\obj\Debug\net10.0\staticwebassets.build.json.cac
 D:\POS-APP\Back-End\Web-POS.Api\obj\Debug\net10.0\staticwebassets.development.json
 D:\POS-APP\Back-End\Web-POS.Api\obj\Debug\net10.0\staticwebassets.build.endpoints.json
 D:\POS-APP\Back-End\Web-POS.Api\obj\Debug\net10.0\swae.build.ex.cache
-D:\POS-APP\Back-End\Web-POS.Api\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt
 D:\POS-APP\Back-End\Web-POS.Api\obj\Debug\net10.0\Web-POS..94E23462.Up2Date
 D:\POS-APP\Back-End\Web-POS.Api\obj\Debug\net10.0\Web-POS.Api.dll
 D:\POS-APP\Back-End\Web-POS.Api\obj\Debug\net10.0\refint\Web-POS.Api.dll

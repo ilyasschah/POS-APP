@@ -22,6 +22,9 @@ namespace Api.Controllers
             => Ok(await cloneAudit.GetAlertsAsync(companyId));
 
         /// <summary>Public key the app uses to verify offline subscription leases (Pillar 2).</summary>
+        // Licensing bootstrap: the app may fetch this around token-refresh boundaries,
+        // and it is a public key — anonymous by design.
+        [AllowAnonymous]
         [HttpGet("[action]")]
         public IActionResult LeasePublicKey()
             => Ok(new { publicKeyPem = leaseKeys.PublicKeyPem });
@@ -33,6 +36,10 @@ namespace Api.Controllers
         /// takes effect without a re-login. The lease's `issuedAt` doubles as the
         /// trusted server clock the app pins for anti-rollback.
         /// </summary>
+        // Licensing bootstrap. Its security is the RS256 signature (Pillar 2), not
+        // transport auth — the app must be able to (re)fetch it while its token is
+        // mid-refresh, so it is anonymous by design.
+        [AllowAnonymous]
         [HttpGet("[action]")]
         public async Task<IActionResult> Lease([FromQuery] int companyId)
         {

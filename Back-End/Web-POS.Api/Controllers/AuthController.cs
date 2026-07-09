@@ -13,6 +13,9 @@ namespace Api.Controllers;
 [Route("api/[controller]")]
 public class AuthController(IMediator mediator) : ControllerBase
 {
+    // The one genuinely-public endpoint: the caller has no token yet. Everything
+    // else is covered by the global FallbackPolicy (see Program.cs).
+    [AllowAnonymous]
     [HttpPost("[action]")]
     public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest body)
     {

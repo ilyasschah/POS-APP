@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/api/api_client.dart';
 import 'package:pos_app/auth/auth_storage.dart';
+import 'package:pos_app/auth/auth_token_cache.dart';
+import 'package:pos_app/auth/session_expiry.dart';
 import 'package:pos_app/auth/master_login_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pos_app/auth/login_screen.dart';
@@ -28,6 +30,13 @@ void main() async {
   // (master-login/sync need it, and it can't come from the cloud-synced settings
   // because you need the endpoint to reach the cloud in the first place).
   initApiBaseUrl(prefs.getString(kApiBaseUrlPrefKey));
+
+  // Graceful auth-failure handling: when the server rejects our token with 401,
+  // the Dio interceptor routes here, to the login screen (once, debounced). A
+  // fresh token re-arms it. Wired here so the coordinator stays UI-import-free.
+  SessionExpiry.loginRouteBuilder =
+      (_) => const LoginScreen(sessionExpired: true);
+  AuthTokenCache.onTokenSet = SessionExpiry.reset;
 
   runApp(
     ProviderScope(
@@ -206,6 +215,7 @@ class _MyAppState extends ConsumerState<MyApp> {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      navigatorKey: rootNavigatorKey,
       title: 'POS System',
       themeMode: ThemeMode.light,
       theme: themeData,
