@@ -1,7 +1,13 @@
 // Pillar 3 on-device verification: proves the local Drift database is opened
 // with SQLCipher (encryption-at-rest) on the real platform's native library.
-// Run on a connected device/emulator:
-//   flutter test integration_test/cipher_test.dart -d <deviceId>
+//
+// Encryption is a master switch — `kPillar3Encryption` in app_database.dart. It
+// is DELIBERATELY `false` during the dev phase (so the DB can be inspected with
+// DBeaver/LINQPad), so this test AUTO-SKIPS while it's off. Flip the switch to
+// `true` for production and this becomes the gate that proves encryption works.
+//
+// On-device only (needs real plugins → must live in integration_test/). Run:
+//   flutter test integration_test/cipher_test.dart -d windows
 import 'dart:io';
 
 import 'package:flutter/foundation.dart' show debugPrint;
@@ -14,8 +20,10 @@ import 'package:pos_app/database/app_database.dart';
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
+  // Skipped while encryption is off (dev). Flip kPillar3Encryption → true in
+  // app_database.dart to run this gate for production.
   testWidgets('local database is opened with SQLCipher and is encrypted at rest',
-      (tester) async {
+      skip: !kPillar3Encryption, (tester) async {
     final db = AppDatabase();
 
     // The first query opens the LazyDatabase connection, which derives the
