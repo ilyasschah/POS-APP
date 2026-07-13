@@ -689,4 +689,13 @@ D:\POS-APP\Back-End\Web-POS.Api\obj\Debug\net10.0\refint\Web-POS.Api.dll
 D:\POS-APP\Back-End\Web-POS.Api\obj\Debug\net10.0\Web-POS.Api.pdb
 D:\POS-APP\Back-End\Web-POS.Api\obj\Debug\net10.0\Web-POS.Api.genruntimeconfig.cache
 D:\POS-APP\Back-End\Web-POS.Api\obj\Debug\net10.0\ref\Web-POS.Api.dll
+C:\Users\ILYASS\AppData\Local\Temp\webpos_build_check\appsettings.Development.json
+C:\Users\ILYASS\AppData\Local\Temp\webpos_build_check\appsettings.json
+C:\Users\ILYASS\AppData\Local\Temp\webpos_build_check\libman.json
+C:\Users\ILYASS\AppData\Local\Temp\webpos_build_check\Web-POS.Api.staticwebassets.endpoints.json
+C:\Users\ILYASS\AppData\Local\Temp\webpos_build_check\Web-POS.Api.exe
+C:\Users\ILYASS\AppData\Local\Temp\webpos_build_check\Web-POS.Api.deps.json
+C:\Users\ILYASS\AppData\Local\Temp\webpos_build_check\Web-POS.Api.runtimeconfig.json
+C:\Users\ILYASS\AppData\Local\Temp\webpos_build_check\Web-POS.Api.dll
+C:\Users\ILYASS\AppData\Local\Temp\webpos_build_check\Web-POS.Api.pdb
 D:\POS-APP\Back-End\Web-POS.Api\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt

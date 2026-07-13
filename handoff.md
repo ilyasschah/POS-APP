@@ -1,6 +1,8 @@
 # Handoff
 
-_Last updated: 2026-07-09._
+_Last updated: 2026-07-13._
+
+_**2026-07-13 session:** a batch of UI/UX fixes plus two data-integrity fixes — all verified (`dart analyze lib` = clean, `flutter build windows`, backend `dotnet build`, and data simulations against the live SQLite). **(1) Unified date/time pickers** — new **`lib/core/app_date_picker.dart`**: `showAppDateRangePicker` / `showAppDatePicker` (the Sales-history-style predefined-period calendar, for **date-only**) and `showAppDateTimePicker` (Material date→time, for **date+time**). Every raw `showDatePicker` / `showDateRangePicker` across sales_history, reports, dashboard, documents, shift, document_editor, promotions and bookings now routes through it; shift clock-in/out collapsed to one combined date+time chip; **promotions and bookings kept split on purpose** (their "time" is a recurring daily window / a fixed-day time, not a single moment). Standalone time-only pickers stay on Material. **(2) Menu polish** — the item **Tax** dialog is now compact + theme-token (was `Colors.pink`, a hard-coded-colour violation); the **warehouse** switcher changed from a footer popup-menu to a centered picker (**`lib/stock/warehouse_picker_dialog.dart`**) mirroring the customer picker. **(3) Cash In/Out** — the after-login screen's **Cancel** now closes and returns to the POS shell (it was a dead button that only reset the fields). **(4) Floor plan empty state** — an empty canvas (no floor plans, or a plan with no tables) showed an **endless spinner** because `tablesByFloorPlanProvider` returns `Stream.empty()` with no active plan (a StreamProvider that never emits stays "loading"); it now shows a call-to-action that opens the shared **`showAddFloorPlanDialog`** (extracted from `side_panel.dart`) or adds a table. **(5) Credit payments made offline-first** — the dialog fetched unpaid docs from the backend (`/Document/GetUnpaidByCustomer`), which returned nothing when the server copy was stale; it now reads Drift like the rest of the app, and applying a credit runs a **local waterfall** (payments + paid-status) that SyncManager pushes (`/Payments/Add` + `/Document/Update`). **(6) Paid-status now recomputes** — new **`AppDatabase.recomputePaidStatus`** (Unpaid/Partial/Paid; never deletes payments, unlike `setLocalPaidStatus`) is called after every payment add/edit/delete in the document editor and in the credit waterfall, so a partially-paid document finally shows **Partial** (+ a safe self-heal on credit-dialog load for legacy Unpaid-with-payments rows). **(7) Percentage item discounts preserved** — a `%` item discount was flattened to fixed money at checkout, so editing a document item always showed "Fixed"; it's now stored as `(discountType 0, the % value)` on both the order item and the local document item (no-promo case only), and **`BatchSyncPosOrdersCommand` computes each line total type-aware** (`0 → price*disc/100`). The fixed/type-1 path is byte-identical, so it's backward-compatible and total-neutral (proven: 50% ≡ 5 money). **⚠️ The backend was rebuilt but the running instance must be restarted to pick up the BatchSync change.** Existing already-resolved document items are unchanged (the `%` can't be reliably reverse-mapped — the `discount_lines` that hold the original % have a null `item_local_id`)._
 
 _**2026-07-09 session:** closed the **entire audit** — finished the colour-token pass (OPT-5), burned the lint residual down to a **true zero-lint baseline** (OPT-4), corrected the EF **`HasTrigger`** labels against `sys.triggers`, **wired the serial weighing scale** (`Scale.Enabled/Port/BaudRate`), and **closed a live backend auth hole** (45 unauthenticated controllers → fail-closed `FallbackPolicy`) plus moved the committed secrets to env vars (§4 item 20). Then added **graceful 401 → login** handling so a dead/rotated token routes to the login screen instead of an endless 401 flood (item 21), and **reorganised the tests** + added a device-reset utility (item 22). All verified against the running API / app. (Note: local DB encryption is **intentionally off for the dev phase** — `kPillar3Encryption = false`; re-enable for production — see item 22.)_
 
@@ -31,6 +33,21 @@ Highlights:
 - **Docs consolidated** — repo root now holds only `CLAUDE.md` + `PROJECT_DOCUMENTATION.md` (the latter merges the old handover, offline-migration plan, ADR-001/002, offline-first audit, and the project audit as §6).
 
 ## 3. Active Files
+
+### Touched 2026-07-13
+
+Frontend (`Front-End/`):
+- `lib/core/app_date_picker.dart` **(new)** — the three `showApp*` pickers. Consumers: `reports/sales_history_screen.dart` (local `_DateRangePickerDialog` **deleted**), `reports/reports_screen.dart`, `dashboard/dashboard_screen.dart`, `document/documents_screen.dart`, `shift/shift_management_screen.dart` (range + clock-in/out date+time), `document/document_editor_screen.dart` (date/due/stock/expiration), `promotions/promotion_edit_screen.dart` + `bookings/bookings_screen.dart` (date parts only).
+- `lib/stock/warehouse_picker_dialog.dart` **(new)** — centered warehouse picker; wired into `menu/menu_screen.dart` (replaced the `PopupMenuButton`; also compacted `_ItemTaxDialog` there).
+- `lib/cash/cash_movement_screen.dart` — `_cancel` → `_leaveToShell()` (Cancel closes).
+- `lib/floor_plan/floor_plan_screen.dart` — empty-state (`_EmptyFloorState`) instead of a spinner; `lib/floor_plan/widgets/side_panel.dart` — extracted top-level `showAddFloorPlanDialog`.
+- `lib/credit/credit_payment_dialog.dart` — offline-first load + local credit waterfall.
+- `lib/database/app_database.dart` — new `recomputePaidStatus(docLocalId)`.
+- `lib/document/document_editor_screen.dart` — recompute paid-status after payment add/edit/delete (`_PaymentsView.onPaidStatusRecomputed`).
+- `lib/cart/payment_checkout_dialog.dart` — store %-entered item discount as `(type 0, % value)`; `lib/reports/sales_history_screen.dart` — item-discount column now type-aware.
+
+Backend (`Back-End/Web-POS.Api/`):
+- `Commands/PosOrderCommands/BatchSync/BatchSyncPosOrdersCommand.cs` — per-line total computed type-aware (`0 → price*disc/100`). **Rebuilt; restart the running API.**
 
 ### Touched 2026-07-09
 

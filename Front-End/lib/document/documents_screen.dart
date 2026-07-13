@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:pos_app/api/api_client.dart';
+import 'package:pos_app/core/app_date_picker.dart';
 import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/security/security_guard.dart';
 import 'package:pos_app/security/security_keys.dart';
@@ -495,11 +496,14 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
                 control: InkWell(
                   borderRadius: BorderRadius.circular(8),
                   onTap: () async {
-                    final range = await showDateRangePicker(
-                      context:         context,
-                      firstDate:       DateTime(2020),
-                      lastDate:        DateTime.now().add(const Duration(days: 365)),
-                      initialDateRange: _filterDateRange,
+                    final now = DateTime.now();
+                    final current = _filterDateRange;
+                    final range = await showAppDateRangePicker(
+                      context,
+                      initialStart: current?.start ?? DateTime(now.year, now.month, 1),
+                      initialEnd:   current?.end ?? now,
+                      firstDate:    DateTime(2020),
+                      lastDate:     now.add(const Duration(days: 365)),
                     );
                     if (range != null) setState(() => _filterDateRange = range);
                   },

@@ -4,7 +4,9 @@
 > This file consolidates what were previously six separate documents. For active, harness-loaded
 > engineering rules see `CLAUDE.md` (kept separate on purpose — it is auto-loaded each session).
 >
-> **Last consolidated:** 2026-07-04 · **Last updated:** 2026-07-09
+> **Last consolidated:** 2026-07-04 · **Last updated:** 2026-07-13
+>
+> **2026-07-13 update:** UI/UX pass + two data-integrity fixes — see `handoff.md` (2026-07-13 block) for the full list. Reusable pieces worth knowing: a **unified date/time picker** at `Front-End/lib/core/app_date_picker.dart` — use `showAppDateRangePicker` / `showAppDatePicker` for **date-only** and `showAppDateTimePicker` for **date+time**; **never** call raw `showDatePicker` / `showDateRangePicker` in new UI. **Credit payments** is now offline-first (reads Drift, not the backend). Document **paid-status now recomputes** to Partial/Paid via `AppDatabase.recomputePaidStatus` after any payment change. A **percentage item discount** is preserved end-to-end as `(discountType 0, the % value)` — checkout stores it and `BatchSyncPosOrdersCommand` computes line totals type-aware (`0 → price*disc/100`); **restart the API** after deploying that change.
 >
 > **2026-07-09 update:** the §6 audit is **fully closed** (all CRITICAL/OPT/UP items + the deferred
 > `HasTrigger` cleanup); `dart analyze lib` reports *"No issues found!"*. The serial weighing scale

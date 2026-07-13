@@ -2,6 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:pos_app/core/app_date_picker.dart';
 import 'package:pos_app/currency/currencies_provider.dart';
 import 'package:pos_app/dashboard/dashboard_model.dart';
 import 'package:pos_app/dashboard/dashboard_provider.dart';
@@ -522,14 +523,12 @@ class _PeriodicFilterBar extends ConsumerWidget {
             ),
           ),
           onPressed: () async {
-            final result = await showDateRangePicker(
-              context: context,
+            final result = await showAppDateRangePicker(
+              context,
+              initialStart: range.start,
+              initialEnd: range.end,
               firstDate: DateTime(2020),
               lastDate: DateTime.now().add(const Duration(days: 365)),
-              initialDateRange: DateTimeRange(
-                start: range.start,
-                end: range.end,
-              ),
             );
             if (result != null) {
               ref

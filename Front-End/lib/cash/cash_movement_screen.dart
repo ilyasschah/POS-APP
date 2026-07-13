@@ -92,19 +92,8 @@ class _CashMovementScreenState extends ConsumerState<CashMovementScreen> {
       _descCtrl.clear();
       setState(() => _saving = false);
 
-      // Return to the main shell once the row is persisted. When launched from
-      // MainLayout's startup flow this simply pops back; if the screen was ever
-      // shown as a root route, redirect into MainLayout so the user is never
-      // stranded on this canvas.
-      if (!mounted) return;
-      if (Navigator.canPop(context)) {
-        Navigator.pop(context);
-      } else {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const MainLayout()),
-        );
-      }
+      // Return to the main shell once the row is persisted.
+      _leaveToShell();
     } catch (e) {
       setState(() {
         _error  = e.toString();
@@ -113,11 +102,26 @@ class _CashMovementScreenState extends ConsumerState<CashMovementScreen> {
     }
   }
 
-  void _cancel() {
-    _amountCtrl.text = '0';
-    _descCtrl.clear();
-    setState(() => _error = null);
+  /// Leaves this screen back to the POS shell. Normally this just pops (the
+  /// screen is pushed over MainLayout — on login or from the menu); if it was
+  /// ever shown as a root route, redirect into MainLayout so the user is never
+  /// stranded on this canvas.
+  void _leaveToShell() {
+    if (!mounted) return;
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context);
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const MainLayout()),
+      );
+    }
   }
+
+  // "Cancel" abandons the cash movement and returns to the POS. It previously
+  // only reset the fields, which read as a dead button on the after-login
+  // launch where the user expects Cancel to close the screen and move on.
+  void _cancel() => _leaveToShell();
 
   @override
   Widget build(BuildContext context) {

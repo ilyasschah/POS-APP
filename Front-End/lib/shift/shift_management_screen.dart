@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 
 import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/company/company_provider.dart';
+import 'package:pos_app/core/app_date_picker.dart';
 import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/navigation/nav_widgets.dart';
 import 'package:pos_app/shift/shift_provider.dart';
@@ -341,11 +342,12 @@ class _HoursTabState extends ConsumerState<_HoursTab> {
   }
 
   Future<void> _pickRange() async {
-    final result = await showDateRangePicker(
-      context: context,
+    final result = await showAppDateRangePicker(
+      context,
+      initialStart: _range.start,
+      initialEnd: _range.end,
       firstDate: DateTime(2020),
       lastDate: DateTime.now(),
-      initialDateRange: _range,
     );
     if (result != null && mounted) {
       setState(() {
@@ -908,10 +910,8 @@ class _AddTimeCardDialog extends ConsumerStatefulWidget {
 
 class _AddTimeCardDialogState extends ConsumerState<_AddTimeCardDialog> {
   int? _userId;
-  late DateTime _inDate;
-  late TimeOfDay _inTime;
-  late DateTime _outDate;
-  late TimeOfDay _outTime;
+  late DateTime _clockIn;
+  late DateTime _clockOut;
   bool _saving = false;
   String? _error;
 
@@ -919,49 +919,27 @@ class _AddTimeCardDialogState extends ConsumerState<_AddTimeCardDialog> {
   void initState() {
     super.initState();
     final now = DateTime.now();
-    _inDate = DateTime(now.year, now.month, now.day);
-    _outDate = _inDate;
-    _inTime = TimeOfDay.fromDateTime(now.subtract(const Duration(hours: 1)));
-    _outTime = TimeOfDay.fromDateTime(now);
+    // To the minute; clock-in defaults to an hour before clock-out (correct
+    // across midnight, unlike a separate date+time-of-day that would invert).
+    _clockOut = DateTime(now.year, now.month, now.day, now.hour, now.minute);
+    _clockIn = _clockOut.subtract(const Duration(hours: 1));
   }
 
   // Independent in/out date+time so a session can span any window (even
   // different days), per the admin override requirement.
-  DateTime get _clockIn => DateTime(_inDate.year, _inDate.month, _inDate.day,
-      _inTime.hour, _inTime.minute);
-  DateTime get _clockOut => DateTime(_outDate.year, _outDate.month,
-      _outDate.day, _outTime.hour, _outTime.minute);
-
-  Future<void> _pickDate(bool isIn) async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: isIn ? _inDate : _outDate,
+  Future<void> _pickDateTime(bool isIn) async {
+    final picked = await showAppDateTimePicker(
+      context,
+      initialDateTime: isIn ? _clockIn : _clockOut,
       firstDate: DateTime(2020),
       lastDate: DateTime.now().add(const Duration(days: 1)),
     );
     if (picked != null && mounted) {
       setState(() {
         if (isIn) {
-          _inDate = picked;
+          _clockIn = picked;
         } else {
-          _outDate = picked;
-        }
-        _error = null;
-      });
-    }
-  }
-
-  Future<void> _pickTime(bool isIn) async {
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: isIn ? _inTime : _outTime,
-    );
-    if (picked != null && mounted) {
-      setState(() {
-        if (isIn) {
-          _inTime = picked;
-        } else {
-          _outTime = picked;
+          _clockOut = picked;
         }
         _error = null;
       });
@@ -1004,6 +982,8 @@ class _AddTimeCardDialogState extends ConsumerState<_AddTimeCardDialog> {
     final cs = theme.colorScheme;
     final usersAsync = ref.watch(allUsersProvider);
     final dateFmt = DateFormat('MMM d, yyyy');
+    String dtLabel(DateTime dt) =>
+        '${dateFmt.format(dt)}  ${TimeOfDay.fromDateTime(dt).format(context)}';
 
     final minutes = _clockOut.isAfter(_clockIn)
         ? _clockOut.difference(_clockIn).inMinutes
@@ -1074,17 +1054,9 @@ class _AddTimeCardDialogState extends ConsumerState<_AddTimeCardDialog> {
             Row(children: [
               Expanded(
                 child: _PickerChip(
-                  icon: Icons.calendar_today,
-                  label: dateFmt.format(_inDate),
-                  onTap: () => _pickDate(true),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _PickerChip(
-                  icon: Icons.schedule,
-                  label: _inTime.format(context),
-                  onTap: () => _pickTime(true),
+                  icon: Icons.login,
+                  label: dtLabel(_clockIn),
+                  onTap: () => _pickDateTime(true),
                 ),
               ),
             ]),
@@ -1094,17 +1066,9 @@ class _AddTimeCardDialogState extends ConsumerState<_AddTimeCardDialog> {
             Row(children: [
               Expanded(
                 child: _PickerChip(
-                  icon: Icons.calendar_today,
-                  label: dateFmt.format(_outDate),
-                  onTap: () => _pickDate(false),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _PickerChip(
-                  icon: Icons.schedule,
-                  label: _outTime.format(context),
-                  onTap: () => _pickTime(false),
+                  icon: Icons.logout,
+                  label: dtLabel(_clockOut),
+                  onTap: () => _pickDateTime(false),
                 ),
               ),
             ]),

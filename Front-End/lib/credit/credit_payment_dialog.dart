@@ -1,21 +1,27 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:pos_app/api/api_client.dart';
+import 'package:uuid/uuid.dart';
 import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/cart/payment_type_model.dart';
 import 'package:pos_app/cart/payment_type_provider.dart';
 import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/core/status_colors.dart';
+import 'package:pos_app/database/app_database.dart';
+import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/customer/customer_model.dart';
 import 'package:pos_app/customer/customer_provider.dart';
+import 'package:pos_app/sync/sync_notifier.dart';
 
 // ---------------------------------------------------------------------------
 // Model
 // ---------------------------------------------------------------------------
 class _UnpaidDoc {
-  final int     id;
+  final int     id;         // server document id (used to key the backend apply)
+  final String  localId;    // Drift local id (used to attach the local payment)
+  final DateTime date;      // raw date, for oldest-first waterfall ordering
   final String  number;
   final String? documentTypeName;
   final String  dateStr;
@@ -28,6 +34,8 @@ class _UnpaidDoc {
 
   const _UnpaidDoc({
     required this.id,
+    required this.localId,
+    required this.date,
     required this.number,
     this.documentTypeName,
     required this.dateStr,
@@ -38,41 +46,6 @@ class _UnpaidDoc {
     this.internalNote,
     this.note,
   });
-
-  factory _UnpaidDoc.fromJson(Map<String, dynamic> j) {
-    String fmt(String? raw) {
-      if (raw == null || raw.isEmpty) return '';
-      try {
-        final dt = DateTime.parse(raw).toLocal();
-        return DateFormat('dd/MM/yyyy').format(dt);
-      } catch (_) {
-        return raw;
-      }
-    }
-
-    String fmtFull(String? raw) {
-      if (raw == null || raw.isEmpty) return '';
-      try {
-        final dt = DateTime.parse(raw).toLocal();
-        return DateFormat('dd/MM/yyyy HH:mm:ss').format(dt);
-      } catch (_) {
-        return raw;
-      }
-    }
-
-    return _UnpaidDoc(
-      id:               j['id'] as int? ?? 0,
-      number:           j['number'] as String? ?? '',
-      documentTypeName: j['documentTypeName'] as String?,
-      dateStr:          fmt(j['date'] as String?),
-      userName:         j['userName'] as String?,
-      total:            (j['total'] as num?)?.toDouble() ?? 0,
-      balance:          (j['balance'] as num?)?.toDouble() ?? 0,
-      dateCreatedStr:   fmtFull(j['dateCreated'] as String?),
-      internalNote:     j['internalNote'] as String?,
-      note:             j['note'] as String?,
-    );
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -197,16 +170,63 @@ class _CreditPaymentsDialogState
     });
 
     try {
-      final dio      = createDio();
-      final response = await dio.get(
-        '/Document/GetUnpaidByCustomer',
-        queryParameters: {
-          'companyId':  company.id,
-          'customerId': _customerId,
-        },
+      // Offline-first: unpaid documents come from the local Drift store — the
+      // same source the documents list and the applied-payments tab read. This
+      // dialog used to query the online backend (/Document/GetUnpaidByCustomer),
+      // which silently returned nothing whenever the server's copy was stale or
+      // unreachable, even though the balance was still open locally.
+      final db = ref.read(appDatabaseProvider);
+      final rows = await db.getDocuments(
+        companyId: company.id,
+        customerId: _customerId,
       );
-      final list = response.data as List<dynamic>;
-      final docs = list.map((j) => _UnpaidDoc.fromJson(j as Map<String, dynamic>)).toList();
+
+      final users = await db.select(db.usersTable).get();
+      final types = await db.select(db.documentTypesTable).get();
+      final userName = {for (final u in users) u.id: u.name};
+      final typeName = {for (final t in types) t.id: t.name};
+
+      final dateFmt = DateFormat('dd/MM/yyyy');
+      final createdFmt = DateFormat('dd/MM/yyyy HH:mm:ss');
+
+      final docs = <_UnpaidDoc>[];
+      for (final row in rows) {
+        // Only synced documents can be reconciled through the backend
+        // (ApplyCreditPayment keys on the server document id), and 1 = fully
+        // paid so there's nothing left to settle.
+        if (row.serverId == null || row.paidStatus == 1) continue;
+
+        final payments = await db.getPayments(row.localId);
+        final paid = payments
+            .where((p) => p.syncStatus != 'pending_delete')
+            .fold<double>(0, (s, p) => s + p.amount);
+        final balance = row.total - paid;
+        if (balance <= 0) continue;
+
+        // Self-heal legacy rows written before paid-status was recomputed: an
+        // Unpaid document that already carries payments is always a bug (a
+        // genuinely unpaid doc has none), so correct it to Partial. Safe — it
+        // never touches a manual "Paid" override, which carries no payments.
+        if (row.paidStatus == 0 && paid > 0.005) {
+          await db.recomputePaidStatus(row.localId);
+        }
+
+        docs.add(_UnpaidDoc(
+          id: row.serverId!,
+          localId: row.localId,
+          date: row.date,
+          number: row.number ?? '',
+          documentTypeName: typeName[row.documentTypeId],
+          dateStr: dateFmt.format(row.date.toLocal()),
+          userName: userName[row.userId],
+          total: row.total,
+          balance: balance,
+          dateCreatedStr:
+              createdFmt.format((row.dateCreated ?? row.date).toLocal()),
+          internalNote: row.internalNote,
+          note: row.note,
+        ));
+      }
 
       setState(() {
         _docs      = docs;
@@ -257,30 +277,60 @@ class _CreditPaymentsDialogState
     });
 
     try {
-      final dio = createDio();
-      await dio.post(
-        '/Payments/ApplyCreditPayment',
-        queryParameters: {
-          'companyId': company.id,
-          'userId':    user.id,
-        },
-        data: {
-          'customerId':          _customerId,
-          'paymentTypeId':       effectivePayId,
-          'amount':              amount,
-          'isAutomatic':         _automaticDistribution,
-          'selectedDocumentIds': _automaticDistribution
-              ? <int>[]
-              : _selectedIds.toList(),
-        },
-      );
+      final db = ref.read(appDatabaseProvider);
+
+      // Offline-first waterfall — mirrors the backend ApplyCreditPayment: spend
+      // the amount across the customer's open documents oldest-first, capping
+      // each at its remaining balance, writing one local payment per document
+      // and recomputing its paid status. SyncManager pushes the payments
+      // (/Payments/Add) and the paid-status changes (/Document/Update).
+      final targets = (_automaticDistribution
+              ? List<_UnpaidDoc>.from(_docs)
+              : _docs.where((d) => _selectedIds.contains(d.id)).toList())
+          ..sort((a, b) => a.date.compareTo(b.date));
+
+      var remaining = amount;
+      final now = DateTime.now();
+      var appliedToAny = false;
+      for (final doc in targets) {
+        if (remaining <= 0) break;
+        final apply = remaining < doc.balance ? remaining : doc.balance;
+        if (apply <= 0) continue;
+
+        await db.insertLocalPayment(PaymentsTableCompanion(
+          localId: Value(const Uuid().v4()),
+          documentId: Value(doc.localId),
+          paymentTypeId: Value(effectivePayId),
+          amount: Value(apply),
+          userId: Value(user.id),
+          date: Value(now),
+          companyId: Value(company.id),
+          dateCreated: Value(now),
+          syncStatus: const Value('pending_create'),
+        ));
+        await db.recomputePaidStatus(doc.localId);
+        remaining -= apply;
+        appliedToAny = true;
+      }
+
+      if (!appliedToAny) {
+        setState(() {
+          _isSubmitting = false;
+          _errorMessage =
+              'Nothing to settle — the selected documents are already paid.';
+        });
+        return;
+      }
+
+      // Best-effort push now (payments + paid status); anything unsent stays
+      // queued for the next sync.
+      ref.read(syncStateProvider.notifier).sync().catchError((_) {});
 
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
-      String msg = 'An error occurred: $e';
       setState(() {
         _isSubmitting = false;
-        _errorMessage = msg;
+        _errorMessage = 'An error occurred: $e';
       });
     }
   }

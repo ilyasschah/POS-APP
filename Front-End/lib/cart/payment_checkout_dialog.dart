@@ -352,14 +352,24 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
         }).toList();
         final taxesJsonStr =
             taxEntries.isEmpty ? null : jsonEncode(taxEntries);
+        // A %-entered item discount is stored as (type 0, the % value) rather
+        // than its resolved money, so the saved document line reads "50%" not
+        // "Fixed 5". Totals are identical — the backend BatchSync applies the
+        // discount type-aware. Skipped when a promotion is mixed in, since one
+        // discount field can't hold both a % and the promo's money.
+        final pctItemDiscount = item.discountInputType == 0 &&
+            item.discountInputValue != null &&
+            item.promotionalDiscount == 0;
         return PosOrderItemsTableCompanion(
           localId: Value(lineLocalIds[item.cartItemId]!),
           orderId: Value(orderLocalId),
           productId: Value(item.productId),
           quantity: Value(item.quantity),
           unitPrice: Value(item.price),
-          discount: Value(item.discount + item.promotionalDiscount),
-          discountType: Value(item.discountType),
+          discount: Value(pctItemDiscount
+              ? item.discountInputValue!
+              : item.discount + item.promotionalDiscount),
+          discountType: Value(pctItemDiscount ? 0 : item.discountType),
           taxRate: Value(summedRate),
           taxesJson: Value(taxesJsonStr),
           comment: Value(item.comment),
@@ -464,6 +474,13 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
             pctTaxes.fold<double>(0, (s, t) => s + t.rate);
         final firstTaxId =
             item.appliedTaxes.isNotEmpty ? item.appliedTaxes.first.id : null;
+        // Mirror the pos_order_items choice so local + pulled docs agree: keep a
+        // %-entered discount as (type 0, the % value) instead of the resolved
+        // money, so the Edit-Item dialog shows "50%". `total` (lineTotal) stays
+        // authoritative and unchanged.
+        final pctItemDiscount = item.discountInputType == 0 &&
+            item.discountInputValue != null &&
+            item.promotionalDiscount == 0;
         return DocumentItemsTableCompanion(
           localId:      Value(docItemLocalId),
           documentId:   Value(orderLocalId),
@@ -479,8 +496,10 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
           // promotion show twice (item "Item Disc." column + breakdown) and made
           // local docs disagree with pulled ones. `total`/`taxAmount` already net
           // out the promotion via `lineTotal`, so they're unaffected.
-          discount:     Value(item.discount),
-          discountType: Value(item.discountType),
+          discount:     Value(pctItemDiscount
+              ? item.discountInputValue!
+              : item.discount),
+          discountType: Value(pctItemDiscount ? 0 : item.discountType),
           total:        Value(lineTotal),
           taxAmount:    Value(taxAmt),
           taxRate:      Value(combinedRate),

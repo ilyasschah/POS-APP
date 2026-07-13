@@ -14,6 +14,8 @@ import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/customer/customer_picker_dialog.dart';
 import 'package:pos_app/customer/customer_provider.dart';
 import 'package:pos_app/stock/warehouse_provider.dart';
+import 'package:pos_app/stock/warehouse_model.dart';
+import 'package:pos_app/stock/warehouse_picker_dialog.dart';
 import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/menu/discount_dialog.dart';
 import 'package:pos_app/menu/quantity_keypad_dialog.dart';
@@ -797,39 +799,29 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
           ),
           const SizedBox(width: 8),
 
-          // --- Warehouse Switcher (labelled icon) ---
+          // --- Warehouse Switcher (centered picker, like the customer one) ---
           if (showWarehouseBtn)
             Consumer(
               builder: (context, ref, child) {
                 final selectedWarehouse = ref.watch(selectedWarehouseProvider);
-                final warehouses = ref.watch(allWarehousesProvider);
+                final warehousesAsync = ref.watch(allWarehousesProvider);
 
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 2),
-                  child: PopupMenuButton<int>(
-                    tooltip: selectedWarehouse?.name ?? "Select Warehouse",
-                    child: _MenuActionVisual(
-                      icon: Icons.warehouse,
-                      label: selectedWarehouse?.name ?? 'Warehouse',
-                      tint: Theme.of(context).colorScheme.onSurface,
-                    ),
-                    onSelected: (id) {
-                      warehouses.whenData((list) {
-                        final wh = list.firstWhere((w) => w.id == id);
-                        ref.read(selectedWarehouseProvider.notifier).state = wh;
-                      });
-                    },
-                    itemBuilder: (ctx) => warehouses.when(
-                      data: (list) => list
-                          .map(
-                            (w) =>
-                                PopupMenuItem(value: w.id, child: Text(w.name)),
-                          )
-                          .toList(),
-                      loading: () => [],
-                      error: (_, __) => [],
-                    ),
-                  ),
+                return _MenuHeaderActionBtn(
+                  icon: Icons.warehouse,
+                  label: selectedWarehouse?.name ?? 'Warehouse',
+                  active: selectedWarehouse != null,
+                  onTap: () async {
+                    final list =
+                        warehousesAsync.value ?? const <Warehouse>[];
+                    final selected = await showWarehousePickerDialog(
+                      context,
+                      list,
+                      selectedId: selectedWarehouse?.id,
+                    );
+                    if (selected == null || !context.mounted) return;
+                    ref.read(selectedWarehouseProvider.notifier).state =
+                        selected;
+                  },
                 );
               },
             ),
@@ -3644,67 +3636,99 @@ class _ItemTaxDialogState extends ConsumerState<_ItemTaxDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     final allTaxesAsync = ref.watch(allTaxesProvider);
 
     return AlertDialog(
-      title: Text("Taxes: ${widget.item.productName}"),
+      backgroundColor: theme.cardColor,
+      titlePadding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
+      title: Text(
+        'Taxes · ${widget.item.productName}',
+        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      contentPadding: const EdgeInsets.fromLTRB(4, 4, 4, 0),
       content: SizedBox(
-        width: double.maxFinite,
+        width: 300,
         child: allTaxesAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Text("Error: $e"),
+          loading: () => const Padding(
+            padding: EdgeInsets.all(24),
+            child: Center(child: CircularProgressIndicator()),
+          ),
+          error: (e, _) => Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text("Error: $e"),
+          ),
           data: (taxes) {
             if (taxes.isEmpty) {
-              return const Text("No taxes available in system.");
+              return const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text("No taxes available in system."),
+              );
             }
-            return ListView.builder(
-              shrinkWrap: true,
-              itemCount: taxes.length,
-              itemBuilder: (ctx, i) {
-                final tax = taxes[i];
-                final isSelected = _selectedTaxes.any((t) => t.id == tax.id);
+            return ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 320),
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: taxes.length,
+                itemBuilder: (ctx, i) {
+                  final tax = taxes[i];
+                  final isSelected = _selectedTaxes.any((t) => t.id == tax.id);
 
-                return CheckboxListTile(
-                  title: Text(tax.name),
-                  subtitle: Text("${tax.rate}${tax.isFixed ? '' : '%'}"),
-                  value: isSelected,
-                  activeColor: Colors.pink,
-                  onChanged: (val) {
-                    setState(() {
-                      if (val == true) {
-                        _selectedTaxes.add(
-                          MenuTax(
-                            id: tax.id,
-                            name: tax.name,
-                            rate: tax.rate,
-                            isFixed: tax.isFixed,
-                            isTaxOnTotal: tax.isTaxOnTotal,
-                          ),
-                        );
-                      } else {
-                        _selectedTaxes.removeWhere((t) => t.id == tax.id);
-                      }
-                    });
-                  },
-                );
-              },
+                  return CheckboxListTile(
+                    dense: true,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                    controlAffinity: ListTileControlAffinity.leading,
+                    activeColor: cs.primary,
+                    title: Text(tax.name, style: const TextStyle(fontSize: 13)),
+                    subtitle: Text(
+                      "${tax.rate}${tax.isFixed ? '' : '%'}",
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: cs.onSurface.withValues(alpha: 0.6),
+                      ),
+                    ),
+                    value: isSelected,
+                    onChanged: (val) {
+                      setState(() {
+                        if (val == true) {
+                          _selectedTaxes.add(
+                            MenuTax(
+                              id: tax.id,
+                              name: tax.name,
+                              rate: tax.rate,
+                              isFixed: tax.isFixed,
+                              isTaxOnTotal: tax.isTaxOnTotal,
+                            ),
+                          );
+                        } else {
+                          _selectedTaxes.removeWhere((t) => t.id == tax.id);
+                        }
+                      });
+                    },
+                  );
+                },
+              ),
             );
           },
         ),
       ),
+      actionsPadding: const EdgeInsets.fromLTRB(8, 0, 12, 8),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
           child: const Text("Cancel"),
         ),
-        ElevatedButton(
+        FilledButton(
           onPressed: () {
             ref
                 .read(cartProvider.notifier)
                 .updateItemTaxes(widget.item.cartItemId, _selectedTaxes);
             Navigator.pop(context);
           },
-          child: const Text("Apply Taxes"),
+          child: const Text("Apply"),
         ),
       ],
     );

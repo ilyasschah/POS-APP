@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/api/promotion_models.dart';
 import 'package:pos_app/api/api_client.dart';
 import 'package:pos_app/company/company_provider.dart';
+import 'package:pos_app/core/app_date_picker.dart';
 import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/product/product_provider.dart';
@@ -568,8 +569,8 @@ class _PromotionEditScreenState extends ConsumerState<PromotionEditScreen> {
                             : "${_startDate!.toLocal()}".split(' ')[0],
                       ),
                       onPressed: () async {
-                        final date = await showDatePicker(
-                          context: context,
+                        final date = await showAppDatePicker(
+                          context,
                           initialDate: _startDate ?? DateTime.now(),
                           firstDate: DateTime(2000),
                           lastDate: DateTime(2100),
@@ -612,8 +613,8 @@ class _PromotionEditScreenState extends ConsumerState<PromotionEditScreen> {
                             : "${_endDate!.toLocal()}".split(' ')[0],
                       ),
                       onPressed: () async {
-                        final date = await showDatePicker(
-                          context: context,
+                        final date = await showAppDatePicker(
+                          context,
                           initialDate: _endDate ?? DateTime.now(),
                           firstDate: DateTime(2000),
                           lastDate: DateTime(2100),

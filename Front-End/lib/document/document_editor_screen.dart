@@ -5,6 +5,7 @@ import 'package:pos_app/cart/payment_model.dart';
 import 'package:pos_app/cart/discount_display.dart';
 import 'package:pos_app/api/api_client.dart';
 import 'package:pos_app/company/company_provider.dart';
+import 'package:pos_app/core/app_date_picker.dart';
 import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/document/document_model.dart';
 import 'package:pos_app/customer/customer_provider.dart';
@@ -637,8 +638,8 @@ class _DocumentEditorDialogState extends ConsumerState<_DocumentEditorDialog> {
           onUserChanged: (v) => setState(() => _selectedUserId = v),
           onWarehouseChanged: (v) => setState(() => _selectedWarehouseId = v),
           onDatePick: () async {
-            final picked = await showDatePicker(
-              context: context,
+            final picked = await showAppDatePicker(
+              context,
               initialDate: _date,
               firstDate: DateTime(2020),
               lastDate: DateTime(2030),
@@ -646,8 +647,8 @@ class _DocumentEditorDialogState extends ConsumerState<_DocumentEditorDialog> {
             if (picked != null) setState(() => _date = picked);
           },
           onDueDatePick: () async {
-            final picked = await showDatePicker(
-              context: context,
+            final picked = await showAppDatePicker(
+              context,
               initialDate: _dueDate,
               firstDate: DateTime(2020),
               lastDate: DateTime(2030),
@@ -655,8 +656,8 @@ class _DocumentEditorDialogState extends ConsumerState<_DocumentEditorDialog> {
             if (picked != null) setState(() => _dueDate = picked);
           },
           onStockDatePick: () async {
-            final picked = await showDatePicker(
-              context: context,
+            final picked = await showAppDatePicker(
+              context,
               initialDate: _stockDate,
               firstDate: DateTime(2020),
               lastDate: DateTime(2030),
@@ -739,6 +740,11 @@ class _DocumentEditorDialogState extends ConsumerState<_DocumentEditorDialog> {
                 documentTotal: _savedDocument!.total,
                 paidStatus: _paidStatus,
                 onPaidStatusChanged: _updatePaidStatus,
+                onPaidStatusRecomputed: (s) {
+                  if (!mounted) return;
+                  setState(() => _paidStatus = s);
+                  ref.invalidate(allDocumentsProvider);
+                },
               ),
             )
           : needsHeader(),
@@ -2141,9 +2147,9 @@ class _AddItemDialogState extends ConsumerState<_AddItemDialog> {
                       : const Icon(Icons.calendar_today, size: 16),
                 ),
                 onTap: () async {
-                  final picked = await showDatePicker(
-                    context: context,
-                    initialDate: DateTime.now(),
+                  final picked = await showAppDatePicker(
+                    context,
+                    initialDate: _expirationDate ?? DateTime.now(),
                     firstDate: DateTime(2000),
                     lastDate: DateTime(2100),
                   );
@@ -2427,8 +2433,8 @@ class _EditItemDialogState extends ConsumerState<_EditItemDialog> {
                       controller: _expirationDateCtrl,
                       readOnly: true,
                       onTap: () async {
-                        final picked = await showDatePicker(
-                          context: context,
+                        final picked = await showAppDatePicker(
+                          context,
                           initialDate: _expirationDate ?? DateTime.now(),
                           firstDate: DateTime(2000),
                           lastDate: DateTime(2100),
@@ -2680,6 +2686,12 @@ class _PaymentsView extends ConsumerWidget {
   final int paidStatus;
   final void Function(int) onPaidStatusChanged;
 
+  /// Called after a payment add/edit/delete recomputes the paid status from the
+  /// live payments, so the editor's chip + the documents list reflect it. Unlike
+  /// [onPaidStatusChanged] this does NOT re-persist (recompute already did) — it
+  /// only syncs the in-memory state.
+  final void Function(int) onPaidStatusRecomputed;
+
   const _PaymentsView({
     required this.documentId,
     required this.documentLocalId,
@@ -2688,6 +2700,7 @@ class _PaymentsView extends ConsumerWidget {
     required this.documentTotal,
     required this.paidStatus,
     required this.onPaidStatusChanged,
+    required this.onPaidStatusRecomputed,
   });
 
   @override
@@ -2777,6 +2790,12 @@ class _PaymentsView extends ConsumerWidget {
                         userId: userId,
                       ),
                     );
+                    // Reflect the new payment in the paid status (Unpaid →
+                    // Partial → Paid) locally + in the documents list.
+                    final s = await ref
+                        .read(appDatabaseProvider)
+                        .recomputePaidStatus(localId);
+                    onPaidStatusRecomputed(s);
                   },
                 ),
               ],
@@ -2912,6 +2931,11 @@ class _PaymentsView extends ConsumerWidget {
                                                         companyId: companyId,
                                                       ),
                                                 );
+                                                final s = await ref
+                                                    .read(appDatabaseProvider)
+                                                    .recomputePaidStatus(
+                                                        localId);
+                                                onPaidStatusRecomputed(s);
                                               },
                                       ),
                                       IconButton(
@@ -2999,6 +3023,13 @@ class _PaymentsView extends ConsumerWidget {
                                                           'Payment delete deferred to sync: $e');
                                                     }
                                                   }
+                                                  // Removing a payment can drop
+                                                  // the doc back to Partial /
+                                                  // Unpaid.
+                                                  final s = await db
+                                                      .recomputePaidStatus(
+                                                          localId);
+                                                  onPaidStatusRecomputed(s);
                                                 }
                                               },
                                       ),

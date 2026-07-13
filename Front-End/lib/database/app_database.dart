@@ -2491,6 +2491,44 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
+  /// Recomputes a document's paid status from its live (non-deleted) payments
+  /// and persists it (flagged dirty so SyncManager PATCHes it to the server).
+  /// 0 = Unpaid, 1 = Paid, 2 = Partial. Unlike [setLocalPaidStatus] this NEVER
+  /// deletes payments — it only reflects them — so it's safe to call after every
+  /// payment add / edit / delete. Documents with a non-positive total (refunds,
+  /// credit notes) are left untouched; their status is owned by their own flow.
+  /// Returns the resulting status (the current one if left unchanged).
+  Future<int> recomputePaidStatus(String docLocalId) async {
+    final doc = await (select(documentsTable)
+          ..where((t) => t.localId.equals(docLocalId))
+          ..limit(1))
+        .getSingleOrNull();
+    if (doc == null) return 0;
+    if (doc.total <= 0) return doc.paidStatus;
+
+    final payments = await (select(paymentsTable)
+          ..where((t) => t.documentId.equals(docLocalId))
+          ..where((t) => t.syncStatus.equals('pending_delete').not()))
+        .get();
+    final paid = payments.fold<double>(0, (s, p) => s + p.amount);
+
+    // 0.005 tolerance keeps two-decimal currency rounding from reading a fully
+    // settled balance as "Partial".
+    final int status = paid <= 0.005
+        ? 0
+        : (paid >= doc.total - 0.005 ? 1 : 2);
+
+    if (status != doc.paidStatus) {
+      await (update(documentsTable)..where((t) => t.localId.equals(docLocalId)))
+          .write(DocumentsTableCompanion(
+        paidStatus: Value(status),
+        paidStatusDirty: const Value(true),
+        lastModified: Value(DateTime.now().toUtc()),
+      ));
+    }
+    return status;
+  }
+
   /// Live payments for a document, newest-last, hiding soft-deleted rows.
   Stream<List<PaymentsTableData>> watchPayments(String docLocalId) =>
       (select(paymentsTable)

@@ -1,0 +1,19 @@
+POS NOTES
+
+
+I need o add a logic when I click logout from "master login" not the logout POS login in the settings
+the subscription & devices in admin portal should check if this account still login and update Devices from 1/1 to 0/1 seats
+when I have gives a company a subscriptions for 1 only device but when I have opened the app on another device and logged in hhh and also asked me to create a new POS PIN 
+
+if I deleted a company subscription and the user didn't logout yet it should check if this is id of company still existed if not go back to master login 
+
+
+
+
+after I printed a receipt of a credit payment it doesn't show the real customer name 
+its uses default walk in cusmter and also I donts show how we own the client it print total 500 dh 
+and how much he paid but we should print also how much he still own us and also when i click on sales hestory and i click on print reciept 
+its not the same as the one after payment dailog its another generated one with other blocks 
+we should fix that and double check is because we want to fix the custmer name and the total paid and how much he owns in case of credit payment
+
+

@@ -13,6 +13,7 @@ import 'package:pos_app/customer/customer_provider.dart';
 import 'package:pos_app/product/product_provider.dart';
 import 'package:pos_app/product/product_group_provider.dart';
 import 'package:pos_app/stock/warehouse_provider.dart';
+import 'package:pos_app/core/app_date_picker.dart';
 import 'package:pos_app/reports/report_models.dart';
 import 'package:pos_app/reports/reports_provider.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
@@ -5470,24 +5471,10 @@ class _FilterPanel extends ConsumerWidget {
             if (reportId != 'reorder_list' && reportId != 'low_stock_warning') ...[
               const _FilterLabel('Period'),
               const Gap(6),
-              Row(
-                children: [
-                  Expanded(
-                    child: _DateButton(
-                      label: dateFmt.format(filter.startDate),
-                      onTap: () => _pickDate(context, true),
-                    ),
-                  ),
-                  const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 4),
-                      child: Text('–')),
-                  Expanded(
-                    child: _DateButton(
-                      label: dateFmt.format(filter.endDate),
-                      onTap: () => _pickDate(context, false),
-                    ),
-                  ),
-                ],
+              _DateButton(
+                label:
+                    '${dateFmt.format(filter.startDate)} – ${dateFmt.format(filter.endDate)}',
+                onTap: () => _pickRange(context),
               ),
               const Gap(16),
               const Divider(),
@@ -5519,18 +5506,17 @@ class _FilterPanel extends ConsumerWidget {
     );
   }
 
-  Future<void> _pickDate(BuildContext context, bool isStart) async {
-    final initial = isStart ? filter.startDate : filter.endDate;
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: initial,
-      firstDate: DateTime(2000),
+  Future<void> _pickRange(BuildContext context) async {
+    final range = await showAppDateRangePicker(
+      context,
+      initialStart: filter.startDate,
+      initialEnd: filter.endDate,
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
-    if (picked == null) return;
-    onFilterChanged(isStart
-        ? filter.copyWith(startDate: picked)
-        : filter.copyWith(endDate: picked));
+    if (range == null) return;
+    onFilterChanged(
+      filter.copyWith(startDate: range.start, endDate: range.end),
+    );
   }
 }
 

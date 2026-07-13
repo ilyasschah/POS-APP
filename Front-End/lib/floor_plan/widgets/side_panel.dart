@@ -285,44 +285,8 @@ class _EditPanelState extends ConsumerState<_EditPanel> {
     );
   }
 
-  void _showAddPlanDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) {
-        String newName = '';
-        return AlertDialog(
-          title: Text(
-            widget.isService ? 'New Resource Area' : 'New Floor Plan',
-          ),
-          content: TextField(
-            onChanged: (v) => newName = v,
-            decoration: const InputDecoration(
-              hintText: 'E.g., Second Floor',
-              border: OutlineInputBorder(),
-            ),
-            autofocus: true,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () {
-                if (newName.isNotEmpty) {
-                  ref
-                      .read(floorPlanProvider.notifier)
-                      .addFloorPlan(newName, 'Transparent');
-                }
-                Navigator.pop(ctx);
-              },
-              child: const Text('Add'),
-            ),
-          ],
-        );
-      },
-    );
-  }
+  void _showAddPlanDialog(BuildContext context) =>
+      showAddFloorPlanDialog(context, ref, isService: widget.isService);
 
   void _showRenamePlanDialog(BuildContext context) {
     final plans = ref.read(allFloorPlansProvider).value ?? [];
@@ -1041,4 +1005,48 @@ class _NudgeBtn extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Prompts for a name and creates a floor plan / resource area. Shared by the
+/// side panel's "New Floor" action and the empty-canvas call-to-action so both
+/// open the exact same dialog.
+Future<void> showAddFloorPlanDialog(
+  BuildContext context,
+  WidgetRef ref, {
+  required bool isService,
+}) {
+  return showDialog(
+    context: context,
+    builder: (ctx) {
+      String newName = '';
+      return AlertDialog(
+        title: Text(isService ? 'New Resource Area' : 'New Floor Plan'),
+        content: TextField(
+          onChanged: (v) => newName = v,
+          decoration: const InputDecoration(
+            hintText: 'E.g., Second Floor',
+            border: OutlineInputBorder(),
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (newName.isNotEmpty) {
+                ref
+                    .read(floorPlanProvider.notifier)
+                    .addFloorPlan(newName, 'Transparent');
+              }
+              Navigator.pop(ctx);
+            },
+            child: const Text('Add'),
+          ),
+        ],
+      );
+    },
+  );
 }

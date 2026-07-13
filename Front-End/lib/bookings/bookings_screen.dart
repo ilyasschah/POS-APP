@@ -6,6 +6,7 @@ import 'package:pos_app/api/api_client.dart';
 import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/auth/user_model.dart';
 import 'package:pos_app/bookings/booking_model.dart';
+import 'package:pos_app/core/app_date_picker.dart';
 import 'package:pos_app/bookings/bookings_provider.dart';
 import 'package:pos_app/cart/cart_provider.dart';
 import 'package:pos_app/core/status_colors.dart';
@@ -252,8 +253,8 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
               ),
               TextButton(
                 onPressed: () async {
-                  final picked = await showDatePicker(
-                    context: context,
+                  final picked = await showAppDatePicker(
+                    context,
                     initialDate: selectedDate,
                     firstDate: DateTime(2020),
                     lastDate: DateTime(2030),
