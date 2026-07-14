@@ -1,0 +1,51 @@
+﻿@page "{id:int}"
+@model Api.Pages.Admin.Companies.EditModel
+@{
+    ViewData["Title"] = "Edit company";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="mb-0">Edit company #@Model.Input.Id</h3>
+    <a class="btn-ghost" asp-page="Details" asp-route-id="@Model.Input.Id">Back</a>
+</div>
+
+<form method="post" class="card">
+    <input type="hidden" asp-for="Input.Id" />
+    <div style="display:grid; grid-template-columns: repeat(2,1fr); gap:1rem; padding:1rem">
+        <div class="form-field">
+            <label>Name *</label>
+            <input asp-for="Input.Name" required />
+        </div>
+        <div class="form-field">
+            <label>Country Id *</label>
+            <input type="number" asp-for="Input.CountryId" />
+        </div>
+        <div class="form-field">
+            <label>Email</label>
+            <input asp-for="Input.Email" />
+        </div>
+        <div class="form-field">
+            <label>Phone</label>
+            <input asp-for="Input.PhoneNumber" />
+        </div>
+        <div class="form-field">
+            <label>Address</label>
+            <input asp-for="Input.Address" />
+        </div>
+        <div class="form-field">
+            <label>City</label>
+            <input asp-for="Input.City" />
+        </div>
+        <div class="form-field">
+            <label>Postal code</label>
+            <input asp-for="Input.PostalCode" />
+        </div>
+        <div class="form-field">
+            <label>Tax number</label>
+            <input asp-for="Input.TaxNumber" />
+        </div>
+    </div>
+    <div style="padding:1rem; border-top:1px solid var(--border);">
+        <button type="submit" class="btn-primary">Save changes</button>
+    </div>
+</form>

@@ -1,47 +1,74 @@
 @page
 @model Api.Pages.Admin.Users.EditModel
 @{
-    ViewData["Title"] = "Edit user";
+    ViewData["Title"] = "Edit User";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h3 class="mb-0">Edit user #@Model.Input.UserId</h3>
-    <a class="btn btn-outline-secondary" asp-page="/Admin/Companies/Details" asp-route-id="@Model.Input.CompanyId">Back</a>
+<style>
+    /* Force theme text variables to override Bootstrap's default dark text */
+    .text-muted {
+        color: var(--muted) !important;
+    }
+
+    .text-main, .card, h3, label, p, strong {
+        color: var(--text) !important;
+    }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-4 text-main">
+    <div>
+        <h3 class="mb-0">Edit User <span class="text-muted small fw-normal">#@Model.Input.UserId</span></h3>
+        <div class="text-muted small mt-1">Update user profile, role, and system access</div>
+    </div>
+    <div class="top-actions">
+        <a class="btn-ghost" asp-page="/Admin/Companies/Details" asp-route-id="@Model.Input.CompanyId">Cancel & Back</a>
+    </div>
 </div>
 
-<form method="post" class="bg-white shadow-sm p-4 rounded">
+<form method="post" class="card mb-4 text-main">
     <input type="hidden" asp-for="Input.CompanyId" />
     <input type="hidden" asp-for="Input.UserId" />
-    <div class="row g-3">
-        <div class="col-md-6">
-            <label class="form-label">Username</label>
-            <input class="form-control" asp-for="Input.Username" />
+
+    <div class="brand mb-4" style="font-size: 1rem;">User Profile</div>
+
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:1.25rem;">
+        <div class="form-field mb-0">
+            <label>Username <span style="color:#ef4444">*</span></label>
+            <input asp-for="Input.Username" required />
         </div>
-        <div class="col-md-6">
-            <label class="form-label">Email</label>
-            <input class="form-control" asp-for="Input.Email" />
+        <div class="form-field mb-0">
+            <label>Email Address</label>
+            <input type="email" asp-for="Input.Email" placeholder="user@example.com" />
         </div>
-        <div class="col-md-4">
-            <label class="form-label">First name</label>
-            <input class="form-control" asp-for="Input.FirstName" />
+        <div class="form-field mb-0">
+            <label>First Name</label>
+            <input asp-for="Input.FirstName" />
         </div>
-        <div class="col-md-4">
-            <label class="form-label">Last name</label>
-            <input class="form-control" asp-for="Input.LastName" />
+        <div class="form-field mb-0">
+            <label>Last Name</label>
+            <input asp-for="Input.LastName" />
         </div>
-        <div class="col-md-4">
-            <label class="form-label">Access level</label>
-            <input type="number" class="form-control" asp-for="Input.AccessLevel" />
-        </div>
-        <div class="col-12">
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" asp-for="Input.IsEnabled" id="enabled" />
-                <label class="form-check-label" for="enabled">Enabled</label>
-            </div>
+        <div class="form-field mb-0">
+            <label>Role</label>
+            <!-- Converted numeric input to the intuitive Role dropdown -->
+            <select asp-for="Input.AccessLevel">
+                <option value="0">Cashier</option>
+                <option value="1">Admin</option>
+            </select>
         </div>
     </div>
-    <div class="mt-4">
-        <button type="submit" class="btn btn-primary">Save changes</button>
+
+    <div class="mt-4 pt-4" style="border-top: 1px solid var(--border);">
+        <div class="d-flex align-items-center gap-2 mb-4">
+            <input type="checkbox" asp-for="Input.IsEnabled" id="enabledToggle" style="width:18px; height:18px; accent-color: var(--accent); cursor: pointer;" />
+            <label for="enabledToggle" class="mb-0" style="font-weight: 500; cursor:pointer;">Account Enabled (Active)</label>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center">
+            <p class="text-muted small mb-0">
+                To change this user's password, use the <strong style="color: #d97706 !important;">Reset</strong> action on the organization's details page.
+            </p>
+            <button type="submit" class="btn-primary" style="padding: 0.6rem 2rem; font-size: 1rem;">Save Changes</button>
+        </div>
     </div>
-    <p class="text-muted mt-3 mb-0">To change this user's password, use the <strong>Reset</strong> action on the company page.</p>
 </form>

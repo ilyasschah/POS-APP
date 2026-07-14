@@ -40,6 +40,7 @@ import 'package:pos_app/auth/user_model.dart';
 import 'package:pos_app/product/product_comment_model.dart';
 // import 'package:pos_app/menu/open_orders_screen.dart';
 import 'package:pos_app/printer/receipt_printer_service.dart';
+import 'package:pos_app/printer/printer_routing_service.dart';
 import 'package:pos_app/refund/refund_dialog.dart';
 import 'package:pos_app/security/security_guard.dart';
 import 'package:pos_app/security/security_keys.dart';
@@ -768,19 +769,39 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                                 final roundNum = cartItems.isNotEmpty
                                     ? cartItems.first.roundNumber
                                     : 1;
+                                final orderNo = cart.orderNumber ?? 'WALK-IN';
+                                final cashierName =
+                                    cashier?.displayName ?? 'Unknown';
 
-                                await ReceiptPrinterService()
-                                    .printKitchenTicket(
-                                      orderNumber:
-                                          cart.orderNumber ?? 'WALK-IN',
-                                      cashierName:
-                                          cashier?.displayName ?? 'Unknown',
-                                      serviceType: serviceLabel,
-                                      roundNumber: roundNum,
-                                      printTime: DateTime.now(),
-                                      items: cartItems,
-                                      roleSettings: roleSettings,
-                                    );
+                                // If any printer has "Print kitchen ticket" on,
+                                // split the order across those printers by
+                                // category (food→kitchen, drinks→bar). Otherwise
+                                // fall back to the legacy single all-items ticket
+                                // on the Kitchen printer — unchanged behaviour
+                                // until the operator opts printers in.
+                                final routing =
+                                    ref.read(printerRoutingProvider);
+                                if (routing.hasKitchenStations) {
+                                  await routing.printStationTickets(
+                                    items: cartItems,
+                                    orderNumber: orderNo,
+                                    cashierName: cashierName,
+                                    serviceType: serviceLabel,
+                                    roundNumber: roundNum,
+                                    printTime: DateTime.now(),
+                                  );
+                                } else {
+                                  await ReceiptPrinterService()
+                                      .printKitchenTicket(
+                                        orderNumber: orderNo,
+                                        cashierName: cashierName,
+                                        serviceType: serviceLabel,
+                                        roundNumber: roundNum,
+                                        printTime: DateTime.now(),
+                                        items: cartItems,
+                                        roleSettings: roleSettings,
+                                      );
+                                }
                               } catch (e) {
                                 if (context.mounted) {
                                   showAppSnackbar(

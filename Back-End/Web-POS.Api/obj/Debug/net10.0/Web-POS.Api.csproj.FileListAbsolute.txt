@@ -699,3 +699,5 @@ C:\Users\ILYASS\AppData\Local\Temp\webpos_build_check\Web-POS.Api.runtimeconfig.
 C:\Users\ILYASS\AppData\Local\Temp\webpos_build_check\Web-POS.Api.dll
 C:\Users\ILYASS\AppData\Local\Temp\webpos_build_check\Web-POS.Api.pdb
 D:\POS-APP\Back-End\Web-POS.Api\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt
+D:\POS-APP\Back-End\Web-POS.Api\bin\Debug\net10.0\Web-POS.Api.staticwebassets.runtime.json
+D:\POS-APP\Back-End\Web-POS.Api\obj\Debug\net10.0\compressed\3fgzlzyjdt-{0}-9mxh5yq04s-9mxh5yq04s.gz

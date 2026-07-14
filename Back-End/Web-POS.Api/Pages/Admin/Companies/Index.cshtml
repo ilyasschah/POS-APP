@@ -1,50 +1,123 @@
 @page
 @model Api.Pages.Admin.Companies.IndexModel
 @{
-    ViewData["Title"] = "Companies";
+    ViewData["Title"] = "Companies Dashboard";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h3 class="mb-0">Companies <span class="badge bg-secondary">@Model.Companies.Count</span></h3>
-    <a class="btn btn-primary" asp-page="Create">+ New company</a>
+<style>
+    /* Force theme text variables to override Bootstrap's default dark text */
+    .text-muted {
+        color: var(--muted) !important;
+    }
+
+    .text-main, h2, h3, h5, p, strong {
+        color: var(--text) !important;
+    }
+
+    .table-clean th {
+        color: var(--muted) !important;
+    }
+
+    .table-clean td {
+        color: var(--text) !important;
+    }
+
+    /* Hide the sidebar specifically for this page */
+    .sidebar {
+        display: none !important;
+    }
+
+    .stat-card {
+        background: var(--muted-surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--text) !important;
+        line-height: 1;
+    }
+</style>
+
+<div class="mb-4 text-main">
+    <h2 class="mb-1 fw-bold">Organizations</h2>
+    <div class="text-muted small">Manage companies, subscriptions, and billing status</div>
 </div>
 
+<!-- Dashboard Stats -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div style="background: rgba(63,96,120,0.1); color: var(--accent); padding: 1rem; border-radius: 12px;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            </div>
+            <div>
+                <div class="text-muted small mb-1">Total Companies</div>
+                <div class="stat-value">@Model.Companies.Count</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Table -->
 @if (Model.Companies.Count == 0)
 {
-    <div class="alert alert-info">No companies yet.</div>
+    <div class="card text-center py-5 text-main">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.5" class="mb-3"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        <h5 class="mb-2">No companies found</h5>
+        <p class="text-muted mb-4">Get started by creating your first organization and provisioning a tenant.</p>
+        <!-- Keeping the button here since it's the empty state, but you can remove it if you prefer -->
+        <a class="btn-primary" asp-page="Create">Create Company</a>
+    </div>
 }
 else
 {
-    <table class="table table-hover bg-white shadow-sm align-middle">
-        <thead class="table-light">
-            <tr>
-                <th>Id</th>
-                <th>Name</th>
-                <th>Country</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th class="text-end">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var c in Model.Companies)
-            {
-                <tr>
-                    <td>@c.Id</td>
-                    <td><strong>@c.Name</strong></td>
-                    <td>@c.CountryName</td>
-                    <td>@c.Email</td>
-                    <td>@c.PhoneNumber</td>
-                    <td class="text-end">
-                        <a class="btn btn-sm btn-outline-secondary" asp-page="Details" asp-route-id="@c.Id">Details &amp; users</a>
-                        <a class="btn btn-sm btn-outline-primary" asp-page="Edit" asp-route-id="@c.Id">Edit</a>
-                        <form method="post" asp-page-handler="Delete" asp-route-id="@c.Id" class="d-inline"
-                              onsubmit="return confirm('Delete company &quot;@c.Name&quot; and ALL its data? This cannot be undone.');">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                        </form>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    <div class="card p-0" style="overflow: hidden;">
+        <div class="table-responsive">
+            <table class="table-clean" aria-describedby="companies-table">
+                <thead style="background: var(--muted-surface);">
+                    <tr>
+                        <th style="padding-left: 1.5rem;">ID</th>
+                        <th>Organization</th>
+                        <th>Location</th>
+                        <th>Contact Email</th>
+                        <th>Phone</th>
+                        <th class="text-end" style="padding-right: 1.5rem;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in Model.Companies)
+                    {
+                        <tr>
+                            <td class="text-muted small" style="padding-left: 1.5rem;">#@c.Id</td>
+                            <td><strong class="text-main">@c.Name</strong></td>
+                            <td>
+                                <span style="background: var(--muted-surface); color: var(--text); padding: 3px 8px; border-radius: 6px; font-size: 0.85rem; border: 1px solid var(--border);">
+                                    @c.CountryName
+                                </span>
+                            </td>
+                            <td class="text-muted small">@(string.IsNullOrEmpty(c.Email) ? "—" : c.Email)</td>
+                            <td class="text-muted small">@(string.IsNullOrEmpty(c.PhoneNumber) ? "—" : c.PhoneNumber)</td>
+                            <td class="text-end" style="padding-right: 1.5rem;">
+                                <div class="d-flex justify-content-end gap-2">
+                                    <a class="btn-ghost" style="padding: 0.25rem 0.6rem; font-size: 0.85rem;" asp-page="Details" asp-route-id="@c.Id">Details</a>
+                                    <a class="btn-ghost" style="padding: 0.25rem 0.6rem; font-size: 0.85rem;" asp-page="Edit" asp-route-id="@c.Id">Edit</a>
+                                    <form method="post" asp-page-handler="Delete" asp-route-id="@c.Id" class="d-inline m-0"
+                                          onsubmit="return confirm('Delete company &quot;@c.Name&quot; and ALL its data? This cannot be undone.');">
+                                        <button type="submit" class="btn-ghost" style="padding: 0.25rem 0.6rem; font-size: 0.85rem; color: #ef4444; border-color: rgba(239,68,68,0.3);">Delete</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
 }

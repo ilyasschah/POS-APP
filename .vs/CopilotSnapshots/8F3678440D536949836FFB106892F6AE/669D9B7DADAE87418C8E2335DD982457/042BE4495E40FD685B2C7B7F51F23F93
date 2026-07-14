@@ -1,0 +1,61 @@
+﻿@page
+@model Api.Pages.Admin.Companies.IndexModel
+@{
+    ViewData["Title"] = "Companies";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="mb-0">Companies <span class="small text-muted">— @Model.Companies.Count</span></h3>
+        <div class="text-muted small">Manage organizations and subscriptions</div>
+    </div>
+    <div>
+        <a class="btn btn-primary" asp-page="Create">New company</a>
+    </div>
+</div>
+
+@if (Model.Companies.Count == 0)
+{
+    <div class="card">
+        <div class="card" style="padding:1rem">No companies yet.</div>
+    </div>
+}
+else
+{
+    <div class="card">
+        <div style="overflow:auto">
+            <table class="table-clean" aria-describedby="companies-table">
+                <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>Name</th>
+                        <th>Country</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in Model.Companies)
+                    {
+                        <tr>
+                            <td class="small text-muted">@c.Id</td>
+                            <td><strong>@c.Name</strong></td>
+                            <td class="small text-muted">@c.CountryName</td>
+                            <td class="small text-muted">@c.Email</td>
+                            <td class="small text-muted">@c.PhoneNumber</td>
+                            <td class="text-end">
+                                <a class="btn-ghost" asp-page="Details" asp-route-id="@c.Id">Details</a>
+                                <a class="btn-ghost" asp-page="Edit" asp-route-id="@c.Id">Edit</a>
+                                <form method="post" asp-page-handler="Delete" asp-route-id="@c.Id" class="d-inline"
+                                      onsubmit="return confirm('Delete company &quot;@c.Name&quot; and ALL its data? This cannot be undone.');">
+                                    <button type="submit" class="btn btn-ghost" style="color:#B45252; border-color:rgba(180,82,82,0.12);">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

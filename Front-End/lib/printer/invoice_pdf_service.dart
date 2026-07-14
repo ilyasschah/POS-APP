@@ -38,6 +38,7 @@ class InvoicePdfService {
     required double discount,
     required String? paymentSummary,
     required String currencySymbol,
+    double? amountPaid,
     List<ReceiptDiscountLine> discountLines = const [],
     Uint8List? logoBytes,
     Map<String, String> settings = const {},
@@ -55,6 +56,7 @@ class InvoicePdfService {
       discount: discount,
       paymentSummary: paymentSummary,
       currencySymbol: currencySymbol,
+      amountPaid: amountPaid,
       discountLines: discountLines,
       logoBytes: logoBytes,
       settings: settings,
@@ -75,6 +77,7 @@ class InvoicePdfService {
     required double discount,
     required String? paymentSummary,
     required String currencySymbol,
+    double? amountPaid,
     List<ReceiptDiscountLine> discountLines = const [],
     Uint8List? logoBytes,
     Map<String, String> settings = const {},
@@ -92,6 +95,7 @@ class InvoicePdfService {
       discount: discount,
       paymentSummary: paymentSummary,
       currencySymbol: currencySymbol,
+      amountPaid: amountPaid,
       discountLines: discountLines,
       logoBytes: logoBytes,
       settings: settings,
@@ -122,6 +126,7 @@ class InvoicePdfService {
     required double discount,
     required String? paymentSummary,
     required String currencySymbol,
+    double? amountPaid,
     List<ReceiptDiscountLine> discountLines = const [],
     Uint8List? logoBytes,
     Map<String, String> settings = const {},
@@ -147,15 +152,41 @@ class InvoicePdfService {
     final globalHeader = (settings[SettingKeys.invoiceGlobalHeader] ?? '').trim();
     final globalFooter = (settings[SettingKeys.invoiceGlobalFooter] ?? '').trim();
 
+    // Invoice.FontFamily — mirror the receipt's font handling. Courier/Times are
+    // PDF core fonts (no download); anything else uses the Noto Sans web font.
+    final fontFamily = settings[SettingKeys.invoiceFontFamily] ?? '(None)';
     pw.Font font;
     pw.Font boldFont;
     try {
-      font = await PdfGoogleFonts.notoSansRegular();
-      boldFont = await PdfGoogleFonts.notoSansBold();
+      switch (fontFamily) {
+        case 'Courier':
+        case 'Monospace':
+          font = pw.Font.courier();
+          boldFont = pw.Font.courierBold();
+          break;
+        case 'Times New Roman':
+        case 'Times':
+          font = pw.Font.times();
+          boldFont = pw.Font.timesBold();
+          break;
+        default:
+          font = await PdfGoogleFonts.notoSansRegular();
+          boldFont = await PdfGoogleFonts.notoSansBold();
+      }
     } catch (_) {
       font = pw.Font.helvetica();
       boldFont = pw.Font.helveticaBold();
     }
+
+    // Row visibility toggles (both default ON → unchanged output).
+    final showPaymentMethods =
+        (settings[SettingKeys.invoiceShowPaymentMethods] ?? 'true')
+                .toLowerCase() !=
+            'false';
+    final showOutstanding =
+        (settings[SettingKeys.invoiceShowOutstandingBalance] ?? 'true')
+                .toLowerCase() !=
+            'false';
 
     pw.ImageProvider? logo;
     if (logoBytes != null) {
@@ -181,8 +212,11 @@ class InvoicePdfService {
       }
     }
 
-    // Build the totals section
-    final amountDue = isPaid ? 0.0 : total;
+    // Build the totals section. Prefer the real tendered amount (from the
+    // stored payments) so a credit / partial sale shows what was actually paid
+    // and what is still owed; fall back to the paid flag when it's unknown.
+    final paidAmount = amountPaid ?? (isPaid ? total : 0.0);
+    final amountDue = (total - paidAmount).clamp(0.0, double.infinity);
 
     // Item table columns — the Tax and Discount columns are toggleable, so build
     // the column set first, then derive the widths, header and body rows from it
@@ -460,27 +494,30 @@ class InvoicePdfService {
                   ),
                   pw.SizedBox(height: 10),
                   // Payment method label
-                  if (paymentSummary != null && paymentSummary.isNotEmpty) ...[
+                  if (showPaymentMethods &&
+                      paymentSummary != null &&
+                      paymentSummary.isNotEmpty) ...[
                     pw.Text('Payment method:', style: ts(9, bold: true)),
                     pw.SizedBox(height: 3),
                     _summaryRow(
                       paymentSummary,
-                      '$currencySymbol${_numFmt.format(total)}',
+                      '$currencySymbol${_numFmt.format(paidAmount)}',
                       ts: ts,
                     ),
                   ],
                   _summaryRow(
                     'Paid amount:',
-                    '$currencySymbol${_numFmt.format(total)}',
+                    '$currencySymbol${_numFmt.format(paidAmount)}',
                     ts: ts,
                     bold: true,
                   ),
-                  _summaryRow(
-                    'Amount due:',
-                    '$currencySymbol${_numFmt.format(amountDue)}',
-                    ts: ts,
-                    bold: true,
-                  ),
+                  if (showOutstanding)
+                    _summaryRow(
+                      'Amount due:',
+                      '$currencySymbol${_numFmt.format(amountDue)}',
+                      ts: ts,
+                      bold: true,
+                    ),
                 ],
               ),
             ),

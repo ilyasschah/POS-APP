@@ -187,6 +187,9 @@ class SettingKeys {
   static const receiptPrintOrderNumber        = 'Receipt.PrintOrderNumber';
   static const receiptPrintOutstandingBalance = 'Receipt.PrintOutstandingBalance';
   static const receiptDecimalPlaces           = 'Receipt.DecimalPlaces';
+  // When true the receipt/order number prints only its trailing counter segment
+  // (e.g. "000008") instead of the full "POS1-200-000008".
+  static const receiptShortNumber             = 'Receipt.ShortReceiptNumber';
 
   // ── Receipt Customer Details ─────────────────────────────────────────────
   static const receiptCustomerName       = 'Receipt.Customer.PrintName';
@@ -198,6 +201,9 @@ class SettingKeys {
   static const receiptAddressFormat      = 'Receipt.Customer.AddressFormat';
 
   // ── Receipt Labels (Localize Text) ───────────────────────────────────────
+  // Master switch: when false, printed receipts ignore the custom labels below
+  // and use the built-in defaults.
+  static const receiptUseCustomLabels = 'Receipt.Label.UseCustom';
   static const labelCompanyTaxNumber = 'Receipt.Label.CompanyTaxNumber';
   static const labelReceiptNumber    = 'Receipt.Label.ReceiptNumber';
   static const labelOrderNumber      = 'Receipt.Label.OrderNumber';
@@ -210,6 +216,13 @@ class SettingKeys {
   static const labelPaidAmount       = 'Receipt.Label.PaidAmount';
   static const labelAmountDue        = 'Receipt.Label.AmountDue';
   static const labelChange           = 'Receipt.Label.Change';
+  static const labelOutstandingBalance = 'Receipt.Label.OutstandingBalance';
+  // Customer-block label overrides.
+  static const labelCustomer         = 'Receipt.Label.Customer';
+  static const labelCustomerCode     = 'Receipt.Label.CustomerCode';
+  static const labelCustomerPhone    = 'Receipt.Label.CustomerPhone';
+  static const labelCustomerEmail    = 'Receipt.Label.CustomerEmail';
+  static const labelCustomerAddress  = 'Receipt.Label.CustomerAddress';
 
   // ── Invoice / Templates ──────────────────────────────────────────────────
   static const invoiceTitle          = 'Invoice.Title';
@@ -218,6 +231,13 @@ class SettingKeys {
   static const invoiceColumnDiscount = 'Invoice.Columns.Discount';
   static const invoiceGlobalHeader   = 'Invoice.GlobalHeader';
   static const invoiceGlobalFooter   = 'Invoice.GlobalFooter';
+  static const invoiceFontFamily     = 'Invoice.FontFamily';
+  static const invoiceShowPaymentMethods    = 'Invoice.ShowPaymentMethods';
+  static const invoiceShowOutstandingBalance = 'Invoice.ShowOutstandingBalance';
+
+  // ── Printers (Printer selection tab) ──────────────────────────────────────
+  // JSON array of user-defined printers: [{prefix,name,enabled,builtin,groupId}].
+  static const printersList          = 'Printers.List';
 
   // ── Printer Role Settings ────────────────────────────────────────────────
   // Keys are dynamically prefixed: 'Receipt.<suffix>' or 'Kitchen.<suffix>'
@@ -237,6 +257,12 @@ class SettingKeys {
   static String roleFontSize(String role)          => '$role.FontSize';
   static String roleCashDrawerEnabled(String role) => '$role.CashDrawer.Enabled';
   static String roleCashDrawerCommand(String role) => '$role.CashDrawer.Command';
+  // The printer group (station) this printer prints. Empty = all products.
+  // Resolved against [kitchenPrinterGroups]. Stored per-printer (offline-first).
+  static String rolePrinterGroupId(String role) => '$role.PrinterGroupId';
+  // When true, this printer is fired by the menu "Kitchen" button and receives
+  // a kitchen ticket of its category's items. Default false.
+  static String rolePrintKitchenTicket(String role) => '$role.PrintKitchenTicket';
 
   // Application Style
   static const writingDirection         = 'App.WritingDirection';
@@ -454,6 +480,7 @@ const Map<String, String> kSettingDefaults = {
   SettingKeys.receiptPrintOrderNumber:        'true',
   SettingKeys.receiptPrintOutstandingBalance: 'false',
   SettingKeys.receiptDecimalPlaces:           '2',
+  SettingKeys.receiptShortNumber:             'false',
 
   // Receipt Customer Details
   SettingKeys.receiptCustomerName:       'true',
@@ -466,6 +493,7 @@ const Map<String, String> kSettingDefaults = {
       '%STREET_NAME% %BUILDING_NUMBER%\n%CITY%, %POSTAL_CODE%',
 
   // Receipt Labels
+  SettingKeys.receiptUseCustomLabels: 'true',
   SettingKeys.labelCompanyTaxNumber: 'Tax Number',
   SettingKeys.labelReceiptNumber:    'Receipt No.',
   SettingKeys.labelOrderNumber:      'Order No.',
@@ -478,6 +506,12 @@ const Map<String, String> kSettingDefaults = {
   SettingKeys.labelPaidAmount:       'Paid',
   SettingKeys.labelAmountDue:        'Amount Due',
   SettingKeys.labelChange:           'Change',
+  SettingKeys.labelOutstandingBalance: 'Balance Due',
+  SettingKeys.labelCustomer:         'Customer',
+  SettingKeys.labelCustomerCode:     'Code',
+  SettingKeys.labelCustomerPhone:    'Phone',
+  SettingKeys.labelCustomerEmail:    'Email',
+  SettingKeys.labelCustomerAddress:  'Address',
 
   // Invoice / Templates
   SettingKeys.invoiceTitle:          'TAX INVOICE',
@@ -486,6 +520,12 @@ const Map<String, String> kSettingDefaults = {
   SettingKeys.invoiceColumnDiscount: 'false',
   SettingKeys.invoiceGlobalHeader:   '',
   SettingKeys.invoiceGlobalFooter:   '',
+  SettingKeys.invoiceFontFamily:     '(None)',
+  SettingKeys.invoiceShowPaymentMethods:     'true',
+  SettingKeys.invoiceShowOutstandingBalance: 'true',
+
+  // Printers
+  SettingKeys.printersList:          '',
 
   // Printer Role — Receipt
   'Receipt.PrinterName':       '',

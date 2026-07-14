@@ -642,7 +642,11 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
           .printCartReceipt(
             company: company,
             cashier: user,
-            customer: ref.read(cartProvider).selectedCustomer,
+            // Use the customer captured at checkout time (from the pre-clear
+            // snapshot). `clearCart()` above resets the live cart back to the
+            // walk-in customer, so reading `cartProvider` here would print
+            // "Walk-in" instead of the real (e.g. credit) customer.
+            customer: cartState.selectedCustomer,
             orderNumber: orderNum ?? 'WALK-IN',
             printTime: DateTime.now(),
             items: _cartItems,

@@ -55,6 +55,9 @@ class SalesHistoryDocument {
   final int discountType;
   final int paidStatus;
   final String? paymentSummary;
+  // Kept so a reprinted receipt can load the full Customer record (name, tax
+  // number, address …) — the receipt needs the object, not just the name.
+  final int? customerId;
 
   SalesHistoryDocument({
     required this.id,
@@ -62,6 +65,7 @@ class SalesHistoryDocument {
     required this.number,
     this.userName,
     this.customerName,
+    this.customerId,
     this.warehouseName,
     this.orderNumber,
     this.referenceDocumentNumber,
@@ -83,6 +87,7 @@ class SalesHistoryDocument {
       number: j['number'] ?? '',
       userName: j['userName'],
       customerName: j['customerName'],
+      customerId: j['customerId'],
       warehouseName: j['warehouseName'],
       orderNumber: j['orderNumber'],
       referenceDocumentNumber: j['referenceDocumentNumber'],
@@ -418,6 +423,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
             customerName: row.customerId != null
                 ? customerMap[row.customerId]
                 : null,
+            customerId: row.customerId,
             warehouseName: warehouseMap[row.warehouseId],
             orderNumber: row.orderNumber,
             referenceDocumentNumber: row.referenceDocumentNumber,
@@ -624,11 +630,28 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     );
   }
 
+  /// The real amount tendered against a document = the sum of its (non-deleted)
+  /// payments. This is what lets the receipt/invoice show the correct "paid" and
+  /// "still owed" figures on a credit sale instead of assuming paid-in-full.
+  /// Falls back to the doc total when a doc is flagged paid but carries no
+  /// payment rows (legacy / pulled docs), and to 0 when it is Unpaid.
+  Future<double> _amountPaidFor(SalesHistoryDocument doc) async {
+    final localId = doc.localId;
+    if (localId == null) return doc.paidStatus == 0 ? 0.0 : doc.total;
+    final db = ref.read(appDatabaseProvider);
+    final payments = (await db.getPayments(localId))
+        .where((p) => p.syncStatus != 'pending_delete')
+        .toList();
+    if (payments.isEmpty) return doc.paidStatus == 0 ? 0.0 : doc.total;
+    return payments.fold<double>(0.0, (s, p) => s + p.amount);
+  }
+
   Future<void> _printInvoice(SalesHistoryDocument doc) async {
     if (ref.read(selectedCompanyProvider) == null) return;
     await _ensureItemsLoaded(doc);
     final a = _invoiceArgs(doc);
     final discountLines = await _discountLinesFor(doc);
+    final amountPaid = await _amountPaidFor(doc);
     await InvoicePdfService.printDocument(
       company: a['company'],
       invoiceNumber: a['invoiceNumber'],
@@ -642,6 +665,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       discount: a['discount'],
       paymentSummary: a['paymentSummary'],
       currencySymbol: a['currencySymbol'],
+      amountPaid: amountPaid,
       discountLines: discountLines,
       logoBytes: a['logoBytes'],
       settings: ref.read(appSettingsProvider),
@@ -653,6 +677,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     await _ensureItemsLoaded(doc);
     final a = _invoiceArgs(doc);
     final discountLines = await _discountLinesFor(doc);
+    final amountPaid = await _amountPaidFor(doc);
     await InvoicePdfService.saveAsPdf(
       company: a['company'],
       invoiceNumber: a['invoiceNumber'],
@@ -666,6 +691,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       discount: a['discount'],
       paymentSummary: a['paymentSummary'],
       currencySymbol: a['currencySymbol'],
+      amountPaid: amountPaid,
       discountLines: discountLines,
       logoBytes: a['logoBytes'],
       settings: ref.read(appSettingsProvider),
@@ -733,9 +759,44 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     final sym = ref.read(currencySymbolProvider);
     final discountLines = await _discountLinesFor(doc, includeLoyalty: false);
 
+    final db = ref.read(appDatabaseProvider);
+
+    // Load the real customer so the receipt prints the actual name / details —
+    // matching the after-checkout receipt — instead of leaving it blank.
+    Customer? customer;
+    if (doc.customerId != null) {
+      final cRow = await (db.select(db.customersTable)
+            ..where((t) => t.id.equals(doc.customerId!)))
+          .getSingleOrNull();
+      if (cRow != null) customer = Customer.fromDrift(cRow);
+    }
+
+    // Reproduce what was actually tendered: the summed payment amount + the
+    // payment type name(s), NOT the doc total. This makes the reprint show the
+    // real "paid" figure and surfaces the outstanding balance on a credit sale
+    // (the receipt service prints "Balance Due" when amountPaid < grand total).
+    final amountPaid = await _amountPaidFor(doc);
+    String? paymentTypeName = doc.paymentSummary;
+    final localId = doc.localId;
+    if (localId != null) {
+      final payments = (await db.getPayments(localId))
+          .where((p) => p.syncStatus != 'pending_delete')
+          .toList();
+      if (payments.isNotEmpty) {
+        final payTypeRows = await db.select(db.paymentTypesTable).get();
+        final payTypeMap = {for (final t in payTypeRows) t.id: t.name};
+        final names = payments
+            .map((p) => payTypeMap[p.paymentTypeId] ?? 'Payment')
+            .toSet()
+            .toList();
+        if (names.isNotEmpty) paymentTypeName = names.join(' / ');
+      }
+    }
+
     await ReceiptPrinterService().printCartReceipt(
       company: company,
       cashier: ref.read(currentUserProvider),
+      customer: customer,
       orderNumber: doc.number,
       printTime: printTime,
       items: cartItems,
@@ -745,8 +806,8 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       totalTax: doc.taxTotal,
       grandTotal: doc.total,
       currencySymbol: sym,
-      paymentTypeName: doc.paymentSummary,
-      amountPaid: doc.total,
+      paymentTypeName: paymentTypeName,
+      amountPaid: amountPaid,
       logoBytes: logoBytes,
       roleSettings: ref.read(appSettingsProvider),
     );

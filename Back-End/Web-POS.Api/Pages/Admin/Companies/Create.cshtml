@@ -1,118 +1,165 @@
 @page
 @model Api.Pages.Admin.Companies.CreateModel
 @{
-    ViewData["Title"] = "New company";
+    ViewData["Title"] = "Provision New Organization";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h3 class="mb-0">New company</h3>
-    <a class="btn btn-outline-secondary" asp-page="Index">Back</a>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="mb-0">Provision New Organization</h3>
+        <div class="text-muted small mt-1">Create a company, configure subscription limits, and set up the initial user.</div>
+    </div>
+    <div class="top-actions">
+        <a class="btn-ghost" asp-page="Index">Back to Dashboard</a>
+    </div>
 </div>
 
-<form method="post" class="bg-white shadow-sm p-4 rounded">
-    <div class="row g-3">
-        <div class="col-md-6">
-            <label class="form-label">Name *</label>
-            <input class="form-control" asp-for="Input.Name" required />
+<form method="post" class="content-wrap p-0">
+
+    <!-- Card 1: Company Profile -->
+    <div class="card mb-4">
+        <div class="brand mb-3" style="font-size: 1rem;">Organization Profile</div>
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:1.25rem;">
+            <div class="form-field mb-0">
+                <label>Company Name <span style="color:#ef4444">*</span></label>
+                <input asp-for="Input.Name" required placeholder="e.g., Acme Corp" />
+            </div>
+            <div class="form-field mb-0">
+                <label>Country <span style="color:#ef4444">*</span></label>
+                @if (Model.Countries.Count > 0)
+                {
+                    <select asp-for="Input.CountryId" required>
+                        <option value="">-- Select Country --</option>
+                        @foreach (var c in Model.Countries)
+                        {
+                            <option value="@c.Id">@c.Name (@c.Id)</option>
+                        }
+                    </select>
+                }
+                else
+                {
+                    <input type="number" asp-for="Input.CountryId" placeholder="Country ID" required />
+                    <div class="small text-muted mt-1">No countries found — enter an existing CountryId.</div>
+                }
+            </div>
+            <div class="form-field mb-0">
+                <label>Email Address</label>
+                <input type="email" asp-for="Input.Email" placeholder="billing@example.com" />
+            </div>
+            <div class="form-field mb-0">
+                <label>Phone Number</label>
+                <input type="tel" asp-for="Input.PhoneNumber" placeholder="+1 (555) 000-0000" />
+            </div>
+            <div class="form-field mb-0">
+                <label>Street Address</label>
+                <input asp-for="Input.Address" placeholder="123 Main St" />
+            </div>
+            <div class="form-field mb-0">
+                <label>City</label>
+                <input asp-for="Input.City" placeholder="Metropolis" />
+            </div>
+            <div class="form-field mb-0">
+                <label>Postal Code</label>
+                <input asp-for="Input.PostalCode" placeholder="10001" />
+            </div>
+            <div class="form-field mb-0">
+                <label>Tax / VAT Number</label>
+                <input asp-for="Input.TaxNumber" placeholder="XX123456789" />
+            </div>
         </div>
-        <div class="col-md-6">
-            <label class="form-label">Country *</label>
-            @if (Model.Countries.Count > 0)
-            {
-                <select class="form-select" asp-for="Input.CountryId">
-                    @foreach (var c in Model.Countries)
-                    {
-                        <option value="@c.Id">@c.Name (@c.Id)</option>
-                    }
+    </div>
+
+    <!-- Card 2: SaaS Provisioning -->
+    <div class="card mb-4">
+        <div class="brand mb-3" style="font-size: 1rem;">SaaS Subscription & Licensing</div>
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:1.25rem;">
+            <div class="form-field mb-0">
+                <label>Billing Period</label>
+                <select asp-for="Input.SubscriptionDays">
+                    <option value="14">14 days (Trial)</option>
+                    <option value="30" selected>1 month (30 days)</option>
+                    <option value="90">3 months (Quarterly)</option>
+                    <option value="180">6 months (Biannual)</option>
+                    <option value="365">1 year (Annual)</option>
                 </select>
-            }
-            else
-            {
-                <input type="number" class="form-control" asp-for="Input.CountryId" />
-                <div class="form-text text-warning">No countries found — enter an existing CountryId (Country is company-scoped).</div>
-            }
-        </div>
-        <div class="col-md-6">
-            <label class="form-label">Email</label>
-            <input class="form-control" asp-for="Input.Email" />
-        </div>
-        <div class="col-md-6">
-            <label class="form-label">Phone</label>
-            <input class="form-control" asp-for="Input.PhoneNumber" />
-        </div>
-        <div class="col-md-6">
-            <label class="form-label">Address</label>
-            <input class="form-control" asp-for="Input.Address" />
-        </div>
-        <div class="col-md-3">
-            <label class="form-label">City</label>
-            <input class="form-control" asp-for="Input.City" />
-        </div>
-        <div class="col-md-3">
-            <label class="form-label">Postal code</label>
-            <input class="form-control" asp-for="Input.PostalCode" />
-        </div>
-        <div class="col-md-6">
-            <label class="form-label">Tax number</label>
-            <input class="form-control" asp-for="Input.TaxNumber" />
+            </div>
+            <div class="form-field mb-0">
+                <label>Seat Allowance (Terminals)</label>
+                <input type="number" min="1" asp-for="Input.SeatAllowance" placeholder="e.g., 5" />
+                <div class="small text-muted mt-1">Maximum active devices allowed to sync.</div>
+            </div>
         </div>
     </div>
 
-    <hr class="my-4" />
-
-    <h6 class="text-muted text-uppercase mb-3">Subscription</h6>
-    <div class="row g-3">
-        <div class="col-md-4">
-            <label class="form-label">Period</label>
-            <select class="form-select" asp-for="Input.SubscriptionDays">
-                <option value="14">14 days (trial)</option>
-                <option value="30" selected>1 month (30 days)</option>
-                <option value="90">3 months (90 days)</option>
-                <option value="180">6 months (180 days)</option>
-                <option value="365">1 year (365 days)</option>
-            </select>
+    <!-- Card 3: Initial User -->
+    <div class="card mb-4">
+        <div class="d-flex align-items-center gap-2 mb-4">
+            <input type="checkbox" asp-for="Input.CreateFirstUser" id="createFirstUserToggle" style="width:18px; height:18px; accent-color: var(--accent); cursor: pointer;" />
+            <label for="createFirstUserToggle" class="brand mb-0" style="font-size: 1rem; cursor:pointer;">Provision Initial User</label>
         </div>
-        <div class="col-md-4">
-            <label class="form-label">Seats (terminals)</label>
-            <input type="number" min="1" class="form-control" asp-for="Input.SeatAllowance" />
+
+        <div id="firstUserFields" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:1.25rem; opacity: 0.5; pointer-events: none; transition: all 0.3s ease;">
+            <div class="form-field mb-0">
+                <label>Username</label>
+                <input asp-for="Input.Username" autocomplete="new-username" />
+            </div>
+            <div class="form-field mb-0">
+                <label>Password</label>
+                <input type="password" asp-for="Input.Password" autocomplete="new-password" />
+            </div>
+            <div class="form-field mb-0">
+                <label>Access Level</label>
+                <!-- Replacing numeric 0/1 with an intuitive dropdown -->
+                <select asp-for="Input.AccessLevel">
+                    <option value="1">Admin</option>
+                    <option value="0">Cashier</option>
+                </select>
+            </div>
+            <div class="form-field mb-0">
+                <label>First Name</label>
+                <input asp-for="Input.FirstName" />
+            </div>
+            <div class="form-field mb-0">
+                <label>Last Name</label>
+                <input asp-for="Input.LastName" />
+            </div>
+            <div class="form-field mb-0">
+                <label>User Email</label>
+                <input type="email" asp-for="Input.UserEmail" />
+            </div>
         </div>
     </div>
 
-    <hr class="my-4" />
-
-    <div class="form-check mb-3">
-        <input class="form-check-input" type="checkbox" asp-for="Input.CreateFirstUser" id="cfu" />
-        <label class="form-check-label" for="cfu"><strong>Also create the first admin user</strong></label>
-    </div>
-
-    <div class="row g-3">
-        <div class="col-md-4">
-            <label class="form-label">Username</label>
-            <input class="form-control" asp-for="Input.Username" />
-        </div>
-        <div class="col-md-4">
-            <label class="form-label">Password</label>
-            <input type="password" class="form-control" asp-for="Input.Password" />
-        </div>
-        <div class="col-md-4">
-            <label class="form-label">Access level</label>
-            <input type="number" class="form-control" asp-for="Input.AccessLevel" />
-        </div>
-        <div class="col-md-4">
-            <label class="form-label">First name</label>
-            <input class="form-control" asp-for="Input.FirstName" />
-        </div>
-        <div class="col-md-4">
-            <label class="form-label">Last name</label>
-            <input class="form-control" asp-for="Input.LastName" />
-        </div>
-        <div class="col-md-4">
-            <label class="form-label">User email</label>
-            <input class="form-control" asp-for="Input.UserEmail" />
-        </div>
-    </div>
-
-    <div class="mt-4">
-        <button type="submit" class="btn btn-primary">Create company</button>
+    <div class="d-flex justify-content-end mt-4 mb-5">
+        <button type="submit" class="btn-primary" style="padding: 0.6rem 2rem; font-size: 1rem;">Create Organization</button>
     </div>
 </form>
+
+<script>
+    // UX Enhancement: Greys out the user fields until the toggle is checked
+    document.addEventListener("DOMContentLoaded", function () {
+        const toggle = document.getElementById("createFirstUserToggle");
+        const fields = document.getElementById("firstUserFields");
+
+        function updateState() {
+            if (toggle.checked) {
+                fields.style.opacity = "1";
+                fields.style.pointerEvents = "auto";
+
+                // Automatically set required attributes when enabled
+                document.getElementById("Input_Username").setAttribute("required", "required");
+                document.getElementById("Input_Password").setAttribute("required", "required");
+            } else {
+                fields.style.opacity = "0.5";
+                fields.style.pointerEvents = "none";
+
+                // Remove required attributes when disabled
+                document.getElementById("Input_Username").removeAttribute("required");
+                document.getElementById("Input_Password").removeAttribute("required");
+            }
+        }
+
+        toggle.addEventListener("change", updateState);
+        updateState(); // Initialize state on load
+    });
+</script>

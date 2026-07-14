@@ -1,207 +1,325 @@
 @page "{id:int}"
 @model Api.Pages.Admin.Companies.DetailsModel
 @{
-    ViewData["Title"] = Model.Company?.Name ?? "Company";
+    ViewData["Title"] = Model.Company?.Name ?? "Organization Details";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h3 class="mb-0">@Model.Company?.Name <span class="text-muted fs-6">#@Model.Company?.Id</span></h3>
+<style>
+    /* Force theme text variables to override Bootstrap's default dark text */
+    .text-muted {
+        color: var(--muted) !important;
+    }
+
+    .text-main, .card, .fw-bold, strong, h3, h4, label {
+        color: var(--text) !important;
+    }
+
+    .table-clean th {
+        color: var(--muted) !important;
+    }
+
+    .table-clean td {
+        color: var(--text) !important;
+    }
+
+    .kpi-box {
+        background: var(--muted-surface);
+        padding: 1rem;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+    }
+
+    .code-badge {
+        background: var(--muted-surface);
+        color: var(--text);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: monospace;
+    }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-4 text-main">
     <div>
-        <a class="btn btn-outline-primary" asp-page="Edit" asp-route-id="@Model.Company?.Id">Edit company</a>
-        <a class="btn btn-outline-secondary" asp-page="Index">Back to list</a>
+        <h3 class="mb-0">@Model.Company?.Name <span class="text-muted small fw-normal">#@Model.Company?.Id</span></h3>
+        <div class="text-muted small mt-1">Organization details, subscription status, and user management</div>
+    </div>
+    <div class="top-actions">
+        <a class="btn-ghost" asp-page="Edit" asp-route-id="@Model.Company?.Id">Edit Organization</a>
+        <a class="btn-ghost" asp-page="Index">Back to Dashboard</a>
     </div>
 </div>
 
-<div class="card shadow-sm mb-4">
-    <div class="card-body row">
-        <div class="col-md-4"><strong>Country:</strong> @Model.Company?.CountryName (@Model.Company?.CountryId)</div>
-        <div class="col-md-4"><strong>Email:</strong> @Model.Company?.Email</div>
-        <div class="col-md-4"><strong>Phone:</strong> @Model.Company?.PhoneNumber</div>
-        <div class="col-md-4"><strong>City:</strong> @Model.Company?.City</div>
-        <div class="col-md-4"><strong>Tax #:</strong> @Model.Company?.TaxNumber</div>
+<!-- Grid for Profile & Subscription Info -->
+<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap:1.5rem; margin-bottom:1.5rem;">
+
+    <!-- Profile Card -->
+    <div class="card p-0">
+        <div class="p-4">
+            <div class="brand mb-4 text-main">Profile Information</div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem;">
+                <div>
+                    <div class="small text-muted mb-1">Country</div>
+                    <div class="fw-bold">@Model.Company?.CountryName <span class="text-muted fw-normal">(@Model.Company?.CountryId)</span></div>
+                </div>
+                <div>
+                    <div class="small text-muted mb-1">Email</div>
+                    <div class="fw-bold">@(string.IsNullOrEmpty(Model.Company?.Email) ? "—" : Model.Company?.Email)</div>
+                </div>
+                <div>
+                    <div class="small text-muted mb-1">Phone</div>
+                    <div class="fw-bold">@(string.IsNullOrEmpty(Model.Company?.PhoneNumber) ? "—" : Model.Company?.PhoneNumber)</div>
+                </div>
+                <div>
+                    <div class="small text-muted mb-1">City</div>
+                    <div class="fw-bold">@(string.IsNullOrEmpty(Model.Company?.City) ? "—" : Model.Company?.City)</div>
+                </div>
+                <div>
+                    <div class="small text-muted mb-1">Tax #</div>
+                    <div class="fw-bold">@(string.IsNullOrEmpty(Model.Company?.TaxNumber) ? "—" : Model.Company?.TaxNumber)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Subscription & Devices Card -->
+    <div class="card p-0">
+        <div class="p-4 d-flex flex-column" style="height: 100%;">
+            <div class="brand mb-4 text-main">Subscription & Terminals</div>
+            @if (!Model.HasTenant)
+            {
+                <div class="text-muted d-flex align-items-center justify-content-center flex-grow-1 kpi-box">
+                    <div>No control-plane tenant for this company yet (not provisioned).</div>
+                </div>
+            }
+            else
+            {
+                <div class="kpi-grid flex-grow-1">
+                    <div class="kpi-box">
+                        <div class="small text-muted mb-1">Billing Status</div>
+                        <div class="value text-main" style="font-size: 1.1rem;">
+                            <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10B981; margin-right:6px;"></span>@Model.BillingStatus
+                        </div>
+                    </div>
+                    <div class="kpi-box">
+                        <div class="small text-muted mb-1">Days Left</div>
+                        @if (Model.SubscriptionDaysLeft == null)
+                        {
+                            <div class="value text-main" style="font-size: 1.1rem;">—</div>
+                        }
+                        else
+                        {
+                            var dl = Model.SubscriptionDaysLeft.Value;
+                            var color = dl <= 0 ? "#ef4444" : (dl <= 7 ? "#f59e0b" : "var(--text)");
+                            <div class="value" style="font-size: 1.1rem; color: @color !important;">
+                                @dl <span class="small text-muted fw-normal" style="font-size:0.8rem;">day(s)</span>
+                            </div>
+                        }
+                    </div>
+                    <div class="kpi-box">
+                        <div class="small text-muted mb-1">Expires</div>
+                        <div class="value text-main" style="font-size: 1.1rem;">@(Model.SubscriptionEnd?.ToUniversalTime().ToString("yyyy-MM-dd") ?? "—")</div>
+                    </div>
+                    <div class="kpi-box">
+                        <div class="small text-muted mb-1">Active Devices</div>
+                        @{
+                            var over = Model.RegisteredDevices > Model.SeatAllowance;
+                        }
+                        <div class="value" style="font-size: 1.1rem; color: @(over ? "#ef4444" : "var(--text)") !important;">
+                            @Model.RegisteredDevices <span class="small text-muted fw-normal" style="font-size:0.8rem;">/ @Model.SeatAllowance</span>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
     </div>
 </div>
 
-<div class="card shadow-sm mb-4">
-    <div class="card-header">Subscription &amp; devices</div>
-    <div class="card-body">
-        @if (!Model.HasTenant)
+<!-- Security Audit Card -->
+<div class="card mb-4" style="border-color: @(Model.CloneAlertCount > 0 ? "rgba(239, 68, 68, 0.3)" : "var(--border)");">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="brand mb-0 text-main">Security Audit <span class="small text-muted fw-normal">— Duplication / Clone Detection (Pillar 5)</span></div>
+        @if (Model.CloneAlertCount > 0)
         {
-            <div class="text-muted">No control-plane tenant for this company yet (not provisioned).</div>
+            <div style="background: rgba(239,68,68,0.1); color: #ef4444; padding: 4px 12px; border-radius: 99px; font-size: 0.85rem; font-weight: 600;">
+                @Model.CloneAlertCount Alert(s)
+            </div>
         }
         else
         {
-            <div class="row">
-                <div class="col-md-3">
-                    <div class="text-muted small">Status</div>
-                    <span class="badge bg-info text-dark text-uppercase">@Model.BillingStatus</span>
-                </div>
-                <div class="col-md-3">
-                    <div class="text-muted small">Days left</div>
-                    @if (Model.SubscriptionDaysLeft == null)
-                    {
-                        <span class="fs-5">—</span>
-                    }
-                    else
-                    {
-                        var dl = Model.SubscriptionDaysLeft.Value;
-                        var cls = dl <= 0 ? "text-danger" : (dl <= 7 ? "text-warning" : "text-success");
-                        <span class="fs-4 fw-bold @cls">@dl</span>
-                        <span class="text-muted">day(s)</span>
-                    }
-                </div>
-                <div class="col-md-3">
-                    <div class="text-muted small">Expires</div>
-                    <span>@(Model.SubscriptionEnd?.ToUniversalTime().ToString("yyyy-MM-dd") ?? "—")</span>
-                </div>
-                <div class="col-md-3">
-                    <div class="text-muted small">Devices</div>
-                    @{ var over = Model.RegisteredDevices > Model.SeatAllowance; }
-                    <span class="fs-4 fw-bold @(over ? "text-danger" : "text-dark")">@Model.RegisteredDevices</span>
-                    <span class="text-muted">/ @Model.SeatAllowance seat(s)</span>
-                </div>
+            <div style="background: rgba(16,185,129,0.1); color: #10B981; padding: 4px 12px; border-radius: 99px; font-size: 0.85rem; font-weight: 600;">
+                Secure (0 Alerts)
             </div>
         }
     </div>
-</div>
 
-<div class="card shadow-sm mb-4">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <span>Security &mdash; clone / duplication audit <span class="text-muted small">(Pillar 5)</span></span>
-        @if (Model.CloneAlertCount > 0)
-        {
-            <span class="badge bg-danger">@Model.CloneAlertCount alert(s)</span>
-        }
-        else
-        {
-            <span class="badge bg-success">No alerts</span>
-        }
-    </div>
-    <div class="card-body">
-        @if (Model.CloneAlertCount == 0)
-        {
-            <div class="text-muted">No duplicated transactions detected. Every synced sale was reported by a single device.</div>
-        }
-        else
-        {
-            <p class="text-danger mb-2">
-                The same transaction id was synced from more than one device — a sign a terminal's
-                local data was duplicated onto another device (clone / restored backup).
-            </p>
-            <table class="table table-sm align-middle mb-0">
-                <thead class="table-light">
+    @if (Model.CloneAlertCount == 0)
+    {
+        <div class="text-muted small">No duplicated transactions detected. Every synced sale was reported by a single unique device.</div>
+    }
+    else
+    {
+        <div class="small mb-3" style="color: #ef4444 !important;">
+            Warning: The same transaction ID was synced from more than one device. This indicates a terminal's local database was duplicated onto another device (clone or restored backup).
+        </div>
+        <div style="overflow-x:auto;">
+            <table class="table-clean" aria-describedby="clone-alerts">
+                <thead>
                     <tr>
-                        <th>Transaction id</th>
-                        <th>Origin device</th>
-                        <th>Duplicate device</th>
-                        <th>Times seen</th>
-                        <th>Last seen (UTC)</th>
+                        <th>Transaction ID</th>
+                        <th>Origin Device</th>
+                        <th>Duplicate Device</th>
+                        <th>Times Seen</th>
+                        <th>Last Seen (UTC)</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach (var a in Model.CloneAlerts)
                     {
                         <tr>
-                            <td><code>@a.ClientTxnId</code></td>
-                            <td><code>@a.FirstDeviceId</code></td>
-                            <td><code class="text-danger">@a.LastDeviceId</code></td>
+                            <td><span class="code-badge">@a.ClientTxnId</span></td>
+                            <td><span class="code-badge">@a.FirstDeviceId</span></td>
+                            <td><span class="code-badge" style="color: #ef4444 !important; background: rgba(239,68,68,0.1);">@a.LastDeviceId</span></td>
                             <td>@a.SeenCount</td>
                             <td>@a.LastSeenUtc.ToString("yyyy-MM-dd HH:mm")</td>
                         </tr>
                     }
                 </tbody>
             </table>
-        }
+        </div>
+    }
+</div>
+
+<!-- Users Section -->
+<div class="d-flex justify-content-between align-items-end mb-3 mt-5 text-main">
+    <h4 class="mb-0" style="font-weight: 600;">Users <span class="small text-muted fw-normal ms-2">@Model.Users.Count total</span></h4>
+
+    <!-- Add New User Trigger Button -->
+    <button type="button" id="btnToggleAddUser" class="btn-primary" style="padding: 0.4rem 1rem; font-size: 0.9rem;">+ Add User</button>
+</div>
+
+<div class="card p-0 mb-4" style="overflow: hidden;">
+    <div style="overflow-x:auto;">
+        <table class="table-clean" aria-describedby="users-table">
+            <thead style="background: var(--muted-surface);">
+                <tr>
+                    <th style="padding-left:1.25rem;">ID</th>
+                    <th>Username</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th style="width: 340px; padding-right:1.25rem;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var u in Model.Users)
+                {
+                    <tr>
+                        <td class="small text-muted" style="padding-left:1.25rem;">@u.Id</td>
+                        <td><strong>@u.Username</strong></td>
+                        <td class="text-main">@(string.IsNullOrEmpty(u.FirstName) && string.IsNullOrEmpty(u.LastName) ? "—" : $"{u.FirstName} {u.LastName}")</td>
+                        <td class="small text-muted">@(string.IsNullOrEmpty(u.Email) ? "—" : u.Email)</td>
+                        <td>
+                            @if (u.AccessLevel == 1)
+                            {
+                                <span style="background: rgba(63,96,120,0.1); color: var(--accent); padding: 3px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">Admin</span>
+                            }
+                            else
+                            {
+                                <span style="background: var(--muted-surface); color: var(--text); padding: 3px 8px; border-radius: 6px; font-size: 0.8rem;">Cashier</span>
+                            }
+                        </td>
+                        <td>
+                            @if (u.IsEnabled)
+                            {
+                                <span style="color: #10B981; font-size: 0.85rem; font-weight: 500;">Active</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted" style="font-size: 0.85rem;">Disabled</span>
+                            }
+                        </td>
+                        <td style="padding-right:1.25rem;">
+                            <div style="display:flex; gap:0.5rem; align-items:center;">
+                                <a class="btn-ghost" style="padding: 0.25rem 0.6rem; font-size: 0.85rem;" asp-page="/Admin/Users/Edit" asp-route-id="@Model.Company?.Id" asp-route-userId="@u.Id">Edit</a>
+
+                                <form method="post" asp-page-handler="ResetPassword" asp-route-id="@Model.Company?.Id" style="display:flex; gap:0.5rem; align-items:center; margin:0;">
+                                    <input type="hidden" name="userId" value="@u.Id" />
+                                    <input type="password" name="newPassword" placeholder="New pass" style="width: 110px; padding: 0.25rem 0.5rem; border-radius: 6px; border: 1px solid var(--border); background: var(--muted-surface); color: var(--text);" required />
+                                    <button type="submit" class="btn-ghost" style="padding: 0.25rem 0.6rem; font-size: 0.85rem; color: #d97706; border-color: rgba(217,119,6,0.3);">Reset</button>
+                                </form>
+
+                                <form method="post" asp-page-handler="DeleteUser" asp-route-id="@Model.Company?.Id" style="margin:0;" onsubmit="return confirm('Delete user @u.Username?');">
+                                    <input type="hidden" name="userId" value="@u.Id" />
+                                    <button type="submit" class="btn-ghost" style="padding: 0.25rem 0.6rem; font-size: 0.85rem; color: #ef4444; border-color: rgba(239,68,68,0.3);">Delete</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
     </div>
 </div>
 
-<h4 class="mb-3">Users <span class="badge bg-secondary">@Model.Users.Count</span></h4>
-
-<table class="table bg-white shadow-sm align-middle">
-    <thead class="table-light">
-        <tr>
-            <th>Id</th>
-            <th>Username</th>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Access</th>
-            <th>Enabled</th>
-            <th style="width: 360px;">Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var u in Model.Users)
-        {
-            <tr>
-                <td>@u.Id</td>
-                <td><strong>@u.Username</strong></td>
-                <td>@u.FirstName @u.LastName</td>
-                <td>@u.Email</td>
-                <td>@u.AccessLevel</td>
-                <td>
-                    @if (u.IsEnabled)
-                    {
-                        <span class="badge bg-success">Yes</span>
-                    }
-                    else
-                    {
-                        <span class="badge bg-secondary">No</span>
-                    }
-                </td>
-                <td>
-                    <div class="d-flex gap-1 align-items-center">
-                        <a class="btn btn-sm btn-outline-primary"
-                           asp-page="/Admin/Users/Edit" asp-route-id="@Model.Company?.Id" asp-route-userId="@u.Id">Edit</a>
-
-                        <form method="post" asp-page-handler="ResetPassword" asp-route-id="@Model.Company?.Id" class="d-flex gap-1">
-                            <input type="hidden" name="userId" value="@u.Id" />
-                            <input type="password" name="newPassword" class="form-control form-control-sm" placeholder="New password" style="width: 130px;" required />
-                            <button type="submit" class="btn btn-sm btn-outline-warning">Reset</button>
-                        </form>
-
-                        <form method="post" asp-page-handler="DeleteUser" asp-route-id="@Model.Company?.Id"
-                              onsubmit="return confirm('Delete user @u.Username?');">
-                            <input type="hidden" name="userId" value="@u.Id" />
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                        </form>
-                    </div>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
-
-<div class="card shadow-sm mt-4">
-    <div class="card-header">Add user</div>
-    <div class="card-body">
-        <form method="post" asp-page-handler="AddUser" asp-route-id="@Model.Company?.Id">
-            <div class="row g-3">
-                <div class="col-md-3">
-                    <label class="form-label">Username *</label>
-                    <input class="form-control" asp-for="NewUser.Username" required />
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Password *</label>
-                    <input type="password" class="form-control" asp-for="NewUser.Password" required />
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Access level</label>
-                    <input type="number" class="form-control" asp-for="NewUser.AccessLevel" />
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">First name</label>
-                    <input class="form-control" asp-for="NewUser.FirstName" />
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Last name</label>
-                    <input class="form-control" asp-for="NewUser.LastName" />
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">Email</label>
-                    <input class="form-control" asp-for="NewUser.Email" />
-                </div>
+<!-- Add User Card (Hidden by Default) -->
+<div id="addUserSection" class="card mb-5 text-main" style="display: none;">
+    <div class="brand mb-3">Provision New User</div>
+    <form method="post" asp-page-handler="AddUser" asp-route-id="@Model.Company?.Id">
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:1.25rem;">
+            <div class="form-field mb-0">
+                <label>Username <span style="color:#ef4444">*</span></label>
+                <input asp-for="NewUser.Username" required autocomplete="new-username" />
             </div>
-            <button type="submit" class="btn btn-primary mt-3">Add user</button>
-        </form>
-    </div>
+            <div class="form-field mb-0">
+                <label>Password <span style="color:#ef4444">*</span></label>
+                <input type="password" asp-for="NewUser.Password" required autocomplete="new-password" />
+            </div>
+            <div class="form-field mb-0">
+                <label>Role</label>
+                <select asp-for="NewUser.AccessLevel">
+                    <option value="0">Cashier</option>
+                    <option value="1">Admin</option>
+                </select>
+            </div>
+            <div class="form-field mb-0">
+                <label>First Name</label>
+                <input asp-for="NewUser.FirstName" />
+            </div>
+            <div class="form-field mb-0">
+                <label>Last Name</label>
+                <input asp-for="NewUser.LastName" />
+            </div>
+            <div class="form-field mb-0">
+                <label>Email</label>
+                <input type="email" asp-for="NewUser.Email" />
+            </div>
+        </div>
+        <div class="mt-4 d-flex gap-2">
+            <button type="submit" class="btn-primary">Add User</button>
+            <button type="button" id="btnCancelAddUser" class="btn-ghost">Cancel</button>
+        </div>
+    </form>
 </div>
+
+<!-- Script to handle Add User Form Toggling -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const toggleBtn = document.getElementById("btnToggleAddUser");
+        const cancelBtn = document.getElementById("btnCancelAddUser");
+        const addUserSection = document.getElementById("addUserSection");
+
+        function toggleAddUserForm() {
+            if (addUserSection.style.display === "none" || addUserSection.style.display === "") {
+                addUserSection.style.display = "block";
+                toggleBtn.style.display = "none";
+            } else {
+                addUserSection.style.display = "none";
+                toggleBtn.style.display = "inline-block";
+            }
+        }
+
+        toggleBtn.addEventListener("click", toggleAddUserForm);
+        cancelBtn.addEventListener("click", toggleAddUserForm);
+    });
+</script>

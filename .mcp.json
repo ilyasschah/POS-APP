@@ -1,0 +1,42 @@
+{
+  "mcpServers": {
+    "pos-sqlite": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@executeautomation/database-server",
+        "C:\\Users\\ILYASS\\OneDrive - Devaxy\\Documents\\pos_app.sqlite"
+      ]
+    },
+    "pos-mssql": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@bytebase/dbhub",
+        "--transport",
+        "stdio",
+        "--dsn",
+        "sqlserver://${WEBPOS_DB_USER}:${WEBPOS_DB_PASSWORD}@192.168.11.103:1433/web-pos?encrypt=false&trustServerCertificate=true"
+      ]
+    },
+    "context7": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@upstash/context7-mcp"]
+    },
+    "dart": {
+      "command": "cmd",
+      "args": ["/c", "dart", "mcp-server"]
+    },
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer ${GITHUB_PAT}"
+      }
+    }
+  }
+}

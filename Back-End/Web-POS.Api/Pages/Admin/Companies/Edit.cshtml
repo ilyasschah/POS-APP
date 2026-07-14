@@ -1,51 +1,72 @@
 @page "{id:int}"
 @model Api.Pages.Admin.Companies.EditModel
 @{
-    ViewData["Title"] = "Edit company";
+    ViewData["Title"] = "Edit Organization";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h3 class="mb-0">Edit company #@Model.Input.Id</h3>
-    <a class="btn btn-outline-secondary" asp-page="Details" asp-route-id="@Model.Input.Id">Back</a>
+<style>
+    /* Force theme text variables to override Bootstrap's default dark text */
+    .text-muted {
+        color: var(--muted) !important;
+    }
+
+    .text-main, .card, h3, label {
+        color: var(--text) !important;
+    }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-4 text-main">
+    <div>
+        <h3 class="mb-0">Edit Organization <span class="text-muted small fw-normal">#@Model.Input.Id</span></h3>
+        <div class="text-muted small mt-1">Update company profile and contact information</div>
+    </div>
+    <div class="top-actions">
+        <a class="btn-ghost" asp-page="Details" asp-route-id="@Model.Input.Id">Cancel & Back</a>
+    </div>
 </div>
 
-<form method="post" class="bg-white shadow-sm p-4 rounded">
+<form method="post" class="card mb-4 text-main">
     <input type="hidden" asp-for="Input.Id" />
-    <div class="row g-3">
-        <div class="col-md-6">
-            <label class="form-label">Name *</label>
-            <input class="form-control" asp-for="Input.Name" required />
+
+    <div class="brand mb-4" style="font-size: 1rem;">Organization Profile</div>
+
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:1.25rem;">
+        <div class="form-field mb-0">
+            <label>Company Name <span style="color:#ef4444">*</span></label>
+            <input asp-for="Input.Name" required placeholder="e.g., Acme Corp" />
         </div>
-        <div class="col-md-6">
-            <label class="form-label">Country Id *</label>
-            <input type="number" class="form-control" asp-for="Input.CountryId" />
+        <div class="form-field mb-0">
+            <label>Country ID <span style="color:#ef4444">*</span></label>
+            <input type="number" asp-for="Input.CountryId" required placeholder="e.g., 1" />
+            <div class="small text-muted mt-1">Numeric identifier for the country.</div>
         </div>
-        <div class="col-md-6">
-            <label class="form-label">Email</label>
-            <input class="form-control" asp-for="Input.Email" />
+        <div class="form-field mb-0">
+            <label>Email Address</label>
+            <input type="email" asp-for="Input.Email" placeholder="billing@example.com" />
         </div>
-        <div class="col-md-6">
-            <label class="form-label">Phone</label>
-            <input class="form-control" asp-for="Input.PhoneNumber" />
+        <div class="form-field mb-0">
+            <label>Phone Number</label>
+            <input type="tel" asp-for="Input.PhoneNumber" placeholder="+1 (555) 000-0000" />
         </div>
-        <div class="col-md-6">
-            <label class="form-label">Address</label>
-            <input class="form-control" asp-for="Input.Address" />
+        <div class="form-field mb-0">
+            <label>Street Address</label>
+            <input asp-for="Input.Address" placeholder="123 Main St" />
         </div>
-        <div class="col-md-3">
-            <label class="form-label">City</label>
-            <input class="form-control" asp-for="Input.City" />
+        <div class="form-field mb-0">
+            <label>City</label>
+            <input asp-for="Input.City" placeholder="Metropolis" />
         </div>
-        <div class="col-md-3">
-            <label class="form-label">Postal code</label>
-            <input class="form-control" asp-for="Input.PostalCode" />
+        <div class="form-field mb-0">
+            <label>Postal Code</label>
+            <input asp-for="Input.PostalCode" placeholder="10001" />
         </div>
-        <div class="col-md-6">
-            <label class="form-label">Tax number</label>
-            <input class="form-control" asp-for="Input.TaxNumber" />
+        <div class="form-field mb-0">
+            <label>Tax / VAT Number</label>
+            <input asp-for="Input.TaxNumber" placeholder="XX123456789" />
         </div>
     </div>
-    <div class="mt-4">
-        <button type="submit" class="btn btn-primary">Save changes</button>
+
+    <div class="mt-4 pt-4" style="border-top: 1px solid var(--border);">
+        <button type="submit" class="btn-primary" style="padding: 0.6rem 2rem; font-size: 1rem;">Save Changes</button>
     </div>
 </form>

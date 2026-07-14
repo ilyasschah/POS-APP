@@ -231,6 +231,12 @@ class ReceiptPrinterService {
     double? amountPaid,
     Uint8List? logoBytes,
     Map<String, String> roleSettings = const {},
+    // Settings-key prefix for this printer's HARDWARE keys (PaperSize, Margins,
+    // Header/Footer, Font, RightToLeft, PrinterName…). Defaults to 'Receipt';
+    // the demo test print passes a specific printer's prefix so the preview
+    // reflects that exact printer. Receipt *content* keys (tax/customer/labels)
+    // stay global.
+    String role = 'Receipt',
     bool isGuestCheck = false,
     // Loyalty
     double pointsUsed = 0,
@@ -238,7 +244,6 @@ class ReceiptPrinterService {
     double pointsBalance = 0,
     double pointValue = 1.0,
   }) async {
-    const role = 'Receipt';
     // Print item prices tax-inclusive when the shop is configured that way
     // (matches the cart + payment screen). Tax base follows the discount rule.
     final taxIncluded =
@@ -341,10 +346,26 @@ class ReceiptPrinterService {
         : itemCount.toStringAsFixed(2);
 
     // Localize Text: each label falls back to its current wording, so any label
-    // the operator hasn't customised keeps the receipt exactly as before.
+    // the operator hasn't customised keeps the receipt exactly as before. The
+    // master toggle (default ON) lets the operator switch back to the built-in
+    // wording without clearing every field.
+    final useCustomLabels =
+        (roleSettings[SettingKeys.receiptUseCustomLabels] ?? 'true')
+                .toLowerCase() !=
+            'false';
     String lbl(String key, String fallback) {
+      if (!useCustomLabels) return fallback;
       final v = roleSettings[key]?.trim();
       return (v != null && v.isNotEmpty) ? v : fallback;
+    }
+
+    // Short receipt number: print only the trailing counter segment.
+    final shortNumber = _flag(roleSettings, SettingKeys.receiptShortNumber);
+    String shortNo(String n) {
+      if (!shortNumber) return n;
+      if (n.contains('#')) return n.split('#').last.trim();
+      if (n.contains('-')) return n.split('-').last.trim();
+      return n;
     }
 
     // Money formatting honours Receipt.DecimalPlaces (default 2).
@@ -381,14 +402,15 @@ class ReceiptPrinterService {
         }
       }
 
-      add(showCustName, 'Customer', c.name);
-      add(showCustCode, 'Code', c.code);
+      add(showCustName, lbl(SettingKeys.labelCustomer, 'Customer'), c.name);
+      add(showCustCode, lbl(SettingKeys.labelCustomerCode, 'Code'), c.code);
       add(showCustTax, lbl(SettingKeys.labelCompanyTaxNumber, 'Tax No'),
           c.taxNumber);
-      add(showCustPhone, 'Phone', c.phoneNumber);
-      add(showCustEmail, 'Email', c.email);
+      add(showCustPhone, lbl(SettingKeys.labelCustomerPhone, 'Phone'),
+          c.phoneNumber);
+      add(showCustEmail, lbl(SettingKeys.labelCustomerEmail, 'Email'), c.email);
       if (showCustAddr) {
-        add(true, 'Address',
+        add(true, lbl(SettingKeys.labelCustomerAddress, 'Address'),
             _formatCustomerAddress(c, roleSettings[SettingKeys.receiptAddressFormat]));
       }
       if (rows.isEmpty) return const [];
@@ -462,7 +484,7 @@ class ReceiptPrinterService {
             // ── Transaction info ───────────────────────────────────────────
             if (printOrderNumber)
               rowW('${lbl(SettingKeys.labelReceiptNumber, 'Receipt')}:',
-                  orderNumber),
+                  shortNo(orderNumber)),
             rowW('Date:', _fmtDateTime(printTime)),
             if (cashier != null)
               rowW('${lbl(SettingKeys.labelUser, 'Cashier')}:',
@@ -612,8 +634,14 @@ class ReceiptPrinterService {
                   '${money(amountPaid - (grandTotal - pointsUsed * pointValue).clamp(0.0, double.infinity))} $currencySymbol',
                 ),
             ],
-            if (printBalance && balanceDue > 0.005)
-              rowW('Balance Due:', '${money(balanceDue)} $currencySymbol',
+            // Outstanding balance — always printed when the customer still owes
+            // money (a credit / partial payment), so a credit receipt clearly
+            // states what is due. `receiptPrintOutstandingBalance` additionally
+            // forces the row even when the sale is fully settled (balance 0).
+            if (balanceDue > 0.005 || printBalance)
+              rowW(
+                  '${lbl(SettingKeys.labelOutstandingBalance, 'Balance Due')}:',
+                  '${money(balanceDue)} $currencySymbol',
                   bold: true),
             if (printItemsCount)
               rowW('${lbl(SettingKeys.labelItemsCount, 'Items')}:',
@@ -666,8 +694,10 @@ class ReceiptPrinterService {
     required List<CartItem> items,
     List<List<String>> itemComments = const [],
     Map<String, String> roleSettings = const {},
+    // Settings-key prefix for the target printer's hardware keys. Defaults to
+    // 'Kitchen'; group routing passes a specific station printer's prefix.
+    String role = 'Kitchen',
   }) async {
-    const role = 'Kitchen';
     final fmt = _paperFmt(roleSettings['$role.PaperSize']);
     final margins = _margins(roleSettings, role);
     final copies = _copies(roleSettings, role);
