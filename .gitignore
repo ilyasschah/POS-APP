@@ -3,3 +3,7 @@
 # Backend local secrets (never commit)
 SECRETS.local.txt
 **/SECRETS.local.txt
+**/.vs/
+# Ignore build output and intermediate files
+**/obj/
+**/bin/

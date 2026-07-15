@@ -1,2 +1,0 @@
-wwwroot\css\theme.css
-D:\POS-APP\Back-End\Web-POS.Api\wwwroot\css\theme.css
