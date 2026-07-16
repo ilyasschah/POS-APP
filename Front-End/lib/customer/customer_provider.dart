@@ -7,6 +7,12 @@ import 'package:pos_app/database/database_provider.dart';
 
 /// Live list of customers for the current company, streamed from Drift.
 /// Sorted alphabetically by name to match the picker's expected order.
+///
+/// Includes DISABLED customers. Use this only to display or resolve records that
+/// already reference a customer (the management screen, report/document filters,
+/// reopening a saved order) — otherwise a customer disabled today would erase the
+/// name on last month's invoice. To offer a customer for a NEW selection, use
+/// [selectableCustomersProvider] instead.
 final allCustomersProvider = StreamProvider.autoDispose<List<Customer>>((ref) {
   final db = ref.watch(appDatabaseProvider);
   final companyId = ref.watch(selectedCompanyProvider)?.id;
@@ -18,6 +24,20 @@ final allCustomersProvider = StreamProvider.autoDispose<List<Customer>>((ref) {
     ..orderBy([(t) => OrderingTerm.asc(t.name)]);
 
   return query.watch().map((rows) => rows.map(Customer.fromDrift).toList());
+});
+
+/// Customers that may be attached to NEW business — the POS customer button,
+/// checkout, credit/payment dialogs, bookings, documents, loyalty cards.
+/// Disabling a customer withdraws them from every such picker.
+///
+/// Derived from [allCustomersProvider] rather than running its own query, so both
+/// share a single Drift watch and stay consistent. It keeps the same AsyncValue
+/// shape, so it is a drop-in swap at call sites.
+final selectableCustomersProvider =
+    Provider.autoDispose<AsyncValue<List<Customer>>>((ref) {
+  return ref.watch(allCustomersProvider).whenData(
+        (customers) => customers.where((c) => c.isEnabled).toList(),
+      );
 });
 
 class CurrentCustomerNotifier extends Notifier<Customer?> {

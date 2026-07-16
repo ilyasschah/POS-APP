@@ -477,39 +477,28 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     });
     try {
       // Offline-first: line items from the local Drift store, with product
-      // names resolved from the local product cache.
+      // names resolved from the local product cache. The mapping is shared with
+      // the document editor (see [DocumentItem.fromDrift]) — this screen used to
+      // roll its own, dropped taxRate/taxAmount entirely, and applied the
+      // manual-document formula to checkout rows, so a taxed sale listed "Tax 0%"
+      // and an ex-tax line total beneath a tax-inclusive document total.
       final db = ref.read(appDatabaseProvider);
       final rows = await db.getActiveDocumentItems(localId);
       final productRows = await db.select(db.productsTable).get();
       final pById = {for (final p in productRows) p.id: p};
+      final docRow = await db.getDocumentByLocalId(localId);
+      final isCheckoutDoc =
+          docRow?.orderNumber != null && docRow!.orderNumber!.isNotEmpty;
       setState(() {
-        _items = rows.map((r) {
-          final p = pById[r.productId];
-          return DocumentItem(
-            id: r.serverId ?? 0,
-            localId: r.localId,
-            companyId: doc.id,
-            documentId: doc.id,
-            productId: r.productId,
-            productName: p?.name,
-            productCode: p?.code,
-            measurementUnit: p?.measurementUnit,
-            quantity: r.quantity,
-            expectedQuantity: r.quantity,
-            priceBeforeTax: r.priceBeforeTax,
-            price: r.unitPrice,
-            discount: r.discount,
-            discountType: r.discountType,
-            productCost: p?.cost ?? 0,
-            priceBeforeTaxAfterDiscount: r.taxRate > 0
-                ? r.total / (1 + r.taxRate / 100)
-                : r.total,
-            priceAfterDiscount: r.unitPrice,
-            total: r.total,
-            totalAfterDocumentDiscount: r.total,
-            discountApplyRule: true,
-          );
-        }).toList();
+        _items = rows
+            .map((r) => DocumentItem.fromDrift(
+                  r,
+                  isCheckoutDoc: isCheckoutDoc,
+                  companyId: ref.read(selectedCompanyProvider)?.id ?? 0,
+                  documentId: doc.id,
+                  product: pById[r.productId],
+                ))
+            .toList();
       });
     } catch (_) {
       setState(() {
@@ -707,11 +696,29 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       await _fetchItems(doc);
     }
     final items = _items;
+    final db = ref.read(appDatabaseProvider);
+
+    // Tax names for the per-tax breakdown (Receipt.PrintTaxName).
+    final taxRows = await db.select(db.taxesTable).get();
+    final taxNameById = {for (final t in taxRows) t.id: t.name};
 
     // Convert DocumentItems → CartItems
     final cartItems = <CartItem>[];
     for (int i = 0; i < items.length; i++) {
       final item = items[i];
+      // Rebuild each line's tax from what was actually BANKED. This passed an
+      // empty list, so `lineTax` came out 0 and every line printed ex-tax —
+      // which is exactly why a reprint didn't match the receipt printed after
+      // payment (35.00 where the original said 42.00).
+      //
+      // The stored money is carried as a FIXED tax on purpose. The receipt
+      // re-derives a percentage tax from the rate using the CURRENT
+      // `discountApplyRule`, so reprinting a sale that was rung under the other
+      // rule would silently contradict its own document. A fixed tax is only
+      // ever multiplied by quantity, so this reproduces the banked figure
+      // exactly under either setting. The rate itself is never printed — the
+      // receipt shows only the tax name and its amount.
+      final unitTax = item.quantity > 0 ? item.taxAmount / item.quantity : 0.0;
       cartItems.add(
         CartItem(
           cartItemId: '${item.productId}_$i',
@@ -723,7 +730,17 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
           discount: item.discount,
           discountType: item.discountType,
           promotionalDiscount: 0,
-          appliedTaxes: [],
+          appliedTaxes: item.taxAmount > 0
+              ? [
+                  MenuTax(
+                    id: item.taxId ?? 0,
+                    name: taxNameById[item.taxId] ?? 'Tax',
+                    rate: unitTax,
+                    isFixed: true,
+                    isTaxOnTotal: false,
+                  ),
+                ]
+              : const [],
           measurementUnit: item.measurementUnit,
           isService: false,
         ),
@@ -747,19 +764,22 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       printTime = DateTime.now();
     }
 
-    // Item-level discount total. An item's `discount` is always stored as an
-    // absolute currency amount (the entry dialog converts a % to money before
-    // saving), so sum it directly — interpreting it as a % (the old type==0
-    // branch) under-counted any percentage-entered discount.
-    final totalDiscount = items.fold<double>(
-      0,
-      (sum, item) => sum + item.discount * item.quantity,
-    );
+    // Item-level discount total, resolved to money per line. `discount` is the
+    // value AS ENTERED and `discountType` says what it means: 0 = percent of the
+    // price, 1 = fixed money per unit. Checkout deliberately keeps a %-entered
+    // discount as (type 0, the % value), so summing the column raw — as this
+    // used to — added "50" (a percentage) to the currency total.
+    // Only a fallback: when `discountLines` is non-empty the receipt prints the
+    // itemized breakdown from those resolved amounts instead of this figure.
+    final totalDiscount = items.fold<double>(0, (sum, item) {
+      final perUnit = item.discountType == 0
+          ? item.priceBeforeTax * item.discount / 100
+          : item.discount;
+      return sum + perUnit * item.quantity;
+    });
 
     final sym = ref.read(currencySymbolProvider);
     final discountLines = await _discountLinesFor(doc, includeLoyalty: false);
-
-    final db = ref.read(appDatabaseProvider);
 
     // Load the real customer so the receipt prints the actual name / details —
     // matching the after-checkout receipt — instead of leaving it blank.
@@ -798,6 +818,9 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       cashier: ref.read(currentUserProvider),
       customer: customer,
       orderNumber: doc.number,
+      // A reprint is always of a banked sale, so it names itself after the
+      // document number.
+      documentNumber: doc.number,
       printTime: printTime,
       items: cartItems,
       subtotal: doc.totalBeforeTax,
@@ -1471,12 +1494,16 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       'qty': (item) => Text(_numFmt.format(item.quantity), style: ts),
       'priceBeforeTax': (item) =>
           Text(_numFmt.format(item.priceBeforeTax), style: ts),
-      'tax': (item) {
-        final taxPct = item.priceBeforeTax > 0
-            ? ((item.price - item.priceBeforeTax) / item.priceBeforeTax * 100)
-            : 0.0;
-        return Text('${taxPct.toStringAsFixed(0)}%', style: ts);
-      },
+      // The line's own rate. Deriving it from (price - priceBeforeTax) always
+      // read 0% on a checkout row — both fields hold the same ex-tax price
+      // there, so a 20% sale rendered "Tax 0%" while the document header showed
+      // the tax. Matches the document editor.
+      'tax': (item) => Text(
+        item.taxRate > 0
+            ? '${item.taxRate.toStringAsFixed(item.taxRate % 1 == 0 ? 0 : 1)}%'
+            : '—',
+        style: ts,
+      ),
       'price': (item) => Text(_numFmt.format(item.price), style: ts),
       'totalBeforeDiscount': (item) =>
           Text(_numFmt.format(item.price * item.quantity), style: ts),
@@ -1491,8 +1518,10 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
                   : '-${_numFmt.format(item.discount * item.quantity)}',
         style: ts,
       ),
+      // Tax-inclusive, so the column sums to the document's Total. `total` is
+      // ex-tax on checkout rows, which made a 42.00 sale list a 35.00 line.
       'total': (item) => Text(
-        _numFmt.format(item.total),
+        _numFmt.format(item.totalWithTax),
         style: ts.copyWith(fontWeight: FontWeight.w700, color: cs.primary),
       ),
     };

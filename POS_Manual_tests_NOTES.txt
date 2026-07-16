@@ -1,24 +1,24 @@
 POS NOTES
 
-I need o add a logic when I click logout from "master login" not the logout POS login in the settings
-the subscription & devices in admin portal should check if this account still login and update Devices from 1/1 to 0/1 seats
-when I have gives a company a subscriptions for 1 only device but when I have opened the app on another device and logged in hhh and also asked me to create a new POS PIN 
 
-if I deleted a company subscription and the user didn't logout yet it should check if this is id of company still existed if not go back to master login 
-also if i deleted a local sqlite db the app crash on no enabled users and its created an empty local db and i stuck on that loop i cant do any thing 
-
-we should take controlle of that Tax and address under the company name and Tel and address
-
-and the footer message nothing should be hardcoded
-
-every printer document or reciept should have a file name by default
-
-after i created a customer i got this error ---> Microsoft.Data.SqlClient.SqlException (0x80131904): Cannot insert duplicate key row in object 'dbo.Customer' with unique index 'UQ_Customer_Code_PerCompany'. The duplicate key value is (25, ).
+virtual keyboard
+sounds
+in the settings scrren and in license tab we should chnage it to subscription (show the suscriotion started date and end time and least seats/devies 
+)
+and remove that license email and license key and that licnese status we already know its on 
 
 
-waht this table used for  Pos_printer_selections and were the new cretaed printers are saved ?
+when i create a booking and i put it status in service and open the order and add products and save the status changed good and the table shows in service all good but when i go to booking and i opne taht booking it shows start service (it should show oopen service because its already stared 
+that button should be dynamic )
+
+and also it open a new order hhhhhh that is wrong its bug that will cause saving twi irders at the same booking adn also when i go to tables and click on that table its shows the selected saved products all good bu thte order name changed to A1 not like when i cretaed the booking adn open it it should shows the table and stuff name 
 
 
-i dont think we still need this industryMode
+when i cliced on table floor button in the booking screen i feel like it render or build new one because it dosnt show the side nivigation bar and the button in table floor of booking its not working 
 
 
+and we need a setting if we already have tables enable to make us able to creeate order with out selecting table 
+and the same time for booking i could create an table order or new sale even i dont have a booking i should have this two settings in the order tab in the settings 
+
+
+booking document shows wrong customer i have selected ilyass as customer but wehn i saved the order it used defaulkt walk in customer

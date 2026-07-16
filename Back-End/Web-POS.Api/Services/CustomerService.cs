@@ -13,6 +13,13 @@ namespace Api.Services
             _customerRepository = customerRepository;
         }
 
+        // UQ_Customer_Code_PerCompany is a FILTERED unique index (WHERE Code IS NOT NULL):
+        // NULL means "this customer has no code" and may repeat freely, but "" is a real
+        // value, so only one row per company could ever hold it. Blank input must therefore
+        // land as NULL, never as "".
+        private static string? NormalizeCode(string? code)
+            => string.IsNullOrWhiteSpace(code) ? null : code.Trim();
+
         public async Task<bool> CreateAsync(CreateCustomerRequest request, int companyId)
         {
             if (await _customerRepository.ExistsByNameAsync(request.Name, companyId))
@@ -20,9 +27,15 @@ namespace Api.Services
                 throw new InvalidOperationException($"A customer with the name '{request.Name}' already exists.");
             }
 
+            var code = NormalizeCode(request.Code);
+            if (code != null && await _customerRepository.ExistsByCodeAsync(code, companyId))
+            {
+                throw new InvalidOperationException($"A customer with the code '{code}' already exists.");
+            }
+
             var customer = Customer.Create(
                 companyId,
-                request.Code,
+                code,
                 request.Name,
                 request.TaxNumber,
                 request.Address,
@@ -71,8 +84,19 @@ namespace Api.Services
                 }
             }
 
+            // Both callers (the customer dialog and the offline sync push) always send the
+            // full row, so a blank/absent Code means "this customer has no code" — clear it.
+            // Falling back to the stored value here would make clearing a code impossible.
+            string? newCode = NormalizeCode(request.Code);
+
+            if (newCode != null && newCode != customer.Code &&
+                await _customerRepository.ExistsByCodeAsync(newCode, companyId))
+            {
+                throw new InvalidOperationException($"A customer with the code '{newCode}' already exists.");
+            }
+
             customer.UpdateDetails(
-                request.Code ?? customer.Code,
+                newCode,
                 newName,
                 request.TaxNumber ?? customer.TaxNumber,
                 request.Address ?? customer.Address,

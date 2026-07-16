@@ -51,10 +51,24 @@ namespace Api.Master.Services
             string billingStatus;
             if (sub != null)
             {
-                // Normal path: honour the subscription's period end (+ grace).
-                var periodEnd = sub.CurrentPeriodEnd ?? now;
-                validUntil = periodEnd.AddDays(_graceDays).ToUniversalTime();
-                billingStatus = sub.BillingStatus ?? "active";
+                var status = (sub.BillingStatus ?? "active").Trim().ToLowerInvariant();
+                if (IsStopped(status))
+                {
+                    // Subscription switched OFF by the provider (admin Subscriptions
+                    // page) WITHOUT deleting any company data. Issue an already-expired
+                    // lease so the terminal blocks with "contact your service provider".
+                    // Fully reversible: flipping it back to active + a future period end
+                    // re-licenses the device on its next lease refresh.
+                    validUntil = now;
+                    billingStatus = status;
+                }
+                else
+                {
+                    // Normal path: honour the subscription's period end (+ grace).
+                    var periodEnd = sub.CurrentPeriodEnd ?? now;
+                    validUntil = periodEnd.AddDays(_graceDays).ToUniversalTime();
+                    billingStatus = sub.BillingStatus ?? "active";
+                }
             }
             else if (tenant == null)
             {
@@ -95,5 +109,17 @@ namespace Api.Master.Services
 
             return new JwtSecurityTokenHandler().WriteToken(jwt);
         }
+
+        /// <summary>Billing statuses that mean the subscription is switched OFF
+        /// (company data preserved, terminal blocked). Kept in sync with the admin
+        /// Subscriptions page toggle.</summary>
+        private static readonly HashSet<string> _stoppedStatuses =
+            new(StringComparer.OrdinalIgnoreCase)
+            {
+                "canceled", "cancelled", "paused", "suspended", "inactive",
+            };
+
+        private static bool IsStopped(string? status) =>
+            status != null && _stoppedStatuses.Contains(status.Trim());
     }
 }

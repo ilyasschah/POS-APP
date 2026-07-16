@@ -14,6 +14,8 @@ import 'package:pos_app/product/product_provider.dart';
 import 'package:pos_app/product/product_group_provider.dart';
 import 'package:pos_app/stock/warehouse_provider.dart';
 import 'package:pos_app/core/app_date_picker.dart';
+import 'package:pos_app/printer/pdf_file_name.dart';
+import 'package:pos_app/printer/pdf_save_service.dart';
 import 'package:pos_app/reports/report_models.dart';
 import 'package:pos_app/reports/reports_provider.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
@@ -1046,6 +1048,37 @@ class _TabPdfView extends ConsumerWidget {
     final users = ref.watch(allUsersProvider).value ?? [];
     final products = ref.watch(allProductsListProvider).value ?? [];
 
+    // Every report names itself after what it is plus the range it covers, so
+    // two exports of the same report don't overwrite each other on disk. Built
+    // from the tab, so a new report type gets a real name without touching this.
+    final baseName =
+        reportPdfName(tab.reportType.label, tab.filter.startDate, tab.filter.endDate);
+    final fileName = '$baseName.pdf';
+
+    // "Save as PDF", shared by all report previews. `build` hands back the bytes
+    // of whichever report is on screen, so this one action covers every type.
+    final saveActions = <Widget>[
+      PdfPreviewAction(
+        icon: const Icon(Icons.save_alt),
+        onPressed: (ctx, build, pageFormat) async {
+          final messenger = ScaffoldMessenger.of(ctx);
+          try {
+            final bytes = await build(pageFormat);
+            final path =
+                await savePdfAs(bytes: bytes, suggestedName: baseName);
+            if (path == null) return; // cancelled
+            messenger.showSnackBar(
+              SnackBar(content: Text('Saved to $path')),
+            );
+          } catch (e) {
+            messenger.showSnackBar(
+              SnackBar(content: Text('Save failed: $e')),
+            );
+          }
+        },
+      ),
+    ];
+
     String customerLabel() {
       if (tab.filter.customerId == null) return 'All';
       return customers
@@ -1081,7 +1114,8 @@ class _TabPdfView extends ConsumerWidget {
         error: (e, _) =>
             Center(child: Text('Error: $e', style: TextStyle(color: cs.error))),
         data: (rows) => PdfPreview(
-          pdfFileName: 'SalesByProduct.pdf',
+          pdfFileName: fileName,
+          actions: saveActions,
           initialPageFormat: PdfPageFormat.a4.landscape,
           canChangePageFormat: false,
           canDebug: false,
@@ -1106,7 +1140,8 @@ class _TabPdfView extends ConsumerWidget {
         error: (e, _) =>
             Center(child: Text('Error: $e', style: TextStyle(color: cs.error))),
         data: (rows) => PdfPreview(
-          pdfFileName: 'SalesByProductGroup.pdf',
+          pdfFileName: fileName,
+          actions: saveActions,
           initialPageFormat: PdfPageFormat.a4.landscape,
           canChangePageFormat: false,
           canDebug: false,
@@ -1131,7 +1166,8 @@ class _TabPdfView extends ConsumerWidget {
         error: (e, _) =>
             Center(child: Text('Error: $e', style: TextStyle(color: cs.error))),
         data: (rows) => PdfPreview(
-          pdfFileName: 'SalesByCustomer.pdf',
+          pdfFileName: fileName,
+          actions: saveActions,
           initialPageFormat: PdfPageFormat.a4.landscape,
           canChangePageFormat: false,
           canDebug: false,
@@ -1156,7 +1192,8 @@ class _TabPdfView extends ConsumerWidget {
         error: (e, _) =>
             Center(child: Text('Error: $e', style: TextStyle(color: cs.error))),
         data: (rows) => PdfPreview(
-          pdfFileName: 'SalesTax.pdf',
+          pdfFileName: fileName,
+          actions: saveActions,
           initialPageFormat: PdfPageFormat.a4.landscape,
           canChangePageFormat: false,
           canDebug: false,
@@ -1181,7 +1218,8 @@ class _TabPdfView extends ConsumerWidget {
         error: (e, _) =>
             Center(child: Text('Error: $e', style: TextStyle(color: cs.error))),
         data: (rows) => PdfPreview(
-          pdfFileName: 'PaymentTypesByCustomer.pdf',
+          pdfFileName: fileName,
+          actions: saveActions,
           initialPageFormat: PdfPageFormat.a4.landscape,
           canChangePageFormat: false,
           canDebug: false,
@@ -1206,7 +1244,8 @@ class _TabPdfView extends ConsumerWidget {
         error: (e, _) =>
             Center(child: Text('Error: $e', style: TextStyle(color: cs.error))),
         data: (rows) => PdfPreview(
-          pdfFileName: 'PaymentTypesByUser.pdf',
+          pdfFileName: fileName,
+          actions: saveActions,
           initialPageFormat: PdfPageFormat.a4.landscape,
           canChangePageFormat: false,
           canDebug: false,
@@ -1231,7 +1270,8 @@ class _TabPdfView extends ConsumerWidget {
         error: (e, _) =>
             Center(child: Text('Error: $e', style: TextStyle(color: cs.error))),
         data: (rows) => PdfPreview(
-          pdfFileName: 'SalesByPaymentType.pdf',
+          pdfFileName: fileName,
+          actions: saveActions,
           initialPageFormat: PdfPageFormat.a4.landscape,
           canChangePageFormat: false,
           canDebug: false,
@@ -1256,7 +1296,8 @@ class _TabPdfView extends ConsumerWidget {
         error: (e, _) =>
             Center(child: Text('Error: $e', style: TextStyle(color: cs.error))),
         data: (rows) => PdfPreview(
-          pdfFileName: 'Refunds.pdf',
+          pdfFileName: fileName,
+          actions: saveActions,
           initialPageFormat: PdfPageFormat.a4.landscape,
           canChangePageFormat: false,
           canDebug: false,
@@ -1281,7 +1322,8 @@ class _TabPdfView extends ConsumerWidget {
         error: (e, _) =>
             Center(child: Text('Error: $e', style: TextStyle(color: cs.error))),
         data: (rows) => PdfPreview(
-          pdfFileName: 'InvoiceList.pdf',
+          pdfFileName: fileName,
+          actions: saveActions,
           initialPageFormat: PdfPageFormat.a4.landscape,
           canChangePageFormat: false,
           canDebug: false,
@@ -1305,7 +1347,8 @@ class _TabPdfView extends ConsumerWidget {
         error: (e, _) =>
             Center(child: Text('Error: $e', style: TextStyle(color: cs.error))),
         data: (rows) => PdfPreview(
-          pdfFileName: 'DailySales.pdf',
+          pdfFileName: fileName,
+          actions: saveActions,
           initialPageFormat: PdfPageFormat.a4.landscape,
           canChangePageFormat: false,
           canDebug: false,
@@ -1329,7 +1372,8 @@ class _TabPdfView extends ConsumerWidget {
         error: (e, _) =>
             Center(child: Text('Error: $e', style: TextStyle(color: cs.error))),
         data: (rows) => PdfPreview(
-          pdfFileName: 'HourlySales.pdf',
+          pdfFileName: fileName,
+          actions: saveActions,
           initialPageFormat: PdfPageFormat.a4.landscape,
           canChangePageFormat: false,
           canDebug: false,
@@ -1352,7 +1396,8 @@ class _TabPdfView extends ConsumerWidget {
         error: (e, _) =>
             Center(child: Text('Error: $e', style: TextStyle(color: cs.error))),
         data: (rows) => PdfPreview(
-          pdfFileName: 'HourlySalesByGroup.pdf',
+          pdfFileName: fileName,
+          actions: saveActions,
           initialPageFormat: PdfPageFormat.a4.landscape,
           canChangePageFormat: false,
           canDebug: false,
@@ -1376,7 +1421,8 @@ class _TabPdfView extends ConsumerWidget {
         error: (e, _) =>
             Center(child: Text('Error: $e', style: TextStyle(color: cs.error))),
         data: (rows) => PdfPreview(
-          pdfFileName: 'SalesByTable.pdf',
+          pdfFileName: fileName,
+          actions: saveActions,
           initialPageFormat: PdfPageFormat.a4.landscape,
           canChangePageFormat: false,
           canDebug: false,
@@ -1400,7 +1446,8 @@ class _TabPdfView extends ConsumerWidget {
         error: (e, _) =>
             Center(child: Text('Error: $e', style: TextStyle(color: cs.error))),
         data: (rows) => PdfPreview(
-          pdfFileName: 'Profit.pdf',
+          pdfFileName: fileName,
+          actions: saveActions,
           initialPageFormat: PdfPageFormat.a4.landscape,
           canChangePageFormat: false,
           canDebug: false,
@@ -1425,7 +1472,8 @@ class _TabPdfView extends ConsumerWidget {
         error: (e, _) =>
             Center(child: Text('Error: $e', style: TextStyle(color: cs.error))),
         data: (rows) => PdfPreview(
-          pdfFileName: 'UnpaidSales.pdf',
+          pdfFileName: fileName,
+          actions: saveActions,
           initialPageFormat: PdfPageFormat.a4.landscape,
           canChangePageFormat: false,
           canDebug: false,
@@ -1449,7 +1497,8 @@ class _TabPdfView extends ConsumerWidget {
         error: (e, _) =>
             Center(child: Text('Error: $e', style: TextStyle(color: cs.error))),
         data: (rows) => PdfPreview(
-          pdfFileName: 'StartingCash.pdf',
+          pdfFileName: fileName,
+          actions: saveActions,
           initialPageFormat: PdfPageFormat.a4,
           canChangePageFormat: false,
           canDebug: false,
@@ -1472,7 +1521,8 @@ class _TabPdfView extends ConsumerWidget {
         error: (e, _) =>
             Center(child: Text('Error: $e', style: TextStyle(color: cs.error))),
         data: (rows) => PdfPreview(
-          pdfFileName: 'StockMovement.pdf',
+          pdfFileName: fileName,
+          actions: saveActions,
           initialPageFormat: PdfPageFormat.a4,
           canChangePageFormat: false,
           canDebug: false,
@@ -1496,7 +1546,8 @@ class _TabPdfView extends ConsumerWidget {
         error: (e, _) =>
             Center(child: Text('Error: $e', style: TextStyle(color: cs.error))),
         data: (rows) => PdfPreview(
-          pdfFileName: 'ItemsDiscounts.pdf',
+          pdfFileName: fileName,
+          actions: saveActions,
           initialPageFormat: PdfPageFormat.a4,
           canChangePageFormat: false,
           canDebug: false,
@@ -1521,7 +1572,8 @@ class _TabPdfView extends ConsumerWidget {
         error: (e, _) =>
             Center(child: Text('Error: $e', style: TextStyle(color: cs.error))),
         data: (rows) => PdfPreview(
-          pdfFileName: 'DiscountsGranted.pdf',
+          pdfFileName: fileName,
+          actions: saveActions,
           initialPageFormat: PdfPageFormat.a4,
           canChangePageFormat: false,
           canDebug: false,
@@ -1545,7 +1597,8 @@ class _TabPdfView extends ConsumerWidget {
         error: (e, _) =>
             Center(child: Text('Error: $e', style: TextStyle(color: cs.error))),
         data: (rows) => PdfPreview(
-          pdfFileName: 'DiscountsBySource.pdf',
+          pdfFileName: fileName,
+          actions: saveActions,
           initialPageFormat: PdfPageFormat.a4,
           canChangePageFormat: false,
           canDebug: false,
@@ -1567,7 +1620,8 @@ class _TabPdfView extends ConsumerWidget {
         error: (e, _) =>
             Center(child: Text('Error: $e', style: TextStyle(color: cs.error))),
         data: (rows) => PdfPreview(
-          pdfFileName: 'VoidedItems.pdf',
+          pdfFileName: fileName,
+          actions: saveActions,
           initialPageFormat: PdfPageFormat.a4,
           canChangePageFormat: false,
           canDebug: false,
@@ -1591,7 +1645,8 @@ class _TabPdfView extends ConsumerWidget {
         error: (e, _) =>
             Center(child: Text('Error: $e', style: TextStyle(color: cs.error))),
         data: (rows) => PdfPreview(
-          pdfFileName: 'SalesItemList.pdf',
+          pdfFileName: fileName,
+          actions: saveActions,
           initialPageFormat: PdfPageFormat.a4.landscape,
           canChangePageFormat: false,
           canDebug: false,
@@ -1616,7 +1671,8 @@ class _TabPdfView extends ConsumerWidget {
         error: (e, _) =>
             Center(child: Text('Error: $e', style: TextStyle(color: cs.error))),
         data: (rows) => PdfPreview(
-          pdfFileName: 'SalesByUser.pdf',
+          pdfFileName: fileName,
+          actions: saveActions,
           initialPageFormat: PdfPageFormat.a4.landscape,
           canChangePageFormat: false,
           canDebug: false,
@@ -1641,7 +1697,8 @@ class _TabPdfView extends ConsumerWidget {
         error: (e, _) =>
             Center(child: Text('Error: $e', style: TextStyle(color: cs.error))),
         data: (rows) => PdfPreview(
-          pdfFileName: 'UnpaidPurchase.pdf',
+          pdfFileName: fileName,
+          actions: saveActions,
           initialPageFormat: PdfPageFormat.a4.landscape,
           canChangePageFormat: false,
           canDebug: false,
@@ -1665,7 +1722,8 @@ class _TabPdfView extends ConsumerWidget {
         error: (e, _) =>
             Center(child: Text('Error: $e', style: TextStyle(color: cs.error))),
         data: (rows) => PdfPreview(
-          pdfFileName: 'PurchaseBySupplier.pdf',
+          pdfFileName: fileName,
+          actions: saveActions,
           initialPageFormat: PdfPageFormat.a4.landscape,
           canChangePageFormat: false,
           canDebug: false,
@@ -1690,7 +1748,8 @@ class _TabPdfView extends ConsumerWidget {
         error: (e, _) =>
             Center(child: Text('Error: $e', style: TextStyle(color: cs.error))),
         data: (rows) => PdfPreview(
-          pdfFileName: 'PurchaseByProduct.pdf',
+          pdfFileName: fileName,
+          actions: saveActions,
           initialPageFormat: PdfPageFormat.a4.landscape,
           canChangePageFormat: false,
           canDebug: false,
@@ -1715,7 +1774,8 @@ class _TabPdfView extends ConsumerWidget {
         error: (e, _) =>
             Center(child: Text('Error: $e', style: TextStyle(color: cs.error))),
         data: (rows) => PdfPreview(
-          pdfFileName: 'PurchaseTax.pdf',
+          pdfFileName: fileName,
+          actions: saveActions,
           initialPageFormat: PdfPageFormat.a4.landscape,
           canChangePageFormat: false,
           canDebug: false,
@@ -1740,7 +1800,8 @@ class _TabPdfView extends ConsumerWidget {
         error: (e, _) =>
             Center(child: Text('Error: $e', style: TextStyle(color: cs.error))),
         data: (rows) => PdfPreview(
-          pdfFileName: 'PurchaseExpirationDate.pdf',
+          pdfFileName: fileName,
+          actions: saveActions,
           initialPageFormat: PdfPageFormat.a4.landscape,
           canChangePageFormat: false,
           canDebug: false,
@@ -1765,7 +1826,8 @@ class _TabPdfView extends ConsumerWidget {
         error: (e, _) =>
             Center(child: Text('Error: $e', style: TextStyle(color: cs.error))),
         data: (rows) => PdfPreview(
-          pdfFileName: 'PurchaseInvoices.pdf',
+          pdfFileName: fileName,
+          actions: saveActions,
           initialPageFormat: PdfPageFormat.a4.landscape,
           canChangePageFormat: false,
           canDebug: false,
@@ -1790,7 +1852,8 @@ class _TabPdfView extends ConsumerWidget {
         error: (e, _) =>
             Center(child: Text('Error: $e', style: TextStyle(color: cs.error))),
         data: (rows) => PdfPreview(
-          pdfFileName: 'PurchaseItemsDiscounts.pdf',
+          pdfFileName: fileName,
+          actions: saveActions,
           initialPageFormat: PdfPageFormat.a4.landscape,
           canChangePageFormat: false,
           canDebug: false,
@@ -1815,7 +1878,8 @@ class _TabPdfView extends ConsumerWidget {
         error: (e, _) =>
             Center(child: Text('Error: $e', style: TextStyle(color: cs.error))),
         data: (rows) => PdfPreview(
-          pdfFileName: 'PurchaseDiscounts.pdf',
+          pdfFileName: fileName,
+          actions: saveActions,
           initialPageFormat: PdfPageFormat.a4,
           canChangePageFormat: false,
           canDebug: false,
@@ -1839,7 +1903,8 @@ class _TabPdfView extends ConsumerWidget {
         error: (e, _) =>
             Center(child: Text('Error: $e', style: TextStyle(color: cs.error))),
         data: (rows) => PdfPreview(
-          pdfFileName: 'StockReturnByProduct.pdf',
+          pdfFileName: fileName,
+          actions: saveActions,
           initialPageFormat: PdfPageFormat.a4.landscape,
           canChangePageFormat: false,
           canDebug: false,
@@ -1863,7 +1928,8 @@ class _TabPdfView extends ConsumerWidget {
         error: (e, _) =>
             Center(child: Text('Error: $e', style: TextStyle(color: cs.error))),
         data: (rows) => PdfPreview(
-          pdfFileName: 'LossAndDamageByProduct.pdf',
+          pdfFileName: fileName,
+          actions: saveActions,
           initialPageFormat: PdfPageFormat.a4.landscape,
           canChangePageFormat: false,
           canDebug: false,
@@ -1886,7 +1952,8 @@ class _TabPdfView extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error: $e', style: TextStyle(color: cs.error))),
         data: (rows) => PdfPreview(
-          pdfFileName: 'ReorderProductList.pdf',
+          pdfFileName: fileName,
+          actions: saveActions,
           initialPageFormat: PdfPageFormat.a4.landscape,
           canChangePageFormat: false,
           canDebug: false,
@@ -1909,7 +1976,8 @@ class _TabPdfView extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error: $e', style: TextStyle(color: cs.error))),
         data: (rows) => PdfPreview(
-          pdfFileName: 'LowStockWarning.pdf',
+          pdfFileName: fileName,
+          actions: saveActions,
           initialPageFormat: PdfPageFormat.a4.landscape,
           canChangePageFormat: false,
           canDebug: false,
@@ -1941,7 +2009,8 @@ class _TabPdfView extends ConsumerWidget {
         error: (e, _) =>
             Center(child: Text('Error: $e', style: TextStyle(color: cs.error))),
         data: (rows) => PdfPreview(
-          pdfFileName: 'TransactionHistory.pdf',
+          pdfFileName: fileName,
+          actions: saveActions,
           initialPageFormat: PdfPageFormat.a4.landscape,
           canChangePageFormat: false,
           canDebug: false,

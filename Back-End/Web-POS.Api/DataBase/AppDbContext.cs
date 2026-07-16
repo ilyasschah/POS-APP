@@ -44,9 +44,7 @@ namespace Api.DataBase
         public DbSet<Stock> Stocks { get; set; }
         public DbSet<ApplicationProperty> ApplicationProperties { get; set; }
         public DbSet<Migration> Migrations { get; set; }
-        public DbSet<PosPrinterSelection> PosPrinterSelections { get; set; }
         public DbSet<PosPrinterSettings> PosPrinterSettings { get; set; }
-        public DbSet<PosPrinterSelectionSettings> PosPrinterSelectionSettings { get; set; }
         public DbSet<Template> Templates { get; set; }
         public DbSet<ZReport> ZReports { get; set; }
         public DbSet<PaymentType> PaymentTypes { get; set; }

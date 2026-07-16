@@ -2140,2007 +2140,6 @@ class FiscalItemsTableCompanion extends UpdateCompanion<FiscalItemsTableData> {
   }
 }
 
-class $PosPrinterSelectionsTableTable extends PosPrinterSelectionsTable
-    with
-        TableInfo<
-          $PosPrinterSelectionsTableTable,
-          PosPrinterSelectionsTableData
-        > {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $PosPrinterSelectionsTableTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
-  @override
-  late final GeneratedColumn<int> id = GeneratedColumn<int>(
-    'id',
-    aliasedName,
-    false,
-    hasAutoIncrement: true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'PRIMARY KEY AUTOINCREMENT',
-    ),
-  );
-  static const VerificationMeta _serverIdMeta = const VerificationMeta(
-    'serverId',
-  );
-  @override
-  late final GeneratedColumn<int> serverId = GeneratedColumn<int>(
-    'server_id',
-    aliasedName,
-    true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _keyMeta = const VerificationMeta('key');
-  @override
-  late final GeneratedColumn<String> key = GeneratedColumn<String>(
-    'key',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _printerNameMeta = const VerificationMeta(
-    'printerName',
-  );
-  @override
-  late final GeneratedColumn<String> printerName = GeneratedColumn<String>(
-    'printer_name',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _isEnabledMeta = const VerificationMeta(
-    'isEnabled',
-  );
-  @override
-  late final GeneratedColumn<bool> isEnabled = GeneratedColumn<bool>(
-    'is_enabled',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("is_enabled" IN (0, 1))',
-    ),
-  );
-  static const VerificationMeta _companyIdMeta = const VerificationMeta(
-    'companyId',
-  );
-  @override
-  late final GeneratedColumn<int> companyId = GeneratedColumn<int>(
-    'company_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-  );
-  @override
-  List<GeneratedColumn> get $columns => [
-    id,
-    serverId,
-    key,
-    printerName,
-    isEnabled,
-    companyId,
-  ];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'pos_printer_selections';
-  @override
-  VerificationContext validateIntegrity(
-    Insertable<PosPrinterSelectionsTableData> instance, {
-    bool isInserting = false,
-  }) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    }
-    if (data.containsKey('server_id')) {
-      context.handle(
-        _serverIdMeta,
-        serverId.isAcceptableOrUnknown(data['server_id']!, _serverIdMeta),
-      );
-    }
-    if (data.containsKey('key')) {
-      context.handle(
-        _keyMeta,
-        key.isAcceptableOrUnknown(data['key']!, _keyMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_keyMeta);
-    }
-    if (data.containsKey('printer_name')) {
-      context.handle(
-        _printerNameMeta,
-        printerName.isAcceptableOrUnknown(
-          data['printer_name']!,
-          _printerNameMeta,
-        ),
-      );
-    }
-    if (data.containsKey('is_enabled')) {
-      context.handle(
-        _isEnabledMeta,
-        isEnabled.isAcceptableOrUnknown(data['is_enabled']!, _isEnabledMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_isEnabledMeta);
-    }
-    if (data.containsKey('company_id')) {
-      context.handle(
-        _companyIdMeta,
-        companyId.isAcceptableOrUnknown(data['company_id']!, _companyIdMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_companyIdMeta);
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => {id};
-  @override
-  PosPrinterSelectionsTableData map(
-    Map<String, dynamic> data, {
-    String? tablePrefix,
-  }) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return PosPrinterSelectionsTableData(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}id'],
-      )!,
-      serverId: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}server_id'],
-      ),
-      key: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}key'],
-      )!,
-      printerName: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}printer_name'],
-      ),
-      isEnabled: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_enabled'],
-      )!,
-      companyId: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}company_id'],
-      )!,
-    );
-  }
-
-  @override
-  $PosPrinterSelectionsTableTable createAlias(String alias) {
-    return $PosPrinterSelectionsTableTable(attachedDatabase, alias);
-  }
-}
-
-class PosPrinterSelectionsTableData extends DataClass
-    implements Insertable<PosPrinterSelectionsTableData> {
-  final int id;
-  final int? serverId;
-  final String key;
-  final String? printerName;
-  final bool isEnabled;
-  final int companyId;
-  const PosPrinterSelectionsTableData({
-    required this.id,
-    this.serverId,
-    required this.key,
-    this.printerName,
-    required this.isEnabled,
-    required this.companyId,
-  });
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<int>(id);
-    if (!nullToAbsent || serverId != null) {
-      map['server_id'] = Variable<int>(serverId);
-    }
-    map['key'] = Variable<String>(key);
-    if (!nullToAbsent || printerName != null) {
-      map['printer_name'] = Variable<String>(printerName);
-    }
-    map['is_enabled'] = Variable<bool>(isEnabled);
-    map['company_id'] = Variable<int>(companyId);
-    return map;
-  }
-
-  PosPrinterSelectionsTableCompanion toCompanion(bool nullToAbsent) {
-    return PosPrinterSelectionsTableCompanion(
-      id: Value(id),
-      serverId: serverId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(serverId),
-      key: Value(key),
-      printerName: printerName == null && nullToAbsent
-          ? const Value.absent()
-          : Value(printerName),
-      isEnabled: Value(isEnabled),
-      companyId: Value(companyId),
-    );
-  }
-
-  factory PosPrinterSelectionsTableData.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return PosPrinterSelectionsTableData(
-      id: serializer.fromJson<int>(json['id']),
-      serverId: serializer.fromJson<int?>(json['serverId']),
-      key: serializer.fromJson<String>(json['key']),
-      printerName: serializer.fromJson<String?>(json['printerName']),
-      isEnabled: serializer.fromJson<bool>(json['isEnabled']),
-      companyId: serializer.fromJson<int>(json['companyId']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<int>(id),
-      'serverId': serializer.toJson<int?>(serverId),
-      'key': serializer.toJson<String>(key),
-      'printerName': serializer.toJson<String?>(printerName),
-      'isEnabled': serializer.toJson<bool>(isEnabled),
-      'companyId': serializer.toJson<int>(companyId),
-    };
-  }
-
-  PosPrinterSelectionsTableData copyWith({
-    int? id,
-    Value<int?> serverId = const Value.absent(),
-    String? key,
-    Value<String?> printerName = const Value.absent(),
-    bool? isEnabled,
-    int? companyId,
-  }) => PosPrinterSelectionsTableData(
-    id: id ?? this.id,
-    serverId: serverId.present ? serverId.value : this.serverId,
-    key: key ?? this.key,
-    printerName: printerName.present ? printerName.value : this.printerName,
-    isEnabled: isEnabled ?? this.isEnabled,
-    companyId: companyId ?? this.companyId,
-  );
-  PosPrinterSelectionsTableData copyWithCompanion(
-    PosPrinterSelectionsTableCompanion data,
-  ) {
-    return PosPrinterSelectionsTableData(
-      id: data.id.present ? data.id.value : this.id,
-      serverId: data.serverId.present ? data.serverId.value : this.serverId,
-      key: data.key.present ? data.key.value : this.key,
-      printerName: data.printerName.present
-          ? data.printerName.value
-          : this.printerName,
-      isEnabled: data.isEnabled.present ? data.isEnabled.value : this.isEnabled,
-      companyId: data.companyId.present ? data.companyId.value : this.companyId,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('PosPrinterSelectionsTableData(')
-          ..write('id: $id, ')
-          ..write('serverId: $serverId, ')
-          ..write('key: $key, ')
-          ..write('printerName: $printerName, ')
-          ..write('isEnabled: $isEnabled, ')
-          ..write('companyId: $companyId')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode =>
-      Object.hash(id, serverId, key, printerName, isEnabled, companyId);
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is PosPrinterSelectionsTableData &&
-          other.id == this.id &&
-          other.serverId == this.serverId &&
-          other.key == this.key &&
-          other.printerName == this.printerName &&
-          other.isEnabled == this.isEnabled &&
-          other.companyId == this.companyId);
-}
-
-class PosPrinterSelectionsTableCompanion
-    extends UpdateCompanion<PosPrinterSelectionsTableData> {
-  final Value<int> id;
-  final Value<int?> serverId;
-  final Value<String> key;
-  final Value<String?> printerName;
-  final Value<bool> isEnabled;
-  final Value<int> companyId;
-  const PosPrinterSelectionsTableCompanion({
-    this.id = const Value.absent(),
-    this.serverId = const Value.absent(),
-    this.key = const Value.absent(),
-    this.printerName = const Value.absent(),
-    this.isEnabled = const Value.absent(),
-    this.companyId = const Value.absent(),
-  });
-  PosPrinterSelectionsTableCompanion.insert({
-    this.id = const Value.absent(),
-    this.serverId = const Value.absent(),
-    required String key,
-    this.printerName = const Value.absent(),
-    required bool isEnabled,
-    required int companyId,
-  }) : key = Value(key),
-       isEnabled = Value(isEnabled),
-       companyId = Value(companyId);
-  static Insertable<PosPrinterSelectionsTableData> custom({
-    Expression<int>? id,
-    Expression<int>? serverId,
-    Expression<String>? key,
-    Expression<String>? printerName,
-    Expression<bool>? isEnabled,
-    Expression<int>? companyId,
-  }) {
-    return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (serverId != null) 'server_id': serverId,
-      if (key != null) 'key': key,
-      if (printerName != null) 'printer_name': printerName,
-      if (isEnabled != null) 'is_enabled': isEnabled,
-      if (companyId != null) 'company_id': companyId,
-    });
-  }
-
-  PosPrinterSelectionsTableCompanion copyWith({
-    Value<int>? id,
-    Value<int?>? serverId,
-    Value<String>? key,
-    Value<String?>? printerName,
-    Value<bool>? isEnabled,
-    Value<int>? companyId,
-  }) {
-    return PosPrinterSelectionsTableCompanion(
-      id: id ?? this.id,
-      serverId: serverId ?? this.serverId,
-      key: key ?? this.key,
-      printerName: printerName ?? this.printerName,
-      isEnabled: isEnabled ?? this.isEnabled,
-      companyId: companyId ?? this.companyId,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<int>(id.value);
-    }
-    if (serverId.present) {
-      map['server_id'] = Variable<int>(serverId.value);
-    }
-    if (key.present) {
-      map['key'] = Variable<String>(key.value);
-    }
-    if (printerName.present) {
-      map['printer_name'] = Variable<String>(printerName.value);
-    }
-    if (isEnabled.present) {
-      map['is_enabled'] = Variable<bool>(isEnabled.value);
-    }
-    if (companyId.present) {
-      map['company_id'] = Variable<int>(companyId.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('PosPrinterSelectionsTableCompanion(')
-          ..write('id: $id, ')
-          ..write('serverId: $serverId, ')
-          ..write('key: $key, ')
-          ..write('printerName: $printerName, ')
-          ..write('isEnabled: $isEnabled, ')
-          ..write('companyId: $companyId')
-          ..write(')'))
-        .toString();
-  }
-}
-
-class $PosPrinterSelectionSettingsTableTable
-    extends PosPrinterSelectionSettingsTable
-    with
-        TableInfo<
-          $PosPrinterSelectionSettingsTableTable,
-          PosPrinterSelectionSettingsTableData
-        > {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $PosPrinterSelectionSettingsTableTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
-  @override
-  late final GeneratedColumn<int> id = GeneratedColumn<int>(
-    'id',
-    aliasedName,
-    false,
-    hasAutoIncrement: true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'PRIMARY KEY AUTOINCREMENT',
-    ),
-  );
-  static const VerificationMeta _serverIdMeta = const VerificationMeta(
-    'serverId',
-  );
-  @override
-  late final GeneratedColumn<int> serverId = GeneratedColumn<int>(
-    'server_id',
-    aliasedName,
-    true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _posPrinterSelectionIdMeta =
-      const VerificationMeta('posPrinterSelectionId');
-  @override
-  late final GeneratedColumn<int> posPrinterSelectionId = GeneratedColumn<int>(
-    'pos_printer_selection_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _paperWidthMeta = const VerificationMeta(
-    'paperWidth',
-  );
-  @override
-  late final GeneratedColumn<int> paperWidth = GeneratedColumn<int>(
-    'paper_width',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _headerMeta = const VerificationMeta('header');
-  @override
-  late final GeneratedColumn<String> header = GeneratedColumn<String>(
-    'header',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _footerMeta = const VerificationMeta('footer');
-  @override
-  late final GeneratedColumn<String> footer = GeneratedColumn<String>(
-    'footer',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _feedLinesMeta = const VerificationMeta(
-    'feedLines',
-  );
-  @override
-  late final GeneratedColumn<int> feedLines = GeneratedColumn<int>(
-    'feed_lines',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _cutPaperMeta = const VerificationMeta(
-    'cutPaper',
-  );
-  @override
-  late final GeneratedColumn<bool> cutPaper = GeneratedColumn<bool>(
-    'cut_paper',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("cut_paper" IN (0, 1))',
-    ),
-  );
-  static const VerificationMeta _printBitmapMeta = const VerificationMeta(
-    'printBitmap',
-  );
-  @override
-  late final GeneratedColumn<bool> printBitmap = GeneratedColumn<bool>(
-    'print_bitmap',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("print_bitmap" IN (0, 1))',
-    ),
-  );
-  static const VerificationMeta _openCashDrawerMeta = const VerificationMeta(
-    'openCashDrawer',
-  );
-  @override
-  late final GeneratedColumn<bool> openCashDrawer = GeneratedColumn<bool>(
-    'open_cash_drawer',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("open_cash_drawer" IN (0, 1))',
-    ),
-  );
-  static const VerificationMeta _cashDrawerCommandMeta = const VerificationMeta(
-    'cashDrawerCommand',
-  );
-  @override
-  late final GeneratedColumn<String> cashDrawerCommand =
-      GeneratedColumn<String>(
-        'cash_drawer_command',
-        aliasedName,
-        true,
-        type: DriftSqlType.string,
-        requiredDuringInsert: false,
-      );
-  static const VerificationMeta _headerAlignmentMeta = const VerificationMeta(
-    'headerAlignment',
-  );
-  @override
-  late final GeneratedColumn<int> headerAlignment = GeneratedColumn<int>(
-    'header_alignment',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _footerAlignmentMeta = const VerificationMeta(
-    'footerAlignment',
-  );
-  @override
-  late final GeneratedColumn<int> footerAlignment = GeneratedColumn<int>(
-    'footer_alignment',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _isFormattingEnabledMeta =
-      const VerificationMeta('isFormattingEnabled');
-  @override
-  late final GeneratedColumn<bool> isFormattingEnabled = GeneratedColumn<bool>(
-    'is_formatting_enabled',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("is_formatting_enabled" IN (0, 1))',
-    ),
-  );
-  static const VerificationMeta _printerTypeMeta = const VerificationMeta(
-    'printerType',
-  );
-  @override
-  late final GeneratedColumn<int> printerType = GeneratedColumn<int>(
-    'printer_type',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _numberOfCopiesMeta = const VerificationMeta(
-    'numberOfCopies',
-  );
-  @override
-  late final GeneratedColumn<int> numberOfCopies = GeneratedColumn<int>(
-    'number_of_copies',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _codePageMeta = const VerificationMeta(
-    'codePage',
-  );
-  @override
-  late final GeneratedColumn<int> codePage = GeneratedColumn<int>(
-    'code_page',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _characterSetMeta = const VerificationMeta(
-    'characterSet',
-  );
-  @override
-  late final GeneratedColumn<int> characterSet = GeneratedColumn<int>(
-    'character_set',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _marginMeta = const VerificationMeta('margin');
-  @override
-  late final GeneratedColumn<int> margin = GeneratedColumn<int>(
-    'margin',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _leftMarginMeta = const VerificationMeta(
-    'leftMargin',
-  );
-  @override
-  late final GeneratedColumn<double> leftMargin = GeneratedColumn<double>(
-    'left_margin',
-    aliasedName,
-    false,
-    type: DriftSqlType.double,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _topMarginMeta = const VerificationMeta(
-    'topMargin',
-  );
-  @override
-  late final GeneratedColumn<double> topMargin = GeneratedColumn<double>(
-    'top_margin',
-    aliasedName,
-    false,
-    type: DriftSqlType.double,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _rightMarginMeta = const VerificationMeta(
-    'rightMargin',
-  );
-  @override
-  late final GeneratedColumn<double> rightMargin = GeneratedColumn<double>(
-    'right_margin',
-    aliasedName,
-    false,
-    type: DriftSqlType.double,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _bottomMarginMeta = const VerificationMeta(
-    'bottomMargin',
-  );
-  @override
-  late final GeneratedColumn<double> bottomMargin = GeneratedColumn<double>(
-    'bottom_margin',
-    aliasedName,
-    false,
-    type: DriftSqlType.double,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _printBarcodeMeta = const VerificationMeta(
-    'printBarcode',
-  );
-  @override
-  late final GeneratedColumn<bool> printBarcode = GeneratedColumn<bool>(
-    'print_barcode',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("print_barcode" IN (0, 1))',
-    ),
-  );
-  static const VerificationMeta _fontNameMeta = const VerificationMeta(
-    'fontName',
-  );
-  @override
-  late final GeneratedColumn<String> fontName = GeneratedColumn<String>(
-    'font_name',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _fontSizePercentMeta = const VerificationMeta(
-    'fontSizePercent',
-  );
-  @override
-  late final GeneratedColumn<double> fontSizePercent = GeneratedColumn<double>(
-    'font_size_percent',
-    aliasedName,
-    false,
-    type: DriftSqlType.double,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _printLogoFullWidthMeta =
-      const VerificationMeta('printLogoFullWidth');
-  @override
-  late final GeneratedColumn<bool> printLogoFullWidth = GeneratedColumn<bool>(
-    'print_logo_full_width',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("print_logo_full_width" IN (0, 1))',
-    ),
-  );
-  static const VerificationMeta _companyIdMeta = const VerificationMeta(
-    'companyId',
-  );
-  @override
-  late final GeneratedColumn<int> companyId = GeneratedColumn<int>(
-    'company_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-  );
-  @override
-  List<GeneratedColumn> get $columns => [
-    id,
-    serverId,
-    posPrinterSelectionId,
-    paperWidth,
-    header,
-    footer,
-    feedLines,
-    cutPaper,
-    printBitmap,
-    openCashDrawer,
-    cashDrawerCommand,
-    headerAlignment,
-    footerAlignment,
-    isFormattingEnabled,
-    printerType,
-    numberOfCopies,
-    codePage,
-    characterSet,
-    margin,
-    leftMargin,
-    topMargin,
-    rightMargin,
-    bottomMargin,
-    printBarcode,
-    fontName,
-    fontSizePercent,
-    printLogoFullWidth,
-    companyId,
-  ];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'pos_printer_selection_settings';
-  @override
-  VerificationContext validateIntegrity(
-    Insertable<PosPrinterSelectionSettingsTableData> instance, {
-    bool isInserting = false,
-  }) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    }
-    if (data.containsKey('server_id')) {
-      context.handle(
-        _serverIdMeta,
-        serverId.isAcceptableOrUnknown(data['server_id']!, _serverIdMeta),
-      );
-    }
-    if (data.containsKey('pos_printer_selection_id')) {
-      context.handle(
-        _posPrinterSelectionIdMeta,
-        posPrinterSelectionId.isAcceptableOrUnknown(
-          data['pos_printer_selection_id']!,
-          _posPrinterSelectionIdMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_posPrinterSelectionIdMeta);
-    }
-    if (data.containsKey('paper_width')) {
-      context.handle(
-        _paperWidthMeta,
-        paperWidth.isAcceptableOrUnknown(data['paper_width']!, _paperWidthMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_paperWidthMeta);
-    }
-    if (data.containsKey('header')) {
-      context.handle(
-        _headerMeta,
-        header.isAcceptableOrUnknown(data['header']!, _headerMeta),
-      );
-    }
-    if (data.containsKey('footer')) {
-      context.handle(
-        _footerMeta,
-        footer.isAcceptableOrUnknown(data['footer']!, _footerMeta),
-      );
-    }
-    if (data.containsKey('feed_lines')) {
-      context.handle(
-        _feedLinesMeta,
-        feedLines.isAcceptableOrUnknown(data['feed_lines']!, _feedLinesMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_feedLinesMeta);
-    }
-    if (data.containsKey('cut_paper')) {
-      context.handle(
-        _cutPaperMeta,
-        cutPaper.isAcceptableOrUnknown(data['cut_paper']!, _cutPaperMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_cutPaperMeta);
-    }
-    if (data.containsKey('print_bitmap')) {
-      context.handle(
-        _printBitmapMeta,
-        printBitmap.isAcceptableOrUnknown(
-          data['print_bitmap']!,
-          _printBitmapMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_printBitmapMeta);
-    }
-    if (data.containsKey('open_cash_drawer')) {
-      context.handle(
-        _openCashDrawerMeta,
-        openCashDrawer.isAcceptableOrUnknown(
-          data['open_cash_drawer']!,
-          _openCashDrawerMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_openCashDrawerMeta);
-    }
-    if (data.containsKey('cash_drawer_command')) {
-      context.handle(
-        _cashDrawerCommandMeta,
-        cashDrawerCommand.isAcceptableOrUnknown(
-          data['cash_drawer_command']!,
-          _cashDrawerCommandMeta,
-        ),
-      );
-    }
-    if (data.containsKey('header_alignment')) {
-      context.handle(
-        _headerAlignmentMeta,
-        headerAlignment.isAcceptableOrUnknown(
-          data['header_alignment']!,
-          _headerAlignmentMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_headerAlignmentMeta);
-    }
-    if (data.containsKey('footer_alignment')) {
-      context.handle(
-        _footerAlignmentMeta,
-        footerAlignment.isAcceptableOrUnknown(
-          data['footer_alignment']!,
-          _footerAlignmentMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_footerAlignmentMeta);
-    }
-    if (data.containsKey('is_formatting_enabled')) {
-      context.handle(
-        _isFormattingEnabledMeta,
-        isFormattingEnabled.isAcceptableOrUnknown(
-          data['is_formatting_enabled']!,
-          _isFormattingEnabledMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_isFormattingEnabledMeta);
-    }
-    if (data.containsKey('printer_type')) {
-      context.handle(
-        _printerTypeMeta,
-        printerType.isAcceptableOrUnknown(
-          data['printer_type']!,
-          _printerTypeMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_printerTypeMeta);
-    }
-    if (data.containsKey('number_of_copies')) {
-      context.handle(
-        _numberOfCopiesMeta,
-        numberOfCopies.isAcceptableOrUnknown(
-          data['number_of_copies']!,
-          _numberOfCopiesMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_numberOfCopiesMeta);
-    }
-    if (data.containsKey('code_page')) {
-      context.handle(
-        _codePageMeta,
-        codePage.isAcceptableOrUnknown(data['code_page']!, _codePageMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_codePageMeta);
-    }
-    if (data.containsKey('character_set')) {
-      context.handle(
-        _characterSetMeta,
-        characterSet.isAcceptableOrUnknown(
-          data['character_set']!,
-          _characterSetMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_characterSetMeta);
-    }
-    if (data.containsKey('margin')) {
-      context.handle(
-        _marginMeta,
-        margin.isAcceptableOrUnknown(data['margin']!, _marginMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_marginMeta);
-    }
-    if (data.containsKey('left_margin')) {
-      context.handle(
-        _leftMarginMeta,
-        leftMargin.isAcceptableOrUnknown(data['left_margin']!, _leftMarginMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_leftMarginMeta);
-    }
-    if (data.containsKey('top_margin')) {
-      context.handle(
-        _topMarginMeta,
-        topMargin.isAcceptableOrUnknown(data['top_margin']!, _topMarginMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_topMarginMeta);
-    }
-    if (data.containsKey('right_margin')) {
-      context.handle(
-        _rightMarginMeta,
-        rightMargin.isAcceptableOrUnknown(
-          data['right_margin']!,
-          _rightMarginMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_rightMarginMeta);
-    }
-    if (data.containsKey('bottom_margin')) {
-      context.handle(
-        _bottomMarginMeta,
-        bottomMargin.isAcceptableOrUnknown(
-          data['bottom_margin']!,
-          _bottomMarginMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_bottomMarginMeta);
-    }
-    if (data.containsKey('print_barcode')) {
-      context.handle(
-        _printBarcodeMeta,
-        printBarcode.isAcceptableOrUnknown(
-          data['print_barcode']!,
-          _printBarcodeMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_printBarcodeMeta);
-    }
-    if (data.containsKey('font_name')) {
-      context.handle(
-        _fontNameMeta,
-        fontName.isAcceptableOrUnknown(data['font_name']!, _fontNameMeta),
-      );
-    }
-    if (data.containsKey('font_size_percent')) {
-      context.handle(
-        _fontSizePercentMeta,
-        fontSizePercent.isAcceptableOrUnknown(
-          data['font_size_percent']!,
-          _fontSizePercentMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_fontSizePercentMeta);
-    }
-    if (data.containsKey('print_logo_full_width')) {
-      context.handle(
-        _printLogoFullWidthMeta,
-        printLogoFullWidth.isAcceptableOrUnknown(
-          data['print_logo_full_width']!,
-          _printLogoFullWidthMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_printLogoFullWidthMeta);
-    }
-    if (data.containsKey('company_id')) {
-      context.handle(
-        _companyIdMeta,
-        companyId.isAcceptableOrUnknown(data['company_id']!, _companyIdMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_companyIdMeta);
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => {id};
-  @override
-  PosPrinterSelectionSettingsTableData map(
-    Map<String, dynamic> data, {
-    String? tablePrefix,
-  }) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return PosPrinterSelectionSettingsTableData(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}id'],
-      )!,
-      serverId: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}server_id'],
-      ),
-      posPrinterSelectionId: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}pos_printer_selection_id'],
-      )!,
-      paperWidth: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}paper_width'],
-      )!,
-      header: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}header'],
-      ),
-      footer: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}footer'],
-      ),
-      feedLines: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}feed_lines'],
-      )!,
-      cutPaper: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}cut_paper'],
-      )!,
-      printBitmap: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}print_bitmap'],
-      )!,
-      openCashDrawer: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}open_cash_drawer'],
-      )!,
-      cashDrawerCommand: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}cash_drawer_command'],
-      ),
-      headerAlignment: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}header_alignment'],
-      )!,
-      footerAlignment: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}footer_alignment'],
-      )!,
-      isFormattingEnabled: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_formatting_enabled'],
-      )!,
-      printerType: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}printer_type'],
-      )!,
-      numberOfCopies: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}number_of_copies'],
-      )!,
-      codePage: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}code_page'],
-      )!,
-      characterSet: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}character_set'],
-      )!,
-      margin: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}margin'],
-      )!,
-      leftMargin: attachedDatabase.typeMapping.read(
-        DriftSqlType.double,
-        data['${effectivePrefix}left_margin'],
-      )!,
-      topMargin: attachedDatabase.typeMapping.read(
-        DriftSqlType.double,
-        data['${effectivePrefix}top_margin'],
-      )!,
-      rightMargin: attachedDatabase.typeMapping.read(
-        DriftSqlType.double,
-        data['${effectivePrefix}right_margin'],
-      )!,
-      bottomMargin: attachedDatabase.typeMapping.read(
-        DriftSqlType.double,
-        data['${effectivePrefix}bottom_margin'],
-      )!,
-      printBarcode: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}print_barcode'],
-      )!,
-      fontName: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}font_name'],
-      ),
-      fontSizePercent: attachedDatabase.typeMapping.read(
-        DriftSqlType.double,
-        data['${effectivePrefix}font_size_percent'],
-      )!,
-      printLogoFullWidth: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}print_logo_full_width'],
-      )!,
-      companyId: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}company_id'],
-      )!,
-    );
-  }
-
-  @override
-  $PosPrinterSelectionSettingsTableTable createAlias(String alias) {
-    return $PosPrinterSelectionSettingsTableTable(attachedDatabase, alias);
-  }
-}
-
-class PosPrinterSelectionSettingsTableData extends DataClass
-    implements Insertable<PosPrinterSelectionSettingsTableData> {
-  final int id;
-  final int? serverId;
-  final int posPrinterSelectionId;
-  final int paperWidth;
-  final String? header;
-  final String? footer;
-  final int feedLines;
-  final bool cutPaper;
-  final bool printBitmap;
-  final bool openCashDrawer;
-  final String? cashDrawerCommand;
-  final int headerAlignment;
-  final int footerAlignment;
-  final bool isFormattingEnabled;
-  final int printerType;
-  final int numberOfCopies;
-  final int codePage;
-  final int characterSet;
-  final int margin;
-  final double leftMargin;
-  final double topMargin;
-  final double rightMargin;
-  final double bottomMargin;
-  final bool printBarcode;
-  final String? fontName;
-  final double fontSizePercent;
-  final bool printLogoFullWidth;
-  final int companyId;
-  const PosPrinterSelectionSettingsTableData({
-    required this.id,
-    this.serverId,
-    required this.posPrinterSelectionId,
-    required this.paperWidth,
-    this.header,
-    this.footer,
-    required this.feedLines,
-    required this.cutPaper,
-    required this.printBitmap,
-    required this.openCashDrawer,
-    this.cashDrawerCommand,
-    required this.headerAlignment,
-    required this.footerAlignment,
-    required this.isFormattingEnabled,
-    required this.printerType,
-    required this.numberOfCopies,
-    required this.codePage,
-    required this.characterSet,
-    required this.margin,
-    required this.leftMargin,
-    required this.topMargin,
-    required this.rightMargin,
-    required this.bottomMargin,
-    required this.printBarcode,
-    this.fontName,
-    required this.fontSizePercent,
-    required this.printLogoFullWidth,
-    required this.companyId,
-  });
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<int>(id);
-    if (!nullToAbsent || serverId != null) {
-      map['server_id'] = Variable<int>(serverId);
-    }
-    map['pos_printer_selection_id'] = Variable<int>(posPrinterSelectionId);
-    map['paper_width'] = Variable<int>(paperWidth);
-    if (!nullToAbsent || header != null) {
-      map['header'] = Variable<String>(header);
-    }
-    if (!nullToAbsent || footer != null) {
-      map['footer'] = Variable<String>(footer);
-    }
-    map['feed_lines'] = Variable<int>(feedLines);
-    map['cut_paper'] = Variable<bool>(cutPaper);
-    map['print_bitmap'] = Variable<bool>(printBitmap);
-    map['open_cash_drawer'] = Variable<bool>(openCashDrawer);
-    if (!nullToAbsent || cashDrawerCommand != null) {
-      map['cash_drawer_command'] = Variable<String>(cashDrawerCommand);
-    }
-    map['header_alignment'] = Variable<int>(headerAlignment);
-    map['footer_alignment'] = Variable<int>(footerAlignment);
-    map['is_formatting_enabled'] = Variable<bool>(isFormattingEnabled);
-    map['printer_type'] = Variable<int>(printerType);
-    map['number_of_copies'] = Variable<int>(numberOfCopies);
-    map['code_page'] = Variable<int>(codePage);
-    map['character_set'] = Variable<int>(characterSet);
-    map['margin'] = Variable<int>(margin);
-    map['left_margin'] = Variable<double>(leftMargin);
-    map['top_margin'] = Variable<double>(topMargin);
-    map['right_margin'] = Variable<double>(rightMargin);
-    map['bottom_margin'] = Variable<double>(bottomMargin);
-    map['print_barcode'] = Variable<bool>(printBarcode);
-    if (!nullToAbsent || fontName != null) {
-      map['font_name'] = Variable<String>(fontName);
-    }
-    map['font_size_percent'] = Variable<double>(fontSizePercent);
-    map['print_logo_full_width'] = Variable<bool>(printLogoFullWidth);
-    map['company_id'] = Variable<int>(companyId);
-    return map;
-  }
-
-  PosPrinterSelectionSettingsTableCompanion toCompanion(bool nullToAbsent) {
-    return PosPrinterSelectionSettingsTableCompanion(
-      id: Value(id),
-      serverId: serverId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(serverId),
-      posPrinterSelectionId: Value(posPrinterSelectionId),
-      paperWidth: Value(paperWidth),
-      header: header == null && nullToAbsent
-          ? const Value.absent()
-          : Value(header),
-      footer: footer == null && nullToAbsent
-          ? const Value.absent()
-          : Value(footer),
-      feedLines: Value(feedLines),
-      cutPaper: Value(cutPaper),
-      printBitmap: Value(printBitmap),
-      openCashDrawer: Value(openCashDrawer),
-      cashDrawerCommand: cashDrawerCommand == null && nullToAbsent
-          ? const Value.absent()
-          : Value(cashDrawerCommand),
-      headerAlignment: Value(headerAlignment),
-      footerAlignment: Value(footerAlignment),
-      isFormattingEnabled: Value(isFormattingEnabled),
-      printerType: Value(printerType),
-      numberOfCopies: Value(numberOfCopies),
-      codePage: Value(codePage),
-      characterSet: Value(characterSet),
-      margin: Value(margin),
-      leftMargin: Value(leftMargin),
-      topMargin: Value(topMargin),
-      rightMargin: Value(rightMargin),
-      bottomMargin: Value(bottomMargin),
-      printBarcode: Value(printBarcode),
-      fontName: fontName == null && nullToAbsent
-          ? const Value.absent()
-          : Value(fontName),
-      fontSizePercent: Value(fontSizePercent),
-      printLogoFullWidth: Value(printLogoFullWidth),
-      companyId: Value(companyId),
-    );
-  }
-
-  factory PosPrinterSelectionSettingsTableData.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return PosPrinterSelectionSettingsTableData(
-      id: serializer.fromJson<int>(json['id']),
-      serverId: serializer.fromJson<int?>(json['serverId']),
-      posPrinterSelectionId: serializer.fromJson<int>(
-        json['posPrinterSelectionId'],
-      ),
-      paperWidth: serializer.fromJson<int>(json['paperWidth']),
-      header: serializer.fromJson<String?>(json['header']),
-      footer: serializer.fromJson<String?>(json['footer']),
-      feedLines: serializer.fromJson<int>(json['feedLines']),
-      cutPaper: serializer.fromJson<bool>(json['cutPaper']),
-      printBitmap: serializer.fromJson<bool>(json['printBitmap']),
-      openCashDrawer: serializer.fromJson<bool>(json['openCashDrawer']),
-      cashDrawerCommand: serializer.fromJson<String?>(
-        json['cashDrawerCommand'],
-      ),
-      headerAlignment: serializer.fromJson<int>(json['headerAlignment']),
-      footerAlignment: serializer.fromJson<int>(json['footerAlignment']),
-      isFormattingEnabled: serializer.fromJson<bool>(
-        json['isFormattingEnabled'],
-      ),
-      printerType: serializer.fromJson<int>(json['printerType']),
-      numberOfCopies: serializer.fromJson<int>(json['numberOfCopies']),
-      codePage: serializer.fromJson<int>(json['codePage']),
-      characterSet: serializer.fromJson<int>(json['characterSet']),
-      margin: serializer.fromJson<int>(json['margin']),
-      leftMargin: serializer.fromJson<double>(json['leftMargin']),
-      topMargin: serializer.fromJson<double>(json['topMargin']),
-      rightMargin: serializer.fromJson<double>(json['rightMargin']),
-      bottomMargin: serializer.fromJson<double>(json['bottomMargin']),
-      printBarcode: serializer.fromJson<bool>(json['printBarcode']),
-      fontName: serializer.fromJson<String?>(json['fontName']),
-      fontSizePercent: serializer.fromJson<double>(json['fontSizePercent']),
-      printLogoFullWidth: serializer.fromJson<bool>(json['printLogoFullWidth']),
-      companyId: serializer.fromJson<int>(json['companyId']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<int>(id),
-      'serverId': serializer.toJson<int?>(serverId),
-      'posPrinterSelectionId': serializer.toJson<int>(posPrinterSelectionId),
-      'paperWidth': serializer.toJson<int>(paperWidth),
-      'header': serializer.toJson<String?>(header),
-      'footer': serializer.toJson<String?>(footer),
-      'feedLines': serializer.toJson<int>(feedLines),
-      'cutPaper': serializer.toJson<bool>(cutPaper),
-      'printBitmap': serializer.toJson<bool>(printBitmap),
-      'openCashDrawer': serializer.toJson<bool>(openCashDrawer),
-      'cashDrawerCommand': serializer.toJson<String?>(cashDrawerCommand),
-      'headerAlignment': serializer.toJson<int>(headerAlignment),
-      'footerAlignment': serializer.toJson<int>(footerAlignment),
-      'isFormattingEnabled': serializer.toJson<bool>(isFormattingEnabled),
-      'printerType': serializer.toJson<int>(printerType),
-      'numberOfCopies': serializer.toJson<int>(numberOfCopies),
-      'codePage': serializer.toJson<int>(codePage),
-      'characterSet': serializer.toJson<int>(characterSet),
-      'margin': serializer.toJson<int>(margin),
-      'leftMargin': serializer.toJson<double>(leftMargin),
-      'topMargin': serializer.toJson<double>(topMargin),
-      'rightMargin': serializer.toJson<double>(rightMargin),
-      'bottomMargin': serializer.toJson<double>(bottomMargin),
-      'printBarcode': serializer.toJson<bool>(printBarcode),
-      'fontName': serializer.toJson<String?>(fontName),
-      'fontSizePercent': serializer.toJson<double>(fontSizePercent),
-      'printLogoFullWidth': serializer.toJson<bool>(printLogoFullWidth),
-      'companyId': serializer.toJson<int>(companyId),
-    };
-  }
-
-  PosPrinterSelectionSettingsTableData copyWith({
-    int? id,
-    Value<int?> serverId = const Value.absent(),
-    int? posPrinterSelectionId,
-    int? paperWidth,
-    Value<String?> header = const Value.absent(),
-    Value<String?> footer = const Value.absent(),
-    int? feedLines,
-    bool? cutPaper,
-    bool? printBitmap,
-    bool? openCashDrawer,
-    Value<String?> cashDrawerCommand = const Value.absent(),
-    int? headerAlignment,
-    int? footerAlignment,
-    bool? isFormattingEnabled,
-    int? printerType,
-    int? numberOfCopies,
-    int? codePage,
-    int? characterSet,
-    int? margin,
-    double? leftMargin,
-    double? topMargin,
-    double? rightMargin,
-    double? bottomMargin,
-    bool? printBarcode,
-    Value<String?> fontName = const Value.absent(),
-    double? fontSizePercent,
-    bool? printLogoFullWidth,
-    int? companyId,
-  }) => PosPrinterSelectionSettingsTableData(
-    id: id ?? this.id,
-    serverId: serverId.present ? serverId.value : this.serverId,
-    posPrinterSelectionId: posPrinterSelectionId ?? this.posPrinterSelectionId,
-    paperWidth: paperWidth ?? this.paperWidth,
-    header: header.present ? header.value : this.header,
-    footer: footer.present ? footer.value : this.footer,
-    feedLines: feedLines ?? this.feedLines,
-    cutPaper: cutPaper ?? this.cutPaper,
-    printBitmap: printBitmap ?? this.printBitmap,
-    openCashDrawer: openCashDrawer ?? this.openCashDrawer,
-    cashDrawerCommand: cashDrawerCommand.present
-        ? cashDrawerCommand.value
-        : this.cashDrawerCommand,
-    headerAlignment: headerAlignment ?? this.headerAlignment,
-    footerAlignment: footerAlignment ?? this.footerAlignment,
-    isFormattingEnabled: isFormattingEnabled ?? this.isFormattingEnabled,
-    printerType: printerType ?? this.printerType,
-    numberOfCopies: numberOfCopies ?? this.numberOfCopies,
-    codePage: codePage ?? this.codePage,
-    characterSet: characterSet ?? this.characterSet,
-    margin: margin ?? this.margin,
-    leftMargin: leftMargin ?? this.leftMargin,
-    topMargin: topMargin ?? this.topMargin,
-    rightMargin: rightMargin ?? this.rightMargin,
-    bottomMargin: bottomMargin ?? this.bottomMargin,
-    printBarcode: printBarcode ?? this.printBarcode,
-    fontName: fontName.present ? fontName.value : this.fontName,
-    fontSizePercent: fontSizePercent ?? this.fontSizePercent,
-    printLogoFullWidth: printLogoFullWidth ?? this.printLogoFullWidth,
-    companyId: companyId ?? this.companyId,
-  );
-  PosPrinterSelectionSettingsTableData copyWithCompanion(
-    PosPrinterSelectionSettingsTableCompanion data,
-  ) {
-    return PosPrinterSelectionSettingsTableData(
-      id: data.id.present ? data.id.value : this.id,
-      serverId: data.serverId.present ? data.serverId.value : this.serverId,
-      posPrinterSelectionId: data.posPrinterSelectionId.present
-          ? data.posPrinterSelectionId.value
-          : this.posPrinterSelectionId,
-      paperWidth: data.paperWidth.present
-          ? data.paperWidth.value
-          : this.paperWidth,
-      header: data.header.present ? data.header.value : this.header,
-      footer: data.footer.present ? data.footer.value : this.footer,
-      feedLines: data.feedLines.present ? data.feedLines.value : this.feedLines,
-      cutPaper: data.cutPaper.present ? data.cutPaper.value : this.cutPaper,
-      printBitmap: data.printBitmap.present
-          ? data.printBitmap.value
-          : this.printBitmap,
-      openCashDrawer: data.openCashDrawer.present
-          ? data.openCashDrawer.value
-          : this.openCashDrawer,
-      cashDrawerCommand: data.cashDrawerCommand.present
-          ? data.cashDrawerCommand.value
-          : this.cashDrawerCommand,
-      headerAlignment: data.headerAlignment.present
-          ? data.headerAlignment.value
-          : this.headerAlignment,
-      footerAlignment: data.footerAlignment.present
-          ? data.footerAlignment.value
-          : this.footerAlignment,
-      isFormattingEnabled: data.isFormattingEnabled.present
-          ? data.isFormattingEnabled.value
-          : this.isFormattingEnabled,
-      printerType: data.printerType.present
-          ? data.printerType.value
-          : this.printerType,
-      numberOfCopies: data.numberOfCopies.present
-          ? data.numberOfCopies.value
-          : this.numberOfCopies,
-      codePage: data.codePage.present ? data.codePage.value : this.codePage,
-      characterSet: data.characterSet.present
-          ? data.characterSet.value
-          : this.characterSet,
-      margin: data.margin.present ? data.margin.value : this.margin,
-      leftMargin: data.leftMargin.present
-          ? data.leftMargin.value
-          : this.leftMargin,
-      topMargin: data.topMargin.present ? data.topMargin.value : this.topMargin,
-      rightMargin: data.rightMargin.present
-          ? data.rightMargin.value
-          : this.rightMargin,
-      bottomMargin: data.bottomMargin.present
-          ? data.bottomMargin.value
-          : this.bottomMargin,
-      printBarcode: data.printBarcode.present
-          ? data.printBarcode.value
-          : this.printBarcode,
-      fontName: data.fontName.present ? data.fontName.value : this.fontName,
-      fontSizePercent: data.fontSizePercent.present
-          ? data.fontSizePercent.value
-          : this.fontSizePercent,
-      printLogoFullWidth: data.printLogoFullWidth.present
-          ? data.printLogoFullWidth.value
-          : this.printLogoFullWidth,
-      companyId: data.companyId.present ? data.companyId.value : this.companyId,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('PosPrinterSelectionSettingsTableData(')
-          ..write('id: $id, ')
-          ..write('serverId: $serverId, ')
-          ..write('posPrinterSelectionId: $posPrinterSelectionId, ')
-          ..write('paperWidth: $paperWidth, ')
-          ..write('header: $header, ')
-          ..write('footer: $footer, ')
-          ..write('feedLines: $feedLines, ')
-          ..write('cutPaper: $cutPaper, ')
-          ..write('printBitmap: $printBitmap, ')
-          ..write('openCashDrawer: $openCashDrawer, ')
-          ..write('cashDrawerCommand: $cashDrawerCommand, ')
-          ..write('headerAlignment: $headerAlignment, ')
-          ..write('footerAlignment: $footerAlignment, ')
-          ..write('isFormattingEnabled: $isFormattingEnabled, ')
-          ..write('printerType: $printerType, ')
-          ..write('numberOfCopies: $numberOfCopies, ')
-          ..write('codePage: $codePage, ')
-          ..write('characterSet: $characterSet, ')
-          ..write('margin: $margin, ')
-          ..write('leftMargin: $leftMargin, ')
-          ..write('topMargin: $topMargin, ')
-          ..write('rightMargin: $rightMargin, ')
-          ..write('bottomMargin: $bottomMargin, ')
-          ..write('printBarcode: $printBarcode, ')
-          ..write('fontName: $fontName, ')
-          ..write('fontSizePercent: $fontSizePercent, ')
-          ..write('printLogoFullWidth: $printLogoFullWidth, ')
-          ..write('companyId: $companyId')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode => Object.hashAll([
-    id,
-    serverId,
-    posPrinterSelectionId,
-    paperWidth,
-    header,
-    footer,
-    feedLines,
-    cutPaper,
-    printBitmap,
-    openCashDrawer,
-    cashDrawerCommand,
-    headerAlignment,
-    footerAlignment,
-    isFormattingEnabled,
-    printerType,
-    numberOfCopies,
-    codePage,
-    characterSet,
-    margin,
-    leftMargin,
-    topMargin,
-    rightMargin,
-    bottomMargin,
-    printBarcode,
-    fontName,
-    fontSizePercent,
-    printLogoFullWidth,
-    companyId,
-  ]);
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is PosPrinterSelectionSettingsTableData &&
-          other.id == this.id &&
-          other.serverId == this.serverId &&
-          other.posPrinterSelectionId == this.posPrinterSelectionId &&
-          other.paperWidth == this.paperWidth &&
-          other.header == this.header &&
-          other.footer == this.footer &&
-          other.feedLines == this.feedLines &&
-          other.cutPaper == this.cutPaper &&
-          other.printBitmap == this.printBitmap &&
-          other.openCashDrawer == this.openCashDrawer &&
-          other.cashDrawerCommand == this.cashDrawerCommand &&
-          other.headerAlignment == this.headerAlignment &&
-          other.footerAlignment == this.footerAlignment &&
-          other.isFormattingEnabled == this.isFormattingEnabled &&
-          other.printerType == this.printerType &&
-          other.numberOfCopies == this.numberOfCopies &&
-          other.codePage == this.codePage &&
-          other.characterSet == this.characterSet &&
-          other.margin == this.margin &&
-          other.leftMargin == this.leftMargin &&
-          other.topMargin == this.topMargin &&
-          other.rightMargin == this.rightMargin &&
-          other.bottomMargin == this.bottomMargin &&
-          other.printBarcode == this.printBarcode &&
-          other.fontName == this.fontName &&
-          other.fontSizePercent == this.fontSizePercent &&
-          other.printLogoFullWidth == this.printLogoFullWidth &&
-          other.companyId == this.companyId);
-}
-
-class PosPrinterSelectionSettingsTableCompanion
-    extends UpdateCompanion<PosPrinterSelectionSettingsTableData> {
-  final Value<int> id;
-  final Value<int?> serverId;
-  final Value<int> posPrinterSelectionId;
-  final Value<int> paperWidth;
-  final Value<String?> header;
-  final Value<String?> footer;
-  final Value<int> feedLines;
-  final Value<bool> cutPaper;
-  final Value<bool> printBitmap;
-  final Value<bool> openCashDrawer;
-  final Value<String?> cashDrawerCommand;
-  final Value<int> headerAlignment;
-  final Value<int> footerAlignment;
-  final Value<bool> isFormattingEnabled;
-  final Value<int> printerType;
-  final Value<int> numberOfCopies;
-  final Value<int> codePage;
-  final Value<int> characterSet;
-  final Value<int> margin;
-  final Value<double> leftMargin;
-  final Value<double> topMargin;
-  final Value<double> rightMargin;
-  final Value<double> bottomMargin;
-  final Value<bool> printBarcode;
-  final Value<String?> fontName;
-  final Value<double> fontSizePercent;
-  final Value<bool> printLogoFullWidth;
-  final Value<int> companyId;
-  const PosPrinterSelectionSettingsTableCompanion({
-    this.id = const Value.absent(),
-    this.serverId = const Value.absent(),
-    this.posPrinterSelectionId = const Value.absent(),
-    this.paperWidth = const Value.absent(),
-    this.header = const Value.absent(),
-    this.footer = const Value.absent(),
-    this.feedLines = const Value.absent(),
-    this.cutPaper = const Value.absent(),
-    this.printBitmap = const Value.absent(),
-    this.openCashDrawer = const Value.absent(),
-    this.cashDrawerCommand = const Value.absent(),
-    this.headerAlignment = const Value.absent(),
-    this.footerAlignment = const Value.absent(),
-    this.isFormattingEnabled = const Value.absent(),
-    this.printerType = const Value.absent(),
-    this.numberOfCopies = const Value.absent(),
-    this.codePage = const Value.absent(),
-    this.characterSet = const Value.absent(),
-    this.margin = const Value.absent(),
-    this.leftMargin = const Value.absent(),
-    this.topMargin = const Value.absent(),
-    this.rightMargin = const Value.absent(),
-    this.bottomMargin = const Value.absent(),
-    this.printBarcode = const Value.absent(),
-    this.fontName = const Value.absent(),
-    this.fontSizePercent = const Value.absent(),
-    this.printLogoFullWidth = const Value.absent(),
-    this.companyId = const Value.absent(),
-  });
-  PosPrinterSelectionSettingsTableCompanion.insert({
-    this.id = const Value.absent(),
-    this.serverId = const Value.absent(),
-    required int posPrinterSelectionId,
-    required int paperWidth,
-    this.header = const Value.absent(),
-    this.footer = const Value.absent(),
-    required int feedLines,
-    required bool cutPaper,
-    required bool printBitmap,
-    required bool openCashDrawer,
-    this.cashDrawerCommand = const Value.absent(),
-    required int headerAlignment,
-    required int footerAlignment,
-    required bool isFormattingEnabled,
-    required int printerType,
-    required int numberOfCopies,
-    required int codePage,
-    required int characterSet,
-    required int margin,
-    required double leftMargin,
-    required double topMargin,
-    required double rightMargin,
-    required double bottomMargin,
-    required bool printBarcode,
-    this.fontName = const Value.absent(),
-    required double fontSizePercent,
-    required bool printLogoFullWidth,
-    required int companyId,
-  }) : posPrinterSelectionId = Value(posPrinterSelectionId),
-       paperWidth = Value(paperWidth),
-       feedLines = Value(feedLines),
-       cutPaper = Value(cutPaper),
-       printBitmap = Value(printBitmap),
-       openCashDrawer = Value(openCashDrawer),
-       headerAlignment = Value(headerAlignment),
-       footerAlignment = Value(footerAlignment),
-       isFormattingEnabled = Value(isFormattingEnabled),
-       printerType = Value(printerType),
-       numberOfCopies = Value(numberOfCopies),
-       codePage = Value(codePage),
-       characterSet = Value(characterSet),
-       margin = Value(margin),
-       leftMargin = Value(leftMargin),
-       topMargin = Value(topMargin),
-       rightMargin = Value(rightMargin),
-       bottomMargin = Value(bottomMargin),
-       printBarcode = Value(printBarcode),
-       fontSizePercent = Value(fontSizePercent),
-       printLogoFullWidth = Value(printLogoFullWidth),
-       companyId = Value(companyId);
-  static Insertable<PosPrinterSelectionSettingsTableData> custom({
-    Expression<int>? id,
-    Expression<int>? serverId,
-    Expression<int>? posPrinterSelectionId,
-    Expression<int>? paperWidth,
-    Expression<String>? header,
-    Expression<String>? footer,
-    Expression<int>? feedLines,
-    Expression<bool>? cutPaper,
-    Expression<bool>? printBitmap,
-    Expression<bool>? openCashDrawer,
-    Expression<String>? cashDrawerCommand,
-    Expression<int>? headerAlignment,
-    Expression<int>? footerAlignment,
-    Expression<bool>? isFormattingEnabled,
-    Expression<int>? printerType,
-    Expression<int>? numberOfCopies,
-    Expression<int>? codePage,
-    Expression<int>? characterSet,
-    Expression<int>? margin,
-    Expression<double>? leftMargin,
-    Expression<double>? topMargin,
-    Expression<double>? rightMargin,
-    Expression<double>? bottomMargin,
-    Expression<bool>? printBarcode,
-    Expression<String>? fontName,
-    Expression<double>? fontSizePercent,
-    Expression<bool>? printLogoFullWidth,
-    Expression<int>? companyId,
-  }) {
-    return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (serverId != null) 'server_id': serverId,
-      if (posPrinterSelectionId != null)
-        'pos_printer_selection_id': posPrinterSelectionId,
-      if (paperWidth != null) 'paper_width': paperWidth,
-      if (header != null) 'header': header,
-      if (footer != null) 'footer': footer,
-      if (feedLines != null) 'feed_lines': feedLines,
-      if (cutPaper != null) 'cut_paper': cutPaper,
-      if (printBitmap != null) 'print_bitmap': printBitmap,
-      if (openCashDrawer != null) 'open_cash_drawer': openCashDrawer,
-      if (cashDrawerCommand != null) 'cash_drawer_command': cashDrawerCommand,
-      if (headerAlignment != null) 'header_alignment': headerAlignment,
-      if (footerAlignment != null) 'footer_alignment': footerAlignment,
-      if (isFormattingEnabled != null)
-        'is_formatting_enabled': isFormattingEnabled,
-      if (printerType != null) 'printer_type': printerType,
-      if (numberOfCopies != null) 'number_of_copies': numberOfCopies,
-      if (codePage != null) 'code_page': codePage,
-      if (characterSet != null) 'character_set': characterSet,
-      if (margin != null) 'margin': margin,
-      if (leftMargin != null) 'left_margin': leftMargin,
-      if (topMargin != null) 'top_margin': topMargin,
-      if (rightMargin != null) 'right_margin': rightMargin,
-      if (bottomMargin != null) 'bottom_margin': bottomMargin,
-      if (printBarcode != null) 'print_barcode': printBarcode,
-      if (fontName != null) 'font_name': fontName,
-      if (fontSizePercent != null) 'font_size_percent': fontSizePercent,
-      if (printLogoFullWidth != null)
-        'print_logo_full_width': printLogoFullWidth,
-      if (companyId != null) 'company_id': companyId,
-    });
-  }
-
-  PosPrinterSelectionSettingsTableCompanion copyWith({
-    Value<int>? id,
-    Value<int?>? serverId,
-    Value<int>? posPrinterSelectionId,
-    Value<int>? paperWidth,
-    Value<String?>? header,
-    Value<String?>? footer,
-    Value<int>? feedLines,
-    Value<bool>? cutPaper,
-    Value<bool>? printBitmap,
-    Value<bool>? openCashDrawer,
-    Value<String?>? cashDrawerCommand,
-    Value<int>? headerAlignment,
-    Value<int>? footerAlignment,
-    Value<bool>? isFormattingEnabled,
-    Value<int>? printerType,
-    Value<int>? numberOfCopies,
-    Value<int>? codePage,
-    Value<int>? characterSet,
-    Value<int>? margin,
-    Value<double>? leftMargin,
-    Value<double>? topMargin,
-    Value<double>? rightMargin,
-    Value<double>? bottomMargin,
-    Value<bool>? printBarcode,
-    Value<String?>? fontName,
-    Value<double>? fontSizePercent,
-    Value<bool>? printLogoFullWidth,
-    Value<int>? companyId,
-  }) {
-    return PosPrinterSelectionSettingsTableCompanion(
-      id: id ?? this.id,
-      serverId: serverId ?? this.serverId,
-      posPrinterSelectionId:
-          posPrinterSelectionId ?? this.posPrinterSelectionId,
-      paperWidth: paperWidth ?? this.paperWidth,
-      header: header ?? this.header,
-      footer: footer ?? this.footer,
-      feedLines: feedLines ?? this.feedLines,
-      cutPaper: cutPaper ?? this.cutPaper,
-      printBitmap: printBitmap ?? this.printBitmap,
-      openCashDrawer: openCashDrawer ?? this.openCashDrawer,
-      cashDrawerCommand: cashDrawerCommand ?? this.cashDrawerCommand,
-      headerAlignment: headerAlignment ?? this.headerAlignment,
-      footerAlignment: footerAlignment ?? this.footerAlignment,
-      isFormattingEnabled: isFormattingEnabled ?? this.isFormattingEnabled,
-      printerType: printerType ?? this.printerType,
-      numberOfCopies: numberOfCopies ?? this.numberOfCopies,
-      codePage: codePage ?? this.codePage,
-      characterSet: characterSet ?? this.characterSet,
-      margin: margin ?? this.margin,
-      leftMargin: leftMargin ?? this.leftMargin,
-      topMargin: topMargin ?? this.topMargin,
-      rightMargin: rightMargin ?? this.rightMargin,
-      bottomMargin: bottomMargin ?? this.bottomMargin,
-      printBarcode: printBarcode ?? this.printBarcode,
-      fontName: fontName ?? this.fontName,
-      fontSizePercent: fontSizePercent ?? this.fontSizePercent,
-      printLogoFullWidth: printLogoFullWidth ?? this.printLogoFullWidth,
-      companyId: companyId ?? this.companyId,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<int>(id.value);
-    }
-    if (serverId.present) {
-      map['server_id'] = Variable<int>(serverId.value);
-    }
-    if (posPrinterSelectionId.present) {
-      map['pos_printer_selection_id'] = Variable<int>(
-        posPrinterSelectionId.value,
-      );
-    }
-    if (paperWidth.present) {
-      map['paper_width'] = Variable<int>(paperWidth.value);
-    }
-    if (header.present) {
-      map['header'] = Variable<String>(header.value);
-    }
-    if (footer.present) {
-      map['footer'] = Variable<String>(footer.value);
-    }
-    if (feedLines.present) {
-      map['feed_lines'] = Variable<int>(feedLines.value);
-    }
-    if (cutPaper.present) {
-      map['cut_paper'] = Variable<bool>(cutPaper.value);
-    }
-    if (printBitmap.present) {
-      map['print_bitmap'] = Variable<bool>(printBitmap.value);
-    }
-    if (openCashDrawer.present) {
-      map['open_cash_drawer'] = Variable<bool>(openCashDrawer.value);
-    }
-    if (cashDrawerCommand.present) {
-      map['cash_drawer_command'] = Variable<String>(cashDrawerCommand.value);
-    }
-    if (headerAlignment.present) {
-      map['header_alignment'] = Variable<int>(headerAlignment.value);
-    }
-    if (footerAlignment.present) {
-      map['footer_alignment'] = Variable<int>(footerAlignment.value);
-    }
-    if (isFormattingEnabled.present) {
-      map['is_formatting_enabled'] = Variable<bool>(isFormattingEnabled.value);
-    }
-    if (printerType.present) {
-      map['printer_type'] = Variable<int>(printerType.value);
-    }
-    if (numberOfCopies.present) {
-      map['number_of_copies'] = Variable<int>(numberOfCopies.value);
-    }
-    if (codePage.present) {
-      map['code_page'] = Variable<int>(codePage.value);
-    }
-    if (characterSet.present) {
-      map['character_set'] = Variable<int>(characterSet.value);
-    }
-    if (margin.present) {
-      map['margin'] = Variable<int>(margin.value);
-    }
-    if (leftMargin.present) {
-      map['left_margin'] = Variable<double>(leftMargin.value);
-    }
-    if (topMargin.present) {
-      map['top_margin'] = Variable<double>(topMargin.value);
-    }
-    if (rightMargin.present) {
-      map['right_margin'] = Variable<double>(rightMargin.value);
-    }
-    if (bottomMargin.present) {
-      map['bottom_margin'] = Variable<double>(bottomMargin.value);
-    }
-    if (printBarcode.present) {
-      map['print_barcode'] = Variable<bool>(printBarcode.value);
-    }
-    if (fontName.present) {
-      map['font_name'] = Variable<String>(fontName.value);
-    }
-    if (fontSizePercent.present) {
-      map['font_size_percent'] = Variable<double>(fontSizePercent.value);
-    }
-    if (printLogoFullWidth.present) {
-      map['print_logo_full_width'] = Variable<bool>(printLogoFullWidth.value);
-    }
-    if (companyId.present) {
-      map['company_id'] = Variable<int>(companyId.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('PosPrinterSelectionSettingsTableCompanion(')
-          ..write('id: $id, ')
-          ..write('serverId: $serverId, ')
-          ..write('posPrinterSelectionId: $posPrinterSelectionId, ')
-          ..write('paperWidth: $paperWidth, ')
-          ..write('header: $header, ')
-          ..write('footer: $footer, ')
-          ..write('feedLines: $feedLines, ')
-          ..write('cutPaper: $cutPaper, ')
-          ..write('printBitmap: $printBitmap, ')
-          ..write('openCashDrawer: $openCashDrawer, ')
-          ..write('cashDrawerCommand: $cashDrawerCommand, ')
-          ..write('headerAlignment: $headerAlignment, ')
-          ..write('footerAlignment: $footerAlignment, ')
-          ..write('isFormattingEnabled: $isFormattingEnabled, ')
-          ..write('printerType: $printerType, ')
-          ..write('numberOfCopies: $numberOfCopies, ')
-          ..write('codePage: $codePage, ')
-          ..write('characterSet: $characterSet, ')
-          ..write('margin: $margin, ')
-          ..write('leftMargin: $leftMargin, ')
-          ..write('topMargin: $topMargin, ')
-          ..write('rightMargin: $rightMargin, ')
-          ..write('bottomMargin: $bottomMargin, ')
-          ..write('printBarcode: $printBarcode, ')
-          ..write('fontName: $fontName, ')
-          ..write('fontSizePercent: $fontSizePercent, ')
-          ..write('printLogoFullWidth: $printLogoFullWidth, ')
-          ..write('companyId: $companyId')
-          ..write(')'))
-        .toString();
-  }
-}
-
 class $PosPrinterSettingsTableTable extends PosPrinterSettingsTable
     with TableInfo<$PosPrinterSettingsTableTable, PosPrinterSettingsTableData> {
   @override
@@ -10864,6 +8863,29 @@ class $FloorPlanTablesTableTable extends FloorPlanTablesTable
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _syncStatusMeta = const VerificationMeta(
+    'syncStatus',
+  );
+  @override
+  late final GeneratedColumn<String> syncStatus = GeneratedColumn<String>(
+    'sync_status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('synced'),
+  );
+  static const VerificationMeta _syncErrorMeta = const VerificationMeta(
+    'syncError',
+  );
+  @override
+  late final GeneratedColumn<String> syncError = GeneratedColumn<String>(
+    'sync_error',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -10877,6 +8899,8 @@ class $FloorPlanTablesTableTable extends FloorPlanTablesTable
     isRound,
     status,
     lastModified,
+    syncStatus,
+    syncError,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -10975,6 +8999,18 @@ class $FloorPlanTablesTableTable extends FloorPlanTablesTable
     } else if (isInserting) {
       context.missing(_lastModifiedMeta);
     }
+    if (data.containsKey('sync_status')) {
+      context.handle(
+        _syncStatusMeta,
+        syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
+      );
+    }
+    if (data.containsKey('sync_error')) {
+      context.handle(
+        _syncErrorMeta,
+        syncError.isAcceptableOrUnknown(data['sync_error']!, _syncErrorMeta),
+      );
+    }
     return context;
   }
 
@@ -11031,6 +9067,14 @@ class $FloorPlanTablesTableTable extends FloorPlanTablesTable
         DriftSqlType.dateTime,
         data['${effectivePrefix}last_modified'],
       )!,
+      syncStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sync_status'],
+      )!,
+      syncError: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sync_error'],
+      ),
     );
   }
 
@@ -11053,6 +9097,8 @@ class FloorPlanTablesTableData extends DataClass
   final bool isRound;
   final int status;
   final DateTime lastModified;
+  final String syncStatus;
+  final String? syncError;
   const FloorPlanTablesTableData({
     required this.id,
     required this.companyId,
@@ -11065,6 +9111,8 @@ class FloorPlanTablesTableData extends DataClass
     required this.isRound,
     required this.status,
     required this.lastModified,
+    required this.syncStatus,
+    this.syncError,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -11080,6 +9128,10 @@ class FloorPlanTablesTableData extends DataClass
     map['is_round'] = Variable<bool>(isRound);
     map['status'] = Variable<int>(status);
     map['last_modified'] = Variable<DateTime>(lastModified);
+    map['sync_status'] = Variable<String>(syncStatus);
+    if (!nullToAbsent || syncError != null) {
+      map['sync_error'] = Variable<String>(syncError);
+    }
     return map;
   }
 
@@ -11096,6 +9148,10 @@ class FloorPlanTablesTableData extends DataClass
       isRound: Value(isRound),
       status: Value(status),
       lastModified: Value(lastModified),
+      syncStatus: Value(syncStatus),
+      syncError: syncError == null && nullToAbsent
+          ? const Value.absent()
+          : Value(syncError),
     );
   }
 
@@ -11116,6 +9172,8 @@ class FloorPlanTablesTableData extends DataClass
       isRound: serializer.fromJson<bool>(json['isRound']),
       status: serializer.fromJson<int>(json['status']),
       lastModified: serializer.fromJson<DateTime>(json['lastModified']),
+      syncStatus: serializer.fromJson<String>(json['syncStatus']),
+      syncError: serializer.fromJson<String?>(json['syncError']),
     );
   }
   @override
@@ -11133,6 +9191,8 @@ class FloorPlanTablesTableData extends DataClass
       'isRound': serializer.toJson<bool>(isRound),
       'status': serializer.toJson<int>(status),
       'lastModified': serializer.toJson<DateTime>(lastModified),
+      'syncStatus': serializer.toJson<String>(syncStatus),
+      'syncError': serializer.toJson<String?>(syncError),
     };
   }
 
@@ -11148,6 +9208,8 @@ class FloorPlanTablesTableData extends DataClass
     bool? isRound,
     int? status,
     DateTime? lastModified,
+    String? syncStatus,
+    Value<String?> syncError = const Value.absent(),
   }) => FloorPlanTablesTableData(
     id: id ?? this.id,
     companyId: companyId ?? this.companyId,
@@ -11160,6 +9222,8 @@ class FloorPlanTablesTableData extends DataClass
     isRound: isRound ?? this.isRound,
     status: status ?? this.status,
     lastModified: lastModified ?? this.lastModified,
+    syncStatus: syncStatus ?? this.syncStatus,
+    syncError: syncError.present ? syncError.value : this.syncError,
   );
   FloorPlanTablesTableData copyWithCompanion(
     FloorPlanTablesTableCompanion data,
@@ -11180,6 +9244,10 @@ class FloorPlanTablesTableData extends DataClass
       lastModified: data.lastModified.present
           ? data.lastModified.value
           : this.lastModified,
+      syncStatus: data.syncStatus.present
+          ? data.syncStatus.value
+          : this.syncStatus,
+      syncError: data.syncError.present ? data.syncError.value : this.syncError,
     );
   }
 
@@ -11196,7 +9264,9 @@ class FloorPlanTablesTableData extends DataClass
           ..write('height: $height, ')
           ..write('isRound: $isRound, ')
           ..write('status: $status, ')
-          ..write('lastModified: $lastModified')
+          ..write('lastModified: $lastModified, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('syncError: $syncError')
           ..write(')'))
         .toString();
   }
@@ -11214,6 +9284,8 @@ class FloorPlanTablesTableData extends DataClass
     isRound,
     status,
     lastModified,
+    syncStatus,
+    syncError,
   );
   @override
   bool operator ==(Object other) =>
@@ -11229,7 +9301,9 @@ class FloorPlanTablesTableData extends DataClass
           other.height == this.height &&
           other.isRound == this.isRound &&
           other.status == this.status &&
-          other.lastModified == this.lastModified);
+          other.lastModified == this.lastModified &&
+          other.syncStatus == this.syncStatus &&
+          other.syncError == this.syncError);
 }
 
 class FloorPlanTablesTableCompanion
@@ -11245,6 +9319,8 @@ class FloorPlanTablesTableCompanion
   final Value<bool> isRound;
   final Value<int> status;
   final Value<DateTime> lastModified;
+  final Value<String> syncStatus;
+  final Value<String?> syncError;
   const FloorPlanTablesTableCompanion({
     this.id = const Value.absent(),
     this.companyId = const Value.absent(),
@@ -11257,6 +9333,8 @@ class FloorPlanTablesTableCompanion
     this.isRound = const Value.absent(),
     this.status = const Value.absent(),
     this.lastModified = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.syncError = const Value.absent(),
   });
   FloorPlanTablesTableCompanion.insert({
     this.id = const Value.absent(),
@@ -11270,6 +9348,8 @@ class FloorPlanTablesTableCompanion
     this.isRound = const Value.absent(),
     this.status = const Value.absent(),
     required DateTime lastModified,
+    this.syncStatus = const Value.absent(),
+    this.syncError = const Value.absent(),
   }) : companyId = Value(companyId),
        floorPlanId = Value(floorPlanId),
        name = Value(name),
@@ -11290,6 +9370,8 @@ class FloorPlanTablesTableCompanion
     Expression<bool>? isRound,
     Expression<int>? status,
     Expression<DateTime>? lastModified,
+    Expression<String>? syncStatus,
+    Expression<String>? syncError,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -11303,6 +9385,8 @@ class FloorPlanTablesTableCompanion
       if (isRound != null) 'is_round': isRound,
       if (status != null) 'status': status,
       if (lastModified != null) 'last_modified': lastModified,
+      if (syncStatus != null) 'sync_status': syncStatus,
+      if (syncError != null) 'sync_error': syncError,
     });
   }
 
@@ -11318,6 +9402,8 @@ class FloorPlanTablesTableCompanion
     Value<bool>? isRound,
     Value<int>? status,
     Value<DateTime>? lastModified,
+    Value<String>? syncStatus,
+    Value<String?>? syncError,
   }) {
     return FloorPlanTablesTableCompanion(
       id: id ?? this.id,
@@ -11331,6 +9417,8 @@ class FloorPlanTablesTableCompanion
       isRound: isRound ?? this.isRound,
       status: status ?? this.status,
       lastModified: lastModified ?? this.lastModified,
+      syncStatus: syncStatus ?? this.syncStatus,
+      syncError: syncError ?? this.syncError,
     );
   }
 
@@ -11370,6 +9458,12 @@ class FloorPlanTablesTableCompanion
     if (lastModified.present) {
       map['last_modified'] = Variable<DateTime>(lastModified.value);
     }
+    if (syncStatus.present) {
+      map['sync_status'] = Variable<String>(syncStatus.value);
+    }
+    if (syncError.present) {
+      map['sync_error'] = Variable<String>(syncError.value);
+    }
     return map;
   }
 
@@ -11386,7 +9480,317 @@ class FloorPlanTablesTableCompanion
           ..write('height: $height, ')
           ..write('isRound: $isRound, ')
           ..write('status: $status, ')
-          ..write('lastModified: $lastModified')
+          ..write('lastModified: $lastModified, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('syncError: $syncError')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $FloorPlanTableIdMapTableTable extends FloorPlanTableIdMapTable
+    with
+        TableInfo<
+          $FloorPlanTableIdMapTableTable,
+          FloorPlanTableIdMapTableData
+        > {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $FloorPlanTableIdMapTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _tempIdMeta = const VerificationMeta('tempId');
+  @override
+  late final GeneratedColumn<int> tempId = GeneratedColumn<int>(
+    'temp_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _realIdMeta = const VerificationMeta('realId');
+  @override
+  late final GeneratedColumn<int> realId = GeneratedColumn<int>(
+    'real_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _companyIdMeta = const VerificationMeta(
+    'companyId',
+  );
+  @override
+  late final GeneratedColumn<int> companyId = GeneratedColumn<int>(
+    'company_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [tempId, realId, companyId, createdAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'floor_plan_table_id_map';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<FloorPlanTableIdMapTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('temp_id')) {
+      context.handle(
+        _tempIdMeta,
+        tempId.isAcceptableOrUnknown(data['temp_id']!, _tempIdMeta),
+      );
+    }
+    if (data.containsKey('real_id')) {
+      context.handle(
+        _realIdMeta,
+        realId.isAcceptableOrUnknown(data['real_id']!, _realIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_realIdMeta);
+    }
+    if (data.containsKey('company_id')) {
+      context.handle(
+        _companyIdMeta,
+        companyId.isAcceptableOrUnknown(data['company_id']!, _companyIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_companyIdMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {tempId};
+  @override
+  FloorPlanTableIdMapTableData map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return FloorPlanTableIdMapTableData(
+      tempId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}temp_id'],
+      )!,
+      realId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}real_id'],
+      )!,
+      companyId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}company_id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $FloorPlanTableIdMapTableTable createAlias(String alias) {
+    return $FloorPlanTableIdMapTableTable(attachedDatabase, alias);
+  }
+}
+
+class FloorPlanTableIdMapTableData extends DataClass
+    implements Insertable<FloorPlanTableIdMapTableData> {
+  final int tempId;
+  final int realId;
+  final int companyId;
+  final DateTime createdAt;
+  const FloorPlanTableIdMapTableData({
+    required this.tempId,
+    required this.realId,
+    required this.companyId,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['temp_id'] = Variable<int>(tempId);
+    map['real_id'] = Variable<int>(realId);
+    map['company_id'] = Variable<int>(companyId);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  FloorPlanTableIdMapTableCompanion toCompanion(bool nullToAbsent) {
+    return FloorPlanTableIdMapTableCompanion(
+      tempId: Value(tempId),
+      realId: Value(realId),
+      companyId: Value(companyId),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory FloorPlanTableIdMapTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return FloorPlanTableIdMapTableData(
+      tempId: serializer.fromJson<int>(json['tempId']),
+      realId: serializer.fromJson<int>(json['realId']),
+      companyId: serializer.fromJson<int>(json['companyId']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'tempId': serializer.toJson<int>(tempId),
+      'realId': serializer.toJson<int>(realId),
+      'companyId': serializer.toJson<int>(companyId),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  FloorPlanTableIdMapTableData copyWith({
+    int? tempId,
+    int? realId,
+    int? companyId,
+    DateTime? createdAt,
+  }) => FloorPlanTableIdMapTableData(
+    tempId: tempId ?? this.tempId,
+    realId: realId ?? this.realId,
+    companyId: companyId ?? this.companyId,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  FloorPlanTableIdMapTableData copyWithCompanion(
+    FloorPlanTableIdMapTableCompanion data,
+  ) {
+    return FloorPlanTableIdMapTableData(
+      tempId: data.tempId.present ? data.tempId.value : this.tempId,
+      realId: data.realId.present ? data.realId.value : this.realId,
+      companyId: data.companyId.present ? data.companyId.value : this.companyId,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FloorPlanTableIdMapTableData(')
+          ..write('tempId: $tempId, ')
+          ..write('realId: $realId, ')
+          ..write('companyId: $companyId, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(tempId, realId, companyId, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is FloorPlanTableIdMapTableData &&
+          other.tempId == this.tempId &&
+          other.realId == this.realId &&
+          other.companyId == this.companyId &&
+          other.createdAt == this.createdAt);
+}
+
+class FloorPlanTableIdMapTableCompanion
+    extends UpdateCompanion<FloorPlanTableIdMapTableData> {
+  final Value<int> tempId;
+  final Value<int> realId;
+  final Value<int> companyId;
+  final Value<DateTime> createdAt;
+  const FloorPlanTableIdMapTableCompanion({
+    this.tempId = const Value.absent(),
+    this.realId = const Value.absent(),
+    this.companyId = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  FloorPlanTableIdMapTableCompanion.insert({
+    this.tempId = const Value.absent(),
+    required int realId,
+    required int companyId,
+    required DateTime createdAt,
+  }) : realId = Value(realId),
+       companyId = Value(companyId),
+       createdAt = Value(createdAt);
+  static Insertable<FloorPlanTableIdMapTableData> custom({
+    Expression<int>? tempId,
+    Expression<int>? realId,
+    Expression<int>? companyId,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (tempId != null) 'temp_id': tempId,
+      if (realId != null) 'real_id': realId,
+      if (companyId != null) 'company_id': companyId,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  FloorPlanTableIdMapTableCompanion copyWith({
+    Value<int>? tempId,
+    Value<int>? realId,
+    Value<int>? companyId,
+    Value<DateTime>? createdAt,
+  }) {
+    return FloorPlanTableIdMapTableCompanion(
+      tempId: tempId ?? this.tempId,
+      realId: realId ?? this.realId,
+      companyId: companyId ?? this.companyId,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (tempId.present) {
+      map['temp_id'] = Variable<int>(tempId.value);
+    }
+    if (realId.present) {
+      map['real_id'] = Variable<int>(realId.value);
+    }
+    if (companyId.present) {
+      map['company_id'] = Variable<int>(companyId.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FloorPlanTableIdMapTableCompanion(')
+          ..write('tempId: $tempId, ')
+          ..write('realId: $realId, ')
+          ..write('companyId: $companyId, ')
+          ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
   }
@@ -23008,6 +21412,39 @@ class $ZReportsTableTable extends ZReportsTable
     type: DriftSqlType.double,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _documentCountMeta = const VerificationMeta(
+    'documentCount',
+  );
+  @override
+  late final GeneratedColumn<int> documentCount = GeneratedColumn<int>(
+    'document_count',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _fromDocumentNumberMeta =
+      const VerificationMeta('fromDocumentNumber');
+  @override
+  late final GeneratedColumn<String> fromDocumentNumber =
+      GeneratedColumn<String>(
+        'from_document_number',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _toDocumentNumberMeta = const VerificationMeta(
+    'toDocumentNumber',
+  );
+  @override
+  late final GeneratedColumn<String> toDocumentNumber = GeneratedColumn<String>(
+    'to_document_number',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     localId,
@@ -23030,6 +21467,9 @@ class $ZReportsTableTable extends ZReportsTable
     taxableTotal,
     totalTax,
     grandTotal,
+    documentCount,
+    fromDocumentNumber,
+    toDocumentNumber,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -23206,6 +21646,33 @@ class $ZReportsTableTable extends ZReportsTable
         grandTotal.isAcceptableOrUnknown(data['grand_total']!, _grandTotalMeta),
       );
     }
+    if (data.containsKey('document_count')) {
+      context.handle(
+        _documentCountMeta,
+        documentCount.isAcceptableOrUnknown(
+          data['document_count']!,
+          _documentCountMeta,
+        ),
+      );
+    }
+    if (data.containsKey('from_document_number')) {
+      context.handle(
+        _fromDocumentNumberMeta,
+        fromDocumentNumber.isAcceptableOrUnknown(
+          data['from_document_number']!,
+          _fromDocumentNumberMeta,
+        ),
+      );
+    }
+    if (data.containsKey('to_document_number')) {
+      context.handle(
+        _toDocumentNumberMeta,
+        toDocumentNumber.isAcceptableOrUnknown(
+          data['to_document_number']!,
+          _toDocumentNumberMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -23295,6 +21762,18 @@ class $ZReportsTableTable extends ZReportsTable
         DriftSqlType.double,
         data['${effectivePrefix}grand_total'],
       ),
+      documentCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}document_count'],
+      ),
+      fromDocumentNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}from_document_number'],
+      ),
+      toDocumentNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}to_document_number'],
+      ),
     );
   }
 
@@ -23326,6 +21805,9 @@ class ZReportsTableData extends DataClass
   final double? taxableTotal;
   final double? totalTax;
   final double? grandTotal;
+  final int? documentCount;
+  final String? fromDocumentNumber;
+  final String? toDocumentNumber;
   const ZReportsTableData({
     required this.localId,
     this.serverId,
@@ -23347,6 +21829,9 @@ class ZReportsTableData extends DataClass
     this.taxableTotal,
     this.totalTax,
     this.grandTotal,
+    this.documentCount,
+    this.fromDocumentNumber,
+    this.toDocumentNumber,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -23392,6 +21877,15 @@ class ZReportsTableData extends DataClass
     }
     if (!nullToAbsent || grandTotal != null) {
       map['grand_total'] = Variable<double>(grandTotal);
+    }
+    if (!nullToAbsent || documentCount != null) {
+      map['document_count'] = Variable<int>(documentCount);
+    }
+    if (!nullToAbsent || fromDocumentNumber != null) {
+      map['from_document_number'] = Variable<String>(fromDocumentNumber);
+    }
+    if (!nullToAbsent || toDocumentNumber != null) {
+      map['to_document_number'] = Variable<String>(toDocumentNumber);
     }
     return map;
   }
@@ -23440,6 +21934,15 @@ class ZReportsTableData extends DataClass
       grandTotal: grandTotal == null && nullToAbsent
           ? const Value.absent()
           : Value(grandTotal),
+      documentCount: documentCount == null && nullToAbsent
+          ? const Value.absent()
+          : Value(documentCount),
+      fromDocumentNumber: fromDocumentNumber == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fromDocumentNumber),
+      toDocumentNumber: toDocumentNumber == null && nullToAbsent
+          ? const Value.absent()
+          : Value(toDocumentNumber),
     );
   }
 
@@ -23471,6 +21974,11 @@ class ZReportsTableData extends DataClass
       taxableTotal: serializer.fromJson<double?>(json['taxableTotal']),
       totalTax: serializer.fromJson<double?>(json['totalTax']),
       grandTotal: serializer.fromJson<double?>(json['grandTotal']),
+      documentCount: serializer.fromJson<int?>(json['documentCount']),
+      fromDocumentNumber: serializer.fromJson<String?>(
+        json['fromDocumentNumber'],
+      ),
+      toDocumentNumber: serializer.fromJson<String?>(json['toDocumentNumber']),
     );
   }
   @override
@@ -23497,6 +22005,9 @@ class ZReportsTableData extends DataClass
       'taxableTotal': serializer.toJson<double?>(taxableTotal),
       'totalTax': serializer.toJson<double?>(totalTax),
       'grandTotal': serializer.toJson<double?>(grandTotal),
+      'documentCount': serializer.toJson<int?>(documentCount),
+      'fromDocumentNumber': serializer.toJson<String?>(fromDocumentNumber),
+      'toDocumentNumber': serializer.toJson<String?>(toDocumentNumber),
     };
   }
 
@@ -23521,6 +22032,9 @@ class ZReportsTableData extends DataClass
     Value<double?> taxableTotal = const Value.absent(),
     Value<double?> totalTax = const Value.absent(),
     Value<double?> grandTotal = const Value.absent(),
+    Value<int?> documentCount = const Value.absent(),
+    Value<String?> fromDocumentNumber = const Value.absent(),
+    Value<String?> toDocumentNumber = const Value.absent(),
   }) => ZReportsTableData(
     localId: localId ?? this.localId,
     serverId: serverId.present ? serverId.value : this.serverId,
@@ -23546,6 +22060,15 @@ class ZReportsTableData extends DataClass
     taxableTotal: taxableTotal.present ? taxableTotal.value : this.taxableTotal,
     totalTax: totalTax.present ? totalTax.value : this.totalTax,
     grandTotal: grandTotal.present ? grandTotal.value : this.grandTotal,
+    documentCount: documentCount.present
+        ? documentCount.value
+        : this.documentCount,
+    fromDocumentNumber: fromDocumentNumber.present
+        ? fromDocumentNumber.value
+        : this.fromDocumentNumber,
+    toDocumentNumber: toDocumentNumber.present
+        ? toDocumentNumber.value
+        : this.toDocumentNumber,
   );
   ZReportsTableData copyWithCompanion(ZReportsTableCompanion data) {
     return ZReportsTableData(
@@ -23593,6 +22116,15 @@ class ZReportsTableData extends DataClass
       grandTotal: data.grandTotal.present
           ? data.grandTotal.value
           : this.grandTotal,
+      documentCount: data.documentCount.present
+          ? data.documentCount.value
+          : this.documentCount,
+      fromDocumentNumber: data.fromDocumentNumber.present
+          ? data.fromDocumentNumber.value
+          : this.fromDocumentNumber,
+      toDocumentNumber: data.toDocumentNumber.present
+          ? data.toDocumentNumber.value
+          : this.toDocumentNumber,
     );
   }
 
@@ -23618,13 +22150,16 @@ class ZReportsTableData extends DataClass
           ..write('discountsGranted: $discountsGranted, ')
           ..write('taxableTotal: $taxableTotal, ')
           ..write('totalTax: $totalTax, ')
-          ..write('grandTotal: $grandTotal')
+          ..write('grandTotal: $grandTotal, ')
+          ..write('documentCount: $documentCount, ')
+          ..write('fromDocumentNumber: $fromDocumentNumber, ')
+          ..write('toDocumentNumber: $toDocumentNumber')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     localId,
     serverId,
     companyId,
@@ -23645,7 +22180,10 @@ class ZReportsTableData extends DataClass
     taxableTotal,
     totalTax,
     grandTotal,
-  );
+    documentCount,
+    fromDocumentNumber,
+    toDocumentNumber,
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -23669,7 +22207,10 @@ class ZReportsTableData extends DataClass
           other.discountsGranted == this.discountsGranted &&
           other.taxableTotal == this.taxableTotal &&
           other.totalTax == this.totalTax &&
-          other.grandTotal == this.grandTotal);
+          other.grandTotal == this.grandTotal &&
+          other.documentCount == this.documentCount &&
+          other.fromDocumentNumber == this.fromDocumentNumber &&
+          other.toDocumentNumber == this.toDocumentNumber);
 }
 
 class ZReportsTableCompanion extends UpdateCompanion<ZReportsTableData> {
@@ -23693,6 +22234,9 @@ class ZReportsTableCompanion extends UpdateCompanion<ZReportsTableData> {
   final Value<double?> taxableTotal;
   final Value<double?> totalTax;
   final Value<double?> grandTotal;
+  final Value<int?> documentCount;
+  final Value<String?> fromDocumentNumber;
+  final Value<String?> toDocumentNumber;
   final Value<int> rowid;
   const ZReportsTableCompanion({
     this.localId = const Value.absent(),
@@ -23715,6 +22259,9 @@ class ZReportsTableCompanion extends UpdateCompanion<ZReportsTableData> {
     this.taxableTotal = const Value.absent(),
     this.totalTax = const Value.absent(),
     this.grandTotal = const Value.absent(),
+    this.documentCount = const Value.absent(),
+    this.fromDocumentNumber = const Value.absent(),
+    this.toDocumentNumber = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ZReportsTableCompanion.insert({
@@ -23738,6 +22285,9 @@ class ZReportsTableCompanion extends UpdateCompanion<ZReportsTableData> {
     this.taxableTotal = const Value.absent(),
     this.totalTax = const Value.absent(),
     this.grandTotal = const Value.absent(),
+    this.documentCount = const Value.absent(),
+    this.fromDocumentNumber = const Value.absent(),
+    this.toDocumentNumber = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : localId = Value(localId),
        companyId = Value(companyId),
@@ -23768,6 +22318,9 @@ class ZReportsTableCompanion extends UpdateCompanion<ZReportsTableData> {
     Expression<double>? taxableTotal,
     Expression<double>? totalTax,
     Expression<double>? grandTotal,
+    Expression<int>? documentCount,
+    Expression<String>? fromDocumentNumber,
+    Expression<String>? toDocumentNumber,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -23792,6 +22345,10 @@ class ZReportsTableCompanion extends UpdateCompanion<ZReportsTableData> {
       if (taxableTotal != null) 'taxable_total': taxableTotal,
       if (totalTax != null) 'total_tax': totalTax,
       if (grandTotal != null) 'grand_total': grandTotal,
+      if (documentCount != null) 'document_count': documentCount,
+      if (fromDocumentNumber != null)
+        'from_document_number': fromDocumentNumber,
+      if (toDocumentNumber != null) 'to_document_number': toDocumentNumber,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -23817,6 +22374,9 @@ class ZReportsTableCompanion extends UpdateCompanion<ZReportsTableData> {
     Value<double?>? taxableTotal,
     Value<double?>? totalTax,
     Value<double?>? grandTotal,
+    Value<int?>? documentCount,
+    Value<String?>? fromDocumentNumber,
+    Value<String?>? toDocumentNumber,
     Value<int>? rowid,
   }) {
     return ZReportsTableCompanion(
@@ -23840,6 +22400,9 @@ class ZReportsTableCompanion extends UpdateCompanion<ZReportsTableData> {
       taxableTotal: taxableTotal ?? this.taxableTotal,
       totalTax: totalTax ?? this.totalTax,
       grandTotal: grandTotal ?? this.grandTotal,
+      documentCount: documentCount ?? this.documentCount,
+      fromDocumentNumber: fromDocumentNumber ?? this.fromDocumentNumber,
+      toDocumentNumber: toDocumentNumber ?? this.toDocumentNumber,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -23909,6 +22472,15 @@ class ZReportsTableCompanion extends UpdateCompanion<ZReportsTableData> {
     if (grandTotal.present) {
       map['grand_total'] = Variable<double>(grandTotal.value);
     }
+    if (documentCount.present) {
+      map['document_count'] = Variable<int>(documentCount.value);
+    }
+    if (fromDocumentNumber.present) {
+      map['from_document_number'] = Variable<String>(fromDocumentNumber.value);
+    }
+    if (toDocumentNumber.present) {
+      map['to_document_number'] = Variable<String>(toDocumentNumber.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -23938,6 +22510,9 @@ class ZReportsTableCompanion extends UpdateCompanion<ZReportsTableData> {
           ..write('taxableTotal: $taxableTotal, ')
           ..write('totalTax: $totalTax, ')
           ..write('grandTotal: $grandTotal, ')
+          ..write('documentCount: $documentCount, ')
+          ..write('fromDocumentNumber: $fromDocumentNumber, ')
+          ..write('toDocumentNumber: $toDocumentNumber, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -36835,12 +35410,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $FiscalItemsTableTable fiscalItemsTable = $FiscalItemsTableTable(
     this,
   );
-  late final $PosPrinterSelectionsTableTable posPrinterSelectionsTable =
-      $PosPrinterSelectionsTableTable(this);
-  late final $PosPrinterSelectionSettingsTableTable
-  posPrinterSelectionSettingsTable = $PosPrinterSelectionSettingsTableTable(
-    this,
-  );
   late final $PosPrinterSettingsTableTable posPrinterSettingsTable =
       $PosPrinterSettingsTableTable(this);
   late final $PosVoidsTableTable posVoidsTable = $PosVoidsTableTable(this);
@@ -36860,6 +35429,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $FloorPlanTablesTableTable floorPlanTablesTable =
       $FloorPlanTablesTableTable(this);
+  late final $FloorPlanTableIdMapTableTable floorPlanTableIdMapTable =
+      $FloorPlanTableIdMapTableTable(this);
   late final $UsersTableTable usersTable = $UsersTableTable(this);
   late final $AppPropertiesTableTable appPropertiesTable =
       $AppPropertiesTableTable(this);
@@ -36983,8 +35554,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     documentItemExpirationDatesTable,
     documentItemTaxesTable,
     fiscalItemsTable,
-    posPrinterSelectionsTable,
-    posPrinterSelectionSettingsTable,
     posPrinterSettingsTable,
     posVoidsTable,
     templatesTable,
@@ -36996,6 +35565,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     taxesTable,
     floorPlansTable,
     floorPlanTablesTable,
+    floorPlanTableIdMapTable,
     usersTable,
     appPropertiesTable,
     productGroupsTable,
@@ -38399,924 +36969,6 @@ typedef $$FiscalItemsTableTableProcessedTableManager =
         >,
       ),
       FiscalItemsTableData,
-      PrefetchHooks Function()
-    >;
-typedef $$PosPrinterSelectionsTableTableCreateCompanionBuilder =
-    PosPrinterSelectionsTableCompanion Function({
-      Value<int> id,
-      Value<int?> serverId,
-      required String key,
-      Value<String?> printerName,
-      required bool isEnabled,
-      required int companyId,
-    });
-typedef $$PosPrinterSelectionsTableTableUpdateCompanionBuilder =
-    PosPrinterSelectionsTableCompanion Function({
-      Value<int> id,
-      Value<int?> serverId,
-      Value<String> key,
-      Value<String?> printerName,
-      Value<bool> isEnabled,
-      Value<int> companyId,
-    });
-
-class $$PosPrinterSelectionsTableTableFilterComposer
-    extends Composer<_$AppDatabase, $PosPrinterSelectionsTableTable> {
-  $$PosPrinterSelectionsTableTableFilterComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnFilters<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get serverId => $composableBuilder(
-    column: $table.serverId,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get key => $composableBuilder(
-    column: $table.key,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get printerName => $composableBuilder(
-    column: $table.printerName,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get isEnabled => $composableBuilder(
-    column: $table.isEnabled,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get companyId => $composableBuilder(
-    column: $table.companyId,
-    builder: (column) => ColumnFilters(column),
-  );
-}
-
-class $$PosPrinterSelectionsTableTableOrderingComposer
-    extends Composer<_$AppDatabase, $PosPrinterSelectionsTableTable> {
-  $$PosPrinterSelectionsTableTableOrderingComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnOrderings<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get serverId => $composableBuilder(
-    column: $table.serverId,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get key => $composableBuilder(
-    column: $table.key,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get printerName => $composableBuilder(
-    column: $table.printerName,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get isEnabled => $composableBuilder(
-    column: $table.isEnabled,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get companyId => $composableBuilder(
-    column: $table.companyId,
-    builder: (column) => ColumnOrderings(column),
-  );
-}
-
-class $$PosPrinterSelectionsTableTableAnnotationComposer
-    extends Composer<_$AppDatabase, $PosPrinterSelectionsTableTable> {
-  $$PosPrinterSelectionsTableTableAnnotationComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  GeneratedColumn<int> get id =>
-      $composableBuilder(column: $table.id, builder: (column) => column);
-
-  GeneratedColumn<int> get serverId =>
-      $composableBuilder(column: $table.serverId, builder: (column) => column);
-
-  GeneratedColumn<String> get key =>
-      $composableBuilder(column: $table.key, builder: (column) => column);
-
-  GeneratedColumn<String> get printerName => $composableBuilder(
-    column: $table.printerName,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<bool> get isEnabled =>
-      $composableBuilder(column: $table.isEnabled, builder: (column) => column);
-
-  GeneratedColumn<int> get companyId =>
-      $composableBuilder(column: $table.companyId, builder: (column) => column);
-}
-
-class $$PosPrinterSelectionsTableTableTableManager
-    extends
-        RootTableManager<
-          _$AppDatabase,
-          $PosPrinterSelectionsTableTable,
-          PosPrinterSelectionsTableData,
-          $$PosPrinterSelectionsTableTableFilterComposer,
-          $$PosPrinterSelectionsTableTableOrderingComposer,
-          $$PosPrinterSelectionsTableTableAnnotationComposer,
-          $$PosPrinterSelectionsTableTableCreateCompanionBuilder,
-          $$PosPrinterSelectionsTableTableUpdateCompanionBuilder,
-          (
-            PosPrinterSelectionsTableData,
-            BaseReferences<
-              _$AppDatabase,
-              $PosPrinterSelectionsTableTable,
-              PosPrinterSelectionsTableData
-            >,
-          ),
-          PosPrinterSelectionsTableData,
-          PrefetchHooks Function()
-        > {
-  $$PosPrinterSelectionsTableTableTableManager(
-    _$AppDatabase db,
-    $PosPrinterSelectionsTableTable table,
-  ) : super(
-        TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer: () =>
-              $$PosPrinterSelectionsTableTableFilterComposer(
-                $db: db,
-                $table: table,
-              ),
-          createOrderingComposer: () =>
-              $$PosPrinterSelectionsTableTableOrderingComposer(
-                $db: db,
-                $table: table,
-              ),
-          createComputedFieldComposer: () =>
-              $$PosPrinterSelectionsTableTableAnnotationComposer(
-                $db: db,
-                $table: table,
-              ),
-          updateCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                Value<int?> serverId = const Value.absent(),
-                Value<String> key = const Value.absent(),
-                Value<String?> printerName = const Value.absent(),
-                Value<bool> isEnabled = const Value.absent(),
-                Value<int> companyId = const Value.absent(),
-              }) => PosPrinterSelectionsTableCompanion(
-                id: id,
-                serverId: serverId,
-                key: key,
-                printerName: printerName,
-                isEnabled: isEnabled,
-                companyId: companyId,
-              ),
-          createCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                Value<int?> serverId = const Value.absent(),
-                required String key,
-                Value<String?> printerName = const Value.absent(),
-                required bool isEnabled,
-                required int companyId,
-              }) => PosPrinterSelectionsTableCompanion.insert(
-                id: id,
-                serverId: serverId,
-                key: key,
-                printerName: printerName,
-                isEnabled: isEnabled,
-                companyId: companyId,
-              ),
-          withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
-              .toList(),
-          prefetchHooksCallback: null,
-        ),
-      );
-}
-
-typedef $$PosPrinterSelectionsTableTableProcessedTableManager =
-    ProcessedTableManager<
-      _$AppDatabase,
-      $PosPrinterSelectionsTableTable,
-      PosPrinterSelectionsTableData,
-      $$PosPrinterSelectionsTableTableFilterComposer,
-      $$PosPrinterSelectionsTableTableOrderingComposer,
-      $$PosPrinterSelectionsTableTableAnnotationComposer,
-      $$PosPrinterSelectionsTableTableCreateCompanionBuilder,
-      $$PosPrinterSelectionsTableTableUpdateCompanionBuilder,
-      (
-        PosPrinterSelectionsTableData,
-        BaseReferences<
-          _$AppDatabase,
-          $PosPrinterSelectionsTableTable,
-          PosPrinterSelectionsTableData
-        >,
-      ),
-      PosPrinterSelectionsTableData,
-      PrefetchHooks Function()
-    >;
-typedef $$PosPrinterSelectionSettingsTableTableCreateCompanionBuilder =
-    PosPrinterSelectionSettingsTableCompanion Function({
-      Value<int> id,
-      Value<int?> serverId,
-      required int posPrinterSelectionId,
-      required int paperWidth,
-      Value<String?> header,
-      Value<String?> footer,
-      required int feedLines,
-      required bool cutPaper,
-      required bool printBitmap,
-      required bool openCashDrawer,
-      Value<String?> cashDrawerCommand,
-      required int headerAlignment,
-      required int footerAlignment,
-      required bool isFormattingEnabled,
-      required int printerType,
-      required int numberOfCopies,
-      required int codePage,
-      required int characterSet,
-      required int margin,
-      required double leftMargin,
-      required double topMargin,
-      required double rightMargin,
-      required double bottomMargin,
-      required bool printBarcode,
-      Value<String?> fontName,
-      required double fontSizePercent,
-      required bool printLogoFullWidth,
-      required int companyId,
-    });
-typedef $$PosPrinterSelectionSettingsTableTableUpdateCompanionBuilder =
-    PosPrinterSelectionSettingsTableCompanion Function({
-      Value<int> id,
-      Value<int?> serverId,
-      Value<int> posPrinterSelectionId,
-      Value<int> paperWidth,
-      Value<String?> header,
-      Value<String?> footer,
-      Value<int> feedLines,
-      Value<bool> cutPaper,
-      Value<bool> printBitmap,
-      Value<bool> openCashDrawer,
-      Value<String?> cashDrawerCommand,
-      Value<int> headerAlignment,
-      Value<int> footerAlignment,
-      Value<bool> isFormattingEnabled,
-      Value<int> printerType,
-      Value<int> numberOfCopies,
-      Value<int> codePage,
-      Value<int> characterSet,
-      Value<int> margin,
-      Value<double> leftMargin,
-      Value<double> topMargin,
-      Value<double> rightMargin,
-      Value<double> bottomMargin,
-      Value<bool> printBarcode,
-      Value<String?> fontName,
-      Value<double> fontSizePercent,
-      Value<bool> printLogoFullWidth,
-      Value<int> companyId,
-    });
-
-class $$PosPrinterSelectionSettingsTableTableFilterComposer
-    extends Composer<_$AppDatabase, $PosPrinterSelectionSettingsTableTable> {
-  $$PosPrinterSelectionSettingsTableTableFilterComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnFilters<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get serverId => $composableBuilder(
-    column: $table.serverId,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get posPrinterSelectionId => $composableBuilder(
-    column: $table.posPrinterSelectionId,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get paperWidth => $composableBuilder(
-    column: $table.paperWidth,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get header => $composableBuilder(
-    column: $table.header,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get footer => $composableBuilder(
-    column: $table.footer,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get feedLines => $composableBuilder(
-    column: $table.feedLines,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get cutPaper => $composableBuilder(
-    column: $table.cutPaper,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get printBitmap => $composableBuilder(
-    column: $table.printBitmap,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get openCashDrawer => $composableBuilder(
-    column: $table.openCashDrawer,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get cashDrawerCommand => $composableBuilder(
-    column: $table.cashDrawerCommand,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get headerAlignment => $composableBuilder(
-    column: $table.headerAlignment,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get footerAlignment => $composableBuilder(
-    column: $table.footerAlignment,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get isFormattingEnabled => $composableBuilder(
-    column: $table.isFormattingEnabled,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get printerType => $composableBuilder(
-    column: $table.printerType,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get numberOfCopies => $composableBuilder(
-    column: $table.numberOfCopies,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get codePage => $composableBuilder(
-    column: $table.codePage,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get characterSet => $composableBuilder(
-    column: $table.characterSet,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get margin => $composableBuilder(
-    column: $table.margin,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<double> get leftMargin => $composableBuilder(
-    column: $table.leftMargin,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<double> get topMargin => $composableBuilder(
-    column: $table.topMargin,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<double> get rightMargin => $composableBuilder(
-    column: $table.rightMargin,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<double> get bottomMargin => $composableBuilder(
-    column: $table.bottomMargin,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get printBarcode => $composableBuilder(
-    column: $table.printBarcode,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get fontName => $composableBuilder(
-    column: $table.fontName,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<double> get fontSizePercent => $composableBuilder(
-    column: $table.fontSizePercent,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get printLogoFullWidth => $composableBuilder(
-    column: $table.printLogoFullWidth,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get companyId => $composableBuilder(
-    column: $table.companyId,
-    builder: (column) => ColumnFilters(column),
-  );
-}
-
-class $$PosPrinterSelectionSettingsTableTableOrderingComposer
-    extends Composer<_$AppDatabase, $PosPrinterSelectionSettingsTableTable> {
-  $$PosPrinterSelectionSettingsTableTableOrderingComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnOrderings<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get serverId => $composableBuilder(
-    column: $table.serverId,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get posPrinterSelectionId => $composableBuilder(
-    column: $table.posPrinterSelectionId,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get paperWidth => $composableBuilder(
-    column: $table.paperWidth,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get header => $composableBuilder(
-    column: $table.header,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get footer => $composableBuilder(
-    column: $table.footer,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get feedLines => $composableBuilder(
-    column: $table.feedLines,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get cutPaper => $composableBuilder(
-    column: $table.cutPaper,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get printBitmap => $composableBuilder(
-    column: $table.printBitmap,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get openCashDrawer => $composableBuilder(
-    column: $table.openCashDrawer,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get cashDrawerCommand => $composableBuilder(
-    column: $table.cashDrawerCommand,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get headerAlignment => $composableBuilder(
-    column: $table.headerAlignment,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get footerAlignment => $composableBuilder(
-    column: $table.footerAlignment,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get isFormattingEnabled => $composableBuilder(
-    column: $table.isFormattingEnabled,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get printerType => $composableBuilder(
-    column: $table.printerType,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get numberOfCopies => $composableBuilder(
-    column: $table.numberOfCopies,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get codePage => $composableBuilder(
-    column: $table.codePage,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get characterSet => $composableBuilder(
-    column: $table.characterSet,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get margin => $composableBuilder(
-    column: $table.margin,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<double> get leftMargin => $composableBuilder(
-    column: $table.leftMargin,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<double> get topMargin => $composableBuilder(
-    column: $table.topMargin,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<double> get rightMargin => $composableBuilder(
-    column: $table.rightMargin,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<double> get bottomMargin => $composableBuilder(
-    column: $table.bottomMargin,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get printBarcode => $composableBuilder(
-    column: $table.printBarcode,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get fontName => $composableBuilder(
-    column: $table.fontName,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<double> get fontSizePercent => $composableBuilder(
-    column: $table.fontSizePercent,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get printLogoFullWidth => $composableBuilder(
-    column: $table.printLogoFullWidth,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get companyId => $composableBuilder(
-    column: $table.companyId,
-    builder: (column) => ColumnOrderings(column),
-  );
-}
-
-class $$PosPrinterSelectionSettingsTableTableAnnotationComposer
-    extends Composer<_$AppDatabase, $PosPrinterSelectionSettingsTableTable> {
-  $$PosPrinterSelectionSettingsTableTableAnnotationComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  GeneratedColumn<int> get id =>
-      $composableBuilder(column: $table.id, builder: (column) => column);
-
-  GeneratedColumn<int> get serverId =>
-      $composableBuilder(column: $table.serverId, builder: (column) => column);
-
-  GeneratedColumn<int> get posPrinterSelectionId => $composableBuilder(
-    column: $table.posPrinterSelectionId,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<int> get paperWidth => $composableBuilder(
-    column: $table.paperWidth,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get header =>
-      $composableBuilder(column: $table.header, builder: (column) => column);
-
-  GeneratedColumn<String> get footer =>
-      $composableBuilder(column: $table.footer, builder: (column) => column);
-
-  GeneratedColumn<int> get feedLines =>
-      $composableBuilder(column: $table.feedLines, builder: (column) => column);
-
-  GeneratedColumn<bool> get cutPaper =>
-      $composableBuilder(column: $table.cutPaper, builder: (column) => column);
-
-  GeneratedColumn<bool> get printBitmap => $composableBuilder(
-    column: $table.printBitmap,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<bool> get openCashDrawer => $composableBuilder(
-    column: $table.openCashDrawer,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get cashDrawerCommand => $composableBuilder(
-    column: $table.cashDrawerCommand,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<int> get headerAlignment => $composableBuilder(
-    column: $table.headerAlignment,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<int> get footerAlignment => $composableBuilder(
-    column: $table.footerAlignment,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<bool> get isFormattingEnabled => $composableBuilder(
-    column: $table.isFormattingEnabled,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<int> get printerType => $composableBuilder(
-    column: $table.printerType,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<int> get numberOfCopies => $composableBuilder(
-    column: $table.numberOfCopies,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<int> get codePage =>
-      $composableBuilder(column: $table.codePage, builder: (column) => column);
-
-  GeneratedColumn<int> get characterSet => $composableBuilder(
-    column: $table.characterSet,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<int> get margin =>
-      $composableBuilder(column: $table.margin, builder: (column) => column);
-
-  GeneratedColumn<double> get leftMargin => $composableBuilder(
-    column: $table.leftMargin,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<double> get topMargin =>
-      $composableBuilder(column: $table.topMargin, builder: (column) => column);
-
-  GeneratedColumn<double> get rightMargin => $composableBuilder(
-    column: $table.rightMargin,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<double> get bottomMargin => $composableBuilder(
-    column: $table.bottomMargin,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<bool> get printBarcode => $composableBuilder(
-    column: $table.printBarcode,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get fontName =>
-      $composableBuilder(column: $table.fontName, builder: (column) => column);
-
-  GeneratedColumn<double> get fontSizePercent => $composableBuilder(
-    column: $table.fontSizePercent,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<bool> get printLogoFullWidth => $composableBuilder(
-    column: $table.printLogoFullWidth,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<int> get companyId =>
-      $composableBuilder(column: $table.companyId, builder: (column) => column);
-}
-
-class $$PosPrinterSelectionSettingsTableTableTableManager
-    extends
-        RootTableManager<
-          _$AppDatabase,
-          $PosPrinterSelectionSettingsTableTable,
-          PosPrinterSelectionSettingsTableData,
-          $$PosPrinterSelectionSettingsTableTableFilterComposer,
-          $$PosPrinterSelectionSettingsTableTableOrderingComposer,
-          $$PosPrinterSelectionSettingsTableTableAnnotationComposer,
-          $$PosPrinterSelectionSettingsTableTableCreateCompanionBuilder,
-          $$PosPrinterSelectionSettingsTableTableUpdateCompanionBuilder,
-          (
-            PosPrinterSelectionSettingsTableData,
-            BaseReferences<
-              _$AppDatabase,
-              $PosPrinterSelectionSettingsTableTable,
-              PosPrinterSelectionSettingsTableData
-            >,
-          ),
-          PosPrinterSelectionSettingsTableData,
-          PrefetchHooks Function()
-        > {
-  $$PosPrinterSelectionSettingsTableTableTableManager(
-    _$AppDatabase db,
-    $PosPrinterSelectionSettingsTableTable table,
-  ) : super(
-        TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer: () =>
-              $$PosPrinterSelectionSettingsTableTableFilterComposer(
-                $db: db,
-                $table: table,
-              ),
-          createOrderingComposer: () =>
-              $$PosPrinterSelectionSettingsTableTableOrderingComposer(
-                $db: db,
-                $table: table,
-              ),
-          createComputedFieldComposer: () =>
-              $$PosPrinterSelectionSettingsTableTableAnnotationComposer(
-                $db: db,
-                $table: table,
-              ),
-          updateCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                Value<int?> serverId = const Value.absent(),
-                Value<int> posPrinterSelectionId = const Value.absent(),
-                Value<int> paperWidth = const Value.absent(),
-                Value<String?> header = const Value.absent(),
-                Value<String?> footer = const Value.absent(),
-                Value<int> feedLines = const Value.absent(),
-                Value<bool> cutPaper = const Value.absent(),
-                Value<bool> printBitmap = const Value.absent(),
-                Value<bool> openCashDrawer = const Value.absent(),
-                Value<String?> cashDrawerCommand = const Value.absent(),
-                Value<int> headerAlignment = const Value.absent(),
-                Value<int> footerAlignment = const Value.absent(),
-                Value<bool> isFormattingEnabled = const Value.absent(),
-                Value<int> printerType = const Value.absent(),
-                Value<int> numberOfCopies = const Value.absent(),
-                Value<int> codePage = const Value.absent(),
-                Value<int> characterSet = const Value.absent(),
-                Value<int> margin = const Value.absent(),
-                Value<double> leftMargin = const Value.absent(),
-                Value<double> topMargin = const Value.absent(),
-                Value<double> rightMargin = const Value.absent(),
-                Value<double> bottomMargin = const Value.absent(),
-                Value<bool> printBarcode = const Value.absent(),
-                Value<String?> fontName = const Value.absent(),
-                Value<double> fontSizePercent = const Value.absent(),
-                Value<bool> printLogoFullWidth = const Value.absent(),
-                Value<int> companyId = const Value.absent(),
-              }) => PosPrinterSelectionSettingsTableCompanion(
-                id: id,
-                serverId: serverId,
-                posPrinterSelectionId: posPrinterSelectionId,
-                paperWidth: paperWidth,
-                header: header,
-                footer: footer,
-                feedLines: feedLines,
-                cutPaper: cutPaper,
-                printBitmap: printBitmap,
-                openCashDrawer: openCashDrawer,
-                cashDrawerCommand: cashDrawerCommand,
-                headerAlignment: headerAlignment,
-                footerAlignment: footerAlignment,
-                isFormattingEnabled: isFormattingEnabled,
-                printerType: printerType,
-                numberOfCopies: numberOfCopies,
-                codePage: codePage,
-                characterSet: characterSet,
-                margin: margin,
-                leftMargin: leftMargin,
-                topMargin: topMargin,
-                rightMargin: rightMargin,
-                bottomMargin: bottomMargin,
-                printBarcode: printBarcode,
-                fontName: fontName,
-                fontSizePercent: fontSizePercent,
-                printLogoFullWidth: printLogoFullWidth,
-                companyId: companyId,
-              ),
-          createCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                Value<int?> serverId = const Value.absent(),
-                required int posPrinterSelectionId,
-                required int paperWidth,
-                Value<String?> header = const Value.absent(),
-                Value<String?> footer = const Value.absent(),
-                required int feedLines,
-                required bool cutPaper,
-                required bool printBitmap,
-                required bool openCashDrawer,
-                Value<String?> cashDrawerCommand = const Value.absent(),
-                required int headerAlignment,
-                required int footerAlignment,
-                required bool isFormattingEnabled,
-                required int printerType,
-                required int numberOfCopies,
-                required int codePage,
-                required int characterSet,
-                required int margin,
-                required double leftMargin,
-                required double topMargin,
-                required double rightMargin,
-                required double bottomMargin,
-                required bool printBarcode,
-                Value<String?> fontName = const Value.absent(),
-                required double fontSizePercent,
-                required bool printLogoFullWidth,
-                required int companyId,
-              }) => PosPrinterSelectionSettingsTableCompanion.insert(
-                id: id,
-                serverId: serverId,
-                posPrinterSelectionId: posPrinterSelectionId,
-                paperWidth: paperWidth,
-                header: header,
-                footer: footer,
-                feedLines: feedLines,
-                cutPaper: cutPaper,
-                printBitmap: printBitmap,
-                openCashDrawer: openCashDrawer,
-                cashDrawerCommand: cashDrawerCommand,
-                headerAlignment: headerAlignment,
-                footerAlignment: footerAlignment,
-                isFormattingEnabled: isFormattingEnabled,
-                printerType: printerType,
-                numberOfCopies: numberOfCopies,
-                codePage: codePage,
-                characterSet: characterSet,
-                margin: margin,
-                leftMargin: leftMargin,
-                topMargin: topMargin,
-                rightMargin: rightMargin,
-                bottomMargin: bottomMargin,
-                printBarcode: printBarcode,
-                fontName: fontName,
-                fontSizePercent: fontSizePercent,
-                printLogoFullWidth: printLogoFullWidth,
-                companyId: companyId,
-              ),
-          withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
-              .toList(),
-          prefetchHooksCallback: null,
-        ),
-      );
-}
-
-typedef $$PosPrinterSelectionSettingsTableTableProcessedTableManager =
-    ProcessedTableManager<
-      _$AppDatabase,
-      $PosPrinterSelectionSettingsTableTable,
-      PosPrinterSelectionSettingsTableData,
-      $$PosPrinterSelectionSettingsTableTableFilterComposer,
-      $$PosPrinterSelectionSettingsTableTableOrderingComposer,
-      $$PosPrinterSelectionSettingsTableTableAnnotationComposer,
-      $$PosPrinterSelectionSettingsTableTableCreateCompanionBuilder,
-      $$PosPrinterSelectionSettingsTableTableUpdateCompanionBuilder,
-      (
-        PosPrinterSelectionSettingsTableData,
-        BaseReferences<
-          _$AppDatabase,
-          $PosPrinterSelectionSettingsTableTable,
-          PosPrinterSelectionSettingsTableData
-        >,
-      ),
-      PosPrinterSelectionSettingsTableData,
       PrefetchHooks Function()
     >;
 typedef $$PosPrinterSettingsTableTableCreateCompanionBuilder =
@@ -42584,6 +40236,8 @@ typedef $$FloorPlanTablesTableTableCreateCompanionBuilder =
       Value<bool> isRound,
       Value<int> status,
       required DateTime lastModified,
+      Value<String> syncStatus,
+      Value<String?> syncError,
     });
 typedef $$FloorPlanTablesTableTableUpdateCompanionBuilder =
     FloorPlanTablesTableCompanion Function({
@@ -42598,6 +40252,8 @@ typedef $$FloorPlanTablesTableTableUpdateCompanionBuilder =
       Value<bool> isRound,
       Value<int> status,
       Value<DateTime> lastModified,
+      Value<String> syncStatus,
+      Value<String?> syncError,
     });
 
 class $$FloorPlanTablesTableTableFilterComposer
@@ -42661,6 +40317,16 @@ class $$FloorPlanTablesTableTableFilterComposer
 
   ColumnFilters<DateTime> get lastModified => $composableBuilder(
     column: $table.lastModified,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get syncError => $composableBuilder(
+    column: $table.syncError,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -42728,6 +40394,16 @@ class $$FloorPlanTablesTableTableOrderingComposer
     column: $table.lastModified,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get syncError => $composableBuilder(
+    column: $table.syncError,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$FloorPlanTablesTableTableAnnotationComposer
@@ -42775,6 +40451,14 @@ class $$FloorPlanTablesTableTableAnnotationComposer
     column: $table.lastModified,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get syncError =>
+      $composableBuilder(column: $table.syncError, builder: (column) => column);
 }
 
 class $$FloorPlanTablesTableTableTableManager
@@ -42831,6 +40515,8 @@ class $$FloorPlanTablesTableTableTableManager
                 Value<bool> isRound = const Value.absent(),
                 Value<int> status = const Value.absent(),
                 Value<DateTime> lastModified = const Value.absent(),
+                Value<String> syncStatus = const Value.absent(),
+                Value<String?> syncError = const Value.absent(),
               }) => FloorPlanTablesTableCompanion(
                 id: id,
                 companyId: companyId,
@@ -42843,6 +40529,8 @@ class $$FloorPlanTablesTableTableTableManager
                 isRound: isRound,
                 status: status,
                 lastModified: lastModified,
+                syncStatus: syncStatus,
+                syncError: syncError,
               ),
           createCompanionCallback:
               ({
@@ -42857,6 +40545,8 @@ class $$FloorPlanTablesTableTableTableManager
                 Value<bool> isRound = const Value.absent(),
                 Value<int> status = const Value.absent(),
                 required DateTime lastModified,
+                Value<String> syncStatus = const Value.absent(),
+                Value<String?> syncError = const Value.absent(),
               }) => FloorPlanTablesTableCompanion.insert(
                 id: id,
                 companyId: companyId,
@@ -42869,6 +40559,8 @@ class $$FloorPlanTablesTableTableTableManager
                 isRound: isRound,
                 status: status,
                 lastModified: lastModified,
+                syncStatus: syncStatus,
+                syncError: syncError,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -42897,6 +40589,200 @@ typedef $$FloorPlanTablesTableTableProcessedTableManager =
         >,
       ),
       FloorPlanTablesTableData,
+      PrefetchHooks Function()
+    >;
+typedef $$FloorPlanTableIdMapTableTableCreateCompanionBuilder =
+    FloorPlanTableIdMapTableCompanion Function({
+      Value<int> tempId,
+      required int realId,
+      required int companyId,
+      required DateTime createdAt,
+    });
+typedef $$FloorPlanTableIdMapTableTableUpdateCompanionBuilder =
+    FloorPlanTableIdMapTableCompanion Function({
+      Value<int> tempId,
+      Value<int> realId,
+      Value<int> companyId,
+      Value<DateTime> createdAt,
+    });
+
+class $$FloorPlanTableIdMapTableTableFilterComposer
+    extends Composer<_$AppDatabase, $FloorPlanTableIdMapTableTable> {
+  $$FloorPlanTableIdMapTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get tempId => $composableBuilder(
+    column: $table.tempId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get realId => $composableBuilder(
+    column: $table.realId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get companyId => $composableBuilder(
+    column: $table.companyId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$FloorPlanTableIdMapTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $FloorPlanTableIdMapTableTable> {
+  $$FloorPlanTableIdMapTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get tempId => $composableBuilder(
+    column: $table.tempId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get realId => $composableBuilder(
+    column: $table.realId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get companyId => $composableBuilder(
+    column: $table.companyId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$FloorPlanTableIdMapTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $FloorPlanTableIdMapTableTable> {
+  $$FloorPlanTableIdMapTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get tempId =>
+      $composableBuilder(column: $table.tempId, builder: (column) => column);
+
+  GeneratedColumn<int> get realId =>
+      $composableBuilder(column: $table.realId, builder: (column) => column);
+
+  GeneratedColumn<int> get companyId =>
+      $composableBuilder(column: $table.companyId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$FloorPlanTableIdMapTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $FloorPlanTableIdMapTableTable,
+          FloorPlanTableIdMapTableData,
+          $$FloorPlanTableIdMapTableTableFilterComposer,
+          $$FloorPlanTableIdMapTableTableOrderingComposer,
+          $$FloorPlanTableIdMapTableTableAnnotationComposer,
+          $$FloorPlanTableIdMapTableTableCreateCompanionBuilder,
+          $$FloorPlanTableIdMapTableTableUpdateCompanionBuilder,
+          (
+            FloorPlanTableIdMapTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $FloorPlanTableIdMapTableTable,
+              FloorPlanTableIdMapTableData
+            >,
+          ),
+          FloorPlanTableIdMapTableData,
+          PrefetchHooks Function()
+        > {
+  $$FloorPlanTableIdMapTableTableTableManager(
+    _$AppDatabase db,
+    $FloorPlanTableIdMapTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$FloorPlanTableIdMapTableTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$FloorPlanTableIdMapTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$FloorPlanTableIdMapTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> tempId = const Value.absent(),
+                Value<int> realId = const Value.absent(),
+                Value<int> companyId = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => FloorPlanTableIdMapTableCompanion(
+                tempId: tempId,
+                realId: realId,
+                companyId: companyId,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> tempId = const Value.absent(),
+                required int realId,
+                required int companyId,
+                required DateTime createdAt,
+              }) => FloorPlanTableIdMapTableCompanion.insert(
+                tempId: tempId,
+                realId: realId,
+                companyId: companyId,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$FloorPlanTableIdMapTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $FloorPlanTableIdMapTableTable,
+      FloorPlanTableIdMapTableData,
+      $$FloorPlanTableIdMapTableTableFilterComposer,
+      $$FloorPlanTableIdMapTableTableOrderingComposer,
+      $$FloorPlanTableIdMapTableTableAnnotationComposer,
+      $$FloorPlanTableIdMapTableTableCreateCompanionBuilder,
+      $$FloorPlanTableIdMapTableTableUpdateCompanionBuilder,
+      (
+        FloorPlanTableIdMapTableData,
+        BaseReferences<
+          _$AppDatabase,
+          $FloorPlanTableIdMapTableTable,
+          FloorPlanTableIdMapTableData
+        >,
+      ),
+      FloorPlanTableIdMapTableData,
       PrefetchHooks Function()
     >;
 typedef $$UsersTableTableCreateCompanionBuilder =
@@ -48738,6 +46624,9 @@ typedef $$ZReportsTableTableCreateCompanionBuilder =
       Value<double?> taxableTotal,
       Value<double?> totalTax,
       Value<double?> grandTotal,
+      Value<int?> documentCount,
+      Value<String?> fromDocumentNumber,
+      Value<String?> toDocumentNumber,
       Value<int> rowid,
     });
 typedef $$ZReportsTableTableUpdateCompanionBuilder =
@@ -48762,6 +46651,9 @@ typedef $$ZReportsTableTableUpdateCompanionBuilder =
       Value<double?> taxableTotal,
       Value<double?> totalTax,
       Value<double?> grandTotal,
+      Value<int?> documentCount,
+      Value<String?> fromDocumentNumber,
+      Value<String?> toDocumentNumber,
       Value<int> rowid,
     });
 
@@ -48871,6 +46763,21 @@ class $$ZReportsTableTableFilterComposer
 
   ColumnFilters<double> get grandTotal => $composableBuilder(
     column: $table.grandTotal,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get documentCount => $composableBuilder(
+    column: $table.documentCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fromDocumentNumber => $composableBuilder(
+    column: $table.fromDocumentNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get toDocumentNumber => $composableBuilder(
+    column: $table.toDocumentNumber,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -48983,6 +46890,21 @@ class $$ZReportsTableTableOrderingComposer
     column: $table.grandTotal,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get documentCount => $composableBuilder(
+    column: $table.documentCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fromDocumentNumber => $composableBuilder(
+    column: $table.fromDocumentNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get toDocumentNumber => $composableBuilder(
+    column: $table.toDocumentNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ZReportsTableTableAnnotationComposer
@@ -49077,6 +46999,21 @@ class $$ZReportsTableTableAnnotationComposer
     column: $table.grandTotal,
     builder: (column) => column,
   );
+
+  GeneratedColumn<int> get documentCount => $composableBuilder(
+    column: $table.documentCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get fromDocumentNumber => $composableBuilder(
+    column: $table.fromDocumentNumber,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get toDocumentNumber => $composableBuilder(
+    column: $table.toDocumentNumber,
+    builder: (column) => column,
+  );
 }
 
 class $$ZReportsTableTableTableManager
@@ -49134,6 +47071,9 @@ class $$ZReportsTableTableTableManager
                 Value<double?> taxableTotal = const Value.absent(),
                 Value<double?> totalTax = const Value.absent(),
                 Value<double?> grandTotal = const Value.absent(),
+                Value<int?> documentCount = const Value.absent(),
+                Value<String?> fromDocumentNumber = const Value.absent(),
+                Value<String?> toDocumentNumber = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ZReportsTableCompanion(
                 localId: localId,
@@ -49156,6 +47096,9 @@ class $$ZReportsTableTableTableManager
                 taxableTotal: taxableTotal,
                 totalTax: totalTax,
                 grandTotal: grandTotal,
+                documentCount: documentCount,
+                fromDocumentNumber: fromDocumentNumber,
+                toDocumentNumber: toDocumentNumber,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -49180,6 +47123,9 @@ class $$ZReportsTableTableTableManager
                 Value<double?> taxableTotal = const Value.absent(),
                 Value<double?> totalTax = const Value.absent(),
                 Value<double?> grandTotal = const Value.absent(),
+                Value<int?> documentCount = const Value.absent(),
+                Value<String?> fromDocumentNumber = const Value.absent(),
+                Value<String?> toDocumentNumber = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ZReportsTableCompanion.insert(
                 localId: localId,
@@ -49202,6 +47148,9 @@ class $$ZReportsTableTableTableManager
                 taxableTotal: taxableTotal,
                 totalTax: totalTax,
                 grandTotal: grandTotal,
+                documentCount: documentCount,
+                fromDocumentNumber: fromDocumentNumber,
+                toDocumentNumber: toDocumentNumber,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -56097,17 +54046,6 @@ class $AppDatabaseManager {
       );
   $$FiscalItemsTableTableTableManager get fiscalItemsTable =>
       $$FiscalItemsTableTableTableManager(_db, _db.fiscalItemsTable);
-  $$PosPrinterSelectionsTableTableTableManager get posPrinterSelectionsTable =>
-      $$PosPrinterSelectionsTableTableTableManager(
-        _db,
-        _db.posPrinterSelectionsTable,
-      );
-  $$PosPrinterSelectionSettingsTableTableTableManager
-  get posPrinterSelectionSettingsTable =>
-      $$PosPrinterSelectionSettingsTableTableTableManager(
-        _db,
-        _db.posPrinterSelectionSettingsTable,
-      );
   $$PosPrinterSettingsTableTableTableManager get posPrinterSettingsTable =>
       $$PosPrinterSettingsTableTableTableManager(
         _db,
@@ -56137,6 +54075,11 @@ class $AppDatabaseManager {
       $$FloorPlansTableTableTableManager(_db, _db.floorPlansTable);
   $$FloorPlanTablesTableTableTableManager get floorPlanTablesTable =>
       $$FloorPlanTablesTableTableTableManager(_db, _db.floorPlanTablesTable);
+  $$FloorPlanTableIdMapTableTableTableManager get floorPlanTableIdMapTable =>
+      $$FloorPlanTableIdMapTableTableTableManager(
+        _db,
+        _db.floorPlanTableIdMapTable,
+      );
   $$UsersTableTableTableManager get usersTable =>
       $$UsersTableTableTableManager(_db, _db.usersTable);
   $$AppPropertiesTableTableTableManager get appPropertiesTable =>

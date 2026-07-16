@@ -337,19 +337,17 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
 
       // Build items first — orderId is the same whether we insert or update.
       final itemCompanions = _cartItems.map((item) {
-        final lineTotal =
-            (item.price - item.discount - item.promotionalDiscount) *
-            item.quantity;
         final summedRate = item.appliedTaxes
             .where((t) => !t.isFixed)
             .fold<double>(0, (sum, t) => sum + t.rate);
-        // Compute per-tax amounts so SyncManager can pass CheckoutItemDto.Taxes
-        // to the server, creating DocumentItemTax rows during BatchSync.
-        final taxEntries = item.appliedTaxes.map((t) {
-          final amount =
-              t.isFixed ? t.rate : (t.rate / 100 * lineTotal);
-          return {'id': t.id, 'amount': amount};
-        }).toList();
+        // Per-tax amounts so SyncManager can pass CheckoutItemDto.Taxes to the
+        // server, creating DocumentItemTax rows during BatchSync. Sourced from
+        // the cart so the banked tax is the tax the cashier was shown — this
+        // used to re-derive it and silently ignored `discountApplyRule`.
+        final taxEntries = cartNotifier
+            .taxAmountsForItem(item)
+            .map((t) => {'id': t.id, 'amount': t.amount})
+            .toList();
         final taxesJsonStr =
             taxEntries.isEmpty ? null : jsonEncode(taxEntries);
         // A %-entered item discount is stored as (type 0, the % value) rather
@@ -378,6 +376,12 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
           syncStatus: const Value('pending'),
         );
       }).toList();
+
+      // The cart may have been opened on a table created offline, whose temp id
+      // was swapped for a real one by a sync while this cart sat open. Checkout
+      // is the last writer, so resolve before persisting or the dead id wins.
+      final resolvedTableId =
+          await db.resolveFloorPlanTableId(cartState.floorPlanTableId);
 
       if (existingLocalId != null) {
         // Existing open order (server-originated or previously synced) —
@@ -409,7 +413,7 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
             serverId: const Value(null),
             companyId: Value(company.id),
             userId: Value(user.id),
-            tableId: Value(cartState.floorPlanTableId),
+            tableId: Value(resolvedTableId),
             customerId: Value(cartState.selectedCustomer?.id),
             serviceType: Value(cartState.serviceType),
             serviceStatus: Value(cartState.serviceStatus),
@@ -463,15 +467,20 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
         final lineTotal =
             (item.price - item.discount - item.promotionalDiscount) *
             item.quantity;
-        final pctTaxes = item.appliedTaxes.where((t) => !t.isFixed);
-        final taxAmt =
-            pctTaxes.fold<double>(0, (s, t) => s + t.rate / 100 * lineTotal);
+        // From the cart, so `total + taxAmount` reconciles with the document
+        // total the customer actually paid under EITHER discountApplyRule.
+        // Re-deriving it here hardcoded the "Before tax" rule, so an "After tax"
+        // company banked a line that contradicted its own document by
+        // (discount × rate) — 30 + 6 on a 37.00 document.
+        final taxAmt = cartNotifier.taxForItem(item);
         // Persist the tax-base price + the applied tax so the document editor's
         // Edit-Item dialog can load real values (it was showing 0 / "No tax"
         // because these were never written). The editor is single-tax, so carry
-        // the combined % rate and the first applied tax id.
-        final combinedRate =
-            pctTaxes.fold<double>(0, (s, t) => s + t.rate);
+        // the combined % rate and the first applied tax id. The rate stays
+        // %-only — a fixed tax has no rate — while taxAmt above is every tax.
+        final combinedRate = item.appliedTaxes
+            .where((t) => !t.isFixed)
+            .fold<double>(0, (s, t) => s + t.rate);
         final firstTaxId =
             item.appliedTaxes.isNotEmpty ? item.appliedTaxes.first.id : null;
         // Mirror the pos_order_items choice so local + pulled docs agree: keep a
@@ -638,8 +647,9 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
                   .toLowerCase() ==
               'true';
 
-      void doPrint() => ReceiptPrinterService()
+      void doPrint({bool saveToFile = false}) => ReceiptPrinterService()
           .printCartReceipt(
+            saveToFile: saveToFile,
             company: company,
             cashier: user,
             // Use the customer captured at checkout time (from the pre-clear
@@ -648,6 +658,10 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
             // "Walk-in" instead of the real (e.g. credit) customer.
             customer: cartState.selectedCustomer,
             orderNumber: orderNum ?? 'WALK-IN',
+            // The sale is banked by this point and `docNumber` is assigned
+            // locally (offline-first), so the receipt names itself after the
+            // document rather than the order it came from.
+            documentNumber: docNumber,
             printTime: DateTime.now(),
             items: _cartItems,
             subtotal: _subtotal,
@@ -670,7 +684,7 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
       if (autoprint) {
         doPrint();
       } else if (showPrintDialog && ctx.mounted) {
-        final wantsPrint = await showDialog<bool>(
+        final choice = await showDialog<String>(
           context: ctx,
           barrierDismissible: false,
           builder: (c) => AlertDialog(
@@ -683,17 +697,22 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
             content: const Text('Would you like to print a receipt?'),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(c, false),
+                onPressed: () => Navigator.pop(c, 'no'),
                 child: const Text('No'),
               ),
+              TextButton(
+                onPressed: () => Navigator.pop(c, 'save'),
+                child: const Text('Save as PDF'),
+              ),
               FilledButton(
-                onPressed: () => Navigator.pop(c, true),
+                onPressed: () => Navigator.pop(c, 'print'),
                 child: const Text('Print Receipt'),
               ),
             ],
           ),
         );
-        if (wantsPrint == true) doPrint();
+        if (choice == 'print') doPrint();
+        if (choice == 'save') doPrint(saveToFile: true);
       }
 
       if (!ctx.mounted) return;
@@ -758,7 +777,10 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
   // ── Customer picker (reused from menu_screen pattern) ─────────────────────
   void _clearCustomer() {
     final companyId = ref.read(selectedCompanyProvider)?.id;
-    final customers = ref.read(allCustomersProvider).asData?.value ?? [];
+    final customers = ref.read(selectableCustomersProvider).asData?.value ?? [];
+    // Every customer can be disabled, so this list can legitimately be empty —
+    // firstWhere's orElse would then throw on `customers.first`.
+    if (customers.isEmpty) return;
     final defaultCustomer = customers.firstWhere(
       (c) => c.code == 'C000',
       orElse: () => customers.first,
@@ -796,7 +818,7 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
     final theme = Theme.of(context);
     final payTypesAsync = ref.watch(allPaymentTypesProvider);
     final customer = ref.watch(cartProvider).selectedCustomer;
-    final allCustomersAsync = ref.watch(allCustomersProvider);
+    final allCustomersAsync = ref.watch(selectableCustomersProvider);
 
     // Auto-select first payment type once loaded
     payTypesAsync.whenData((types) {

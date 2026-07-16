@@ -339,7 +339,7 @@ class _CreditPaymentsDialogState
   @override
   Widget build(BuildContext context) {
     final theme          = Theme.of(context);
-    final customersAsync = ref.watch(allCustomersProvider);
+    final customersAsync = ref.watch(selectableCustomersProvider);
     final payTypesAsync  = ref.watch(allPaymentTypesProvider);
 
     // Resolve selected customer name for summary

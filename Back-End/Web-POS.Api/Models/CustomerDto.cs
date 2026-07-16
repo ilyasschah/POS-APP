@@ -28,7 +28,11 @@ namespace Api.Models
     }
     public class CreateCustomerRequest
     {
-        public required string  Code { get; set; }
+        // Optional + nullable on purpose: a blank code must reach the server as null so it
+        // stores as NULL (see CustomerService.NormalizeCode). A non-nullable string here
+        // would be implicitly [Required] under <Nullable>enable</Nullable> and reject null
+        // with a 400 before the handler ever runs.
+        public string? Code { get; set; }
         public required string  Name { get; set; }
         public required string  TaxNumber { get; set; }
         public required string  Address { get; set; }

@@ -557,10 +557,14 @@ class _HoursTabState extends ConsumerState<_HoursTab> {
 // HOURS REPORT CARD (table + export + pagination)
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Formats raw minutes as decimal hours (e.g. 90 → "1.50").
-/// Shared by the report table and the CSV export.
-String _fmtHours(int minutes) =>
-    NumberFormat.decimalPatternDigits(decimalDigits: 2).format(minutes / 60.0);
+/// Formats raw minutes as hh:mm (e.g. 90 → "01:30").
+/// Shared by the report table and the CSV export. Hours are not capped at 24 —
+/// a range total legitimately runs into the hundreds (e.g. "168:45").
+String _fmtHours(int minutes) {
+  final h = minutes ~/ 60;
+  final m = minutes % 60;
+  return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
+}
 
 /// Framed flat action button — the shared frame style for EXPORT and
 /// ADD TIME CARD (thin navAccent outline, rounded, touch-sized, flat hover).

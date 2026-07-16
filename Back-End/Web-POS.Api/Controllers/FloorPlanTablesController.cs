@@ -58,8 +58,15 @@ namespace Api.Controllers
         public async Task<ActionResult<FloorPlanTableDto>> Add([FromBody] CreateFloorPlanTableRequest request, [FromQuery] int companyId)
         {
             if (companyId == 0) return BadRequest();
-            var result = await _mediator.Send(new AddFloorPlanTableCommand { Request = request, CompanyId = companyId });
-            return Ok(result);
+            try
+            {
+                var result = await _mediator.Send(new AddFloorPlanTableCommand { Request = request, CompanyId = companyId });
+                return Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
         }
 
         [HttpPatch("[action]")]
@@ -75,9 +82,16 @@ namespace Api.Controllers
         public async Task<ActionResult> Update([FromBody] UpdateTablePropertiesRequest request, [FromQuery] int companyId)
         {
             if (companyId == 0) return BadRequest();
-            var success = await _service.UpdatePropertiesAsync(request, companyId);
-            if (!success) return NotFound();
-            return Ok();
+            try
+            {
+                var success = await _service.UpdatePropertiesAsync(request, companyId);
+                if (!success) return NotFound();
+                return Ok();
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
         }
 
         [HttpPatch("[action]")]

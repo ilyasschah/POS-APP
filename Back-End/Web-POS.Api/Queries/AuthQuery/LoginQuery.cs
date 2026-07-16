@@ -43,25 +43,41 @@ public class LoginQuery : IRequest<LoginResponse>
             if (!BCrypt.Net.BCrypt.Verify(request.Request.Password, user.Password))
                 return new LoginResponse { Success = false, Message = "Invalid credentials." };
 
+            // Pillar 4: enforce the seat cap at master login. A brand-new device
+            // that would exceed the tenant's paid allowance (or an admin-blocked
+            // device) is REFUSED here, so an over-cap terminal can't link at all —
+            // and a logged-in device counts immediately (not only after its first
+            // sync). Known / within-allowance devices are registered and allowed.
+            // Fail-OPEN only on a control-plane error (exception) so a Master-DB
+            // hiccup never blocks a legitimate customer (the hard seat block also
+            // stays at the BatchSync ingress).
+            if (!string.IsNullOrWhiteSpace(request.Request.DeviceId))
+            {
+                try
+                {
+                    var seat = await _provisioning.RegisterOrValidateDeviceAsync(
+                        user.CompanyId, request.Request.DeviceId!, "POS terminal");
+
+                    if (!seat.Allowed &&
+                        (seat.Reason == "seat_limit_exceeded" || seat.Reason == "device_blocked"))
+                    {
+                        return new LoginResponse
+                        {
+                            Success = false,
+                            Message = seat.Reason == "seat_limit_exceeded"
+                                ? $"This account is licensed for {seat.SeatAllowance} terminal(s) and that limit is reached. Sign out another device before linking this one."
+                                : "This device has been blocked by the account administrator.",
+                        };
+                    }
+                }
+                catch { /* control plane unavailable — fail open */ }
+            }
+
             var (token, expiresIn) = _tokenService.CreateJwt(user.Email!, user.Id, user.AccessLevel, user.CompanyId);
 
             // Pillar 2: issue the signed offline subscription lease for this
             // company so the terminal can enforce the subscription offline.
             var lease = await _leaseService.IssueLeaseAsync(user.CompanyId);
-
-            // Pillar 4: register this terminal against the seat cap at login, so a
-            // logged-in device counts immediately (not only after its first sync).
-            // Non-fatal — a Master-DB hiccup or an over-cap device must not break
-            // login (the hard seat block stays at the BatchSync ingress).
-            if (!string.IsNullOrWhiteSpace(request.Request.DeviceId))
-            {
-                try
-                {
-                    await _provisioning.RegisterOrValidateDeviceAsync(
-                        user.CompanyId, request.Request.DeviceId!, "POS terminal");
-                }
-                catch { /* control plane unavailable — ignore */ }
-            }
 
             return new LoginResponse
             {

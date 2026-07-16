@@ -154,6 +154,9 @@ class SyncManager {
     await pushPendingPaymentTypeOps(companyId);  // remaps payments/orders.paymentTypeId
     await pushPendingVoidReasonOps(companyId);
     await pushPendingPromotionOps(companyId);
+    // Tables must own real ids before ANY transactional row that points at one:
+    // orders carry floorPlanTableId, bookings carry a tableIds list.
+    await pushPendingFloorPlanTableOps(companyId); // remaps orders + bookings
     // ── Transactional data (now all their referenced ids are real) ───────────
     await pushPendingOpenOrders(companyId);
     await pushPendingOrders(companyId);
@@ -313,9 +316,6 @@ class SyncManager {
     await _step('fiscalItems', () => pullFiscalItems(companyId));
     await _step('templates', () => pullTemplates(companyId));
     await _step('posVoids', () => pullPosVoids(companyId));
-    await _step('printerSelections', () => pullPosPrinterSelections(companyId));
-    await _step('printerSelectionSettings',
-        () => pullPosPrinterSelectionSettings(companyId));
     await _step('printerSettings', () => pullPosPrinterSettings(companyId));
     await _step('userDevicePins', () => pullUserDevicePins(companyId));
     await _step('documentItemTaxes', () => pullDocumentItemTaxes(companyId));
@@ -462,68 +462,6 @@ class SyncManager {
       await _replaceTable(db.posVoidsTable, rows);
     } catch (e) {
       debugPrint('pullPosVoids failed: $e — local cache preserved.');
-    }
-  }
-
-  Future<void> pullPosPrinterSelections(int companyId) async {
-    try {
-      final res = await dio.get<dynamic>('/PosPrinterSelections/GetAll',
-          queryParameters: {'companyId': companyId});
-      final list = ((res.data as List?) ?? const []).cast<Map<String, dynamic>>();
-      final rows = list
-          .map((j) => PosPrinterSelectionsTableCompanion(
-                serverId: Value(_i(j['id'])),
-                key: Value((j['key'] as String?) ?? ''),
-                printerName: Value(j['printerName'] as String?),
-                isEnabled: Value((j['isEnabled'] as bool?) ?? false),
-                companyId: Value(_i(j['companyId']) ?? companyId),
-              ))
-          .toList();
-      await _replaceTable(db.posPrinterSelectionsTable, rows);
-    } catch (e) {
-      debugPrint('pullPosPrinterSelections failed: $e — local cache preserved.');
-    }
-  }
-
-  Future<void> pullPosPrinterSelectionSettings(int companyId) async {
-    try {
-      final res = await dio.get<dynamic>('/PosPrinterSelectionSettings/GetAll',
-          queryParameters: {'companyId': companyId});
-      final list = ((res.data as List?) ?? const []).cast<Map<String, dynamic>>();
-      final rows = list
-          .map((j) => PosPrinterSelectionSettingsTableCompanion(
-                serverId: Value(_i(j['id'])),
-                posPrinterSelectionId: Value(_i(j['posPrinterSelectionId']) ?? 0),
-                paperWidth: Value(_i(j['paperWidth']) ?? 0),
-                header: Value(j['header'] as String?),
-                footer: Value(j['footer'] as String?),
-                feedLines: Value(_i(j['feedLines']) ?? 0),
-                cutPaper: Value((j['cutPaper'] as bool?) ?? false),
-                printBitmap: Value((j['printBitmap'] as bool?) ?? false),
-                openCashDrawer: Value((j['openCashDrawer'] as bool?) ?? false),
-                cashDrawerCommand: Value(j['cashDrawerCommand'] as String?),
-                headerAlignment: Value(_i(j['headerAlignment']) ?? 0),
-                footerAlignment: Value(_i(j['footerAlignment']) ?? 0),
-                isFormattingEnabled: Value((j['isFormattingEnabled'] as bool?) ?? false),
-                printerType: Value(_i(j['printerType']) ?? 0),
-                numberOfCopies: Value(_i(j['numberOfCopies']) ?? 0),
-                codePage: Value(_i(j['codePage']) ?? 0),
-                characterSet: Value(_i(j['characterSet']) ?? 0),
-                margin: Value(_i(j['margin']) ?? 0),
-                leftMargin: Value(_d(j['leftMargin']) ?? 0),
-                topMargin: Value(_d(j['topMargin']) ?? 0),
-                rightMargin: Value(_d(j['rightMargin']) ?? 0),
-                bottomMargin: Value(_d(j['bottomMargin']) ?? 0),
-                printBarcode: Value((j['printBarcode'] as bool?) ?? false),
-                fontName: Value(j['fontName'] as String?),
-                fontSizePercent: Value(_d(j['fontSizePercent']) ?? 0),
-                printLogoFullWidth: Value((j['printLogoFullWidth'] as bool?) ?? false),
-                companyId: Value(_i(j['companyId']) ?? companyId),
-              ))
-          .toList();
-      await _replaceTable(db.posPrinterSelectionSettingsTable, rows);
-    } catch (e) {
-      debugPrint('pullPosPrinterSelectionSettings failed: $e — cache preserved.');
     }
   }
 
@@ -957,6 +895,137 @@ class SyncManager {
         }
       });
     });
+  }
+
+  // ==========================================================================
+  // FLOOR PLAN TABLES — push offline create / update / delete.
+  //  • pending_create (temp id) → POST /Add; swap the temp row for the server id.
+  //    The payload is rebuilt from the local row, so moves/renames made before
+  //    the first sync ride along with the create.
+  //  • pending_update (real id) → PATCH /Update (name + shape) and
+  //    /UpdateGeometry (position + size).
+  //  • pending_delete → DELETE on the server (real ids only); temp rows that
+  //    never synced are just dropped.
+  //
+  // Names are unique per plan server-side (UQ_FloorPlanTable_Name_PerPlan), so a
+  // create whose name was taken while offline is a rejection, not a retry — it
+  // resolves to sync_failed and keeps the local row.
+  // ==========================================================================
+  Future<void> pushPendingFloorPlanTableOps(int companyId) async {
+    final pending =
+        await (db.select(db.floorPlanTablesTable)
+              ..where((t) => t.companyId.equals(companyId))
+              ..where(
+                (t) => t.syncStatus.isIn([
+                  'pending_create',
+                  'pending_update',
+                  'pending_delete',
+                ]),
+              ))
+            .get();
+    if (pending.isEmpty) return;
+
+    for (final t in pending) {
+      try {
+        final isTemp = t.id < 0;
+
+        if (t.syncStatus == 'pending_delete') {
+          if (!isTemp) {
+            await dio.delete<dynamic>(
+              '/FloorPlanTables/Delete',
+              queryParameters: {'id': t.id, 'companyId': companyId},
+            );
+          }
+          await (db.delete(
+            db.floorPlanTablesTable,
+          )..where((x) => x.id.equals(t.id))).go();
+          continue;
+        }
+
+        if (isTemp) {
+          final res = await dio.post<dynamic>(
+            '/FloorPlanTables/Add',
+            queryParameters: {'companyId': companyId},
+            data: {
+              'floorPlanId': t.floorPlanId,
+              'name': t.name,
+              'positionX': t.positionX,
+              'positionY': t.positionY,
+              'width': t.width,
+              'height': t.height,
+              'isRound': t.isRound,
+              'status': t.status,
+            },
+          );
+          final data = res.data;
+          final realId =
+              data is Map ? ((data['id'] ?? data['Id']) as num?)?.toInt() : null;
+          if (realId == null || realId <= 0) {
+            throw Exception('Server returned no id for floor plan table create');
+          }
+          await db.transaction(() async {
+            await (db.delete(
+              db.floorPlanTablesTable,
+            )..where((x) => x.id.equals(t.id))).go();
+            await db.into(db.floorPlanTablesTable).insert(
+                  FloorPlanTablesTableCompanion(
+                    id: Value(realId),
+                    companyId: Value(t.companyId),
+                    floorPlanId: Value(t.floorPlanId),
+                    name: Value(t.name),
+                    positionX: Value(t.positionX),
+                    positionY: Value(t.positionY),
+                    width: Value(t.width),
+                    height: Value(t.height),
+                    isRound: Value(t.isRound),
+                    status: Value(t.status),
+                    lastModified: Value(DateTime.now().toUtc()),
+                    syncStatus: const Value('synced'),
+                    syncError: const Value(null),
+                  ),
+                  mode: InsertMode.insertOrReplace,
+                );
+            await db.remapFloorPlanTableRefs(t.id, realId, companyId);
+          });
+        } else {
+          await dio.patch<dynamic>(
+            '/FloorPlanTables/Update',
+            queryParameters: {'companyId': companyId},
+            data: {'id': t.id, 'name': t.name, 'isRound': t.isRound},
+          );
+          await dio.patch<dynamic>(
+            '/FloorPlanTables/UpdateGeometry',
+            queryParameters: {'companyId': companyId},
+            data: {
+              'id': t.id,
+              'positionX': t.positionX,
+              'positionY': t.positionY,
+              'width': t.width,
+              'height': t.height,
+            },
+          );
+          await (db.update(
+            db.floorPlanTablesTable,
+          )..where((x) => x.id.equals(t.id))).write(
+            const FloorPlanTablesTableCompanion(
+              syncStatus: Value('synced'),
+              syncError: Value(null),
+            ),
+          );
+        }
+      } catch (e) {
+        await _resolveRejection(
+          error: e,
+          syncStatus: t.syncStatus,
+          logLabel: 'pushPendingFloorPlanTableOps: table ${t.id} (${t.syncStatus})',
+          entityLabel: 'Table "${t.name}"',
+          apply: (s, msg) => (db.update(db.floorPlanTablesTable)
+                ..where((x) => x.id.equals(t.id)))
+              .write(FloorPlanTablesTableCompanion(
+                  syncStatus: Value(s), syncError: Value(msg))),
+        );
+      }
+    }
   }
 
   // ==========================================================================
@@ -1597,15 +1666,16 @@ class SyncManager {
         );
 
         final data = res.data;
-        final serverId = data is Map<String, dynamic>
-            ? (data['id'] as int?)
-            : null;
+        final map = data is Map<String, dynamic> ? data : null;
+        final serverId = map?['id'] as int?;
+        // The server owns Z numbering across devices, so its number supersedes
+        // the device-local one issued at close time. The local totals stand:
+        // they were computed from this device's documents at the moment of
+        // closing, which is what the cashier's slip states.
+        final serverNumber = map?['number'] as int?;
 
-        if (serverId != null) {
-          await db.markZReportSynced(report.localId, serverId);
-        } else {
-          await db.markZReportSynced(report.localId, 0);
-        }
+        await db.markZReportSynced(report.localId, serverId ?? 0,
+            serverNumber: serverNumber);
       } catch (e) {
         await db.markZReportFailed(report.localId, e.toString());
       }
@@ -2244,27 +2314,35 @@ class SyncManager {
     );
     final rows = res.data ?? const [];
 
-    await db.batch((batch) {
-      for (final json in rows.cast<Map<String, dynamic>>()) {
-        batch.insert(
-          db.floorPlanTablesTable,
-          FloorPlanTablesTableCompanion(
-            id: Value(json['id'] as int),
-            companyId: Value(json['companyId'] as int? ?? companyId),
-            floorPlanId: Value(json['floorPlanId'] as int),
-            name: Value(json['name'] as String? ?? ''),
-            positionX: Value((json['positionX'] as num?)?.toDouble() ?? 0),
-            positionY: Value((json['positionY'] as num?)?.toDouble() ?? 0),
-            width: Value((json['width'] as num?)?.toDouble() ?? 0),
-            height: Value((json['height'] as num?)?.toDouble() ?? 0),
-            isRound: Value(json['isRound'] as bool? ?? false),
-            status: Value(json['status'] as int? ?? 0),
-            lastModified: Value(_parseLastModified(json['lastModified'])),
-          ),
-          mode: InsertMode.insertOrReplace,
-        );
-      }
-    });
+    // Loop individually to protect rows with pending local edits from being
+    // overwritten by stale server data. Same pattern as pullCustomers — and it
+    // matters doubly here: insertOrReplace rewrites the WHOLE row, so an unset
+    // syncStatus would silently fall back to its 'synced' default and strand the
+    // pending change.
+    for (final json in rows.cast<Map<String, dynamic>>()) {
+      final id = json['id'] as int;
+      final existing = await (db.select(
+        db.floorPlanTablesTable,
+      )..where((t) => t.id.equals(id))).getSingleOrNull();
+      if (existing != null && existing.syncStatus != 'synced') continue;
+
+      await db.into(db.floorPlanTablesTable).insertOnConflictUpdate(
+            FloorPlanTablesTableCompanion(
+              id: Value(id),
+              companyId: Value(json['companyId'] as int? ?? companyId),
+              floorPlanId: Value(json['floorPlanId'] as int),
+              name: Value(json['name'] as String? ?? ''),
+              positionX: Value((json['positionX'] as num?)?.toDouble() ?? 0),
+              positionY: Value((json['positionY'] as num?)?.toDouble() ?? 0),
+              width: Value((json['width'] as num?)?.toDouble() ?? 0),
+              height: Value((json['height'] as num?)?.toDouble() ?? 0),
+              isRound: Value(json['isRound'] as bool? ?? false),
+              status: Value(json['status'] as int? ?? 0),
+              lastModified: Value(_parseLastModified(json['lastModified'])),
+              syncStatus: const Value('synced'),
+            ),
+          );
+    }
 
     await _setLastSync(_kFloorPlanTables, startedAt);
   }
@@ -2737,6 +2815,16 @@ class SyncManager {
                 'buildingNumber': c.buildingNumber,
                 'plotIdentification': c.plotIdentification,
                 'citySubdivisionName': c.citySubdivisionName,
+                // Required by CreateCustomerRequest — omitting them fails
+                // deserialization outright (400) before the handler runs. Send the
+                // real offline creation time, not the sync time, so a customer
+                // created during an outage keeps its true DateCreated.
+                'dateCreated': (c.dateCreated ?? c.lastModified)
+                    .toUtc()
+                    .toIso8601String(),
+                'dateUpdated': (c.dateUpdated ?? c.lastModified)
+                    .toUtc()
+                    .toIso8601String(),
               },
             );
             final data = res.data;

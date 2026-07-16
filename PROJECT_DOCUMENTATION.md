@@ -168,7 +168,7 @@ Defined in `lib/app_settings/app_settings_model.dart`. Key groups:
 
 | Group | Keys (sample) |
 |---|---|
-| General | `currencySymbol`, `language`, `timezone`, `dateFormat`, `taxIncludedByDefault`, `industryMode` |
+| General | `currencySymbol`, `language`, `timezone`, `dateFormat`, `taxIncludedByDefault` |
 | Order & Payment | `defaultPaymentType`, `allowNegativeStock`, `allowPriceChange`, `roundingMode`, `receiptFooter`, `orderPrefix`, `displayReceiptPrintDialog` |
 | Products | `showProductImages`, `defaultMeasurementUnit`, `barcodeFormat`, `displayAndPrintTaxIncluded`, `discountApplyRule`, `productSorting`, `allowNegativePrice`, `costPriceBasedMarkup`, `autoUpdateCostPrice`, `updateSalePriceOnMarkup`, `enableMovingAveragePrice` |
 | Menu Grid | `menuGridCols`, `menuGridRows` |
@@ -183,12 +183,24 @@ Defined in `lib/app_settings/app_settings_model.dart`. Key groups:
 
 **`kSettingDefaults`** in the same file provides fallback values for every key. Always check there first if a setting behaves unexpectedly.
 
-### `industryMode` — FB vs Service
+### Industry adaptation
 
-- `'FB'` = Food & Beverage (restaurant/bar mode). Shows floor plans, kitchen display, etc.
-- `'Service'` = Service industry mode. Renames "Tables" → "Resources", hides F&B-specific UI.
+`industryMode` (`App.IndustryMode`, FB vs Service) was **removed on 2026-07-16**. Despite the
+old docs claiming it hid F&B-specific UI, it never gated any feature — its only consumer was the
+floor-plan screen, where it swapped labels (Tables↔Resources, Floor Plans↔Areas). It was also
+self-defeating: the backend's Service preset set `Feature_FloorPlan_Enabled = false` alongside it,
+so the one screen it affected was hidden from the companies that had it set. Its client default
+(`FB`) and server seed (`Service`) also contradicted each other.
 
-Always gate F&B-only UI on: `(settings[SettingKeys.industryMode] ?? 'FB') == 'FB'`.
+Industry adaptation now lives in two orthogonal places:
+- **Feature toggles** — `Feature_FloorPlan_Enabled`, `Feature_Booking_Enabled`: whether a
+  capability exists at all.
+- **Industry Packs** — `App_ServiceType_Pack` / `App_ServiceStatus_Pack` (Restaurant, Salon, …)
+  plus the custom service type/status lists.
+
+> ⚠️ **`Product.isService` is unrelated** and must never be swept up with this. It marks a product
+> as a service so stock deduction is skipped (see the inventory rules in `CLAUDE.md`). It only ever
+> shared a name with the removed `industryMode`-derived `isService` UI flag.
 
 ### Core UI Modules
 

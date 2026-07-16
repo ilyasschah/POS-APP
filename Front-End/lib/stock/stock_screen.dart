@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -7,6 +9,8 @@ import 'package:printing/printing.dart';
 import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/database/database_provider.dart';
+import 'package:pos_app/printer/pdf_file_name.dart';
+import 'package:pos_app/printer/pdf_save_service.dart';
 import 'package:pos_app/product/product_group_provider.dart';
 import 'package:pos_app/stock/warehouse_provider.dart';
 import 'package:pos_app/stock/warehouses_screen.dart';
@@ -158,12 +162,34 @@ class _StockScreenState extends ConsumerState<StockScreen> {
 
   // ── PDF Generation ──────────────────────────────────────────────────────────
 
-  Future<void> _printPdf(
+  /// Resolves what the report covers — the filtered rows + the selected
+  /// warehouse's name — so Print and Save always render the same sheet.
+  void _withReportArgs(
+    Future<void> Function(List<StockMasterItem>, String?) action,
+  ) {
+    final masterList = ref.read(stockMasterProvider).asData?.value;
+    if (masterList == null) return;
+    String? warehouseName;
+    if (_selectedWarehouseId != null) {
+      final whs = ref.read(allWarehousesProvider).asData?.value ?? [];
+      for (final w in whs) {
+        if (w.id == _selectedWarehouseId) {
+          warehouseName = w.name;
+          break;
+        }
+      }
+    }
+    action(_applyFilters(masterList), warehouseName);
+  }
+
+  /// Builds the stock sheet. Split from dispatch so Print and Save as PDF
+  /// render byte-identical documents. Returns null when there is no company.
+  Future<Uint8List?> _buildStockPdf(
     List<StockMasterItem> items,
     String? warehouseName,
   ) async {
     final company = ref.read(selectedCompanyProvider);
-    if (company == null) return;
+    if (company == null) return null;
 
     Map<int, String> groupMap = {};
     try {
@@ -457,11 +483,42 @@ class _StockScreenState extends ConsumerState<StockScreen> {
       ),
     );
 
+    return pdf.save();
+  }
+
+  Future<void> _printPdf(
+    List<StockMasterItem> items,
+    String? warehouseName,
+  ) async {
+    final bytes = await _buildStockPdf(items, warehouseName);
+    if (bytes == null) return;
     await Printing.layoutPdf(
-      onLayout: (_) async => pdf.save(),
-      name: 'Stock-${DateFormat('yyyy-MM-dd').format(now)}.pdf',
+      onLayout: (_) async => bytes,
+      // No '.pdf' — the platform appends the extension to the job name, so
+      // spelling it here produced 'Stock-2026-07-16.pdf.pdf'.
+      name: stockPdfName(DateTime.now()),
       format: PdfPageFormat.a4.landscape,
     );
+  }
+
+  Future<void> _savePdf(
+    List<StockMasterItem> items,
+    String? warehouseName,
+  ) async {
+    final bytes = await _buildStockPdf(items, warehouseName);
+    if (bytes == null) return;
+    try {
+      final path = await savePdfAs(
+        bytes: bytes,
+        suggestedName: stockPdfName(DateTime.now()),
+        dialogTitle: 'Save Stock Report',
+      );
+      if (!mounted || path == null) return;
+      showAppSnackbar(context, ref, 'Saved to $path');
+    } catch (e) {
+      if (!mounted) return;
+      showAppSnackbar(context, ref, 'Save failed: $e', isError: true);
+    }
   }
 
   // ── Build ───────────────────────────────────────────────────────────────────
@@ -510,25 +567,12 @@ class _StockScreenState extends ConsumerState<StockScreen> {
           IconButton(
             icon: const Icon(Icons.picture_as_pdf_outlined),
             tooltip: "Print Stock Report (PDF)",
-            onPressed: () {
-              final masterList =
-                  ref.read(stockMasterProvider).asData?.value;
-              if (masterList == null) return;
-              final filtered = _applyFilters(masterList);
-              String? warehouseName;
-              if (_selectedWarehouseId != null) {
-                final whs =
-                    ref.read(allWarehousesProvider).asData?.value ??
-                        [];
-                for (final w in whs) {
-                  if (w.id == _selectedWarehouseId) {
-                    warehouseName = w.name;
-                    break;
-                  }
-                }
-              }
-              _printPdf(filtered, warehouseName);
-            },
+            onPressed: () => _withReportArgs(_printPdf),
+          ),
+          IconButton(
+            icon: const Icon(Icons.save_alt),
+            tooltip: "Save Stock Report as PDF",
+            onPressed: () => _withReportArgs(_savePdf),
           ),
           IconButton(
             icon: const Icon(Icons.refresh),

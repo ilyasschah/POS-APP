@@ -996,7 +996,7 @@ class _AddBookingDialogState extends ConsumerState<_AddBookingDialog> {
           widget.prefilledStaff ??
           (widget.users.isNotEmpty ? widget.users.first : null);
       // Eager default: set Walk-in customer if the provider is already cached.
-      final earlyCustomers = ref.read(allCustomersProvider).value ?? [];
+      final earlyCustomers = ref.read(selectableCustomersProvider).value ?? [];
       final def = _findDefaultCustomer(earlyCustomers);
       if (def != null) {
         _selectedCustomerId = def.id;
@@ -1202,7 +1202,7 @@ class _AddBookingDialogState extends ConsumerState<_AddBookingDialog> {
   Widget build(BuildContext context) {
     final isTableMode = widget.resourceMode != 'staff';
     final existingBookings = ref.watch(allBookingsProvider).value ?? [];
-    final customers = ref.watch(allCustomersProvider).value ?? [];
+    final customers = ref.watch(selectableCustomersProvider).value ?? [];
 
     // Lazy default: fires once when the provider resolves after initState.
     if (!_customerDefaultSet && customers.isNotEmpty) {
@@ -1234,7 +1234,7 @@ class _AddBookingDialogState extends ConsumerState<_AddBookingDialog> {
                     prefixIcon: Icon(Icons.account_circle),
                   ),
                   items: customers
-                      .where((c) => c.isEnabled && c.isCustomer)
+                      .where((c) => c.isCustomer)
                       .map(
                         (c) => DropdownMenuItem<int?>(
                           value: c.id,

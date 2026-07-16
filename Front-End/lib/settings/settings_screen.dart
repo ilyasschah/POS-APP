@@ -151,26 +151,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text(
-          'Settings',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: cs.surface,
-        foregroundColor: cs.onSurface,
-        elevation: 0,
-        actions: [
-          if (isLoading)
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            ),
-        ],
-      ),
+      appBar: SettingsHeaderBar(isLoading: isLoading),
       body: Row(
         children: [
           // ── Left sidebar — instant show/hide via conditional inclusion ───
@@ -186,13 +167,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
                 child: Column(
                   children: [
-                    // Global settings search — overrides the tab content on the
-                    // right with a flat "Search Results" list while non-empty.
-                    const Padding(
-                      padding: EdgeInsets.fromLTRB(12, 12, 12, 6),
-                      child: _SettingsSearchField(),
-                    ),
-
                     // Scrollable tab list — takes all space above the pinned action.
                     Expanded(
                       child: ListView.builder(
@@ -288,6 +262,68 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// The settings screen's header: the title, the global search, and the
+/// settings-loading spinner.
+///
+/// The search lives here rather than in the sidebar so it survives collapsing
+/// the sidebar (where it used to be hidden along with it), and here rather than
+/// in a band of its own because the header already had empty space to the right
+/// of the title — a second band would cost ~64px of vertical room, which is
+/// scarce on a 10–13" tablet. While the query is non-empty the tab content below
+/// is replaced by "Search Results".
+///
+/// Public only so `test/settings_header_bar_test.dart` can pump it — it has no
+/// callers outside this file.
+class SettingsHeaderBar extends StatelessWidget implements PreferredSizeWidget {
+  const SettingsHeaderBar({super.key, this.isLoading = false});
+
+  final bool isLoading;
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return AppBar(
+      backgroundColor: cs.surface,
+      foregroundColor: cs.onSurface,
+      elevation: 0,
+      // Use a Stack to perfectly center the search bar regardless of the title
+      title: Stack(
+        alignment: Alignment.center,
+        children: [
+          const Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              'Settings',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          Align(
+            alignment: Alignment.center,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 480),
+              child: const _SettingsSearchField(),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        if (isLoading)
+          const Padding(
+            padding: EdgeInsets.all(16),
+            child: SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -1435,7 +1471,7 @@ class _StepperRow extends StatelessWidget {
 // GLOBAL SEARCH — UI + RESULTS + REGISTRY
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Flat Material-3 search box pinned at the top of the settings sidebar.
+/// Flat Material-3 search box, mounted in the settings screen's header.
 ///
 /// Low-spec friendly: no animated container, no blur, no drop shadow — just a
 /// filled field with a thin explicit border. Pushes the live (trimmed +
@@ -1449,7 +1485,15 @@ class _SettingsSearchField extends ConsumerStatefulWidget {
 }
 
 class _SettingsSearchFieldState extends ConsumerState<_SettingsSearchField> {
-  final _ctrl = TextEditingController();
+  late final TextEditingController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize the controller WITH the current provider state to prevent
+    // desyncs when the widget remounts or rebuilds.
+    _ctrl = TextEditingController(text: ref.read(settingsSearchQueryProvider));
+  }
 
   @override
   void dispose() {
@@ -1458,8 +1502,6 @@ class _SettingsSearchFieldState extends ConsumerState<_SettingsSearchField> {
   }
 
   void _onChanged(String raw) {
-    // setState only drives the inline clear-button visibility; the actual
-    // query lives in the provider so the results view can react to it.
     setState(() {});
     ref.read(settingsSearchQueryProvider.notifier).state = raw
         .trim()
@@ -1468,14 +1510,14 @@ class _SettingsSearchFieldState extends ConsumerState<_SettingsSearchField> {
 
   void _clear() {
     _ctrl.clear();
-    _onChanged('');
+    ref.read(settingsSearchQueryProvider.notifier).state = '';
+    setState(() {});
     FocusScope.of(context).unfocus();
   }
 
   @override
   Widget build(BuildContext context) {
     // Keep the field in sync when the query is cleared programmatically
-    // (e.g. tapping a navigational result that jumps to a tab).
     ref.listen(settingsSearchQueryProvider, (_, next) {
       if (next.isEmpty && _ctrl.text.isNotEmpty) {
         _ctrl.clear();
@@ -1518,7 +1560,7 @@ class _SettingsSearchFieldState extends ConsumerState<_SettingsSearchField> {
           minWidth: 36,
           minHeight: 36,
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
         border: border,
         enabledBorder: border,
         focusedBorder: OutlineInputBorder(
@@ -1869,13 +1911,6 @@ final _kSearchableSettings = <SearchableSetting>[
     trailingBuilder: (openTab) => _OpenTabButton(openTab),
   ),
   SearchableSetting(
-    title: 'Industry Mode',
-    tabName: 'General · Regional',
-    tabIndex: 0,
-    trailingBuilder: (_) =>
-        const _DropdownControl(SettingKeys.industryMode, ['FB', 'Service']),
-  ),
-  SearchableSetting(
     title: 'Tax Included in Price by Default',
     tabName: 'General · Tax',
     tabIndex: 0,
@@ -1906,13 +1941,6 @@ final _kSearchableSettings = <SearchableSetting>[
     tabIndex: 0,
     trailingBuilder: (_) =>
         const _DropdownControl(SettingKeys.writingDirection, ['LTR', 'RTL']),
-  ),
-  SearchableSetting(
-    title: 'POS Layout',
-    tabName: 'General · Application Style',
-    tabIndex: 0,
-    trailingBuilder: (_) =>
-        const _DropdownControl(SettingKeys.posLayout, ['Visual', 'Standard']),
   ),
   SearchableSetting(
     title: 'Enable Virtual Keyboard',
@@ -1982,22 +2010,10 @@ final _kSearchableSettings = <SearchableSetting>[
     trailingBuilder: (_) => const _SwitchControl(SettingKeys.showCommentBtn),
   ),
   SearchableSetting(
-    title: 'New Sale button',
-    tabName: 'General · POS Buttons',
-    tabIndex: 0,
-    trailingBuilder: (_) => const _SwitchControl(SettingKeys.showNewSaleBtn),
-  ),
-  SearchableSetting(
     title: 'Refund button',
     tabName: 'General · POS Buttons',
     tabIndex: 0,
     trailingBuilder: (_) => const _SwitchControl(SettingKeys.showRefundBtn),
-  ),
-  SearchableSetting(
-    title: 'Order Name button',
-    tabName: 'General · POS Buttons',
-    tabIndex: 0,
-    trailingBuilder: (_) => const _SwitchControl(SettingKeys.showOrderNameBtn),
   ),
   SearchableSetting(
     title: 'Cash Drawer button',
@@ -2208,26 +2224,6 @@ final _kSearchableSettings = <SearchableSetting>[
     tabIndex: 1,
     trailingBuilder: (_) =>
         const _SwitchControl(SettingKeys.trackUnconfirmedVoidedItems),
-  ),
-  SearchableSetting(
-    title: 'Enable custom order name',
-    tabName: 'Order & Payment · Order Name',
-    tabIndex: 1,
-    trailingBuilder: (_) =>
-        const _SwitchControl(SettingKeys.enableCustomOrderName),
-  ),
-  SearchableSetting(
-    title: 'Order name required',
-    tabName: 'Order & Payment · Order Name',
-    tabIndex: 1,
-    trailingBuilder: (_) => const _SwitchControl(SettingKeys.orderNameRequired),
-  ),
-  SearchableSetting(
-    title: 'Request order name automatically',
-    tabName: 'Order & Payment · Order Name',
-    tabIndex: 1,
-    trailingBuilder: (_) =>
-        const _SwitchControl(SettingKeys.requestOrderNameAutomatically),
   ),
   SearchableSetting(
     title: 'Request service type automatically',
@@ -2845,8 +2841,10 @@ class _FontScalePicker extends ConsumerWidget {
             children: [
               Text(
                 'Font Size',
-                style:
-                    TextStyle(fontSize: 14, color: theme.colorScheme.onSurface),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: theme.colorScheme.onSurface,
+                ),
               ),
               const Spacer(),
               Text(
@@ -3450,11 +3448,6 @@ class _GeneralTab extends ConsumerWidget {
               options: ['dd-MM-yyyy', 'MM/dd/yyyy', 'yyyy-MM-dd', 'dd/MM/yyyy'],
             ),
             _TimezoneCard(),
-            _SettingDropdown(
-              settingKey: SettingKeys.industryMode,
-              label: 'Industry Mode',
-              options: ['FB', 'Service'],
-            ),
           ],
         ),
         const _SettingsCard(
@@ -3483,11 +3476,6 @@ class _GeneralTab extends ConsumerWidget {
               settingKey: SettingKeys.writingDirection,
               label: 'Writing Direction',
               options: ['LTR', 'RTL'],
-            ),
-            _SettingDropdown(
-              settingKey: SettingKeys.posLayout,
-              label: 'POS Layout',
-              options: ['Visual', 'Standard'],
             ),
             _SettingSwitch(
               settingKey: SettingKeys.enableVirtualKeyboard,
@@ -3557,16 +3545,8 @@ class _GeneralTab extends ConsumerWidget {
               label: 'Comment',
             ),
             const _SettingSwitch(
-              settingKey: SettingKeys.showNewSaleBtn,
-              label: 'New Sale',
-            ),
-            const _SettingSwitch(
               settingKey: SettingKeys.showRefundBtn,
               label: 'Refund',
-            ),
-            const _SettingSwitch(
-              settingKey: SettingKeys.showOrderNameBtn,
-              label: 'Order Name',
             ),
             const _SettingSwitch(
               settingKey: SettingKeys.showCashDrawerBtn,
@@ -3752,23 +3732,6 @@ class _OrderPaymentTab extends ConsumerWidget {
             _SettingSwitch(
               settingKey: SettingKeys.trackUnconfirmedVoidedItems,
               label: 'Track unconfirmed voided items',
-            ),
-          ],
-        ),
-        const _SettingsCard(
-          title: 'ORDER NAME',
-          children: [
-            _SettingSwitch(
-              settingKey: SettingKeys.enableCustomOrderName,
-              label: 'Enable custom order name',
-            ),
-            _SettingSwitch(
-              settingKey: SettingKeys.orderNameRequired,
-              label: 'Order name required',
-            ),
-            _SettingSwitch(
-              settingKey: SettingKeys.requestOrderNameAutomatically,
-              label: 'Request order name automatically',
             ),
           ],
         ),
@@ -4339,7 +4302,8 @@ class _ScalePortDropdown extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final detected = ref.watch(availableSerialPortsProvider);
-    final saved = ref.watch(
+    final saved =
+        ref.watch(
           appSettingsProvider.select((s) => s[SettingKeys.scalePort]),
         ) ??
         kSettingDefaults[SettingKeys.scalePort]!;
@@ -4382,21 +4346,21 @@ class _ScaleLiveTest extends ConsumerWidget {
 
     final (Color color, IconData icon, String text) = switch (reading) {
       AsyncError(:final error) => (
-          context.dangerColor,
-          Icons.error_outline,
-          error is ScaleException ? error.message : 'Scale error: $error',
-        ),
+        context.dangerColor,
+        Icons.error_outline,
+        error is ScaleException ? error.message : 'Scale error: $error',
+      ),
       AsyncData(:final value) => (
-          value.stable ? context.successColor : context.warningColor,
-          value.stable ? Icons.check_circle_outline : Icons.hourglass_empty,
-          '${value.weight}${value.unit ?? ''}'
-              '${value.stable ? '' : '  (settling…)'}',
-        ),
+        value.stable ? context.successColor : context.warningColor,
+        value.stable ? Icons.check_circle_outline : Icons.hourglass_empty,
+        '${value.weight}${value.unit ?? ''}'
+            '${value.stable ? '' : '  (settling…)'}',
+      ),
       _ => (
-          theme.colorScheme.onSurfaceVariant,
-          Icons.hourglass_empty,
-          'Waiting for the scale to send a weight…',
-        ),
+        theme.colorScheme.onSurfaceVariant,
+        Icons.hourglass_empty,
+        'Waiting for the scale to send a weight…',
+      ),
     };
 
     return Padding(
@@ -6112,10 +6076,6 @@ class _AboutTab extends ConsumerWidget {
                 value: settings[SettingKeys.dateFormat] ?? '–',
               ),
               _InfoRow(
-                label: 'Industry Mode',
-                value: settings[SettingKeys.industryMode] ?? '–',
-              ),
-              _InfoRow(
                 label: 'Dual Currency',
                 value: settings[SettingKeys.dualCurrencyEnabled] == 'true'
                     ? 'Enabled'
@@ -6163,6 +6123,13 @@ class _InfoRow extends StatelessWidget {
 
 // ── Timezone Card ─────────────────────────────────────────────────────────────
 
+/// The canonical UTC id in the IANA database. There is **no plain `'UTC'` key** —
+/// verified against the bundled database: 341 location keys, none named `'UTC'`
+/// (the closest are `Etc/UTC` and `Etc/GMT*`). Feeding `'UTC'` to the timezone
+/// dropdown as a value with no matching item trips DropdownButton's "exactly one
+/// item" assertion, so it must never be used as a fallback or a default.
+const String _kUtcTzId = 'Etc/UTC';
+
 String _tzOffsetLabel(String name) {
   try {
     final loc = tz.getLocation(name);
@@ -6200,6 +6167,20 @@ class _TimezoneCardState extends ConsumerState<_TimezoneCard> {
     });
   }
 
+  /// The id to show in the dropdown, guaranteed to be one of [_tzIds].
+  ///
+  /// DropdownButton asserts that its value matches exactly one item, so this must
+  /// never return something absent from the list. Legacy rows (and the old
+  /// default) stored the invalid `'UTC'` — see [_kUtcTzId] — and an id can also
+  /// vanish between tz database versions, so anything unknown lands on Etc/UTC.
+  /// While [_tzIds] is still loading the list is empty, which the assertion
+  /// explicitly allows, so any value is safe there.
+  String _safeTzId(String current) {
+    if (_tzIds.isEmpty || _tzIds.contains(current)) return current;
+    if (_tzIds.contains(_kUtcTzId)) return _kUtcTzId;
+    return _tzIds.first;
+  }
+
   Future<void> _applyAutoTimezone() async {
     setState(() => _detecting = true);
     try {
@@ -6218,8 +6199,8 @@ class _TimezoneCardState extends ConsumerState<_TimezoneCard> {
   Widget build(BuildContext context) {
     final settings = ref.watch(appSettingsProvider);
     final isAuto = (settings[SettingKeys.timezoneMode] ?? 'Auto') == 'Auto';
-    final currentTz = settings[SettingKeys.timezone] ?? 'UTC';
-    final safeId = _tzIds.contains(currentTz) ? currentTz : 'UTC';
+    final currentTz = settings[SettingKeys.timezone] ?? _kUtcTzId;
+    final safeId = _safeTzId(currentTz);
     final theme = Theme.of(context);
 
     return Column(
@@ -6284,6 +6265,11 @@ class _TimezoneCardState extends ConsumerState<_TimezoneCard> {
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
             child: DropdownButtonFormField<String>(
+              // FormField seeds its state from initialValue ONCE. _tzIds loads
+              // asynchronously, so safeId can legitimately change after the first
+              // build (empty list → resolved id); without this the field would
+              // keep serving the stale seed to the DropdownButton underneath.
+              key: ValueKey(safeId),
               initialValue: safeId,
               isExpanded: true,
               decoration: InputDecoration(

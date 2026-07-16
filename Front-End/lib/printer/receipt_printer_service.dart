@@ -7,6 +7,8 @@ import 'package:pos_app/cart/checkout_models.dart';
 import 'package:pos_app/cart/discount_display.dart';
 import 'package:pos_app/company/company_model.dart';
 import 'package:pos_app/customer/customer_model.dart';
+import 'package:pos_app/printer/pdf_file_name.dart';
+import 'package:pos_app/printer/pdf_save_service.dart';
 import 'package:pos_app/reports/z_report_model.dart';
 import 'package:printing/printing.dart';
 
@@ -215,6 +217,11 @@ class ReceiptPrinterService {
     required User? cashier,
     Customer? customer,
     required String orderNumber,
+    /// The banked sale's document number, when this receipt is for one. Drives
+    /// the PDF file name only — a document is a permanent, uniquely-numbered
+    /// record, so it names itself; an order (guest check, not yet banked) has
+    /// only its name + the print time. Null for anything not yet a document.
+    String? documentNumber,
     required DateTime printTime,
     required List<CartItem> items,
     required double subtotal,
@@ -238,6 +245,9 @@ class ReceiptPrinterService {
     // stay global.
     String role = 'Receipt',
     bool isGuestCheck = false,
+    /// Write the receipt to a file the operator picks (with the name pre-filled)
+    /// instead of sending it to a printer. Same bytes either way.
+    bool saveToFile = false,
     // Loyalty
     double pointsUsed = 0,
     double pointsEarned = 0,
@@ -287,6 +297,12 @@ class ReceiptPrinterService {
     final printTotalQty = onToggle(SettingKeys.receiptPrintTotalQuantity); // default ON
     final printTaxName = onToggle(SettingKeys.receiptPrintTaxName); // default ON
 
+    // Company header block, printed under the logo/name. All default ON so
+    // existing receipts are unchanged; toggle in Printer Settings → Customize.
+    final showCompanyTax = onToggle(SettingKeys.receiptShowCompanyTaxNumber);
+    final showCompanyAddress = onToggle(SettingKeys.receiptShowCompanyAddress);
+    final showCompanyPhone = onToggle(SettingKeys.receiptShowCompanyPhone);
+
     // Per-tax breakdown for Receipt.PrintTaxName: sum each named tax over items
     // (mirrors the per-line tax math used below).
     final taxByName = <String, double>{};
@@ -317,10 +333,9 @@ class ReceiptPrinterService {
     final headerText = (roleSettings['$role.Header'] ?? '').isNotEmpty
         ? roleSettings['$role.Header']!
         : company.name;
-    final footerRaw = roleSettings['$role.Footer'] ?? '';
-    final footerText = footerRaw.isNotEmpty
-        ? footerRaw
-        : (isGuestCheck ? '' : 'Thank you for your visit!');
+    // Footer is exactly what the operator configured (Printer Settings → Footer).
+    // No hardcoded default — an empty footer simply prints nothing.
+    final footerText = roleSettings['$role.Footer'] ?? '';
 
     pw.TextStyle ts(double size, {bool bold = false}) => pw.TextStyle(
       font: bold ? boldFont : font,
@@ -448,12 +463,12 @@ class ReceiptPrinterService {
 
             // ── Header ─────────────────────────────────────────────────────
             center(headerText, size: 16, bold: true),
-            if (company.taxNumber?.isNotEmpty == true)
-              center('Tax No: ${company.taxNumber}', size: 9),
-            if (company.address?.isNotEmpty == true)
+            if (showCompanyTax && company.taxNumber?.isNotEmpty == true)
+              center('${lbl(SettingKeys.labelCompanyTaxNumber, 'Tax No')}: ${company.taxNumber}', size: 9),
+            if (showCompanyAddress && company.address?.isNotEmpty == true)
               center(company.address!, size: 9),
-            if (company.phoneNumber?.isNotEmpty == true)
-              center('Tel: ${company.phoneNumber}', size: 9),
+            if (showCompanyPhone && company.phoneNumber?.isNotEmpty == true)
+              center('${lbl(SettingKeys.labelCompanyPhone, 'Tel')}: ${company.phoneNumber}', size: 9),
             pw.SizedBox(height: 6),
             pw.Divider(borderStyle: pw.BorderStyle.dashed),
             pw.SizedBox(height: 4),
@@ -675,12 +690,21 @@ class ReceiptPrinterService {
       ),
     );
 
-    await _dispatch(
-      pdf,
-      isGuestCheck ? 'GuestCheck_$orderNumber' : 'Receipt_$orderNumber',
-      copies,
-      printerName,
-    );
+    // A guest check is always an order — it prints before the sale is banked,
+    // so it never has a document number even when the caller knows one.
+    final name = (!isGuestCheck && (documentNumber?.trim().isNotEmpty ?? false))
+        ? documentPdfName(documentNumber!)
+        : orderPdfName(orderNumber, printTime);
+
+    if (saveToFile) {
+      await savePdfAs(
+        bytes: await pdf.save(),
+        suggestedName: name,
+        dialogTitle: isGuestCheck ? 'Save Guest Check' : 'Save Receipt',
+      );
+      return;
+    }
+    await _dispatch(pdf, name, copies, printerName);
   }
 
   // ── Kitchen Ticket ────────────────────────────────────────────────────────
@@ -788,7 +812,9 @@ class ReceiptPrinterService {
       ),
     );
 
-    await _dispatch(pdf, 'Kitchen_$orderNumber', copies, printerName);
+    // Always an order — a kitchen ticket prints long before the sale is banked.
+    await _dispatch(
+        pdf, orderPdfName(orderNumber, printTime), copies, printerName);
   }
 
   // ── Z-Report ──────────────────────────────────────────────────────────────
@@ -849,10 +875,19 @@ class ReceiptPrinterService {
               pw.SizedBox(height: 8),
               _buildReceiptRow(
                 'Documents:',
-                '#${report.fromDocumentId} to #${report.toDocumentId}',
+                report.documentCount?.toString() ?? '-',
                 font: font,
                 boldFont: boldFont,
               ),
+              if (report.fromDocumentNumber != null)
+                _buildReceiptRow(
+                  'Range:',
+                  report.fromDocumentNumber == report.toDocumentNumber
+                      ? report.fromDocumentNumber!
+                      : '${report.fromDocumentNumber} - ${report.toDocumentNumber}',
+                  font: font,
+                  boldFont: boldFont,
+                ),
               _buildReceiptRow(
                 'Cash in:',
                 '${report.totalCashIn.toStringAsFixed(2)} $currencySymbol',

@@ -8,10 +8,10 @@ import 'package:pos_app/floor_plan/floor_plan_table.dart';
 import 'package:pos_app/floor_plan/floor_plan_table_provider.dart';
 import 'package:pos_app/security/security_guard.dart';
 import 'package:pos_app/security/security_keys.dart';
+import 'package:pos_app/utils/snackbar_helper.dart';
 
 class SidePanel extends ConsumerWidget {
-  final bool isService;
-  const SidePanel({super.key, this.isService = false});
+  const SidePanel({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -29,7 +29,6 @@ class SidePanel extends ConsumerWidget {
           children: [
             _PanelHeader(
               isEditMode: fpState.isEditMode,
-              isService: isService,
               onClose: fpState.isEditMode
                   ? () {
                       ref
@@ -46,13 +45,11 @@ class SidePanel extends ConsumerWidget {
             Expanded(
               child: fpState.isEditMode
                   ? _EditPanel(
-                      isService: isService,
                       selectedTableId: selectedTableId,
                       activePlanId: fpState.activeFloorPlanId ?? 0,
                       fpState: fpState,
                     )
                   : _ViewPanel(
-                      isService: isService,
                       context: context,
                       ref: ref,
                     ),
@@ -68,12 +65,10 @@ class SidePanel extends ConsumerWidget {
 
 class _PanelHeader extends StatelessWidget {
   final bool isEditMode;
-  final bool isService;
   final VoidCallback onClose;
 
   const _PanelHeader({
     required this.isEditMode,
-    required this.isService,
     required this.onClose,
   });
 
@@ -94,9 +89,7 @@ class _PanelHeader extends StatelessWidget {
           const Gap(10),
           Expanded(
             child: Text(
-              isEditMode
-                  ? (isService ? 'Edit Resources' : 'Edit Floor Plan')
-                  : 'Options',
+              isEditMode ? 'Edit Floor Plan' : 'Options',
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
@@ -124,12 +117,10 @@ class _PanelHeader extends StatelessWidget {
 // ─── View Panel (normal mode) ─────────────────────────────────────────────────
 
 class _ViewPanel extends StatelessWidget {
-  final bool isService;
   final BuildContext context;
   final WidgetRef ref;
 
   const _ViewPanel({
-    required this.isService,
     required this.context,
     required this.ref,
   });
@@ -141,7 +132,7 @@ class _ViewPanel extends StatelessWidget {
       children: [
         _ActionTile(
           icon: PhosphorIconsRegular.pencilSimple,
-          title: isService ? 'Edit Resources & Rooms' : 'Edit Floor Plan',
+          title: 'Edit Floor Plan',
           subtitle: 'Add, resize, and rename tables',
           onTap: () => ref.read(securityGuardProvider).guard(
             context,
@@ -160,13 +151,11 @@ class _ViewPanel extends StatelessWidget {
 // ─── Edit Panel (edit mode) ───────────────────────────────────────────────────
 
 class _EditPanel extends ConsumerStatefulWidget {
-  final bool isService;
   final int? selectedTableId;
   final int activePlanId;
   final FloorPlanState fpState;
 
   const _EditPanel({
-    required this.isService,
     required this.selectedTableId,
     required this.activePlanId,
     required this.fpState,
@@ -213,14 +202,14 @@ class _EditPanelState extends ConsumerState<_EditPanel> {
         const Gap(20),
 
         // Floor plan actions
-        _SectionLabel(widget.isService ? 'Areas' : 'Floor Plans'),
+        const _SectionLabel('Floor Plans'),
         const Gap(8),
         Row(
           children: [
             Expanded(
               child: _OutlineBtn(
                 icon: PhosphorIconsRegular.plus,
-                label: widget.isService ? 'New Area' : 'New Floor',
+                label: 'New Floor',
                 onTap: () => _showAddPlanDialog(context),
               ),
             ),
@@ -237,34 +226,25 @@ class _EditPanelState extends ConsumerState<_EditPanel> {
         const Gap(8),
         _OutlineBtn(
           icon: PhosphorIconsRegular.trash,
-          label: widget.isService ? 'Remove Area' : 'Remove Floor',
+          label: 'Remove Floor',
           danger: true,
           onTap: () => _confirmDeletePlan(context),
         ),
         const Gap(20),
 
         // Table actions
-        _SectionLabel(widget.isService ? 'Resources' : 'Tables'),
+        const _SectionLabel('Tables'),
         const Gap(8),
         _PrimaryBtn(
           icon: PhosphorIconsRegular.plus,
-          label: widget.isService ? 'Add Resource' : 'Add Table',
-          onTap: () {
-            if (widget.activePlanId != 0) {
-              ref
-                  .read(floorPlanTableProvider.notifier)
-                  .addTable(
-                    FloorPlanTable(
-                      id: 0,
-                      floorPlanId: widget.activePlanId,
-                      name: widget.isService ? 'New Resource' : 'New Table',
-                      positionX: 60,
-                      positionY: 60,
-                      width: 100,
-                      height: 100,
-                      isRound: false,
-                    ),
-                  );
+          label: 'Add Table',
+          onTap: () async {
+            if (widget.activePlanId == 0) return;
+            final err = await ref
+                .read(floorPlanTableProvider.notifier)
+                .addTable(floorPlanId: widget.activePlanId);
+            if (err != null && context.mounted) {
+              showAppSnackbar(context, ref, err, isError: true);
             }
           },
         ),
@@ -272,21 +252,16 @@ class _EditPanelState extends ConsumerState<_EditPanel> {
         // Table properties (when a table is selected)
         if (selectedTable != null) ...[
           const Gap(20),
-          _SectionLabel(
-            widget.isService ? 'Resource Properties' : 'Table Properties',
-          ),
+          const _SectionLabel('Table Properties'),
           const Gap(8),
-          _TablePropertiesEditor(
-            table: selectedTable,
-            isService: widget.isService,
-          ),
+          _TablePropertiesEditor(table: selectedTable),
         ],
       ],
     );
   }
 
   void _showAddPlanDialog(BuildContext context) =>
-      showAddFloorPlanDialog(context, ref, isService: widget.isService);
+      showAddFloorPlanDialog(context, ref);
 
   void _showRenamePlanDialog(BuildContext context) {
     final plans = ref.read(allFloorPlansProvider).value ?? [];
@@ -362,8 +337,7 @@ class _EditPanelState extends ConsumerState<_EditPanel> {
 
 class _TablePropertiesEditor extends ConsumerStatefulWidget {
   final FloorPlanTable table;
-  final bool isService;
-  const _TablePropertiesEditor({required this.table, required this.isService});
+  const _TablePropertiesEditor({required this.table});
 
   @override
   ConsumerState<_TablePropertiesEditor> createState() =>
@@ -637,7 +611,7 @@ class _TablePropertiesEditorState
           padding: const EdgeInsets.all(12),
           child: _OutlineBtn(
             icon: PhosphorIconsRegular.trash,
-            label: widget.isService ? 'Remove Resource' : 'Remove Table',
+            label: 'Remove Table',
             danger: true,
             onTap: () =>
                 ref.read(floorPlanTableProvider.notifier).deleteTable(t.id),
@@ -1007,20 +981,19 @@ class _NudgeBtn extends StatelessWidget {
   }
 }
 
-/// Prompts for a name and creates a floor plan / resource area. Shared by the
-/// side panel's "New Floor" action and the empty-canvas call-to-action so both
-/// open the exact same dialog.
+/// Prompts for a name and creates a floor plan. Shared by the side panel's
+/// "New Floor" action and the empty-canvas call-to-action so both open the exact
+/// same dialog.
 Future<void> showAddFloorPlanDialog(
   BuildContext context,
-  WidgetRef ref, {
-  required bool isService,
-}) {
+  WidgetRef ref,
+) {
   return showDialog(
     context: context,
     builder: (ctx) {
       String newName = '';
       return AlertDialog(
-        title: Text(isService ? 'New Resource Area' : 'New Floor Plan'),
+        title: const Text('New Floor Plan'),
         content: TextField(
           onChanged: (v) => newName = v,
           decoration: const InputDecoration(

@@ -47,48 +47,23 @@ final localDocumentItemsProvider = StreamProvider.autoDispose
   return db.watchDocumentItems(args.docLocalId).asyncMap((rows) async {
     final products = await db.select(db.productsTable).get();
     final pById = {for (final p in products) p.id: p};
-    return rows.map((r) {
-      final p = pById[r.productId];
-      // Heal older rows where checkout didn't persist these: fall back to the
-      // unit price for the tax base, and derive the rate from the stored tax
-      // amount, so the Edit-Item dialog loads real values instead of 0 / No tax.
-      final effectivePriceBeforeTax =
-          r.priceBeforeTax > 0 ? r.priceBeforeTax : r.unitPrice;
-      final effectiveTaxRate = r.taxRate > 0
-          ? r.taxRate
-          : (r.taxAmount > 0 && r.total > 0
-              ? (r.taxAmount / r.total * 100)
-              : 0.0);
-      final beforeTaxAfterDisc = effectiveTaxRate > 0
-          ? r.total / (1 + effectiveTaxRate / 100)
-          : r.total;
-      return DocumentItem(
-        id: r.serverId ?? 0,
-        localId: r.localId,
-        syncStatus: r.syncStatus,
-        taxId: r.taxId,
-        taxRate: effectiveTaxRate,
-        expirationDate: r.expirationDate,
-        companyId: args.companyId,
-        documentId: args.docServerId,
-        productId: r.productId,
-        productName: p?.name,
-        productCode: p?.code,
-        measurementUnit: p?.measurementUnit,
-        quantity: r.quantity,
-        expectedQuantity: r.quantity,
-        priceBeforeTax: effectivePriceBeforeTax,
-        price: r.unitPrice,
-        discount: r.discount,
-        discountType: r.discountType,
-        productCost: p?.cost ?? 0,
-        priceBeforeTaxAfterDiscount: beforeTaxAfterDisc,
-        priceAfterDiscount: r.unitPrice,
-        total: r.total,
-        totalAfterDocumentDiscount: r.total,
-        discountApplyRule: true,
-      );
-    }).toList();
+    // `total` carries two different meanings depending on where the document
+    // came from: a checkout document stores each line EX-tax (the tax sits in
+    // `taxAmount`), a manual editor document stores it tax-INCLUSIVE. Same
+    // origin test as _syncDocumentTotal — checkout stamps `orderNumber`.
+    // Reading it origin-blind billed a 15.00 + 20% line as 12.50 (15 / 1.2).
+    final doc = await db.getDocumentByLocalId(args.docLocalId);
+    final isCheckoutDoc =
+        doc?.orderNumber != null && doc!.orderNumber!.isNotEmpty;
+    return rows
+        .map((r) => DocumentItem.fromDrift(
+              r,
+              isCheckoutDoc: isCheckoutDoc,
+              companyId: args.companyId,
+              documentId: args.docServerId,
+              product: pById[r.productId],
+            ))
+        .toList();
   });
 });
 
@@ -1005,7 +980,7 @@ class _HeaderForm extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final asyncCustomers = ref.watch(allCustomersProvider);
+    final asyncCustomers = ref.watch(selectableCustomersProvider);
     final asyncUsers = ref.watch(allUsersProvider);
     final asyncWarehouses = ref.watch(allWarehousesProvider);
     final isSupplier =
@@ -1478,7 +1453,11 @@ class _ItemsView extends ConsumerWidget {
                   );
                 }
 
-                final total = items.fold<double>(0, (s, i) => s + i.total);
+                // Sum the ex-tax subtotals, not the raw `total` — that column
+                // means ex-tax on checkout documents but tax-inclusive on
+                // manual ones, which made this "Base Total" origin-dependent.
+                final total = items.fold<double>(
+                    0, (s, i) => s + i.priceBeforeTaxAfterDiscount);
 
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1637,7 +1616,11 @@ class _ItemsView extends ConsumerWidget {
                                 Expanded(
                                   flex: 1,
                                   child: Text(
-                                    item.price.toStringAsFixed(2),
+                                    // Ex-tax, so Price → Subtotal → +Tax →
+                                    // Total reads as one sum. `price`
+                                    // (unit_price) is ex-tax on checkout rows
+                                    // but tax-inclusive on manual ones.
+                                    item.priceBeforeTax.toStringAsFixed(2),
                                     textAlign: TextAlign.right,
                                   ),
                                 ),
@@ -1672,7 +1655,7 @@ class _ItemsView extends ConsumerWidget {
                                 Expanded(
                                   flex: 1,
                                   child: Text(
-                                    item.total.toStringAsFixed(2),
+                                    item.totalWithTax.toStringAsFixed(2),
                                     textAlign: TextAlign.right,
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,

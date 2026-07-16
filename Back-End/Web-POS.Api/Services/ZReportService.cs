@@ -1,4 +1,5 @@
-﻿using Api.DataBase;
+﻿using Api.Constants;
+using Api.DataBase;
 using Api.Domain;
 using Api.Helpers;
 using Api.Models;
@@ -53,11 +54,52 @@ namespace Api.Services
                         .ToListAsync();
 
                     // --- 🧮 CALCULATION ENGINE ---
-                    decimal totalSales = shiftDocuments.Sum(d => d.Total);
-                    decimal totalReturns = 0;
-                    decimal discountsGranted = shiftDocuments.Sum(d => d.Discount);
-                    decimal taxableTotal = shiftDocuments.Sum(d => d.Total);
-                    decimal totalTax = 0;
+                    // Only sales and refunds are takings. The id range above can
+                    // also span purchase / inventory documents, whose totals must
+                    // never land on a Z-report.
+                    var salesDocuments = shiftDocuments
+                        .Where(d => d.DocumentTypeId == DocumentTypeConstants.Sales)
+                        .ToList();
+                    var refundDocuments = shiftDocuments
+                        .Where(d => d.DocumentTypeId == DocumentTypeConstants.Refund)
+                        .ToList();
+
+                    decimal totalSales = salesDocuments.Sum(d => d.Total);
+                    // A refund's Total is stored POSITIVE here (unlike the client,
+                    // which keeps it negative), so summing every document into
+                    // sales — as this used to — inflated takings by the refunded
+                    // amount instead of reporting it as a return.
+                    decimal totalReturns = Math.Abs(refundDocuments.Sum(d => d.Total));
+
+                    // Every discount actually applied, from the normalized
+                    // DiscountLine rows: Amount is the resolved currency figure and
+                    // the only summable field. The previous Document.Discount sum
+                    // saw only whole-order discounts and silently missed every
+                    // item-level, promotion, customer-profile and loyalty discount.
+                    decimal discountsGranted = await (
+                        from dl in _db.DiscountLines
+                        join d in _db.Documents on dl.DocumentId equals d.Id
+                        where d.CompanyId == companyId
+                           && d.Id >= fromDocumentId && d.Id <= toDocumentId
+                           && (d.DocumentTypeId == DocumentTypeConstants.Sales
+                            || d.DocumentTypeId == DocumentTypeConstants.Refund)
+                        select (decimal?)dl.Amount).SumAsync() ?? 0m;
+
+                    // Tax lives on DocumentItemTax, not on DocumentItem.
+                    decimal totalTax = await (
+                        from t in _db.DocumentItemTaxes
+                        join i in _db.DocumentItems on t.DocumentItemId equals i.Id
+                        join d in _db.Documents on i.DocumentId equals d.Id
+                        where d.CompanyId == companyId
+                           && d.Id >= fromDocumentId && d.Id <= toDocumentId
+                           && (d.DocumentTypeId == DocumentTypeConstants.Sales
+                            || d.DocumentTypeId == DocumentTypeConstants.Refund)
+                        select (decimal?)t.Amount).SumAsync() ?? 0m;
+
+                    // Document.Total is tax-inclusive, so the taxable base is the
+                    // net takings less the tax they carry. Reconciles as
+                    // taxableTotal + totalTax == totalSales - totalReturns.
+                    decimal taxableTotal = totalSales - totalReturns - totalTax;
 
                     decimal grandTotal = unreportedPayments.Sum(p => p.Amount);
 

@@ -40,18 +40,36 @@ namespace Api.Controllers
         public async Task<ActionResult<CustomerDto>> AddCustomercommand([FromBody] CreateCustomerRequest createrequest, [FromQuery] int companyId)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
-            var command = new AddCustomerCommand(createrequest, companyId);
-            var result = await mediator.Send(command);
-            return CreatedAtAction(nameof(GetAllCustomers), new { companyId }, result);
+            try
+            {
+                var command = new AddCustomerCommand(createrequest, companyId);
+                var result = await mediator.Send(command);
+                return CreatedAtAction(nameof(GetAllCustomers), new { companyId }, result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
         }
         [HttpPatch("[action]")]
         public async Task<ActionResult<CustomerDto>> UpdateCustomercommand([FromBody] UpdateCustomerRequest updaterequest, [FromQuery] int companyId)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
             if (updaterequest.Id == null) return BadRequest("Customer ID is required");
-            var command = new UpdateCustomerCommand(updaterequest, companyId);
-            var result = await mediator.Send(command);
-            return Ok(new { Message = "Customer updated" });
+            try
+            {
+                var command = new UpdateCustomerCommand(updaterequest, companyId);
+                await mediator.Send(command);
+                return Ok(new { Message = "Customer updated" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { success = false, message = ex.Message });
+            }
         }
         [HttpDelete("[action]")]
         public async Task<ActionResult> DeleteCustomercommand([FromQuery] int id, [FromQuery] int companyId)

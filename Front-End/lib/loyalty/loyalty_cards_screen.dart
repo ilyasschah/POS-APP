@@ -425,7 +425,7 @@ class _AddCardDialogState extends ConsumerState<_AddCardDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final customersAsync = ref.watch(allCustomersProvider);
+    final customersAsync = ref.watch(selectableCustomersProvider);
     final cs = Theme.of(context).colorScheme;
 
     return AlertDialog(

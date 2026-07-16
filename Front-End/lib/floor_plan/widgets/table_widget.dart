@@ -16,7 +16,11 @@ class TableWidget extends ConsumerStatefulWidget {
   final FloorPlanTable table;
   final int companyId;
   final int userId;
-  final int warehouseId;
+
+  /// Null until the warehouse seed resolves. Passed through as-is — the cart
+  /// falls back to the configured default; substituting a literal 1 here would
+  /// pin the order to a warehouse the company may not even have.
+  final int? warehouseId;
 
   const TableWidget({
     super.key,
@@ -230,15 +234,10 @@ class _TableWidgetState extends ConsumerState<TableWidget> {
                   if (mounted) {
                     ref
                         .read(cartProvider.notifier)
-                        .setOrderContext(
-                          0, // local-only sentinel
-                          widget.warehouseId,
+                        .startTableOrder(
                           tableId: widget.table.id,
-                          orderNumber: "ORD- ${widget.table.name}",
+                          tableName: widget.table.name,
                         );
-                    ref.read(cartProvider.notifier).state = ref
-                        .read(cartProvider)
-                        .copyWith(serviceType: 0);
                     ref.read(mainNavigationIndexProvider.notifier).state = 0;
                   }
                 }

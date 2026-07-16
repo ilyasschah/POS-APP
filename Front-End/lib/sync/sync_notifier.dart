@@ -1,32 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:pos_app/api/api_client.dart';
 import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/license/license_service.dart';
 import 'package:pos_app/sync/account_status_provider.dart';
 import 'package:pos_app/sync/sync_provider.dart';
-
-/// Result of the "does my company still exist?" probe. `unknown` = offline or a
-/// transient error → never acted on (an offline terminal must keep working).
-enum _CompanyExistence { exists, deleted, unknown }
-
-/// Probes the server for the company. The backend returns 200 with a null/empty
-/// body when the company has been deleted — that (and only that) means "gone".
-/// Any thrown error is offline/transient → `unknown`.
-Future<_CompanyExistence> _checkCompanyExists(int companyId) async {
-  try {
-    final dio = createDio();
-    final res = await dio.get(
-      '/Company/GetById',
-      queryParameters: {'id': companyId},
-    );
-    final data = res.data;
-    final gone = data == null || (data is Map && data.isEmpty);
-    return gone ? _CompanyExistence.deleted : _CompanyExistence.exists;
-  } catch (_) {
-    return _CompanyExistence.unknown;
-  }
-}
 
 /// Tracks the in-flight state of a manual sync. `isLoading` is true while a sync
 /// runs; `hasError` flips true only on a hard failure (the whole run threw). On
@@ -61,7 +38,7 @@ class SyncNotifier extends AsyncNotifier<List<String>> {
         // gone (deleted in the admin portal), flag it so the shell routes back to
         // master login. Only a real "gone" response trips this — offline/errors do
         // not, so a legitimate offline terminal is never kicked out.
-        if (await _checkCompanyExists(companyId) == _CompanyExistence.deleted) {
+        if (await checkCompanyExists(companyId) == CompanyExistence.deleted) {
           ref.read(accountRevokedProvider.notifier).markRevoked();
           return const <String>[];
         }

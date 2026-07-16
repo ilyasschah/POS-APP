@@ -68,7 +68,7 @@ class _SubscriptionBlockedScreenState
         ref,
         result.state == LicenseState.tampered
             ? 'License is invalid. Please contact support.'
-            : 'Subscription is still expired. Please renew to continue.',
+            : 'Subscription is still inactive. Please contact your service provider.',
         isError: true,
       );
     } finally {
@@ -81,10 +81,10 @@ class _SubscriptionBlockedScreenState
     final cs = Theme.of(context).colorScheme;
     final validUntil = widget.evaluation.validUntil;
 
-    final title = _tampered ? 'License invalid' : 'Subscription expired';
+    final title = _tampered ? 'License invalid' : 'Subscription inactive';
     final message = _tampered
         ? 'This terminal’s license could not be verified. Please contact support to restore service.'
-        : 'Your subscription has ended. Connect this terminal to the internet and renew to continue selling.';
+        : 'Your subscription is not active. Please contact your service provider to renew, then retry the connection to continue selling.';
 
     return Scaffold(
       body: Center(

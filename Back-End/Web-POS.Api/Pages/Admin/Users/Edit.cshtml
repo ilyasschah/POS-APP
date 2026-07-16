@@ -4,17 +4,6 @@
     ViewData["Title"] = "Edit User";
 }
 
-<style>
-    /* Force theme text variables to override Bootstrap's default dark text */
-    .text-muted {
-        color: var(--muted) !important;
-    }
-
-    .text-main, .card, h3, label, p, strong {
-        color: var(--text) !important;
-    }
-</style>
-
 <div class="d-flex justify-content-between align-items-center mb-4 text-main">
     <div>
         <h3 class="mb-0">Edit User <span class="text-muted small fw-normal">#@Model.Input.UserId</span></h3>
@@ -52,8 +41,8 @@
             <label>Role</label>
             <!-- Converted numeric input to the intuitive Role dropdown -->
             <select asp-for="Input.AccessLevel">
-                <option value="0">Cashier</option>
-                <option value="1">Admin</option>
+                <option value="0">Admin</option>
+                <option value="1">Cashier</option>
             </select>
         </div>
     </div>

@@ -35,16 +35,23 @@ final allZReportsProvider =
     return ZReportModel(
       id: r.serverId ?? 0,
       companyId: r.companyId,
-      number: r.serverId ?? 0,
-      dateCreated: r.closedAt,
-      fromDocumentId: 0,
-      toDocumentId: 0,
+      // The report's own sequence number — NOT serverId, which is the ZReport
+      // row's database id and merely looked like a number.
+      number: r.number ?? 0,
+      dateCreated: r.dateCreated ?? r.closedAt,
+      fromDocumentId: r.fromDocumentId ?? 0,
+      toDocumentId: r.toDocumentId ?? 0,
+      documentCount: r.documentCount,
+      fromDocumentNumber: r.fromDocumentNumber,
+      toDocumentNumber: r.toDocumentNumber,
       totalSales: r.totalSales,
-      totalReturns: 0,
-      discountsGranted: 0,
-      taxableTotal: 0,
-      totalTax: 0,
-      grandTotal: r.totalSales,
+      totalReturns: r.totalReturns ?? 0,
+      discountsGranted: r.discountsGranted ?? 0,
+      taxableTotal: r.taxableTotal ?? 0,
+      totalTax: r.totalTax ?? 0,
+      // Pre-v53 rows stored the tendered total in totalSales and have no
+      // grandTotal, so fall back to it rather than showing 0.
+      grandTotal: r.grandTotal ?? r.totalSales,
       totalCashIn: r.totalCashIn,
       totalCashOut: r.totalCashOut,
       paymentSummaries: summaries,

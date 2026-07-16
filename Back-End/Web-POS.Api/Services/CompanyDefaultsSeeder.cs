@@ -126,32 +126,6 @@ namespace Api.Services
             }
 
             await db.SaveChangesAsync();
-
-            // Printer selections + their per-selection settings. Done after the
-            // save above so each selection has its id for the settings FK.
-            if (!await db.PosPrinterSelections.AnyAsync(p => p.CompanyId == companyId))
-            {
-                var selections = new[]
-                {
-                    PosPrinterSelection.Create("ReceiptPrinter", "Microsoft Print to PDF", true),
-                    PosPrinterSelection.Create("CreditPaymentNote", "Microsoft Print to PDF", true),
-                    PosPrinterSelection.Create("KitchenTicket", "Microsoft Print to PDF", true),
-                };
-                foreach (var sel in selections)
-                {
-                    sel.CompanyId = companyId;
-                    db.PosPrinterSelections.Add(sel);
-                }
-                await db.SaveChangesAsync();
-
-                foreach (var sel in selections)
-                {
-                    var setting = PosPrinterSelectionSettings.Create(sel.Id, paperWidth: 48); // 80mm
-                    setting.CompanyId = companyId;
-                    db.PosPrinterSelectionSettings.Add(setting);
-                }
-                await db.SaveChangesAsync();
-            }
         }
 
         /// <summary>
@@ -199,7 +173,6 @@ namespace Api.Services
             ("Menu_Grid_Cols", "4"),
             ("Menu_Grid_Rows", "4"),
             ("Application.Language", "en"),
-            ("App.IndustryMode", "Service"),
             ("Feature_FloorPlan_Enabled", "false"),
             ("Feature_Booking_Enabled", "false"),
             ("Feature_ServiceType_Enabled", "true"),
@@ -226,15 +199,12 @@ namespace Api.Services
             ("Kitchen.PaperSize", "80mm"),
             ("Void.RequireReason", "true"),
             ("App.WritingDirection", "LTR"),
-            ("App.PosLayout", "Standard"),
             ("ButtonBar.ShowSearch", "true"),
             ("ButtonBar.ShowTransfer", "true"),
             ("ButtonBar.ShowCustomer", "true"),
             ("ButtonBar.ShowDiscount", "true"),
             ("ButtonBar.ShowComment", "true"),
-            ("ButtonBar.ShowNewSale", "true"),
             ("ButtonBar.ShowRefund", "true"),
-            ("ButtonBar.ShowOrderName", "true"),
             ("ButtonBar.ShowCashDrawer", "true"),
             ("App.ShowCashInOnStart", "false"),
             ("App.SelectBusinessDayOnStart", "true"),
@@ -260,9 +230,6 @@ namespace Api.Services
             ("Order.SingleItemDiscountAllowed", "true"),
             ("Order.ShortcutKeysPaymentConfirmation", "false"),
             ("Void.TrackUnconfirmed", "false"),
-            ("Order.EnableCustomOrderName", "false"),
-            ("Order.NameRequired", "false"),
-            ("Order.RequestNameAutomatically", "false"),
             ("Feature.ServiceType.SelectionEnabled", "false"),
             ("Feature.ServiceType.RequestAutomatically", "false"),
             ("Feature.ServiceType.Default", "Dine-in"),

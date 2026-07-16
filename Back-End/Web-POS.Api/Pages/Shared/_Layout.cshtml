@@ -10,15 +10,23 @@
 <body>
     <div class="admin-shell">
 
-        <!-- SIDEBAR COMPLETELY REMOVED -->
-        <!-- Added style="width:100%" to ensure it takes up the full width now -->
-        <main class="main-area" style="width: 100%;">
+        <!-- Sidebar removed — navigation now lives in the horizontal top bar. -->
+        <main class="main-area">
             <header class="topbar">
-
-                <!-- Left Menu Toggle Button Removed -->
-
-                <div class="search">
-                    <input type="search" placeholder="Search companies..." aria-label="Search companies" />
+                <div class="topbar-left">
+                    <div class="brand">POS Admin</div>
+                    <nav class="nav-horizontal" aria-label="Main navigation">
+                        <a class="nav-item @(Context.Request.Path.StartsWithSegments("/Admin/Companies")?"active":"")" asp-page="/Admin/Companies/Index">
+                            <!-- SVG: building icon -->
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 21h18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 21V7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 10h.01M13 10h.01M17 10h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            Companies
+                        </a>
+                        <a class="nav-item @(Context.Request.Path.StartsWithSegments("/Admin/Subscriptions")?"active":"")" asp-page="/Admin/Subscriptions/Index">
+                            <!-- SVG: card / billing icon -->
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M2 10h20" stroke="currentColor" stroke-width="1.5"/><path d="M6 15h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                            Subscriptions
+                        </a>
+                    </nav>
                 </div>
 
                 <div class="top-actions">

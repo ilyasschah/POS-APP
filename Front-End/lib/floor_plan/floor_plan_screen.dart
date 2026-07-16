@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:pos_app/floor_plan/floor_plan_provider.dart';
-import 'package:pos_app/floor_plan/floor_plan_table.dart';
 import 'package:pos_app/floor_plan/floor_plan_table_provider.dart';
+import 'package:pos_app/utils/snackbar_helper.dart';
 import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/app_settings/app_settings_model.dart';
@@ -65,15 +65,17 @@ class _FloorPlanScreenState extends ConsumerState<FloorPlanScreen> {
 
     final companyId = ref.watch(selectedCompanyProvider)?.id ?? 0;
     final userId = ref.watch(currentUserProvider)?.id ?? 0;
-    final warehouseId = ref.watch(selectedWarehouseProvider)?.id ?? 1;
+    // No `?? 1` fallback: the seed is async, and a literal 1 both targets a
+    // warehouse this company may not own and outranks the configured default
+    // once it reaches the cart. Null lets the cart resolve it properly.
+    final warehouseId = ref.watch(selectedWarehouseProvider)?.id;
     final settings = ref.watch(appSettingsProvider);
-    final isService = (settings[SettingKeys.industryMode] ?? 'FB') == 'Service';
     final bookingEnabled =
         (settings[SettingKeys.featureBookingEnabled] ?? 'true') == 'true';
 
     return Scaffold(
       backgroundColor: cs.surface,
-      endDrawer: SidePanel(isService: isService),
+      endDrawer: const SidePanel(),
       body: Column(
         children: [
           // Unified flat top bar (replaces the legacy Material AppBar): the
@@ -88,13 +90,13 @@ class _FloorPlanScreenState extends ConsumerState<FloorPlanScreen> {
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
               error: (_, __) => Text(
-                isService ? 'Error loading resources' : 'Error loading rooms',
+                'Error loading rooms',
                 style: TextStyle(color: cs.error),
               ),
               data: (plans) {
                 if (plans.isEmpty) {
                   return Text(
-                    isService ? 'No Resources' : 'No Floor Plans',
+                    'No Floor Plans',
                     style: TextStyle(color: cs.onSurfaceVariant),
                   );
                 }
@@ -212,13 +214,8 @@ class _FloorPlanScreenState extends ConsumerState<FloorPlanScreen> {
                       // is no active floor plan to query.
                       if (plans.isEmpty) {
                         return _EmptyFloorState(
-                          isService: isService,
                           plansExist: false,
-                          onAction: () => showAddFloorPlanDialog(
-                            context,
-                            ref,
-                            isService: isService,
-                          ),
+                          onAction: () => showAddFloorPlanDialog(context, ref),
                         );
                       }
                       return tablesAsync.when(
@@ -230,26 +227,18 @@ class _FloorPlanScreenState extends ConsumerState<FloorPlanScreen> {
                           if (tables.isEmpty) {
                             final activePlanId = fpState.activeFloorPlanId;
                             return _EmptyFloorState(
-                              isService: isService,
                               plansExist: true,
                               onAction: activePlanId == null
                                   ? null
-                                  : () => ref
-                                        .read(floorPlanTableProvider.notifier)
-                                        .addTable(
-                                          FloorPlanTable(
-                                            id: 0,
-                                            floorPlanId: activePlanId,
-                                            name: isService
-                                                ? 'New Resource'
-                                                : 'New Table',
-                                            positionX: 60,
-                                            positionY: 60,
-                                            width: 100,
-                                            height: 100,
-                                            isRound: false,
-                                          ),
-                                        ),
+                                  : () async {
+                                      final err = await ref
+                                          .read(floorPlanTableProvider.notifier)
+                                          .addTable(floorPlanId: activePlanId);
+                                      if (err != null && context.mounted) {
+                                        showAppSnackbar(context, ref, err,
+                                            isError: true);
+                                      }
+                                    },
                             );
                           }
                           return Stack(
@@ -280,13 +269,11 @@ class _FloorPlanScreenState extends ConsumerState<FloorPlanScreen> {
 }
 
 /// Shown on the floor-plan canvas when there is nothing to draw yet — either no
-/// floor plans/areas exist at all, or the active one has no tables/resources.
+/// floor plans exist at all, or the active one has no tables.
 /// Its button opens the same options end-drawer that hosts the create actions.
 class _EmptyFloorState extends StatelessWidget {
-  final bool isService;
-
-  /// false → no floor plans/areas exist yet; true → the active plan has no
-  /// tables/resources. Only the wording differs.
+  /// false → no floor plans exist yet; true → the active plan has no tables.
+  /// Only the wording differs.
   final bool plansExist;
 
   /// Creates the missing thing directly (new floor plan dialog, or a new
@@ -294,7 +281,6 @@ class _EmptyFloorState extends StatelessWidget {
   final VoidCallback? onAction;
 
   const _EmptyFloorState({
-    required this.isService,
     required this.plansExist,
     required this.onAction,
   });
@@ -307,17 +293,14 @@ class _EmptyFloorState extends StatelessWidget {
     final String subtitle;
     final String action;
     if (!plansExist) {
-      title = isService ? 'No resource areas yet' : 'No floor plans yet';
-      subtitle = isService
-          ? 'You haven\'t created any resource areas yet. Open the options to add your first one.'
-          : 'You haven\'t created any floor plans yet. Open the options to add your first one.';
-      action = isService ? 'Create area' : 'Create floor plan';
+      title = 'No floor plans yet';
+      subtitle =
+          'You haven\'t created any floor plans yet. Open the options to add your first one.';
+      action = 'Create floor plan';
     } else {
-      title = isService ? 'No resources yet' : 'No tables yet';
-      subtitle = isService
-          ? 'This area has no resources. Open the options to add some.'
-          : 'This floor plan has no tables. Open the options to add some.';
-      action = isService ? 'Add resource' : 'Add table';
+      title = 'No tables yet';
+      subtitle = 'This floor plan has no tables. Open the options to add some.';
+      action = 'Add table';
     }
 
     return Center(
@@ -329,9 +312,7 @@ class _EmptyFloorState extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                isService
-                    ? Icons.chair_alt_outlined
-                    : Icons.table_restaurant_outlined,
+                Icons.table_restaurant_outlined,
                 size: 56,
                 color: cs.onSurfaceVariant.withValues(alpha: 0.5),
               ),

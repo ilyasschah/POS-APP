@@ -42,7 +42,6 @@ class CartState {
   final int? activeWarehouseId;
   final int? bookingId;
   final int? bookingStaffId;
-  final String? orderName;
   final String? existingLocalOrderId;
 
   CartState({
@@ -63,7 +62,6 @@ class CartState {
     this.activeWarehouseId,
     this.bookingId,
     this.bookingStaffId,
-    this.orderName,
     this.existingLocalOrderId,
   });
 
@@ -85,7 +83,6 @@ class CartState {
     int? activeWarehouseId,
     int? bookingId,
     int? bookingStaffId,
-    String? orderName,
     String? existingLocalOrderId,
     // copyWith can't otherwise set the customer-discount fields back to null
     // (the `?? this.x` pattern keeps the old value). Set this when switching to
@@ -117,7 +114,6 @@ class CartState {
       activeWarehouseId: activeWarehouseId ?? this.activeWarehouseId,
       bookingId: bookingId ?? this.bookingId,
       bookingStaffId: bookingStaffId ?? this.bookingStaffId,
-      orderName: orderName ?? this.orderName,
       existingLocalOrderId: existingLocalOrderId ?? this.existingLocalOrderId,
     );
   }
@@ -206,12 +202,22 @@ class CartNotifier extends Notifier<CartState> {
   int get effectiveWarehouseId {
     final fromState = state.activeWarehouseId;
     if (fromState != null && fromState > 0) return fromState;
+    return _newOrderWarehouseId;
+  }
+
+  /// The warehouse a BRAND-NEW order should source from: the active selection,
+  /// else the configured default (`Order.DefaultWarehouseId`).
+  ///
+  /// Deliberately ignores `state.activeWarehouseId` — that belongs to the order
+  /// being replaced, not the one being started. Callers must NOT pre-resolve
+  /// this with a hardcoded `?? 1`: [selectedWarehouseProvider] starts null and
+  /// is seeded asynchronously, so a caller that substitutes 1 while the seed is
+  /// in flight pins the order to warehouse 1 — which may not even exist for the
+  /// company — and, because 1 > 0, wins over the default below. That race is
+  /// why orders intermittently ignored the configured default warehouse.
+  int get _newOrderWarehouseId {
     final fromProvider = ref.read(selectedWarehouseProvider)?.id ?? 0;
     if (fromProvider > 0) return fromProvider;
-    // Nothing selected yet (e.g. the warehouse seed hasn't resolved). Fall back
-    // to the configured default warehouse (Order.DefaultWarehouseId) rather than
-    // a hardcoded id 1 — otherwise the order targets the wrong warehouse and the
-    // item shows as out of stock ("available in None") at sync.
     final defaultId =
         int.tryParse(
           ref.read(appSettingsProvider)[SettingKeys.defaultWarehouseId] ?? '',
@@ -333,49 +339,56 @@ class CartNotifier extends Notifier<CartState> {
     (sum, item) => sum + (item.promotionalDiscount * item.quantity),
   );
 
-  double get taxTotal {
-    final settings = ref.read(appSettingsProvider);
-    final discountBeforeTax =
-        settings[SettingKeys.discountApplyRule] == 'Before tax';
-
-    double total = 0;
-
-    if (discountBeforeTax) {
-      // Tax base = price minus all discounts (item + proportional cart share).
-      final baseBeforeCartDiscounts = subtotal - discountTotal;
-      final totalCartDiscounts =
-          customerDiscountAmount + manualCartDiscountAmount;
-      final discountFactor = baseBeforeCartDiscounts > 0
-          ? (baseBeforeCartDiscounts - totalCartDiscounts) /
-                baseBeforeCartDiscounts
-          : 1.0;
-
-      for (var item in state.items) {
-        final itemBase =
-            (item.price - item.discount - item.promotionalDiscount) *
-            item.quantity *
-            discountFactor;
-        for (var tax in item.appliedTaxes) {
-          total += tax.isFixed
-              ? tax.rate * item.quantity
-              : itemBase * (tax.rate / 100);
-        }
-      }
-    } else {
-      // "After tax": tax is computed on the full item price; discounts only
-      // reduce the final payable amount, not the taxable base.
-      for (var item in state.items) {
-        final itemBase = item.price * item.quantity;
-        for (var tax in item.appliedTaxes) {
-          total += tax.isFixed
-              ? tax.rate * item.quantity
-              : itemBase * (tax.rate / 100);
-        }
-      }
-    }
-
-    return total;
+  /// The share of the cart-level discounts (customer profile + manual cart)
+  /// that each line carries, so a whole-cart discount reduces every line's tax
+  /// base proportionally. Only meaningful under the "Before tax" rule.
+  double get _cartDiscountFactor {
+    final baseBeforeCartDiscounts = subtotal - discountTotal;
+    if (baseBeforeCartDiscounts <= 0) return 1.0;
+    final totalCartDiscounts =
+        customerDiscountAmount + manualCartDiscountAmount;
+    return (baseBeforeCartDiscounts - totalCartDiscounts) /
+        baseBeforeCartDiscounts;
   }
+
+  /// The resolved tax amounts for one cart line, honouring `discountApplyRule`.
+  ///
+  /// **This is the single source of truth for line tax — never re-derive it.**
+  /// [taxTotal] (what the cart and the payment dialog show), the saved
+  /// `document_items.taxAmount`, and the `Taxes` payload the server turns into
+  /// `DocumentItemTax` rows all read this, so what the cashier is shown is
+  /// exactly what gets banked. They used to compute it in three places and only
+  /// this one read the setting, so an "After tax" company banked a document
+  /// whose own lines contradicted its total by (discount × rate).
+  List<({int id, double amount})> taxAmountsForItem(CartItem item) {
+    final discountBeforeTax =
+        ref.read(appSettingsProvider)[SettingKeys.discountApplyRule] ==
+        'Before tax';
+    final base = discountBeforeTax
+        // Tax base = price minus all discounts (item + proportional cart share).
+        ? (item.price - item.discount - item.promotionalDiscount) *
+              item.quantity *
+              _cartDiscountFactor
+        // "After tax": tax is computed on the full item price; discounts only
+        // reduce the final payable amount, not the taxable base.
+        : item.price * item.quantity;
+
+    return [
+      for (final tax in item.appliedTaxes)
+        (
+          id: tax.id,
+          amount:
+              tax.isFixed ? tax.rate * item.quantity : base * (tax.rate / 100),
+        ),
+    ];
+  }
+
+  /// Total tax for one line — all taxes, fixed and percentage.
+  double taxForItem(CartItem item) =>
+      taxAmountsForItem(item).fold<double>(0, (sum, t) => sum + t.amount);
+
+  double get taxTotal =>
+      state.items.fold<double>(0, (sum, item) => sum + taxForItem(item));
 
   double get customerDiscountAmount {
     if (state.customerDiscountValue == null) return 0;
@@ -540,6 +553,59 @@ class CartNotifier extends Notifier<CartState> {
       // (null when no promo applied).
       item.promotionId = bestDiscount > 0 ? bestPromoId : null;
     }
+  }
+
+  /// Re-points the cart at a table whose temp id a sync swapped for a real one.
+  ///
+  /// The cart lives in memory, so [AppDatabase.remapFloorPlanTableRefs] can't
+  /// rewrite it the way it rewrites rows. It heals from the same forwarding map,
+  /// which also repairs the header, whose table lookup would otherwise miss and
+  /// fall back to printing the raw negative id.
+  Future<void> healTableId() async {
+    final id = state.floorPlanTableId;
+    if (id == null || id >= 0) return;
+    final real =
+        await ref.read(appDatabaseProvider).resolveFloorPlanTableId(id);
+    if (real != null && real != id) {
+      state = state.copyWith(floorPlanTableId: real);
+    }
+  }
+
+  /// Starts a NEW order on an empty floor-plan table.
+  ///
+  /// Builds a fresh [CartState] instead of reusing [setOrderContext], which is
+  /// the "move the order I'm holding onto a table" path and therefore preserves
+  /// the cart by design. Driving a new table through it inherited the previous
+  /// order's items, discounts — and its `existingLocalOrderId`, so the next save
+  /// rewrote the previously parked order's row onto this table, silently moving
+  /// the order and emptying the table it came from.
+  void startTableOrder({
+    required int tableId,
+    required String tableName,
+    int serviceType = 0,
+  }) {
+    state = CartState(
+      activePosOrderId: 0, // local-only sentinel; materialised at checkout
+      serviceType: serviceType,
+      serviceStatus: 1,
+      floorPlanTableId: tableId,
+      orderNumber: 'ORD- $tableName',
+      activeWarehouseId: _newOrderWarehouseId,
+    );
+    _seedDefaultCustomer();
+  }
+
+  /// Selects the default (Walk-in) customer for a freshly-started order, so a
+  /// new order never silently inherits the previous customer's profile discount.
+  void _seedDefaultCustomer() {
+    final customers = ref.read(selectableCustomersProvider).value ?? const [];
+    if (customers.isEmpty) return;
+    final walkIn = customers.firstWhere(
+      (c) => c.code == 'C000',
+      orElse: () => customers.first,
+    );
+    final companyId = ref.read(selectedCompanyProvider)?.id;
+    if (companyId != null) setCustomer(companyId, walkIn);
   }
 
   void setOrderContext(
@@ -738,10 +804,6 @@ class CartNotifier extends Notifier<CartState> {
     state = state.copyWith(selectedCartItemId: cartItemId);
   }
 
-  void setOrderName(String? name) {
-    state = state.copyWith(orderName: name);
-  }
-
   void clearCart({bool keepCustomer = false, String? overrideServiceType}) {
     final serviceTypeName =
         overrideServiceType ??
@@ -767,18 +829,7 @@ class CartNotifier extends Notifier<CartState> {
     );
 
     if (keepCustomer) return;
-
-    final customers = ref.read(allCustomersProvider).value ?? const [];
-    if (customers.isNotEmpty) {
-      final walkIn = customers.firstWhere(
-        (c) => c.code == 'C000',
-        orElse: () => customers.first,
-      );
-      final companyId = ref.read(selectedCompanyProvider)?.id;
-      if (companyId != null) {
-        setCustomer(companyId, walkIn);
-      }
-    }
+    _seedDefaultCustomer();
   }
 
   void addItem(
@@ -854,6 +905,17 @@ class CartNotifier extends Notifier<CartState> {
     state = state.copyWith(items: items);
   }
 
+  /// Sets (or clears, with null) the comment on an existing cart line, so a
+  /// modifier can be changed after the item is in the cart instead of only at
+  /// add time. Comments carry no price, so promotions don't need re-applying.
+  void setItemComment(String cartItemId, String? comment) {
+    final items = List<CartItem>.from(state.items);
+    final index = items.indexWhere((i) => i.cartItemId == cartItemId);
+    if (index < 0) return;
+    items[index].comment = comment;
+    state = state.copyWith(items: items);
+  }
+
   void removeItem(String cartItemId) {
     final items = List<CartItem>.from(state.items);
     items.removeWhere((i) => i.cartItemId == cartItemId);
@@ -888,13 +950,19 @@ class CartNotifier extends Notifier<CartState> {
     ApiClient apiClient,
     int companyId,
     int tableId,
-    int warehouseId,
+    int? warehouseId,
   ) async {
     state = state.copyWith(isLoading: true);
+    // Only used by the API fallback below; the local path takes the warehouse
+    // off the saved order row itself.
+    final resolvedWarehouseId = (warehouseId != null && warehouseId > 0)
+        ? warehouseId
+        : _newOrderWarehouseId;
     try {
       final db = ref.read(appDatabaseProvider);
       final localRow =
           await (db.select(db.posOrdersTable)
+                ..where((t) => t.companyId.equals(companyId))
                 ..where((t) => t.tableId.equals(tableId))
                 ..where((t) => t.status.equals(0))
                 ..limit(1))
@@ -954,6 +1022,7 @@ class CartNotifier extends Notifier<CartState> {
                     ?.map((t) => MenuTax.fromJson(t))
                     .toList() ??
                 [],
+            comment: (item['comment'] ?? item['Comment']) as String?,
             isSaved: true,
           ),
         );
@@ -970,12 +1039,14 @@ class CartNotifier extends Notifier<CartState> {
         serviceType: serviceType,
         serviceStatus: serviceStatus,
         floorPlanTableId: floorPlanTableId,
-        activeWarehouseId: warehouseId,
+        activeWarehouseId: resolvedWarehouseId,
         isLoading: false,
       );
 
       final warehouses = ref.read(allWarehousesProvider).value ?? const [];
-      final wh = warehouses.where((w) => w.id == warehouseId).firstOrNull;
+      final wh = warehouses
+          .where((w) => w.id == resolvedWarehouseId)
+          .firstOrNull;
       if (wh != null) {
         ref.read(selectedWarehouseProvider.notifier).state = wh;
       }
@@ -1076,13 +1147,18 @@ class CartNotifier extends Notifier<CartState> {
         );
       }).toList();
 
+      // Resolve in case a sync swapped this table's temp id while the cart was
+      // open — see AppDatabase.resolveFloorPlanTableId.
+      final resolvedTableId =
+          await db.resolveFloorPlanTableId(state.floorPlanTableId);
+
       await db.saveOpenOrder(
         PosOrdersTableCompanion(
           localId: Value(localId),
           serverId: Value(serverId),
           companyId: Value(companyId),
           userId: Value(userId),
-          tableId: Value(state.floorPlanTableId),
+          tableId: Value(resolvedTableId),
           customerId: Value(state.selectedCustomer?.id),
           serviceType: Value(state.serviceType),
           serviceStatus: Value(state.serviceStatus),
@@ -1220,6 +1296,7 @@ class CartNotifier extends Notifier<CartState> {
           productName: (product?.name ?? 'Product ${item.productId}'),
           appliedTaxes: appliedTaxes,
           warehouseId: item.warehouseId,
+          comment: item.comment,
           isService: product?.isService ?? false,
         );
       }).toList();
@@ -1340,6 +1417,7 @@ class CartNotifier extends Notifier<CartState> {
                     ?.map((t) => MenuTax.fromJson(t))
                     .toList() ??
                 [],
+            comment: (item['comment'] ?? item['Comment']) as String?,
             isSaved: true,
           ),
         );
@@ -1540,13 +1618,16 @@ class CartNotifier extends Notifier<CartState> {
       final db = ref.read(appDatabaseProvider);
       final now = DateTime.now().toUtc();
       final orderLocalId = const Uuid().v4();
+      // Resolve in case a sync swapped this table's temp id while the cart was
+      // open — see AppDatabase.resolveFloorPlanTableId.
+      final resolvedTableId = await db.resolveFloorPlanTableId(activeTableId);
 
       final orderCompanion = PosOrdersTableCompanion(
         localId: Value(orderLocalId),
         serverId: const Value(null),
         companyId: Value(companyId),
         userId: Value(userId),
-        tableId: Value(activeTableId),
+        tableId: Value(resolvedTableId),
         customerId: Value(state.selectedCustomer?.id),
         serviceType: Value(state.serviceType),
         serviceStatus: Value(state.serviceStatus),

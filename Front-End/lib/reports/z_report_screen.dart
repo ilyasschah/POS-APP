@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/auth/auth_provider.dart';
@@ -45,17 +46,21 @@ class _EndOfDayScreenState extends ConsumerState<EndOfDayScreen> {
     try {
       // OFFLINE-FIRST: aggregate the Z-report from local Drift right now so the
       // cashier sees the result + print button instantly — no server wait. The
-      // sync engine still pushes /ZReports/Generate later; the server's
-      // authoritative number backfills into history on the next pull.
+      // sync engine still pushes /ZReports/Generate later, but there is no
+      // pullZReports: this row is the ONLY copy the app will ever read, so
+      // every figure must be computed and persisted here, not left for a pull.
       final db = ref.read(appDatabaseProvider);
       final now = DateTime.now().toUtc();
 
-      // Tender breakdown from unreported payments (read BEFORE we flag them).
+      // Every figure the report states, aggregated from Drift. Must run BEFORE
+      // the payments are flagged below — stamping the placeholder id empties
+      // the unreported set this is scoped to.
+      final totals = await db.aggregateUnreportedForZReport(companyId);
+
+      // Tender breakdown over that same unreported set.
       final payments = await ref.read(unreportedPaymentsProvider.future);
       final byType = <int, ({String name, double amount})>{};
-      double totalSales = 0;
       for (final p in payments) {
-        totalSales += p.amount;
         final cur = byType[p.paymentTypeId];
         byType[p.paymentTypeId] = (
           name: p.paymentTypeName ?? 'Unknown',
@@ -82,23 +87,37 @@ class _EndOfDayScreenState extends ConsumerState<EndOfDayScreen> {
               })
           .toList());
 
+      // Device-local number so the slip printed right now is identified; the
+      // push overwrites it with the server's authoritative one.
+      final number = await db.nextLocalZReportNumber(companyId);
+
       await db.insertOfflineZReport(
         ZReportsTableCompanion.insert(
           localId: '', // helper fills a UUID when blank
           companyId: companyId,
           userId: currentUser.id,
-          totalSales: totalSales,
+          totalSales: totals.totalSales,
           totalCashIn: totalCashIn,
           totalCashOut: totalCashOut,
           paymentBreakdownJson: breakdownJson,
           closedAt: now,
+          number: Value(number),
+          dateCreated: Value(now),
+          documentCount: Value(totals.documentCount),
+          fromDocumentNumber: Value(totals.fromDocumentNumber),
+          toDocumentNumber: Value(totals.toDocumentNumber),
+          totalReturns: Value(totals.totalReturns),
+          discountsGranted: Value(totals.discountsGranted),
+          taxableTotal: Value(totals.taxableTotal),
+          totalTax: Value(totals.totalTax),
+          grandTotal: Value(totals.grandTotal),
         ),
       );
 
       // Optimistic local finalization: flag the just-reported payments and the
       // active cash movements so they drop out of the "current shift" view
-      // immediately. The next pull swaps the -1 placeholder for the server's
-      // real Z-report number.
+      // immediately. This is what empties the set `totals` was computed from —
+      // it must stay after the aggregation above.
       await db.assignUnreportedPaymentsToZReport(companyId);
       await db.optimisticallyFinalizeActiveStartingCash(companyId);
 
@@ -112,16 +131,19 @@ class _EndOfDayScreenState extends ConsumerState<EndOfDayScreen> {
         _showReceiptDialog(ZReportModel(
           id: 0,
           companyId: companyId,
-          number: 0, // server assigns the real number on sync
+          number: number,
           dateCreated: now,
           fromDocumentId: 0,
           toDocumentId: 0,
-          totalSales: totalSales,
-          totalReturns: 0,
-          discountsGranted: 0,
-          taxableTotal: 0,
-          totalTax: 0,
-          grandTotal: totalSales,
+          documentCount: totals.documentCount,
+          fromDocumentNumber: totals.fromDocumentNumber,
+          toDocumentNumber: totals.toDocumentNumber,
+          totalSales: totals.totalSales,
+          totalReturns: totals.totalReturns,
+          discountsGranted: totals.discountsGranted,
+          taxableTotal: totals.taxableTotal,
+          totalTax: totals.totalTax,
+          grandTotal: totals.grandTotal,
           totalCashIn: totalCashIn,
           totalCashOut: totalCashOut,
           paymentSummaries: byType.entries
@@ -202,9 +224,17 @@ class _EndOfDayScreenState extends ConsumerState<EndOfDayScreen> {
                 ),
                 _receiptRow(
                   "Documents",
-                  "#${report.fromDocumentId} to #${report.toDocumentId}",
+                  report.documentCount?.toString() ?? "—",
                   theme,
                 ),
+                if (report.fromDocumentNumber != null)
+                  _receiptRow(
+                    "Range",
+                    report.fromDocumentNumber == report.toDocumentNumber
+                        ? report.fromDocumentNumber!
+                        : "${report.fromDocumentNumber} → ${report.toDocumentNumber}",
+                    theme,
+                  ),
                 const SizedBox(height: 8),
                 Divider(color: theme.colorScheme.outlineVariant),
                 const SizedBox(height: 8),
@@ -787,7 +817,8 @@ class _ZReportHistoryTab extends ConsumerWidget {
                 subtitle: Padding(
                   padding: const EdgeInsets.only(top: 4.0),
                   child: Text(
-                    "Documents: #${report.fromDocumentId} - #${report.toDocumentId}  •  Grand Total: ${report.grandTotal.toStringAsFixed(2)} $sym",
+                    "Documents: ${report.documentCount ?? '—'}"
+                    "  •  Grand Total: ${report.grandTotal.toStringAsFixed(2)} $sym",
                     style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
                   ),
                 ),

@@ -68,6 +68,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               foregroundColor: cs.onError,
             ),
             onPressed: () async {
+              // Release this terminal's seat BEFORE wiping the token (the call
+              // needs it) so the admin portal drops e.g. 1/1 → 0/1. Best-effort —
+              // offline sign-out is reclaimed by the server-side stale reaper.
+              await ref.read(authServiceProvider).releaseDeviceSeat();
               await ref.read(authStorageProvider).unlinkDevice();
               if (mounted) {
                 Navigator.pushAndRemoveUntil(
@@ -233,20 +237,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 child: asyncUsers.when(
                   loading: () =>
                       const Center(child: CircularProgressIndicator()),
-                  error: (err, _) => Center(
-                    child: Text(
-                      "Error loading users: $err",
-                      style: TextStyle(color: cs.error),
-                    ),
-                  ),
+                  error: (err, _) =>
+                      _NoUsersRecovery(companyId: selectedCo.id, error: '$err'),
                   data: (users) {
                     if (users.isEmpty) {
-                      return Center(
-                        child: Text(
-                          "No enabled users found.",
-                          style: TextStyle(color: cs.onSurfaceVariant),
-                        ),
-                      );
+                      // No cached users (e.g. a fresh install, or the local DB was
+                      // wiped). Instead of a dead-end message, try to re-pull from
+                      // the server and always offer a visible re-link escape.
+                      return _NoUsersRecovery(companyId: selectedCo.id);
                     }
                     return GridView.builder(
                       gridDelegate:
@@ -265,6 +263,117 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// No-users recovery
+// ---------------------------------------------------------------------------
+
+/// Shown on the login picker when there are no cached enabled users — a fresh
+/// install, or a wiped/corrupt local DB. Rather than a dead-end "No users"
+/// message, it auto-attempts a re-pull from the server (the device is still
+/// registered — the token lives in secure storage, not the deleted Drift file)
+/// and always offers a visible re-link escape so the operator is never stuck.
+class _NoUsersRecovery extends ConsumerStatefulWidget {
+  final int companyId;
+  final String? error;
+  const _NoUsersRecovery({required this.companyId, this.error});
+
+  @override
+  ConsumerState<_NoUsersRecovery> createState() => _NoUsersRecoveryState();
+}
+
+class _NoUsersRecoveryState extends ConsumerState<_NoUsersRecovery> {
+  bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // One automatic attempt to restore users from the server on first display.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _reload());
+  }
+
+  Future<void> _reload() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      // Re-fetch users from the API into Drift; the users stream then re-emits.
+      await ref.read(seedUsersFromApiProvider(widget.companyId).future);
+      ref.invalidate(allUsersProvider);
+    } catch (_) {
+      // Offline / server down — leave the escape hatch below.
+    }
+    if (mounted) setState(() => _busy = false);
+  }
+
+  Future<void> _relink() async {
+    // Release the seat (best-effort) then wipe the local session and re-link.
+    await ref.read(authServiceProvider).releaseDeviceSeat();
+    await ref.read(authStorageProvider).unlinkDevice();
+    if (!mounted) return;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const MasterLoginScreen()),
+      (route) => false,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.people_outline, size: 48, color: cs.onSurfaceVariant),
+            const Gap(16),
+            Text(
+              widget.error != null
+                  ? "Couldn't load users on this terminal."
+                  : "No users cached on this terminal.",
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: cs.onSurface,
+              ),
+            ),
+            const Gap(8),
+            Text(
+              _busy
+                  ? "Restoring users from the server…"
+                  : "Reconnect to restore them, or re-link this device to sign in again.",
+              textAlign: TextAlign.center,
+              style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14),
+            ),
+            const Gap(24),
+            if (_busy)
+              const CircularProgressIndicator()
+            else
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                alignment: WrapAlignment.center,
+                children: [
+                  FilledButton.tonalIcon(
+                    onPressed: _reload,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Reload users'),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: _relink,
+                    icon: const Icon(Icons.link_off),
+                    label: const Text('Re-link device'),
+                  ),
+                ],
+              ),
+          ],
         ),
       ),
     );

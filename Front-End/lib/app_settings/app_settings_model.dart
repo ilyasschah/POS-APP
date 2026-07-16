@@ -142,9 +142,6 @@ class SettingKeys {
   static const menuGridCols = 'Menu_Grid_Cols';
   static const menuGridRows = 'Menu_Grid_Rows';
 
-  // Industry
-  static const industryMode = 'App.IndustryMode';
-
   // Features
   static const featureFloorPlanEnabled      = 'Feature_FloorPlan_Enabled';
   static const featureBookingEnabled        = 'Feature_Booking_Enabled';
@@ -200,11 +197,17 @@ class SettingKeys {
   static const receiptCustomerEmail      = 'Receipt.Customer.PrintEmail';
   static const receiptAddressFormat      = 'Receipt.Customer.AddressFormat';
 
+  // ── Receipt Company Header (printed under the logo / business name) ───────
+  static const receiptShowCompanyTaxNumber = 'Receipt.Company.PrintTaxNumber';
+  static const receiptShowCompanyAddress   = 'Receipt.Company.PrintAddress';
+  static const receiptShowCompanyPhone     = 'Receipt.Company.PrintPhone';
+
   // ── Receipt Labels (Localize Text) ───────────────────────────────────────
   // Master switch: when false, printed receipts ignore the custom labels below
   // and use the built-in defaults.
   static const receiptUseCustomLabels = 'Receipt.Label.UseCustom';
   static const labelCompanyTaxNumber = 'Receipt.Label.CompanyTaxNumber';
+  static const labelCompanyPhone     = 'Receipt.Label.CompanyPhone';
   static const labelReceiptNumber    = 'Receipt.Label.ReceiptNumber';
   static const labelOrderNumber      = 'Receipt.Label.OrderNumber';
   static const labelUser             = 'Receipt.Label.User';
@@ -267,7 +270,6 @@ class SettingKeys {
   // Application Style
   static const writingDirection         = 'App.WritingDirection';
   static const enableVirtualKeyboard    = 'App.EnableVirtualKeyboard';
-  static const posLayout                = 'App.PosLayout';
 
   // Messages
   static const messageDuration          = 'App.MessageDuration';
@@ -311,9 +313,6 @@ class SettingKeys {
   static const shortcutKeysPaymentConfirmation = 'Order.ShortcutKeysPaymentConfirmation';
 
   // Order Name
-  static const enableCustomOrderName          = 'Order.EnableCustomOrderName';
-  static const orderNameRequired              = 'Order.NameRequired';
-  static const requestOrderNameAutomatically  = 'Order.RequestNameAutomatically';
 
   // Service Type (extended)
   static const enableServiceTypeSelection     = 'Feature.ServiceType.SelectionEnabled';
@@ -345,9 +344,7 @@ class SettingKeys {
   static const showCustomerBtn   = 'ButtonBar.ShowCustomer';
   static const showDiscountBtn   = 'ButtonBar.ShowDiscount';
   static const showCommentBtn    = 'ButtonBar.ShowComment';
-  static const showNewSaleBtn    = 'ButtonBar.ShowNewSale';
   static const showRefundBtn     = 'ButtonBar.ShowRefund';
-  static const showOrderNameBtn  = 'ButtonBar.ShowOrderName';
   static const showCashDrawerBtn = 'ButtonBar.ShowCashDrawer';
   static const showWarehouseBtn  = 'ButtonBar.ShowWarehouse';
   static const showBookingBtn    = 'ButtonBar.ShowBooking';
@@ -367,7 +364,9 @@ class SettingKeys {
 const Map<String, String> kSettingDefaults = {
   SettingKeys.currencySymbol: '\$',
   SettingKeys.language: 'en',
-  SettingKeys.timezone: 'UTC',
+  // 'Etc/UTC', not 'UTC': the IANA database has no plain 'UTC' location key, and
+  // the timezone picker asserts on a value it can't find among its items.
+  SettingKeys.timezone: 'Etc/UTC',
   SettingKeys.timezoneMode: 'Auto',
   SettingKeys.dateFormat: 'dd-MM-yyyy',
   SettingKeys.taxIncludedByDefault: 'true',
@@ -439,7 +438,6 @@ const Map<String, String> kSettingDefaults = {
   SettingKeys.themeAccentColor: '#FF5733',
   SettingKeys.menuGridCols: '4',
   SettingKeys.menuGridRows: '4',
-  SettingKeys.industryMode: 'FB',
   SettingKeys.featureFloorPlanEnabled:     'true',
   SettingKeys.featureBookingEnabled:       'true',
   SettingKeys.tablesButtonLabel:           'Tables',
@@ -492,9 +490,15 @@ const Map<String, String> kSettingDefaults = {
   SettingKeys.receiptAddressFormat:
       '%STREET_NAME% %BUILDING_NUMBER%\n%CITY%, %POSTAL_CODE%',
 
+  // Receipt Company Header (default ON — preserves existing receipts)
+  SettingKeys.receiptShowCompanyTaxNumber: 'true',
+  SettingKeys.receiptShowCompanyAddress:   'true',
+  SettingKeys.receiptShowCompanyPhone:     'true',
+
   // Receipt Labels
   SettingKeys.receiptUseCustomLabels: 'true',
   SettingKeys.labelCompanyTaxNumber: 'Tax Number',
+  SettingKeys.labelCompanyPhone:     'Tel',
   SettingKeys.labelReceiptNumber:    'Receipt No.',
   SettingKeys.labelOrderNumber:      'Order No.',
   SettingKeys.labelUser:             'Cashier',
@@ -568,9 +572,6 @@ const Map<String, String> kSettingDefaults = {
   SettingKeys.shortcutKeysPaymentConfirmation: 'true',
 
   // Order Name
-  SettingKeys.enableCustomOrderName:           'true',
-  SettingKeys.orderNameRequired:               'false',
-  SettingKeys.requestOrderNameAutomatically:   'true',
 
   // Service Type (extended)
   SettingKeys.enableServiceTypeSelection:       'true',
@@ -593,7 +594,6 @@ const Map<String, String> kSettingDefaults = {
   // Application Style
   SettingKeys.writingDirection:         'LTR',
   SettingKeys.enableVirtualKeyboard:    'false',
-  SettingKeys.posLayout:                'Visual',
 
   // Messages
   SettingKeys.messageDuration:          '3',
@@ -613,9 +613,7 @@ const Map<String, String> kSettingDefaults = {
   SettingKeys.showCustomerBtn:   'true',
   SettingKeys.showDiscountBtn:   'true',
   SettingKeys.showCommentBtn:    'true',
-  SettingKeys.showNewSaleBtn:    'true',
   SettingKeys.showRefundBtn:     'true',
-  SettingKeys.showOrderNameBtn:  'true',
   SettingKeys.showCashDrawerBtn: 'true',
   SettingKeys.showWarehouseBtn:  'true',
   SettingKeys.showBookingBtn:    'true',

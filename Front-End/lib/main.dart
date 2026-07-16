@@ -6,6 +6,7 @@ import 'package:pos_app/auth/auth_storage.dart';
 import 'package:pos_app/auth/auth_token_cache.dart';
 import 'package:pos_app/auth/session_expiry.dart';
 import 'package:pos_app/auth/master_login_screen.dart';
+import 'package:pos_app/sync/account_status_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pos_app/auth/login_screen.dart';
 import 'package:pos_app/license/license_service.dart';
@@ -168,8 +169,30 @@ class _MyAppState extends ConsumerState<MyApp> {
   }
 
   Future<_BootDecision> _decideBoot() async {
-    final registered = await ref.read(authStorageProvider).isDeviceRegistered();
+    final storage = ref.read(authStorageProvider);
+    final registered = await storage.isDeviceRegistered();
     if (!registered) return const _BootDecision(false, null);
+
+    // Deleted-account guard at boot: if this terminal's company was deleted in
+    // the admin portal while the app was closed, unlink and fall back to the
+    // master login (re-link) instead of the subscription-blocked screen. Online
+    // + best-effort only — an offline/unknown result never unlinks a legitimate
+    // offline terminal (it just proceeds on its cached lease below).
+    final companyId = await storage.getCompanyId();
+    if (companyId != null) {
+      if (await checkCompanyExists(companyId) == CompanyExistence.deleted) {
+        await storage.unlinkDevice();
+        return const _BootDecision(false, null);
+      }
+      // Pull the freshest lease so a provider-side pause / resume / days change
+      // (admin Subscriptions page) takes effect on this launch. Best-effort +
+      // online only — offline keeps the cached lease, so a legitimate offline
+      // terminal is never affected.
+      try {
+        await ref.read(licenseServiceProvider).refreshFromServer(companyId);
+      } catch (_) {}
+    }
+
     // Registered terminal: enforce the offline subscription lease before
     // letting the operator into the POS.
     final license = await ref.read(licenseServiceProvider).evaluate();

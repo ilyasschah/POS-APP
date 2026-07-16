@@ -4,40 +4,6 @@
     ViewData["Title"] = Model.Company?.Name ?? "Organization Details";
 }
 
-<style>
-    /* Force theme text variables to override Bootstrap's default dark text */
-    .text-muted {
-        color: var(--muted) !important;
-    }
-
-    .text-main, .card, .fw-bold, strong, h3, h4, label {
-        color: var(--text) !important;
-    }
-
-    .table-clean th {
-        color: var(--muted) !important;
-    }
-
-    .table-clean td {
-        color: var(--text) !important;
-    }
-
-    .kpi-box {
-        background: var(--muted-surface);
-        padding: 1rem;
-        border-radius: 8px;
-        border: 1px solid var(--border);
-    }
-
-    .code-badge {
-        background: var(--muted-surface);
-        color: var(--text);
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-family: monospace;
-    }
-</style>
-
 <div class="d-flex justify-content-between align-items-center mb-4 text-main">
     <div>
         <h3 class="mb-0">@Model.Company?.Name <span class="text-muted small fw-normal">#@Model.Company?.Id</span></h3>

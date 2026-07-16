@@ -10,6 +10,7 @@ import 'package:sqlite3/sqlite3.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:pos_app/database/device_key_service.dart';
+import 'package:pos_app/document/document_type_constants.dart';
 
 part 'app_database.g.dart';
 
@@ -130,9 +131,35 @@ class FloorPlanTablesTable extends Table {
   BoolColumn get isRound => boolean().withDefault(const Constant(false))();
   IntColumn get status => integer().withDefault(const Constant(0))();
   DateTimeColumn get lastModified => dateTime()();
+  // Offline CRUD queue: 'synced' | 'pending_create' | 'pending_update' | 'pending_delete'
+  // pending_create rows hold a temp negative id until the server assigns the real one.
+  TextColumn get syncStatus => text().withDefault(const Constant('synced'))();
+  TextColumn get syncError => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
+}
+
+/// Forwarding addresses for floor-plan tables that were created offline.
+///
+/// A table created offline holds a temp negative id until sync assigns the real
+/// one. Rows already referencing it are rewritten in the same transaction (see
+/// [AppDatabase.remapFloorPlanTableRefs]) — but the in-memory cart holds that id
+/// too, and it is NOT a row: tapping a table writes nothing, the order is only
+/// materialised at checkout. A cart opened before the sync would therefore
+/// persist a dead id afterwards. This table keeps the temp→real link so a late
+/// writer can still resolve it — see [AppDatabase.resolveFloorPlanTableId].
+class FloorPlanTableIdMapTable extends Table {
+  @override
+  String get tableName => 'floor_plan_table_id_map';
+
+  IntColumn get tempId => integer()();
+  IntColumn get realId => integer()();
+  IntColumn get companyId => integer()();
+  DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {tempId};
 }
 
 class UsersTable extends Table {
@@ -568,6 +595,55 @@ class ZReportsTable extends Table {
   RealColumn get taxableTotal => real().nullable()();
   RealColumn get totalTax => real().nullable()();
   RealColumn get grandTotal => real().nullable()();
+  // v53. The report is closed over documents that may never have been synced,
+  // so the server-int range above ([fromDocumentId]/[toDocumentId]) cannot be
+  // filled offline. These hold the device-local answer instead: how many
+  // documents were closed, and the `YY-CCC-NNNNNN` number range they span.
+  IntColumn get documentCount => integer().nullable()();
+  TextColumn get fromDocumentNumber => text().nullable()();
+  TextColumn get toDocumentNumber => text().nullable()();
+}
+
+/// One Close-Register snapshot, aggregated from the local DB by
+/// [AppDatabase.aggregateUnreportedForZReport]. Every figure is derived from the
+/// same document set, so the printed slip reconciles:
+/// `taxableTotal + totalTax == totalSales - totalReturns`.
+class ZReportAggregates {
+  final int documentCount;
+  /// Device-local `YY-CCC-NNNNNN` range; null when no document carried a number.
+  final String? fromDocumentNumber;
+  final String? toDocumentNumber;
+  final double totalSales;
+  final double totalReturns;
+  final double discountsGranted;
+  final double taxableTotal;
+  final double totalTax;
+  /// What actually hit the drawer: the summed tender, refunds already netted.
+  final double grandTotal;
+
+  const ZReportAggregates({
+    required this.documentCount,
+    required this.fromDocumentNumber,
+    required this.toDocumentNumber,
+    required this.totalSales,
+    required this.totalReturns,
+    required this.discountsGranted,
+    required this.taxableTotal,
+    required this.totalTax,
+    required this.grandTotal,
+  });
+
+  static const empty = ZReportAggregates(
+    documentCount: 0,
+    fromDocumentNumber: null,
+    toDocumentNumber: null,
+    totalSales: 0,
+    totalReturns: 0,
+    discountsGranted: 0,
+    taxableTotal: 0,
+    totalTax: 0,
+    grandTotal: 0,
+  );
 }
 
 // ============================================================================
@@ -1276,50 +1352,6 @@ class FiscalItemsTable extends Table {
   IntColumn get companyId => integer()();
 }
 
-class PosPrinterSelectionsTable extends Table {
-  @override
-  String get tableName => 'pos_printer_selections';
-  IntColumn get id => integer().autoIncrement()();
-  IntColumn get serverId => integer().nullable()();
-  TextColumn get key => text()();
-  TextColumn get printerName => text().nullable()();
-  BoolColumn get isEnabled => boolean()();
-  IntColumn get companyId => integer()();
-}
-
-class PosPrinterSelectionSettingsTable extends Table {
-  @override
-  String get tableName => 'pos_printer_selection_settings';
-  IntColumn get id => integer().autoIncrement()();
-  IntColumn get serverId => integer().nullable()();
-  IntColumn get posPrinterSelectionId => integer()();
-  IntColumn get paperWidth => integer()();
-  TextColumn get header => text().nullable()();
-  TextColumn get footer => text().nullable()();
-  IntColumn get feedLines => integer()();
-  BoolColumn get cutPaper => boolean()();
-  BoolColumn get printBitmap => boolean()();
-  BoolColumn get openCashDrawer => boolean()();
-  TextColumn get cashDrawerCommand => text().nullable()();
-  IntColumn get headerAlignment => integer()();
-  IntColumn get footerAlignment => integer()();
-  BoolColumn get isFormattingEnabled => boolean()();
-  IntColumn get printerType => integer()();
-  IntColumn get numberOfCopies => integer()();
-  IntColumn get codePage => integer()();
-  IntColumn get characterSet => integer()();
-  IntColumn get margin => integer()();
-  RealColumn get leftMargin => real()();
-  RealColumn get topMargin => real()();
-  RealColumn get rightMargin => real()();
-  RealColumn get bottomMargin => real()();
-  BoolColumn get printBarcode => boolean()();
-  TextColumn get fontName => text().nullable()();
-  RealColumn get fontSizePercent => real()();
-  BoolColumn get printLogoFullWidth => boolean()();
-  IntColumn get companyId => integer()();
-}
-
 class PosPrinterSettingsTable extends Table {
   @override
   String get tableName => 'pos_printer_settings';
@@ -1411,8 +1443,6 @@ class ZReportPaymentSummariesTable extends Table {
     DocumentItemExpirationDatesTable,
     DocumentItemTaxesTable,
     FiscalItemsTable,
-    PosPrinterSelectionsTable,
-    PosPrinterSelectionSettingsTable,
     PosPrinterSettingsTable,
     PosVoidsTable,
     TemplatesTable,
@@ -1424,6 +1454,7 @@ class ZReportPaymentSummariesTable extends Table {
     TaxesTable,
     FloorPlansTable,
     FloorPlanTablesTable,
+    FloorPlanTableIdMapTable,
     UsersTable,
     AppPropertiesTable,
     ProductGroupsTable,
@@ -1464,12 +1495,71 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 49;
+  int get schemaVersion => 53;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) async => m.createAll(),
         onUpgrade: (m, from, to) async {
+          // v53: the Z-report's document range/count, computed at Close Register
+          // from the local DB. The pre-existing server-int columns can't be
+          // filled offline (an unsynced document has no server id), so the
+          // report records the device-local number range instead.
+          if (from < 53) {
+            await customStatement(
+                'ALTER TABLE z_reports ADD COLUMN document_count INTEGER');
+            await customStatement(
+                'ALTER TABLE z_reports ADD COLUMN from_document_number TEXT');
+            await customStatement(
+                'ALTER TABLE z_reports ADD COLUMN to_document_number TEXT');
+            // Existing rows never had a number written (the UI mistook the
+            // server id for one), so they would now all render as "#0". Give
+            // them the per-company sequence their close order implies — the
+            // same 1-based scheme the server numbers by. Best effort: the true
+            // number was never recorded locally, so this cannot be recovered,
+            // only reconstructed.
+            await customStatement(
+              'UPDATE z_reports SET number = ('
+              '  SELECT COUNT(*) FROM z_reports AS prior'
+              '  WHERE prior.company_id = z_reports.company_id'
+              '    AND (prior.closed_at < z_reports.closed_at'
+              '      OR (prior.closed_at = z_reports.closed_at'
+              '          AND prior.local_id <= z_reports.local_id))'
+              ') WHERE number IS NULL',
+            );
+          }
+
+          // v52: temp→real forwarding addresses for offline-created floor plan
+          // tables, so a cart holding a temp id across a sync can still resolve
+          // it at checkout. See [FloorPlanTableIdMapTable].
+          if (from < 52) {
+            await m.createTable(floorPlanTableIdMapTable);
+          }
+
+          // v51: floor plan tables become offline-first (add/move/rename/delete
+          // while offline, pushed on sync) — needs a sync queue. Mirrors v48's
+          // bookings migration; pending_create rows use a temp negative id.
+          if (from < 51) {
+            await customStatement(
+                "ALTER TABLE floor_plan_tables ADD COLUMN sync_status "
+                "TEXT NOT NULL DEFAULT 'synced'");
+            await customStatement(
+                "ALTER TABLE floor_plan_tables ADD COLUMN sync_error TEXT");
+          }
+
+          // v50: the legacy PosPrinterSelection subsystem was removed (fully
+          // superseded by the PrinterConfig + app_properties scheme, and read by
+          // nothing). Drop its two now-orphaned tables so upgraded installs stop
+          // carrying dead schema. Referenced by raw name on purpose — the Drift
+          // table classes no longer exist. IF EXISTS keeps it idempotent for
+          // installs that never had them.
+          if (from < 50) {
+            await customStatement(
+                'DROP TABLE IF EXISTS pos_printer_selection_settings');
+            await customStatement(
+                'DROP TABLE IF EXISTS pos_printer_selections');
+          }
+
           // v49: refunds become fully offline-first via the Drift outbox (the
           // shared_preferences refund queue is gone). Store the two refund-only
           // fields the /Document/Refund push needs so pushPendingRefundOps can
@@ -1577,8 +1667,6 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(documentItemExpirationDatesTable);
             await m.createTable(documentItemTaxesTable);
             await m.createTable(fiscalItemsTable);
-            await m.createTable(posPrinterSelectionsTable);
-            await m.createTable(posPrinterSelectionSettingsTable);
             await m.createTable(posPrinterSettingsTable);
             await m.createTable(posVoidsTable);
             await m.createTable(templatesTable);
@@ -2489,6 +2577,76 @@ class AppDatabase extends _$AppDatabase {
             .go();
       }
     });
+  }
+
+  /// Repoints every local row that referenced a floor-plan table's temp negative
+  /// id at the real server id it was just assigned.
+  ///
+  /// Always call this in the SAME transaction as the id swap: if the swap
+  /// committed but this didn't, the references would point at an id that exists
+  /// nowhere and the table assignment would be silently lost.
+  ///
+  /// Two holders, each storing the id differently:
+  ///  • `pos_orders.tableId` — a plain column, so a direct UPDATE. NOTE: it is
+  ///    `tableId`, NOT the similarly-named `floorPlanTableId` on the same table —
+  ///    that one is dead (nothing writes it; `CartState.floorPlanTableId` is
+  ///    persisted into `tableId`). Remapping the wrong column would silently
+  ///    update zero rows.
+  ///  • `bookings.tableIdsJson` — a JSON array, so decode → swap → encode.
+  ///    Matched in Dart, not via a SQL LIKE: `[12]` LIKE '%1%' would happily
+  ///    match an unrelated table 1.
+  Future<void> remapFloorPlanTableRefs(
+    int tempId,
+    int realId,
+    int companyId,
+  ) async {
+    // Leave a forwarding address first: rewriting existing rows only covers what
+    // is already persisted, and the open cart isn't.
+    await into(floorPlanTableIdMapTable).insertOnConflictUpdate(
+      FloorPlanTableIdMapTableCompanion(
+        tempId: Value(tempId),
+        realId: Value(realId),
+        companyId: Value(companyId),
+        createdAt: Value(DateTime.now().toUtc()),
+      ),
+    );
+
+    await (update(posOrdersTable)..where((o) => o.tableId.equals(tempId)))
+        .write(PosOrdersTableCompanion(tableId: Value(realId)));
+
+    final bookingRows = await (select(bookingsTable)
+          ..where((b) => b.companyId.equals(companyId)))
+        .get();
+    for (final b in bookingRows) {
+      final ids = (jsonDecode(b.tableIdsJson) as List<dynamic>)
+          .map((e) => (e as num).toInt())
+          .toList();
+      if (!ids.contains(tempId)) continue;
+      final remapped = [for (final i in ids) i == tempId ? realId : i];
+      await (update(bookingsTable)..where((x) => x.id.equals(b.id))).write(
+        BookingsTableCompanion(tableIdsJson: Value(jsonEncode(remapped))),
+      );
+    }
+  }
+
+  /// Resolves a floor-plan table id that may be a stale temp id.
+  ///
+  /// Call this on ANY path that persists a table id sourced from in-memory state
+  /// (checkout, save-open-order): the cart can hold a temp id from before a sync,
+  /// and it is the last writer, so it would otherwise overwrite a correctly
+  /// remapped row with the dead value.
+  ///
+  /// Non-negative ids (and null) pass through untouched — a real server id is
+  /// never in the map, so this costs one indexed PK lookup only in the offline
+  /// case. An unresolvable temp id returns **null** rather than the dead id: an
+  /// order with no table is recoverable, one pointing at a nonexistent table is
+  /// a dangling reference the server would reject.
+  Future<int?> resolveFloorPlanTableId(int? tableId) async {
+    if (tableId == null || tableId >= 0) return tableId;
+    final row = await (select(floorPlanTableIdMapTable)
+          ..where((t) => t.tempId.equals(tableId)))
+        .getSingleOrNull();
+    return row?.realId;
   }
 
   /// Recomputes a document's paid status from its live (non-deleted) payments
@@ -4324,11 +4482,16 @@ extension OfflineQueueHelpers on AppDatabase {
         .get();
   }
 
-  Future<void> markZReportSynced(String localId, int serverId) {
+  /// [serverNumber] is the server's own per-company Z sequence number, which is
+  /// authoritative across devices. Left null when the response didn't carry one,
+  /// in which case the device-local number issued at close time stands.
+  Future<void> markZReportSynced(String localId, int serverId,
+      {int? serverNumber}) {
     return (update(zReportsTable)
           ..where((t) => t.localId.equals(localId)))
         .write(ZReportsTableCompanion(
       serverId: Value(serverId),
+      number: serverNumber == null ? const Value.absent() : Value(serverNumber),
       syncStatus: const Value('synced'),
       syncError: const Value(null),
     ));
@@ -4376,6 +4539,87 @@ extension OfflineQueueHelpers on AppDatabase {
           ..where((t) => t.zReportId.isNull()))
         .write(const PaymentsTableCompanion(
             zReportId: Value(optimisticZReportPlaceholder)));
+  }
+
+  /// Aggregates everything the Z-report reports on, in one pass over the local
+  /// DB. Scope = the documents behind the still-unreported payments — the exact
+  /// set [getUnreportedPayments] returns — so the totals and the tender
+  /// breakdown always describe the same sales.
+  ///
+  /// Call this BEFORE [assignUnreportedPaymentsToZReport]: that stamps the
+  /// placeholder id and empties the set. The result must be persisted onto the
+  /// z_reports row, because nothing records which payments belonged to which
+  /// report — once stamped, the scope is unrecoverable.
+  Future<ZReportAggregates> aggregateUnreportedForZReport(int companyId) async {
+    final payments = await getUnreportedPayments(companyId);
+    if (payments.isEmpty) return ZReportAggregates.empty;
+
+    // Refund payments are stored negative, so this nets to the real drawer take.
+    final grandTotal = payments.fold<double>(0, (s, p) => s + p.amount);
+    final docIds = payments.map((p) => p.documentId).toSet().toList();
+
+    final docs = await (select(documentsTable)
+          ..where((t) => t.localId.isIn(docIds)))
+        .get();
+    final items = await (select(documentItemsTable)
+          ..where((t) => t.documentId.isIn(docIds))
+          ..where((t) => t.syncStatus.equals('pending_delete').not()))
+        .get();
+    final lines = await (select(discountLinesTable)
+          ..where((t) => t.documentLocalId.isIn(docIds)))
+        .get();
+
+    double totalSales = 0;
+    double totalReturns = 0;
+    for (final d in docs) {
+      // Classify by type, never by the stored sign: a refund total is negative
+      // locally but positive once pulled back from the server.
+      if (d.documentTypeId == DocumentTypes.refund) {
+        totalReturns += d.total.abs();
+      } else {
+        totalSales += d.total;
+      }
+    }
+
+    // Refund items carry no taxAmount (refund_service doesn't write one), so a
+    // return reduces the taxable base without reversing its tax.
+    final totalTax = items.fold<double>(0, (s, i) => s + i.taxAmount);
+    // `amount` is the resolved money figure — the only discount-line field that
+    // may be summed, since % and fixed lines mix freely once resolved.
+    final discountsGranted = lines.fold<double>(0, (s, l) => s + l.amount);
+
+    // Zero-padded NNNNNN suffix ⇒ lexicographic order is issue order.
+    final numbers = docs
+        .map((d) => d.number)
+        .whereType<String>()
+        .where((n) => n.isNotEmpty)
+        .toList()
+      ..sort();
+
+    return ZReportAggregates(
+      documentCount: docs.length,
+      fromDocumentNumber: numbers.isEmpty ? null : numbers.first,
+      toDocumentNumber: numbers.isEmpty ? null : numbers.last,
+      totalSales: totalSales,
+      totalReturns: totalReturns,
+      discountsGranted: discountsGranted,
+      taxableTotal: totalSales - totalReturns - totalTax,
+      totalTax: totalTax,
+      grandTotal: grandTotal,
+    );
+  }
+
+  /// The next device-local Z-report number for a company. The server keeps its
+  /// own per-company sequence and [SyncManager.pushPendingZReports] overwrites
+  /// this with the authoritative one, but a cashier closing offline still needs
+  /// a number on today's slip.
+  Future<int> nextLocalZReportNumber(int companyId) async {
+    final maxNumber = zReportsTable.number.max();
+    final row = await (selectOnly(zReportsTable)
+          ..addColumns([maxNumber])
+          ..where(zReportsTable.companyId.equals(companyId)))
+        .getSingle();
+    return (row.read(maxNumber) ?? 0) + 1;
   }
 
   /// Active (unfinalized) cash movements for a company — used to total cash

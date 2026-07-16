@@ -1,6 +1,4 @@
-import 'dart:io';
 import 'dart:typed_data';
-import 'package:file_picker/file_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -8,6 +6,8 @@ import 'package:printing/printing.dart';
 import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/company/company_model.dart';
 import 'package:pos_app/document/document_model.dart';
+import 'package:pos_app/printer/pdf_file_name.dart';
+import 'package:pos_app/printer/pdf_save_service.dart';
 import 'package:pos_app/cart/discount_display.dart';
 
 // Orange accent matching the Aronium invoice style
@@ -61,7 +61,8 @@ class InvoicePdfService {
       logoBytes: logoBytes,
       settings: settings,
     );
-    await Printing.layoutPdf(onLayout: (_) async => bytes, name: invoiceNumber);
+    await Printing.layoutPdf(
+        onLayout: (_) async => bytes, name: documentPdfName(invoiceNumber));
   }
 
   static Future<void> saveAsPdf({
@@ -100,15 +101,11 @@ class InvoicePdfService {
       logoBytes: logoBytes,
       settings: settings,
     );
-    final path = await FilePicker.platform.saveFile(
+    await savePdfAs(
+      bytes: bytes,
+      suggestedName: documentPdfName(invoiceNumber),
       dialogTitle: 'Save Invoice PDF',
-      fileName: '$invoiceNumber.pdf',
-      type: FileType.custom,
-      allowedExtensions: ['pdf'],
     );
-    if (path != null) {
-      await File(path).writeAsBytes(bytes);
-    }
   }
 
   // ── PDF generation ──────────────────────────────────────────────────────────
@@ -255,27 +252,34 @@ class InvoicePdfService {
           'Tax',
           const pw.FixedColumnWidth(50),
           pw.Alignment.centerRight,
-          (item, idx) {
-            final taxPct = item.priceBeforeTax > 0
-                ? (item.price - item.priceBeforeTax) / item.priceBeforeTax * 100
-                : 0.0;
-            return taxPct == 0 ? '---' : '${taxPct.toStringAsFixed(0)}%';
-          },
+          // The line's own rate. Deriving it from (price - priceBeforeTax) read
+          // 0 on every checkout row — both hold the same ex-tax price there — so
+          // a taxed invoice printed "---" in the Tax column.
+          (item, idx) => item.taxRate > 0
+              ? '${item.taxRate.toStringAsFixed(item.taxRate % 1 == 0 ? 0 : 1)}%'
+              : '---',
         ),
       if (showDiscountColumn)
         _InvColumn(
           'Discount',
           const pw.FixedColumnWidth(55),
           pw.Alignment.centerRight,
+          // Type-aware: 0 = percent, 1 = fixed money. This printed a "%" sign on
+          // every discount, so a 5.00 MAD item discount read "5.00%".
           (item, idx) => item.discount == 0
-              ? '0.00%'
-              : '${item.discount.toStringAsFixed(2)}%',
+              ? '---'
+              : item.discountType == 0
+                  ? '${item.discount.toStringAsFixed(item.discount % 1 == 0 ? 0 : 2)}%'
+                  : _numFmt.format(item.discount * item.quantity),
         ),
       _InvColumn(
         'Total',
         const pw.FixedColumnWidth(65),
         pw.Alignment.centerRight,
-        (item, idx) => _numFmt.format(item.total),
+        // Tax-inclusive, so the column reconciles with the invoice Total.
+        // `total` is ex-tax on checkout rows, which printed a 30.00 line under a
+        // 37.00 invoice total and read as if the discount were taken twice.
+        (item, idx) => _numFmt.format(item.totalWithTax),
       ),
     ];
     final columnWidths = {
@@ -466,6 +470,25 @@ class InvoicePdfService {
                         '-$currencySymbol${_numFmt.format(d.amount)}',
                         ts: ts,
                       ),
+                    ),
+                    pw.SizedBox(height: 6),
+                  ],
+                  // Subtotal + tax. These were passed in and then DROPPED — a
+                  // document headed "TAX INVOICE" printed no tax at all, and the
+                  // Total appeared to follow from nothing (the discount line read
+                  // as if it were subtracted from an already-discounted line
+                  // total). Subtotal is net of tax AND of any discount above, so
+                  // subtotal + tax == total on both discountApplyRule settings.
+                  if (showTaxColumn) ...[
+                    _summaryRow(
+                      'Subtotal',
+                      '$currencySymbol${_numFmt.format(totalBeforeTax)}',
+                      ts: ts,
+                    ),
+                    _summaryRow(
+                      'Tax',
+                      '$currencySymbol${_numFmt.format(taxTotal)}',
+                      ts: ts,
                     ),
                     pw.SizedBox(height: 6),
                   ],

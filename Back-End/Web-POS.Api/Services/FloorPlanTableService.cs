@@ -39,6 +39,12 @@ namespace Api.Services
 
         public async Task<FloorPlanTableDto> CreateAsync(CreateFloorPlanTableRequest req, int companyId)
         {
+            if (await _repository.ExistsByNameInPlanAsync(req.Name, req.FloorPlanId, companyId))
+            {
+                throw new InvalidOperationException(
+                    $"A table named '{req.Name}' already exists on this floor plan.");
+            }
+
             var entity = FloorPlanTable.Create(
                 companyId,
                 req.FloorPlanId,
@@ -66,6 +72,15 @@ namespace Api.Services
         {
             var entity = await _repository.GetByIdAsync(req.Id, companyId);
             if (entity == null) return false;
+
+            // A rename onto a name already used on the same plan hits the unique
+            // index — catch it here so it's a 400, not an unhandled SQL 500.
+            if (req.Name != entity.Name &&
+                await _repository.ExistsByNameInPlanAsync(req.Name, entity.FloorPlanId, companyId, excludeId: entity.Id))
+            {
+                throw new InvalidOperationException(
+                    $"A table named '{req.Name}' already exists on this floor plan.");
+            }
 
             entity.UpdateProperties(req.Name, req.IsRound);
             return await _repository.UpdateAsync(entity);

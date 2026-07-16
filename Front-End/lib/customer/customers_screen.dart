@@ -549,9 +549,15 @@ class _CustomerFormDialogState extends ConsumerState<_CustomerFormDialog> {
     final now = DateTime.now().toUtc();
     final nowIso = now.toIso8601String();
 
+    // A blank code must travel as null, not '': the server's per-company unique code
+    // index skips NULLs but treats '' as a real code, so a second blank-coded customer
+    // would collide with the first.
+    final codeText = _codeCtrl.text.trim();
+    final code = codeText.isEmpty ? null : codeText;
+
     final payload = <String, dynamic>{
       'name': _nameCtrl.text.trim(),
-      'code': _codeCtrl.text.trim(),
+      'code': code,
       'taxNumber': _taxNumberCtrl.text.trim(),
       'address': _addressCtrl.text.trim(),
       'postalCode': _postalCodeCtrl.text.trim(),
@@ -582,8 +588,9 @@ class _CustomerFormDialogState extends ConsumerState<_CustomerFormDialog> {
       await (db.update(db.customersTable)
             ..where((t) => t.id.equals(widget.customer!.id)))
           .write(CustomersTableCompanion(
+        dateUpdated: Value(now),
         name: Value(_nameCtrl.text.trim()),
-        code: Value(_codeCtrl.text.trim()),
+        code: Value(code),
         taxNumber: Value(_taxNumberCtrl.text.trim()),
         address: Value(_addressCtrl.text.trim()),
         postalCode: Value(_postalCodeCtrl.text.trim()),
@@ -646,8 +653,12 @@ class _CustomerFormDialogState extends ConsumerState<_CustomerFormDialog> {
       await db.into(db.customersTable).insert(CustomersTableCompanion(
         id: Value(tempId),
         companyId: Value(widget.companyId),
+        // Stamped locally so an offline-created customer keeps its true creation
+        // time when the sync push later sends it to the server.
+        dateCreated: Value(now),
+        dateUpdated: Value(now),
         name: Value(_nameCtrl.text.trim()),
-        code: Value(_codeCtrl.text.trim()),
+        code: Value(code),
         taxNumber: Value(_taxNumberCtrl.text.trim()),
         address: Value(_addressCtrl.text.trim()),
         postalCode: Value(_postalCodeCtrl.text.trim()),
@@ -695,8 +706,10 @@ class _CustomerFormDialogState extends ConsumerState<_CustomerFormDialog> {
             await db.into(db.customersTable).insert(CustomersTableCompanion(
               id: Value(newId),
               companyId: Value(widget.companyId),
+              dateCreated: Value(now),
+              dateUpdated: Value(now),
               name: Value(_nameCtrl.text.trim()),
-              code: Value(_codeCtrl.text.trim()),
+              code: Value(code),
               taxNumber: Value(_taxNumberCtrl.text.trim()),
               address: Value(_addressCtrl.text.trim()),
               postalCode: Value(_postalCodeCtrl.text.trim()),

@@ -36,6 +36,11 @@ namespace Api.Repository
         {
             return _db.Customers.AnyAsync(c => c.Name == name && c.CompanyId == companyId);
         }
+
+        public Task<bool> ExistsByCodeAsync(string code, int companyId)
+        {
+            return _db.Customers.AnyAsync(c => c.Code == code && c.CompanyId == companyId);
+        }
         public async Task AddCustomerAsync(Customer newCustomer)
         {
             _db.Customers.Add(newCustomer);

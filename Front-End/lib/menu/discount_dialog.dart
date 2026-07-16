@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/app_settings/app_settings_provider.dart';
 import 'package:pos_app/cart/cart_provider.dart';
+import 'package:pos_app/currency/currencies_provider.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
 
 class DiscountDialog extends ConsumerStatefulWidget {
@@ -15,8 +16,11 @@ class DiscountDialog extends ConsumerStatefulWidget {
 class _DiscountDialogState extends ConsumerState<DiscountDialog>
     with SingleTickerProviderStateMixin {
   TabController? _tabController;
-  final TextEditingController _cartValueCtrl = TextEditingController(text: '0');
-  final TextEditingController _itemValueCtrl = TextEditingController(text: '0');
+
+  // Keypad state
+  String _cartInput = '0';
+  String _itemInput = '0';
+  bool _replaceOnNextKey = true;
 
   int _cartDiscountType = 0;
   int _itemDiscountType = 0;
@@ -25,45 +29,113 @@ class _DiscountDialogState extends ConsumerState<DiscountDialog>
   void initState() {
     super.initState();
     final settings = ref.read(appSettingsProvider);
-    final defaultTypeInt = settings[SettingKeys.defaultDiscountType] == 'Fixed' ? 1 : 0;
+    final defaultTypeInt = settings[SettingKeys.defaultDiscountType] == 'Fixed'
+        ? 1
+        : 0;
     _cartDiscountType = defaultTypeInt;
     _itemDiscountType = defaultTypeInt;
 
     final itemDiscountAllowed =
-        settings[SettingKeys.singleItemDiscountAllowed]?.toLowerCase() != 'false';
+        settings[SettingKeys.singleItemDiscountAllowed]?.toLowerCase() !=
+        'false';
     if (itemDiscountAllowed) {
       _tabController = TabController(length: 2, vsync: this);
+      _tabController!.addListener(() {
+        if (_tabController!.indexIsChanging) {
+          setState(() {
+            _replaceOnNextKey = true;
+          });
+        }
+      });
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final cartState = ref.read(cartProvider);
-      _cartValueCtrl.text = cartState.manualCartDiscount.toString();
-      // Always restore the saved type — not just when discount > 0.
-      _cartDiscountType = cartState.manualCartDiscountType;
+      _cartInput = _fmt(cartState.manualCartDiscount);
+
+      if (cartState.manualCartDiscount > 0) {
+        _cartDiscountType = cartState.manualCartDiscountType;
+      }
 
       if (cartState.selectedCartItemId != null) {
         final item = cartState.items
             .where((i) => i.cartItemId == cartState.selectedCartItemId)
             .firstOrNull;
         if (item != null) {
-          _itemValueCtrl.text = item.discount.toString();
-          _itemDiscountType = item.discountType;
+          _itemInput = _fmt(item.discount);
+          if (item.discount > 0) _itemDiscountType = item.discountType;
         }
       }
       setState(() {});
     });
   }
 
+  static String _fmt(double v) =>
+      v == v.roundToDouble() ? v.toInt().toString() : v.toString();
+
   @override
   void dispose() {
     _tabController?.dispose();
-    _cartValueCtrl.dispose();
-    _itemValueCtrl.dispose();
     super.dispose();
   }
 
+  // Helper getters/setters for the active tab's input
+  bool get _isCartTab => _tabController == null || _tabController!.index == 0;
+
+  String get _activeInput => _isCartTab ? _cartInput : _itemInput;
+
+  set _activeInput(String val) {
+    if (_isCartTab) {
+      _cartInput = val;
+    } else {
+      _itemInput = val;
+    }
+  }
+
+  // Keypad logic
+  void _tapDigit(String d) {
+    setState(() {
+      if (_replaceOnNextKey) {
+        _activeInput = '';
+        _replaceOnNextKey = false;
+      }
+      _activeInput += d;
+    });
+  }
+
+  void _tapDot() {
+    setState(() {
+      if (_replaceOnNextKey) {
+        _activeInput = '0';
+        _replaceOnNextKey = false;
+      }
+      if (_activeInput.isEmpty) _activeInput = '0';
+      if (!_activeInput.contains('.')) _activeInput += '.';
+    });
+  }
+
+  void _tapSign() {
+    setState(() {
+      _replaceOnNextKey = false;
+      if (_activeInput.startsWith('-')) {
+        _activeInput = _activeInput.substring(1);
+      } else if (_activeInput.isNotEmpty && _activeInput != '0') {
+        _activeInput = '-$_activeInput';
+      }
+    });
+  }
+
+  void _backspace() {
+    setState(() {
+      _replaceOnNextKey = false;
+      if (_activeInput.isNotEmpty) {
+        _activeInput = _activeInput.substring(0, _activeInput.length - 1);
+      }
+    });
+  }
+
   void _applyCartDiscount() {
-    final val = double.tryParse(_cartValueCtrl.text) ?? 0;
+    final val = double.tryParse(_cartInput) ?? 0;
     ref.read(cartProvider.notifier).setCartDiscount(val, _cartDiscountType);
     Navigator.pop(context);
   }
@@ -84,15 +156,23 @@ class _DiscountDialogState extends ConsumerState<DiscountDialog>
       return;
     }
 
-    final val = double.tryParse(_itemValueCtrl.text) ?? 0;
-    double finalDiscount = _itemDiscountType == 0 ? item.price * (val / 100) : val;
+    final val = double.tryParse(_itemInput) ?? 0;
+    double finalDiscount = _itemDiscountType == 0
+        ? item.price * (val / 100)
+        : val;
 
     final settings = ref.read(appSettingsProvider);
     final preventBelowCost =
-        settings[SettingKeys.preventSaleBelowCostPrice]?.toLowerCase() == 'true';
+        settings[SettingKeys.preventSaleBelowCostPrice]?.toLowerCase() ==
+        'true';
     if (preventBelowCost && item.cost > 0) {
       if (item.price - finalDiscount < item.cost) {
-        showAppSnackbar(context, ref, 'Discount would price item below cost.', isError: true);
+        showAppSnackbar(
+          context,
+          ref,
+          'Discount would price item below cost.',
+          isError: true,
+        );
         return;
       }
     }
@@ -109,16 +189,9 @@ class _DiscountDialogState extends ConsumerState<DiscountDialog>
       return;
     }
 
-    // `finalDiscount` is an absolute currency amount (a % entry was converted to
-    // money above), so store it as Fixed (type 1) — not the entry mode. This
-    // keeps the value self-consistent: reopening the dialog prefills the amount
-    // against the Fixed tab and re-applying it is stable, instead of the amount
-    // being re-read as a percentage and silently shrinking.
-    //
-    // The as-entered figure (val + the chosen tab) is passed alongside so the
-    // discount record/receipt can show "10%" rather than its money value, while
-    // the cart math keeps using the resolved `finalDiscount`.
-    ref.read(cartProvider.notifier).setItemDiscount(
+    ref
+        .read(cartProvider.notifier)
+        .setItemDiscount(
           selectedCartItemId,
           finalDiscount,
           1,
@@ -129,112 +202,228 @@ class _DiscountDialogState extends ConsumerState<DiscountDialog>
   }
 
   void _apply() {
-    if (_tabController == null || _tabController!.index == 0) {
+    if (_isCartTab) {
       _applyCartDiscount();
     } else {
       _applyItemDiscount();
     }
   }
 
-  Widget _buildCartDiscountColumn() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+  // Renders the modern toggle switch
+  Widget _buildTypeSwitch(String currencySymbol) {
+    final currentType = _isCartTab ? _cartDiscountType : _itemDiscountType;
+    return SizedBox(
+      width: double.infinity,
+      child: SegmentedButton<int>(
+        segments: [
+          const ButtonSegment(value: 0, label: Text('%')),
+          ButtonSegment(value: 1, label: Text(currencySymbol)),
+        ],
+        selected: {currentType},
+        onSelectionChanged: (Set<int> newSelection) {
+          setState(() {
+            if (_isCartTab) {
+              _cartDiscountType = newSelection.first;
+            } else {
+              _itemDiscountType = newSelection.first;
+            }
+          });
+        },
+      ),
+    );
+  }
+
+  // Renders the clean readout display above the keypad
+  Widget _buildDisplayBox() {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final displayValue = _activeInput.isEmpty ? '0' : _activeInput;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: cs.primary, width: 2),
+      ),
+      child: Text(
+        displayValue,
+        textAlign: TextAlign.right,
+        style: tt.headlineSmall?.copyWith(
+          color: cs.primary,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  Widget _row(List<String> keys) {
+    return Row(
       children: [
-        DropdownButtonFormField<int>(
-          key: ValueKey(_cartDiscountType),
-          initialValue: _cartDiscountType,
-          decoration: const InputDecoration(labelText: 'Discount Type'),
-          items: const [
-            DropdownMenuItem(value: 0, child: Text('Percentage (%)')),
-            DropdownMenuItem(value: 1, child: Text('Fixed Amount')),
-          ],
-          onChanged: (v) => setState(() => _cartDiscountType = v!),
-        ),
-        const SizedBox(height: 16),
-        TextField(
-          controller: _cartValueCtrl,
-          decoration: const InputDecoration(labelText: 'Value'),
-          keyboardType: TextInputType.number,
-        ),
+        for (var i = 0; i < keys.length; i++) ...[
+          if (i > 0) const SizedBox(width: 8),
+          Expanded(
+            child: _key(
+              child: Text(keys[i]),
+              onTap: () {
+                switch (keys[i]) {
+                  case '.':
+                    _tapDot();
+                  case '-':
+                    _tapSign();
+                  default:
+                    _tapDigit(keys[i]);
+                }
+              },
+            ),
+          ),
+        ],
       ],
     );
   }
 
-  Widget _buildItemDiscountColumn(ColorScheme cs) {
-    final hasSelectedItem = ref.watch(cartProvider).selectedCartItemId != null;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (!hasSelectedItem)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Text(
-              'Please select an item in the cart first.',
-              style: TextStyle(color: cs.error),
+  Widget _key({
+    required Widget child,
+    required VoidCallback onTap,
+    bool filled = false,
+  }) {
+    final cs = Theme.of(context).colorScheme;
+    return Material(
+      color: filled ? cs.primary : cs.surfaceContainerHighest,
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: onTap,
+        child: SizedBox(
+          height: 52,
+          child: Center(
+            child: DefaultTextStyle.merge(
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: filled ? cs.onPrimary : cs.onSurface,
+              ),
+              child: IconTheme.merge(
+                data: IconThemeData(
+                  color: filled ? cs.onPrimary : cs.onSurface,
+                  size: 22,
+                ),
+                child: child,
+              ),
             ),
           ),
-        DropdownButtonFormField<int>(
-          key: ValueKey(_itemDiscountType),
-          initialValue: _itemDiscountType,
-          decoration: const InputDecoration(labelText: 'Discount Type'),
-          items: const [
-            DropdownMenuItem(value: 0, child: Text('Percentage (%)')),
-            DropdownMenuItem(value: 1, child: Text('Fixed Amount')),
-          ],
-          onChanged: (v) => setState(() => _itemDiscountType = v!),
         ),
-        const SizedBox(height: 16),
-        TextField(
-          controller: _itemValueCtrl,
-          decoration: const InputDecoration(labelText: 'Value'),
-          keyboardType: TextInputType.number,
-        ),
-      ],
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final sym = ref.watch(currencySymbolProvider);
 
-    return AlertDialog(
-      title: const Text('Apply Discount'),
-      content: SizedBox(
-        width: 400,
-        height: _tabController != null ? 300 : 180,
-        child: _tabController != null
-            ? Column(
-                children: [
-                  TabBar(
-                    controller: _tabController,
-                    labelColor: cs.primary,
-                    unselectedLabelColor: cs.onSurfaceVariant,
-                    tabs: const [
-                      Tab(text: 'Cart Discount'),
-                      Tab(text: 'Item Discount'),
-                    ],
+    final hasSelectedItem = ref.watch(cartProvider).selectedCartItemId != null;
+
+    return Dialog(
+      backgroundColor: Theme.of(context).cardColor,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 360),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Apply Discount',
+                style: tt.titleLarge?.copyWith(
+                  color: cs.onSurface,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              if (_tabController != null) ...[
+                TabBar(
+                  controller: _tabController,
+                  labelColor: cs.primary,
+                  unselectedLabelColor: cs.onSurfaceVariant,
+                  tabs: const [
+                    Tab(text: 'Cart'),
+                    Tab(text: 'Item'),
+                  ],
+                ),
+                const SizedBox(height: 16),
+              ],
+
+              if (!_isCartTab && !hasSelectedItem)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text(
+                    'Please select an item in the cart first.',
+                    style: TextStyle(color: cs.error),
                   ),
-                  const SizedBox(height: 16),
-                  Expanded(
-                    child: TabBarView(
-                      controller: _tabController,
-                      children: [
-                        _buildCartDiscountColumn(),
-                        _buildItemDiscountColumn(cs),
-                      ],
+                ),
+
+              _buildTypeSwitch(sym),
+              const SizedBox(height: 16),
+
+              _buildDisplayBox(),
+              const SizedBox(height: 16),
+
+              // Keypad
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: Column(
+                        children: [
+                          _row(['1', '2', '3']),
+                          const SizedBox(height: 8),
+                          _row(['4', '5', '6']),
+                          const SizedBox(height: 8),
+                          _row(['7', '8', '9']),
+                          const SizedBox(height: 8),
+                          _row(['-', '0', '.']),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              )
-            : _buildCartDiscountColumn(),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      flex: 1,
+                      child: Column(
+                        children: [
+                          _key(
+                            child: const Icon(Icons.backspace_outlined),
+                            onTap: _backspace,
+                          ),
+                          const SizedBox(height: 8),
+                          _key(
+                            child: const Text('esc'),
+                            onTap: () => Navigator.pop(context),
+                          ),
+                          const SizedBox(height: 8),
+                          Expanded(
+                            child: _key(
+                              child: const Icon(Icons.keyboard_return),
+                              onTap: _apply,
+                              filled: true,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
-        ElevatedButton(onPressed: _apply, child: const Text('Apply')),
-      ],
+      ),
     );
   }
 }

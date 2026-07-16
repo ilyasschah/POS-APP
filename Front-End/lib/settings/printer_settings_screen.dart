@@ -2186,6 +2186,30 @@ class _CustomizeReceiptTab extends StatelessWidget {
         ),
 
         const _PCard(
+          title: 'Company Header',
+          icon: Icons.storefront_outlined,
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(16, 6, 16, 6),
+              child: Text(
+                'Details printed under the logo / business name at the top of the receipt. '
+                'The header and footer text themselves are set per printer (⚙ → General).',
+                style: TextStyle(fontSize: 12),
+              ),
+            ),
+            _PSSwitch(
+                settingKey: SettingKeys.receiptShowCompanyTaxNumber,
+                label: 'Print tax number'),
+            _PSSwitch(
+                settingKey: SettingKeys.receiptShowCompanyAddress,
+                label: 'Print address'),
+            _PSSwitch(
+                settingKey: SettingKeys.receiptShowCompanyPhone,
+                label: 'Print phone (Tel)'),
+          ],
+        ),
+
+        const _PCard(
           title: 'Customer Details',
           icon: Icons.badge_outlined,
           children: [
@@ -2450,6 +2474,9 @@ class _LocalizeTextTab extends ConsumerWidget {
               _PSTextField(
                   settingKey: SettingKeys.labelCompanyTaxNumber,
                   label: 'Company tax number'),
+              _PSTextField(
+                  settingKey: SettingKeys.labelCompanyPhone,
+                  label: 'Company phone (Tel)'),
               _PSTextField(
                   settingKey: SettingKeys.labelReceiptNumber,
                   label: 'Receipt number'),

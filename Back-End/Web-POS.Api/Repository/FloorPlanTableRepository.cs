@@ -70,6 +70,18 @@ namespace Api.Repository
                 .FirstOrDefaultAsync(t => t.Name == name && t.CompanyId == companyId);
         }
 
+        /// Mirrors the UQ_FloorPlanTable_Name_PerPlan unique index, which is keyed on
+        /// (CompanyId, FloorPlanId, Name) — company scope alone is NOT enough.
+        /// [excludeId] lets a rename skip the row being renamed.
+        public Task<bool> ExistsByNameInPlanAsync(string name, int floorPlanId, int companyId, int? excludeId = null)
+        {
+            return _db.FloorPlanTables
+                .AnyAsync(t => t.Name == name
+                            && t.FloorPlanId == floorPlanId
+                            && t.CompanyId == companyId
+                            && (excludeId == null || t.Id != excludeId));
+        }
+
         public async Task<FloorPlanTable> AddAsync(FloorPlanTable entity)
         {
             _db.FloorPlanTables.Add(entity);

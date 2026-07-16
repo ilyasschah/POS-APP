@@ -179,7 +179,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
         )));
     final cartState = ref.read(cartProvider);
     final currentCustomer = ref.watch(currentCustomerProvider);
-    final asyncCustomers = ref.watch(allCustomersProvider);
+    final asyncCustomers = ref.watch(selectableCustomersProvider);
     final settings = ref.watch(appSettingsProvider);
     final bookingEnabled =
         settings[SettingKeys.featureBookingEnabled]?.toLowerCase() == 'true';
@@ -217,7 +217,15 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
         settings[SettingKeys.showTaxBtn]?.toLowerCase() != 'false';
     final showQuantityBtn =
         settings[SettingKeys.showQuantityBtn]?.toLowerCase() != 'false';
-    ref.listen(allCustomersProvider, (previous, next) {
+    final showCommentBtn =
+        settings[SettingKeys.showCommentBtn]?.toLowerCase() != 'false';
+    // A sync can swap an offline-created table's temp id out from under an open
+    // cart. This stream re-emits when that lands, so heal the cart's id then —
+    // otherwise the header falls back to 'Table #-1784…' for the rest of the sale.
+    ref.listen(allRoomsProvider, (previous, next) {
+      next.whenData((_) => ref.read(cartProvider.notifier).healTableId());
+    });
+    ref.listen(selectableCustomersProvider, (previous, next) {
       next.whenData((all) {
         final customers = all.where((c) => c.isCustomer).toList();
         final currentCartCustomer = ref.read(cartProvider).selectedCustomer;
@@ -710,6 +718,71 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                           );
                         },
                       ),
+                    ),
+                  if (showCommentBtn)
+                    _MenuHeaderActionBtn(
+                      icon: Icons.comment_outlined,
+                      label: 'Comment',
+                      // Greyed out until a cart line is selected — a comment
+                      // belongs to one line, so there is nothing to edit
+                      // otherwise. Same gating as Quantity.
+                      onTap: cartState.selectedCartItemId == null
+                          ? null
+                          : () async {
+                              final cart = ref.read(cartProvider);
+                              final item = cart.items
+                                  .where(
+                                    (i) =>
+                                        i.cartItemId == cart.selectedCartItemId,
+                                  )
+                                  .firstOrNull;
+                              if (item == null) return;
+                              // Offline-first, and a DIRECT Drift read on
+                              // purpose: productCommentsProvider is an
+                              // autoDispose .family stream, and awaiting its
+                              // `.future` with no active listener can resolve
+                              // before the watch emits — a product WITH
+                              // comments then looks like it has none.
+                              final db = ref.read(appDatabaseProvider);
+                              final companyId =
+                                  ref.read(selectedCompanyProvider)?.id ?? 0;
+                              final rows =
+                                  await (db.select(db.productCommentsTable)
+                                        ..where(
+                                          (t) => t.companyId.equals(companyId),
+                                        )
+                                        ..where(
+                                          (t) =>
+                                              t.productId.equals(item.productId),
+                                        )
+                                        ..where(
+                                          (t) => t.syncStatus.isNotIn([
+                                            'pending_delete',
+                                          ]),
+                                        ))
+                                      .get();
+                              if (!context.mounted) return;
+                              final result = await showDialog<String?>(
+                                context: context,
+                                builder: (_) => _ProductCommentsDialog(
+                                  productName: item.productName,
+                                  predefinedComments: rows
+                                      .map(ProductComment.fromDrift)
+                                      .toList(),
+                                  initialComment: item.comment,
+                                  confirmLabel: 'Save',
+                                ),
+                              );
+                              if (result == null) return;
+                              ref
+                                  .read(cartProvider.notifier)
+                                  .setItemComment(
+                                    item.cartItemId,
+                                    result.trim().isEmpty
+                                        ? null
+                                        : result.trim(),
+                                  );
+                            },
                     ),
                   if (showTransferBtn)
                     _MenuHeaderActionBtn(
@@ -2233,6 +2306,14 @@ class _CartSectionState extends ConsumerState<CartSection> {
         nextIndex = resolveDefaultScreenIndex(savedSettings);
       }
 
+      // The order is parked in Drift now, so the cart must let go of it. It
+      // previously kept everything on the navigating paths, which meant the next
+      // table tap inherited these items AND this order's existingLocalOrderId —
+      // so saving there rewrote this order's row onto the new table, moving the
+      // order and leaving the table it came from empty. Reopen a parked order by
+      // tapping its table or via Open Orders.
+      ref.read(cartProvider.notifier).clearCart();
+
       final idx = nextIndex;
       if (idx != null) {
         Navigator.pushAndRemoveUntil(
@@ -2240,8 +2321,6 @@ class _CartSectionState extends ConsumerState<CartSection> {
           MaterialPageRoute(builder: (_) => MainLayout(initialIndex: idx)),
           (r) => false,
         );
-      } else {
-        ref.read(cartProvider.notifier).clearCart();
       }
 
       // Step 4: Fire-and-forget sync push so the server sees the open order
@@ -2624,35 +2703,6 @@ class _CartSectionState extends ConsumerState<CartSection> {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-
-              if (ref
-                      .read(
-                        appSettingsProvider,
-                      )[SettingKeys.enableCustomOrderName]
-                      ?.toLowerCase() ==
-                  'true')
-                IconButton(
-                  icon: Icon(
-                    cartState.orderName?.isNotEmpty == true
-                        ? Icons.badge
-                        : Icons.badge_outlined,
-                    size: 20,
-                  ),
-                  tooltip: cartState.orderName?.isNotEmpty == true
-                      ? 'Order Name: ${cartState.orderName}'
-                      : 'Set Order Name',
-                  onPressed: () async {
-                    final name = await _showOrderNameDialog(
-                      context,
-                      cartState.orderName,
-                    );
-                    if (name != null) {
-                      ref
-                          .read(cartProvider.notifier)
-                          .setOrderName(name.isEmpty ? null : name);
-                    }
-                  },
-                ),
 
               IconButton(
                 icon: const Icon(Icons.refresh, size: 20),
@@ -3178,22 +3228,6 @@ class _CartSectionState extends ConsumerState<CartSection> {
                       onTap: cartItems.isEmpty
                           ? null
                           : () {
-                              final settings = ref.read(appSettingsProvider);
-                              final orderNameRequired =
-                                  settings[SettingKeys.orderNameRequired]
-                                      ?.toLowerCase() ==
-                                  'true';
-                              if (orderNameRequired &&
-                                  (cartState.orderName == null ||
-                                      cartState.orderName!.isEmpty)) {
-                                showAppSnackbar(
-                                  context,
-                                  ref,
-                                  'Order Name is required to complete this transaction.',
-                                  isError: true,
-                                );
-                                return;
-                              }
                               showDialog(
                                 context: context,
                                 barrierDismissible: false,
@@ -3445,39 +3479,6 @@ Future<double?> _showQuantityInputDialog(
   );
 }
 
-Future<String?> _showOrderNameDialog(
-  BuildContext context,
-  String? currentName,
-) async {
-  final controller = TextEditingController(text: currentName ?? '');
-  return showDialog<String?>(
-    context: context,
-    barrierDismissible: false,
-    builder: (ctx) => AlertDialog(
-      title: const Text('Order Name'),
-      content: TextField(
-        controller: controller,
-        autofocus: true,
-        decoration: const InputDecoration(
-          labelText: 'Enter order name',
-          hintText: 'e.g. John, Table 5',
-        ),
-        textCapitalization: TextCapitalization.words,
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(ctx, null),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: () => Navigator.pop(ctx, controller.text.trim()),
-          child: const Text('Confirm'),
-        ),
-      ],
-    ),
-  );
-}
-
 Future<double?> _showPriceInputDialog(
   BuildContext context,
   double defaultPrice,
@@ -3564,10 +3565,17 @@ Future<bool> _showAgeRestrictionDialog(BuildContext context, int minAge) async {
 class _ProductCommentsDialog extends StatefulWidget {
   final String productName;
   final List<ProductComment> predefinedComments;
+  /// The line's current comment, when editing one already in the cart. Its parts
+  /// are matched back onto the predefined switches; anything unmatched is the
+  /// operator's own text and lands in the custom field.
+  final String? initialComment;
+  final String confirmLabel;
 
   const _ProductCommentsDialog({
     required this.productName,
     required this.predefinedComments,
+    this.initialComment,
+    this.confirmLabel = 'Add to Cart',
   });
 
   @override
@@ -3577,6 +3585,31 @@ class _ProductCommentsDialog extends StatefulWidget {
 class _ProductCommentsDialogState extends State<_ProductCommentsDialog> {
   final Set<int> _selectedIds = {};
   final TextEditingController _customController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Re-hydrate an existing comment. It was stored as `parts.join(', ')`, so
+    // split on the separator and match each part back to a predefined comment;
+    // the remainder is free text. (A predefined comment containing ", " would
+    // split wrongly — the separator is the format's own limitation, not new.)
+    final raw = widget.initialComment?.trim() ?? '';
+    if (raw.isEmpty) return;
+    final idByText = {
+      for (final c in widget.predefinedComments) c.comment.trim(): c.id,
+    };
+    final leftovers = <String>[];
+    for (final part
+        in raw.split(',').map((p) => p.trim()).where((p) => p.isNotEmpty)) {
+      final id = idByText[part];
+      if (id != null) {
+        _selectedIds.add(id);
+      } else {
+        leftovers.add(part);
+      }
+    }
+    _customController.text = leftovers.join(', ');
+  }
 
   @override
   void dispose() {
@@ -3631,7 +3664,7 @@ class _ProductCommentsDialogState extends State<_ProductCommentsDialog> {
             if (custom.isNotEmpty) parts.add(custom);
             Navigator.pop(context, parts.join(', '));
           },
-          child: const Text('Add to Cart'),
+          child: Text(widget.confirmLabel),
         ),
       ],
     );

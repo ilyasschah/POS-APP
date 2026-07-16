@@ -31,6 +31,13 @@ class ZReportModel {
   final DateTime dateCreated;
   final int fromDocumentId;
   final int toDocumentId;
+  /// How many documents the report closes over, and the device-local
+  /// `YY-CCC-NNNNNN` range they span. Null on reports written before these were
+  /// recorded, and on server-sourced rows — the API exposes only the int id
+  /// range above, which is meaningless for documents that never synced.
+  final int? documentCount;
+  final String? fromDocumentNumber;
+  final String? toDocumentNumber;
   final double totalSales;
   final double totalReturns;
   final double discountsGranted;
@@ -48,6 +55,9 @@ class ZReportModel {
     required this.dateCreated,
     required this.fromDocumentId,
     required this.toDocumentId,
+    this.documentCount,
+    this.fromDocumentNumber,
+    this.toDocumentNumber,
     required this.totalSales,
     required this.totalReturns,
     required this.discountsGranted,
