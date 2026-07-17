@@ -40,8 +40,48 @@ class LicenseEvaluation {
       state == LicenseState.expired || state == LicenseState.tampered;
 }
 
+/// Everything the Settings → Subscription tab shows. Read straight out of the
+/// signed lease, so it stays truthful offline (the lease is the same artefact
+/// the boot guard enforces — there is no second source to drift from).
+class SubscriptionInfo {
+  /// When the tenant was provisioned. Null on a lease issued before the server
+  /// carried the claim, or for a company with no tenant record yet.
+  final DateTime? startedAt;
+
+  /// The subscription's own period end — what the customer is billed to.
+  final DateTime? periodEnd;
+
+  /// Period end + grace: the moment the terminal actually stops working.
+  final DateTime? validUntil;
+
+  /// Paid terminal cap. 0 when no subscription is provisioned (trial).
+  final int seatAllowance;
+
+  final String billingStatus;
+  final LicenseState state;
+
+  /// Whole days until [validUntil] (negative once expired).
+  final int daysLeft;
+
+  const SubscriptionInfo({
+    required this.state,
+    required this.seatAllowance,
+    required this.billingStatus,
+    required this.daysLeft,
+    this.startedAt,
+    this.periodEnd,
+    this.validUntil,
+  });
+}
+
 final licenseServiceProvider = Provider<LicenseService>(
   (ref) => LicenseService(ref.read(authStorageProvider)),
+);
+
+/// Subscription details for the Settings tab. Offline-safe — decodes the cached
+/// lease, never the network.
+final subscriptionInfoProvider = FutureProvider.autoDispose<SubscriptionInfo>(
+  (ref) => ref.read(licenseServiceProvider).describe(),
 );
 
 /// Verifies and enforces the signed offline subscription lease entirely on the
@@ -81,6 +121,35 @@ class LicenseService {
     final state =
         now.isBefore(validUntil) ? LicenseState.active : LicenseState.expired;
     return LicenseEvaluation(state, validUntil: validUntil, daysLeft: daysLeft);
+  }
+
+  /// Describes the stored lease for display. Reuses [evaluate] for the verdict
+  /// (so the tab can never disagree with the boot guard) and reads the rest of
+  /// the claims off the same lease.
+  Future<SubscriptionInfo> describe() async {
+    final evaluation = await evaluate();
+    final lease = await _storage.getLease();
+    // A tampered lease's claims are attacker-controlled — show the verdict only,
+    // never its forged dates/seat count dressed up as fact.
+    final claims = (lease == null || evaluation.state == LicenseState.tampered)
+        ? null
+        : _decodePayload(lease);
+
+    return SubscriptionInfo(
+      state: evaluation.state,
+      daysLeft: evaluation.daysLeft,
+      validUntil: evaluation.validUntil,
+      startedAt: _claimDate(claims, 'startedAt'),
+      periodEnd: _claimDate(claims, 'periodEnd'),
+      seatAllowance:
+          int.tryParse(claims?['seatAllowance']?.toString() ?? '') ?? 0,
+      billingStatus: claims?['billingStatus']?.toString() ?? 'unknown',
+    );
+  }
+
+  static DateTime? _claimDate(Map<String, dynamic>? claims, String key) {
+    final v = claims?[key] as String?;
+    return v == null ? null : DateTime.tryParse(v)?.toUtc();
   }
 
   /// True when [lease]'s RS256 signature matches [pem]. A valid signature that
@@ -128,7 +197,12 @@ class LicenseService {
   }
 
   /// Reads the server-stamped `issuedAt` claim (the trusted clock pin).
-  static DateTime? _decodeIssuedAt(String jwt) {
+  static DateTime? _decodeIssuedAt(String jwt) =>
+      _claimDate(_decodePayload(jwt), 'issuedAt');
+
+  /// Decodes a lease's claim payload WITHOUT verifying its signature — callers
+  /// must only use this for display, or after [_signatureValid] has passed.
+  static Map<String, dynamic>? _decodePayload(String jwt) {
     try {
       final parts = jwt.split('.');
       if (parts.length != 3) return null;
@@ -141,10 +215,7 @@ class LicenseService {
           p += '=';
           break;
       }
-      final map =
-          jsonDecode(utf8.decode(base64.decode(p))) as Map<String, dynamic>;
-      final v = map['issuedAt'] as String?;
-      return v == null ? null : DateTime.tryParse(v)?.toUtc();
+      return jsonDecode(utf8.decode(base64.decode(p))) as Map<String, dynamic>;
     } catch (_) {
       return null;
     }

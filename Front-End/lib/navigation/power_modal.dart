@@ -46,8 +46,13 @@ class PowerModal extends StatelessWidget {
                   iconColor: cs.onSurface,
                   onTap: () async {
                     try {
-                      await Process.run(Platform.resolvedExecutable, []);
-                      exit(0);
+                      // FIX: Use Process.start in detached mode so it doesn't wait
+                      await Process.start(
+                        Platform.resolvedExecutable,
+                        [],
+                        mode: ProcessStartMode.detached,
+                      );
+                      exit(0); // Now this triggers immediately
                     } catch (e) {
                       if (context.mounted) Navigator.pop(context);
                     }
@@ -84,8 +89,13 @@ class PowerModal extends StatelessWidget {
               label: Text("Cancel", style: TextStyle(color: cs.onSurface)),
               style: OutlinedButton.styleFrom(
                 side: BorderSide(color: context.navDivider),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
             ),
           ],
@@ -122,7 +132,7 @@ class _PowerOptionCardState extends State<_PowerOptionCard> {
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hovered = true),
-      onExit:  (_) => setState(() => _hovered = false),
+      onExit: (_) => setState(() => _hovered = false),
       child: GestureDetector(
         onTap: widget.onTap,
         child: AnimatedContainer(
@@ -141,8 +151,6 @@ class _PowerOptionCardState extends State<_PowerOptionCard> {
             children: [
               Icon(widget.icon, size: 54, color: widget.iconColor),
               const SizedBox(height: 16),
-              // Flexible + ellipsis so a larger font scale can't push the label
-              // past the fixed 150px card height (vertical overflow).
               Flexible(
                 child: Text(
                   widget.label,
@@ -150,7 +158,9 @@ class _PowerOptionCardState extends State<_PowerOptionCard> {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: widget.textColor ?? Theme.of(context).colorScheme.onSurface,
+                    color:
+                        widget.textColor ??
+                        Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w500,
                   ),
                 ),

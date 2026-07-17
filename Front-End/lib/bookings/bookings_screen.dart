@@ -11,11 +11,11 @@ import 'package:pos_app/bookings/bookings_provider.dart';
 import 'package:pos_app/cart/cart_provider.dart';
 import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/company/company_provider.dart';
+import 'package:pos_app/database/app_database.dart' show BookingResource;
 import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/sync/sync_notifier.dart';
-import 'package:pos_app/floor_plan/floor_plan_screen.dart';
 import 'package:pos_app/floor_plan/floor_plan_table.dart';
-import 'package:pos_app/menu/menu_screen.dart';
+import 'package:pos_app/navigation/main_layout.dart';
 import 'package:pos_app/navigation/nav_widgets.dart';
 import 'package:pos_app/stock/warehouse_provider.dart';
 import 'package:pos_app/sync/sync_provider.dart';
@@ -85,6 +85,22 @@ String _fmtTime(TimeOfDay t) {
 String _fmtDateTime(DateTime dt) => _fmtTime(TimeOfDay.fromDateTime(dt));
 
 enum _PostSaveAction { stay, open }
+
+/// Closes whatever booking dialog is open and switches MainLayout to the POS
+/// menu, for the flows that hand a freshly-seeded cart to the cashier.
+///
+/// These used to `pushAndRemoveUntil(MenuScreen())`, which renders MenuScreen as
+/// a bare route OUTSIDE MainLayout — so the sidebar vanished and there was no
+/// way back. Pushing a fresh `MainLayout` instead is also wrong on two counts:
+/// its `initState` re-runs (re-firing the one-time startup cash-in hook), and
+/// `initialIndex: 0` is indistinguishable from "not supplied", so it silently
+/// falls back to `resolveDefaultScreenIndex` and can land on Tables/Bookings
+/// rather than the POS. Setting the shared index is what MainLayout documents
+/// as the supported way to change tabs.
+void _openPosMenu(BuildContext context, WidgetRef ref) {
+  Navigator.pop(context); // close the booking dialog; MainLayout is beneath it
+  ref.read(mainNavigationIndexProvider.notifier).state = 0;
+}
 
 // ────────────────────────────────────────────────────────────────────────────
 // BookingsScreen
@@ -238,10 +254,13 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
               IconButton(
                 icon: const Icon(Icons.table_restaurant),
                 tooltip: 'Floor Plan',
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const FloorPlanScreen()),
-                ),
+                // Switch MainLayout's tab rather than pushing FloorPlanScreen as
+                // a route: a pushed copy renders OUTSIDE the layout, so it lost
+                // the sidebar and its own nav-back button had nothing to return
+                // to. This mirrors the Bookings button on the floor plan (which
+                // sets index 2), keeping the two screens a symmetric tab swap.
+                onPressed: () =>
+                    ref.read(mainNavigationIndexProvider.notifier).state = 4,
               ),
               const SizedBox(width: 4),
               IconButton(
@@ -1021,6 +1040,51 @@ class _AddBookingDialogState extends ConsumerState<_AddBookingDialog> {
     t.minute,
   );
 
+  /// Blocks a save that would double-book the resource this venue schedules by.
+  /// Returns true when the slot is free (or nothing is reserved).
+  ///
+  /// Which resource is checked follows `resourceMode`: 'staff' venues (a salon)
+  /// book a person and may leave tables unset, while 'table'/'room' venues book
+  /// the space. Checking the wrong one would either block nothing or block
+  /// everything, so the mode drives it rather than "whatever is filled in".
+  Future<bool> _passesDoubleBookingCheck(int companyId) async {
+    final isStaffMode = widget.resourceMode == 'staff';
+    // A booking holds a LIST of tables, so a clash on ANY of them is a clash.
+    final resourceIds = isStaffMode
+        ? {if (_selectedStaff != null) _selectedStaff!.id}
+        : _selectedTableIds.toSet();
+    if (resourceIds.isEmpty) return true; // nothing reserved → nothing to clash
+
+    final clashes = await ref
+        .read(appDatabaseProvider)
+        .findConflictingBookings(
+          companyId: companyId,
+          start: _toDateTime(_startTime),
+          end: _toDateTime(_endTime),
+          resource: isStaffMode
+              ? BookingResource.staff
+              : BookingResource.table,
+          resourceIds: resourceIds,
+          // Editing: without this the booking collides with its own saved row
+          // and could never be edited at all.
+          excludeBookingId: widget.existingBooking?.id,
+        );
+    if (clashes.isEmpty) return true;
+    if (!mounted) return false;
+
+    final clash = clashes.first;
+    final what = isStaffMode ? 'staff member' : widget.resourceMode;
+    showAppSnackbar(
+      context,
+      ref,
+      'This $what is already booked during this time — '
+      '${clash.reservationName} '
+      '(${_fmtDateTime(clash.startTime)}–${_fmtDateTime(clash.endTime)}).',
+      isError: true,
+    );
+    return false;
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     if (widget.resourceMode != 'staff' && _selectedTableIds.isEmpty) {
@@ -1054,10 +1118,13 @@ class _AddBookingDialogState extends ConsumerState<_AddBookingDialog> {
       );
       return;
     }
-    setState(() => _saving = true);
 
     final companyId = ref.read(selectedCompanyProvider)?.id;
     if (companyId == null) return;
+
+    if (!await _passesDoubleBookingCheck(companyId)) return;
+
+    setState(() => _saving = true);
 
     try {
       // Offline-first: write to local Drift (instant UI via the stream) and
@@ -1169,11 +1236,7 @@ class _AddBookingDialogState extends ConsumerState<_AddBookingDialog> {
                   customerId: created.customerId,
                 );
             if (!mounted) return;
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (_) => const MenuScreen()),
-              (route) => false,
-            );
+            _openPosMenu(context, ref);
           }
         } else {
           Navigator.pop(context);
@@ -1626,9 +1689,14 @@ class _BookingDetailDialogState extends ConsumerState<_BookingDetailDialog> {
 
     setState(() => _saving = true);
     try {
-      // Seeds the cart with this booking's context (carries bookingId so the
-      // backend links the order + flips the booking to In Service when the
-      // order is saved/checked out). This call is local-only — no network.
+      // Seeds the cart with this booking's context. Local-only — no network.
+      //
+      // NOTE: this used to claim the backend links the order and flips the
+      // booking to In Service on save. It does not: that only happens in
+      // PosOrderService.Create, the legacy online endpoint the offline-first
+      // checkout no longer calls, and no push payload carries BookingId. The
+      // link that makes "Open Service" work is the local pos_orders.bookingId
+      // written by saveOrderLocally — see openOrderForBookingProvider.
       await ref
           .read(cartProvider.notifier)
           .startBookingOrder(
@@ -1642,6 +1710,15 @@ class _BookingDetailDialogState extends ConsumerState<_BookingDetailDialog> {
             customerId: widget.booking.customerId,
           );
 
+      // Service has started — the reservation is now In Service (3). Flipped
+      // locally (instant, offline-safe) and queued so the next sync pushes
+      // /Bookings/UpdateStatus. Without this the booking sat at Scheduled/
+      // Arrived forever, since the offline path never told anyone service began.
+      await ref
+          .read(appDatabaseProvider)
+          .setBookingStatusLocal(widget.booking.id, 3);
+      ref.read(syncStateProvider.notifier).sync().catchError((_) {});
+
       // Mark every assigned table as occupied on the floor plan
       final client = ApiClient();
       for (final tableId in widget.booking.tableIds) {
@@ -1652,11 +1729,47 @@ class _BookingDetailDialogState extends ConsumerState<_BookingDetailDialog> {
 
       widget.onUpdated();
       if (!mounted) return;
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const MenuScreen()),
-        (route) => false,
-      );
+      _openPosMenu(context, ref);
+    } catch (e) {
+      if (mounted) {
+        showAppSnackbar(context, ref, 'Error: $e', isError: true);
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  /// Resumes the booking's existing open order straight from Drift.
+  ///
+  /// The old path here was [_startService], which builds a *fresh* CartState —
+  /// so a booking already in service got a brand-new order and the venue ended
+  /// up with two saved orders for one booking.
+  Future<void> _openLocalOrder(String localId) async {
+    setState(() => _saving = true);
+    try {
+      final loaded = await ref
+          .read(cartProvider.notifier)
+          .loadOrderFromLocal(localId);
+      if (!mounted) return;
+      if (!loaded) {
+        showAppSnackbar(
+          context,
+          ref,
+          'Order not found. It may have been completed or voided.',
+          isError: true,
+        );
+        return;
+      }
+      // An open order exists, so the booking IS in service — normalize rows
+      // stuck at Scheduled/Arrived (started before the status flip existed).
+      if (widget.booking.status < 3) {
+        await ref
+            .read(appDatabaseProvider)
+            .setBookingStatusLocal(widget.booking.id, 3);
+        ref.read(syncStateProvider.notifier).sync().catchError((_) {});
+        if (!mounted) return;
+      }
+      _openPosMenu(context, ref);
     } catch (e) {
       if (mounted) {
         showAppSnackbar(context, ref, 'Error: $e', isError: true);
@@ -1691,11 +1804,7 @@ class _BookingDetailDialogState extends ConsumerState<_BookingDetailDialog> {
         );
         return;
       }
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const MenuScreen()),
-        (route) => false,
-      );
+      _openPosMenu(context, ref);
     } catch (e) {
       if (mounted) {
         showAppSnackbar(context, ref, 'Error: $e', isError: true);
@@ -1867,6 +1976,18 @@ class _BookingDetailDialogState extends ConsumerState<_BookingDetailDialog> {
       );
     }
     if (b.status == 5) return null; // No Show — nothing to start
+
+    // An order still open locally wins over the server link: it's the one the
+    // cashier has been ringing up, and it may not have reached the server yet.
+    final localOrderId = ref.watch(openOrderForBookingProvider(b.id)).value;
+    if (localOrderId != null) {
+      return _bigButton(
+        icon: Icons.receipt_long,
+        label: 'Open Service',
+        color: Colors.indigo,
+        onTap: () => _openLocalOrder(localOrderId),
+      );
+    }
     if (b.posOrderId != null) {
       return _bigButton(
         icon: Icons.receipt_long,

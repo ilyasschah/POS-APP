@@ -606,6 +606,22 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
       // Clear cart now that the order is durably saved.
       cartNotifier.clearCart();
 
+      // A booking's order was just paid — mark the reservation Completed
+      // (status 4) so it leaves the In-Service list instead of lingering there.
+      // Offline-first: the flip is written to Drift now (allBookingsProvider is a
+      // Drift stream, so the calendar updates at once) and the sync below pushes
+      // /Bookings/UpdateStatus. Best-effort — a booking-status hiccup must never
+      // fail an already-banked sale. bookingId is read from the captured
+      // cartState, so clearCart() above doesn't erase it.
+      final paidBookingId = cartState.bookingId;
+      if (paidBookingId != null) {
+        try {
+          await db.setBookingStatusLocal(paidBookingId, 4); // 4 = Completed
+        } catch (e) {
+          debugPrint('mark booking $paidBookingId completed on pay failed — $e');
+        }
+      }
+
       // ── Loyalty points: earn and deduct ──────────────────────────────────
       final loyaltyCustomer = cartState.selectedCustomer;
       if (_settingsAtOpen[SettingKeys.loyaltyEnabled]?.toLowerCase() == 'true' &&
@@ -734,11 +750,6 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
       // The local counter bump above (dailyOrderNumberProvider) keeps the next
       // order number unique on this device until Phase 5 reconciles with the
       // server's official sequence.
-
-      // Optional success sound
-      if (appSettings[SettingKeys.enableSounds]?.toLowerCase() == 'true') {
-        SystemSound.play(SystemSoundType.click);
-      }
 
       // Single-user mode: stay logged in. Multi-user mode: auto-logout so the
       // next cashier can log in.

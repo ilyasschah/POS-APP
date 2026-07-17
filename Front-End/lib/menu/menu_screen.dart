@@ -1169,7 +1169,9 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
       final floorPlanOn =
           settings[SettingKeys.featureFloorPlanEnabled]?.toLowerCase() ==
           'true';
-      if (cartState.serviceType != 0 || !floorPlanOn) {
+      final tablelessAllowed =
+          settings[SettingKeys.allowTablelessOrders]?.toLowerCase() == 'true';
+      if (cartState.serviceType != 0 || !floorPlanOn || tablelessAllowed) {
         final companyId = ref.read(selectedCompanyProvider)?.id;
         final user = ref.read(currentUserProvider);
         if (companyId == null || user == null) return;
@@ -1875,14 +1877,14 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
       onTap: () async {
         final cartState = ref.read(cartProvider);
         if (cartState.activePosOrderId == null) {
+          final settings = ref.read(appSettingsProvider);
           final floorPlanOn =
-              ref
-                  .read(
-                    appSettingsProvider,
-                  )[SettingKeys.featureFloorPlanEnabled]
-                  ?.toLowerCase() ==
+              settings[SettingKeys.featureFloorPlanEnabled]?.toLowerCase() ==
               'true';
-          if (cartState.serviceType != 0 || !floorPlanOn) {
+          final tablelessAllowed =
+              settings[SettingKeys.allowTablelessOrders]?.toLowerCase() ==
+              'true';
+          if (cartState.serviceType != 0 || !floorPlanOn || tablelessAllowed) {
             final companyId = ref.read(selectedCompanyProvider)?.id;
             final user = ref.read(currentUserProvider);
             if (companyId == null || user == null) return;
@@ -2472,6 +2474,16 @@ class _CartSectionState extends ConsumerState<CartSection> {
             allowNegative: true,
           );
         }
+      }
+
+      // The reservation's order is gone — mirror the server's own void handling
+      // (PosOrderService delete: UnlinkPosOrder + MarkAsArrived) locally, so the
+      // booking drops back to Arrived (2) at once and can be restarted, instead
+      // of sitting In Service with no order behind it.
+      final voidedBookingId = cartState.bookingId;
+      if (voidedBookingId != null) {
+        await db.setBookingStatusLocal(voidedBookingId, 2);
+        await db.unlinkBookingPosOrder(voidedBookingId);
       }
 
       ref.read(kitchenSyncProvider).push();
@@ -3901,7 +3913,9 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
   @override
   Widget build(BuildContext context) {
     final usersAsync = ref.watch(allUsersProvider);
-    final roomsAsync = ref.watch(allRoomsProvider);
+    // Free tables only: transferring an order onto a table someone is already
+    // sitting at would park two open orders on it.
+    final roomsAsync = ref.watch(freeRoomsProvider);
     final floorPlanOn =
         ref
             .watch(appSettingsProvider)[SettingKeys.featureFloorPlanEnabled]
@@ -3954,27 +3968,40 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
               roomsAsync.when(
                 loading: () => const LinearProgressIndicator(),
                 error: (_, __) => const SizedBox.shrink(),
-                data: (rooms) => DropdownButtonFormField<FloorPlanTable?>(
-                  initialValue: _selectedRoom,
-                  decoration: const InputDecoration(
-                    labelText: 'Assign Room / Resource',
-                    prefixIcon: Icon(Icons.meeting_room),
-                    border: OutlineInputBorder(),
-                  ),
-                  items: [
-                    const DropdownMenuItem<FloorPlanTable?>(
-                      value: null,
-                      child: Text('No room'),
+                data: (freeRooms) {
+                  // This order's OWN table reads as occupied (it is holding it),
+                  // so the free list excludes it — but it is the dropdown's
+                  // current value, and a DropdownButton whose value is not among
+                  // its items throws. Union it back in, same as the saved-port
+                  // case in _ScalePortDropdown.
+                  final rooms = [
+                    ...freeRooms,
+                    if (_selectedRoom != null &&
+                        !freeRooms.any((r) => r.id == _selectedRoom!.id))
+                      _selectedRoom!,
+                  ];
+                  return DropdownButtonFormField<FloorPlanTable?>(
+                    initialValue: _selectedRoom,
+                    decoration: const InputDecoration(
+                      labelText: 'Assign Room / Resource',
+                      prefixIcon: Icon(Icons.meeting_room),
+                      border: OutlineInputBorder(),
                     ),
-                    ...rooms.map(
-                      (t) => DropdownMenuItem<FloorPlanTable?>(
-                        value: t,
-                        child: Text(t.name),
+                    items: [
+                      const DropdownMenuItem<FloorPlanTable?>(
+                        value: null,
+                        child: Text('No room'),
                       ),
-                    ),
-                  ],
-                  onChanged: (t) => setState(() => _selectedRoom = t),
-                ),
+                      ...rooms.map(
+                        (t) => DropdownMenuItem<FloorPlanTable?>(
+                          value: t,
+                          child: Text(t.name),
+                        ),
+                      ),
+                    ],
+                    onChanged: (t) => setState(() => _selectedRoom = t),
+                  );
+                },
               ),
             ],
             if (widget.cartState.bookingId != null) ...[

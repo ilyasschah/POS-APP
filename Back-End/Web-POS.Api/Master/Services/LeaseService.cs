@@ -49,6 +49,10 @@ namespace Api.Master.Services
 
             DateTime validUntil;
             string billingStatus;
+            // The subscription's own period end, before the grace window is added.
+            // The device enforces `validUntil` (end + grace) but shows this, so the
+            // renewal date the customer sees matches what they are billed for.
+            DateTime? periodEnd = null;
             if (sub != null)
             {
                 var status = (sub.BillingStatus ?? "active").Trim().ToLowerInvariant();
@@ -65,8 +69,8 @@ namespace Api.Master.Services
                 else
                 {
                     // Normal path: honour the subscription's period end (+ grace).
-                    var periodEnd = sub.CurrentPeriodEnd ?? now;
-                    validUntil = periodEnd.AddDays(_graceDays).ToUniversalTime();
+                    periodEnd = (sub.CurrentPeriodEnd ?? now).ToUniversalTime();
+                    validUntil = periodEnd.Value.AddDays(_graceDays);
                     billingStatus = sub.BillingStatus ?? "active";
                 }
             }
@@ -96,6 +100,14 @@ namespace Api.Master.Services
                 new("validUntil",    validUntil.ToString("o")),
                 new("issuedAt",      now.ToString("o")),
             };
+
+            // Display-only claims for the terminal's Subscription tab. Omitted rather
+            // than zero-valued when unknown, so the device shows "—" instead of a
+            // date it would otherwise have to invent.
+            if (tenant != null)
+                claims.Add(new Claim("startedAt", tenant.CreatedAt.ToUniversalTime().ToString("o")));
+            if (periodEnd != null)
+                claims.Add(new Claim("periodEnd", periodEnd.Value.ToString("o")));
 
             var creds = new SigningCredentials(_keys.SigningKey, SecurityAlgorithms.RsaSha256);
             var jwt = new JwtSecurityToken(

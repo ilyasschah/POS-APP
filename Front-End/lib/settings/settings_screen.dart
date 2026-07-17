@@ -33,6 +33,7 @@ import 'package:pos_app/auth/master_login_screen.dart';
 import 'package:pos_app/cart/cart_provider.dart';
 import 'package:pos_app/currency/currencies_provider.dart';
 import 'package:pos_app/floor_plan/floor_plan_table_provider.dart';
+import 'package:pos_app/license/license_service.dart';
 import 'package:pos_app/navigation/nav_widgets.dart';
 import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/settings/printer_settings_screen.dart';
@@ -87,7 +88,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     (icon: Icons.print, label: 'Print'),
     (icon: Icons.currency_exchange, label: 'Dual Currency'),
     (icon: Icons.storage, label: 'Database'),
-    (icon: Icons.vpn_key, label: 'License'),
+    (icon: Icons.workspace_premium, label: 'Subscription'),
     (icon: Icons.info_outline, label: 'About'),
   ];
 
@@ -102,7 +103,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     _PrintTab(),
     _DualCurrencyTab(),
     _DatabaseTab(),
-    _LicenseTab(),
+    _SubscriptionTab(),
     _AboutTab(),
   ];
 
@@ -375,14 +376,12 @@ class _SettingTextField extends ConsumerStatefulWidget {
   final String settingKey;
   final String label;
   final String? hint;
-  final bool obscure;
   final TextInputType keyboardType;
 
   const _SettingTextField({
     required this.settingKey,
     required this.label,
     this.hint,
-    this.obscure = false,
     this.keyboardType = TextInputType.text,
   });
 
@@ -440,7 +439,6 @@ class _SettingTextFieldState extends ConsumerState<_SettingTextField> {
           Expanded(
             child: TextField(
               controller: _ctrl,
-              obscureText: widget.obscure,
               keyboardType: widget.keyboardType,
               maxLines: 1,
               decoration: InputDecoration(
@@ -487,11 +485,17 @@ class _SettingSwitch extends ConsumerWidget {
   final String? subtitle;
   final void Function(WidgetRef, bool)? onChanged;
 
+  /// When false the row renders greyed out and ignores taps — for a setting
+  /// whose parent feature is off, so it stays visible (and self-explanatory)
+  /// instead of disappearing. The stored value is left untouched.
+  final bool enabled;
+
   const _SettingSwitch({
     required this.settingKey,
     required this.label,
     this.subtitle,
     this.onChanged,
+    this.enabled = true,
   });
 
   @override
@@ -506,10 +510,12 @@ class _SettingSwitch extends ConsumerWidget {
       value: value,
       activeThumbColor: theme.colorScheme.primary,
       contentPadding: const EdgeInsets.symmetric(horizontal: 20),
-      onChanged: (v) {
-        ref.read(appSettingsProvider.notifier).setBool(settingKey, v);
-        onChanged?.call(ref, v);
-      },
+      onChanged: enabled
+          ? (v) {
+              ref.read(appSettingsProvider.notifier).setBool(settingKey, v);
+              onChanged?.call(ref, v);
+            }
+          : null,
     );
   }
 }
@@ -2109,16 +2115,24 @@ final _kSearchableSettings = <SearchableSetting>[
     ),
   ),
   SearchableSetting(
+    title: 'Allow table-less orders',
+    tabName: 'Order & Payment · Features',
+    tabIndex: 1,
+    trailingBuilder: (_) =>
+        const _SwitchControl(SettingKeys.allowTablelessOrders),
+  ),
+  SearchableSetting(
+    title: 'Allow walk-in table orders',
+    tabName: 'Order & Payment · Features',
+    tabIndex: 1,
+    trailingBuilder: (_) =>
+        const _SwitchControl(SettingKeys.allowWalkInTableOrders),
+  ),
+  SearchableSetting(
     title: 'Booking settings',
     tabName: 'Order & Payment · Booking',
     tabIndex: 1,
     trailingBuilder: (openTab) => _OpenTabButton(openTab),
-  ),
-  SearchableSetting(
-    title: 'Sounds',
-    tabName: 'Order & Payment · Basic Operations',
-    tabIndex: 1,
-    trailingBuilder: (_) => const _SwitchControl(SettingKeys.enableSounds),
   ),
   SearchableSetting(
     title: 'Default search',
@@ -2203,13 +2217,6 @@ final _kSearchableSettings = <SearchableSetting>[
     tabIndex: 1,
     trailingBuilder: (_) =>
         const _SwitchControl(SettingKeys.singleItemDiscountAllowed),
-  ),
-  SearchableSetting(
-    title: 'Shortcut keys payment confirmation',
-    tabName: 'Order & Payment · Payment',
-    tabIndex: 1,
-    trailingBuilder: (_) =>
-        const _SwitchControl(SettingKeys.shortcutKeysPaymentConfirmation),
   ),
   SearchableSetting(
     title: 'Require reason on void',
@@ -2662,8 +2669,8 @@ final _kSearchableSettings = <SearchableSetting>[
     navigational: true,
   ),
   const SearchableSetting(
-    title: 'License',
-    tabName: 'License',
+    title: 'Subscription',
+    tabName: 'Subscription',
     tabIndex: 10,
     navigational: true,
   ),
@@ -3607,6 +3614,8 @@ class _OrderPaymentTab extends ConsumerWidget {
     final statusEnabled =
         settings[SettingKeys.featureServiceStatusEnabled]?.toLowerCase() ==
         'true';
+    final floorPlanEnabled =
+        settings[SettingKeys.featureFloorPlanEnabled]?.toLowerCase() == 'true';
 
     return _TabScrollView(
       cards: [
@@ -3643,18 +3652,28 @@ class _OrderPaymentTab extends ConsumerWidget {
               label: 'Tables Button Label',
               hint: 'e.g. Tables, Rooms, Resources',
             ),
-          ],
-        ),
-        const _BookingSettingsCard(),
-        const _SettingsCard(
-          title: 'BASIC OPERATIONS',
-          children: [
+            // Both only apply while the floor plan is on, so they're greyed out
+            // (rather than hidden) when it's off — a control that silently
+            // vanishes reads as a bug, one that's visibly disabled explains why.
             _SettingSwitch(
-              settingKey: SettingKeys.enableSounds,
-              label: 'Sounds',
+              settingKey: SettingKeys.allowTablelessOrders,
+              label: 'Allow table-less orders',
+              subtitle:
+                  'Ring up a dine-in order without picking a table, even with '
+                  'Floor Plan / Tables enabled',
+              enabled: floorPlanEnabled,
+            ),
+            _SettingSwitch(
+              settingKey: SettingKeys.allowWalkInTableOrders,
+              label: 'Allow walk-in table orders',
+              subtitle:
+                  'Start an order on a free table without a booking. When off, '
+                  'a table can only be opened from its booking',
+              enabled: floorPlanEnabled,
             ),
           ],
         ),
+        const _BookingSettingsCard(),
         const _SettingsCard(
           title: 'ITEMS',
           children: [
@@ -3715,10 +3734,6 @@ class _OrderPaymentTab extends ConsumerWidget {
             _SettingSwitch(
               settingKey: SettingKeys.singleItemDiscountAllowed,
               label: 'Single item discount allowed',
-            ),
-            _SettingSwitch(
-              settingKey: SettingKeys.shortcutKeysPaymentConfirmation,
-              label: 'Shortcut keys payment confirmation',
             ),
           ],
         ),
@@ -5790,72 +5805,119 @@ class _BackupLocationFieldState extends ConsumerState<_BackupLocationField> {
   }
 }
 
-// ── License ───────────────────────────────────────────────────────────────────
-class _LicenseTab extends ConsumerWidget {
-  const _LicenseTab();
+// ── Subscription ──────────────────────────────────────────────────────────────
+
+String _fmtSubscriptionDate(DateTime? dt) {
+  if (dt == null) return '–';
+  final l = dt.toLocal();
+  return '${l.day.toString().padLeft(2, '0')}/'
+      '${l.month.toString().padLeft(2, '0')}/'
+      '${l.year}';
+}
+
+class _SubscriptionTab extends ConsumerWidget {
+  const _SubscriptionTab();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return _TabScrollView(
-      cards: [
-        const _SettingsCard(
-          title: 'LICENSE',
-          children: [
-            _SettingTextField(
-              settingKey: SettingKeys.licenseEmail,
-              label: 'License Email',
-              hint: 'your@email.com',
-              keyboardType: TextInputType.emailAddress,
-            ),
-            _SettingTextField(
-              settingKey: SettingKeys.licenseKey,
-              label: 'License Key',
-              hint: 'XXXX-XXXX-XXXX-XXXX',
-              obscure: false,
-            ),
-          ],
-        ),
-        _SettingsCard(
-          title: 'STATUS',
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: context.successColor.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: context.successColor),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.check_circle,
-                          color: context.successColor,
-                          size: 18,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Valid License',
-                          style: TextStyle(
-                            color: context.successColor,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+    final infoAsync = ref.watch(subscriptionInfoProvider);
+
+    return infoAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => _TabScrollView(
+        cards: [
+          _SettingsCard(
+            title: 'SUBSCRIPTION',
+            children: [_InfoRow(label: 'Error', value: e.toString())],
+          ),
+        ],
+      ),
+      data: (info) => _TabScrollView(
+        cards: [
+          _SettingsCard(
+            title: 'SUBSCRIPTION',
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
+                child: Row(children: [_SubscriptionStatusPill(info: info)]),
               ),
-            ),
-          ],
-        ),
-      ],
+              _InfoRow(
+                label: 'Started',
+                value: _fmtSubscriptionDate(info.startedAt),
+              ),
+              _InfoRow(
+                label: 'Renews / ends',
+                value: _fmtSubscriptionDate(info.periodEnd ?? info.validUntil),
+              ),
+              // Allowance 0 = no subscription row provisioned upstream, NOT an
+              // unlimited plan — say nothing rather than imply a cap either way.
+              _InfoRow(
+                label: 'Devices',
+                value: info.seatAllowance > 0
+                    ? '${info.seatAllowance} '
+                          '${info.seatAllowance == 1 ? 'device' : 'devices'}'
+                    : '–',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Status chip driven by the same lease evaluation the boot guard enforces, so
+/// it can never claim "Active" on a terminal that is one restart from blocked.
+class _SubscriptionStatusPill extends StatelessWidget {
+  const _SubscriptionStatusPill({required this.info});
+  final SubscriptionInfo info;
+
+  @override
+  Widget build(BuildContext context) {
+    final (label, icon, color) = switch (info.state) {
+      LicenseState.active => (
+        info.daysLeft <= 7
+            ? 'Expires in ${info.daysLeft} '
+                  '${info.daysLeft == 1 ? 'day' : 'days'}'
+            : 'Active',
+        Icons.check_circle,
+        info.daysLeft <= 7 ? context.warningColor : context.successColor,
+      ),
+      LicenseState.expired => (
+        'Expired',
+        Icons.error,
+        Theme.of(context).colorScheme.error,
+      ),
+      LicenseState.tampered => (
+        'Invalid',
+        Icons.gpp_bad,
+        Theme.of(context).colorScheme.error,
+      ),
+      LicenseState.unknown => (
+        'Not activated',
+        Icons.help_outline,
+        Theme.of(context).hintColor,
+      ),
+    };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 18),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(color: color, fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -186,6 +186,11 @@ namespace Api.Services
             ("Pos.CustomServiceTypes", @"[{""id"":0,""name"":""Dine-In"",""prefix"":""TALABIA""},{""id"":1,""name"":""Takeaway"",""prefix"":""TAKEAWAY""},{""id"":2,""name"":""Delivery"",""prefix"":""DELIVERY""}]"),
             ("Pos.CustomServiceStatuses", @"[{""id"":1,""name"":""standby"",""colorValue"":4280391411},{""id"":2,""name"":""IN-Kitchen"",""colorValue"":4294940672},{""id"":3,""name"":""COOKED"",""colorValue"":4283215696}]"),
             ("Feature.TablesButtonLabel", "TABLES"),
+            // Match kSettingDefaults in the client's app_settings_model.dart:
+            // a dine-in order still needs a table, and a free table can still be
+            // rung up without a booking.
+            ("Order.AllowTablelessOrders", "false"),
+            ("Order.AllowWalkInTableOrders", "true"),
             ("Pos.BookingSettings", @"{""resourceMode"":""table"",""defaultDurationMinutes"":90,""timeSnappingMinutes"":15,""allowPastBookings"":false}"),
             ("Print.CashDrawer.Enabled", "false"),
             ("Print.PrinterType", "Windows Printer"),

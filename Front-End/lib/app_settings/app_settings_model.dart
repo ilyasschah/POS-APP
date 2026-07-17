@@ -116,10 +116,8 @@ class SettingKeys {
   static const dbBackupAutoDelete   = 'Database.Backup.AutoDelete';
   static const dbBackupRetentionDays = 'Database.Backup.RetentionDays';
 
-  // License / API
+  // API
   static const apiBaseUrl = 'Application.Api.BaseUrl';
-  static const licenseKey = 'License.Key';
-  static const licenseEmail = 'License.Email';
 
   // Weighing Scale – Serial connection
   static const scaleEnabled = 'Scale.Enabled';
@@ -146,6 +144,10 @@ class SettingKeys {
   static const featureFloorPlanEnabled      = 'Feature_FloorPlan_Enabled';
   static const featureBookingEnabled        = 'Feature_Booking_Enabled';
   static const tablesButtonLabel            = 'Feature.TablesButtonLabel';
+  // Both only bite while the floor plan is enabled; with it off, orders are
+  // table-less and booking-free anyway.
+  static const allowTablelessOrders         = 'Order.AllowTablelessOrders';
+  static const allowWalkInTableOrders       = 'Order.AllowWalkInTableOrders';
   static const requireReasonOnVoid          = 'Void.RequireReason';
   static const trackUnconfirmedVoidedItems  = 'Void.TrackUnconfirmed';
 
@@ -292,7 +294,6 @@ class SettingKeys {
 
   // Basic Operations
   static const useFloorPlans                  = 'Order.UseFloorPlans';
-  static const enableSounds                   = 'App.EnableSounds';
 
   // Items
   static const defaultSearch                  = 'Menu.DefaultSearch';
@@ -310,7 +311,6 @@ class SettingKeys {
   static const defaultDueDateDays             = 'Order.DefaultDueDateDays';
   static const mergeItemsOnReceipt            = 'Receipt.MergeItems';
   static const singleItemDiscountAllowed      = 'Order.SingleItemDiscountAllowed';
-  static const shortcutKeysPaymentConfirmation = 'Order.ShortcutKeysPaymentConfirmation';
 
   // Order Name
 
@@ -423,8 +423,6 @@ const Map<String, String> kSettingDefaults = {
   SettingKeys.dbBackupAutoDelete:    'false',
   SettingKeys.dbBackupRetentionDays: '10',
   SettingKeys.apiBaseUrl: 'http://192.168.11.103:5002/api',
-  SettingKeys.licenseKey: '',
-  SettingKeys.licenseEmail: '',
   SettingKeys.scaleEnabled: 'false',
   SettingKeys.scalePort: 'COM2',
   SettingKeys.scaleBaudRate: '9600',
@@ -441,6 +439,10 @@ const Map<String, String> kSettingDefaults = {
   SettingKeys.featureFloorPlanEnabled:     'true',
   SettingKeys.featureBookingEnabled:       'true',
   SettingKeys.tablesButtonLabel:           'Tables',
+  // Defaults preserve the pre-existing behaviour exactly: a Dine-in order still
+  // requires a table, and an empty table can still be rung up without a booking.
+  SettingKeys.allowTablelessOrders:        'false',
+  SettingKeys.allowWalkInTableOrders:      'true',
   SettingKeys.requireReasonOnVoid:         'false',
   SettingKeys.trackUnconfirmedVoidedItems: 'true',
   SettingKeys.featureServiceTypeEnabled:   'true',
@@ -551,7 +553,6 @@ const Map<String, String> kSettingDefaults = {
 
   // Basic Operations
   SettingKeys.useFloorPlans:                   'true',
-  SettingKeys.enableSounds:                    'false',
 
   // Items
   SettingKeys.defaultSearch:                   'Name',
@@ -569,7 +570,6 @@ const Map<String, String> kSettingDefaults = {
   SettingKeys.defaultDueDateDays:              '0',
   SettingKeys.mergeItemsOnReceipt:             'true',
   SettingKeys.singleItemDiscountAllowed:       'true',
-  SettingKeys.shortcutKeysPaymentConfirmation: 'true',
 
   // Order Name
 

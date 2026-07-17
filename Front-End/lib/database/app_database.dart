@@ -470,6 +470,20 @@ class PosOrdersTable extends Table {
   IntColumn get floorPlanTableId => integer().nullable()();
   DateTimeColumn get dueDate => dateTime().nullable()();
   DateTimeColumn get dateCreated => dateTime().nullable()();
+
+  // ---- Schema v54 — the booking this order was opened from ----
+  // Local-only mirror of the server's one-directional Booking.PosOrderId link,
+  // which can't be used offline: it holds a server int, and an order created
+  // offline has no server id until it syncs. Without these, a saved order lost
+  // its booking entirely — the bookings screen kept offering "Start Service"
+  // (creating a SECOND order) and reopening from the floor plan dropped the
+  // booking header down to the bare table name.
+  //
+  // Deliberately NOT pushed: the BatchSync payload is built field-by-field and
+  // the server still links booking→order itself from the checkout request, so
+  // these stay a local concern.
+  IntColumn get bookingId => integer().nullable()();
+  IntColumn get bookingStaffId => integer().nullable()();
 }
 
 @TableIndex(name: 'idx_pos_order_items_order_id', columns: {#orderId})
@@ -1054,6 +1068,14 @@ class ShiftsTable extends Table {
 // table id list as a JSON array.
 // ============================================================================
 
+/// What a booking reserves, for [AppDatabase.findConflictingBookings].
+///
+/// Maps from `BookingSettingsModel.resourceMode`, which has THREE values: both
+/// 'table' and 'room' reserve floor-plan tables and collapse to [table] here —
+/// they are the same physical thing under two labels — while 'staff' reserves a
+/// person.
+enum BookingResource { table, staff }
+
 @TableIndex(name: 'idx_bookings_company_start', columns: {#companyId, #startTime})
 class BookingsTable extends Table {
   @override
@@ -1494,13 +1516,28 @@ class ZReportPaymentSummariesTable extends Table {
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
+  /// Backs the DB with a caller-supplied executor (an in-memory
+  /// `NativeDatabase` in tests) instead of the on-disk, encrypted, real one.
+  /// Lets order save/resume be exercised against actual SQLite.
+  AppDatabase.forTesting(super.executor) : super();
+
   @override
-  int get schemaVersion => 53;
+  int get schemaVersion => 54;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) async => m.createAll(),
         onUpgrade: (m, from, to) async {
+          // v54: remember which booking (and its assigned staff) an order was
+          // opened from, so the link survives a save/reopen offline. Existing
+          // rows correctly get NULL — they are ordinary non-booking orders.
+          if (from < 54) {
+            await customStatement(
+                'ALTER TABLE pos_orders ADD COLUMN booking_id INTEGER');
+            await customStatement(
+                'ALTER TABLE pos_orders ADD COLUMN booking_staff_id INTEGER');
+          }
+
           // v53: the Z-report's document range/count, computed at Close Register
           // from the local DB. The pre-existing server-int columns can't be
           // filled offline (an unsynced document has no server id), so the
@@ -3336,6 +3373,39 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
+  /// Sets a booking's forward link to its now-synced order (the reverse
+  /// pos_orders.bookingId already exists). The row stays 'synced' — the server
+  /// was just updated by the order push — so this only keeps the local
+  /// mirror consistent until the next booking pull re-reconciles it.
+  Future<void> linkBookingPosOrder(int bookingId, int posOrderId) {
+    return (update(bookingsTable)..where((t) => t.id.equals(bookingId)))
+        .write(BookingsTableCompanion(posOrderId: Value(posOrderId)));
+  }
+
+  /// Clears the local forward link when a booking's order is voided, mirroring
+  /// the server's UnlinkPosOrder so the stale order id can't drive "Open Order".
+  Future<void> unlinkBookingPosOrder(int bookingId) {
+    return (update(bookingsTable)..where((t) => t.id.equals(bookingId)))
+        .write(const BookingsTableCompanion(posOrderId: Value(null)));
+  }
+
+  /// Repoints orders at a booking's real server id after its offline temp id
+  /// (negative) is swapped by the booking push. Without this, an order started
+  /// from a not-yet-synced booking keeps the dead temp id — the reverse link
+  /// breaks, "Start Service" reappears (duplicate-order risk), and paying can
+  /// never complete the booking. Returns the affected orders so the caller can
+  /// late-link any that already reached the server.
+  Future<List<PosOrdersTableData>> remapOrderBookingId(
+      int tempId, int realId) async {
+    final affected = await (select(posOrdersTable)
+          ..where((t) => t.bookingId.equals(tempId)))
+        .get();
+    if (affected.isEmpty) return const [];
+    await (update(posOrdersTable)..where((t) => t.bookingId.equals(tempId)))
+        .write(PosOrdersTableCompanion(bookingId: Value(realId)));
+    return affected;
+  }
+
   /// Record a failure on the order header. The row stays in the DB and the
   /// user can retry it from the Failed Syncs screen (planned).
   Future<void> markOrderFailed(String localId, String errorMessage) {
@@ -3470,6 +3540,7 @@ class AppDatabase extends _$AppDatabase {
       ..where(documentsTable.companyId.equals(companyId) &
           documentsTable.date.isBetweenValues(from, to))
       ..groupBy([discountLinesTable.source]);
+
     final rows = await query.get();
     return {
       for (final r in rows)
@@ -3939,6 +4010,63 @@ class AppDatabase extends _$AppDatabase {
         .getSingleOrNull();
     final min = row?.read(bookingsTable.id.min());
     return ((min != null && min < 0) ? min : 0) - 1;
+  }
+
+  /// Active bookings that would collide with [start]–[end] on [resourceIds].
+  /// An empty result means the slot is free. Fully offline — the local
+  /// `bookings` table is authoritative for the calendar.
+  ///
+  /// Overlap is the standard half-open test: `newStart < existingEnd &&
+  /// newEnd > existingStart`. Two bookings that merely *touch* — one ending
+  /// exactly as the next begins — do not collide, which is what back-to-back
+  /// sittings need.
+  ///
+  /// The time window is filtered in SQL, but the resource match is done in Dart
+  /// on purpose: a booking's tables live in `tableIdsJson` (a JSON *list* — one
+  /// booking can hold several tables), which SQLite can't index into here. The
+  /// time filter narrows the set to the few bookings sharing that window first,
+  /// so the in-Dart pass stays trivial.
+  ///
+  /// Status matters: No Show (5) never occupied the resource and Completed (4)
+  /// has released it, so neither may block a new booking. Only Scheduled (1),
+  /// Arrived (2) and In Service (3) reserve it — the same set
+  /// `hasLiveBookingForTable` treats as holding a table.
+  Future<List<BookingsTableData>> findConflictingBookings({
+    required int companyId,
+    required DateTime start,
+    required DateTime end,
+    required BookingResource resource,
+    required Set<int> resourceIds,
+    int? excludeBookingId,
+  }) async {
+    // No resource selected (e.g. staff mode with nobody assigned) reserves
+    // nothing, so nothing can clash with it.
+    if (resourceIds.isEmpty) return const [];
+
+    final query = select(bookingsTable)
+      ..where((t) => t.companyId.equals(companyId))
+      // Tombstoned rows are already gone from the calendar; they must not
+      // reserve anything either.
+      ..where((t) => t.syncStatus.isNotIn(const ['pending_delete']))
+      ..where((t) => t.status.isIn(const [1, 2, 3]))
+      ..where((t) => t.startTime.isSmallerThanValue(end))
+      ..where((t) => t.endTime.isBiggerThanValue(start));
+    if (excludeBookingId != null) {
+      // Editing: a booking must never be found colliding with itself.
+      query.where((t) => t.id.isNotValue(excludeBookingId));
+    }
+
+    final rows = await query.get();
+    return rows.where((row) {
+      switch (resource) {
+        case BookingResource.staff:
+          return row.userId != null && resourceIds.contains(row.userId);
+        case BookingResource.table:
+          final ids = (jsonDecode(row.tableIdsJson) as List<dynamic>)
+              .map((e) => (e as num).toInt());
+          return ids.any(resourceIds.contains);
+      }
+    }).toList();
   }
 
   /// Offline-first upsert of a booking. A null [id] creates a row with a temp

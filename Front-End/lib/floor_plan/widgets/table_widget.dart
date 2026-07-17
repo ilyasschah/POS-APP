@@ -4,13 +4,21 @@ import 'package:pos_app/floor_plan/floor_plan_provider.dart';
 import 'package:pos_app/floor_plan/floor_plan_table.dart';
 import 'package:pos_app/floor_plan/floor_plan_table_provider.dart';
 import 'package:pos_app/api/api_client.dart';
+import 'package:pos_app/bookings/bookings_provider.dart';
+import 'package:pos_app/bookings/booking_model.dart';
 import 'package:pos_app/cart/cart_provider.dart';
+import 'package:pos_app/database/database_provider.dart';
+import 'package:pos_app/sync/sync_notifier.dart';
 import 'package:pos_app/utils/status_helper.dart';
 import 'package:pos_app/app_settings/app_settings_provider.dart';
 import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/navigation/main_layout.dart';
 import 'package:pos_app/kitchen/kitchen_push_service.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
+
+/// What the cashier chose when tapping a free table that a live reservation is
+/// holding: resume/open that reservation's order, or ring up a separate walk-in.
+enum _BookedTableAction { reservation, walkIn }
 
 class TableWidget extends ConsumerStatefulWidget {
   final FloorPlanTable table;
@@ -56,9 +64,131 @@ class _TableWidgetState extends ConsumerState<TableWidget> {
     }
   }
 
+  /// `Order.AllowWalkInTableOrders`, defaulting to true (the historical
+  /// behaviour) so a missing/unset key never locks the venue out of its tables.
+  /// The gate is moot when bookings are switched off — there would be no way to
+  /// satisfy it — so the feature flag being off also counts as "allowed".
+  bool _walkInAllowed() {
+    final settings = ref.read(appSettingsProvider);
+    final bookingsOn =
+        settings[SettingKeys.featureBookingEnabled]?.toLowerCase() == 'true';
+    if (!bookingsOn) return true;
+    return (settings[SettingKeys.allowWalkInTableOrders] ?? 'true')
+            .toLowerCase() !=
+        'false';
+  }
+
+  bool _hasLiveBooking() {
+    final bookings = ref.read(allBookingsProvider).value ?? const [];
+    return hasLiveBookingForTable(bookings, widget.table.id, DateTime.now());
+  }
+
+  Booking? _liveBookingForTable() {
+    final bookings = ref.read(allBookingsProvider).value ?? const [];
+    return liveBookingForTable(bookings, widget.table.id, DateTime.now());
+  }
+
+  /// Asks whether to open the reservation holding a free table or ring up a
+  /// separate walk-in. The walk-in choice is hidden when the venue disallows
+  /// walk-in table orders, leaving "Open reservation" (or Cancel).
+  Future<_BookedTableAction?> _askBookedTableAction(
+    BuildContext context,
+    Booking booking, {
+    required bool allowWalkIn,
+  }) {
+    final theme = Theme.of(context);
+    return showDialog<_BookedTableAction>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        backgroundColor: theme.colorScheme.surface,
+        title: const Text('Reserved table'),
+        content: Text(
+          'This table is held by a reservation for '
+          '"${booking.reservationName}".',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('Cancel'),
+          ),
+          if (allowWalkIn)
+            TextButton(
+              onPressed: () =>
+                  Navigator.pop(dialogCtx, _BookedTableAction.walkIn),
+              child: const Text('Walk-in'),
+            ),
+          FilledButton(
+            onPressed: () =>
+                Navigator.pop(dialogCtx, _BookedTableAction.reservation),
+            child: const Text('Open reservation'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Opens the reservation on this table: resumes its existing open order when it
+  /// already has one (never a second order), otherwise starts a fresh order that
+  /// inherits the reservation's customer — the fix for the Walk-in-inheritance
+  /// bug on the floor-plan path.
+  Future<void> _openReservation(ApiClient apiClient, Booking booking) async {
+    final existingLocalId =
+        await ref.read(openOrderForBookingProvider(booking.id).future);
+    final cart = ref.read(cartProvider.notifier);
+    if (existingLocalId != null) {
+      final ok = await cart.loadOrderFromLocal(existingLocalId);
+      if (!mounted) return;
+      if (!ok) {
+        showAppSnackbar(
+          context,
+          ref,
+          'Could not open the reservation order. It may have been completed '
+          'or voided.',
+          isError: true,
+        );
+        return;
+      }
+    } else {
+      await cart.startBookingOrder(
+        apiClient,
+        widget.companyId,
+        widget.userId,
+        booking.id,
+        booking.reservationName,
+        staffUserId: booking.userId,
+        floorPlanTableId: widget.table.id,
+        customerId: booking.customerId,
+      );
+      // Mark the reservation's tables occupied, mirroring the Bookings-screen
+      // Start Service path. Best-effort — an offline floor-plan sync never
+      // blocks opening the order.
+      for (final tableId in booking.tableIds) {
+        try {
+          await apiClient.occupyFloorPlanTable(widget.companyId, tableId);
+        } catch (_) {}
+      }
+    }
+    // Either way service is (or already was) running — reflect it on the
+    // reservation. Mirrors the Bookings-screen Start Service flip; the resume
+    // branch normalizes rows started before the flip existed.
+    if (booking.status < 3) {
+      await ref
+          .read(appDatabaseProvider)
+          .setBookingStatusLocal(booking.id, 3);
+      ref.read(syncStateProvider.notifier).sync().catchError((_) {});
+    }
+    if (mounted) {
+      ref.read(mainNavigationIndexProvider.notifier).state = 0;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final selectedTableId = ref.watch(floorPlanTableProvider);
+    // Watched (not just read in the tap handler) so the autoDispose bookings
+    // stream is actually alive and loaded by the time a table is tapped —
+    // a bare read would hand back AsyncLoading and wrongly report "no booking".
+    ref.watch(allBookingsProvider);
     final isEditMode = ref.watch(floorPlanProvider).isEditMode;
     final isSelected = selectedTableId == widget.table.id && isEditMode;
     final theme = Theme.of(context);
@@ -114,6 +244,42 @@ class _TableWidgetState extends ConsumerState<TableWidget> {
                   );
                 }
               } else {
+                // A live reservation holding this FREE table: offer to open that
+                // booking (inherit its customer, resume its existing order)
+                // instead of silently ringing up a Walk-in — the bug where a
+                // booked guest's order was banked against Walk-in. With walk-ins
+                // disabled the choice collapses to just opening the reservation.
+                final liveBooking = _liveBookingForTable();
+                if (liveBooking != null) {
+                  final action = await _askBookedTableAction(
+                    context,
+                    liveBooking,
+                    allowWalkIn: _walkInAllowed(),
+                  );
+                  if (action == null) return;
+                  if (action == _BookedTableAction.reservation) {
+                    await _openReservation(apiClient, liveBooking);
+                    return;
+                  }
+                  // _BookedTableAction.walkIn falls through to the normal flow.
+                  if (!context.mounted) return;
+                }
+                // Walk-ups on a free table are allowed by default. When the
+                // venue turns that off, the table may only be opened from a
+                // booking that currently holds it — the booking's own "Start
+                // Service" seeds the cart and bypasses this path entirely.
+                if (!_walkInAllowed() && !_hasLiveBooking()) {
+                  if (context.mounted) {
+                    showAppSnackbar(
+                      context,
+                      ref,
+                      'This table needs a booking. Create one, then start '
+                      'service from it.',
+                      isError: true,
+                    );
+                  }
+                  return;
+                }
                 final types = ref
                     .read(appSettingsProvider.notifier)
                     .customServiceTypes;

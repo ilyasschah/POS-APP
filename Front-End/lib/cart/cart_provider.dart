@@ -15,6 +15,7 @@ import 'package:pos_app/api/customer_discount_models.dart';
 import 'package:pos_app/customer/customer_provider.dart';
 import 'package:pos_app/floor_plan/floor_plan_table_provider.dart';
 import 'package:pos_app/bookings/bookings_provider.dart';
+import 'package:pos_app/api/promotion_models.dart';
 import 'package:pos_app/promotions/promotion_provider.dart';
 import 'package:pos_app/stock/warehouse_provider.dart';
 import 'package:pos_app/kitchen/kitchen_push_service.dart';
@@ -88,6 +89,10 @@ class CartState {
     // (the `?? this.x` pattern keeps the old value). Set this when switching to
     // a customer with no discount / Walk-in so the previous discount is wiped.
     bool clearCustomerDiscount = false,
+    // Same escape hatch for the booking link: reopening a NON-booking order
+    // must drop any booking left on the cart from a previous one, or the menu
+    // header keeps captioning it with the old guest's booking banner.
+    bool clearBooking = false,
   }) {
     return CartState(
       activePosOrderId: activePosOrderId ?? this.activePosOrderId,
@@ -112,8 +117,9 @@ class CartState {
       serviceStatus: serviceStatus ?? this.serviceStatus,
       floorPlanTableId: floorPlanTableId ?? this.floorPlanTableId,
       activeWarehouseId: activeWarehouseId ?? this.activeWarehouseId,
-      bookingId: bookingId ?? this.bookingId,
-      bookingStaffId: bookingStaffId ?? this.bookingStaffId,
+      bookingId: clearBooking ? null : (bookingId ?? this.bookingId),
+      bookingStaffId:
+          clearBooking ? null : (bookingStaffId ?? this.bookingStaffId),
       existingLocalOrderId: existingLocalOrderId ?? this.existingLocalOrderId,
     );
   }
@@ -125,6 +131,19 @@ class CartNotifier extends Notifier<CartState> {
   /// IDs → [MenuTax] synchronously when an item is added to the cart.
   List<Tax> _taxesCache = const [];
 
+  /// Warm snapshot of the live promotions, kept current the same way — and for
+  /// the same reason — as [_taxesCache].
+  ///
+  /// [_applyPromotions] used to `ref.read(activePromotionsProvider)`, but that
+  /// chain bottoms out in an autoDispose *stream*: with no listener holding it
+  /// open, a read spins it up, gets `AsyncLoading` (the stream hasn't emitted
+  /// yet), and yields null. Promotions therefore only applied when some other
+  /// widget happened to be watching them — the POS menu does, the bookings and
+  /// floor-plan screens don't — so reopening an order from a table silently
+  /// dropped every promotional discount. Listening here pins the stream for the
+  /// cart's whole lifetime, making it deterministic wherever it's called from.
+  List<PromotionDto> _promotionsCache = const [];
+
   @override
   CartState build() {
     // Listening (rather than reading) keeps the autoDispose taxes stream warm
@@ -132,6 +151,13 @@ class CartNotifier extends Notifier<CartState> {
     ref.listen<AsyncValue<List<Tax>>>(allTaxesProvider, (_, next) {
       final list = next.value;
       if (list != null) _taxesCache = list;
+    }, fireImmediately: true);
+    ref.listen<AsyncValue<List<PromotionDto>>>(activePromotionsProvider, (
+      _,
+      next,
+    ) {
+      final list = next.value;
+      if (list != null) _promotionsCache = list;
     }, fireImmediately: true);
     return CartState();
   }
@@ -527,13 +553,35 @@ class CartNotifier extends Notifier<CartState> {
   }
 
   void _applyPromotions(List<CartItem> items) {
-    final activePromotions = ref.read(activePromotionsProvider).value ?? [];
+    // A conditional promotion asks "does the CART hold N of this product?", not
+    // "does this ROW hold N?". With `Order.SeparateRowForEachItem` on, three
+    // Pepsis are three rows of quantity 1, so a per-row check can never satisfy
+    // "Buy 2" no matter how many the customer actually buys. Totalling by
+    // product first makes the condition independent of how the cart is split;
+    // for an unsplit cart the total IS the row quantity, so nothing changes.
+    final cartQtyByProduct = <int, double>{};
+    for (final i in items) {
+      cartQtyByProduct[i.productId] = (cartQtyByProduct[i.productId] ?? 0) +
+          i.quantity;
+    }
+
     for (var item in items) {
       double bestDiscount = 0;
       int? bestPromoId;
-      for (var promo in activePromotions) {
+      for (var promo in _promotionsCache) {
         for (var pItem in promo.items) {
           if (pItem.productId == item.productId) {
+            // A conditional line ("Buy 2, get 10% off") only earns its discount
+            // once the cart actually holds the required quantity. This was never
+            // checked: every conditional promo fired on the first unit, so the
+            // condition the operator configured did nothing at all.
+            // conditionType 0 (Same Product) is the only kind the editor offers;
+            // an unknown type is left unapplied rather than guessed at.
+            if (pItem.isConditional) {
+              if (pItem.conditionType != 0) continue;
+              final cartQty = cartQtyByProduct[item.productId] ?? 0;
+              if (cartQty < pItem.quantity) continue;
+            }
             double currentDiscount = 0;
             // discountType: 0 for %, 1 for $
             if (pItem.discountType == 0) {
@@ -595,17 +643,27 @@ class CartNotifier extends Notifier<CartState> {
     _seedDefaultCustomer();
   }
 
-  /// Selects the default (Walk-in) customer for a freshly-started order, so a
-  /// new order never silently inherits the previous customer's profile discount.
-  void _seedDefaultCustomer() {
+  /// Selects the starting customer for a freshly-started order, so a new order
+  /// never silently inherits the previous customer's profile discount.
+  ///
+  /// [customerId] names the customer the order already belongs to (a booking's
+  /// customer); it falls back to Walk-in when absent or unknown locally. Without
+  /// it, an order opened from a booking for "Ilyass" was banked against Walk-in
+  /// and lost their profile discount.
+  Future<void> _seedDefaultCustomer({int? customerId}) async {
     final customers = ref.read(selectableCustomersProvider).value ?? const [];
     if (customers.isEmpty) return;
-    final walkIn = customers.firstWhere(
-      (c) => c.code == 'C000',
-      orElse: () => customers.first,
-    );
+    final booked = customerId == null
+        ? null
+        : customers.where((c) => c.id == customerId).firstOrNull;
+    final customer =
+        booked ??
+        customers.firstWhere(
+          (c) => c.code == 'C000',
+          orElse: () => customers.first,
+        );
     final companyId = ref.read(selectedCompanyProvider)?.id;
-    if (companyId != null) setCustomer(companyId, walkIn);
+    if (companyId != null) await setCustomer(companyId, customer);
   }
 
   void setOrderContext(
@@ -759,6 +817,8 @@ class CartNotifier extends Notifier<CartState> {
       bookingId: bookingId,
       bookingStaffId: staffUserId,
     );
+    // The order belongs to whoever the booking was made for — not Walk-in.
+    await _seedDefaultCustomer(customerId: customerId);
     return 0;
   }
 
@@ -1030,6 +1090,11 @@ class CartNotifier extends Notifier<CartState> {
 
       _applyPromotions(loadedItems);
 
+      // Carry the server order's booking link into the cart — and when it has
+      // none, CLEAR any bookingId left from a previous cart, or paying this
+      // order would complete an unrelated reservation.
+      final loadedBookingId =
+          ((order['bookingId'] ?? order['BookingId']) as num?)?.toInt();
       state = state.copyWith(
         activePosOrderId: posOrderId,
         items: loadedItems,
@@ -1040,6 +1105,8 @@ class CartNotifier extends Notifier<CartState> {
         serviceStatus: serviceStatus,
         floorPlanTableId: floorPlanTableId,
         activeWarehouseId: resolvedWarehouseId,
+        bookingId: loadedBookingId,
+        clearBooking: loadedBookingId == null,
         isLoading: false,
       );
 
@@ -1163,6 +1230,8 @@ class CartNotifier extends Notifier<CartState> {
           serviceType: Value(state.serviceType),
           serviceStatus: Value(state.serviceStatus),
           orderName: Value(orderNum),
+          bookingId: Value(state.bookingId),
+          bookingStaffId: Value(state.bookingStaffId),
           openedAt: Value(now),
           status: const Value(0),
           total: Value(grandTotal),
@@ -1326,7 +1395,16 @@ class CartNotifier extends Notifier<CartState> {
       final restored = await _restoreCustomerDiscount(localId, row.customerId);
 
       state = state.copyWith(
-        activePosOrderId: row.serverId,
+        // `?? 0` is load-bearing, not defensive. serverId is null for any order
+        // created offline and not yet synced — i.e. every booking order. The POS
+        // treats `activePosOrderId == null` as "no order is open" and silently
+        // calls startTablelessOrder on the next product tap, which builds a
+        // FRESH CartState: existingLocalOrderId and bookingId are wiped, so the
+        // following save minted a new UUID and left a DUPLICATE row behind
+        // rather than updating this order. 0 is the established "local-only
+        // order" sentinel (startTableOrder / startBookingOrder both use it) and
+        // saveOrderLocally already maps it back to a null serverId.
+        activePosOrderId: row.serverId ?? 0,
         items: loadedItems,
         orderNumber: row.orderName,
         serviceType: row.serviceType,
@@ -1338,6 +1416,13 @@ class CartNotifier extends Notifier<CartState> {
         selectedCustomer: restored.customer,
         customerDiscountValue: restored.value,
         customerDiscountType: restored.type,
+        // Reinstate the booking this order was opened from, so reopening it by
+        // tapping its table shows the same "<table> · Staff: <name>" header and
+        // booking banner as opening it from the bookings screen. A non-booking
+        // order must actively clear the field, not inherit the last cart's.
+        bookingId: row.bookingId,
+        bookingStaffId: row.bookingStaffId,
+        clearBooking: row.bookingId == null,
         isLoading: false,
         existingLocalOrderId: localId,
       );
@@ -1424,6 +1509,10 @@ class CartNotifier extends Notifier<CartState> {
       }
 
       _applyPromotions(loadedItems);
+      // Same booking-link hygiene as loadExistingOrder: adopt the server
+      // order's bookingId, and clear a stale one when it carries none.
+      final loadedBookingId =
+          ((order['bookingId'] ?? order['BookingId']) as num?)?.toInt();
       state = state.copyWith(
         activePosOrderId: posOrderId,
         items: loadedItems,
@@ -1434,6 +1523,8 @@ class CartNotifier extends Notifier<CartState> {
         serviceStatus: serviceStatus,
         floorPlanTableId: floorPlanTableId,
         activeWarehouseId: warehouseId,
+        bookingId: loadedBookingId,
+        clearBooking: loadedBookingId == null,
         isLoading: false,
         existingLocalOrderId: localRow?.localId,
       );

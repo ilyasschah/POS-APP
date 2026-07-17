@@ -54,8 +54,7 @@ final mainNavigationIndexProvider = StateProvider<int>(
 /// black screen. Indices must match the `screens` array below:
 /// 0 = POS Menu, 2 = Bookings, 4 = FloorPlan / Tables.
 int resolveDefaultScreenIndex(Map<String, String> settings) {
-  final pref =
-      (settings[SettingKeys.defaultScreen] ?? 'POS').toLowerCase();
+  final pref = (settings[SettingKeys.defaultScreen] ?? 'POS').toLowerCase();
   final bookingEnabled =
       settings[SettingKeys.featureBookingEnabled]?.toLowerCase() == 'true';
   final floorPlanEnabled =
@@ -256,10 +255,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
     final renderIndex = isRenderable(selectedIndex) ? selectedIndex : 0;
 
     final List<Widget> screens = [
-      MenuScreen(
-        showAppBarNavigation: true,
-        onToggleSidebar: _openSidebar,
-      ),
+      MenuScreen(showAppBarNavigation: true, onToggleSidebar: _openSidebar),
       OpenOrdersScreen(onMenuPressed: _openSidebar),
       bookingEnabled
           ? BookingsScreen(onMenuPressed: _openSidebar)
@@ -286,10 +282,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
       child: SafeArea(
         child: Column(
           children: [
-            NavSidebarHeader(
-              name: companyName,
-              onHideSidebar: _closeSidebar,
-            ),
+            NavSidebarHeader(name: companyName, onHideSidebar: _closeSidebar),
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
@@ -344,34 +337,42 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
                       icon: Icons.layers,
                       label: "View open sales",
                       isActive: selectedIndex == 1,
-                      trailing: readyCount > 0 ? _ReadyCountBadge(readyCount) : null,
-                      onTap: () => ref.read(securityGuardProvider).guard(
-                        context,
-                        SecurityKeys.openOrders,
-                        () => handleNavTap(1),
-                      ),
+                      trailing: readyCount > 0
+                          ? _ReadyCountBadge(readyCount)
+                          : null,
+                      onTap: () => ref
+                          .read(securityGuardProvider)
+                          .guard(
+                            context,
+                            SecurityKeys.openOrders,
+                            () => handleNavTap(1),
+                          ),
                     ),
                     if (bookingEnabled)
                       NavItem(
                         icon: Icons.calendar_month,
                         label: "Bookings",
                         isActive: selectedIndex == 2,
-                        onTap: () => ref.read(securityGuardProvider).guard(
-                          context,
-                          SecurityKeys.bookings,
-                          () => handleNavTap(2),
-                        ),
+                        onTap: () => ref
+                            .read(securityGuardProvider)
+                            .guard(
+                              context,
+                              SecurityKeys.bookings,
+                              () => handleNavTap(2),
+                            ),
                       ),
                     if (bookingEnabled)
                       NavItem(
                         icon: Icons.history,
                         label: "Booking History",
                         isActive: selectedIndex == 3,
-                        onTap: () => ref.read(securityGuardProvider).guard(
-                          context,
-                          SecurityKeys.bookingHistory,
-                          () => handleNavTap(3),
-                        ),
+                        onTap: () => ref
+                            .read(securityGuardProvider)
+                            .guard(
+                              context,
+                              SecurityKeys.bookingHistory,
+                              () => handleNavTap(3),
+                            ),
                       ),
                     if (floorPlanEnabled)
                       NavItem(
@@ -379,11 +380,13 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
                         label:
                             settings[SettingKeys.tablesButtonLabel] ?? "Tables",
                         isActive: selectedIndex == 4,
-                        onTap: () => ref.read(securityGuardProvider).guard(
-                          context,
-                          SecurityKeys.floorPlanView,
-                          () => handleNavTap(4),
-                        ),
+                        onTap: () => ref
+                            .read(securityGuardProvider)
+                            .guard(
+                              context,
+                              SecurityKeys.floorPlanView,
+                              () => handleNavTap(4),
+                            ),
                       ),
 
                     NavItem(
@@ -436,11 +439,13 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
                       icon: Icons.directions_run,
                       label: "End of day",
                       isActive: selectedIndex == 5,
-                      onTap: () => ref.read(securityGuardProvider).guard(
-                        context,
-                        SecurityKeys.endOfDay,
-                        () => handleNavTap(5),
-                      ),
+                      onTap: () => ref
+                          .read(securityGuardProvider)
+                          .guard(
+                            context,
+                            SecurityKeys.endOfDay,
+                            () => handleNavTap(5),
+                          ),
                     ),
 
                     const NavSectionLabel("User"),
@@ -453,11 +458,13 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
                       icon: Icons.person_outline,
                       label: "User info",
                       isActive: selectedIndex == 6,
-                      onTap: () => ref.read(securityGuardProvider).guard(
-                        context,
-                        SecurityKeys.userProfile,
-                        () => handleNavTap(6),
-                      ),
+                      onTap: () => ref
+                          .read(securityGuardProvider)
+                          .guard(
+                            context,
+                            SecurityKeys.userProfile,
+                            () => handleNavTap(6),
+                          ),
                     ),
                     NavItem(
                       icon: Icons.logout,
@@ -516,8 +523,8 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
                   const SyncButton(),
                   if (!kIsWeb &&
                       (defaultTargetPlatform == TargetPlatform.windows ||
-                       defaultTargetPlatform == TargetPlatform.macOS ||
-                       defaultTargetPlatform == TargetPlatform.linux))
+                          defaultTargetPlatform == TargetPlatform.macOS ||
+                          defaultTargetPlatform == TargetPlatform.linux))
                     NavIconButton(
                       icon: Icons.fullscreen,
                       tooltip: "Full Screen",
@@ -530,7 +537,6 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
                   NavIconButton(
                     icon: Icons.power_settings_new,
                     tooltip: "Power",
-                    iconColor: Colors.white,
                     onTap: () {
                       _closeSidebar();
                       showDialog(
@@ -556,10 +562,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
       drawer: Drawer(backgroundColor: context.navSidebarBg, child: sidebar),
       // The body is just the content — no permanent rail, no edge toggle.
       // Cached, instant tab switching (LazyIndexedStack keeps state).
-      body: LazyIndexedStack(
-        index: renderIndex,
-        children: screens,
-      ),
+      body: LazyIndexedStack(index: renderIndex, children: screens),
     );
   }
 }

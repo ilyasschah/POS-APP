@@ -18,6 +18,9 @@ import 'package:pos_app/settings/settings_provider.dart';
 import 'package:pos_app/sync/sync_provider.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
 
+// Import the PowerModal (Adjust this path if you placed it in a different folder)
+import 'package:pos_app/navigation/power_modal.dart';
+
 class LoginScreen extends ConsumerStatefulWidget {
   /// Set when we landed here because the server rejected our token (see
   /// `SessionExpiry`); shows a "session expired" prompt on arrival.
@@ -161,10 +164,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return Scaffold(
       backgroundColor: cs.surface,
       appBar: AppBar(
-        title: GestureDetector(
-          onLongPress: _handleUnlinkDevice,
-          child: const Text("POS Login"),
-        ),
+        // Removed the "POS Login" title to clean up the top left
         actions: [
           // TIME CLOCK button — only when SelectBusinessDayOnStart == 'true'
           if (ref
@@ -204,66 +204,88 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
             onPressed: () => ref.read(themeModeProvider.notifier).toggleTheme(),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.business, size: 18),
-                const SizedBox(width: 6),
-                Text(selectedCo.name),
-              ],
+          const SizedBox(
+            width: 16,
+          ), // Padding to replace the removed company name
+        ],
+      ),
+      body: Stack(
+        children: [
+          Center(
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 800),
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Replaced "Select User" with Company Name & Hidden Unlink Action
+                  GestureDetector(
+                    onLongPress: _handleUnlinkDevice,
+                    child: Text(
+                      selectedCo.name,
+                      style: GoogleFonts.inter(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: cs.onSurface,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const Gap(40),
+                  Expanded(
+                    child: asyncUsers.when(
+                      loading: () =>
+                          const Center(child: CircularProgressIndicator()),
+                      error: (err, _) => _NoUsersRecovery(
+                        companyId: selectedCo.id,
+                        error: '$err',
+                      ),
+                      data: (users) {
+                        if (users.isEmpty) {
+                          return _NoUsersRecovery(companyId: selectedCo.id);
+                        }
+                        // Replaced GridView with Wrap to automatically center orphan cards
+                        return SingleChildScrollView(
+                          child: Wrap(
+                            alignment: WrapAlignment.center,
+                            spacing: 20,
+                            runSpacing: 20,
+                            children: users.map((user) {
+                              final index = users.indexOf(user);
+                              return SizedBox(
+                                width: 170,
+                                height: 170,
+                                child: _buildUserCard(context, user, index),
+                              );
+                            }).toList(),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Bottom-Left Power Button
+          Positioned(
+            bottom: 24,
+            left: 24,
+            child: FloatingActionButton(
+              backgroundColor: cs.surfaceContainerHighest,
+              foregroundColor: cs.onSurface,
+              elevation: 0,
+              tooltip: 'Power Options',
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (_) => const PowerModal(),
+                );
+              },
+              child: const Icon(Icons.power_settings_new, size: 28),
             ),
           ),
         ],
-      ),
-      body: Center(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 800),
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                "Select User",
-                style: GoogleFonts.inter(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: cs.onSurface,
-                ),
-              ),
-              const Gap(40),
-              Expanded(
-                child: asyncUsers.when(
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
-                  error: (err, _) =>
-                      _NoUsersRecovery(companyId: selectedCo.id, error: '$err'),
-                  data: (users) {
-                    if (users.isEmpty) {
-                      // No cached users (e.g. a fresh install, or the local DB was
-                      // wiped). Instead of a dead-end message, try to re-pull from
-                      // the server and always offer a visible re-link escape.
-                      return _NoUsersRecovery(companyId: selectedCo.id);
-                    }
-                    return GridView.builder(
-                      gridDelegate:
-                          const SliverGridDelegateWithMaxCrossAxisExtent(
-                            maxCrossAxisExtent: 200,
-                            childAspectRatio: 1.0,
-                            crossAxisSpacing: 20,
-                            mainAxisSpacing: 20,
-                          ),
-                      itemCount: users.length,
-                      itemBuilder: (context, index) =>
-                          _buildUserCard(context, users[index], index),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -273,11 +295,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 // No-users recovery
 // ---------------------------------------------------------------------------
 
-/// Shown on the login picker when there are no cached enabled users — a fresh
-/// install, or a wiped/corrupt local DB. Rather than a dead-end "No users"
-/// message, it auto-attempts a re-pull from the server (the device is still
-/// registered — the token lives in secure storage, not the deleted Drift file)
-/// and always offers a visible re-link escape so the operator is never stuck.
 class _NoUsersRecovery extends ConsumerStatefulWidget {
   final int companyId;
   final String? error;
@@ -293,7 +310,6 @@ class _NoUsersRecoveryState extends ConsumerState<_NoUsersRecovery> {
   @override
   void initState() {
     super.initState();
-    // One automatic attempt to restore users from the server on first display.
     WidgetsBinding.instance.addPostFrameCallback((_) => _reload());
   }
 
@@ -301,17 +317,13 @@ class _NoUsersRecoveryState extends ConsumerState<_NoUsersRecovery> {
     if (_busy) return;
     setState(() => _busy = true);
     try {
-      // Re-fetch users from the API into Drift; the users stream then re-emits.
       await ref.read(seedUsersFromApiProvider(widget.companyId).future);
       ref.invalidate(allUsersProvider);
-    } catch (_) {
-      // Offline / server down — leave the escape hatch below.
-    }
+    } catch (_) {}
     if (mounted) setState(() => _busy = false);
   }
 
   Future<void> _relink() async {
-    // Release the seat (best-effort) then wipe the local session and re-link.
     await ref.read(authServiceProvider).releaseDeviceSeat();
     await ref.read(authStorageProvider).unlinkDevice();
     if (!mounted) return;
@@ -475,21 +487,6 @@ class _PinPadModalState extends ConsumerState<_PinPadModal> {
   Future<void> _loginUser() async {
     ref.read(currentUserProvider.notifier).setUser(widget.user);
 
-    // Offline-first login: the user already authenticated against the LOCAL
-    // cache (the user list + PIN are read from Drift), so go STRAIGHT into the
-    // app on cached data — never block login on the network. The sync runs in
-    // the BACKGROUND (push pending writes + pull fresh master data); Drift-backed
-    // screens fill in reactively as the pull lands. A first install briefly shows
-    // empty screens until the first pull completes — an acceptable trade for not
-    // hanging on "Syncing master data…" when the server is slow/unreachable.
-    //
-    // Capture the manager before navigating so the future outlives this screen,
-    // and swallow errors (we're already running on cache).
-    //
-    // First mint a per-user backend token (best-effort) so the backend sees THIS
-    // cashier's identity + role, THEN sync so its refresh step slides that token
-    // forward. Both run in the background — login never blocks, and offline the
-    // device token keeps being used unchanged.
     final authService = ref.read(authServiceProvider);
     final sync = ref.read(syncManagerProvider);
     Future(() async {
@@ -499,10 +496,6 @@ class _PinPadModalState extends ConsumerState<_PinPadModal> {
 
     if (!mounted) return;
 
-    // Land on the user's configured default screen. MainLayout (initialIndex
-    // defaults to 0) resolves it from settings via resolveDefaultScreenIndex,
-    // validated against the feature flags. MainLayout's auto-sync watcher keeps
-    // syncing for the rest of the session.
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (context) => const MainLayout()),
@@ -526,9 +519,6 @@ class _PinPadModalState extends ConsumerState<_PinPadModal> {
         ? (_isConfirming ? "Confirm New PIN" : "Create 4-Digit PIN")
         : "Enter PIN";
 
-    // Responsive scale: shrink the whole pad on smaller screens (8"/10"
-    // tablets, short landscape) so it never feels oversized or overflows.
-    // Derived from the screen's shortest side against a 600px reference.
     final screen = MediaQuery.sizeOf(context);
     final scale = (screen.shortestSide / 600).clamp(0.7, 1.0).toDouble();
     double s(double v) => v * scale;
@@ -550,7 +540,6 @@ class _PinPadModalState extends ConsumerState<_PinPadModal> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Drag handle
                   Container(
                     width: s(40),
                     height: s(4),
@@ -560,7 +549,6 @@ class _PinPadModalState extends ConsumerState<_PinPadModal> {
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-
                   CircleAvatar(
                     radius: s(32),
                     backgroundColor: avatarBg,
@@ -585,8 +573,6 @@ class _PinPadModalState extends ConsumerState<_PinPadModal> {
                     style: TextStyle(color: cs.primary, fontSize: s(15)),
                   ),
                   Gap(s(28)),
-
-                  // PIN slots — fixed-size boxes so the row never shifts or resizes
                   SizedBox(
                     width: s(280),
                     height: s(64),
@@ -628,10 +614,7 @@ class _PinPadModalState extends ConsumerState<_PinPadModal> {
                             }),
                           ),
                   ),
-
                   Gap(s(32)),
-
-                  // Number grid — fills the comfortable padded width
                   SizedBox(
                     width: double.infinity,
                     child: GridView.builder(
@@ -645,10 +628,8 @@ class _PinPadModalState extends ConsumerState<_PinPadModal> {
                       ),
                       itemCount: 12,
                       itemBuilder: (context, index) {
-                        // Empty slot below "7 8 9"
                         if (index == 9) return const SizedBox.shrink();
 
-                        // Backspace
                         if (index == 11) {
                           return FilledButton.tonal(
                             onPressed: _onBackspace,

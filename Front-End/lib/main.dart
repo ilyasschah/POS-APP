@@ -15,6 +15,7 @@ import 'package:pos_app/settings/settings_provider.dart';
 import 'package:pos_app/settings/local_ui_prefs.dart';
 import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/app_settings/app_settings_provider.dart';
+import 'package:pos_app/core/pos_virtual_keyboard.dart';
 import 'package:window_manager/window_manager.dart';
 
 void main() async {
@@ -248,7 +249,7 @@ class _MyAppState extends ConsumerState<MyApp> {
         ).copyWith(textScaler: TextScaler.linear(fontScale)),
         child: Directionality(
           textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
-          child: child!,
+          child: VirtualKeyboardHost(child: child!),
         ),
       ),
       home: FutureBuilder<_BootDecision>(

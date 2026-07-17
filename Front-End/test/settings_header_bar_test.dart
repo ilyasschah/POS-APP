@@ -8,9 +8,15 @@
 // to every other check in this repo, so it gets asserted here in pixels.
 //
 // The header's own failure mode is different from that one: an AppBar toolbar is
-// only kToolbarHeight tall and its title Row has finite width, so the risks are
+// only kToolbarHeight tall and its title has finite width, so the risks are
 // (a) the field overflowing the toolbar vertically and (b) a RenderFlex overflow
 // on a narrow tablet. Both are covered below.
+//
+// The title is now a Stack (centring the field independently of the "Settings"
+// label) rather than a Row, which swaps one risk for another: a Stack CANNOT
+// RenderFlex-overflow, so the overflow test below can no longer catch a field
+// that has grown into the title — it would silently paint on top of it instead.
+// That overlap is asserted explicitly for exactly that reason.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -52,17 +58,40 @@ void main() {
     expect(find.text('Settings'), findsOneWidget);
   });
 
-  testWidgets('the field is capped and left-aligned on a wide monitor', (
+  testWidgets('the field is capped and centred on a wide monitor', (
     tester,
   ) async {
     await _pump(tester, _desktop);
 
     final field = tester.getSize(find.byType(TextField));
+    // Without the cap the field would span the whole 1920px monitor.
     expect(field.width, lessThanOrEqualTo(480));
-    // Sits just after the title, not floating in the middle of 1920px.
-    expect(tester.getTopLeft(find.byType(TextField)).dx, lessThan(240));
+    // Centred on the header, not left-aligned beside the title: the Stack
+    // deliberately centres it regardless of how wide the title happens to be.
+    expect(
+      tester.getCenter(find.byType(TextField)).dx,
+      closeTo(tester.getCenter(find.byType(SettingsHeaderBar)).dx, 1),
+    );
     // Touch target: 44px minimum (CLAUDE.md) — the reason its padding is 12.
     expect(field.height, greaterThanOrEqualTo(44));
+  });
+
+  testWidgets('the centred field never collides with the title', (
+    tester,
+  ) async {
+    // A Stack silently paints its children on top of one another, so this can
+    // only be caught by measuring: at 480 wide the field starts to eat the
+    // "Settings" label somewhere below ~860px of window width.
+    for (final screen in [_desktop, _tablet]) {
+      await _pump(tester, screen);
+      final titleRight = tester.getTopRight(find.text('Settings')).dx;
+      final fieldLeft = tester.getTopLeft(find.byType(TextField)).dx;
+      expect(
+        fieldLeft,
+        greaterThanOrEqualTo(titleRight),
+        reason: 'search field overlaps the "Settings" title at $screen',
+      );
+    }
   });
 
   testWidgets('the field fits inside the toolbar and never overflows', (

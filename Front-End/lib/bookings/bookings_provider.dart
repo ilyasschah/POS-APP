@@ -1,4 +1,5 @@
-import 'package:drift/drift.dart' show OrderingTerm;
+import 'package:drift/drift.dart'
+    show BooleanExpressionOperators, OrderingTerm, leftOuterJoin;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
@@ -32,6 +33,65 @@ final allBookingsProvider = StreamProvider.autoDispose<List<Booking>>((ref) {
 bool isSameDay(DateTime a, DateTime b) =>
     a.year == b.year && a.month == b.month && a.day == b.day;
 
+/// Whether [tableId] is currently held by a booking — its reservation window
+/// covers [at] and it hasn't finished. Completed (4) and No Show (5) release the
+/// table; Scheduled (1), Arrived (2) and In Service (3) still hold it.
+///
+/// Used to enforce `Order.AllowWalkInTableOrders`. Pure so it stays testable and
+/// callable from any screen holding a booking list.
+/// The live booking currently holding [tableId] at [at], or null when there is
+/// none. "Live" = a Scheduled / Arrived / In-Service booking (status 1-3) whose
+/// window contains [at]. When several overlap, the earliest-starting one wins so
+/// a table with back-to-back reservations resolves deterministically.
+Booking? liveBookingForTable(
+  List<Booking> bookings,
+  int tableId,
+  DateTime at,
+) {
+  final matches = bookings
+      .where(
+        (b) =>
+            b.tableIds.contains(tableId) &&
+            const {1, 2, 3}.contains(b.status) &&
+            !at.isBefore(b.startTime) &&
+            !at.isAfter(b.endTime),
+      )
+      .toList()
+    ..sort((a, b) => a.startTime.compareTo(b.startTime));
+  return matches.isEmpty ? null : matches.first;
+}
+
+bool hasLiveBookingForTable(
+  List<Booking> bookings,
+  int tableId,
+  DateTime at,
+) =>
+    liveBookingForTable(bookings, tableId, at) != null;
+
+/// The `localId` of the still-open order this booking already has, or null when
+/// it has none. Drives the booking's primary action: "Open Service" (resume the
+/// existing order) vs "Start Service" (create one).
+///
+/// Deliberately reads `pos_orders` rather than `Booking.posOrderId`. That field
+/// holds a *server* id the backend only assigns at checkout, so it stays null
+/// for the entire life of an offline order — which is exactly why the button
+/// kept saying "Start Service" for a booking already in service, and why
+/// pressing it opened a second order alongside the first.
+final openOrderForBookingProvider = StreamProvider.autoDispose
+    .family<String?, int>((ref, bookingId) {
+  final db = ref.watch(appDatabaseProvider);
+  final companyId = ref.watch(selectedCompanyProvider)?.id;
+  if (companyId == null) return Stream.value(null);
+
+  final query = db.select(db.posOrdersTable)
+    ..where((t) => t.companyId.equals(companyId))
+    ..where((t) => t.bookingId.equals(bookingId))
+    ..where((t) => t.status.equals(0))
+    ..limit(1);
+
+  return query.watch().map((rows) => rows.firstOrNull?.localId);
+});
+
 /// All floor-plan tables across every floor plan for the company, streamed
 /// from the local Drift cache. Used by the booking calendar (table/room mode)
 /// and the booking dialog's table picker. Floor-plan tables are populated by
@@ -43,13 +103,56 @@ bool isSameDay(DateTime a, DateTime b) =>
 /// value while the company is resolving throws "disposed during loading
 /// state"). Reading the tables directly from Drift removes both the network
 /// dependency and the crash.
+/// `status`/`assignedUserId` are derived from open `pos_orders`, NOT from
+/// `floor_plan_tables.status` — that column is dead (only `pullFloorPlanTables`
+/// writes it, and the server only ever assigns 0), so `FloorPlanTable.fromDrift`
+/// reports EVERY table as free. Filtering this list on `status == 0` without
+/// this join is a silent no-op: it compiles, runs, and excludes nothing. Same
+/// derivation as [tablesByFloorPlanProvider], minus its active-plan filter.
 final allRoomsProvider = StreamProvider.autoDispose<List<FloorPlanTable>>((ref) {
   final db = ref.watch(appDatabaseProvider);
   final companyId = ref.watch(selectedCompanyProvider)?.id;
   if (companyId == null) return Stream.value(const []);
 
-  final query = db.select(db.floorPlanTablesTable)
-    ..where((t) => t.companyId.equals(companyId));
+  // Left join: a table with no open order must still be listed (as free).
+  final query = db.select(db.floorPlanTablesTable).join([
+    leftOuterJoin(
+      db.posOrdersTable,
+      db.posOrdersTable.tableId.equalsExp(db.floorPlanTablesTable.id) &
+          db.posOrdersTable.companyId.equals(companyId) &
+          db.posOrdersTable.status.equals(0),
+    ),
+  ])..where(db.floorPlanTablesTable.companyId.equals(companyId));
 
-  return query.watch().map((rows) => rows.map(FloorPlanTable.fromDrift).toList());
+  return query.watch().map((rows) {
+    // The join yields one row per (table, open order); a table carrying more
+    // than one open order must still appear exactly once.
+    final byId = <int, FloorPlanTable>{};
+    for (final row in rows) {
+      final table = FloorPlanTable.fromDrift(
+        row.readTable(db.floorPlanTablesTable),
+      );
+      final existing = byId.putIfAbsent(table.id, () => table);
+      final order = row.readTableOrNull(db.posOrdersTable);
+      if (order == null) continue;
+      // serviceStatus 1..3 = Occupied / In Preparation / In Kitchen. Guard the
+      // 0 case: an order whose status is unset would otherwise paint its table
+      // "Free" while still holding items.
+      existing.status = order.serviceStatus > 0 ? order.serviceStatus : 1;
+      existing.assignedUserId = order.userId;
+    }
+    return byId.values.toList();
+  });
 });
+
+/// [allRoomsProvider] filtered to tables nobody is currently sitting at.
+///
+/// For pickers that must not offer an occupied table (transfer target, booking
+/// creation). Kept as its own provider so the unfiltered list stays available to
+/// the booking calendar and the cart header's table-name lookup, which must see
+/// every table regardless of occupancy.
+final freeRoomsProvider = Provider.autoDispose<AsyncValue<List<FloorPlanTable>>>(
+  (ref) => ref
+      .watch(allRoomsProvider)
+      .whenData((rooms) => rooms.where((r) => r.status == 0).toList()),
+);

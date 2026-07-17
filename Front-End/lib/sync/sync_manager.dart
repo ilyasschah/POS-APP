@@ -1145,6 +1145,35 @@ class SyncManager {
               mode: InsertMode.insertOrReplace,
             );
           });
+
+          // Service may have started from this booking while it still carried
+          // its temp id — repoint those orders at the real id, or the reverse
+          // link breaks (duplicate "Start Service", payment never completes
+          // the booking). An order that already reached the server synced
+          // WITHOUT a usable bookingId (open-order push omits temp ids), so
+          // late-link it now that both real ids exist. Best-effort: the link
+          // is a mirror, never worth failing the booking push over.
+          final remapped = await db.remapOrderBookingId(b.id, realId);
+          final syncedOrder =
+              remapped.where((o) => o.serverId != null).firstOrNull;
+          if (syncedOrder != null) {
+            try {
+              await dio.patch<dynamic>(
+                '/Bookings/LinkPosOrder',
+                queryParameters: {
+                  'companyId': companyId,
+                  'bookingId': realId,
+                  'posOrderId': syncedOrder.serverId,
+                },
+              );
+              await db.linkBookingPosOrder(realId, syncedOrder.serverId!);
+            } catch (e) {
+              debugPrint(
+                'pushPendingBookings: late link booking $realId -> order '
+                '${syncedOrder.serverId} failed — $e',
+              );
+            }
+          }
         } else {
           // ── UPDATE (real id): full edit + status ──────────────────────────
           await dio.patch<dynamic>(
@@ -1418,6 +1447,14 @@ class SyncManager {
       }
       try {
         int serverId;
+        // Only a REAL booking id is sent: with it, the server's /PosOrder/Create
+        // links booking -> order AND flips the booking to In Service in one
+        // transaction (PosOrderService.Create). A temp (negative) id from a
+        // not-yet-synced booking can't match server-side, so it is omitted here
+        // and reconciled by pushPendingBookings (remap + late link) instead.
+        final bookingId = o.order.bookingId;
+        final syncableBookingId =
+            (bookingId != null && bookingId > 0) ? bookingId : null;
         if (o.order.serverId == null) {
           final res = await dio.post<dynamic>(
             '/PosOrder/Create',
@@ -1433,6 +1470,7 @@ class SyncManager {
               'serviceStatus': o.order.serviceStatus,
               'floorPlanTableId': o.order.tableId,
               'warehouseId': o.order.warehouseId,
+              'bookingId': syncableBookingId,
             },
           );
           final data = res.data;
@@ -1445,6 +1483,12 @@ class SyncManager {
                     as int;
 
           await db.setServerId(o.order.localId, serverId);
+
+          // The server linked booking.PosOrderId during Create above — keep the
+          // local mirror consistent so "Open Order" works before the next pull.
+          if (syncableBookingId != null) {
+            await db.linkBookingPosOrder(syncableBookingId, serverId);
+          }
         } else {
           serverId = o.order.serverId!;
           await dio.patch<dynamic>(
