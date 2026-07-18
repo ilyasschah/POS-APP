@@ -71,4 +71,49 @@ void main() {
     expect(hasLiveBookingForTable([booking(id: 1)], 1, at), isTrue);
     expect(hasLiveBookingForTable([booking(id: 1, status: 4)], 1, at), isFalse);
   });
+
+  // The "occupied on create" rule: a booking holds its tables regardless of
+  // time, until it's Completed/No-Show/deleted. This is what marks a table
+  // Reserved on the floor plan and hides it from the transfer + booking pickers.
+  group('tablesHeldByBookings (time-independent)', () {
+    // A window entirely in the past — proves holding does NOT depend on time.
+    final pastFrom = DateTime(2020, 1, 1, 10);
+    final pastTo = DateTime(2020, 1, 1, 12);
+
+    test('holds tables of active bookings even outside their window', () {
+      final held = tablesHeldByBookings([
+        booking(id: 1, tableIds: [3], from: pastFrom, to: pastTo),
+      ]);
+      expect(held, {3});
+    });
+
+    test('releases Completed (4) and No-Show (5) bookings', () {
+      expect(tablesHeldByBookings([booking(id: 1, tableIds: [3], status: 4)]),
+          isEmpty);
+      expect(tablesHeldByBookings([booking(id: 1, tableIds: [3], status: 5)]),
+          isEmpty);
+    });
+
+    test('unions and de-dupes multi-table bookings', () {
+      final held = tablesHeldByBookings([
+        booking(id: 1, tableIds: [1, 2]),
+        booking(id: 2, tableIds: [2, 3], status: 2),
+      ]);
+      expect(held, {1, 2, 3});
+    });
+
+    test('heldBookingForTable returns the reservation regardless of time', () {
+      final b = heldBookingForTable(
+        [booking(id: 9, tableIds: [3], customerId: 59, from: pastFrom, to: pastTo)],
+        3,
+      );
+      expect(b?.id, 9);
+      expect(b?.customerId, 59);
+      // A completed booking no longer holds it.
+      expect(
+        heldBookingForTable([booking(id: 9, tableIds: [3], status: 4)], 3),
+        isNull,
+      );
+    });
+  });
 }

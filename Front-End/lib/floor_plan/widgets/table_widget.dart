@@ -88,6 +88,13 @@ class _TableWidgetState extends ConsumerState<TableWidget> {
     return liveBookingForTable(bookings, widget.table.id, DateTime.now());
   }
 
+  /// The booking holding this table regardless of time — drives a Reserved
+  /// (status 4) table's tap to open that reservation.
+  Booking? _heldBookingForTable() {
+    final bookings = ref.read(allBookingsProvider).value ?? const [];
+    return heldBookingForTable(bookings, widget.table.id);
+  }
+
   /// Asks whether to open the reservation holding a free table or ring up a
   /// separate walk-in. The walk-in choice is hidden when the venue disallows
   /// walk-in table orders, leaving "Open reservation" (or Cancel).
@@ -224,7 +231,23 @@ class _TableWidgetState extends ConsumerState<TableWidget> {
             try {
               final apiClient = ApiClient();
 
-              if (widget.table.status > 0) {
+              if (widget.table.status == 4) {
+                // Reserved: a booking holds this table but service hasn't
+                // started (no order yet). Open that reservation — inheriting its
+                // customer — instead of the "no active order" error a plain
+                // occupied table would show.
+                final booking = _heldBookingForTable();
+                if (booking != null) {
+                  await _openReservation(apiClient, booking);
+                } else if (context.mounted) {
+                  showAppSnackbar(
+                    context,
+                    ref,
+                    'This reservation is no longer active.',
+                    isError: true,
+                  );
+                }
+              } else if (widget.table.status > 0) {
                 final success = await ref
                     .read(cartProvider.notifier)
                     .loadExistingOrder(

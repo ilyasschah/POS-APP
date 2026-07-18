@@ -1464,14 +1464,18 @@ class _TableAvailabilityPicker extends StatelessWidget {
     required this.onToggled,
   });
 
+  // A table is unavailable while ANY active booking (Scheduled/Arrived/In
+  // Service) holds it — no longer just time-overlapping ones: a booked table is
+  // claimed until its reservation is Completed (4), No-Show (5), or deleted. The
+  // booking being edited (excludeBookingId) still lists its own tables so they
+  // can be deselected. startTime/endTime are kept on the widget for the caller
+  // but no longer gate availability.
   bool _available(FloorPlanTable t) => !existingBookings.any(
     (b) =>
         b.status != 4 &&
         b.status != 5 &&
         b.id != excludeBookingId &&
-        b.tableIds.contains(t.id) &&
-        b.startTime.isBefore(endTime) &&
-        b.endTime.isAfter(startTime),
+        b.tableIds.contains(t.id),
   );
 
   @override

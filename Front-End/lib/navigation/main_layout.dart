@@ -26,7 +26,7 @@ import 'package:pos_app/database/backup_scheduler.dart';
 import 'package:pos_app/cash/cash_movement_screen.dart';
 import 'package:pos_app/time_clock/time_clock_screen.dart';
 import 'package:pos_app/reports/sales_history_screen.dart';
-import 'package:pos_app/credit/credit_payment_dialog.dart';
+import 'package:pos_app/credit/credit_payment_screen.dart';
 import 'package:pos_app/shift/shift_management_screen.dart';
 import 'package:pos_app/kitchen/pos_kitchen_server.dart';
 import 'package:pos_app/sync/connectivity_watcher.dart';
@@ -431,7 +431,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
                         SecurityKeys.creditPayments,
                         () {
                           _closeSidebar();
-                          CreditPaymentsDialog.show(context);
+                          CreditPaymentsScreen.show(context);
                         },
                       ),
                     ),

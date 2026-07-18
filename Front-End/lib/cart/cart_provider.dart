@@ -651,7 +651,19 @@ class CartNotifier extends Notifier<CartState> {
   /// it, an order opened from a booking for "Ilyass" was banked against Walk-in
   /// and lost their profile discount.
   Future<void> _seedDefaultCustomer({int? customerId}) async {
-    final customers = ref.read(selectableCustomersProvider).value ?? const [];
+    // AWAIT the loaded list rather than reading a cold sync snapshot. This runs
+    // from a booking's Start Service, where the customers provider is usually
+    // autoDispose-cold (nothing on the booking detail dialog watches it) and its
+    // `.value` is null — the old code then bailed WITHOUT seeding, leaving the
+    // booking order with no customer, which the menu defaulted to Walk-in.
+    // allCustomersProvider includes disabled records, so a booking's customer is
+    // still honoured even if it was later disabled.
+    final List<Customer> customers;
+    try {
+      customers = await ref.read(allCustomersProvider.future);
+    } catch (_) {
+      return; // no company / stream closed early — leave seeding to the menu.
+    }
     if (customers.isEmpty) return;
     final booked = customerId == null
         ? null
@@ -1293,17 +1305,13 @@ class CartNotifier extends Notifier<CartState> {
         db.posOrderItemsTable,
       )..where((t) => t.orderId.equals(localId))).get();
 
-      // Restore customer
-      if (row.customerId != null) {
-        final companyId = ref.read(selectedCompanyProvider)?.id;
-        final customers = ref.read(allCustomersProvider).value ?? const [];
-        final customer = customers
-            .where((c) => c.id == row.customerId)
-            .firstOrNull;
-        if (customer != null && companyId != null) {
-          await setCustomer(companyId, customer);
-        }
-      }
+      // NB: the customer is restored below via _restoreCustomerDiscount (a direct
+      // Drift read by id) + the copyWith + the currentCustomerProvider sync. The
+      // old cold-read setCustomer here was removed: it read
+      // allCustomersProvider.value, which is usually empty when reopening a
+      // booking's order (nothing keeps that provider warm), so it silently set no
+      // customer — and even when it did, its state was overwritten by the restore
+      // below. It also fired a needless network call on an offline-first path.
 
       // Offline-First fix: Build a map of products directly from database cache
       // instead of reading the potentially uninitialized stream provider
@@ -1430,6 +1438,18 @@ class CartNotifier extends Notifier<CartState> {
       final warehouses = ref.read(allWarehousesProvider).value ?? const [];
       final wh = warehouses.where((w) => w.id == row.warehouseId).firstOrNull;
       if (wh != null) ref.read(selectedWarehouseProvider.notifier).state = wh;
+
+      // The POS header watches currentCustomerProvider, but the copyWith above
+      // only set the cart's selectedCustomer. Sync the two, or a reopened order
+      // (e.g. a booking's "Open Service") shows a stale Walk-in / empty value the
+      // Notifier still holds from the previous order instead of this order's real
+      // customer. This is the single source that keeps the header truthful.
+      final loadedCustomer = state.selectedCustomer;
+      if (loadedCustomer != null) {
+        ref.read(currentCustomerProvider.notifier).setCustomer(loadedCustomer);
+      } else {
+        ref.invalidate(currentCustomerProvider);
+      }
 
       return true;
     } catch (_) {

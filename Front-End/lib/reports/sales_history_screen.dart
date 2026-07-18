@@ -49,14 +49,9 @@ class SalesHistoryDocument {
   final double totalBeforeTax;
   final double taxTotal;
   final double discount;
-  // 0 = Percentage, 1 = Fixed. The header discount is stored as-entered (unlike
-  // item discounts which are pre-converted to an absolute amount), so the type
-  // decides whether to render it as a '%' or a currency amount.
   final int discountType;
   final int paidStatus;
   final String? paymentSummary;
-  // Kept so a reprinted receipt can load the full Customer record (name, tax
-  // number, address …) — the receipt needs the object, not just the name.
   final int? customerId;
 
   SalesHistoryDocument({
@@ -117,9 +112,6 @@ class _ColDef {
 class _FlexTable extends StatelessWidget {
   final List<_ColDef> columns;
   final int rowCount;
-  // Builds one row's cells on demand. Called from the ListView's itemBuilder so
-  // cells are only constructed for visible rows — a large sales history no
-  // longer instantiates every cell widget up front on each rebuild.
   final List<Widget> Function(int index) rowBuilder;
   final bool Function(int index)? isRowSelected;
   final void Function(int index)? onRowTap;
@@ -156,9 +148,9 @@ class _FlexTable extends StatelessWidget {
                   (c) => Text(
                     c.label,
                     style: TextStyle(
-                      fontSize: 10,
+                      fontSize: 14, // Increased size for touch targets
                       fontWeight: FontWeight.w700,
-                      color: cs.onSurface.withValues(alpha: 0.55),
+                      color: cs.onSurface.withValues(alpha: 0.65),
                       letterSpacing: 0.4,
                     ),
                     textAlign: c.numeric ? TextAlign.right : TextAlign.left,
@@ -167,7 +159,7 @@ class _FlexTable extends StatelessWidget {
                   ),
                 )
                 .toList(),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
         ),
         // ── Body ──────────────────────────────────────────────────────────
@@ -194,8 +186,8 @@ class _FlexTable extends StatelessWidget {
                         child: _buildRow(
                           rowBuilder(i),
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 9,
+                            horizontal: 16,
+                            vertical: 14, // Fatter rows for easier tapping
                           ),
                         ),
                       ),
@@ -258,10 +250,6 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
   // ── split pane ────────────────────────────────────────────────────────────
   double _splitFraction = 0.55;
 
-  // ── column visibility (per-device, persisted in SharedPreferences) ──────────
-  // Which columns each table shows. Seeded from prefs (falling back to "all");
-  // the "Columns" pickers toggle entries and at least one column always stays
-  // visible (the picker forbids clearing the last one).
   static const _prefsMasterColsKey = 'sales_history_master_cols';
   static const _prefsDetailColsKey = 'sales_history_detail_cols';
   late Set<String> _visibleMasterColIds;
@@ -285,9 +273,6 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _fetchDocuments());
   }
 
-  /// Reads a persisted set of visible column ids, dropping any stale ids no
-  /// longer present in [allIds] and falling back to "all visible" when nothing
-  /// valid is stored (first run, or a saved set that's been fully invalidated).
   Set<String> _loadCols(String prefsKey, Iterable<String> allIds) {
     final all = allIds.toSet();
     final stored = ref.read(sharedPreferencesProvider).getStringList(prefsKey);
@@ -357,12 +342,9 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     });
 
     try {
-      // Offline-first: read sales documents straight from the local Drift store
-      // (kept fresh by SyncManager.pullDocuments). No network needed.
       final db = ref.read(appDatabaseProvider);
       final user = ref.read(currentUserProvider);
 
-      // Lookup maps for name resolution + payment summaries.
       final userRows = await db.select(db.usersTable).get();
       final customerRows = await db.select(db.customersTable).get();
       final warehouseRows = await db.select(db.warehousesTable).get();
@@ -372,7 +354,6 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       final warehouseMap = {for (final w in warehouseRows) w.id: w.name};
       final payTypeMap = {for (final p in payTypeRows) p.id: p.name};
 
-      // Inclusive end-of-day bound for the date filter.
       final from = DateTime(_startDate.year, _startDate.month, _startDate.day);
       final to = DateTime(
         _endDate.year,
@@ -476,12 +457,6 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       _items = [];
     });
     try {
-      // Offline-first: line items from the local Drift store, with product
-      // names resolved from the local product cache. The mapping is shared with
-      // the document editor (see [DocumentItem.fromDrift]) — this screen used to
-      // roll its own, dropped taxRate/taxAmount entirely, and applied the
-      // manual-document formula to checkout rows, so a taxed sale listed "Tax 0%"
-      // and an ex-tax line total beneath a tax-inclusive document total.
       final db = ref.read(appDatabaseProvider);
       final rows = await db.getActiveDocumentItems(localId);
       final productRows = await db.select(db.productsTable).get();
@@ -491,13 +466,15 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
           docRow?.orderNumber != null && docRow!.orderNumber!.isNotEmpty;
       setState(() {
         _items = rows
-            .map((r) => DocumentItem.fromDrift(
-                  r,
-                  isCheckoutDoc: isCheckoutDoc,
-                  companyId: ref.read(selectedCompanyProvider)?.id ?? 0,
-                  documentId: doc.id,
-                  product: pById[r.productId],
-                ))
+            .map(
+              (r) => DocumentItem.fromDrift(
+                r,
+                isCheckoutDoc: isCheckoutDoc,
+                companyId: ref.read(selectedCompanyProvider)?.id ?? 0,
+                documentId: doc.id,
+                product: pById[r.productId],
+              ),
+            )
             .toList();
       });
     } catch (_) {
@@ -518,17 +495,23 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Document'),
-        content: Text("Delete '${doc.number}'? This cannot be undone."),
+        title: const Text('Delete Document', style: TextStyle(fontSize: 20)),
+        content: Text(
+          "Delete '${doc.number}'? This cannot be undone.",
+          style: const TextStyle(fontSize: 16),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: const Text('Cancel', style: TextStyle(fontSize: 16)),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: ctx.dangerColor),
+            style: FilledButton.styleFrom(
+              backgroundColor: ctx.dangerColor,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete'),
+            child: const Text('Delete', style: TextStyle(fontSize: 16)),
           ),
         ],
       ),
@@ -536,8 +519,6 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     if (confirmed != true || !mounted) return;
 
     try {
-      // Offline-first: soft/hard-delete locally; the sync queue issues
-      // /Document/Delete on the next sync.
       final db = ref.read(appDatabaseProvider);
       var localId = doc.localId;
       if (localId == null && doc.id > 0) {
@@ -595,9 +576,6 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     };
   }
 
-  /// Itemized discount lines for a history document, resolved from local Drift
-  /// by document number (offline-first sales carry a discount_lines record).
-  /// Empty for cloud-only/legacy docs — surfaces just fall back to no breakdown.
   Future<List<ReceiptDiscountLine>> _discountLinesFor(
     SalesHistoryDocument doc, {
     bool includeLoyalty = true,
@@ -619,18 +597,13 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     );
   }
 
-  /// The real amount tendered against a document = the sum of its (non-deleted)
-  /// payments. This is what lets the receipt/invoice show the correct "paid" and
-  /// "still owed" figures on a credit sale instead of assuming paid-in-full.
-  /// Falls back to the doc total when a doc is flagged paid but carries no
-  /// payment rows (legacy / pulled docs), and to 0 when it is Unpaid.
   Future<double> _amountPaidFor(SalesHistoryDocument doc) async {
     final localId = doc.localId;
     if (localId == null) return doc.paidStatus == 0 ? 0.0 : doc.total;
     final db = ref.read(appDatabaseProvider);
-    final payments = (await db.getPayments(localId))
-        .where((p) => p.syncStatus != 'pending_delete')
-        .toList();
+    final payments = (await db.getPayments(
+      localId,
+    )).where((p) => p.syncStatus != 'pending_delete').toList();
     if (payments.isEmpty) return doc.paidStatus == 0 ? 0.0 : doc.total;
     return payments.fold<double>(0.0, (s, p) => s + p.amount);
   }
@@ -691,33 +664,18 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     final company = ref.read(selectedCompanyProvider);
     if (company == null) return;
 
-    // Ensure items are loaded for the selected document
     if (_items.isEmpty && !_itemsLoading) {
       await _fetchItems(doc);
     }
     final items = _items;
     final db = ref.read(appDatabaseProvider);
 
-    // Tax names for the per-tax breakdown (Receipt.PrintTaxName).
     final taxRows = await db.select(db.taxesTable).get();
     final taxNameById = {for (final t in taxRows) t.id: t.name};
 
-    // Convert DocumentItems → CartItems
     final cartItems = <CartItem>[];
     for (int i = 0; i < items.length; i++) {
       final item = items[i];
-      // Rebuild each line's tax from what was actually BANKED. This passed an
-      // empty list, so `lineTax` came out 0 and every line printed ex-tax —
-      // which is exactly why a reprint didn't match the receipt printed after
-      // payment (35.00 where the original said 42.00).
-      //
-      // The stored money is carried as a FIXED tax on purpose. The receipt
-      // re-derives a percentage tax from the rate using the CURRENT
-      // `discountApplyRule`, so reprinting a sale that was rung under the other
-      // rule would silently contradict its own document. A fixed tax is only
-      // ever multiplied by quantity, so this reproduces the banked figure
-      // exactly under either setting. The rate itself is never printed — the
-      // receipt shows only the tax name and its amount.
       final unitTax = item.quantity > 0 ? item.taxAmount / item.quantity : 0.0;
       cartItems.add(
         CartItem(
@@ -747,7 +705,6 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       );
     }
 
-    // Decode logo
     Uint8List? logoBytes;
     final logoBase64 = company.logo;
     if (logoBase64 != null && logoBase64.isNotEmpty) {
@@ -756,7 +713,6 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       } catch (_) {}
     }
 
-    // Parse stockDate for printTime
     DateTime printTime;
     try {
       printTime = DateTime.parse(doc.stockDate);
@@ -764,13 +720,6 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       printTime = DateTime.now();
     }
 
-    // Item-level discount total, resolved to money per line. `discount` is the
-    // value AS ENTERED and `discountType` says what it means: 0 = percent of the
-    // price, 1 = fixed money per unit. Checkout deliberately keeps a %-entered
-    // discount as (type 0, the % value), so summing the column raw — as this
-    // used to — added "50" (a percentage) to the currency total.
-    // Only a fallback: when `discountLines` is non-empty the receipt prints the
-    // itemized breakdown from those resolved amounts instead of this figure.
     final totalDiscount = items.fold<double>(0, (sum, item) {
       final perUnit = item.discountType == 0
           ? item.priceBeforeTax * item.discount / 100
@@ -781,27 +730,21 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     final sym = ref.read(currencySymbolProvider);
     final discountLines = await _discountLinesFor(doc, includeLoyalty: false);
 
-    // Load the real customer so the receipt prints the actual name / details —
-    // matching the after-checkout receipt — instead of leaving it blank.
     Customer? customer;
     if (doc.customerId != null) {
-      final cRow = await (db.select(db.customersTable)
-            ..where((t) => t.id.equals(doc.customerId!)))
-          .getSingleOrNull();
+      final cRow = await (db.select(
+        db.customersTable,
+      )..where((t) => t.id.equals(doc.customerId!))).getSingleOrNull();
       if (cRow != null) customer = Customer.fromDrift(cRow);
     }
 
-    // Reproduce what was actually tendered: the summed payment amount + the
-    // payment type name(s), NOT the doc total. This makes the reprint show the
-    // real "paid" figure and surfaces the outstanding balance on a credit sale
-    // (the receipt service prints "Balance Due" when amountPaid < grand total).
     final amountPaid = await _amountPaidFor(doc);
     String? paymentTypeName = doc.paymentSummary;
     final localId = doc.localId;
     if (localId != null) {
-      final payments = (await db.getPayments(localId))
-          .where((p) => p.syncStatus != 'pending_delete')
-          .toList();
+      final payments = (await db.getPayments(
+        localId,
+      )).where((p) => p.syncStatus != 'pending_delete').toList();
       if (payments.isNotEmpty) {
         final payTypeRows = await db.select(db.paymentTypesTable).get();
         final payTypeMap = {for (final t in payTypeRows) t.id: t.name};
@@ -818,8 +761,6 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       cashier: ref.read(currentUserProvider),
       customer: customer,
       orderNumber: doc.number,
-      // A reprint is always of a banked sale, so it names itself after the
-      // document number.
       documentNumber: doc.number,
       printTime: printTime,
       items: cartItems,
@@ -841,7 +782,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       context: context,
       builder: (_) => _CustomerPickerDialog(current: _filterCustomer),
     );
-    if (selected == null) return; // dialog dismissed
+    if (selected == null) return;
     setState(() => _filterCustomer = selected.customer);
     _fetchDocuments();
   }
@@ -864,14 +805,84 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
         children: [
           PosTopBar(
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
+              icon: const Icon(
+                Icons.arrow_back,
+                size: 28,
+              ), // Larger icon for touch
               tooltip: 'Back',
               onPressed: () => Navigator.pop(context),
             ),
-            title: const Text(
-              'Sales history',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              overflow: TextOverflow.ellipsis,
+            // Header content: Replaced generic Text title with a comprehensive Row
+            title: Row(
+              children: [
+                const Text(
+                  'Sales history',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                ),
+                const Spacer(),
+
+                // Date picker moved to the header
+                InkWell(
+                  onTap: _pickDateRange,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: cs.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.calendar_month_outlined,
+                          size: 20,
+                          color: cs.primary,
+                        ),
+                        const Gap(8),
+                        Text(
+                          '${_dateFmt.format(_startDate)} – ${_dateFmt.format(_endDate)}',
+                          style: TextStyle(
+                            fontSize: 15, // Larger font
+                            color: cs.onSurface,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const Gap(16),
+
+                // Search bar moved to the header and made wider for POS
+                SizedBox(
+                  width: 260,
+                  child: TextField(
+                    controller: _docNumCtrl,
+                    decoration: InputDecoration(
+                      hintText: 'Search document...',
+                      isDense: true,
+                      prefixIcon: const Icon(Icons.search, size: 22),
+                      filled: true,
+                      fillColor: cs.surfaceContainerHighest,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14, // Fatter target
+                      ),
+                    ),
+                    style: TextStyle(fontSize: 16, color: cs.onSurface),
+                    onSubmitted: (_) => _fetchDocuments(),
+                  ),
+                ),
+                const Gap(8),
+              ],
             ),
           ),
           _buildToolbar(theme, cs),
@@ -890,78 +901,16 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
         : null;
 
     return Container(
-      height: 56,
+      height: 80, // Increased height for POS touch buttons
       decoration: BoxDecoration(
         color: cs.surface,
         border: Border(
           bottom: BorderSide(color: theme.dividerColor, width: 0.5),
         ),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Row(
         children: [
-          // Doc number search
-          SizedBox(
-            width: 160,
-            child: TextField(
-              controller: _docNumCtrl,
-              decoration: InputDecoration(
-                hintText: 'Document nu...',
-                isDense: true,
-                prefixIcon: const Icon(Icons.search, size: 16),
-                filled: true,
-                fillColor: cs.surfaceContainerHighest,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(6),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 8,
-                ),
-              ),
-              style: TextStyle(fontSize: 13, color: cs.onSurface),
-              onSubmitted: (_) => _fetchDocuments(),
-            ),
-          ),
-          const Gap(8),
-
-          // Date range
-          InkWell(
-            onTap: _pickDateRange,
-            borderRadius: BorderRadius.circular(6),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              decoration: BoxDecoration(
-                color: cs.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.calendar_month_outlined,
-                    size: 15,
-                    color: cs.primary,
-                  ),
-                  const Gap(6),
-                  Text(
-                    '${_dateFmt.format(_startDate)} – ${_dateFmt.format(_endDate)}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: cs.onSurface,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const Gap(6),
-
-          const VerticalDivider(width: 1),
-          const Gap(2),
-
           _toolBtn(
             _showAllUsers ? Icons.group : Icons.person_outline,
             _showAllUsers ? 'All users' : 'My sales',
@@ -978,8 +927,9 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
             active: _filterCustomer != null,
           ),
 
-          const VerticalDivider(width: 1),
-          const Gap(2),
+          const Gap(12),
+          const VerticalDivider(width: 1, indent: 16, endIndent: 16),
+          const Gap(12),
 
           _toolBtn(
             Icons.print_outlined,
@@ -1010,8 +960,9 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
             sel == null ? null : () => _notImplemented('Send email'),
           ),
 
-          const VerticalDivider(width: 1),
-          const Gap(2),
+          const Gap(12),
+          const VerticalDivider(width: 1, indent: 16, endIndent: 16),
+          const Gap(12),
 
           _toolBtn(
             Icons.undo_outlined,
@@ -1045,7 +996,6 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
             color: context.dangerColor,
           ),
 
-          // Right-aligned utilities: Documents column picker + refresh.
           const Spacer(),
           _toolBtn(
             Icons.view_column_outlined,
@@ -1068,8 +1018,6 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
 
   // ── column selector ─────────────────────────────────────────────────────────
 
-  /// Shared picker for either table. Persists the chosen set to SharedPreferences
-  /// and pushes it back into state via [onApply].
   Future<void> _pickColumns({
     required String title,
     required List<({String id, String label})> columns,
@@ -1091,6 +1039,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     }
   }
 
+  // Expanded ToolButton with touch-pad sizing
   Widget _toolBtn(
     IconData icon,
     String label,
@@ -1107,20 +1056,26 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       message: label,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(6),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 6),
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: active
+              ? BoxDecoration(
+                  color: cs.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                )
+              : null,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 20, color: col),
-              const Gap(2),
+              Icon(icon, size: 28, color: col), // Scaled up icon
+              const Gap(6),
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 9,
+                  fontSize: 14, // Scaled up text
                   color: col,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
@@ -1156,14 +1111,14 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error_outline, size: 48, color: cs.error),
-            const Gap(12),
-            Text(_error!, style: TextStyle(color: cs.error)),
+            Icon(Icons.error_outline, size: 56, color: cs.error),
             const Gap(16),
+            Text(_error!, style: TextStyle(color: cs.error, fontSize: 16)),
+            const Gap(24),
             FilledButton.icon(
               onPressed: _fetchDocuments,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
+              icon: const Icon(Icons.refresh, size: 24),
+              label: const Text('Retry', style: TextStyle(fontSize: 16)),
             ),
           ],
         ),
@@ -1173,9 +1128,9 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final totalH = constraints.maxHeight;
-        final masterH = (totalH * _splitFraction).clamp(120.0, totalH - 120.0);
-        const dividerH = 12.0;
-        const headerH = 28.0;
+        final masterH = (totalH * _splitFraction).clamp(150.0, totalH - 150.0);
+        const dividerH = 16.0; // Slightly thicker divider handle
+        const headerH = 36.0;
         final detailH = totalH - masterH - dividerH - (headerH * 2);
 
         return Column(
@@ -1200,11 +1155,11 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
                 color: cs.surfaceContainerHighest,
                 child: Center(
                   child: Container(
-                    width: 40,
-                    height: 4,
+                    width: 60,
+                    height: 6,
                     decoration: BoxDecoration(
-                      color: cs.onSurface.withValues(alpha: 0.22),
-                      borderRadius: BorderRadius.circular(2),
+                      color: cs.onSurface.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(3),
                     ),
                   ),
                 ),
@@ -1242,18 +1197,18 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     Widget? trailing,
   }) {
     return Container(
-      height: 28,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      height: 36, // Scaled up
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       color: cs.surfaceContainerHighest.withValues(alpha: 0.45),
       child: Row(
         children: [
           Text(
             title,
             style: TextStyle(
-              fontSize: 11,
+              fontSize: 15, // Made larger
               fontWeight: FontWeight.w700,
-              color: cs.onSurface.withValues(alpha: 0.65),
-              letterSpacing: 0.4,
+              color: cs.onSurface.withValues(alpha: 0.7),
+              letterSpacing: 0.5,
             ),
           ),
           const Spacer(),
@@ -1263,30 +1218,29 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     );
   }
 
-  /// Compact "Columns" affordance used inside a section header.
   Widget _columnsHeaderButton(ColorScheme cs, VoidCallback onTap) {
     return Tooltip(
       message: 'Choose columns',
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(6),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
                 Icons.view_column_outlined,
-                size: 14,
-                color: cs.onSurface.withValues(alpha: 0.65),
+                size: 20, // Larger icon
+                color: cs.onSurface.withValues(alpha: 0.7),
               ),
-              const Gap(4),
+              const Gap(6),
               Text(
                 'Columns',
                 style: TextStyle(
-                  fontSize: 10,
+                  fontSize: 14, // Larger text
                   fontWeight: FontWeight.w600,
-                  color: cs.onSurface.withValues(alpha: 0.65),
+                  color: cs.onSurface.withValues(alpha: 0.7),
                 ),
               ),
             ],
@@ -1298,10 +1252,6 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
 
   // ── master table ──────────────────────────────────────────────────────────
 
-  // Master-table column metadata (stable id + display label + layout). The
-  // "Columns" picker toggles these on/off; the cell builders in
-  // [_buildMasterTable] are keyed by the same ids so header and body stay in
-  // lock-step regardless of which columns are hidden.
   static const _masterColumns =
       <({String id, String label, double flex, bool numeric})>[
         (id: 'id', label: 'ID', flex: 0.4, numeric: true),
@@ -1327,13 +1277,12 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       ];
 
   Widget _buildMasterTable(ThemeData theme, ColorScheme cs, String sym) {
-    const ts = TextStyle(fontSize: 12);
+    const ts = TextStyle(fontSize: 15); // Scaled up table row font
     final dimTs = TextStyle(
-      fontSize: 12,
-      color: cs.onSurface.withValues(alpha: 0.45),
+      fontSize: 15,
+      color: cs.onSurface.withValues(alpha: 0.5),
     );
 
-    // Per-column cell builders, keyed to the metadata ids above.
     final cellBuilders = <String, Widget Function(SalesHistoryDocument)>{
       'id': (doc) => Text('${doc.id}', style: dimTs),
       'type': (doc) => const Text('Sales', style: ts),
@@ -1412,15 +1361,15 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
           children: [
             Icon(
               Icons.receipt_long_outlined,
-              size: 48,
+              size: 64,
               color: cs.onSurface.withValues(alpha: 0.18),
             ),
-            const Gap(12),
+            const Gap(16),
             Text(
               'No sales documents for the selected period.',
               style: TextStyle(
-                color: cs.onSurface.withValues(alpha: 0.45),
-                fontSize: 13,
+                color: cs.onSurface.withValues(alpha: 0.5),
+                fontSize: 16,
               ),
             ),
           ],
@@ -1431,8 +1380,6 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
 
   // ── detail table ──────────────────────────────────────────────────────────
 
-  // Document-items column metadata — same id-keyed pattern as the master table
-  // so the "Columns" picker can hide any of them.
   static const _detailColumns =
       <({String id, String label, double flex, bool numeric})>[
         (id: 'id', label: 'ID', flex: 0.35, numeric: true),
@@ -1464,24 +1411,22 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
         child: Text(
           'Select a document above to view its items.',
           style: TextStyle(
-            color: cs.onSurface.withValues(alpha: 0.38),
-            fontSize: 13,
+            color: cs.onSurface.withValues(alpha: 0.45),
+            fontSize: 16,
           ),
         ),
       );
     }
     if (_itemsLoading) {
-      return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+      return const Center(child: CircularProgressIndicator(strokeWidth: 3));
     }
 
-    const ts = TextStyle(fontSize: 12);
+    const ts = TextStyle(fontSize: 15); // Scaled up table font
     final dimTs = TextStyle(
-      fontSize: 12,
+      fontSize: 15,
       color: cs.onSurface.withValues(alpha: 0.45),
     );
 
-    // Per-column cell builders, keyed to [_detailColumns]. taxPct and the
-    // pre-discount total are derived per item inside their builders.
     final cellBuilders = <String, Widget Function(DocumentItem)>{
       'id': (item) => Text('${item.id}', style: dimTs),
       'code': (item) => Text(item.productCode ?? '-', style: ts),
@@ -1494,10 +1439,6 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       'qty': (item) => Text(_numFmt.format(item.quantity), style: ts),
       'priceBeforeTax': (item) =>
           Text(_numFmt.format(item.priceBeforeTax), style: ts),
-      // The line's own rate. Deriving it from (price - priceBeforeTax) always
-      // read 0% on a checkout row — both fields hold the same ex-tax price
-      // there, so a 20% sale rendered "Tax 0%" while the document header showed
-      // the tax. Matches the document editor.
       'tax': (item) => Text(
         item.taxRate > 0
             ? '${item.taxRate.toStringAsFixed(item.taxRate % 1 == 0 ? 0 : 1)}%'
@@ -1507,19 +1448,14 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       'price': (item) => Text(_numFmt.format(item.price), style: ts),
       'totalBeforeDiscount': (item) =>
           Text(_numFmt.format(item.price * item.quantity), style: ts),
-      // Item discount honours its type: 0 = a percentage of the price (shown as
-      // "-50%"), 1 = a fixed per-unit amount (shown as the money taken off the
-      // line). Matches the document editor's item list.
       'discount': (item) => Text(
         item.discount <= 0
             ? '-'
             : item.discountType == 0
-                  ? '-${item.discount.toStringAsFixed(item.discount % 1 == 0 ? 0 : 2)}%'
-                  : '-${_numFmt.format(item.discount * item.quantity)}',
+            ? '-${item.discount.toStringAsFixed(item.discount % 1 == 0 ? 0 : 2)}%'
+            : '-${_numFmt.format(item.discount * item.quantity)}',
         style: ts,
       ),
-      // Tax-inclusive, so the column sums to the document's Total. `total` is
-      // ex-tax on checkout rows, which made a 42.00 sale list a 35.00 line.
       'total': (item) => Text(
         _numFmt.format(item.totalWithTax),
         style: ts.copyWith(fontWeight: FontWeight.w700, color: cs.primary),
@@ -1543,8 +1479,8 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
         child: Text(
           'No items found for this document.',
           style: TextStyle(
-            color: cs.onSurface.withValues(alpha: 0.38),
-            fontSize: 13,
+            color: cs.onSurface.withValues(alpha: 0.45),
+            fontSize: 16,
           ),
         ),
       ),
@@ -1557,8 +1493,8 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     final totalAmount = _documents.fold<double>(0, (sum, d) => sum + d.total);
 
     return Container(
-      height: 44,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      height: 60, // Scaled up Footer
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest,
         border: Border(top: BorderSide(color: theme.dividerColor, width: 0.5)),
@@ -1568,17 +1504,18 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
           Text(
             'Documents count: ${_documents.length}',
             style: TextStyle(
-              fontSize: 12,
-              color: cs.onSurface.withValues(alpha: 0.65),
+              fontSize: 16, // Larger font
+              color: cs.onSurface.withValues(alpha: 0.7),
+              fontWeight: FontWeight.w500,
             ),
           ),
-          const Gap(24),
+          const Spacer(),
           Text(
             'Total amount: ${_numFmt.format(totalAmount)} $sym',
             style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: cs.onSurface,
+              fontSize: 20, // Highlight the final total
+              fontWeight: FontWeight.w800,
+              color: cs.primary,
             ),
           ),
         ],
@@ -1588,9 +1525,6 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
 }
 
 // ── Column selector dialog ──────────────────────────────────────────────────
-// Lets the user pick which Documents-table columns are shown. Toggles a local
-// working set and returns it on "Apply"; the last remaining column can't be
-// unchecked so the table is never left with zero columns.
 class _ColumnSelectorDialog extends StatefulWidget {
   final String title;
   final List<({String id, String label})> columns;
@@ -1615,35 +1549,35 @@ class _ColumnSelectorDialogState extends State<_ColumnSelectorDialog> {
 
     return Dialog(
       backgroundColor: theme.cardColor,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: SizedBox(
-        width: 320,
-        height: 520,
+        width: 380, // Made wider for easier tapping
+        height: 600,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Title bar
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               decoration: BoxDecoration(
                 color: cs.surfaceContainerHighest,
                 borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(10),
+                  top: Radius.circular(12),
                 ),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.view_column_outlined, size: 18, color: cs.primary),
-                  const Gap(8),
+                  Icon(Icons.view_column_outlined, size: 24, color: cs.primary),
+                  const Gap(12),
                   Text(
                     widget.title,
-                    style: theme.textTheme.titleSmall?.copyWith(
+                    style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
+                      fontSize: 18,
                     ),
                   ),
                   const Spacer(),
                   IconButton(
-                    icon: const Icon(Icons.close, size: 18),
+                    icon: const Icon(Icons.close, size: 24),
                     onPressed: () => Navigator.pop(context),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
@@ -1651,18 +1585,22 @@ class _ColumnSelectorDialogState extends State<_ColumnSelectorDialog> {
                 ],
               ),
             ),
-
-            // Column checklist
             Expanded(
               child: ListView(
                 children: widget.columns.map((c) {
                   final checked = _sel.contains(c.id);
-                  // Forbid clearing the final column.
                   final lockLast = checked && _sel.length == 1;
                   return CheckboxListTile(
-                    dense: true,
+                    dense: false,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 4,
+                    ),
                     value: checked,
-                    title: Text(c.label, style: const TextStyle(fontSize: 13)),
+                    title: Text(
+                      c.label,
+                      style: const TextStyle(fontSize: 16),
+                    ), // Bigger Font
                     controlAffinity: ListTileControlAffinity.leading,
                     onChanged: lockLast
                         ? null
@@ -1677,12 +1615,9 @@ class _ColumnSelectorDialogState extends State<_ColumnSelectorDialog> {
                 }).toList(),
               ),
             ),
-
             Divider(height: 1, color: theme.dividerColor),
-
-            // Footer actions
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               child: Row(
                 children: [
                   TextButton(
@@ -1691,12 +1626,21 @@ class _ColumnSelectorDialogState extends State<_ColumnSelectorDialog> {
                         ..clear()
                         ..addAll(widget.columns.map((c) => c.id)),
                     ),
-                    child: const Text('Select all'),
+                    child: const Text(
+                      'Select all',
+                      style: TextStyle(fontSize: 16),
+                    ),
                   ),
                   const Spacer(),
                   FilledButton(
                     onPressed: () => Navigator.pop(context, _sel),
-                    child: const Text('Apply'),
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                    ),
+                    child: const Text('Apply', style: TextStyle(fontSize: 16)),
                   ),
                 ],
               ),
@@ -1710,7 +1654,6 @@ class _ColumnSelectorDialogState extends State<_ColumnSelectorDialog> {
 
 // ── Customer picker helpers ────────────────────────────────────────────────────
 
-/// Wraps the selected customer (null = "All customers" / clear filter).
 class _CustomerPickerResult {
   final Customer? customer;
   const _CustomerPickerResult(this.customer);
@@ -1744,39 +1687,39 @@ class _CustomerPickerDialogState extends ConsumerState<_CustomerPickerDialog> {
 
     return Dialog(
       backgroundColor: theme.cardColor,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: SizedBox(
-        width: 360,
-        height: 500,
+        width: 420,
+        height: 600,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Title bar
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               decoration: BoxDecoration(
                 color: cs.surfaceContainerHighest,
                 borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(10),
+                  top: Radius.circular(12),
                 ),
               ),
               child: Row(
                 children: [
                   Icon(
                     Icons.person_search_outlined,
-                    size: 18,
+                    size: 24,
                     color: cs.primary,
                   ),
-                  const Gap(8),
+                  const Gap(12),
                   Text(
                     'Filter by customer',
-                    style: theme.textTheme.titleSmall?.copyWith(
+                    style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
+                      fontSize: 18,
                     ),
                   ),
                   const Spacer(),
                   IconButton(
-                    icon: const Icon(Icons.close, size: 18),
+                    icon: const Icon(Icons.close, size: 24),
                     onPressed: () => Navigator.pop(context),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
@@ -1784,56 +1727,52 @@ class _CustomerPickerDialogState extends ConsumerState<_CustomerPickerDialog> {
                 ],
               ),
             ),
-
-            // Search field
             Padding(
-              padding: const EdgeInsets.fromLTRB(12, 12, 12, 6),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               child: TextField(
                 controller: _searchCtrl,
                 autofocus: true,
                 decoration: InputDecoration(
                   hintText: 'Search customer...',
                   isDense: true,
-                  prefixIcon: const Icon(Icons.search, size: 16),
+                  prefixIcon: const Icon(Icons.search, size: 22),
                   filled: true,
                   fillColor: cs.surfaceContainerHighest,
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide.none,
                   ),
                   contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 8,
+                    horizontal: 16,
+                    vertical: 14,
                   ),
                 ),
-                style: TextStyle(fontSize: 13, color: cs.onSurface),
+                style: TextStyle(fontSize: 16, color: cs.onSurface),
                 onChanged: (v) =>
                     setState(() => _query = v.trim().toLowerCase()),
               ),
             ),
-
-            // "All customers" clear row
             if (widget.current != null)
               InkWell(
                 onTap: () =>
                     Navigator.pop(context, const _CustomerPickerResult(null)),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
+                    horizontal: 20,
+                    vertical: 14,
                   ),
                   child: Row(
                     children: [
                       Icon(
                         Icons.clear,
-                        size: 16,
+                        size: 20,
                         color: cs.onSurface.withValues(alpha: 0.55),
                       ),
-                      const Gap(10),
+                      const Gap(12),
                       Text(
                         'All customers',
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: 16,
                           color: cs.onSurface.withValues(alpha: 0.7),
                           fontStyle: FontStyle.italic,
                         ),
@@ -1842,19 +1781,16 @@ class _CustomerPickerDialogState extends ConsumerState<_CustomerPickerDialog> {
                   ),
                 ),
               ),
-
             Divider(height: 1, color: theme.dividerColor),
-
-            // Customer list
             Expanded(
               child: customersAsync.when(
                 loading: () => const Center(
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                  child: CircularProgressIndicator(strokeWidth: 3),
                 ),
                 error: (e, _) => Center(
                   child: Text(
                     'Failed to load customers',
-                    style: TextStyle(color: cs.error, fontSize: 13),
+                    style: TextStyle(color: cs.error, fontSize: 16),
                   ),
                 ),
                 data: (customers) {
@@ -1875,7 +1811,7 @@ class _CustomerPickerDialogState extends ConsumerState<_CustomerPickerDialog> {
                         'No customers found',
                         style: TextStyle(
                           color: cs.onSurface.withValues(alpha: 0.45),
-                          fontSize: 13,
+                          fontSize: 16,
                         ),
                       ),
                     );
@@ -1898,24 +1834,24 @@ class _CustomerPickerDialogState extends ConsumerState<_CustomerPickerDialog> {
                               ? cs.primary.withValues(alpha: 0.1)
                               : null,
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 10,
+                            horizontal: 20,
+                            vertical: 16,
                           ),
                           child: Row(
                             children: [
                               Icon(
                                 Icons.person_outline,
-                                size: 16,
+                                size: 22,
                                 color: isActive
                                     ? cs.primary
                                     : cs.onSurface.withValues(alpha: 0.45),
                               ),
-                              const Gap(10),
+                              const Gap(12),
                               Expanded(
                                 child: Text(
                                   c.name,
                                   style: TextStyle(
-                                    fontSize: 13,
+                                    fontSize: 16,
                                     color: isActive ? cs.primary : cs.onSurface,
                                     fontWeight: isActive
                                         ? FontWeight.w600
@@ -1928,13 +1864,13 @@ class _CustomerPickerDialogState extends ConsumerState<_CustomerPickerDialog> {
                                 Text(
                                   c.code!,
                                   style: TextStyle(
-                                    fontSize: 11,
+                                    fontSize: 14,
                                     color: cs.onSurface.withValues(alpha: 0.4),
                                   ),
                                 ),
                               if (isActive) ...[
-                                const Gap(6),
-                                Icon(Icons.check, size: 16, color: cs.primary),
+                                const Gap(8),
+                                Icon(Icons.check, size: 22, color: cs.primary),
                               ],
                             ],
                           ),

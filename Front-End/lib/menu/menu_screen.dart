@@ -178,7 +178,14 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
           c.activePosOrderId,
         )));
     final cartState = ref.read(cartProvider);
-    final currentCustomer = ref.watch(currentCustomerProvider);
+    // Drive the header customer button off the CART's own customer — the single
+    // source of truth for this order — not the parallel currentCustomerProvider,
+    // which drifts out of sync (a reopened order showed a stale Walk-in/empty
+    // name while the cart held the right one). select() rebuilds the header only
+    // when the customer actually changes.
+    final currentCustomer = ref.watch(
+      cartProvider.select((c) => c.selectedCustomer),
+    );
     final asyncCustomers = ref.watch(selectableCustomersProvider);
     final settings = ref.watch(appSettingsProvider);
     final bookingEnabled =
@@ -227,9 +234,14 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
     });
     ref.listen(selectableCustomersProvider, (previous, next) {
       next.whenData((all) {
+        final cart = ref.read(cartProvider);
+        // A booking order carries the reservation's customer (seeded by
+        // startBookingOrder). Never auto-reset it to Walk-in — doing so was
+        // overwriting "test" with Walk-in in the header when the seed lost a
+        // race with this listener.
+        if (cart.bookingId != null) return;
         final customers = all.where((c) => c.isCustomer).toList();
-        final currentCartCustomer = ref.read(cartProvider).selectedCustomer;
-        if (currentCartCustomer == null && customers.isNotEmpty) {
+        if (cart.selectedCustomer == null && customers.isNotEmpty) {
           final walkIn = customers.firstWhere(
             (c) => c.code == 'C000',
             orElse: () => customers.first,
@@ -685,39 +697,31 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                     _MenuHeaderActionBtn(
                       icon: Icons.receipt,
                       label: 'Tax',
-                      onTap: () => ref.read(securityGuardProvider).guard(
-                        context,
-                        SecurityKeys.taxOverride,
-                        () {
-                          final cart = ref.read(cartProvider);
-                          final selectedCartItemId = cart.selectedCartItemId;
-                          if (selectedCartItemId == null) {
-                            showAppSnackbar(
+                      // Greyed out until a cart line is selected — the tax
+                      // override acts on one line, so there's nothing to change
+                      // otherwise. Same gating as Quantity and Comment (replaces
+                      // the old always-on button + "select an item" snackbar).
+                      onTap: cartState.selectedCartItemId == null
+                          ? null
+                          : () => ref.read(securityGuardProvider).guard(
                               context,
-                              ref,
-                              'Please select an item first',
-                              isError: true,
-                            );
-                            return;
-                          }
-                          final item = cart.items
-                              .where((i) => i.cartItemId == selectedCartItemId)
-                              .firstOrNull;
-                          if (item == null) {
-                            showAppSnackbar(
-                              context,
-                              ref,
-                              'Please add a product to the cart and select it',
-                              isError: true,
-                            );
-                            return;
-                          }
-                          showDialog(
-                            context: context,
-                            builder: (_) => _ItemTaxDialog(item: item),
-                          );
-                        },
-                      ),
+                              SecurityKeys.taxOverride,
+                              () {
+                                final cart = ref.read(cartProvider);
+                                final item = cart.items
+                                    .where(
+                                      (i) =>
+                                          i.cartItemId ==
+                                          cart.selectedCartItemId,
+                                    )
+                                    .firstOrNull;
+                                if (item == null) return;
+                                showDialog(
+                                  context: context,
+                                  builder: (_) => _ItemTaxDialog(item: item),
+                                );
+                              },
+                            ),
                     ),
                   if (showCommentBtn)
                     _MenuHeaderActionBtn(

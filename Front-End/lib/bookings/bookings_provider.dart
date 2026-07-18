@@ -68,6 +68,29 @@ bool hasLiveBookingForTable(
 ) =>
     liveBookingForTable(bookings, tableId, at) != null;
 
+/// Table ids a booking claims the MOMENT it exists — no time window. A booked
+/// table is held (shown Reserved, hidden from the transfer + new-booking pickers)
+/// until its booking is Completed (4), No-Show (5), or deleted; statuses 1-3
+/// (Scheduled / Arrived / In Service) all hold it. This is the "occupied on
+/// create" rule, distinct from the window-based [liveBookingForTable] used only
+/// by the walk-in gate.
+Set<int> tablesHeldByBookings(List<Booking> bookings) => {
+      for (final b in bookings)
+        if (const {1, 2, 3}.contains(b.status)) ...b.tableIds,
+    };
+
+/// The active booking holding [tableId] regardless of time (see
+/// [tablesHeldByBookings]); earliest-starting wins when several stack. Null when
+/// none. Drives the Reserved table's tap → open that reservation.
+Booking? heldBookingForTable(List<Booking> bookings, int tableId) {
+  final matches = bookings
+      .where((b) =>
+          const {1, 2, 3}.contains(b.status) && b.tableIds.contains(tableId))
+      .toList()
+    ..sort((a, b) => a.startTime.compareTo(b.startTime));
+  return matches.isEmpty ? null : matches.first;
+}
+
 /// The `localId` of the still-open order this booking already has, or null when
 /// it has none. Drives the booking's primary action: "Open Service" (resume the
 /// existing order) vs "Start Service" (create one).
@@ -114,6 +137,11 @@ final allRoomsProvider = StreamProvider.autoDispose<List<FloorPlanTable>>((ref) 
   final companyId = ref.watch(selectedCompanyProvider)?.id;
   if (companyId == null) return Stream.value(const []);
 
+  // A table is also held by an active booking, from the moment it's created —
+  // watched so the reservation appearing/clearing re-derives occupancy live.
+  final heldByBooking =
+      tablesHeldByBookings(ref.watch(allBookingsProvider).value ?? const []);
+
   // Left join: a table with no open order must still be listed (as free).
   final query = db.select(db.floorPlanTablesTable).join([
     leftOuterJoin(
@@ -140,6 +168,12 @@ final allRoomsProvider = StreamProvider.autoDispose<List<FloorPlanTable>>((ref) 
       // "Free" while still holding items.
       existing.status = order.serviceStatus > 0 ? order.serviceStatus : 1;
       existing.assignedUserId = order.userId;
+    }
+    // Reserved (4): a booking claims the table until it's completed/deleted. An
+    // in-progress order (status 1-3, set above) always wins over the reservation.
+    for (final tableId in heldByBooking) {
+      final t = byId[tableId];
+      if (t != null && t.status == 0) t.status = 4;
     }
     return byId.values.toList();
   });

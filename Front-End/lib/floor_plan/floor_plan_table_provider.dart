@@ -9,6 +9,7 @@ import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/floor_plan/floor_plan_provider.dart';
 import 'package:pos_app/floor_plan/floor_plan_table.dart';
+import 'package:pos_app/bookings/bookings_provider.dart';
 
 /// Live list of tables for the currently-active floor plan, sourced from Drift.
 ///
@@ -30,6 +31,11 @@ final tablesByFloorPlanProvider =
   if (companyId == null || activeFloorPlanId == null) {
     return const Stream.empty();
   }
+
+  // A table is also held by an active booking the moment it's created — watched
+  // so a reservation appearing/clearing re-derives occupancy live.
+  final heldByBooking =
+      tablesHeldByBookings(ref.watch(allBookingsProvider).value ?? const []);
 
   // Left join: a table with no open order must still be listed (as free).
   final query = db.select(db.floorPlanTablesTable).join([
@@ -60,6 +66,12 @@ final tablesByFloorPlanProvider =
       // "Free" while still holding items.
       existing.status = order.serviceStatus > 0 ? order.serviceStatus : 1;
       existing.assignedUserId = order.userId;
+    }
+    // Reserved (4): a booking claims the table until it's completed/deleted. An
+    // in-progress order (status 1-3, set above) always wins over the reservation.
+    for (final tableId in heldByBooking) {
+      final t = byId[tableId];
+      if (t != null && t.status == 0) t.status = 4;
     }
     return byId.values.toList();
   });

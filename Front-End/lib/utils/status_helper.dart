@@ -11,6 +11,8 @@ class ServiceStatusHelper {
         return const Color(0xFFF59E0B); // Amber/Orange
       case 3:
         return const Color(0xFF14B8A6); // Teal
+      case 4:
+        return const Color(0xFF8B5CF6); // Violet — Reserved (booking, no order)
       default:
         return Colors.blueGrey;
     }
@@ -34,6 +36,10 @@ class ServiceStatusHelper {
         return const LinearGradient(
           colors: [Color(0xFF14B8A6), Color(0xFF0D9488)],
         );
+      case 4:
+        return const LinearGradient(
+          colors: [Color(0xFF8B5CF6), Color(0xFF7C3AED)], // Reserved
+        );
       default:
         return const LinearGradient(colors: [Colors.blueGrey, Colors.grey]);
     }
@@ -49,6 +55,8 @@ class ServiceStatusHelper {
         return Icons.local_fire_department;
       case 3:
         return Icons.room_service;
+      case 4:
+        return Icons.event_seat; // Reserved
       default:
         return Icons.help_outline;
     }
@@ -64,6 +72,8 @@ class ServiceStatusHelper {
         return "In Preparation";
       case 3:
         return "In Kitchen";
+      case 4:
+        return "Reserved";
       default:
         return "Unknown";
     }
