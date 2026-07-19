@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/app_settings/app_settings_provider.dart';
+import 'package:pos_app/onboarding/onboarding_seed.dart';
 import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/menu/menu_screen.dart';
 import 'package:pos_app/menu/open_orders_screen.dart';
@@ -144,6 +145,10 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       ref.read(mainNavigationIndexProvider.notifier).state = landingIndex;
+      // Apply any feature choices made during pre-login onboarding (virtual
+      // keyboard / tables / booking) now that a company + its settings exist.
+      // Best-effort + idempotent — a no-op when nothing was parked.
+      ref.read(onboardingFeatureSeedProvider.notifier).applyToCompanySettings();
       if (settings[SettingKeys.showCashInOnStart]?.toLowerCase() == 'true') {
         Navigator.push(
           context,

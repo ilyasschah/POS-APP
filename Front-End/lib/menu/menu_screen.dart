@@ -170,13 +170,17 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
     // edit, which the CartSection owns. cartState is read (not watched) so the
     // render conditions below stay fresh via that rebuild; the tap handlers read
     // the live cart via ref.read so they never act on stale state.
-    ref.watch(cartProvider.select((c) => (
+    ref.watch(
+      cartProvider.select(
+        (c) => (
           c.serviceType,
           c.serviceStatus,
           c.selectedCartItemId,
           c.items.isEmpty,
           c.activePosOrderId,
-        )));
+        ),
+      ),
+    );
     final cartState = ref.read(cartProvider);
     // Drive the header customer button off the CART's own customer — the single
     // source of truth for this order — not the parallel currentCustomerProvider,
@@ -627,7 +631,9 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                           },
                         ).then((val) {
                           if (val != null) {
-                            ref.read(cartProvider.notifier).setServiceStatus(val);
+                            ref
+                                .read(cartProvider.notifier)
+                                .setServiceStatus(val);
                           }
                         });
                       },
@@ -756,8 +762,9 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                                           (t) => t.companyId.equals(companyId),
                                         )
                                         ..where(
-                                          (t) =>
-                                              t.productId.equals(item.productId),
+                                          (t) => t.productId.equals(
+                                            item.productId,
+                                          ),
                                         )
                                         ..where(
                                           (t) => t.syncStatus.isNotIn([
@@ -837,12 +844,11 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                                 final cashier = ref.read(currentUserProvider);
                                 final cart = ref.read(cartProvider);
                                 final cartItems = cart.items;
-                                final serviceLabel =
-                                    switch (cart.serviceType) {
-                                      0 => 'Dine In',
-                                      1 => 'Takeaway',
-                                      _ => 'Order',
-                                    };
+                                final serviceLabel = switch (cart.serviceType) {
+                                  0 => 'Dine In',
+                                  1 => 'Takeaway',
+                                  _ => 'Order',
+                                };
                                 final roundNum = cartItems.isNotEmpty
                                     ? cartItems.first.roundNumber
                                     : 1;
@@ -856,8 +862,9 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                                 // fall back to the legacy single all-items ticket
                                 // on the Kitchen printer — unchanged behaviour
                                 // until the operator opts printers in.
-                                final routing =
-                                    ref.read(printerRoutingProvider);
+                                final routing = ref.read(
+                                  printerRoutingProvider,
+                                );
                                 if (routing.hasKitchenStations) {
                                   await routing.printStationTickets(
                                     items: cartItems,
@@ -909,8 +916,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                   label: selectedWarehouse?.name ?? 'Warehouse',
                   active: selectedWarehouse != null,
                   onTap: () async {
-                    final list =
-                        warehousesAsync.value ?? const <Warehouse>[];
+                    final list = warehousesAsync.value ?? const <Warehouse>[];
                     final selected = await showWarehousePickerDialog(
                       context,
                       list,
@@ -1076,17 +1082,30 @@ class BrowserSection extends ConsumerStatefulWidget {
 }
 
 class _BrowserSectionState extends ConsumerState<BrowserSection> {
-  int _currentPage = 0;
   List<PromotionDto> _activePromos = const [];
   Map<int, double> _stockMap = const {};
   Map<int, StockControl> _stockControlMap = const {};
   String? _activeSearchMode;
   final TextEditingController _searchCtrl = TextEditingController();
+  // Drives the scrollable product/group grid; snapped back to the top whenever
+  // the browsed group or the search query changes.
+  final ScrollController _gridScrollController = ScrollController();
 
   @override
   void dispose() {
     _searchCtrl.dispose();
+    _gridScrollController.dispose();
     super.dispose();
+  }
+
+  /// Snap the product grid back to the top — used when the browsed group or the
+  /// search query changes so a fresh list never opens mid-scroll.
+  void _scrollGridToTop() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _gridScrollController.hasClients) {
+        _gridScrollController.jumpTo(0);
+      }
+    });
   }
 
   /// Called when the search field is submitted (e.g. barcode scanner sends Enter).
@@ -1469,12 +1488,10 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen(currentGroupProvider, (_, __) {
-      if (mounted) setState(() => _currentPage = 0);
-    });
-    ref.listen(searchQueryProvider, (_, __) {
-      if (mounted) setState(() => _currentPage = 0);
-    });
+    // Snap the product grid back to the top when the browsed group or the
+    // search query changes, so a new list never opens mid-scroll.
+    ref.listen(currentGroupProvider, (_, __) => _scrollGridToTop());
+    ref.listen(searchQueryProvider, (_, __) => _scrollGridToTop());
     // Watch (don't just listen): ref.listen never delivers the provider's
     // already-resolved value, so when promotions/stock were loaded before this
     // grid mounted (the parent keeps them alive), the listener never fired and
@@ -1551,16 +1568,8 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
 
     final showSearchBtn =
         settings[SettingKeys.showSearchBtn]?.toLowerCase() != 'false';
+    // Respect the configured column count; the full list scrolls (no paging).
     final cols = int.tryParse(settings[SettingKeys.menuGridCols] ?? '4') ?? 4;
-    final rows = int.tryParse(settings[SettingKeys.menuGridRows] ?? '4') ?? 4;
-    final itemsPerPage = cols * rows;
-    final totalPages = itemsToDisplay.isEmpty
-        ? 1
-        : ((itemsToDisplay.length + itemsPerPage - 1) ~/ itemsPerPage);
-    final safePage = _currentPage.clamp(0, totalPages - 1);
-    final pageStart = safePage * itemsPerPage;
-    final pageEnd = (pageStart + itemsPerPage).clamp(0, itemsToDisplay.length);
-    final pageItems = itemsToDisplay.sublist(pageStart, pageEnd);
 
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
@@ -1740,45 +1749,31 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
                     ],
                   ),
                 )
-              : LayoutBuilder(
-                  builder: (ctx, constraints) {
-                    final maxExtent = (constraints.maxWidth / cols).clamp(
-                      100.0,
-                      240.0,
-                    );
-                    return GridView.builder(
-                      padding: const EdgeInsets.all(12),
-                      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                        maxCrossAxisExtent: maxExtent,
-                        childAspectRatio: 0.82,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
-                      ),
-                      itemCount: pageItems.length,
-                      itemBuilder: (context, index) {
-                        final item = pageItems[index];
-                        Widget card;
-                        if (item is ProductGroup) {
-                          card = _buildGroupCard(context, ref, item);
-                        } else if (item is Product) {
-                          card = _buildProductCard(context, ref, item);
-                        } else {
-                          return const SizedBox();
-                        }
-                        return card;
-                      },
-                    );
+              : GridView.builder(
+                  controller: _gridScrollController,
+                  padding: const EdgeInsets.all(12),
+                  // Fixed column count from settings; the full list scrolls
+                  // vertically (the pagination bar was removed).
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: cols,
+                    childAspectRatio: 0.82,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                  ),
+                  itemCount: itemsToDisplay.length,
+                  itemBuilder: (context, index) {
+                    final item = itemsToDisplay[index];
+                    Widget card;
+                    if (item is ProductGroup) {
+                      card = _buildGroupCard(context, ref, item);
+                    } else if (item is Product) {
+                      card = _buildProductCard(context, ref, item);
+                    } else {
+                      return const SizedBox();
+                    }
+                    return card;
                   },
                 ),
-        ),
-
-        _PaginationBar(
-          currentPage: safePage,
-          totalPages: totalPages,
-          onFirst: () => setState(() => _currentPage = 0),
-          onPrevious: () => setState(() => _currentPage = safePage - 1),
-          onNext: () => setState(() => _currentPage = safePage + 1),
-          onLast: () => setState(() => _currentPage = totalPages - 1),
         ),
       ],
     );
@@ -2136,123 +2131,6 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// PAGINATION BAR
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _PaginationBar extends StatelessWidget {
-  final int currentPage;
-  final int totalPages;
-  final VoidCallback onFirst;
-  final VoidCallback onPrevious;
-  final VoidCallback onNext;
-  final VoidCallback onLast;
-
-  const _PaginationBar({
-    required this.currentPage,
-    required this.totalPages,
-    required this.onFirst,
-    required this.onPrevious,
-    required this.onNext,
-    required this.onLast,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final isFirst = currentPage == 0;
-    final isLast = currentPage >= totalPages - 1;
-
-    return Container(
-      height: 52,
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest,
-        border: Border(
-          top: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.3)),
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          _NavButton(
-            icon: PhosphorIconsRegular.skipBack,
-            tooltip: 'First',
-            onTap: isFirst ? null : onFirst,
-          ),
-          _NavButton(
-            icon: PhosphorIconsRegular.caretLeft,
-            tooltip: 'Previous',
-            onTap: isFirst ? null : onPrevious,
-          ),
-          const Gap(12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            decoration: BoxDecoration(
-              color: cs.surface,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: cs.outlineVariant.withValues(alpha: 0.5),
-              ),
-            ),
-            child: Text(
-              '${currentPage + 1} / $totalPages',
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: cs.onSurface,
-              ),
-            ),
-          ),
-          const Gap(12),
-          _NavButton(
-            icon: PhosphorIconsRegular.caretRight,
-            tooltip: 'Next',
-            onTap: isLast ? null : onNext,
-          ),
-          _NavButton(
-            icon: PhosphorIconsRegular.skipForward,
-            tooltip: 'Last',
-            onTap: isLast ? null : onLast,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _NavButton extends StatelessWidget {
-  final IconData icon;
-  final String tooltip;
-  final VoidCallback? onTap;
-
-  const _NavButton({
-    required this.icon,
-    required this.tooltip,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final enabled = onTap != null;
-
-    return Tooltip(
-      message: tooltip,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-          child: PhosphorIcon(
-            icon,
-            size: 18,
-            color: enabled ? cs.primary : cs.onSurface.withValues(alpha: 0.25),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class CartSection extends ConsumerStatefulWidget {
   const CartSection({super.key});
 
@@ -2354,8 +2232,11 @@ class _CartSectionState extends ConsumerState<CartSection> {
         icon: CircleAvatar(
           radius: 32,
           backgroundColor: Theme.of(ctx).colorScheme.surfaceContainerHighest,
-          child: Icon(Icons.question_mark,
-              size: 32, color: Theme.of(ctx).colorScheme.onSurfaceVariant),
+          child: Icon(
+            Icons.question_mark,
+            size: 32,
+            color: Theme.of(ctx).colorScheme.onSurfaceVariant,
+          ),
         ),
         title: const Text('Void order'),
         content: const Text('Are you sure you want to void this order?'),
@@ -3069,12 +2950,18 @@ class _CartSectionState extends ConsumerState<CartSection> {
                       "Item Discounts",
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 16, color: context.successColor),
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: context.successColor,
+                      ),
                     ),
                     value: Text(
                       "-${discountTotal.toStringAsFixed(2)} $sym",
                       textAlign: TextAlign.right,
-                      style: TextStyle(fontSize: 16, color: context.successColor),
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: context.successColor,
+                      ),
                     ),
                   ),
                 ),
@@ -3089,12 +2976,18 @@ class _CartSectionState extends ConsumerState<CartSection> {
                       "Customer Discount",
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 16, color: context.successColor),
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: context.successColor,
+                      ),
                     ),
                     value: Text(
                       "-${cartNotifier.customerDiscountAmount.toStringAsFixed(2)} $sym",
                       textAlign: TextAlign.right,
-                      style: TextStyle(fontSize: 16, color: context.successColor),
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: context.successColor,
+                      ),
                     ),
                   ),
                 ),
@@ -3106,12 +2999,18 @@ class _CartSectionState extends ConsumerState<CartSection> {
                       "Cart Discount",
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 16, color: context.successColor),
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: context.successColor,
+                      ),
                     ),
                     value: Text(
                       "-${cartNotifier.manualCartDiscountAmount.toStringAsFixed(2)} $sym",
                       textAlign: TextAlign.right,
-                      style: TextStyle(fontSize: 16, color: context.successColor),
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: context.successColor,
+                      ),
                     ),
                   ),
                 ),
@@ -3123,12 +3022,18 @@ class _CartSectionState extends ConsumerState<CartSection> {
                       "Total Promotional Discount",
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 16, color: context.warningColor),
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: context.warningColor,
+                      ),
                     ),
                     value: Text(
                       "-${cartNotifier.promotionalDiscountTotal.toStringAsFixed(2)} $sym",
                       textAlign: TextAlign.right,
-                      style: TextStyle(fontSize: 16, color: context.warningColor),
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: context.warningColor,
+                      ),
                     ),
                   ),
                 ),
@@ -3581,6 +3486,7 @@ Future<bool> _showAgeRestrictionDialog(BuildContext context, int minAge) async {
 class _ProductCommentsDialog extends StatefulWidget {
   final String productName;
   final List<ProductComment> predefinedComments;
+
   /// The line's current comment, when editing one already in the cart. Its parts
   /// are matched back onto the predefined switches; anything unmatched is the
   /// operator's own text and lands in the custom field.

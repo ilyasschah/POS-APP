@@ -16,6 +16,9 @@ import 'package:pos_app/settings/local_ui_prefs.dart';
 import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/app_settings/app_settings_provider.dart';
 import 'package:pos_app/core/pos_virtual_keyboard.dart';
+import 'package:pos_app/core/device_theme_mode_provider.dart';
+import 'package:pos_app/onboarding/onboarding_prefs.dart';
+import 'package:pos_app/onboarding/onboarding_screen.dart';
 import 'package:window_manager/window_manager.dart';
 
 void main() async {
@@ -213,17 +216,19 @@ class _MyAppState extends ConsumerState<MyApp> {
   @override
   Widget build(BuildContext context) {
     final settings = ref.watch(appSettingsProvider);
-    final prefs = ref.watch(sharedPreferencesProvider);
 
     final isRtl =
         settings[SettingKeys.writingDirection]?.toUpperCase() == 'RTL';
 
-    // Read synchronously from SharedPreferences first to stop the brown flash
+    // Device-local accent wins (boot cache — stops the brown flash), read
+    // reactively so the onboarding accent picker recolours the app live.
     final savedHex =
-        prefs.getString('boot_theme_color') ??
+        ref.watch(deviceAccentColorProvider) ??
         settings[SettingKeys.themeAccentColor];
+    // Device-local override wins (boot cache — prevents theme flash), now read
+    // reactively so the onboarding theme picker restyles the app live.
     final themeString =
-        prefs.getString('boot_theme_mode') ??
+        ref.watch(deviceThemeModeProvider) ??
         settings[SettingKeys.themeMode] ??
         'dark';
 
@@ -236,6 +241,11 @@ class _MyAppState extends ConsumerState<MyApp> {
     // multiplies every Text in the tree, including ones with a hardcoded
     // fontSize.
     final fontScale = ref.watch(fontScaleProvider);
+
+    // First-run gate. Device-local, read synchronously (no async flash). When
+    // the placeholder's "Get Started" flips this, MyApp rebuilds straight into
+    // the normal boot flow below — no manual navigation.
+    final onboarded = ref.watch(onboardingCompleteProvider);
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
@@ -252,24 +262,26 @@ class _MyAppState extends ConsumerState<MyApp> {
           child: VirtualKeyboardHost(child: child!),
         ),
       ),
-      home: FutureBuilder<_BootDecision>(
-        future: _bootFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting ||
-              !snapshot.hasData) {
-            return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            );
-          }
-          final decision = snapshot.data!;
-          if (!decision.registered) return const MasterLoginScreen();
-          final license = decision.license;
-          if (license != null && license.blocked) {
-            return SubscriptionBlockedScreen(evaluation: license);
-          }
-          return const LoginScreen();
-        },
-      ),
+      home: onboarded
+          ? FutureBuilder<_BootDecision>(
+              future: _bootFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting ||
+                    !snapshot.hasData) {
+                  return const Scaffold(
+                    body: Center(child: CircularProgressIndicator()),
+                  );
+                }
+                final decision = snapshot.data!;
+                if (!decision.registered) return const MasterLoginScreen();
+                final license = decision.license;
+                if (license != null && license.blocked) {
+                  return SubscriptionBlockedScreen(evaluation: license);
+                }
+                return const LoginScreen();
+              },
+            )
+          : const OnboardingScreen(),
     );
   }
 }

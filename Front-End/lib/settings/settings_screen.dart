@@ -45,6 +45,7 @@ import 'package:pos_app/stock/warehouse_provider.dart';
 import 'package:pos_app/tax/tax_provider.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
 import 'package:pos_app/settings/device_identity.dart';
+import 'package:pos_app/onboarding/onboarding_prefs.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -6148,6 +6149,54 @@ class _AboutTab extends ConsumerWidget {
                 value: settings[SettingKeys.dbAutoBackup] == 'true'
                     ? 'On'
                     : 'Off',
+              ),
+            ],
+          ),
+
+          // ── Onboarding ────────────────────────────────────────────────────
+          _SettingsCard(
+            title: 'ONBOARDING',
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Replay the first-run welcome tour. It shows again the '
+                        'next time you open the app on this device.',
+                        style: TextStyle(
+                          color: Theme.of(context).hintColor,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    OutlinedButton.icon(
+                      icon: const Icon(Icons.restart_alt, size: 18),
+                      label: const Text('Replay'),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(0, 44),
+                      ),
+                      // Reset only — the app replaces the root route after login
+                      // (pushAndRemoveUntil to MainLayout), so re-showing it now
+                      // would need a fragile stack rebuild. Clearing the flag lets
+                      // the boot gate show it cleanly on the next launch.
+                      onPressed: () async {
+                        await ref
+                            .read(onboardingCompleteProvider.notifier)
+                            .reset();
+                        if (context.mounted) {
+                          showAppSnackbar(
+                            context,
+                            ref,
+                            'Onboarding will show the next time you open the app.',
+                          );
+                        }
+                      },
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
