@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:pos_app/api/api_client.dart';
 import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/core/status_colors.dart';
@@ -30,6 +31,7 @@ import 'package:pos_app/barcode/barcode_provider.dart';
 import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/app_settings/app_settings_provider.dart';
 import 'package:pos_app/product/product_import_screen.dart';
+import 'package:pos_app/settings/local_ui_prefs.dart';
 import 'package:pos_app/sync/sync_notifier.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
 import 'package:uuid/uuid.dart';
@@ -587,7 +589,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
         children: [
           // LEFT SIDEBAR
           Container(
-            width: 280,
+            width: ref.watch(groupSidebarWidthProvider),
             color: theme.colorScheme.surface,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -603,7 +605,30 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
               ],
             ),
           ),
-          const VerticalDivider(width: 1, thickness: 1),
+          // Drag handle — same interaction as the cart panel on the menu
+          // screen: live resize on drag, one write to on-device storage when
+          // the drag settles. Local only, so it never affects another terminal.
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onHorizontalDragUpdate: (details) {
+              final maxWidth = MediaQuery.of(context).size.width * 0.5;
+              // Sidebar is on the LEFT, so dragging right grows it.
+              final newWidth =
+                  ref.read(groupSidebarWidthProvider) + details.delta.dx;
+              ref.read(groupSidebarWidthProvider.notifier).set(
+                  newWidth > maxWidth ? maxWidth : newWidth);
+            },
+            onHorizontalDragEnd: (_) {
+              ref.read(groupSidebarWidthProvider.notifier).persist();
+            },
+            child: const MouseRegion(
+              cursor: SystemMouseCursors.resizeLeftRight,
+              child: SizedBox(
+                width: 8,
+                child: VerticalDivider(width: 8, thickness: 1),
+              ),
+            ),
+          ),
           // RIGHT AREA
           Expanded(
             child: _ProductListContent(
@@ -814,20 +839,43 @@ class _ProductListContent extends ConsumerWidget {
                 final ImageProvider? provider = p.imageFile != null
                     ? FileImage(p.imageFile!)
                     : (p.imageBytes != null ? MemoryImage(p.imageBytes!) : null);
+                // No image → tint the placeholder with the colour marker so a
+                // coloured product reads as coloured here too, not grey.
+                final marker = p.markerColor;
                 return DataCell(Container(
                   width: 45,
                   height: 45,
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest,
+                    color: provider == null && marker != null
+                        ? marker.withValues(alpha: 0.20)
+                        : theme.colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(6),
                     image: provider != null
                         ? DecorationImage(image: provider, fit: BoxFit.cover)
                         : null,
                   ),
                   child: provider == null
-                      ? Icon(Icons.inventory_2, color: theme.hintColor)
+                      ? PhosphorIcon(PhosphorIconsRegular.forkKnife,
+                          color: marker != null
+                              ? marker.withValues(alpha: 0.9)
+                              : theme.hintColor)
                       : null,
                 ));
+              case 'color':
+                final marker = p.markerColor;
+                return DataCell(marker == null
+                    ? const Text('-')
+                    : Container(
+                        width: 22,
+                        height: 22,
+                        decoration: BoxDecoration(
+                          color: marker,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                              color: theme.colorScheme.outlineVariant,
+                              width: 1),
+                        ),
+                      ));
               case 'code':
                 return DataCell(Text(p.code ?? '-'));
               case 'name':
@@ -1471,6 +1519,13 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
       ]);
     }
 
+    // Appearance sits last (right after Comments when editing). Tied to the
+    // same condition as General so creating a product still exposes it.
+    if (!widget.isPostCreation) {
+      dialogTabs.add(const Tab(text: "Appearance"));
+      dialogTabViews.add(_buildAppearanceTab());
+    }
+
     return DefaultTabController(
       length: dialogTabs.length,
       child: AlertDialog(
@@ -1730,31 +1785,56 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                       SwitchListTile(
                           title: const Text("Is Enabled (Visible)"),
                           value: _isEnabled,
-                          activeThumbColor: context.successColor,
                           onChanged: (v) => setState(() => _isEnabled = v),
                           visualDensity: VisualDensity.compact),
                     ],
                   ),
                 ),
-                const SizedBox(height: 24),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Colour marker + image live in their own tab so the General tab stays a
+  // pure data form. Shown whenever General is (i.e. not in post-creation),
+  // otherwise a new product could never be given a colour or picture.
+  Widget _buildAppearanceTab() {
+    final theme = Theme.of(context);
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Text("Product Color Marker",
                     style: TextStyle(
                         fontWeight: FontWeight.bold, color: theme.hintColor)),
-                const SizedBox(height: 8),
+                const SizedBox(height: 4),
+                Text(
+                    "Tints the product tile in the POS menu and the products list.",
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: theme.hintColor)),
+                const SizedBox(height: 12),
                 Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+                  spacing: 12,
+                  runSpacing: 12,
                   children: _colorPalette.map((color) {
                     final hex = _colorToHex(color);
                     final isSelected =
                         _selectedHexColor.toUpperCase() == hex.toUpperCase();
                     return InkWell(
                       onTap: () => setState(() => _selectedHexColor = hex),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(24),
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
-                        width: 30,
-                        height: 30,
+                        width: 44,
+                        height: 44,
                         decoration: BoxDecoration(
                             color: color,
                             shape: BoxShape.circle,
@@ -1773,22 +1853,33 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                             ]),
                         child: isSelected
                             ? const Icon(Icons.check,
-                                color: Colors.white, size: 16)
+                                color: Colors.white, size: 20)
                             : null,
                       ),
                     );
                   }).toList(),
                 ),
-                const SizedBox(height: 24),
+              ],
+            ),
+          ),
+          const SizedBox(width: 32),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Text("Product Image",
                     style: TextStyle(
                         fontWeight: FontWeight.bold, color: theme.hintColor)),
-                const SizedBox(height: 8),
+                const SizedBox(height: 4),
+                Text("Replaces the placeholder icon on the POS menu tile.",
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: theme.hintColor)),
+                const SizedBox(height: 12),
                 Row(
                   children: [
                     Container(
-                      width: 100,
-                      height: 100,
+                      width: 140,
+                      height: 140,
                       decoration: BoxDecoration(
                           color: theme.colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(8),
@@ -1800,8 +1891,8 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                               child: Image.memory(
                                   base64Decode(_selectedImageBase64!),
                                   fit: BoxFit.cover))
-                          : const Icon(Icons.image,
-                              color: Colors.grey, size: 30),
+                          : PhosphorIcon(PhosphorIconsRegular.forkKnife,
+                              color: theme.hintColor, size: 44),
                     ),
                     const SizedBox(width: 16),
                     Column(

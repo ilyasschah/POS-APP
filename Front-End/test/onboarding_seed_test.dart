@@ -34,6 +34,16 @@ void main() {
     expect(seed.tables, isFalse);
     expect(seed.virtualKeyboard, isTrue);
     expect(seed.booking, isNull); // untouched
+    expect(seed.layoutIsGrid, isNull); // untouched
+    expect(seed.isEmpty, isFalse);
+  });
+
+  test('menu layout choice is stored and reflected in state', () async {
+    final c = await boot();
+    await c.read(onboardingFeatureSeedProvider.notifier).setLayoutIsGrid(true);
+
+    final seed = c.read(onboardingFeatureSeedProvider);
+    expect(seed.layoutIsGrid, isTrue);
     expect(seed.isEmpty, isFalse);
   });
 

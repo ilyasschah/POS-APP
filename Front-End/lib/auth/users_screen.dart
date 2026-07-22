@@ -653,7 +653,6 @@ class _EnableToggleState extends ConsumerState<_EnableToggle> {
     return Switch(
       value: widget.user.isEnabled,
       onChanged: (_) => _toggle(),
-      activeThumbColor: context.successColor,
     );
   }
 }

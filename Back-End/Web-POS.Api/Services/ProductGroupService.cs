@@ -46,7 +46,12 @@ namespace Api.Services
                     throw new InvalidOperationException($"A product group named '{request.Name}' already exists.");
             }
 
-            int? targetParentId = request.ParentGroupId ?? entity.ParentGroupId;
+            // The client always sends ParentGroupId explicitly — an id for a
+            // parent, null for the root — so it is authoritative. The old
+            // `?? entity.ParentGroupId` fallback read a null as "unchanged",
+            // which made moving a group back to the root impossible (it silently
+            // kept the previous parent, and the next pull reverted the client).
+            int? targetParentId = request.ParentGroupId;
             if (request.ParentGroupId.HasValue && request.ParentGroupId.Value != entity.ParentGroupId)
             {
                 if (request.ParentGroupId.Value == request.Id)

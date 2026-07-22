@@ -137,6 +137,9 @@ class SettingKeys {
   static const themeAccentColor = 'Theme_AccentColor';
 
   // Menu Grid
+  // 'List' = continuous vertical scroll (Columns only, no pagination).
+  // 'Grid' = paged Columns × Rows with a first/prev/next/last bar.
+  static const menuLayoutMode = 'Menu_Layout_Mode';
   static const menuGridCols = 'Menu_Grid_Cols';
   static const menuGridRows = 'Menu_Grid_Rows';
 
@@ -151,11 +154,11 @@ class SettingKeys {
   static const requireReasonOnVoid          = 'Void.RequireReason';
   static const trackUnconfirmedVoidedItems  = 'Void.TrackUnconfirmed';
 
-  // Industry Pack workflow
+  // Service type / status toggles. (The old industry "packs" that supplied
+  // canned order types per business vertical were dropped — the custom
+  // service type/status lists below replaced them entirely.)
   static const featureServiceTypeEnabled   = 'Feature_ServiceType_Enabled';
-  static const appServiceTypePack          = 'App_ServiceType_Pack';
   static const featureServiceStatusEnabled = 'Feature_ServiceStatus_Enabled';
-  static const appServiceStatusPack        = 'App_ServiceStatus_Pack';
 
   // Custom service types (JSON array of {id, name, prefix})
   static const customServiceTypes = 'Pos.CustomServiceTypes';
@@ -434,6 +437,7 @@ const Map<String, String> kSettingDefaults = {
   SettingKeys.scaleBarcodePrintsPrice:   'false',
   SettingKeys.themeMode: 'dark',
   SettingKeys.themeAccentColor: '#FF5733',
+  SettingKeys.menuLayoutMode: 'List',
   SettingKeys.menuGridCols: '4',
   SettingKeys.menuGridRows: '4',
   SettingKeys.featureFloorPlanEnabled:     'true',
@@ -446,9 +450,7 @@ const Map<String, String> kSettingDefaults = {
   SettingKeys.requireReasonOnVoid:         'false',
   SettingKeys.trackUnconfirmedVoidedItems: 'true',
   SettingKeys.featureServiceTypeEnabled:   'true',
-  SettingKeys.appServiceTypePack:          'Restaurant',
   SettingKeys.featureServiceStatusEnabled: 'true',
-  SettingKeys.appServiceStatusPack:        'Restaurant',
   SettingKeys.customServiceTypes:
       '[{"id":0,"name":"Dine-In","prefix":"ORDER"},'
       '{"id":1,"name":"Takeaway","prefix":"TAKEAWAY"},'

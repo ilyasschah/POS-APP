@@ -29,6 +29,7 @@ class ProductColumnDef {
 /// row — no network call is involved in deciding what to show.
 const kProductColumns = <ProductColumnDef>[
   ProductColumnDef('image', 'Image', defaultVisible: true),
+  ProductColumnDef('color', 'Color'),
   ProductColumnDef('code', 'Code', defaultVisible: true),
   ProductColumnDef('name', 'Name', defaultVisible: true, mandatory: true),
   ProductColumnDef('category', 'Category', defaultVisible: true),

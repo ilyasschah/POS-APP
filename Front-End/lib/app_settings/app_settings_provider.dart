@@ -66,17 +66,8 @@ class AppSettingsNotifier extends Notifier<Map<String, String>> {
 
   bool get serviceTypeEnabled => getBool(SettingKeys.featureServiceTypeEnabled);
 
-  String get serviceTypePack => get(SettingKeys.appServiceTypePack).isNotEmpty
-      ? get(SettingKeys.appServiceTypePack)
-      : 'Restaurant';
-
   bool get serviceStatusEnabled =>
       getBool(SettingKeys.featureServiceStatusEnabled);
-
-  String get serviceStatusPack =>
-      get(SettingKeys.appServiceStatusPack).isNotEmpty
-      ? get(SettingKeys.appServiceStatusPack)
-      : 'Restaurant';
 
   List<CustomServiceType> get customServiceTypes =>
       CustomServiceType.listFromJson(get(SettingKeys.customServiceTypes));

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/onboarding/onboarding_prefs.dart';
 import 'package:pos_app/onboarding/widgets/activity_slide.dart';
 import 'package:pos_app/onboarding/widgets/features_slide.dart';
+import 'package:pos_app/onboarding/widgets/layout_slide.dart';
 import 'package:pos_app/onboarding/widgets/onboarding_controls.dart';
 import 'package:pos_app/onboarding/widgets/quick_start_slide.dart';
 import 'package:pos_app/onboarding/widgets/setup_slide.dart';
@@ -30,6 +31,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     FeaturesSlide(),
     QuickStartSlide(),
     SetupSlide(),
+    LayoutSlide(),
     ActivitySlide(),
   ];
 

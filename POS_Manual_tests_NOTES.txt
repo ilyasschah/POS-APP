@@ -1,1 +1,3 @@
 POS NOTES
+arabic and FR
+how to make an installtion and what the app need form the OS are required like is it needd a version of .net run time to be installed 

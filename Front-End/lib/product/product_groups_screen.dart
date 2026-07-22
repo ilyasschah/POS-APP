@@ -7,6 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pos_app/api/api_client.dart';
+import 'package:pos_app/app_settings/app_settings_model.dart';
+import 'package:pos_app/app_settings/app_settings_provider.dart';
 import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/database/app_database.dart';
@@ -188,7 +190,25 @@ class _ProductGroupsScreenState extends ConsumerState<ProductGroupsScreen> {
         await (db.delete(db.productGroupsTable)
               ..where((t) => t.id.equals(group.id)))
             .go();
-      } on DioException {
+      } on DioException catch (e) {
+        final status = e.response?.statusCode ?? 0;
+        if (status >= 400 && status < 500) {
+          // The server refused (e.g. still referenced by products/sub-groups).
+          // Undo the local soft-delete so the group doesn't disappear from the
+          // tree only to reappear on the next sync, and say why.
+          final msg = parseApiError(e);
+          await (db.update(db.productGroupsTable)
+                ..where((t) => t.id.equals(group.id)))
+              .write(const ProductGroupsTableCompanion(
+            syncStatus: Value('synced'),
+          ));
+          if (ctx.mounted) {
+            showAppSnackbar(
+                ctx, ref, 'Could not delete "${group.name}": $msg',
+                isError: true);
+          }
+          return;
+        }
         // Offline — row stays pending_delete; SyncManager retries later.
       }
     }
@@ -720,6 +740,23 @@ class _GroupEditorPanelState extends ConsumerState<_GroupEditorPanel>
     final existingImagePath =
         isEditing ? widget.existingGroup!.localImagePath : null;
 
+    // The panel/dialog is closed before the API call, so its own context and
+    // `ref` are gone by the time a failure comes back. Capture the ROOT
+    // navigator's context (which outlives the dialog) and the toast prefs now,
+    // so errors can still be surfaced with the app's normal styling.
+    final rootCtx = Navigator.of(context, rootNavigator: true).context;
+    final toastSettings = ref.read(appSettingsProvider);
+    final toastSeconds =
+        int.tryParse(toastSettings[SettingKeys.messageDuration] ?? '3') ?? 3;
+    final toastPosition =
+        toastSettings[SettingKeys.messagePosition] ?? 'Bottom';
+
+    void notify(String message, {bool isError = false}) {
+      if (!rootCtx.mounted) return;
+      showAppSnackbarRaw(rootCtx, message,
+          isError: isError, duration: toastSeconds, position: toastPosition);
+    }
+
     setState(() { _isLoading = true; _errorMessage = null; });
 
     // ── 1. Save image to disk (if user picked one) ───────────────────────────
@@ -812,11 +849,41 @@ class _GroupEditorPanelState extends ConsumerState<_GroupEditorPanel>
                   ),
                 );
           });
+        } else {
+          // 2xx but no id came back — the row stays pending_create and the next
+          // sync would POST it again. Surface it instead of failing silently.
+          notify(
+            'Saved "$name" locally, but the server did not return an id. '
+            'It will be re-sent on the next sync.',
+            isError: true,
+          );
         }
       }
-    } on DioException {
-      // Offline — row stays pending until SyncManager pushPendingProductGroupOps.
-    } catch (_) {}
+    } on DioException catch (e) {
+      // Tell "the server refused it" apart from "the server wasn't reachable" —
+      // they need very different handling, and silently swallowing both is what
+      // made a rejected save look identical to a successful one.
+      final status = e.response?.statusCode ?? 0;
+      if (status >= 400 && status < 500) {
+        // Rejected (validation, duplicate name, invalid parent…). Keep the local
+        // edit, flag the row so the tree shows it as unsynced, and say why. The
+        // pull skips non-synced rows, so the change is preserved, not reverted.
+        final msg = parseApiError(e);
+        await (db.update(db.productGroupsTable)
+              ..where((t) => t.id.equals(tempId)))
+            .write(ProductGroupsTableCompanion(
+          syncStatus: const Value('sync_failed'),
+          syncError: Value(msg),
+        ));
+        notify('Could not save "$name": $msg', isError: true);
+      } else {
+        // Unreachable/timeout — expected offline. The row stays pending and
+        // SyncManager.pushPendingProductGroupOps retries it later.
+        notify('"$name" saved offline — it will sync when the server is back.');
+      }
+    } catch (e) {
+      notify('Could not save "$name": ${parseApiError(e)}', isError: true);
+    }
   }
 
   Future<void> _saveAssignments() async {

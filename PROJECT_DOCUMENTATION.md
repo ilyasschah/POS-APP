@@ -192,11 +192,18 @@ self-defeating: the backend's Service preset set `Feature_FloorPlan_Enabled = fa
 so the one screen it affected was hidden from the companies that had it set. Its client default
 (`FB`) and server seed (`Service`) also contradicted each other.
 
+The **Industry Packs** that replaced it (`App_ServiceType_Pack` / `App_ServiceStatus_Pack`, with
+hardcoded Restaurant/Salon/Hotel presets in `industry_packs.dart`) were themselves **removed on
+2026-07-22** for the same reason: the keys were seeded and stored, but the `IndustryPacks` class and
+the `serviceTypePack` / `serviceStatusPack` getters had no callers anywhere in the app. The custom
+service type/status lists had already superseded them.
+
 Industry adaptation now lives in two orthogonal places:
 - **Feature toggles** — `Feature_FloorPlan_Enabled`, `Feature_Booking_Enabled`: whether a
   capability exists at all.
-- **Industry Packs** — `App_ServiceType_Pack` / `App_ServiceStatus_Pack` (Restaurant, Salon, …)
-  plus the custom service type/status lists.
+- **Custom lists** — `Pos.CustomServiceTypes` / `Pos.CustomServiceStatuses`, gated by
+  `Feature_ServiceType_Enabled` / `Feature_ServiceStatus_Enabled`: what the order types and
+  statuses actually are.
 
 > ⚠️ **`Product.isService` is unrelated** and must never be swept up with this. It marks a product
 > as a service so stock deduction is skipped (see the inventory rules in `CLAUDE.md`). It only ever

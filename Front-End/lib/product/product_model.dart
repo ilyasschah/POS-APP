@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:flutter/material.dart';
 import 'package:pos_app/database/app_database.dart';
 
 class Product {
@@ -171,5 +172,22 @@ class Product {
     if (localImagePath == null || localImagePath!.isEmpty) return null;
     final f = File(localImagePath!);
     return f.existsSync() ? f : null;
+  }
+
+  /// The product's colour marker parsed to a [Color], or null when it is unset
+  /// — 'Transparent', empty, or the #000000 editor-default — so callers fall
+  /// back to a neutral theme colour instead of painting every product
+  /// black/grey.
+  Color? get markerColor {
+    final c = color.trim();
+    if (c.isEmpty || c.toLowerCase() == 'transparent') return null;
+    if (c.startsWith('#') && c.length == 7) {
+      try {
+        final rgb = int.parse(c.substring(1), radix: 16);
+        if (rgb == 0x000000) return null; // editor default → treat as unset
+        return Color(rgb + 0xFF000000);
+      } catch (_) {}
+    }
+    return null;
   }
 }

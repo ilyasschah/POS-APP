@@ -1082,12 +1082,14 @@ class BrowserSection extends ConsumerStatefulWidget {
 }
 
 class _BrowserSectionState extends ConsumerState<BrowserSection> {
+  // Current page in the paged Grid layout (ignored in the scrollable List one).
+  int _currentPage = 0;
   List<PromotionDto> _activePromos = const [];
   Map<int, double> _stockMap = const {};
   Map<int, StockControl> _stockControlMap = const {};
   String? _activeSearchMode;
   final TextEditingController _searchCtrl = TextEditingController();
-  // Drives the scrollable product/group grid; snapped back to the top whenever
+  // Drives the scrollable List-layout grid; snapped back to the top whenever
   // the browsed group or the search query changes.
   final ScrollController _gridScrollController = ScrollController();
 
@@ -1098,9 +1100,11 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
     super.dispose();
   }
 
-  /// Snap the product grid back to the top — used when the browsed group or the
-  /// search query changes so a fresh list never opens mid-scroll.
-  void _scrollGridToTop() {
+  /// Reset the browse position when the group or search query changes: the
+  /// paged Grid layout jumps back to page 1, the scrollable List layout to the
+  /// top — so a fresh list never opens mid-scroll or mid-page.
+  void _resetBrowsePosition() {
+    if (mounted && _currentPage != 0) setState(() => _currentPage = 0);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && _gridScrollController.hasClients) {
         _gridScrollController.jumpTo(0);
@@ -1488,10 +1492,9 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
 
   @override
   Widget build(BuildContext context) {
-    // Snap the product grid back to the top when the browsed group or the
-    // search query changes, so a new list never opens mid-scroll.
-    ref.listen(currentGroupProvider, (_, __) => _scrollGridToTop());
-    ref.listen(searchQueryProvider, (_, __) => _scrollGridToTop());
+    // Reset to page 1 / scroll top when the browsed group or search changes.
+    ref.listen(currentGroupProvider, (_, __) => _resetBrowsePosition());
+    ref.listen(searchQueryProvider, (_, __) => _resetBrowsePosition());
     // Watch (don't just listen): ref.listen never delivers the provider's
     // already-resolved value, so when promotions/stock were loaded before this
     // grid mounted (the parent keeps them alive), the listener never fired and
@@ -1568,8 +1571,26 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
 
     final showSearchBtn =
         settings[SettingKeys.showSearchBtn]?.toLowerCase() != 'false';
-    // Respect the configured column count; the full list scrolls (no paging).
+    // Layout mode: 'Grid' pages Columns × Rows with a first/prev/next/last bar;
+    // 'List' scrolls the whole set using only the column count.
+    final isGridLayout =
+        settings[SettingKeys.menuLayoutMode]?.toLowerCase() == 'grid';
     final cols = int.tryParse(settings[SettingKeys.menuGridCols] ?? '4') ?? 4;
+    final rows = int.tryParse(settings[SettingKeys.menuGridRows] ?? '4') ?? 4;
+
+    // Paged Grid layout only: slice the full list into Columns × Rows pages.
+    final itemsPerPage = cols * rows;
+    final totalPages = itemsToDisplay.isEmpty
+        ? 1
+        : ((itemsToDisplay.length + itemsPerPage - 1) ~/ itemsPerPage);
+    final safePage = _currentPage.clamp(0, totalPages - 1);
+    // What renders right now: one page in Grid layout, everything in List.
+    final visibleItems = isGridLayout
+        ? itemsToDisplay.sublist(
+            safePage * itemsPerPage,
+            ((safePage + 1) * itemsPerPage).clamp(0, itemsToDisplay.length),
+          )
+        : itemsToDisplay;
 
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
@@ -1749,34 +1770,73 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
                     ],
                   ),
                 )
+              : isGridLayout
+              ? LayoutBuilder(
+                  builder: (ctx, constraints) {
+                    // Paged Grid: derive the aspect ratio so exactly
+                    // Columns × Rows fit the viewport — no inner scroll, the
+                    // nav bar moves between pages.
+                    const pad = 12.0;
+                    const gap = 10.0;
+                    final cellW =
+                        (constraints.maxWidth - pad * 2 - gap * (cols - 1)) /
+                        cols;
+                    final cellH =
+                        (constraints.maxHeight - pad * 2 - gap * (rows - 1)) /
+                        rows;
+                    final ratio = (cellW > 0 && cellH > 0)
+                        ? cellW / cellH
+                        : 0.82;
+                    return GridView.builder(
+                      padding: const EdgeInsets.all(pad),
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: cols,
+                        childAspectRatio: ratio,
+                        crossAxisSpacing: gap,
+                        mainAxisSpacing: gap,
+                      ),
+                      itemCount: visibleItems.length,
+                      itemBuilder: (context, index) =>
+                          _browserCard(context, visibleItems[index]),
+                    );
+                  },
+                )
               : GridView.builder(
+                  // List: fixed column count, the whole set scrolls vertically.
                   controller: _gridScrollController,
                   padding: const EdgeInsets.all(12),
-                  // Fixed column count from settings; the full list scrolls
-                  // vertically (the pagination bar was removed).
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: cols,
                     childAspectRatio: 0.82,
                     crossAxisSpacing: 10,
                     mainAxisSpacing: 10,
                   ),
-                  itemCount: itemsToDisplay.length,
-                  itemBuilder: (context, index) {
-                    final item = itemsToDisplay[index];
-                    Widget card;
-                    if (item is ProductGroup) {
-                      card = _buildGroupCard(context, ref, item);
-                    } else if (item is Product) {
-                      card = _buildProductCard(context, ref, item);
-                    } else {
-                      return const SizedBox();
-                    }
-                    return card;
-                  },
+                  itemCount: visibleItems.length,
+                  itemBuilder: (context, index) =>
+                      _browserCard(context, visibleItems[index]),
                 ),
         ),
+        // First / prev / next / last bar — paged Grid layout only.
+        if (isGridLayout && itemsToDisplay.isNotEmpty)
+          _PaginationBar(
+            currentPage: safePage,
+            totalPages: totalPages,
+            onFirst: () => setState(() => _currentPage = 0),
+            onPrevious: () => setState(() => _currentPage = safePage - 1),
+            onNext: () => setState(() => _currentPage = safePage + 1),
+            onLast: () => setState(() => _currentPage = totalPages - 1),
+          ),
       ],
     );
+  }
+
+  /// Builds a single browser tile — a group folder or a product card — shared
+  /// by both the paged Grid and the scrollable List layouts.
+  Widget _browserCard(BuildContext context, Object item) {
+    if (item is ProductGroup) return _buildGroupCard(context, ref, item);
+    if (item is Product) return _buildProductCard(context, ref, item);
+    return const SizedBox();
   }
 
   Widget _buildGroupCard(
@@ -1871,6 +1931,9 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
         'false';
     final hasPromo =
         getActivePromotionCountForProduct(_activePromos, product.id) > 0;
+    // The product's colour marker (null when unset) — tints the card border and
+    // the no-image placeholder so a coloured product no longer reads as grey.
+    final marker = product.markerColor;
 
     return InkWell(
       onTap: () async {
@@ -2047,8 +2110,10 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: BorderSide(
-            color: cs.outlineVariant.withValues(alpha: 0.5),
-            width: 1,
+            color: marker != null
+                ? marker.withValues(alpha: 0.55)
+                : cs.outlineVariant.withValues(alpha: 0.5),
+            width: marker != null ? 1.5 : 1,
           ),
         ),
         color: cs.surfaceContainer,
@@ -2076,12 +2141,16 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
                       cacheWidth: 150,
                     )
                   : Container(
-                      color: cs.surfaceContainerHighest,
+                      color: marker != null
+                          ? marker.withValues(alpha: 0.18)
+                          : cs.surfaceContainerHighest,
                       child: Center(
                         child: PhosphorIcon(
                           PhosphorIconsRegular.forkKnife,
                           size: 44,
-                          color: cs.onSurface.withValues(alpha: 0.2),
+                          color: marker != null
+                              ? marker.withValues(alpha: 0.85)
+                              : cs.onSurface.withValues(alpha: 0.2),
                         ),
                       ),
                     ),
@@ -2125,6 +2194,123 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PAGINATION BAR
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _PaginationBar extends StatelessWidget {
+  final int currentPage;
+  final int totalPages;
+  final VoidCallback onFirst;
+  final VoidCallback onPrevious;
+  final VoidCallback onNext;
+  final VoidCallback onLast;
+
+  const _PaginationBar({
+    required this.currentPage,
+    required this.totalPages,
+    required this.onFirst,
+    required this.onPrevious,
+    required this.onNext,
+    required this.onLast,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isFirst = currentPage == 0;
+    final isLast = currentPage >= totalPages - 1;
+
+    return Container(
+      height: 52,
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest,
+        border: Border(
+          top: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.3)),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _NavButton(
+            icon: PhosphorIconsRegular.skipBack,
+            tooltip: 'First',
+            onTap: isFirst ? null : onFirst,
+          ),
+          _NavButton(
+            icon: PhosphorIconsRegular.caretLeft,
+            tooltip: 'Previous',
+            onTap: isFirst ? null : onPrevious,
+          ),
+          const Gap(12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            decoration: BoxDecoration(
+              color: cs.surface,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: cs.outlineVariant.withValues(alpha: 0.5),
+              ),
+            ),
+            child: Text(
+              '${currentPage + 1} / $totalPages',
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: cs.onSurface,
+              ),
+            ),
+          ),
+          const Gap(12),
+          _NavButton(
+            icon: PhosphorIconsRegular.caretRight,
+            tooltip: 'Next',
+            onTap: isLast ? null : onNext,
+          ),
+          _NavButton(
+            icon: PhosphorIconsRegular.skipForward,
+            tooltip: 'Last',
+            onTap: isLast ? null : onLast,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NavButton extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback? onTap;
+
+  const _NavButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final enabled = onTap != null;
+
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          child: PhosphorIcon(
+            icon,
+            size: 18,
+            color: enabled ? cs.primary : cs.onSurface.withValues(alpha: 0.25),
+          ),
         ),
       ),
     );

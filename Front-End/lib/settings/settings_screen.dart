@@ -2404,6 +2404,13 @@ final _kSearchableSettings = <SearchableSetting>[
         const _SwitchControl(SettingKeys.enableMovingAveragePrice),
   ),
   SearchableSetting(
+    title: 'Menu Layout (List / Grid)',
+    tabName: 'Products · Menu Grid',
+    tabIndex: 2,
+    trailingBuilder: (_) =>
+        const _DropdownControl(SettingKeys.menuLayoutMode, ['List', 'Grid']),
+  ),
+  SearchableSetting(
     title: 'Menu Grid Columns',
     tabName: 'Products · Menu Grid',
     tabIndex: 2,
@@ -4064,6 +4071,8 @@ class _ProductsTab extends ConsumerWidget {
     final settings = ref.watch(appSettingsProvider);
     final autoUpdateCost =
         settings[SettingKeys.autoUpdateCostPrice]?.toLowerCase() == 'true';
+    final menuIsGrid =
+        settings[SettingKeys.menuLayoutMode]?.toLowerCase() == 'grid';
 
     return _TabScrollView(
       cards: [
@@ -4145,19 +4154,26 @@ class _ProductsTab extends ConsumerWidget {
             ),
           ],
         ),
-        const _SettingsCard(
+        _SettingsCard(
           title: 'MENU GRID',
           children: [
-            _SettingDropdown(
+            const _SettingDropdown(
+              settingKey: SettingKeys.menuLayoutMode,
+              label: 'Layout',
+              options: ['List', 'Grid'],
+            ),
+            const _SettingDropdown(
               settingKey: SettingKeys.menuGridCols,
               label: 'Columns',
               options: ['4', '5'],
             ),
-            _SettingDropdown(
-              settingKey: SettingKeys.menuGridRows,
-              label: 'Rows',
-              options: ['3', '4', '5'],
-            ),
+            // Rows only matter in the paged Grid layout; List scrolls freely.
+            if (menuIsGrid)
+              const _SettingDropdown(
+                settingKey: SettingKeys.menuGridRows,
+                label: 'Rows',
+                options: ['3', '4', '5'],
+              ),
           ],
         ),
       ],
