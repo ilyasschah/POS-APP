@@ -136,8 +136,8 @@ class _ProductGroupsScreenState extends ConsumerState<ProductGroupsScreen> {
               const SizedBox(width: 8),
               Text(AppLocalizations.of(context).cannotDelete),
             ]),
-            content: const Text(
-                "This group has products or sub-groups and cannot be deleted."),
+            content: Text(
+                AppLocalizations.of(context).groupHasChildrenCannotDelete),
             actions: [
               TextButton(
                   onPressed: () => Navigator.pop(c),
@@ -206,7 +206,8 @@ class _ProductGroupsScreenState extends ConsumerState<ProductGroupsScreen> {
           ));
           if (ctx.mounted) {
             showAppSnackbar(
-                ctx, ref, 'Could not delete "${group.name}": $msg',
+                ctx, ref,
+                AppLocalizations.of(ctx).couldNotDeleteNamed(group.name, msg),
                 isError: true);
           }
           return;
@@ -217,7 +218,7 @@ class _ProductGroupsScreenState extends ConsumerState<ProductGroupsScreen> {
 
     if (_editingGroup?.id == group.id) _closePanel();
     if (ctx.mounted) {
-      showAppSnackbar(ctx, ref, "Group deleted");
+      showAppSnackbar(ctx, ref, AppLocalizations.of(ctx).groupDeleted);
     }
   }
 
@@ -242,7 +243,7 @@ class _ProductGroupsScreenState extends ConsumerState<ProductGroupsScreen> {
         title: Text(AppLocalizations.of(context).productGroups),
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 12),
+            padding: const EdgeInsetsDirectional.only(end: 12),
             child: FilledButton.icon(
               onPressed: _createGroup,
               icon: const Icon(Icons.add, size: 18),
@@ -537,7 +538,8 @@ class _TreeNodeTileState extends State<_TreeNodeTile> {
                       children: [
                         if (group.isPendingSync)
                           Padding(
-                            padding: const EdgeInsets.only(right: 4),
+                            padding:
+                                const EdgeInsetsDirectional.only(end: 4),
                             child: Icon(Icons.cloud_upload_outlined,
                                 size: 14,
                                 color: theme.colorScheme.tertiary),
@@ -747,6 +749,9 @@ class _GroupEditorPanelState extends ConsumerState<_GroupEditorPanel>
     // navigator's context (which outlives the dialog) and the toast prefs now,
     // so errors can still be surfaced with the app's normal styling.
     final rootCtx = Navigator.of(context, rootNavigator: true).context;
+    // Resolved before the panel closes — `notify` runs after the async gap,
+    // when this widget's own context is already gone.
+    final l10n = AppLocalizations.of(context);
     final toastSettings = ref.read(appSettingsProvider);
     final toastSeconds =
         int.tryParse(toastSettings[SettingKeys.messageDuration] ?? '3') ?? 3;
@@ -855,8 +860,7 @@ class _GroupEditorPanelState extends ConsumerState<_GroupEditorPanel>
           // 2xx but no id came back — the row stays pending_create and the next
           // sync would POST it again. Surface it instead of failing silently.
           notify(
-            'Saved "$name" locally, but the server did not return an id. '
-            'It will be re-sent on the next sync.',
+            l10n.savedLocallyNoServerId(name),
             isError: true,
           );
         }
@@ -877,14 +881,14 @@ class _GroupEditorPanelState extends ConsumerState<_GroupEditorPanel>
           syncStatus: const Value('sync_failed'),
           syncError: Value(msg),
         ));
-        notify('Could not save "$name": $msg', isError: true);
+        notify(l10n.couldNotSaveNamed(name, msg), isError: true);
       } else {
         // Unreachable/timeout — expected offline. The row stays pending and
         // SyncManager.pushPendingProductGroupOps retries it later.
-        notify('"$name" saved offline — it will sync when the server is back.');
+        notify(l10n.savedOfflineWillSyncNamed(name));
       }
     } catch (e) {
-      notify('Could not save "$name": ${parseApiError(e)}', isError: true);
+      notify(l10n.couldNotSaveNamed(name, parseApiError(e)), isError: true);
     }
   }
 
@@ -898,7 +902,8 @@ class _GroupEditorPanelState extends ConsumerState<_GroupEditorPanel>
           company.id, widget.existingGroup!.id, _assignedProductIds.toList());
       ref.invalidate(productsByGroupProvider);
       if (mounted) {
-        showAppSnackbar(context, ref, "Products assigned successfully");
+        showAppSnackbar(
+            context, ref, AppLocalizations.of(context).productsAssigned);
       }
     } catch (e) {
       if (mounted) {
@@ -948,7 +953,7 @@ class _GroupEditorPanelState extends ConsumerState<_GroupEditorPanel>
                     child: Text(
                       _isEditing
                           ? widget.existingGroup!.name
-                          : "New Product Group",
+                          : AppLocalizations.of(context).newProductGroup,
                       style: theme.textTheme.titleLarge
                           ?.copyWith(fontWeight: FontWeight.bold),
                       maxLines: 1,
@@ -973,9 +978,9 @@ class _GroupEditorPanelState extends ConsumerState<_GroupEditorPanel>
                 const SizedBox(height: 8),
                 TabBar(
                   controller: _tabController,
-                  tabs: const [
-                    Tab(text: "Details"),
-                    Tab(text: "Products"),
+                  tabs: [
+                    Tab(text: AppLocalizations.of(context).detailsTab),
+                    Tab(text: AppLocalizations.of(context).products),
                   ],
                 ),
               ],
@@ -1119,18 +1124,20 @@ class _DetailsTab extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Name
-            const _SectionLabel("Group Name"),
+            _SectionLabel(AppLocalizations.of(context).groupName),
             const SizedBox(height: 8),
             TextFormField(
               controller: nameCtrl,
-              decoration: _inputDecoration(context, "e.g., Beverages, Desserts"),
-              validator: (v) =>
-                  v == null || v.trim().isEmpty ? "Required" : null,
+              decoration: _inputDecoration(
+                  context, AppLocalizations.of(context).groupNameHint),
+              validator: (v) => v == null || v.trim().isEmpty
+                  ? AppLocalizations.of(context).requiredField
+                  : null,
             ),
             const SizedBox(height: 20),
 
             // Parent
-            const _SectionLabel("Parent Folder"),
+            _SectionLabel(AppLocalizations.of(context).parentFolder),
             const SizedBox(height: 8),
             allGroupsAsync.when(
               loading: () => const LinearProgressIndicator(),
@@ -1158,7 +1165,7 @@ class _DetailsTab extends StatelessWidget {
             const SizedBox(height: 20),
 
             // Rank
-            const _SectionLabel("Display Rank"),
+            _SectionLabel(AppLocalizations.of(context).displayRank),
             const SizedBox(height: 8),
             TextFormField(
               controller: rankCtrl,
@@ -1168,7 +1175,7 @@ class _DetailsTab extends StatelessWidget {
             const SizedBox(height: 20),
 
             // Image
-            const _SectionLabel("Folder Image"),
+            _SectionLabel(AppLocalizations.of(context).folderImage),
             const SizedBox(height: 12),
             Row(children: [
               Container(
@@ -1217,7 +1224,7 @@ class _DetailsTab extends StatelessWidget {
             const SizedBox(height: 20),
 
             // Color palette
-            const _SectionLabel("Folder Color"),
+            _SectionLabel(AppLocalizations.of(context).folderColor),
             const SizedBox(height: 12),
             Wrap(
               spacing: 10,
@@ -1300,7 +1307,9 @@ class _DetailsTab extends StatelessWidget {
                             color: Colors.white),
                       )
                     : Icon(isEditing ? Icons.save : Icons.add),
-                label: Text(isEditing ? "Save Changes" : "Create Group"),
+                label: Text(isEditing
+                    ? AppLocalizations.of(context).actionSaveChanges
+                    : AppLocalizations.of(context).createGroup),
                 style: FilledButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14)),
               ),
@@ -1438,8 +1447,8 @@ class _ProductsTab extends StatelessWidget {
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white))
                   : const Icon(Icons.save),
-              label: Text(
-                  "Save Assignments (${assignedIds.length} selected)"),
+              label: Text(AppLocalizations.of(context)
+                  .saveAssignmentsCount(assignedIds.length)),
               style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14)),
             ),

@@ -40,10 +40,14 @@ class CustomersScreen extends ConsumerWidget {
                   onPressed: onMenuPressed,
                 )
               : null,
-          bottom: const TabBar(
+          bottom: TabBar(
             tabs: [
-              Tab(icon: Icon(Icons.people), text: "Customers"),
-              Tab(icon: Icon(Icons.store), text: "Suppliers"),
+              Tab(
+                  icon: const Icon(Icons.people),
+                  text: AppLocalizations.of(context).customersLabel),
+              Tab(
+                  icon: const Icon(Icons.store),
+                  text: AppLocalizations.of(context).rptSuppliers),
             ],
           ),
           actions: [
@@ -77,12 +81,12 @@ class CustomersScreen extends ConsumerWidget {
                 _CustomerList(
                   items: customers,
                   companyId: companyId,
-                  emptyMessage: "No customers found.",
+                  emptyMessage: AppLocalizations.of(context).noCustomersFound,
                 ),
                 _CustomerList(
                   items: suppliers,
                   companyId: companyId,
-                  emptyMessage: "No suppliers found.",
+                  emptyMessage: AppLocalizations.of(context).noSuppliersFound,
                 ),
               ],
             );
@@ -172,7 +176,8 @@ class _CustomerList extends ConsumerWidget {
                     builder: (ctx) => AlertDialog(
                       title: Text(AppLocalizations.of(context).actionDelete),
                       content: Text(
-                        "Are you sure you want to delete ${c.name}?",
+                        AppLocalizations.of(context)
+                            .confirmDeleteQuoted(c.name),
                       ),
                       actions: [
                         TextButton(
@@ -229,12 +234,14 @@ class _CustomerList extends ConsumerWidget {
       await (db.delete(db.customersTable)..where((t) => t.id.equals(c.id)))
           .go();
       if (!context.mounted) return;
-      showAppSnackbar(context, ref, 'Deleted successfully');
+      showAppSnackbar(
+          context, ref, AppLocalizations.of(context).deletedSuccessfully);
     } on DioException catch (e) {
       if (e.response == null) {
         // Offline: keep as pending_delete — SyncManager will push on next sync.
         if (!context.mounted) return;
-        showAppSnackbar(context, ref, 'Will delete when connection is restored');
+        showAppSnackbar(context, ref,
+            AppLocalizations.of(context).willDeleteWhenConnectionRestored);
       } else {
         // Server rejection: revert pending_delete back to synced.
         await (db.update(db.customersTable)..where((t) => t.id.equals(c.id)))
@@ -244,7 +251,8 @@ class _CustomerList extends ConsumerWidget {
         if (!context.mounted) return;
         showAppSnackbar(
           context, ref,
-          e.response?.data?.toString() ?? 'Delete failed',
+          e.response?.data?.toString() ??
+              AppLocalizations.of(context).deleteFailed,
           isError: true,
         );
       }
@@ -312,7 +320,8 @@ class _EnableToggleState extends ConsumerState<_EnableToggle> {
         if (mounted) {
           showAppSnackbar(
             context, ref,
-            e.response?.data?.toString() ?? 'Update failed',
+            e.response?.data?.toString() ??
+                AppLocalizations.of(context).updateFailed,
             isError: true,
           );
         }
@@ -628,21 +637,24 @@ class _CustomerFormDialogState extends ConsumerState<_CustomerFormDialog> {
         await _saveDiscount(widget.customer!.id);
 
         if (!mounted) return;
-        showAppSnackbar(context, ref, 'Customer updated');
+        showAppSnackbar(
+            context, ref, AppLocalizations.of(context).customerUpdated);
         Navigator.of(context).pop();
       } on DioException catch (e) {
         if (e.response == null) {
           // Offline: leave pending_update, also save discount locally.
           await _saveDiscountLocal(widget.customer!.id);
           if (!mounted) return;
-          showAppSnackbar(context, ref, 'Saved offline — will sync when connected');
+          showAppSnackbar(context, ref,
+              AppLocalizations.of(context).savedOfflineWillSync);
           Navigator.of(context).pop();
         } else {
           // Server rejection: revert Drift to the original row.
           if (oldRow != null) await _revertCustomerRow(db, oldRow);
           if (!mounted) return;
           setState(() {
-            _errorMessage = e.response?.data?.toString() ?? 'Operation failed.';
+            _errorMessage = e.response?.data?.toString() ??
+                AppLocalizations.of(context).operationFailed;
             _isLoading = false;
           });
         }
@@ -741,14 +753,16 @@ class _CustomerFormDialogState extends ConsumerState<_CustomerFormDialog> {
         if (newId > 0) await _saveDiscount(newId);
 
         if (!mounted) return;
-        showAppSnackbar(context, ref, 'Customer added');
+        showAppSnackbar(
+            context, ref, AppLocalizations.of(context).customerAdded);
         Navigator.of(context).pop();
       } on DioException catch (e) {
         if (e.response == null) {
           // Offline: keep the optimistic row (pending_create), save discount locally.
           await _saveDiscountLocal(tempId);
           if (!mounted) return;
-          showAppSnackbar(context, ref, 'Saved offline — will sync when connected');
+          showAppSnackbar(context, ref,
+              AppLocalizations.of(context).savedOfflineWillSync);
           Navigator.of(context).pop();
         } else {
           // Server rejection: delete the temp row.
@@ -757,7 +771,8 @@ class _CustomerFormDialogState extends ConsumerState<_CustomerFormDialog> {
               .go();
           if (!mounted) return;
           setState(() {
-            _errorMessage = e.response?.data?.toString() ?? 'Operation failed.';
+            _errorMessage = e.response?.data?.toString() ??
+                AppLocalizations.of(context).operationFailed;
             _isLoading = false;
           });
         }
@@ -948,7 +963,9 @@ class _CustomerFormDialogState extends ConsumerState<_CustomerFormDialog> {
     final sym = ref.watch(currencySymbolProvider);
 
     return AlertDialog(
-      title: Text(_isEditing ? "Edit Customer" : "Add Customer / Supplier"),
+      title: Text(_isEditing
+          ? AppLocalizations.of(context).editCustomer
+          : AppLocalizations.of(context).addCustomerSupplier),
       content: SizedBox(
         width: 480,
         child: Form(
@@ -982,45 +999,49 @@ class _CustomerFormDialogState extends ConsumerState<_CustomerFormDialog> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                _sectionLabel(context, "General"),
+                _sectionLabel(context, AppLocalizations.of(context).generalLabel),
                 _row([
                   _field(
                     _nameCtrl,
-                    "Name *",
-                    validator: (v) =>
-                        v == null || v.trim().isEmpty ? "Required" : null,
+                    AppLocalizations.of(context).nameRequired,
+                    validator: (v) => v == null || v.trim().isEmpty
+                        ? AppLocalizations.of(context).requiredField
+                        : null,
                   ),
-                  _field(_codeCtrl, "Code"),
+                  _field(_codeCtrl, AppLocalizations.of(context).fieldCode),
                 ]),
                 _row([
-                  _field(_taxNumberCtrl, "Tax Number"),
-                  _field(_emailCtrl, "Email"),
+                  _field(_taxNumberCtrl, AppLocalizations.of(context).taxNumber),
+                  _field(_emailCtrl, AppLocalizations.of(context).fieldEmail),
                 ]),
                 _row([
-                  _field(_phoneCtrl, "Phone Number"),
+                  _field(_phoneCtrl, AppLocalizations.of(context).phoneNumber),
                   _field(
                     _dueDateCtrl,
-                    "Due Date Period (days)",
+                    AppLocalizations.of(context).dueDatePeriodDays,
                     keyboardType: TextInputType.number,
                   ),
                 ]),
                 const SizedBox(height: 12),
-                _sectionLabel(context, "Address"),
+                _sectionLabel(context, AppLocalizations.of(context).setAddress),
                 _row([
-                  _field(_streetNameCtrl, "Street Name"),
-                  _field(_buildingNumberCtrl, "Building Number"),
+                  _field(_streetNameCtrl, AppLocalizations.of(context).streetName),
+                  _field(_buildingNumberCtrl, AppLocalizations.of(context).buildingNo),
                 ]),
                 _row([
-                  _field(_additionalStreetCtrl, "Additional Street"),
-                  _field(_plotIdCtrl, "Plot Identification"),
+                  _field(_additionalStreetCtrl,
+                      AppLocalizations.of(context).additionalStreet),
+                  _field(_plotIdCtrl, AppLocalizations.of(context).plotId),
                 ]),
                 _row([
-                  _field(_cityCtrl, "City"),
-                  _field(_postalCodeCtrl, "Postal Code"),
+                  _field(_cityCtrl, AppLocalizations.of(context).cityLabel),
+                  _field(_postalCodeCtrl, AppLocalizations.of(context).postalCode),
                 ]),
-                _field(_citySubdivisionCtrl, "District"),
+                _field(_citySubdivisionCtrl,
+                    AppLocalizations.of(context).districtSubdivision),
                 const SizedBox(height: 12),
-                _sectionLabel(context, "Customer Discount"),
+                _sectionLabel(
+                    context, AppLocalizations.of(context).customerDiscountLabel),
                 _row([
                   DropdownButtonFormField<int>(
                     initialValue: _discountType,
@@ -1049,7 +1070,7 @@ class _CustomerFormDialogState extends ConsumerState<_CustomerFormDialog> {
                   ),
                   _field(
                     _discountValueCtrl,
-                    "Discount Value",
+                    AppLocalizations.of(context).discountValue,
                     keyboardType: TextInputType.number,
                     // Show the unit so a fixed amount reads in the company
                     // currency (MAD) instead of a bare number, and % for percent.
@@ -1061,7 +1082,7 @@ class _CustomerFormDialogState extends ConsumerState<_CustomerFormDialog> {
                     ? const LinearProgressIndicator()
                     : _countries.isEmpty
                     ? Text(
-                        "No countries available.",
+                        AppLocalizations.of(context).noCountriesAvailable,
                         style: TextStyle(color: cs.error),
                       )
                     : DropdownButtonFormField<int>(
@@ -1110,7 +1131,9 @@ class _CustomerFormDialogState extends ConsumerState<_CustomerFormDialog> {
         else
           ElevatedButton.icon(
             icon: const Icon(Icons.save),
-            label: Text(_isEditing ? "Update" : "Save"),
+            label: Text(_isEditing
+                ? AppLocalizations.of(context).actionUpdate
+                : AppLocalizations.of(context).actionSave),
             onPressed: _submit,
           ),
       ],

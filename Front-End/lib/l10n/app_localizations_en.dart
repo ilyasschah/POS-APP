@@ -3630,4 +3630,1756 @@ class AppLocalizationsEn extends AppLocalizations {
   String selectAvailableSpace(String space) {
     return 'Select Available $space';
   }
+
+  @override
+  String get errorMissingCompanyContext =>
+      'Error: missing company or user context.';
+
+  @override
+  String failedToQueueZReport(String message) {
+    return 'Failed to queue Z-Report: $message';
+  }
+
+  @override
+  String zReportNumber(String number) {
+    return 'Z-Report #$number';
+  }
+
+  @override
+  String get shiftSummaryUpper => 'SHIFT SUMMARY';
+
+  @override
+  String get dateTimeLabel => 'Date/Time';
+
+  @override
+  String get rangeLabel => 'Range';
+
+  @override
+  String get totalSales => 'Total Sales';
+
+  @override
+  String get totalReturns => 'Total Returns';
+
+  @override
+  String get discountsLabel => 'Discounts';
+
+  @override
+  String get taxableTotal => 'Taxable Total';
+
+  @override
+  String get totalTax => 'Total Tax';
+
+  @override
+  String get cashMovementsUpper => 'CASH MOVEMENTS';
+
+  @override
+  String get tenderTypesUpper => 'TENDER TYPES';
+
+  @override
+  String get noPaymentsRecorded => 'No payments recorded.';
+
+  @override
+  String get grandTotalUpper => 'GRAND TOTAL';
+
+  @override
+  String get unknownLabel => 'Unknown';
+
+  @override
+  String get currentShiftOpen => 'Current Shift (Open)';
+
+  @override
+  String get historyZReports => 'History (Z-Reports)';
+
+  @override
+  String get noOpenTransactions =>
+      'No open transactions.\nThe register is balanced.';
+
+  @override
+  String get tenderBreakdown => 'Tender Breakdown';
+
+  @override
+  String get expectedInDrawer => 'EXPECTED IN DRAWER';
+
+  @override
+  String get shiftDetails => 'Shift Details';
+
+  @override
+  String get cashierOnDuty => 'Cashier on Duty';
+
+  @override
+  String get unknownUser => 'UNKNOWN USER';
+
+  @override
+  String get transactionsLabel => 'Transactions';
+
+  @override
+  String openPaymentsCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count open payments',
+      one: '1 open payment',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get shiftIsOpen => 'Shift is Open';
+
+  @override
+  String get closeRegisterExplain =>
+      'Closing the register will finalize these transactions, generate a Z-Report, and reset the day\'s totals. Ensure cash drops are complete before proceeding.';
+
+  @override
+  String get noZReportsYet => 'No Z-Reports generated yet.';
+
+  @override
+  String zReportOnDate(String date) {
+    return 'Z-Report • $date';
+  }
+
+  @override
+  String zReportSubtitle(String count, String total) {
+    return 'Documents: $count  •  Grand Total: $total';
+  }
+
+  @override
+  String get enterValidAmount => 'Please enter a valid amount.';
+
+  @override
+  String get selectDocumentOrAutoDistribute =>
+      'Please select at least one document, or enable Automatic distribution.';
+
+  @override
+  String get nothingToSettle =>
+      'Nothing to settle — the selected documents are already paid.';
+
+  @override
+  String anErrorOccurred(String message) {
+    return 'An error occurred: $message';
+  }
+
+  @override
+  String get useCustomerBalance => 'Use customer balance';
+
+  @override
+  String get automaticDistribution => 'Automatic distribution';
+
+  @override
+  String get loadUnpaidDocuments => 'Load unpaid documents';
+
+  @override
+  String get summaryLabel => 'Summary';
+
+  @override
+  String get customerBalance => 'Customer balance';
+
+  @override
+  String get totalInSelectedDocuments => 'Total in selected documents';
+
+  @override
+  String get customerNotSelectedReconcile =>
+      'Customer not selected.\nPlease select customer for reconciliation.';
+
+  @override
+  String get autoDistributeExplain =>
+      'Paid amount will be automatically distributed\nacross all unpaid sales.';
+
+  @override
+  String get noUnpaidDocumentsForCustomer =>
+      'No unpaid documents found for this customer.';
+
+  @override
+  String get balanceLabel => 'Balance';
+
+  @override
+  String get internalNoteLabel => 'Internal note';
+
+  @override
+  String get allDates => 'All dates';
+
+  @override
+  String userNumbered(String id) {
+    return 'User $id';
+  }
+
+  @override
+  String get periodLabel => 'Period';
+
+  @override
+  String get documentNumber => 'Document number';
+
+  @override
+  String get documentNumberHint => 'e.g. 26-200-000001';
+
+  @override
+  String get externalDocument => 'External document';
+
+  @override
+  String get paidStatus => 'Paid status';
+
+  @override
+  String get totalResultsUpper => 'TOTAL RESULTS';
+
+  @override
+  String get noDocumentsMatchingFilters => 'No documents matching filters.';
+
+  @override
+  String get notAvailableShort => 'N/A';
+
+  @override
+  String get documentDeleted => 'Document deleted';
+
+  @override
+  String get deleteFailed => 'Delete failed';
+
+  @override
+  String get monthAbbreviations =>
+      'Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec';
+
+  @override
+  String get selectDocumentTypeError => 'Please select a document type.';
+
+  @override
+  String get selectCustomerSupplierError =>
+      'Please select a customer/supplier.';
+
+  @override
+  String get selectUserError => 'Please select a user.';
+
+  @override
+  String get selectWarehouseError => 'Please select a warehouse.';
+
+  @override
+  String get couldNotResolveLocalDocument =>
+      'Could not resolve the local document.';
+
+  @override
+  String get documentSaved => 'Document saved!';
+
+  @override
+  String get newDocument => 'New Document';
+
+  @override
+  String editDocumentNumbered(String number) {
+    return 'Edit Document — $number';
+  }
+
+  @override
+  String documentNumbered(String number) {
+    return 'Document — $number';
+  }
+
+  @override
+  String saveHeaderFirstHint(String action) {
+    return 'Save the document header first (Document Info → $action) to manage items, discounts and payments.';
+  }
+
+  @override
+  String get documentInfo => 'Document Info';
+
+  @override
+  String get partiesLogistics => 'Parties & Logistics';
+
+  @override
+  String get financialsNotes => 'Financials & Notes';
+
+  @override
+  String get documentItems => 'Document Items';
+
+  @override
+  String get paymentsTab => 'Payments';
+
+  @override
+  String get dueDate => 'Due Date';
+
+  @override
+  String get stockDate => 'Stock Date';
+
+  @override
+  String get supplierRequired => 'Supplier *';
+
+  @override
+  String get applyAfterTax => 'Apply after tax';
+
+  @override
+  String get saveHeaderChanges => 'Save Header Changes';
+
+  @override
+  String get createAndAddItems => 'Create & Add Items';
+
+  @override
+  String get noItemsAddedYet => 'No items added yet.';
+
+  @override
+  String get clickAddProductToStart => 'Click \'Add Product\' to get started.';
+
+  @override
+  String get qtyShort => 'Qty';
+
+  @override
+  String get itemDiscShort => 'Item Disc.';
+
+  @override
+  String get actionsLabel => 'Actions';
+
+  @override
+  String get deleteItem => 'Delete Item';
+
+  @override
+  String deleteItemConfirm(String name) {
+    return 'Delete \'$name\'?';
+  }
+
+  @override
+  String get itemsBaseTotal => 'Items Base Total:';
+
+  @override
+  String get selectProductError => 'Please select a product.';
+
+  @override
+  String failedToAddItem(String message) {
+    return 'Failed to add item: $message';
+  }
+
+  @override
+  String updateFailedWithMessage(String message) {
+    return 'Update failed: $message';
+  }
+
+  @override
+  String get itemTax => 'Item Tax';
+
+  @override
+  String get appliedPayments => 'Applied Payments';
+
+  @override
+  String get deleteAllPaymentsWarning =>
+      'This document has a complete payment balance.\n\nProceeding will permanently delete all associated payment transactions. Are you sure?';
+
+  @override
+  String get documentTotal => 'Document Total';
+
+  @override
+  String get totalPaid => 'Total Paid';
+
+  @override
+  String get remainingBalance => 'Remaining Balance';
+
+  @override
+  String get noPaymentsAddedYet => 'No payments added yet.';
+
+  @override
+  String get deletePayment => 'Delete Payment';
+
+  @override
+  String get deletePaymentConfirm =>
+      'Are you sure you want to delete this payment?';
+
+  @override
+  String get selectPaymentTypeError => 'Please select a payment type.';
+
+  @override
+  String get failedToAddPayment => 'Failed to add payment.';
+
+  @override
+  String get updateFailedShort => 'Update failed.';
+
+  @override
+  String paymentTypeNamed(String name) {
+    return 'Payment Type: $name';
+  }
+
+  @override
+  String get discountLabel => 'Discount';
+
+  @override
+  String get orderNumberLabel => 'Order number';
+
+  @override
+  String get updatedLabel => 'Updated';
+
+  @override
+  String get statusGracePeriod => 'Renewal overdue';
+
+  @override
+  String get actionCreate => 'Create';
+
+  @override
+  String get activeDevices => 'Active Devices';
+
+  @override
+  String get addAtLeastOneProduct =>
+      'Add at least one product to the promotion';
+
+  @override
+  String get addCustomerSupplier => 'Add Customer / Supplier';
+
+  @override
+  String get addToPromotion => 'Add to promotion';
+
+  @override
+  String get administrator => 'Administrator';
+
+  @override
+  String get allStockEntriesUpper => 'ALL STOCK ENTRIES';
+
+  @override
+  String get assignAddStock => 'Assign / Add Stock';
+
+  @override
+  String get barcodesTab => 'Barcodes';
+
+  @override
+  String cannotDeleteProductsLinked(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Can\'t delete $count products — linked to existing orders or documents',
+      one: 'Can\'t delete 1 product — linked to existing orders or documents',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get clearEstimate => 'Clear estimate';
+
+  @override
+  String codeWithValue(String code) {
+    return 'Code: $code';
+  }
+
+  @override
+  String get commentsTab => 'Comments';
+
+  @override
+  String get companyUpdatedSuccessfully => 'Company updated successfully';
+
+  @override
+  String get conditionalPromoHint => 'Conditional (e.g. Buy 2, get discount)';
+
+  @override
+  String get costPrice => 'Cost Price';
+
+  @override
+  String couldNotDeleteNamed(String name, String message) {
+    return 'Could not delete \"$name\": $message';
+  }
+
+  @override
+  String couldNotSaveNamed(String name, String message) {
+    return 'Could not save \"$name\": $message';
+  }
+
+  @override
+  String get countriesLabel => 'Countries';
+
+  @override
+  String get createEstimate => 'Create estimate';
+
+  @override
+  String get createPromotion => 'Create Promotion';
+
+  @override
+  String get customerAdded => 'Customer added';
+
+  @override
+  String get customerUpdated => 'Customer updated';
+
+  @override
+  String get daysOfWeekLabel => 'Days of Week: ';
+
+  @override
+  String deleteWithCount(num count) {
+    return 'Delete ($count)';
+  }
+
+  @override
+  String deletedSomeProductsBlocked(num deleted, num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$deleted deleted · $count products kept — linked to existing orders or documents',
+      one:
+          '$deleted deleted · 1 product kept — linked to existing orders or documents',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get deletedSuccessfully => 'Deleted successfully';
+
+  @override
+  String get designFloorPlans => 'Design floor plans';
+
+  @override
+  String get detailsTab => 'Details';
+
+  @override
+  String get deviceRevokedSuccessfully => 'Device revoked successfully';
+
+  @override
+  String get displayRank => 'Display Rank';
+
+  @override
+  String get dueDatePeriodDays => 'Due Date Period (days)';
+
+  @override
+  String get editCustomer => 'Edit Customer';
+
+  @override
+  String get editProduct => 'Edit Product';
+
+  @override
+  String get editPromotion => 'Edit Promotion';
+
+  @override
+  String get editQuantity => 'Edit quantity';
+
+  @override
+  String get endDateBeforeStartDate => 'End date is before the start date';
+
+  @override
+  String get everyDay => 'Every day';
+
+  @override
+  String exportFailed(String message) {
+    return 'Export failed: $message';
+  }
+
+  @override
+  String exportedProductsTo(num count, String path) {
+    return 'Exported $count products to $path';
+  }
+
+  @override
+  String get failedToCreateUser => 'Failed to create user.';
+
+  @override
+  String get failedToSaveChanges => 'Failed to save changes.';
+
+  @override
+  String get failedToUpdateUser => 'Failed to update user.';
+
+  @override
+  String get failedToUploadLogo => 'Failed to upload logo.';
+
+  @override
+  String get finishSetup => 'Finish Setup';
+
+  @override
+  String get flagLow => 'LOW';
+
+  @override
+  String get flagReorder => 'REORDER';
+
+  @override
+  String get floorPlanTables => 'Floor plan / tables';
+
+  @override
+  String get folderColor => 'Folder Color';
+
+  @override
+  String get folderImage => 'Folder Image';
+
+  @override
+  String get forceReset => 'Force Reset';
+
+  @override
+  String get groupDeleted => 'Group deleted';
+
+  @override
+  String get groupHasChildrenCannotDelete =>
+      'This group has products or sub-groups and cannot be deleted.';
+
+  @override
+  String get groupName => 'Group Name';
+
+  @override
+  String get groupNameHint => 'e.g., Beverages, Desserts';
+
+  @override
+  String itemsCountValue(num count) {
+    return 'Items: $count';
+  }
+
+  @override
+  String linkedAt(String date) {
+    return 'Linked: $date';
+  }
+
+  @override
+  String get logoUpdatedSuccessfully => 'Logo updated successfully';
+
+  @override
+  String get lowStockWarningHelp => 'Alert when stock falls below threshold';
+
+  @override
+  String get nameIsRequired => 'Name is required.';
+
+  @override
+  String get nameIsRequiredShort => 'Name is required';
+
+  @override
+  String get newPasswordsDoNotMatch => 'New passwords do not match';
+
+  @override
+  String get newProduct => 'New Product';
+
+  @override
+  String get newProductGroup => 'New Product Group';
+
+  @override
+  String get nextTaxesAndStock => 'Next: Taxes & Stock';
+
+  @override
+  String get noActiveDevicesFound => 'No active devices found.';
+
+  @override
+  String get noConnectionAddUsers =>
+      'No connection. Adding users requires connectivity.';
+
+  @override
+  String get noConnectionDeleteUsers =>
+      'No connection. Deleting users requires connectivity.';
+
+  @override
+  String get noCountriesAvailable => 'No countries available.';
+
+  @override
+  String get noCustomersFound => 'No customers found.';
+
+  @override
+  String get noEmailProvided => 'No email provided';
+
+  @override
+  String get noLogoUploadedYet => 'No logo uploaded yet';
+
+  @override
+  String noProductsMatchQuery(String query) {
+    return 'No products match \"$query\"';
+  }
+
+  @override
+  String get noPromotionsYet =>
+      'No promotions yet. Tap \"Add Promotion\" to create one.';
+
+  @override
+  String get noSuppliersFound => 'No suppliers found.';
+
+  @override
+  String onBelowValue(num value) {
+    return 'On — below $value';
+  }
+
+  @override
+  String get operationFailed => 'Operation failed.';
+
+  @override
+  String get overrideTaxes => 'Override taxes';
+
+  @override
+  String get parentFolder => 'Parent Folder';
+
+  @override
+  String get passwordForciblyReset => 'Password forcibly reset!';
+
+  @override
+  String get passwordUpdatedSuccessfully => 'Password updated successfully';
+
+  @override
+  String get pendingSyncNew => 'Pending sync (new)';
+
+  @override
+  String get pendingSyncUpdate => 'Pending sync (update)';
+
+  @override
+  String get pinForciblyResetForDevice => 'PIN forcibly reset for this Device!';
+
+  @override
+  String get pinMustBeFourDigits => 'PIN must be 4 digits';
+
+  @override
+  String get pinUpdatedSuccessfully => 'PIN updated successfully';
+
+  @override
+  String get pleaseEnterProductName => 'Please enter a Product Name.';
+
+  @override
+  String get pleaseSelectACountry => 'Please select a country.';
+
+  @override
+  String get preferredQty => 'Preferred Qty';
+
+  @override
+  String get preferredQuantityHelp => 'Target quantity to maintain in stock';
+
+  @override
+  String productIdLabel(num id) {
+    return 'Product ID: $id';
+  }
+
+  @override
+  String get productSavedLocallySyncFirst =>
+      'Product saved locally. Sync to complete setup (taxes, barcodes, stock).';
+
+  @override
+  String get productUpdatedSuccessfully => 'Product updated successfully!';
+
+  @override
+  String get productsAssigned => 'Products assigned successfully';
+
+  @override
+  String productsDeletedCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count products deleted',
+      one: '1 product deleted',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String promotionsCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Promotions',
+      one: '1 Promotion',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get quickInventory => 'Quick inventory';
+
+  @override
+  String get removeFromPromotion => 'Remove from promotion';
+
+  @override
+  String removeStockFromWarehouseConfirm(String product, String warehouse) {
+    return 'Remove $product from $warehouse?';
+  }
+
+  @override
+  String get reorderPointHelp =>
+      'Trigger reorder when stock drops below this level';
+
+  @override
+  String get reprintReceipt => 'Reprint receipt';
+
+  @override
+  String get requiredField => 'Required';
+
+  @override
+  String saveAssignmentsCount(num count) {
+    return 'Save Assignments ($count selected)';
+  }
+
+  @override
+  String get saveCompanyChangesUpper => 'SAVE COMPANY CHANGES';
+
+  @override
+  String get saveFailedShort => 'Save failed.';
+
+  @override
+  String savedLocallyNoServerId(String name) {
+    return 'Saved \"$name\" locally, but the server did not return an id. It will be re-sent on the next sync.';
+  }
+
+  @override
+  String get savedLocallyWillSyncOnline =>
+      'Saved locally. Will sync when online.';
+
+  @override
+  String get savedOfflineWillSync => 'Saved offline. Will sync when connected.';
+
+  @override
+  String savedOfflineWillSyncNamed(String name) {
+    return '\"$name\" saved offline — it will sync when the server is back.';
+  }
+
+  @override
+  String get savingUpper => 'SAVING...';
+
+  @override
+  String get scanOrEnterBarcode => 'Scan or enter barcode';
+
+  @override
+  String securityRuleUpdated(String rule) {
+    return '$rule updated.';
+  }
+
+  @override
+  String get securityRules => 'Security Rules';
+
+  @override
+  String get selectAtLeastOneDay => 'Select at least one day of the week';
+
+  @override
+  String get selectProductsFromLeft =>
+      'Select products from the left to add to the promotion.';
+
+  @override
+  String get selectedProducts => 'Selected Products';
+
+  @override
+  String get sellingPrice => 'Selling Price';
+
+  @override
+  String get serverErrorCheckInputs =>
+      'A server error occurred. Please check your inputs.';
+
+  @override
+  String get serviceTag => 'Service';
+
+  @override
+  String setTaxesAndInventoryFor(String name) {
+    return 'Set Taxes & Inventory: $name';
+  }
+
+  @override
+  String get setupComplete => 'Setup Complete!';
+
+  @override
+  String get startingCashLower => 'Starting cash';
+
+  @override
+  String get statusInactive => 'Inactive';
+
+  @override
+  String get stockControlRules => 'Stock Control Rules';
+
+  @override
+  String get stockControlRulesUpper => 'STOCK CONTROL RULES';
+
+  @override
+  String get stockInWarehouseUpper => 'STOCK IN WAREHOUSE';
+
+  @override
+  String stockRulesForProduct(String name) {
+    return 'Stock Rules — $name';
+  }
+
+  @override
+  String get stockStatusHealthy => 'Stock healthy';
+
+  @override
+  String get stockStatusLow => 'Low stock — at/below warning level';
+
+  @override
+  String get stockStatusReorder => 'At/below reorder point';
+
+  @override
+  String get suggestedOrder => 'Suggested Order';
+
+  @override
+  String suggestedOrderValue(String qty, num target) {
+    return '+$qty to reach $target';
+  }
+
+  @override
+  String get tapCameraIconToChangeLogo => 'Tap the camera icon to change logo';
+
+  @override
+  String get thisDevice => 'This Device';
+
+  @override
+  String get unexpectedErrorOccurred => 'An unexpected error occurred.';
+
+  @override
+  String get unexpectedErrorTryAgain =>
+      'An unexpected error occurred. Please try again.';
+
+  @override
+  String uomWithValue(String unit) {
+    return 'UOM: $unit';
+  }
+
+  @override
+  String get updateFailed => 'Update failed';
+
+  @override
+  String get userDeletedSuccessfully => 'User deleted successfully.';
+
+  @override
+  String get userProfileLower => 'User profile';
+
+  @override
+  String get viewAllOpenOrders => 'View all open orders';
+
+  @override
+  String get viewCostPrices => 'View cost prices';
+
+  @override
+  String get voidItem => 'Void item';
+
+  @override
+  String get warningThresholdHelp =>
+      'Show warning when quantity is below this value';
+
+  @override
+  String get weekdayAbbreviations => 'Mon,Tue,Wed,Thu,Fri,Sat,Sun';
+
+  @override
+  String get weekdays => 'Weekdays';
+
+  @override
+  String get weekends => 'Weekends';
+
+  @override
+  String get willDeleteWhenConnectionRestored =>
+      'Will delete when connection is restored';
+
+  @override
+  String get zeroStockQuantitySale => 'Zero stock quantity sale';
+
+  @override
+  String addressWithValue(String address) {
+    return 'Address: $address';
+  }
+
+  @override
+  String get beginTrackingSession =>
+      'Begin a tracking session to clock your hours.';
+
+  @override
+  String cashEntriesCount(num count) {
+    return 'Cash entries ($count)';
+  }
+
+  @override
+  String checkoutError(String message) {
+    return 'Checkout error: $message';
+  }
+
+  @override
+  String get clockOutMustBeAfterClockIn => 'Clock-out must be after clock-in.';
+
+  @override
+  String get completeTransaction => 'Complete\nTransaction';
+
+  @override
+  String couldNotLoadEntries(String message) {
+    return 'Could not load entries: $message';
+  }
+
+  @override
+  String get creditNeedsCustomer =>
+      'Credit payment requires a selected customer.\n\nPlease choose a customer before completing this transaction.';
+
+  @override
+  String deleteDocumentConfirmPermanent(String number) {
+    return 'Delete \'$number\'? This cannot be undone.';
+  }
+
+  @override
+  String discountWithAmount(String amount, String symbol) {
+    return 'Discount: $amount $symbol';
+  }
+
+  @override
+  String documentsCountValue(num count) {
+    return 'Documents count: $count';
+  }
+
+  @override
+  String get enterValidAmountAboveZero =>
+      'Enter a valid amount greater than zero.';
+
+  @override
+  String get exceedsMaximum => 'Exceeds maximum';
+
+  @override
+  String get failedToLoadCustomers => 'Failed to load customers';
+
+  @override
+  String get failedToLoadOrder => 'Failed to load order.';
+
+  @override
+  String featureComingSoon(String feature) {
+    return '$feature — coming soon';
+  }
+
+  @override
+  String get filterByCustomer => 'Filter by customer';
+
+  @override
+  String get hoursReport => 'Hours Report';
+
+  @override
+  String labelWithColon(String label) {
+    return '$label: ';
+  }
+
+  @override
+  String get lastMonth => 'Last month';
+
+  @override
+  String get lastWeek => 'Last week';
+
+  @override
+  String get lastYear => 'Last year';
+
+  @override
+  String maxUsableThisOrder(String points) {
+    return 'Max usable this order: $points pts';
+  }
+
+  @override
+  String get missingCompanyOrUserContext => 'Missing company or user context.';
+
+  @override
+  String get mySales => 'My sales';
+
+  @override
+  String get myShift => 'My Shift';
+
+  @override
+  String get noActiveShift => 'No Active Shift';
+
+  @override
+  String get noCashMovementsToday => 'No cash movements today.';
+
+  @override
+  String get noItemsForDocument => 'No items found for this document.';
+
+  @override
+  String get noOpenOrders => 'No open orders';
+
+  @override
+  String noOrdersMatchQuery(String query) {
+    return 'No orders match \"$query\"';
+  }
+
+  @override
+  String get noSalesDocumentsForPeriod =>
+      'No sales documents for the selected period.';
+
+  @override
+  String get noTimeEntriesInRange => 'No time entries in the selected range.';
+
+  @override
+  String get nothingToExportInRange => 'Nothing to export in this range';
+
+  @override
+  String get nowSelectEndDate => 'Now select an end date';
+
+  @override
+  String get paymentMethod => 'Payment Method';
+
+  @override
+  String pointsBalanceWorth(String points, String value, String symbol) {
+    return 'Balance: $points pts = $value $symbol';
+  }
+
+  @override
+  String get predefinedPeriod => 'Predefined period';
+
+  @override
+  String get receiptLabel => 'Receipt';
+
+  @override
+  String redeemingPoints(String points, String amount, String symbol) {
+    return 'Redeeming $points pts (−$amount $symbol)';
+  }
+
+  @override
+  String get reportCopiedAsCsv => 'Report copied to clipboard as CSV';
+
+  @override
+  String get salesHistoryTitle => 'Sales history';
+
+  @override
+  String get saveCashIn => 'Save Cash In';
+
+  @override
+  String get saveCashOut => 'Save Cash Out';
+
+  @override
+  String get selectAll => 'Select all';
+
+  @override
+  String get selectAnEmployeeError => 'Select an employee.';
+
+  @override
+  String get selectDocumentToViewItems =>
+      'Select a document above to view its items.';
+
+  @override
+  String get sendEmail => 'Send email';
+
+  @override
+  String get shiftOpen => 'Shift Open';
+
+  @override
+  String get shiftStillOpen => 'Open';
+
+  @override
+  String get tapToRedeemPoints => 'Tap to redeem points';
+
+  @override
+  String taxNoWithValue(String number) {
+    return 'Tax No.: $number';
+  }
+
+  @override
+  String get thisMonth => 'This month';
+
+  @override
+  String get thisWeek => 'This week';
+
+  @override
+  String get thisYear => 'This year';
+
+  @override
+  String get timeCardAdded => 'Time card added';
+
+  @override
+  String totalAmountWithValue(String amount, String symbol) {
+    return 'Total amount: $amount $symbol';
+  }
+
+  @override
+  String get totalCompleted => 'Total (completed)';
+
+  @override
+  String get totalHours => 'Total hours';
+
+  @override
+  String totalHoursWithValue(String hours) {
+    return 'Total hours: $hours';
+  }
+
+  @override
+  String get weekdayInitials => 'Mo,Tu,We,Th,Fr,Sa,Su';
+
+  @override
+  String get yesterday => 'Yesterday';
+
+  @override
+  String noStockAvailableIn(String warehouse) {
+    return 'No stock available in $warehouse.';
+  }
+
+  @override
+  String get theSelectedWarehouse => 'the selected warehouse';
+
+  @override
+  String warehouseNumbered(String id) {
+    return 'Warehouse $id';
+  }
+
+  @override
+  String switchedToWarehouse(String warehouse) {
+    return 'Switched to $warehouse — tap the product to add it.';
+  }
+
+  @override
+  String lowStockAddAnyway(String qty, String unit) {
+    return 'Adding this item leaves only $qty $unit in stock, at or below the low-stock warning level.\n\nAdd it anyway?';
+  }
+
+  @override
+  String get unitsFallback => 'unit(s)';
+
+  @override
+  String kitchenPrintError(String message) {
+    return 'Kitchen print error: $message';
+  }
+
+  @override
+  String couldNotSaveOrder(String message) {
+    return 'Could not save order: $message';
+  }
+
+  @override
+  String scaleBarcodeProductNotFound(String code) {
+    return 'Scale barcode: product \"$code\" not found.';
+  }
+
+  @override
+  String errorCreatingOrder(String message) {
+    return 'Error creating order: $message';
+  }
+
+  @override
+  String get orderSavedToTable => 'Order Saved to Table!';
+
+  @override
+  String get orderSaved => 'Order Saved!';
+
+  @override
+  String get orderVoided => 'Order Voided';
+
+  @override
+  String get orderTransferred => 'Order Transferred';
+
+  @override
+  String transferFailed(String message) {
+    return 'Transfer failed: $message';
+  }
+
+  @override
+  String receiptAlreadyRefunded(String reference) {
+    return 'This receipt has already been refunded (Ref: $reference).';
+  }
+
+  @override
+  String receiptNotFound(String number) {
+    return 'Receipt \"$number\" not found.';
+  }
+
+  @override
+  String get managerPinNotRecognised =>
+      'Manager PIN not recognised. Blind return needs an admin.';
+
+  @override
+  String get addAtLeastOneItemToReturn => 'Add at least one item to return.';
+
+  @override
+  String get selectRefundPaymentType => 'Select a refund payment type.';
+
+  @override
+  String get blindRefundQueued =>
+      'Blind refund queued — will sync automatically.';
+
+  @override
+  String blindRefundProcessed(String number) {
+    return 'Blind refund $number processed.';
+  }
+
+  @override
+  String get lookUpReceiptFirst => 'Look up a receipt first.';
+
+  @override
+  String get selectAtLeastOneItemToRefund =>
+      'Select at least one item to refund.';
+
+  @override
+  String get refundQueued => 'Refund queued — will sync automatically.';
+
+  @override
+  String refundProcessed(String number) {
+    return 'Refund $number processed.';
+  }
+
+  @override
+  String get customerReceiptOptional => 'Customer\'s receipt # (optional)';
+
+  @override
+  String get optionalFromPaperReceipt => 'optional — from paper receipt';
+
+  @override
+  String get blindReturnManagerAuthorised =>
+      'Blind return — manager authorised. No original receipt.';
+
+  @override
+  String get blindReturnExplain =>
+      'A blind return refunds goods with no receipt. A manager must approve it.';
+
+  @override
+  String priceTimesMaxQty(String price, String qty) {
+    return '$price × max $qty';
+  }
+
+  @override
+  String get advancedHardware => 'Advanced / Hardware';
+
+  @override
+  String get changeAllowed => 'Change Allowed';
+
+  @override
+  String get colCustomerRequired => 'Customer Req.';
+
+  @override
+  String get colMarkPaid => 'Mark Paid';
+
+  @override
+  String get colQuickPay => 'Quick Pay';
+
+  @override
+  String get colSlip => 'Slip';
+
+  @override
+  String get coreSettings => 'Core Settings';
+
+  @override
+  String get customerRequiredLabel => 'Customer Required';
+
+  @override
+  String deleteTaxRateConfirm(String name) {
+    return 'Are you sure you want to delete the tax rate \'$name\'?';
+  }
+
+  @override
+  String get editPaymentType => 'Edit Payment Type';
+
+  @override
+  String get editTaxRate => 'Edit Tax Rate';
+
+  @override
+  String get enterValidNumber => 'Enter a valid number';
+
+  @override
+  String get fiscal => 'Fiscal';
+
+  @override
+  String get markAsPaid => 'Mark As Paid';
+
+  @override
+  String get oldAndNewTaxMustDiffer => 'Old and new tax must be different.';
+
+  @override
+  String get paymentTypeDeleted => 'Payment type deleted';
+
+  @override
+  String get pleaseSelectBothTaxes => 'Please select both taxes.';
+
+  @override
+  String get quickPayment => 'Quick Payment';
+
+  @override
+  String get slipRequired => 'Slip Required';
+
+  @override
+  String get switchFailed => 'Switch failed.';
+
+  @override
+  String taxRateAppliedSuccessfully(
+    String rate,
+    String oldName,
+    String newName,
+  ) {
+    return 'Rate $rate from \'$oldName\' applied to \'$newName\' successfully.';
+  }
+
+  @override
+  String get taxRateDeleted => 'Tax rate deleted';
+
+  @override
+  String get yearTotal => 'YEAR TOTAL';
+
+  @override
+  String get topMonth => 'TOP MONTH';
+
+  @override
+  String monthlySalesYear(String year) {
+    return 'MONTHLY SALES — $year';
+  }
+
+  @override
+  String activeMonthsCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count active months',
+      one: '1 active month',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get periodicReports => 'Periodic Reports';
+
+  @override
+  String get selectDateRangeToFilter =>
+      'Select a date range to filter the cards below';
+
+  @override
+  String get failedToLoadYearlyData => 'Failed to load yearly data';
+
+  @override
+  String get noDataToDisplay => 'No data to display';
+
+  @override
+  String get selectedPeriod => 'Selected Period';
+
+  @override
+  String get filterLabel => 'Filter';
+
+  @override
+  String get customersAndSuppliers => 'Customers & suppliers';
+
+  @override
+  String get cashRegister => 'Cash register';
+
+  @override
+  String get colImage => 'Image';
+
+  @override
+  String get fieldUnit => 'Unit';
+
+  @override
+  String get markupPercent => 'Markup %';
+
+  @override
+  String get lastPurchase => 'Last Purchase';
+
+  @override
+  String get fieldRank => 'Rank';
+
+  @override
+  String get taxInclusive => 'Tax Inclusive';
+
+  @override
+  String get priceChange => 'Price Change';
+
+  @override
+  String get businessPartnerRequired => 'Business partner (required)';
+
+  @override
+  String get addServiceType => 'Add Service Type';
+
+  @override
+  String get allValuesMustBePositive => 'All values must be positive numbers.';
+
+  @override
+  String get bookingArrived => 'Arrived';
+
+  @override
+  String get bookingCompleted => 'Completed';
+
+  @override
+  String get bookingInService => 'In Service';
+
+  @override
+  String get bookingNoShow => 'No Show';
+
+  @override
+  String get bookingPending => 'Pending';
+
+  @override
+  String couldNotCheckStock(String message) {
+    return 'Could not check stock: $message';
+  }
+
+  @override
+  String deleteLoyaltyCardConfirm(String name) {
+    return 'Delete the loyalty card for $name? This cannot be undone.';
+  }
+
+  @override
+  String earningRuleExample(String symbol) {
+    return 'e.g. every 100 $symbol spent earns 10 pts';
+  }
+
+  @override
+  String get editServiceType => 'Edit Service Type';
+
+  @override
+  String get editWarehouse => 'Edit Warehouse';
+
+  @override
+  String get enterValidPointsValue =>
+      'Enter a valid non-negative points value.';
+
+  @override
+  String failedToAddCard(String message) {
+    return 'Failed to add card: $message';
+  }
+
+  @override
+  String failedToDeleteCard(String message) {
+    return 'Failed to delete: $message';
+  }
+
+  @override
+  String failedToUpdateCard(String message) {
+    return 'Failed to update card: $message';
+  }
+
+  @override
+  String guestsCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count guests',
+      one: '1 guest',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get historyTab => 'History';
+
+  @override
+  String get loyaltyCardAdded => 'Loyalty card added';
+
+  @override
+  String get loyaltyCardDeleted => 'Loyalty card deleted';
+
+  @override
+  String get loyaltyCardUpdated => 'Loyalty card updated';
+
+  @override
+  String get loyaltySettingsSaved => 'Loyalty settings saved';
+
+  @override
+  String get newWarehouse => 'New Warehouse';
+
+  @override
+  String get noCardNumber => 'No card number';
+
+  @override
+  String get noCompletedBookings => 'No completed bookings yet.';
+
+  @override
+  String get noLoyaltyCardsYet => 'No loyalty cards yet.';
+
+  @override
+  String get noUpcomingBookings => 'No upcoming bookings.';
+
+  @override
+  String get onePointEquals => '1 point equals';
+
+  @override
+  String orderNumbered(String number) {
+    return 'Order #$number';
+  }
+
+  @override
+  String get pleaseSelectACustomer => 'Please select a customer.';
+
+  @override
+  String get pointsCannotBeNegative => 'Points cannot be negative.';
+
+  @override
+  String redemptionRuleExample(String symbol) {
+    return 'e.g. 1 pt = 1 $symbol discount at checkout';
+  }
+
+  @override
+  String removeNamedConfirm(String name) {
+    return 'Remove \"$name\"?';
+  }
+
+  @override
+  String stockMovedWarehouseDeleted(String name) {
+    return 'Stock moved to $name; warehouse deleted';
+  }
+
+  @override
+  String tablesCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count tables',
+      one: '1 table',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get upcoming => 'Upcoming';
+
+  @override
+  String get warehouseAndStockDeleted => 'Warehouse and its stock deleted';
+
+  @override
+  String get warehouseDeleted => 'Warehouse deleted';
+
+  @override
+  String warehouseStillHoldsStock(String name, num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '\'$name\' still holds $count stock items. What should happen to them before the warehouse is deleted?',
+      one:
+          '\'$name\' still holds 1 stock item. What should happen to it before the warehouse is deleted?',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get beforeTax => 'Before tax';
+
+  @override
+  String get afterTax => 'After tax';
+
+  @override
+  String get listLabel => 'List';
+
+  @override
+  String get gridLabel => 'Grid';
+
+  @override
+  String get cancelUpper => 'CANCEL';
+
+  @override
+  String get noCategory => 'No category';
+
+  @override
+  String get enterAGroupName => 'Enter a group name.';
+
+  @override
+  String categoryCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count categories',
+      one: '1 category',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get enterAnIpAddress => 'Enter an IP address';
+
+  @override
+  String get invalidIpWithExample => 'Invalid IP (e.g. 192.168.1.100)';
+
+  @override
+  String get invalidIp => 'Invalid IP';
+
+  @override
+  String get backupDatabase => 'Backup database';
+
+  @override
+  String get backingUpEllipsis => 'Backing up…';
+
+  @override
+  String backupSaved(String file) {
+    return 'Backup saved: $file';
+  }
+
+  @override
+  String backupFailed(String message) {
+    return 'Backup failed: $message';
+  }
+
+  @override
+  String get selectBackupFolder => 'Select Backup Folder';
+
+  @override
+  String get autoBackupExplain =>
+      'Automatically create backup copies of your data to protect against loss or corruption';
+
+  @override
+  String get unitHours => 'hours';
+
+  @override
+  String get unitDays => 'days';
+
+  @override
+  String settingSaved(String setting) {
+    return '$setting saved';
+  }
+
+  @override
+  String get customerDisplayQrHint =>
+      'Scan the QR code to open the customer display on any internet-connected device.';
+
+  @override
+  String get everythingIsSynced => 'Everything is synced';
+
+  @override
+  String get exitApplicationConfirm =>
+      'Are you sure you want to exit the application?';
+
+  @override
+  String failedCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count failed',
+      one: '1 failed',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get fontSizeDefault => 'Default';
+
+  @override
+  String get fontSizeLarge => 'Large';
+
+  @override
+  String get fontSizeLarger => 'Larger';
+
+  @override
+  String get fontSizeSmall => 'Small';
+
+  @override
+  String itemsPendingCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items pending',
+      one: '1 item pending',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pendingCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count pending',
+      one: '1 pending',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get syncAfterEverySave => 'After every save';
+
+  @override
+  String get syncCashMovements => 'Cash movements';
+
+  @override
+  String get syncCustomerDiscounts => 'Customer discounts';
+
+  @override
+  String get syncEveryHour => 'Every 1 hour';
+
+  @override
+  String get syncNow => 'Sync now';
+
+  @override
+  String get syncProductComments => 'Product comments';
+
+  @override
+  String get syncProductTaxes => 'Product taxes';
+
+  @override
+  String get syncSalesOrders => 'Sales orders';
+
+  @override
+  String get syncShifts => 'Shifts';
+
+  @override
+  String get syncStatusTitle => 'Sync Status';
+
+  @override
+  String get syncStockCounts => 'Stock counts';
+
+  @override
+  String get syncStockTransfers => 'Stock transfers';
+
+  @override
+  String get syncVoids => 'Voids';
+
+  @override
+  String get syncZReports => 'Z-reports';
+
+  @override
+  String get syncedStatus => 'Synced';
+
+  @override
+  String get syncingEllipsis => 'Syncing…';
+
+  @override
+  String get backupPathHintWindows => 'e.g. D:\\database\\Backup';
+
+  @override
+  String get backupPathHintUnix => 'e.g. /home/user/backups';
+
+  @override
+  String get exchangeRateHint => 'e.g. 1.08  (1 primary = X secondary)';
 }

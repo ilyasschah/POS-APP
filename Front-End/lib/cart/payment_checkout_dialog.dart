@@ -159,6 +159,7 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
         currentPoints: card.points,
         pointValue: _pointValue,
         maxUsable: _grandTotal,
+        sym: _sym,
       ),
     );
     if (result != null && mounted) {
@@ -219,6 +220,7 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
         currentPoints: card.points,
         pointValue: _pointValue,
         maxUsable: _grandTotal,
+        sym: _sym,
       ),
     );
     if (result != null && result > 0 && mounted) {
@@ -263,9 +265,8 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
             builder: (c) => AlertDialog(
               icon: Icon(Icons.block, color: context.dangerColor, size: 36),
               title: Text(AppLocalizations.of(context).transactionBlocked),
-              content: const Text(
-                'Credit payment requires a selected customer.\n\n'
-                'Please choose a customer before completing this transaction.',
+              content: Text(
+                AppLocalizations.of(context).creditNeedsCustomer,
               ),
               actions: [
                 FilledButton(
@@ -781,7 +782,9 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
     } catch (e) {
       if (mounted) {
         setState(() => _isProcessing = false);
-        showAppSnackbar(context, ref, 'Checkout error: $e', isError: true);
+        showAppSnackbar(
+            context, ref, AppLocalizations.of(context).checkoutError(e.toString()),
+            isError: true);
       }
     }
   }
@@ -1187,7 +1190,7 @@ class _OrderSummaryColumn extends ConsumerWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Total',
+                      AppLocalizations.of(context).totalLabel,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -1280,7 +1283,7 @@ class _PaymentMethodsColumn extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             color: theme.colorScheme.surfaceContainer,
             child: Text(
-              'Payment Method',
+              AppLocalizations.of(context).paymentMethod,
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -1291,7 +1294,7 @@ class _PaymentMethodsColumn extends ConsumerWidget {
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, _) => Center(
                 child: Text(
-                  'Error',
+                  AppLocalizations.of(context).errorLabel,
                   style: TextStyle(color: theme.colorScheme.error),
                 ),
               ),
@@ -1485,7 +1488,7 @@ class _CustomerBar extends StatelessWidget {
                 onPressed: () => onPick(context, customers),
                 icon: const Icon(Icons.person_outline, size: 18),
                 label: Text(
-                  customer?.name ?? 'Walk-in',
+                  customer?.name ?? AppLocalizations.of(context).walkIn,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -1843,7 +1846,7 @@ class _CompleteButton extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Complete\nTransaction',
+                      AppLocalizations.of(context).completeTransaction,
                       textAlign: TextAlign.center,
                       style: theme.textTheme.titleMedium?.copyWith(
                         color: canPay
@@ -1905,7 +1908,7 @@ class _CustomerDetailCard extends StatelessWidget {
                 ),
                 if (address != null)
                   Text(
-                    'Address: $address',
+                    AppLocalizations.of(context).addressWithValue(address),
                     style: TextStyle(
                       fontSize: 11,
                       color: cs.onSurface.withValues(alpha: 0.65),
@@ -1914,7 +1917,8 @@ class _CustomerDetailCard extends StatelessWidget {
                 if (customer.taxNumber != null &&
                     customer.taxNumber!.isNotEmpty)
                   Text(
-                    'Tax No.: ${customer.taxNumber}',
+                    AppLocalizations.of(context)
+                        .taxNoWithValue(customer.taxNumber!),
                     style: TextStyle(
                       fontSize: 11,
                       color: cs.onSurface.withValues(alpha: 0.65),
@@ -1991,9 +1995,11 @@ class _LoyaltyInfoRow extends StatelessWidget {
                   ),
                   Text(
                     hasRedeemed
-                        ? 'Redeeming ${pointsUsed.toStringAsFixed(0)} pts'
-                            ' (−${discount.toStringAsFixed(2)} $sym)'
-                        : 'Tap to redeem points',
+                        ? AppLocalizations.of(context).redeemingPoints(
+                            pointsUsed.toStringAsFixed(0),
+                            discount.toStringAsFixed(2),
+                            sym)
+                        : AppLocalizations.of(context).tapToRedeemPoints,
                     style: TextStyle(
                       fontSize: 12,
                       color: hasRedeemed
@@ -2023,13 +2029,15 @@ class _LoyaltyPointsDialog extends StatefulWidget {
   final String customerName;
   final double currentPoints;
   final double pointValue;
-  final double maxUsable; // grand total cap — can't redeem more DH than the order total
+  final double maxUsable; // grand total cap — can't redeem more than the order total
+  final String sym;
 
   const _LoyaltyPointsDialog({
     required this.customerName,
     required this.currentPoints,
     required this.pointValue,
     required this.maxUsable,
+    required this.sym,
   });
 
   @override
@@ -2094,12 +2102,16 @@ class _LoyaltyPointsDialogState extends State<_LoyaltyPointsDialog> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Balance: ${widget.currentPoints.toStringAsFixed(0)} pts'
-                    ' = ${(widget.currentPoints * widget.pointValue).toStringAsFixed(2)} DH',
+                    AppLocalizations.of(context).pointsBalanceWorth(
+                        widget.currentPoints.toStringAsFixed(0),
+                        (widget.currentPoints * widget.pointValue)
+                            .toStringAsFixed(2),
+                        widget.sym),
                     style: theme.textTheme.bodySmall,
                   ),
                   Text(
-                    'Max usable this order: ${max.toStringAsFixed(0)} pts',
+                    AppLocalizations.of(context)
+                        .maxUsableThisOrder(max.toStringAsFixed(0)),
                     style: theme.textTheme.bodySmall
                         ?.copyWith(color: cs.onSurface.withValues(alpha: 0.6)),
                   ),
@@ -2116,12 +2128,15 @@ class _LoyaltyPointsDialogState extends State<_LoyaltyPointsDialog> {
               decoration: InputDecoration(
                 labelText: AppLocalizations.of(context).pointsToUse,
                 helperText: _discount > 0
-                    ? 'Discount: ${_discount.toStringAsFixed(2)} DH'
+                    ? AppLocalizations.of(context).discountWithAmount(
+                        _discount.toStringAsFixed(2), widget.sym)
                     : null,
                 suffixText: 'pts',
                 border: const OutlineInputBorder(),
                 errorText:
-                    entered > max && entered > 0 ? 'Exceeds maximum' : null,
+                    entered > max && entered > 0
+                        ? AppLocalizations.of(context).exceedsMaximum
+                        : null,
               ),
               onChanged: (_) => setState(() {}),
             ),

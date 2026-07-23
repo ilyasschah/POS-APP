@@ -34,6 +34,24 @@ import 'package:pos_app/utils/snackbar_helper.dart';
 
 // ── Model ─────────────────────────────────────────────────────────────────────
 
+/// The terminal that rang a sale, read off the document number's own prefix
+/// (`POS1-200-000026` → `POS1`).
+///
+/// It is deliberately **not** read from `deviceNameProvider`: that setting is
+/// device-local and never synced, so using it would label every document
+/// pulled from another terminal with *this* terminal's name.
+///
+/// Manual-editor documents are numbered by the server
+/// (`/Document/GetNextNumber`, e.g. `26-100-000001`) and have no terminal at
+/// all. They are told apart by [orderNumber] — the checkout-vs-manual
+/// discriminator used throughout this codebase — and **not** by the number's
+/// shape, which the two formats share.
+String? posNameFromDocumentNumber(String number, String? orderNumber) {
+  if (orderNumber == null || orderNumber.isEmpty) return null;
+  final match = RegExp(r'^([A-Z0-9]{1,12})-\d+-\d+$').firstMatch(number);
+  return match?.group(1);
+}
+
 class SalesHistoryDocument {
   final int id;
   final String? localId;
@@ -498,7 +516,8 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       builder: (ctx) => AlertDialog(
         title: Text(AppLocalizations.of(context).deleteDocument, style: const TextStyle(fontSize: 20)),
         content: Text(
-          "Delete '${doc.number}'? This cannot be undone.",
+          AppLocalizations.of(context)
+              .deleteDocumentConfirmPermanent(doc.number),
           style: const TextStyle(fontSize: 16),
         ),
         actions: [
@@ -535,13 +554,15 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
         );
       }
       if (!mounted) return;
-      showAppSnackbar(context, ref, 'Document deleted');
+      showAppSnackbar(
+          context, ref, AppLocalizations.of(context).documentDeleted);
       _fetchDocuments();
     } on DioException catch (e) {
       if (!mounted) return;
       final data = e.response?.data;
       final msg =
-          (data is Map ? data['message'] : data?.toString()) ?? 'Delete failed';
+          (data is Map ? data['message'] : data?.toString()) ??
+              AppLocalizations.of(context).deleteFailed;
       showAppSnackbar(context, ref, msg, isError: true);
     }
   }
@@ -789,7 +810,8 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
   }
 
   void _notImplemented(String action) {
-    showAppSnackbar(context, ref, '$action — coming soon');
+    showAppSnackbar(
+        context, ref, AppLocalizations.of(context).featureComingSoon(action));
   }
 
   // ── build ─────────────────────────────────────────────────────────────────
@@ -816,9 +838,10 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
             // Header content: Replaced generic Text title with a comprehensive Row
             title: Row(
               children: [
-                const Text(
-                  'Sales history',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                Text(
+                  AppLocalizations.of(context).salesHistoryTitle,
+                  style: const TextStyle(
+                      fontSize: 22, fontWeight: FontWeight.bold),
                 ),
                 const Spacer(),
 
@@ -914,7 +937,9 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
         children: [
           _toolBtn(
             _showAllUsers ? Icons.group : Icons.person_outline,
-            _showAllUsers ? 'All users' : 'My sales',
+            _showAllUsers
+                ? AppLocalizations.of(context).allUsers
+                : AppLocalizations.of(context).mySales,
             () {
               setState(() => _showAllUsers = !_showAllUsers);
               _fetchDocuments();
@@ -923,7 +948,9 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
           ),
           _toolBtn(
             Icons.person,
-            _filterCustomer != null ? _filterCustomer!.name : 'Customer',
+            _filterCustomer != null
+                ? _filterCustomer!.name
+                : AppLocalizations.of(context).customerLabel,
             () => _showCustomerPicker(),
             active: _filterCustomer != null,
           ),
@@ -934,17 +961,17 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
 
           _toolBtn(
             Icons.print_outlined,
-            'Print',
+            AppLocalizations.of(context).setPrint,
             sel == null ? null : () => _printInvoice(sel),
           ),
           _toolBtn(
             Icons.picture_as_pdf_outlined,
-            'Save as PDF',
+            AppLocalizations.of(context).saveAsPdf,
             sel == null ? null : () => _saveInvoicePdf(sel),
           ),
           _toolBtn(
             Icons.receipt_outlined,
-            'Receipt',
+            AppLocalizations.of(context).receiptLabel,
             sel == null
                 ? null
                 : () => ref
@@ -957,8 +984,11 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
           ),
           _toolBtn(
             Icons.mail_outline,
-            'Send email',
-            sel == null ? null : () => _notImplemented('Send email'),
+            AppLocalizations.of(context).sendEmail,
+            sel == null
+                ? null
+                : () => _notImplemented(
+                    AppLocalizations.of(context).sendEmail),
           ),
 
           const Gap(12),
@@ -967,7 +997,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
 
           _toolBtn(
             Icons.undo_outlined,
-            'Refund',
+            AppLocalizations.of(context).posRefund,
             sel == null
                 ? null
                 : () => ref
@@ -984,7 +1014,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
           ),
           _toolBtn(
             Icons.delete_outline,
-            'Delete',
+            AppLocalizations.of(context).actionDelete,
             sel == null
                 ? null
                 : () => ref
@@ -1000,7 +1030,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
           const Spacer(),
           _toolBtn(
             Icons.view_column_outlined,
-            'Columns',
+            AppLocalizations.of(context).columns,
             () => _pickColumns(
               title: AppLocalizations.of(context).documentsColumns,
               columns: _masterColumns(context)
@@ -1011,7 +1041,8 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
               onApply: (s) => setState(() => _visibleMasterColIds = s),
             ),
           ),
-          _toolBtn(Icons.sync, 'Refresh', () => _fetchDocuments()),
+          _toolBtn(Icons.sync, AppLocalizations.of(context).refresh,
+              () => _fetchDocuments()),
         ],
       ),
     );
@@ -1137,7 +1168,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _sectionHeader(theme, cs, 'Documents'),
+            _sectionHeader(theme, cs, AppLocalizations.of(context).documents),
             SizedBox(
               height: masterH - headerH,
               child: _buildMasterTable(context, theme, cs, sym),
@@ -1170,7 +1201,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
             _sectionHeader(
               theme,
               cs,
-              'Document items',
+              AppLocalizations.of(context).documentItems,
               trailing: _columnsHeaderButton(
                 cs,
                 () => _pickColumns(
@@ -1237,7 +1268,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
               ),
               const Gap(6),
               Text(
-                'Columns',
+                AppLocalizations.of(context).columns,
                 style: TextStyle(
                   fontSize: 14, // Larger text
                   fontWeight: FontWeight.w600,
@@ -1305,14 +1336,14 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       ),
       'external': (doc) => Text(doc.referenceDocumentNumber ?? '-', style: ts),
       'customer': (doc) => Text(
-        doc.customerName ?? 'Unknown',
+        doc.customerName ?? AppLocalizations.of(context).unknownLabel,
         style: ts,
         overflow: TextOverflow.ellipsis,
       ),
       'date': (doc) => Text(_fmt(doc.date), style: ts),
       'created': (doc) => Text(_fmt(doc.stockDate), style: ts),
       'pos': (doc) => Text(
-        doc.warehouseName ?? 'N/A',
+        posNameFromDocumentNumber(doc.number, doc.orderNumber) ?? '-',
         style: ts,
         overflow: TextOverflow.ellipsis,
       ),
@@ -1377,7 +1408,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
             ),
             const Gap(16),
             Text(
-              'No sales documents for the selected period.',
+              AppLocalizations.of(context).noSalesDocumentsForPeriod,
               style: TextStyle(
                 color: cs.onSurface.withValues(alpha: 0.5),
                 fontSize: 16,
@@ -1427,7 +1458,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     if (_selectedDocLocalId == null) {
       return Center(
         child: Text(
-          'Select a document above to view its items.',
+          AppLocalizations.of(context).selectDocumentToViewItems,
           style: TextStyle(
             color: cs.onSurface.withValues(alpha: 0.45),
             fontSize: 16,
@@ -1495,7 +1526,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       },
       emptyWidget: Center(
         child: Text(
-          'No items found for this document.',
+          AppLocalizations.of(context).noItemsForDocument,
           style: TextStyle(
             color: cs.onSurface.withValues(alpha: 0.45),
             fontSize: 16,
@@ -1520,7 +1551,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       child: Row(
         children: [
           Text(
-            'Documents count: ${_documents.length}',
+            AppLocalizations.of(context).documentsCountValue(_documents.length),
             style: TextStyle(
               fontSize: 16, // Larger font
               color: cs.onSurface.withValues(alpha: 0.7),
@@ -1529,7 +1560,8 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
           ),
           const Spacer(),
           Text(
-            'Total amount: ${_numFmt.format(totalAmount)} $sym',
+            AppLocalizations.of(context).totalAmountWithValue(
+                _numFmt.format(totalAmount), sym),
             style: TextStyle(
               fontSize: 20, // Highlight the final total
               fontWeight: FontWeight.w800,
@@ -1644,9 +1676,9 @@ class _ColumnSelectorDialogState extends State<_ColumnSelectorDialog> {
                         ..clear()
                         ..addAll(widget.columns.map((c) => c.id)),
                     ),
-                    child: const Text(
-                      'Select all',
-                      style: TextStyle(fontSize: 16),
+                    child: Text(
+                      AppLocalizations.of(context).selectAll,
+                      style: const TextStyle(fontSize: 16),
                     ),
                   ),
                   const Spacer(),
@@ -1729,7 +1761,7 @@ class _CustomerPickerDialogState extends ConsumerState<_CustomerPickerDialog> {
                   ),
                   const Gap(12),
                   Text(
-                    'Filter by customer',
+                    AppLocalizations.of(context).filterByCustomer,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                       fontSize: 18,
@@ -1788,7 +1820,7 @@ class _CustomerPickerDialogState extends ConsumerState<_CustomerPickerDialog> {
                       ),
                       const Gap(12),
                       Text(
-                        'All customers',
+                        AppLocalizations.of(context).allCustomers,
                         style: TextStyle(
                           fontSize: 16,
                           color: cs.onSurface.withValues(alpha: 0.7),
@@ -1807,7 +1839,7 @@ class _CustomerPickerDialogState extends ConsumerState<_CustomerPickerDialog> {
                 ),
                 error: (e, _) => Center(
                   child: Text(
-                    'Failed to load customers',
+                    AppLocalizations.of(context).failedToLoadCustomers,
                     style: TextStyle(color: cs.error, fontSize: 16),
                   ),
                 ),
@@ -1826,7 +1858,7 @@ class _CustomerPickerDialogState extends ConsumerState<_CustomerPickerDialog> {
                   if (filtered.isEmpty) {
                     return Center(
                       child: Text(
-                        'No customers found',
+                        AppLocalizations.of(context).noCustomersFound,
                         style: TextStyle(
                           color: cs.onSurface.withValues(alpha: 0.45),
                           fontSize: 16,

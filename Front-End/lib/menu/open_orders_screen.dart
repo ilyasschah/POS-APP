@@ -430,8 +430,9 @@ class _OpenOrdersScreenState extends ConsumerState<OpenOrdersScreen> {
                   const Gap(16),
                   Text(
                     searching
-                        ? 'No orders match "${_search.trim()}"'
-                        : 'No open orders',
+                        ? AppLocalizations.of(context)
+                            .noOrdersMatchQuery(_search.trim())
+                        : AppLocalizations.of(context).noOpenOrders,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           color: Theme.of(context)
@@ -638,11 +639,15 @@ class _OpenOrderCardState extends ConsumerState<_OpenOrderCard> {
         // cash-in hook). Just point the shared nav index at the POS Menu.
         ref.read(mainNavigationIndexProvider.notifier).state = 0;
       } else {
-        showAppSnackbar(context, ref, 'Failed to load order.', isError: true);
+        showAppSnackbar(
+            context, ref, AppLocalizations.of(context).failedToLoadOrder,
+            isError: true);
       }
     } catch (e) {
       if (mounted) {
-        showAppSnackbar(context, ref, 'Error: $e', isError: true);
+        showAppSnackbar(context, ref,
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            isError: true);
       }
     } finally {
       if (mounted) setState(() => _loading = false);

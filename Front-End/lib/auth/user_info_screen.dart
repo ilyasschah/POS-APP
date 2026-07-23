@@ -73,7 +73,8 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
       );
       _fetchDevices();
       if (mounted) {
-        showAppSnackbar(context, ref, 'Device revoked successfully');
+        showAppSnackbar(
+            context, ref, AppLocalizations.of(context).deviceRevokedSuccessfully);
       }
     } on DioException catch (e, st) {
       if (mounted) rethrowApiError(e, st);
@@ -138,7 +139,10 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
                     : () async {
                         if (newPasswordCtrl.text != confirmPasswordCtrl.text) {
                           showAppSnackbar(
-                              context, ref, "New passwords do not match",
+                              context,
+                              ref,
+                              AppLocalizations.of(context)
+                                  .newPasswordsDoNotMatch,
                               isError: true);
                           return;
                         }
@@ -159,7 +163,10 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
                           if (context.mounted) {
                             Navigator.pop(context);
                             showAppSnackbar(
-                                context, ref, "Password updated successfully");
+                                context,
+                                ref,
+                                AppLocalizations.of(context)
+                                    .passwordUpdatedSuccessfully);
                           }
                         } on DioException catch (e, st) {
                           rethrowApiError(e, st);
@@ -217,7 +224,8 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
                     ? null
                     : () async {
                         if (pinCtrl.text.length < 4) {
-                          showAppSnackbar(context, ref, "PIN must be 4 digits",
+                          showAppSnackbar(context, ref,
+                              AppLocalizations.of(context).pinMustBeFourDigits,
                               isError: true);
                           return;
                         }
@@ -238,7 +246,10 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
                           if (context.mounted) {
                             Navigator.pop(context);
                             showAppSnackbar(
-                                context, ref, "PIN updated successfully");
+                                context,
+                                ref,
+                                AppLocalizations.of(context)
+                                    .pinUpdatedSuccessfully);
                             ref.invalidate(allUsersProvider);
                           }
                         } on DioException catch (e, st) {
@@ -345,8 +356,8 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
                           ),
                           child: Text(
                             currentUser.accessLevel == 0
-                                ? "Administrator"
-                                : "Cashier",
+                                ? AppLocalizations.of(context).administrator
+                                : AppLocalizations.of(context).roleCashier,
                             style: TextStyle(
                               color: currentUser.accessLevel == 0
                                   ? Colors.orange
@@ -359,15 +370,16 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
                         _buildInfoRow(
                           context,
                           Icons.account_circle,
-                          "Username",
+                          AppLocalizations.of(context).username,
                           currentUser.username ?? "N/A",
                         ),
                         const Divider(height: 32),
                         _buildInfoRow(
                           context,
                           Icons.email,
-                          "Email",
-                          currentUser.email ?? "No email provided",
+                          AppLocalizations.of(context).fieldEmail,
+                          currentUser.email ??
+                              AppLocalizations.of(context).noEmailProvided,
                         ),
                       ],
                     ),
@@ -413,9 +425,9 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
-                              "Active Devices",
-                              style: TextStyle(
+                            Text(
+                              AppLocalizations.of(context).activeDevices,
+                              style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -435,10 +447,10 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
                             ),
                           )
                         else if (_activeDevices.isEmpty)
-                          const Padding(
-                            padding: EdgeInsets.all(24),
+                          Padding(
+                            padding: const EdgeInsets.all(24),
                             child: Text(
-                              "No active devices found.",
+                              AppLocalizations.of(context).noActiveDevicesFound,
                               textAlign: TextAlign.center,
                             ),
                           )
@@ -462,13 +474,18 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
                                 ),
                                 title: Text(device['deviceId']),
                                 subtitle: Text(
-                                  "Linked: ${DateTime.parse(device['createdAt']).toLocal().toString().split('.')[0]}",
+                                  AppLocalizations.of(context).linkedAt(
+                                      DateTime.parse(device['createdAt'])
+                                          .toLocal()
+                                          .toString()
+                                          .split('.')[0]),
                                 ),
                                 trailing: isCurrentDevice
-                                    ? const Chip(
+                                    ? Chip(
                                         label: Text(
-                                          "This Device",
-                                          style: TextStyle(fontSize: 10),
+                                          AppLocalizations.of(context)
+                                              .thisDevice,
+                                          style: const TextStyle(fontSize: 10),
                                         ),
                                       )
                                     : IconButton(

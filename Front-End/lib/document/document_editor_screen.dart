@@ -410,20 +410,21 @@ class _DocumentEditorDialogState extends ConsumerState<_DocumentEditorDialog> {
   Future<void> _saveOrUpdateHeader() async {
     final company = ref.read(selectedCompanyProvider);
     if (company == null) return;
+    final l = AppLocalizations.of(context);
     if (_selectedDocTypeId == null) {
-      setState(() => _errorMessage = "Please select a document type.");
+      setState(() => _errorMessage = l.selectDocumentTypeError);
       return;
     }
     if (_selectedCustomerId == null) {
-      setState(() => _errorMessage = "Please select a customer/supplier.");
+      setState(() => _errorMessage = l.selectCustomerSupplierError);
       return;
     }
     if (_selectedUserId == null) {
-      setState(() => _errorMessage = "Please select a user.");
+      setState(() => _errorMessage = l.selectUserError);
       return;
     }
     if (_selectedWarehouseId == null) {
-      setState(() => _errorMessage = "Please select a warehouse.");
+      setState(() => _errorMessage = l.selectWarehouseError);
       return;
     }
 
@@ -508,7 +509,7 @@ class _DocumentEditorDialogState extends ConsumerState<_DocumentEditorDialog> {
         final localId = await _resolveLocalId();
         if (localId == null) {
           setState(() {
-            _errorMessage = "Could not resolve the local document.";
+            _errorMessage = l.couldNotResolveLocalDocument;
             _isLoading = false;
           });
           return;
@@ -517,6 +518,11 @@ class _DocumentEditorDialogState extends ConsumerState<_DocumentEditorDialog> {
         await db.updateManualDocumentHeader(
           localId,
           DocumentsTableCompanion(
+            // '' — NOT null — is how this codebase spells "no number yet"
+            // (Document.fromJson and every `number?.isNotEmpty` check agree).
+            // Null would be pushed as JSON null, and CreateDocumentRequest.Number
+            // is `required string`: the API rejects it with a 400, which parks a
+            // still-pending_create row at sync_failed with no retry path.
             number: Value(_numberCtrl.text.trim()),
             customerId: Value(_selectedCustomerId),
             userId: Value(_selectedUserId!),
@@ -540,7 +546,7 @@ class _DocumentEditorDialogState extends ConsumerState<_DocumentEditorDialog> {
         _kickSync();
 
         if (mounted) {
-          showAppSnackbar(context, ref, "Document saved!");
+          showAppSnackbar(context, ref, l.documentSaved);
         }
       }
     } catch (e) {
@@ -560,12 +566,17 @@ class _DocumentEditorDialogState extends ConsumerState<_DocumentEditorDialog> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
 
-    String title = "New Document";
+    // The controller is empty for a document the server has not numbered yet;
+    // the title still needs something to render after the dash.
+    final titleNumber =
+        _numberCtrl.text.trim().isEmpty ? '—' : _numberCtrl.text.trim();
+    String title = l.newDocument;
     if (_isEditing) {
-      title = "Edit Document — ${_numberCtrl.text}";
+      title = l.editDocumentNumbered(titleNumber);
     } else if (_headerSaved) {
-      title = "Document — ${_numberCtrl.text}";
+      title = l.documentNumbered(titleNumber);
     }
 
     final companyId = ref.read(selectedCompanyProvider)?.id ?? 0;
@@ -657,9 +668,9 @@ class _DocumentEditorDialogState extends ConsumerState<_DocumentEditorDialog> {
           child: Padding(
             padding: const EdgeInsets.all(32),
             child: Text(
-              'Save the document header first (Document Info → '
-              '${_isEditing ? "Save Header Changes" : "Create & Add Items"}) '
-              'to manage items, discounts and payments.',
+              l.saveHeaderFirstHint(
+                _isEditing ? l.saveHeaderChanges : l.createAndAddItems,
+              ),
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
@@ -667,13 +678,13 @@ class _DocumentEditorDialogState extends ConsumerState<_DocumentEditorDialog> {
           ),
         );
 
-    const List<Widget> dialogTabs = [
-      Tab(text: "Document Info"),
-      Tab(text: "Parties & Logistics"),
-      Tab(text: "Financials & Notes"),
-      Tab(text: "Document Items"),
-      Tab(text: "Discount Breakdown"),
-      Tab(text: "Payments"),
+    final List<Widget> dialogTabs = [
+      Tab(text: l.documentInfo),
+      Tab(text: l.partiesLogistics),
+      Tab(text: l.financialsNotes),
+      Tab(text: l.documentItems),
+      Tab(text: l.discountBreakdown),
+      Tab(text: l.paymentsTab),
     ];
 
     final List<Widget> dialogTabViews = [
@@ -945,8 +956,10 @@ class _HeaderForm extends ConsumerWidget {
     required this.onSave,
   });
 
-  String _fmt(DateTime dt) =>
-      "${dt.day.toString().padLeft(2, '0')}-${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][dt.month - 1]}-${dt.year}";
+  String _fmt(BuildContext context, DateTime dt) {
+    final months = AppLocalizations.of(context).monthAbbreviations.split(',');
+    return "${dt.day.toString().padLeft(2, '0')}-${months[dt.month - 1]}-${dt.year}";
+  }
 
   Widget _buildCard(String title, IconData icon, List<Widget> children) {
     return Card(
@@ -981,6 +994,8 @@ class _HeaderForm extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
+    String fmt(DateTime dt) => _fmt(context, dt);
     final asyncCustomers = ref.watch(selectableCustomersProvider);
     final asyncUsers = ref.watch(allUsersProvider);
     final asyncWarehouses = ref.watch(allWarehousesProvider);
@@ -1000,7 +1015,7 @@ class _HeaderForm extends ConsumerWidget {
       children: [
         // ── CARD 1: Document Info ──
         if (showInfo)
-        _buildCard('Document Info', Icons.description_outlined, [
+        _buildCard(l.documentInfo, Icons.description_outlined, [
           Row(
             children: [
               Expanded(
@@ -1008,7 +1023,7 @@ class _HeaderForm extends ConsumerWidget {
                 child: OutlinedButton.icon(
                   icon: const Icon(Icons.list_alt),
                   label: Text(
-                    selectedDocTypeName ?? "Select document type...",
+                    selectedDocTypeName ?? l.selectDocumentType,
                     overflow: TextOverflow.ellipsis,
                   ),
                   onPressed: onSelectDocType,
@@ -1035,19 +1050,14 @@ class _HeaderForm extends ConsumerWidget {
           const SizedBox(height: 16),
           Row(
             children: [
-              Expanded(child: _datePicker("Date", date, onDatePick, _fmt)),
+              Expanded(child: _datePicker(l.dateLabel, date, onDatePick, fmt)),
               const SizedBox(width: 12),
               Expanded(
-                child: _datePicker("Due Date", dueDate, onDueDatePick, _fmt),
+                child: _datePicker(l.dueDate, dueDate, onDueDatePick, fmt),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _datePicker(
-                  "Stock Date",
-                  stockDate,
-                  onStockDatePick,
-                  _fmt,
-                ),
+                child: _datePicker(l.stockDate, stockDate, onStockDatePick, fmt),
               ),
             ],
           ),
@@ -1056,7 +1066,7 @@ class _HeaderForm extends ConsumerWidget {
 
         // ── CARD 2: Parties & Logistics ──
         if (showParties)
-        _buildCard('Parties & Logistics', Icons.local_shipping_outlined, [
+        _buildCard(l.partiesLogistics, Icons.local_shipping_outlined, [
           // Customer / Supplier
           asyncCustomers.when(
             loading: () => const LinearProgressIndicator(),
@@ -1071,7 +1081,7 @@ class _HeaderForm extends ConsumerWidget {
               return DropdownButtonFormField<int>(
                 initialValue: isValid ? selectedCustomerId : null,
                 decoration: InputDecoration(
-                  labelText: isSupplier ? "Supplier *" : "Customer *",
+                  labelText: isSupplier ? l.supplierRequired : l.customerRequired,
                   prefixIcon: const Icon(Icons.business),
                   border: const OutlineInputBorder(),
                 ),
@@ -1153,7 +1163,7 @@ class _HeaderForm extends ConsumerWidget {
 
         // ── CARD 3: Financials & Notes ──
         if (showFinancials)
-        _buildCard('Financials & Notes', Icons.request_quote_outlined, [
+        _buildCard(l.financialsNotes, Icons.request_quote_outlined, [
           TextFormField(
             controller: refDocCtrl,
             decoration: InputDecoration(
@@ -1204,10 +1214,10 @@ class _HeaderForm extends ConsumerWidget {
                       value: discountApplyRule,
                       onChanged: (v) => onDiscountApplyRuleChanged(v ?? true),
                     ),
-                    const Expanded(
+                    Expanded(
                       child: Text(
-                        "Apply after tax",
-                        style: TextStyle(fontSize: 13),
+                        l.applyAfterTax,
+                        style: const TextStyle(fontSize: 13),
                       ),
                     ),
                   ],
@@ -1269,7 +1279,7 @@ class _HeaderForm extends ConsumerWidget {
               ElevatedButton.icon(
                 icon: Icon(isEditing ? Icons.save : Icons.arrow_forward),
                 label: Text(
-                  isEditing ? "Save Header Changes" : "Create & Add Items",
+                  isEditing ? l.saveHeaderChanges : l.createAndAddItems,
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: theme.colorScheme.primary,
@@ -1327,6 +1337,7 @@ class _ItemsView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     final sym = ref.watch(currencySymbolProvider);
     final itemsArgs = LocalItemsArgs(
       docLocalId: documentLocalId,
@@ -1364,13 +1375,13 @@ class _ItemsView extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Row(
+                Row(
                   children: [
-                    Icon(Icons.inventory_2_outlined, size: 24),
-                    SizedBox(width: 12),
+                    const Icon(Icons.inventory_2_outlined, size: 24),
+                    const SizedBox(width: 12),
                     Text(
-                      "Document Items",
-                      style: TextStyle(
+                      l.documentItems,
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
@@ -1413,7 +1424,7 @@ class _ItemsView extends ConsumerWidget {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 32),
                   child: Text(
-                    "Error: $e",
+                    l.errorWithMessage('$e'),
                     style: TextStyle(color: theme.colorScheme.error),
                   ),
                 ),
@@ -1433,7 +1444,7 @@ class _ItemsView extends ConsumerWidget {
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            "No items added yet.",
+                            l.noItemsAddedYet,
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
@@ -1442,7 +1453,7 @@ class _ItemsView extends ConsumerWidget {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            "Click 'Add Product' to get started.",
+                            l.clickAddProductToStart,
                             style: TextStyle(
                               fontSize: 14,
                               color: theme.disabledColor,
@@ -1482,7 +1493,7 @@ class _ItemsView extends ConsumerWidget {
                           Expanded(
                             flex: 3,
                             child: Text(
-                              "Product",
+                              l.productLabel,
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: theme.textTheme.bodyMedium?.color,
@@ -1492,7 +1503,7 @@ class _ItemsView extends ConsumerWidget {
                           Expanded(
                             flex: 1,
                             child: Text(
-                              "Qty",
+                              l.qtyShort,
                               textAlign: TextAlign.right,
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
@@ -1503,7 +1514,7 @@ class _ItemsView extends ConsumerWidget {
                           Expanded(
                             flex: 1,
                             child: Text(
-                              "Price",
+                              l.priceLabel,
                               textAlign: TextAlign.right,
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
@@ -1514,7 +1525,7 @@ class _ItemsView extends ConsumerWidget {
                           Expanded(
                             flex: 1,
                             child: Text(
-                              "Item Disc.",
+                              l.itemDiscShort,
                               textAlign: TextAlign.right,
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
@@ -1525,7 +1536,7 @@ class _ItemsView extends ConsumerWidget {
                           Expanded(
                             flex: 1,
                             child: Text(
-                              "Tax",
+                              l.fieldTax,
                               textAlign: TextAlign.right,
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
@@ -1536,7 +1547,7 @@ class _ItemsView extends ConsumerWidget {
                           Expanded(
                             flex: 1,
                             child: Text(
-                              "Subtotal",
+                              l.subtotal,
                               textAlign: TextAlign.right,
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
@@ -1547,7 +1558,7 @@ class _ItemsView extends ConsumerWidget {
                           Expanded(
                             flex: 1,
                             child: Text(
-                              "Total",
+                              l.totalLabel,
                               textAlign: TextAlign.right,
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
@@ -1558,7 +1569,7 @@ class _ItemsView extends ConsumerWidget {
                           SizedBox(
                             width: 80,
                             child: Text(
-                              "Actions",
+                              l.actionsLabel,
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
@@ -1699,11 +1710,11 @@ class _ItemsView extends ConsumerWidget {
                                             final confirm = await showDialog<bool>(
                                               context: context,
                                               builder: (ctx) => AlertDialog(
-                                                title: const Text(
-                                                  "Delete Item",
-                                                ),
+                                                title: Text(l.deleteItem),
                                                 content: Text(
-                                                  "Delete '${item.productName}'?",
+                                                  l.deleteItemConfirm(
+                                                    item.productName ?? '',
+                                                  ),
                                                 ),
                                                 actions: [
                                                   TextButton(
@@ -1725,7 +1736,7 @@ class _ItemsView extends ConsumerWidget {
                                                           ctx,
                                                         ).pop(true),
                                                     child: Text(
-                                                      "Delete",
+                                                      l.actionDelete,
                                                       style: TextStyle(
                                                         color: theme
                                                             .colorScheme
@@ -1783,7 +1794,7 @@ class _ItemsView extends ConsumerWidget {
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         Text(
-                          "Items Base Total:",
+                          l.itemsBaseTotal,
                           style: TextStyle(
                             fontSize: 14,
                             color: theme.textTheme.bodyMedium?.color,
@@ -1857,8 +1868,9 @@ class _AddItemDialogState extends ConsumerState<_AddItemDialog> {
   double get _total => (_price - _discountTaxed) * _qty;
 
   Future<void> _submit() async {
+    final l = AppLocalizations.of(context);
     if (_selectedProductId == null) {
-      setState(() => _errorMessage = "Please select a product.");
+      setState(() => _errorMessage = l.selectProductError);
       return;
     }
     setState(() {
@@ -1914,7 +1926,7 @@ class _AddItemDialogState extends ConsumerState<_AddItemDialog> {
       Navigator.of(context).pop();
     } catch (e) {
       setState(() {
-        _errorMessage = "Failed to add item: $e";
+        _errorMessage = l.failedToAddItem('$e');
         _isLoading = false;
       });
     }
@@ -2274,6 +2286,7 @@ class _EditItemDialogState extends ConsumerState<_EditItemDialog> {
   double get _total => (_price - _discTaxed) * _qty;
 
   Future<void> _submit() async {
+    final l = AppLocalizations.of(context);
     final localId = widget.item.localId;
     if (localId == null) {
       Navigator.of(context).pop();
@@ -2320,7 +2333,7 @@ class _EditItemDialogState extends ConsumerState<_EditItemDialog> {
       Navigator.of(context).pop();
     } catch (e) {
       setState(() {
-        _errorMessage = "Update failed: $e";
+        _errorMessage = l.updateFailedWithMessage('$e');
         _isLoading = false;
       });
     }
@@ -2498,9 +2511,12 @@ class _EditItemDialogState extends ConsumerState<_EditItemDialog> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    "Item Tax",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  Text(
+                    AppLocalizations.of(context).itemTax,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   allTaxesAsync.when(
@@ -2614,10 +2630,11 @@ class _PaidStatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final (label, icon, color) = switch (paidStatus) {
-      1 => ('Paid', Icons.check_circle, Colors.green),
-      2 => ('Partial', Icons.timelapse, Colors.orange),
-      _ => ('Unpaid', Icons.cancel, Colors.red),
+      1 => (l.paid, Icons.check_circle, Colors.green),
+      2 => (l.partial, Icons.timelapse, Colors.orange),
+      _ => (l.unpaid, Icons.cancel, Colors.red),
     };
 
     final nextStatus = paidStatus == 1 ? 0 : 1;
@@ -2711,9 +2728,9 @@ class _PaymentsView extends ConsumerWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              "Applied Payments",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            Text(
+              AppLocalizations.of(context).appliedPayments,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             Row(
               mainAxisSize: MainAxisSize.min,
@@ -2732,10 +2749,9 @@ class _PaymentsView extends ConsumerWidget {
                         context: context,
                         builder: (ctx) => AlertDialog(
                           title: Text(AppLocalizations.of(context).markAsUnpaid),
-                          content: const Text(
-                            'This document has a complete payment balance.\n\n'
-                            'Proceeding will permanently delete all associated '
-                            'payment transactions. Are you sure?',
+                          content: Text(
+                            AppLocalizations.of(context)
+                                .deleteAllPaymentsWarning,
                           ),
                           actions: [
                             TextButton(
@@ -2790,7 +2806,7 @@ class _PaymentsView extends ConsumerWidget {
         asyncPayments.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => Text(
-            "Error: $e",
+            AppLocalizations.of(context).errorWithMessage('$e'),
             style: TextStyle(color: theme.colorScheme.error),
           ),
           data: (payments) {
@@ -2806,17 +2822,17 @@ class _PaymentsView extends ConsumerWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       _SummaryCard(
-                        "Document Total",
+                        AppLocalizations.of(context).documentTotal,
                         documentTotal,
                         theme.colorScheme.primary,
                       ),
                       _SummaryCard(
-                        "Total Paid",
+                        AppLocalizations.of(context).totalPaid,
                         totalPaid,
                         context.successColor,
                       ),
                       _SummaryCard(
-                        "Remaining Balance",
+                        AppLocalizations.of(context).remainingBalance,
                         remaining,
                         remaining > 0
                             ? context.warningColor
@@ -2827,10 +2843,10 @@ class _PaymentsView extends ConsumerWidget {
                   const SizedBox(height: 24),
 
                   if (payments.isEmpty)
-                    const Center(
+                    Center(
                       child: Text(
-                        "No payments added yet.",
-                        style: TextStyle(color: Colors.grey),
+                        AppLocalizations.of(context).noPaymentsAddedYet,
+                        style: const TextStyle(color: Colors.grey),
                       ),
                     )
                   else
@@ -2874,7 +2890,11 @@ class _PaymentsView extends ConsumerWidget {
                                   ),
                                 ),
                                 DataCell(
-                                  Text(payment.paymentTypeName ?? "Unknown"),
+                                  Text(
+                                    payment.paymentTypeName ??
+                                        AppLocalizations.of(context)
+                                            .unknownLabel,
+                                  ),
                                 ),
                                 DataCell(
                                   Text(
@@ -2936,11 +2956,13 @@ class _PaymentsView extends ConsumerWidget {
                                                 final confirm = await showDialog<bool>(
                                                   context: context,
                                                   builder: (ctx) => AlertDialog(
-                                                    title: const Text(
-                                                      "Delete Payment",
+                                                    title: Text(
+                                                      AppLocalizations.of(context)
+                                                          .deletePayment,
                                                     ),
-                                                    content: const Text(
-                                                      "Are you sure you want to delete this payment?",
+                                                    content: Text(
+                                                      AppLocalizations.of(context)
+                                                          .deletePaymentConfirm,
                                                     ),
                                                     actions: [
                                                       TextButton(
@@ -2948,8 +2970,10 @@ class _PaymentsView extends ConsumerWidget {
                                                             Navigator.of(
                                                               ctx,
                                                             ).pop(false),
-                                                        child: const Text(
-                                                          "Cancel",
+                                                        child: Text(
+                                                          AppLocalizations.of(
+                                                            context,
+                                                          ).actionCancel,
                                                         ),
                                                       ),
                                                       ElevatedButton(
@@ -2965,8 +2989,10 @@ class _PaymentsView extends ConsumerWidget {
                                                             Navigator.of(
                                                               ctx,
                                                             ).pop(true),
-                                                        child: const Text(
-                                                          "Delete",
+                                                        child: Text(
+                                                          AppLocalizations.of(
+                                                            context,
+                                                          ).actionDelete,
                                                         ),
                                                       ),
                                                     ],
@@ -3104,8 +3130,9 @@ class _AddPaymentDialogState extends ConsumerState<_AddPaymentDialog> {
   }
 
   Future<void> _submit() async {
+    final l = AppLocalizations.of(context);
     if (_selectedPaymentTypeId == null) {
-      setState(() => _errorMessage = "Please select a payment type.");
+      setState(() => _errorMessage = l.selectPaymentTypeError);
       return;
     }
     setState(() {
@@ -3156,7 +3183,7 @@ class _AddPaymentDialogState extends ConsumerState<_AddPaymentDialog> {
           _errorMessage = e.response?.data is Map
               ? (e.response?.data['message']?.toString() ??
                   e.response?.data.toString())
-              : (e.response?.data?.toString() ?? "Failed to add payment.");
+              : (e.response?.data?.toString() ?? l.failedToAddPayment);
           _isLoading = false;
         });
         return;
@@ -3312,6 +3339,7 @@ class _EditPaymentDialogState extends ConsumerState<_EditPaymentDialog> {
   }
 
   Future<void> _submit() async {
+    final l = AppLocalizations.of(context);
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -3353,7 +3381,7 @@ class _EditPaymentDialogState extends ConsumerState<_EditPaymentDialog> {
           _errorMessage = e.response?.data is Map
               ? (e.response?.data['message']?.toString() ??
                   e.response?.data.toString())
-              : (e.response?.data?.toString() ?? "Update failed.");
+              : (e.response?.data?.toString() ?? l.updateFailedShort);
           _isLoading = false;
         });
         if (localId == null) return; // nothing persisted locally — stay open
@@ -3379,7 +3407,10 @@ class _EditPaymentDialogState extends ConsumerState<_EditPaymentDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Payment Type: ${widget.payment.paymentTypeName ?? 'Unknown'}",
+              AppLocalizations.of(context).paymentTypeNamed(
+                widget.payment.paymentTypeName ??
+                    AppLocalizations.of(context).unknownLabel,
+              ),
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             const SizedBox(height: 16),

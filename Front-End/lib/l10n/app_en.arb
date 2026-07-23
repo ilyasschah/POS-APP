@@ -1,12 +1,17 @@
 {
   "@@locale": "en",
-
   "actionCancel": "Cancel",
-  "@actionCancel": { "description": "Dismisses a dialog without applying changes" },
+  "@actionCancel": {
+    "description": "Dismisses a dialog without applying changes"
+  },
   "actionSave": "Save",
-  "@actionSave": { "description": "Commits the current form" },
+  "@actionSave": {
+    "description": "Commits the current form"
+  },
   "actionSaveChanges": "Save Changes",
-  "@actionSaveChanges": { "description": "Primary button of an edit dialog" },
+  "@actionSaveChanges": {
+    "description": "Primary button of an edit dialog"
+  },
   "actionDelete": "Delete",
   "actionEdit": "Edit",
   "actionAdd": "Add",
@@ -17,18 +22,20 @@
   "actionRemove": "Remove",
   "actionUpload": "Upload",
   "actionSkip": "Skip",
-
   "deviceRegistrationTitle": "Device Registration",
-  "@deviceRegistrationTitle": { "description": "Heading of the master login screen shown on a new install" },
+  "@deviceRegistrationTitle": {
+    "description": "Heading of the master login screen shown on a new install"
+  },
   "deviceRegistrationSubtitle": "Sign in with your account to link this terminal",
   "fieldEmail": "Email",
   "fieldPassword": "Password",
-
   "developerMode": "Developer Mode",
   "unlinkDeviceConfirm": "Are you sure you want to unlink this device?",
   "unlinkDevice": "Unlink Device",
   "timeClock": "TIME CLOCK",
-  "@timeClock": { "description": "Clock in/out button on the PIN screen. Shown upper-case in English." },
+  "@timeClock": {
+    "description": "Clock in/out button on the PIN screen. Shown upper-case in English."
+  },
   "roleAdmin": "Admin",
   "roleCashier": "Cashier",
   "reloadUsers": "Reload users",
@@ -37,7 +44,6 @@
   "noUsersCached": "No users cached on this terminal.",
   "restoringUsersFromServer": "Restoring users from the server…",
   "reconnectToRestoreUsers": "Reconnect to restore them, or re-link this device to sign in again.",
-
   "actionYes": "Yes",
   "actionNo": "No",
   "actionApply": "Apply",
@@ -45,16 +51,27 @@
   "actionSet": "Set",
   "actionSwitch": "Switch",
   "actionProceedAnyway": "Proceed Anyway",
-
   "deleteProductsConfirm": "{count, plural, =1{Delete 1 product? This cannot be undone.} other{Delete {count} products? This cannot be undone.}}",
-  "@deleteProductsConfirm": { "placeholders": { "count": { "type": "num" } } },
+  "@deleteProductsConfirm": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
   "colorMarkerHint": "Tints the product tile in the POS menu and the products list.",
   "modifiersHint": "Add specific notes like 'Extra Spicy' or 'Contains Nuts'.",
   "barcodesHint": "Assign multiple barcodes (e.g., individual item, box, or pallet).",
   "importComplete": "Import complete",
   "documentCreated": "Document created: ",
   "importErrorCount": "{count} error(s):",
-  "@importErrorCount": { "placeholders": { "count": { "type": "num" } } },
+  "@importErrorCount": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
   "importTitle": "Import",
   "selectFile": "Select file",
   "indicatesRequiredField": "* Indicates required field",
@@ -84,7 +101,13 @@
   "cannotDelete": "Cannot Delete",
   "deleteGroup": "Delete Group",
   "deleteGroupConfirm": "Are you sure you want to delete '{name}'?",
-  "@deleteGroupConfirm": { "placeholders": { "name": { "type": "String" } } },
+  "@deleteGroupConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "productGroups": "Product Groups",
   "newGroup": "New Group",
   "deleteGroupTooltip": "Delete group",
@@ -205,16 +228,45 @@
   "warningThreshold": "Warning Threshold",
   "yesDeletePayments": "Yes, delete payments",
   "errorLoadingDocuments": "Error loading documents: {message}",
-  "@errorLoadingDocuments": { "placeholders": { "message": { "type": "String" } } },
+  "@errorLoadingDocuments": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
   "errorLoadingSecurityRules": "Error loading security rules: {message}",
-  "@errorLoadingSecurityRules": { "placeholders": { "message": { "type": "String" } } },
+  "@errorLoadingSecurityRules": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
   "errorLoadingUsers": "Error loading users: {message}",
-  "@errorLoadingUsers": { "placeholders": { "message": { "type": "String" } } },
+  "@errorLoadingUsers": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
   "saveFailed": "Save failed: {message}",
-  "@saveFailed": { "placeholders": { "message": { "type": "String" } } },
+  "@saveFailed": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
   "savedToPath": "Saved to {path}",
-  "@savedToPath": { "placeholders": { "path": { "type": "String" } } },
-
+  "@savedToPath": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
   "addBooking": "Add Booking",
   "addCard": "Add Card",
   "addFirstTaxRate": "Add First Tax Rate",
@@ -342,10 +394,21 @@
   "warehouses": "Warehouses",
   "whichTableForOrder": "Which table should this order be placed on?",
   "errorLoadingLoyaltyCards": "Error loading loyalty cards: {message}",
-  "@errorLoadingLoyaltyCards": { "placeholders": { "message": { "type": "String" } } },
+  "@errorLoadingLoyaltyCards": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
   "errorLoadingWarehouses": "Error loading warehouses: {message}",
-  "@errorLoadingWarehouses": { "placeholders": { "message": { "type": "String" } } },
-
+  "@errorLoadingWarehouses": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
   "colActions": "ACTIONS",
   "addCash": "Add cash",
   "addItem": "Add Item",
@@ -454,10 +517,21 @@
   "voidReasons": "Void Reasons",
   "welcomeToYourPos": "Welcome to your POS",
   "errorLoadingBookings": "Error loading bookings: {message}",
-  "@errorLoadingBookings": { "placeholders": { "message": { "type": "String" } } },
+  "@errorLoadingBookings": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
   "errorLoadingCustomers": "Error loading customers: {message}",
-  "@errorLoadingCustomers": { "placeholders": { "message": { "type": "String" } } },
-
+  "@errorLoadingCustomers": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
   "addPrinter": "Add printer",
   "addressFormat": "Address Format",
   "allProducts2": "All products",
@@ -561,7 +635,6 @@
   "voidReasonsLower": "Void reasons",
   "taxRatesLower": "Tax rates",
   "paymentTypesLower": "Payment types",
-
   "rptSalesByProduct": "Products",
   "rptSalesByGroup": "Product groups",
   "rptSalesByCustomer": "Customers",
@@ -600,7 +673,6 @@
   "secLossAndDamage": "Loss and damage",
   "secStockControl": "Stock control",
   "secFinance": "Finance",
-
   "accent": "Accent",
   "backups": "Backups",
   "barcodeScanning": "Barcode scanning",
@@ -636,7 +708,6 @@
   "trimZerosFromCode": "Remove zeros from product code (trim zeros)",
   "posNamePrefixHint": "POS name — prefix for document numbers",
   "promotionsLower": "Promotions",
-
   "welcomeBody": "A fast, offline-first point of sale for your counter and your tablets. Set it up in a few quick taps.",
   "featBarcodeBody": "Scan to ring up or find any product instantly.",
   "featCustomerDisplayBody": "Show the order and total on a second screen.",
@@ -654,44 +725,120 @@
   "noStockControlRules": "No stock control rules configured",
   "selectGroupToEdit": "Select a group to edit, or create a new one.",
   "editNamedTitle": "Edit {name}",
-  "@editNamedTitle": { "placeholders": { "name": {} } },
+  "@editNamedTitle": {
+    "placeholders": {
+      "name": {}
+    }
+  },
   "forceResetPinTitle": "Force Reset PIN: {name}",
-  "@forceResetPinTitle": { "placeholders": { "name": {} } },
+  "@forceResetPinTitle": {
+    "placeholders": {
+      "name": {}
+    }
+  },
   "forceResetPasswordTitle": "Force Reset Password: {name}",
-  "@forceResetPasswordTitle": { "placeholders": { "name": {} } },
+  "@forceResetPasswordTitle": {
+    "placeholders": {
+      "name": {}
+    }
+  },
   "editPaymentTitle": "Edit Payment #{id}",
-  "@editPaymentTitle": { "placeholders": { "id": {} } },
+  "@editPaymentTitle": {
+    "placeholders": {
+      "id": {}
+    }
+  },
   "editDashTitle": "Edit — {name}",
-  "@editDashTitle": { "placeholders": { "name": {} } },
+  "@editDashTitle": {
+    "placeholders": {
+      "name": {}
+    }
+  },
   "confirmDeleteQuoted": "Are you sure you want to delete '{name}'?",
-  "@confirmDeleteQuoted": { "placeholders": { "name": {} } },
+  "@confirmDeleteQuoted": {
+    "placeholders": {
+      "name": {}
+    }
+  },
   "codeValueLabel": "Code: {code}",
-  "@codeValueLabel": { "placeholders": { "code": {} } },
+  "@codeValueLabel": {
+    "placeholders": {
+      "code": {}
+    }
+  },
   "idValueLabel": "ID: {id}",
-  "@idValueLabel": { "placeholders": { "id": {} } },
+  "@idValueLabel": {
+    "placeholders": {
+      "id": {}
+    }
+  },
   "assignProductToWarehouse": "Assign {name} to Warehouse",
-  "@assignProductToWarehouse": { "placeholders": { "name": {} } },
+  "@assignProductToWarehouse": {
+    "placeholders": {
+      "name": {}
+    }
+  },
   "deleteQuotedConfirm": "Delete \"{name}\"?",
-  "@deleteQuotedConfirm": { "placeholders": { "name": {} } },
+  "@deleteQuotedConfirm": {
+    "placeholders": {
+      "name": {}
+    }
+  },
   "deletePlainConfirm": "Delete {name}?",
-  "@deletePlainConfirm": { "placeholders": { "name": {} } },
+  "@deletePlainConfirm": {
+    "placeholders": {
+      "name": {}
+    }
+  },
   "removeDiscardConfirm": "Remove \"{name}\"? Its settings will be discarded.",
-  "@removeDiscardConfirm": { "placeholders": { "name": {} } },
+  "@removeDiscardConfirm": {
+    "placeholders": {
+      "name": {}
+    }
+  },
   "removeQuotedConfirm": "Remove \"{name}\"?",
-  "@removeQuotedConfirm": { "placeholders": { "name": {} } },
+  "@removeQuotedConfirm": {
+    "placeholders": {
+      "name": {}
+    }
+  },
   "typeValueLabel": "Type: {type}",
-  "@typeValueLabel": { "placeholders": { "type": {} } },
+  "@typeValueLabel": {
+    "placeholders": {
+      "type": {}
+    }
+  },
   "ofPagesLabel": "of {total}",
-  "@ofPagesLabel": { "placeholders": { "total": {} } },
+  "@ofPagesLabel": {
+    "placeholders": {
+      "total": {}
+    }
+  },
   "fixedAmountSymLabel": "Fixed Amount ({sym})",
-  "@fixedAmountSymLabel": { "placeholders": { "sym": {} } },
+  "@fixedAmountSymLabel": {
+    "placeholders": {
+      "sym": {}
+    }
+  },
   "couldNotReadSyncStatus": "Couldn't read sync status: {message}",
-  "@couldNotReadSyncStatus": { "placeholders": { "message": {} } },
+  "@couldNotReadSyncStatus": {
+    "placeholders": {
+      "message": {}
+    }
+  },
   "uidValueLabel": "UID: {uid} | Value: {value}",
-  "@uidValueLabel": { "placeholders": { "uid": {}, "value": {} } },
-
+  "@uidValueLabel": {
+    "placeholders": {
+      "uid": {},
+      "value": {}
+    }
+  },
   "enterFieldHint": "Enter {field}",
-  "@enterFieldHint": { "placeholders": { "field": {} } },
+  "@enterFieldHint": {
+    "placeholders": {
+      "field": {}
+    }
+  },
   "actionClear": "Clear",
   "noStockAssignedWarehouse": "No stock assigned to this warehouse",
   "noStockAssignedProduct": "No stock assigned to this product",
@@ -715,8 +862,12 @@
   "discountBelowCost": "Discount would price item below cost.",
   "discountNegativePrice": "Discount would result in a negative price.",
   "inclPrefix": "incl. {name}",
-  "@inclPrefix": { "placeholders": { "name": {} } },
-  "saveAndRestart": "Save \u0026 Restart",
+  "@inclPrefix": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "saveAndRestart": "Save & Restart",
   "resourceMode": "Resource Mode",
   "resourceModeHint": "What a booking slot is assigned to",
   "defaultDuration": "Default Duration",
@@ -760,7 +911,7 @@
   "signInOnlineAgain": "You will need to sign in online to use the POS again.",
   "tablesLabel": "Tables",
   "bookingLabel": "Booking",
-  "posNameFullHint": "A short, UNIQUE name for this terminal. It becomes the prefix of every document number (e.g. CAISSE1-200-000045), so two POS never produce the same number. Letters \u0026 digits only.",
+  "posNameFullHint": "A short, UNIQUE name for this terminal. It becomes the prefix of every document number (e.g. CAISSE1-200-000045), so two POS never produce the same number. Letters & digits only.",
   "defaultTaxRateFullHint": "Automatically applied to products added to the cart that have no tax of their own.",
   "serialScaleWindowsOnly": "Serial scales are supported on Windows only. On this device, use the barcode parsing option above with a label-printing scale.",
   "openCustomerDisplayFullHint": "Opens the customer display as a full-screen Flutter view on this machine. Ideal for a second monitor — drag the window over and press F11.",
@@ -769,26 +920,58 @@
   "autoSyncFullHint": "Push your local changes and pull fresh data automatically in the background.",
   "replayOnboardingHint": "Replay the first-run welcome tour. It shows again the next time you open the app on this device.",
   "pairingRequestSent": "Pairing request sent to {ip} — the KDS should switch to the kitchen view.",
-  "@pairingRequestSent": { "placeholders": { "ip": {} } },
+  "@pairingRequestSent": {
+    "placeholders": {
+      "ip": {}
+    }
+  },
   "kdsTabletsHelp": "Each Kitchen Display tablet listens on port {port}. Adding its IP pairs it with this POS and pushes orders directly over the local network — the KDS works fully offline, no internet needed.",
-  "@kdsTabletsHelp": { "placeholders": { "port": {} } },
+  "@kdsTabletsHelp": {
+    "placeholders": {
+      "port": {}
+    }
+  },
   "statusActive": "Active",
   "statusEnabled": "Enabled",
   "statusDisabled": "Disabled",
   "statusOn": "On",
   "statusOff": "Off",
   "expiresInDays": "{count, plural, one{Expires in 1 day} other{Expires in {count} days}}",
-  "@expiresInDays": { "placeholders": { "count": { "type": "num" } } },
+  "@expiresInDays": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
   "deviceCount": "{count, plural, one{1 device} other{{count} devices}}",
-  "@deviceCount": { "placeholders": { "count": { "type": "num" } } },
+  "@deviceCount": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
   "scaleBarcodePriceHint": "When on, the encoded value is a price and quantity is calculated as price ÷ unit price",
   "webDisplayHint": "Host an interactive order screen accessible from any browser on your network",
   "savedFieldFailed": "Failed to save {field}",
-  "@savedFieldFailed": { "placeholders": { "field": {} } },
+  "@savedFieldFailed": {
+    "placeholders": {
+      "field": {}
+    }
+  },
   "prefixColonValue": "Prefix: {prefix}",
-  "@prefixColonValue": { "placeholders": { "prefix": {} } },
+  "@prefixColonValue": {
+    "placeholders": {
+      "prefix": {}
+    }
+  },
   "unlinkEmailWarning": "This will unlink {email} from this terminal. You will need to sign in online to use the POS again.",
-  "@unlinkEmailWarning": { "placeholders": { "email": {} } },
+  "@unlinkEmailWarning": {
+    "placeholders": {
+      "email": {}
+    }
+  },
   "unlinkTerminalWarning": "This will unlink this terminal. You will need to sign in online to use the POS again.",
   "builtInBadge": "BUILT-IN",
   "printerType": "Printer type",
@@ -836,7 +1019,11 @@
   "totalDue": "Total Due",
   "replaceTaxesHint": "Use this form to replace taxes for all products. Select the old tax you wish to replace with the new tax and click Replace.",
   "errorLoadingTaxesMsg": "Error loading taxes: {message}",
-  "@errorLoadingTaxesMsg": { "placeholders": { "message": {} } },
+  "@errorLoadingTaxesMsg": {
+    "placeholders": {
+      "message": {}
+    }
+  },
   "orderTypeLabel": "Order Type",
   "noServiceStatuses": "No service statuses configured.",
   "quantityCannotBeNegative": "Quantity cannot be negative.",
@@ -1066,7 +1253,6 @@
   "setHintUber": "e.g. UBER",
   "setHintUberEats": "e.g. Uber Eats",
   "setHintWaiting": "e.g. Waiting",
-
   "selectExportType": "Select export type",
   "exportCsv": "CSV (Excel)",
   "exportXml": "XML",
@@ -1136,7 +1322,13 @@
   "decrementOnePoint": "-1 pt",
   "incrementOnePoint": "+1 pt",
   "useMaxPoints": "Use Max ({points} pts)",
-  "@useMaxPoints": { "placeholders": { "points": { "type": "String" } } },
+  "@useMaxPoints": {
+    "placeholders": {
+      "points": {
+        "type": "String"
+      }
+    }
+  },
   "actionRedeem": "Redeem",
   "paymentTypes": "Payment Types",
   "showNavigation": "Show navigation",
@@ -1145,30 +1337,51 @@
   "refreshTooltip": "Refresh",
   "newPaymentType": "New Payment Type",
   "errorLoadingPaymentTypes": "Error loading payment types: {message}",
-  "@errorLoadingPaymentTypes": { "placeholders": { "message": { "type": "String" } } },
+  "@errorLoadingPaymentTypes": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
   "noCompanySelectedShort": "No company selected.",
   "noPaymentTypesFound": "No payment types found.",
   "addFirstPaymentType": "Add First Payment Type",
   "deletePaymentTypeConfirm": "Delete payment type '{name}'?",
-  "@deletePaymentTypeConfirm": { "placeholders": { "name": { "type": "String" } } },
+  "@deletePaymentTypeConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "fieldNameRequired": "Name *",
   "fieldCode": "Code",
   "fieldPosition": "Position",
   "fieldShortcut": "Shortcut",
   "actionUpdate": "Update",
   "errorWithMessage": "Error: {message}",
-  "@errorWithMessage": { "placeholders": { "message": { "type": "String" } } },
+  "@errorWithMessage": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
   "activePromotions": "Active Promotions",
   "noActivePromotions": "No active promotions right now.",
   "ordersReady": "{count, plural, =1{1 order ready} other{{count} orders ready}}",
   "@ordersReady": {
     "description": "Tooltip on the kitchen-ready badge in the POS header",
-    "placeholders": { "count": { "type": "num" } }
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
   },
   "selectOrderType": "Select Order Type",
   "serviceStatus": "Service Status",
   "selectServiceStatus": "Select Service Status",
-
   "posDiscount": "Discount",
   "posQuantity": "Quantity",
   "posTax": "Tax",
@@ -1179,45 +1392,72 @@
   "posBookings": "Bookings",
   "posPromos": "Promos",
   "posVoid": "VOID",
-  "@posVoid": { "description": "Void button on the cart action bar. Upper-case in English." },
+  "@posVoid": {
+    "description": "Void button on the cart action bar. Upper-case in English."
+  },
   "posPay": "PAY",
-  "@posPay": { "description": "Primary checkout button. Upper-case in English." },
-
+  "@posPay": {
+    "description": "Primary checkout button. Upper-case in English."
+  },
   "productRunningLow": "{product} is running low",
-  "@productRunningLow": { "placeholders": { "product": { "type": "String" } } },
+  "@productRunningLow": {
+    "placeholders": {
+      "product": {
+        "type": "String"
+      }
+    }
+  },
   "productOutOfStock": "{product} is out of stock",
-  "@productOutOfStock": { "placeholders": { "product": { "type": "String" } } },
+  "@productOutOfStock": {
+    "placeholders": {
+      "product": {
+        "type": "String"
+      }
+    }
+  },
   "availableIn": "Available in:",
   "quantityInStock": "{qty} in stock",
-  "@quantityInStock": { "placeholders": { "qty": { "type": "String" } } },
-
+  "@quantityInStock": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      }
+    }
+  },
   "noCompanySelected": "No company selected. Open the menu and pick a company.",
   "errorLoadingData": "Error loading data",
   "searchProductsHint": "Search products...",
-
   "paginationFirst": "First",
   "paginationPrevious": "Previous",
   "paginationNext": "Next",
   "paginationLast": "Last",
-
   "voidOrder": "Void order",
   "voidOrderConfirm": "Are you sure you want to void this order?",
   "enterVoidReason": "Enter void reason here",
   "refreshOrderNumber": "Refresh order number",
-
   "enterQuantity": "Enter Quantity",
   "setSalePrice": "Set Sale Price",
   "fieldPrice": "Price",
   "ageRestriction": "Age Restriction",
   "confirmMinimumAge": "Confirm ({minAge}+)",
-  "@confirmMinimumAge": { "placeholders": { "minAge": { "type": "String" } } },
-
+  "@confirmMinimumAge": {
+    "placeholders": {
+      "minAge": {
+        "type": "String"
+      }
+    }
+  },
   "commentsForProduct": "Comments: {product}",
-  "@commentsForProduct": { "placeholders": { "product": { "type": "String" } } },
+  "@commentsForProduct": {
+    "placeholders": {
+      "product": {
+        "type": "String"
+      }
+    }
+  },
   "customComment": "Custom comment",
   "addANoteHint": "Add a note...",
   "noTaxesAvailable": "No taxes available in system.",
-
   "transferOrder": "Transfer Order",
   "assignStaff": "Assign Staff",
   "unassigned": "Unassigned",
@@ -1226,6 +1466,1221 @@
   "selectAvailableSpace": "Select Available {space}",
   "@selectAvailableSpace": {
     "description": "space is the venue's own word for a table/room, from Feature.TablesButtonLabel",
-    "placeholders": { "space": { "type": "String" } }
-  }
+    "placeholders": {
+      "space": {
+        "type": "String"
+      }
+    }
+  },
+  "errorMissingCompanyContext": "Error: missing company or user context.",
+  "failedToQueueZReport": "Failed to queue Z-Report: {message}",
+  "@failedToQueueZReport": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "zReportNumber": "Z-Report #{number}",
+  "@zReportNumber": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "shiftSummaryUpper": "SHIFT SUMMARY",
+  "dateTimeLabel": "Date/Time",
+  "rangeLabel": "Range",
+  "totalSales": "Total Sales",
+  "totalReturns": "Total Returns",
+  "discountsLabel": "Discounts",
+  "taxableTotal": "Taxable Total",
+  "totalTax": "Total Tax",
+  "cashMovementsUpper": "CASH MOVEMENTS",
+  "tenderTypesUpper": "TENDER TYPES",
+  "noPaymentsRecorded": "No payments recorded.",
+  "grandTotalUpper": "GRAND TOTAL",
+  "unknownLabel": "Unknown",
+  "currentShiftOpen": "Current Shift (Open)",
+  "historyZReports": "History (Z-Reports)",
+  "noOpenTransactions": "No open transactions.\nThe register is balanced.",
+  "tenderBreakdown": "Tender Breakdown",
+  "expectedInDrawer": "EXPECTED IN DRAWER",
+  "shiftDetails": "Shift Details",
+  "cashierOnDuty": "Cashier on Duty",
+  "unknownUser": "UNKNOWN USER",
+  "transactionsLabel": "Transactions",
+  "openPaymentsCount": "{count, plural, =1{1 open payment} other{{count} open payments}}",
+  "@openPaymentsCount": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "shiftIsOpen": "Shift is Open",
+  "closeRegisterExplain": "Closing the register will finalize these transactions, generate a Z-Report, and reset the day's totals. Ensure cash drops are complete before proceeding.",
+  "noZReportsYet": "No Z-Reports generated yet.",
+  "zReportOnDate": "Z-Report • {date}",
+  "@zReportOnDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "zReportSubtitle": "Documents: {count}  •  Grand Total: {total}",
+  "@zReportSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "enterValidAmount": "Please enter a valid amount.",
+  "selectDocumentOrAutoDistribute": "Please select at least one document, or enable Automatic distribution.",
+  "nothingToSettle": "Nothing to settle — the selected documents are already paid.",
+  "anErrorOccurred": "An error occurred: {message}",
+  "@anErrorOccurred": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "useCustomerBalance": "Use customer balance",
+  "automaticDistribution": "Automatic distribution",
+  "loadUnpaidDocuments": "Load unpaid documents",
+  "summaryLabel": "Summary",
+  "customerBalance": "Customer balance",
+  "totalInSelectedDocuments": "Total in selected documents",
+  "customerNotSelectedReconcile": "Customer not selected.\nPlease select customer for reconciliation.",
+  "autoDistributeExplain": "Paid amount will be automatically distributed\nacross all unpaid sales.",
+  "noUnpaidDocumentsForCustomer": "No unpaid documents found for this customer.",
+  "balanceLabel": "Balance",
+  "internalNoteLabel": "Internal note",
+  "allDates": "All dates",
+  "userNumbered": "User {id}",
+  "@userNumbered": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "periodLabel": "Period",
+  "documentNumber": "Document number",
+  "documentNumberHint": "e.g. 26-200-000001",
+  "externalDocument": "External document",
+  "paidStatus": "Paid status",
+  "totalResultsUpper": "TOTAL RESULTS",
+  "noDocumentsMatchingFilters": "No documents matching filters.",
+  "notAvailableShort": "N/A",
+  "documentDeleted": "Document deleted",
+  "deleteFailed": "Delete failed",
+  "monthAbbreviations": "Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec",
+  "@monthAbbreviations": {
+    "description": "Twelve comma-separated month abbreviations, January first. Split on ','; the app formats dates as 16-Jul-26 rather than through intl's DateFormat, which would need locale data initialised at boot."
+  },
+  "selectDocumentTypeError": "Please select a document type.",
+  "selectCustomerSupplierError": "Please select a customer/supplier.",
+  "selectUserError": "Please select a user.",
+  "selectWarehouseError": "Please select a warehouse.",
+  "couldNotResolveLocalDocument": "Could not resolve the local document.",
+  "documentSaved": "Document saved!",
+  "newDocument": "New Document",
+  "editDocumentNumbered": "Edit Document — {number}",
+  "@editDocumentNumbered": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "documentNumbered": "Document — {number}",
+  "@documentNumbered": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "saveHeaderFirstHint": "Save the document header first (Document Info → {action}) to manage items, discounts and payments.",
+  "@saveHeaderFirstHint": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  "documentInfo": "Document Info",
+  "partiesLogistics": "Parties & Logistics",
+  "financialsNotes": "Financials & Notes",
+  "documentItems": "Document Items",
+  "paymentsTab": "Payments",
+  "dueDate": "Due Date",
+  "stockDate": "Stock Date",
+  "supplierRequired": "Supplier *",
+  "applyAfterTax": "Apply after tax",
+  "saveHeaderChanges": "Save Header Changes",
+  "createAndAddItems": "Create & Add Items",
+  "noItemsAddedYet": "No items added yet.",
+  "clickAddProductToStart": "Click 'Add Product' to get started.",
+  "qtyShort": "Qty",
+  "itemDiscShort": "Item Disc.",
+  "actionsLabel": "Actions",
+  "deleteItem": "Delete Item",
+  "deleteItemConfirm": "Delete '{name}'?",
+  "@deleteItemConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "itemsBaseTotal": "Items Base Total:",
+  "selectProductError": "Please select a product.",
+  "failedToAddItem": "Failed to add item: {message}",
+  "@failedToAddItem": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "updateFailedWithMessage": "Update failed: {message}",
+  "@updateFailedWithMessage": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "itemTax": "Item Tax",
+  "appliedPayments": "Applied Payments",
+  "deleteAllPaymentsWarning": "This document has a complete payment balance.\n\nProceeding will permanently delete all associated payment transactions. Are you sure?",
+  "documentTotal": "Document Total",
+  "totalPaid": "Total Paid",
+  "remainingBalance": "Remaining Balance",
+  "noPaymentsAddedYet": "No payments added yet.",
+  "deletePayment": "Delete Payment",
+  "deletePaymentConfirm": "Are you sure you want to delete this payment?",
+  "selectPaymentTypeError": "Please select a payment type.",
+  "failedToAddPayment": "Failed to add payment.",
+  "updateFailedShort": "Update failed.",
+  "paymentTypeNamed": "Payment Type: {name}",
+  "@paymentTypeNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "discountLabel": "Discount",
+  "orderNumberLabel": "Order number",
+  "updatedLabel": "Updated",
+  "statusGracePeriod": "Renewal overdue",
+  "@statusGracePeriod": {
+    "description": "Subscription pill once the billing period end has passed but the terminal is still inside Lease:GraceDays and has not blocked yet."
+  },
+  "actionCreate": "Create",
+  "activeDevices": "Active Devices",
+  "addAtLeastOneProduct": "Add at least one product to the promotion",
+  "addCustomerSupplier": "Add Customer / Supplier",
+  "addToPromotion": "Add to promotion",
+  "administrator": "Administrator",
+  "allStockEntriesUpper": "ALL STOCK ENTRIES",
+  "assignAddStock": "Assign / Add Stock",
+  "barcodesTab": "Barcodes",
+  "cannotDeleteProductsLinked": "{count, plural, =1{Can't delete 1 product — linked to existing orders or documents} other{Can't delete {count} products — linked to existing orders or documents}}",
+  "@cannotDeleteProductsLinked": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "clearEstimate": "Clear estimate",
+  "codeWithValue": "Code: {code}",
+  "@codeWithValue": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "commentsTab": "Comments",
+  "companyUpdatedSuccessfully": "Company updated successfully",
+  "conditionalPromoHint": "Conditional (e.g. Buy 2, get discount)",
+  "costPrice": "Cost Price",
+  "couldNotDeleteNamed": "Could not delete \"{name}\": {message}",
+  "@couldNotDeleteNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "couldNotSaveNamed": "Could not save \"{name}\": {message}",
+  "@couldNotSaveNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "countriesLabel": "Countries",
+  "createEstimate": "Create estimate",
+  "createPromotion": "Create Promotion",
+  "customerAdded": "Customer added",
+  "customerUpdated": "Customer updated",
+  "daysOfWeekLabel": "Days of Week: ",
+  "deleteWithCount": "Delete ({count})",
+  "@deleteWithCount": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "deletedSomeProductsBlocked": "{count, plural, =1{{deleted} deleted · 1 product kept — linked to existing orders or documents} other{{deleted} deleted · {count} products kept — linked to existing orders or documents}}",
+  "@deletedSomeProductsBlocked": {
+    "placeholders": {
+      "deleted": {
+        "type": "num"
+      },
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "deletedSuccessfully": "Deleted successfully",
+  "designFloorPlans": "Design floor plans",
+  "detailsTab": "Details",
+  "deviceRevokedSuccessfully": "Device revoked successfully",
+  "displayRank": "Display Rank",
+  "dueDatePeriodDays": "Due Date Period (days)",
+  "editCustomer": "Edit Customer",
+  "editProduct": "Edit Product",
+  "editPromotion": "Edit Promotion",
+  "editQuantity": "Edit quantity",
+  "endDateBeforeStartDate": "End date is before the start date",
+  "everyDay": "Every day",
+  "exportFailed": "Export failed: {message}",
+  "@exportFailed": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "exportedProductsTo": "Exported {count} products to {path}",
+  "@exportedProductsTo": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      },
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToCreateUser": "Failed to create user.",
+  "failedToSaveChanges": "Failed to save changes.",
+  "failedToUpdateUser": "Failed to update user.",
+  "failedToUploadLogo": "Failed to upload logo.",
+  "finishSetup": "Finish Setup",
+  "flagLow": "LOW",
+  "flagReorder": "REORDER",
+  "floorPlanTables": "Floor plan / tables",
+  "folderColor": "Folder Color",
+  "folderImage": "Folder Image",
+  "forceReset": "Force Reset",
+  "groupDeleted": "Group deleted",
+  "groupHasChildrenCannotDelete": "This group has products or sub-groups and cannot be deleted.",
+  "groupName": "Group Name",
+  "groupNameHint": "e.g., Beverages, Desserts",
+  "itemsCountValue": "Items: {count}",
+  "@itemsCountValue": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "linkedAt": "Linked: {date}",
+  "@linkedAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "logoUpdatedSuccessfully": "Logo updated successfully",
+  "lowStockWarningHelp": "Alert when stock falls below threshold",
+  "nameIsRequired": "Name is required.",
+  "nameIsRequiredShort": "Name is required",
+  "newPasswordsDoNotMatch": "New passwords do not match",
+  "newProduct": "New Product",
+  "newProductGroup": "New Product Group",
+  "nextTaxesAndStock": "Next: Taxes & Stock",
+  "noActiveDevicesFound": "No active devices found.",
+  "noConnectionAddUsers": "No connection. Adding users requires connectivity.",
+  "noConnectionDeleteUsers": "No connection. Deleting users requires connectivity.",
+  "noCountriesAvailable": "No countries available.",
+  "noCustomersFound": "No customers found.",
+  "noEmailProvided": "No email provided",
+  "noLogoUploadedYet": "No logo uploaded yet",
+  "noProductsMatchQuery": "No products match \"{query}\"",
+  "@noProductsMatchQuery": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "noPromotionsYet": "No promotions yet. Tap \"Add Promotion\" to create one.",
+  "noSuppliersFound": "No suppliers found.",
+  "onBelowValue": "On — below {value}",
+  "@onBelowValue": {
+    "placeholders": {
+      "value": {
+        "type": "num"
+      }
+    }
+  },
+  "operationFailed": "Operation failed.",
+  "overrideTaxes": "Override taxes",
+  "parentFolder": "Parent Folder",
+  "passwordForciblyReset": "Password forcibly reset!",
+  "passwordUpdatedSuccessfully": "Password updated successfully",
+  "pendingSyncNew": "Pending sync (new)",
+  "pendingSyncUpdate": "Pending sync (update)",
+  "pinForciblyResetForDevice": "PIN forcibly reset for this Device!",
+  "pinMustBeFourDigits": "PIN must be 4 digits",
+  "pinUpdatedSuccessfully": "PIN updated successfully",
+  "pleaseEnterProductName": "Please enter a Product Name.",
+  "pleaseSelectACountry": "Please select a country.",
+  "preferredQty": "Preferred Qty",
+  "preferredQuantityHelp": "Target quantity to maintain in stock",
+  "productIdLabel": "Product ID: {id}",
+  "@productIdLabel": {
+    "placeholders": {
+      "id": {
+        "type": "num"
+      }
+    }
+  },
+  "productSavedLocallySyncFirst": "Product saved locally. Sync to complete setup (taxes, barcodes, stock).",
+  "productUpdatedSuccessfully": "Product updated successfully!",
+  "productsAssigned": "Products assigned successfully",
+  "productsDeletedCount": "{count, plural, =1{1 product deleted} other{{count} products deleted}}",
+  "@productsDeletedCount": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "promotionsCount": "{count, plural, =1{1 Promotion} other{{count} Promotions}}",
+  "@promotionsCount": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "quickInventory": "Quick inventory",
+  "removeFromPromotion": "Remove from promotion",
+  "removeStockFromWarehouseConfirm": "Remove {product} from {warehouse}?",
+  "@removeStockFromWarehouseConfirm": {
+    "placeholders": {
+      "product": {
+        "type": "String"
+      },
+      "warehouse": {
+        "type": "String"
+      }
+    }
+  },
+  "reorderPointHelp": "Trigger reorder when stock drops below this level",
+  "reprintReceipt": "Reprint receipt",
+  "requiredField": "Required",
+  "saveAssignmentsCount": "Save Assignments ({count} selected)",
+  "@saveAssignmentsCount": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "saveCompanyChangesUpper": "SAVE COMPANY CHANGES",
+  "saveFailedShort": "Save failed.",
+  "savedLocallyNoServerId": "Saved \"{name}\" locally, but the server did not return an id. It will be re-sent on the next sync.",
+  "@savedLocallyNoServerId": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "savedLocallyWillSyncOnline": "Saved locally. Will sync when online.",
+  "savedOfflineWillSync": "Saved offline. Will sync when connected.",
+  "savedOfflineWillSyncNamed": "\"{name}\" saved offline — it will sync when the server is back.",
+  "@savedOfflineWillSyncNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "savingUpper": "SAVING...",
+  "scanOrEnterBarcode": "Scan or enter barcode",
+  "securityRuleUpdated": "{rule} updated.",
+  "@securityRuleUpdated": {
+    "placeholders": {
+      "rule": {
+        "type": "String"
+      }
+    }
+  },
+  "securityRules": "Security Rules",
+  "selectAtLeastOneDay": "Select at least one day of the week",
+  "selectProductsFromLeft": "Select products from the left to add to the promotion.",
+  "selectedProducts": "Selected Products",
+  "sellingPrice": "Selling Price",
+  "serverErrorCheckInputs": "A server error occurred. Please check your inputs.",
+  "serviceTag": "Service",
+  "setTaxesAndInventoryFor": "Set Taxes & Inventory: {name}",
+  "@setTaxesAndInventoryFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "setupComplete": "Setup Complete!",
+  "startingCashLower": "Starting cash",
+  "statusInactive": "Inactive",
+  "stockControlRules": "Stock Control Rules",
+  "stockControlRulesUpper": "STOCK CONTROL RULES",
+  "stockInWarehouseUpper": "STOCK IN WAREHOUSE",
+  "stockRulesForProduct": "Stock Rules — {name}",
+  "@stockRulesForProduct": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "stockStatusHealthy": "Stock healthy",
+  "stockStatusLow": "Low stock — at/below warning level",
+  "stockStatusReorder": "At/below reorder point",
+  "suggestedOrder": "Suggested Order",
+  "suggestedOrderValue": "+{qty} to reach {target}",
+  "@suggestedOrderValue": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      },
+      "target": {
+        "type": "num"
+      }
+    }
+  },
+  "tapCameraIconToChangeLogo": "Tap the camera icon to change logo",
+  "thisDevice": "This Device",
+  "unexpectedErrorOccurred": "An unexpected error occurred.",
+  "unexpectedErrorTryAgain": "An unexpected error occurred. Please try again.",
+  "uomWithValue": "UOM: {unit}",
+  "@uomWithValue": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "updateFailed": "Update failed",
+  "userDeletedSuccessfully": "User deleted successfully.",
+  "userProfileLower": "User profile",
+  "viewAllOpenOrders": "View all open orders",
+  "viewCostPrices": "View cost prices",
+  "voidItem": "Void item",
+  "warningThresholdHelp": "Show warning when quantity is below this value",
+  "weekdayAbbreviations": "Mon,Tue,Wed,Thu,Fri,Sat,Sun",
+  "@weekdayAbbreviations": {
+    "description": "Seven comma-separated weekday abbreviations, MONDAY first. Split on ','; index i maps to bit (1 << i) of the promotion daysOfWeek bitmask, so the order is load-bearing and must not be re-sorted per locale."
+  },
+  "weekdays": "Weekdays",
+  "weekends": "Weekends",
+  "willDeleteWhenConnectionRestored": "Will delete when connection is restored",
+  "zeroStockQuantitySale": "Zero stock quantity sale",
+  "addressWithValue": "Address: {address}",
+  "@addressWithValue": {
+    "placeholders": {
+      "address": {
+        "type": "String"
+      }
+    }
+  },
+  "beginTrackingSession": "Begin a tracking session to clock your hours.",
+  "cashEntriesCount": "Cash entries ({count})",
+  "@cashEntriesCount": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "checkoutError": "Checkout error: {message}",
+  "@checkoutError": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "clockOutMustBeAfterClockIn": "Clock-out must be after clock-in.",
+  "completeTransaction": "Complete\nTransaction",
+  "couldNotLoadEntries": "Could not load entries: {message}",
+  "@couldNotLoadEntries": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "creditNeedsCustomer": "Credit payment requires a selected customer.\n\nPlease choose a customer before completing this transaction.",
+  "deleteDocumentConfirmPermanent": "Delete '{number}'? This cannot be undone.",
+  "@deleteDocumentConfirmPermanent": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "discountWithAmount": "Discount: {amount} {symbol}",
+  "@discountWithAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "symbol": {
+        "type": "String"
+      }
+    }
+  },
+  "documentsCountValue": "Documents count: {count}",
+  "@documentsCountValue": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "enterValidAmountAboveZero": "Enter a valid amount greater than zero.",
+  "exceedsMaximum": "Exceeds maximum",
+  "failedToLoadCustomers": "Failed to load customers",
+  "failedToLoadOrder": "Failed to load order.",
+  "featureComingSoon": "{feature} — coming soon",
+  "@featureComingSoon": {
+    "placeholders": {
+      "feature": {
+        "type": "String"
+      }
+    }
+  },
+  "filterByCustomer": "Filter by customer",
+  "hoursReport": "Hours Report",
+  "labelWithColon": "{label}: ",
+  "@labelWithColon": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "lastMonth": "Last month",
+  "lastWeek": "Last week",
+  "lastYear": "Last year",
+  "maxUsableThisOrder": "Max usable this order: {points} pts",
+  "@maxUsableThisOrder": {
+    "placeholders": {
+      "points": {
+        "type": "String"
+      }
+    }
+  },
+  "missingCompanyOrUserContext": "Missing company or user context.",
+  "mySales": "My sales",
+  "myShift": "My Shift",
+  "noActiveShift": "No Active Shift",
+  "noCashMovementsToday": "No cash movements today.",
+  "noItemsForDocument": "No items found for this document.",
+  "noOpenOrders": "No open orders",
+  "noOrdersMatchQuery": "No orders match \"{query}\"",
+  "@noOrdersMatchQuery": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "noSalesDocumentsForPeriod": "No sales documents for the selected period.",
+  "noTimeEntriesInRange": "No time entries in the selected range.",
+  "nothingToExportInRange": "Nothing to export in this range",
+  "nowSelectEndDate": "Now select an end date",
+  "paymentMethod": "Payment Method",
+  "pointsBalanceWorth": "Balance: {points} pts = {value} {symbol}",
+  "@pointsBalanceWorth": {
+    "placeholders": {
+      "points": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      },
+      "symbol": {
+        "type": "String"
+      }
+    }
+  },
+  "predefinedPeriod": "Predefined period",
+  "receiptLabel": "Receipt",
+  "redeemingPoints": "Redeeming {points} pts (−{amount} {symbol})",
+  "@redeemingPoints": {
+    "placeholders": {
+      "points": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "symbol": {
+        "type": "String"
+      }
+    }
+  },
+  "reportCopiedAsCsv": "Report copied to clipboard as CSV",
+  "salesHistoryTitle": "Sales history",
+  "saveCashIn": "Save Cash In",
+  "saveCashOut": "Save Cash Out",
+  "selectAll": "Select all",
+  "selectAnEmployeeError": "Select an employee.",
+  "selectDocumentToViewItems": "Select a document above to view its items.",
+  "sendEmail": "Send email",
+  "shiftOpen": "Shift Open",
+  "shiftStillOpen": "Open",
+  "@shiftStillOpen": {
+    "description": "Shown in the hours-report table where a clock-out time or a total would go, meaning the session has not been closed yet. Not the verb 'open'."
+  },
+  "tapToRedeemPoints": "Tap to redeem points",
+  "taxNoWithValue": "Tax No.: {number}",
+  "@taxNoWithValue": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "thisMonth": "This month",
+  "thisWeek": "This week",
+  "thisYear": "This year",
+  "timeCardAdded": "Time card added",
+  "totalAmountWithValue": "Total amount: {amount} {symbol}",
+  "@totalAmountWithValue": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "symbol": {
+        "type": "String"
+      }
+    }
+  },
+  "totalCompleted": "Total (completed)",
+  "totalHours": "Total hours",
+  "totalHoursWithValue": "Total hours: {hours}",
+  "@totalHoursWithValue": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "weekdayInitials": "Mo,Tu,We,Th,Fr,Sa,Su",
+  "@weekdayInitials": {
+    "description": "Seven comma-separated one-or-two-letter weekday initials for the date picker's calendar header, MONDAY first. The grid is built from a Monday-based week start, so the order is load-bearing and must not be re-sorted per locale."
+  },
+  "yesterday": "Yesterday",
+  "noStockAvailableIn": "No stock available in {warehouse}.",
+  "@noStockAvailableIn": {
+    "placeholders": {
+      "warehouse": {
+        "type": "String"
+      }
+    }
+  },
+  "theSelectedWarehouse": "the selected warehouse",
+  "warehouseNumbered": "Warehouse {id}",
+  "@warehouseNumbered": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "switchedToWarehouse": "Switched to {warehouse} — tap the product to add it.",
+  "@switchedToWarehouse": {
+    "placeholders": {
+      "warehouse": {
+        "type": "String"
+      }
+    }
+  },
+  "lowStockAddAnyway": "Adding this item leaves only {qty} {unit} in stock, at or below the low-stock warning level.\n\nAdd it anyway?",
+  "@lowStockAddAnyway": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "unitsFallback": "unit(s)",
+  "kitchenPrintError": "Kitchen print error: {message}",
+  "@kitchenPrintError": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "couldNotSaveOrder": "Could not save order: {message}",
+  "@couldNotSaveOrder": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "scaleBarcodeProductNotFound": "Scale barcode: product \"{code}\" not found.",
+  "@scaleBarcodeProductNotFound": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "errorCreatingOrder": "Error creating order: {message}",
+  "@errorCreatingOrder": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "orderSavedToTable": "Order Saved to Table!",
+  "orderSaved": "Order Saved!",
+  "orderVoided": "Order Voided",
+  "orderTransferred": "Order Transferred",
+  "transferFailed": "Transfer failed: {message}",
+  "@transferFailed": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "receiptAlreadyRefunded": "This receipt has already been refunded (Ref: {reference}).",
+  "@receiptAlreadyRefunded": {
+    "placeholders": {
+      "reference": {
+        "type": "String"
+      }
+    }
+  },
+  "receiptNotFound": "Receipt \"{number}\" not found.",
+  "@receiptNotFound": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "managerPinNotRecognised": "Manager PIN not recognised. Blind return needs an admin.",
+  "addAtLeastOneItemToReturn": "Add at least one item to return.",
+  "selectRefundPaymentType": "Select a refund payment type.",
+  "blindRefundQueued": "Blind refund queued — will sync automatically.",
+  "blindRefundProcessed": "Blind refund {number} processed.",
+  "@blindRefundProcessed": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "lookUpReceiptFirst": "Look up a receipt first.",
+  "selectAtLeastOneItemToRefund": "Select at least one item to refund.",
+  "refundQueued": "Refund queued — will sync automatically.",
+  "refundProcessed": "Refund {number} processed.",
+  "@refundProcessed": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "customerReceiptOptional": "Customer's receipt # (optional)",
+  "optionalFromPaperReceipt": "optional — from paper receipt",
+  "blindReturnManagerAuthorised": "Blind return — manager authorised. No original receipt.",
+  "blindReturnExplain": "A blind return refunds goods with no receipt. A manager must approve it.",
+  "priceTimesMaxQty": "{price} × max {qty}",
+  "@priceTimesMaxQty": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      },
+      "qty": {
+        "type": "String"
+      }
+    }
+  },
+  "advancedHardware": "Advanced / Hardware",
+  "changeAllowed": "Change Allowed",
+  "colCustomerRequired": "Customer Req.",
+  "@colCustomerRequired": {
+    "description": "Compact grid column header on the payment-types screen; keep it short."
+  },
+  "colMarkPaid": "Mark Paid",
+  "@colMarkPaid": {
+    "description": "Compact grid column header on the payment-types screen; keep it short."
+  },
+  "colQuickPay": "Quick Pay",
+  "@colQuickPay": {
+    "description": "Compact grid column header on the payment-types screen; keep it short."
+  },
+  "colSlip": "Slip",
+  "@colSlip": {
+    "description": "Compact grid column header on the payment-types screen; keep it short."
+  },
+  "coreSettings": "Core Settings",
+  "customerRequiredLabel": "Customer Required",
+  "deleteTaxRateConfirm": "Are you sure you want to delete the tax rate '{name}'?",
+  "@deleteTaxRateConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "editPaymentType": "Edit Payment Type",
+  "editTaxRate": "Edit Tax Rate",
+  "enterValidNumber": "Enter a valid number",
+  "fiscal": "Fiscal",
+  "markAsPaid": "Mark As Paid",
+  "oldAndNewTaxMustDiffer": "Old and new tax must be different.",
+  "paymentTypeDeleted": "Payment type deleted",
+  "pleaseSelectBothTaxes": "Please select both taxes.",
+  "quickPayment": "Quick Payment",
+  "slipRequired": "Slip Required",
+  "switchFailed": "Switch failed.",
+  "taxRateAppliedSuccessfully": "Rate {rate} from '{oldName}' applied to '{newName}' successfully.",
+  "@taxRateAppliedSuccessfully": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      },
+      "oldName": {
+        "type": "String"
+      },
+      "newName": {
+        "type": "String"
+      }
+    }
+  },
+  "taxRateDeleted": "Tax rate deleted",
+  "yearTotal": "YEAR TOTAL",
+  "topMonth": "TOP MONTH",
+  "monthlySalesYear": "MONTHLY SALES — {year}",
+  "@monthlySalesYear": {
+    "placeholders": {
+      "year": {
+        "type": "String"
+      }
+    }
+  },
+  "activeMonthsCount": "{count, plural, =1{1 active month} other{{count} active months}}",
+  "@activeMonthsCount": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "periodicReports": "Periodic Reports",
+  "selectDateRangeToFilter": "Select a date range to filter the cards below",
+  "failedToLoadYearlyData": "Failed to load yearly data",
+  "noDataToDisplay": "No data to display",
+  "selectedPeriod": "Selected Period",
+  "filterLabel": "Filter",
+  "customersAndSuppliers": "Customers & suppliers",
+  "cashRegister": "Cash register",
+  "colImage": "Image",
+  "fieldUnit": "Unit",
+  "markupPercent": "Markup %",
+  "lastPurchase": "Last Purchase",
+  "fieldRank": "Rank",
+  "taxInclusive": "Tax Inclusive",
+  "priceChange": "Price Change",
+  "businessPartnerRequired": "Business partner (required)",
+  "addServiceType": "Add Service Type",
+  "allValuesMustBePositive": "All values must be positive numbers.",
+  "bookingArrived": "Arrived",
+  "bookingCompleted": "Completed",
+  "bookingInService": "In Service",
+  "bookingNoShow": "No Show",
+  "bookingPending": "Pending",
+  "couldNotCheckStock": "Could not check stock: {message}",
+  "@couldNotCheckStock": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteLoyaltyCardConfirm": "Delete the loyalty card for {name}? This cannot be undone.",
+  "@deleteLoyaltyCardConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "earningRuleExample": "e.g. every 100 {symbol} spent earns 10 pts",
+  "@earningRuleExample": {
+    "placeholders": {
+      "symbol": {
+        "type": "String"
+      }
+    }
+  },
+  "editServiceType": "Edit Service Type",
+  "editWarehouse": "Edit Warehouse",
+  "enterValidPointsValue": "Enter a valid non-negative points value.",
+  "failedToAddCard": "Failed to add card: {message}",
+  "@failedToAddCard": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToDeleteCard": "Failed to delete: {message}",
+  "@failedToDeleteCard": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToUpdateCard": "Failed to update card: {message}",
+  "@failedToUpdateCard": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "guestsCount": "{count, plural, =1{1 guest} other{{count} guests}}",
+  "@guestsCount": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "historyTab": "History",
+  "loyaltyCardAdded": "Loyalty card added",
+  "loyaltyCardDeleted": "Loyalty card deleted",
+  "loyaltyCardUpdated": "Loyalty card updated",
+  "loyaltySettingsSaved": "Loyalty settings saved",
+  "newWarehouse": "New Warehouse",
+  "noCardNumber": "No card number",
+  "noCompletedBookings": "No completed bookings yet.",
+  "noLoyaltyCardsYet": "No loyalty cards yet.",
+  "noUpcomingBookings": "No upcoming bookings.",
+  "onePointEquals": "1 point equals",
+  "orderNumbered": "Order #{number}",
+  "@orderNumbered": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "pleaseSelectACustomer": "Please select a customer.",
+  "pointsCannotBeNegative": "Points cannot be negative.",
+  "redemptionRuleExample": "e.g. 1 pt = 1 {symbol} discount at checkout",
+  "@redemptionRuleExample": {
+    "placeholders": {
+      "symbol": {
+        "type": "String"
+      }
+    }
+  },
+  "removeNamedConfirm": "Remove \"{name}\"?",
+  "@removeNamedConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "stockMovedWarehouseDeleted": "Stock moved to {name}; warehouse deleted",
+  "@stockMovedWarehouseDeleted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tablesCount": "{count, plural, =1{1 table} other{{count} tables}}",
+  "@tablesCount": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "upcoming": "Upcoming",
+  "warehouseAndStockDeleted": "Warehouse and its stock deleted",
+  "warehouseDeleted": "Warehouse deleted",
+  "warehouseStillHoldsStock": "{count, plural, =1{'{name}' still holds 1 stock item. What should happen to it before the warehouse is deleted?} other{'{name}' still holds {count} stock items. What should happen to them before the warehouse is deleted?}}",
+  "@warehouseStillHoldsStock": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "beforeTax": "Before tax",
+  "afterTax": "After tax",
+  "listLabel": "List",
+  "gridLabel": "Grid",
+  "cancelUpper": "CANCEL",
+  "noCategory": "No category",
+  "enterAGroupName": "Enter a group name.",
+  "categoryCount": "{count, plural, =1{1 category} other{{count} categories}}",
+  "@categoryCount": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "enterAnIpAddress": "Enter an IP address",
+  "invalidIpWithExample": "Invalid IP (e.g. 192.168.1.100)",
+  "invalidIp": "Invalid IP",
+  "backupDatabase": "Backup database",
+  "backingUpEllipsis": "Backing up…",
+  "backupSaved": "Backup saved: {file}",
+  "@backupSaved": {
+    "placeholders": {
+      "file": {
+        "type": "String"
+      }
+    }
+  },
+  "backupFailed": "Backup failed: {message}",
+  "@backupFailed": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "selectBackupFolder": "Select Backup Folder",
+  "autoBackupExplain": "Automatically create backup copies of your data to protect against loss or corruption",
+  "unitHours": "hours",
+  "unitDays": "days",
+  "settingSaved": "{setting} saved",
+  "@settingSaved": {
+    "placeholders": {
+      "setting": {
+        "type": "String"
+      }
+    }
+  },
+  "customerDisplayQrHint": "Scan the QR code to open the customer display on any internet-connected device.",
+  "everythingIsSynced": "Everything is synced",
+  "exitApplicationConfirm": "Are you sure you want to exit the application?",
+  "failedCount": "{count, plural, =1{1 failed} other{{count} failed}}",
+  "@failedCount": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "fontSizeDefault": "Default",
+  "fontSizeLarge": "Large",
+  "fontSizeLarger": "Larger",
+  "fontSizeSmall": "Small",
+  "itemsPendingCount": "{count, plural, =1{1 item pending} other{{count} items pending}}",
+  "@itemsPendingCount": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "pendingCount": "{count, plural, =1{1 pending} other{{count} pending}}",
+  "@pendingCount": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "syncAfterEverySave": "After every save",
+  "@syncAfterEverySave": {
+    "description": "Display label for the persisted App autoSyncMode VALUE 'After every save'. The stored value stays English — only this label is translated."
+  },
+  "syncCashMovements": "Cash movements",
+  "syncCustomerDiscounts": "Customer discounts",
+  "syncEveryHour": "Every 1 hour",
+  "@syncEveryHour": {
+    "description": "Display label for the persisted App autoSyncMode VALUE 'Every 1 hour'. The stored value stays English — only this label is translated."
+  },
+  "syncNow": "Sync now",
+  "syncProductComments": "Product comments",
+  "syncProductTaxes": "Product taxes",
+  "syncSalesOrders": "Sales orders",
+  "syncShifts": "Shifts",
+  "syncStatusTitle": "Sync Status",
+  "syncStockCounts": "Stock counts",
+  "syncStockTransfers": "Stock transfers",
+  "syncVoids": "Voids",
+  "syncZReports": "Z-reports",
+  "syncedStatus": "Synced",
+  "syncingEllipsis": "Syncing…",
+  "backupPathHintWindows": "e.g. D:\\database\\Backup",
+  "backupPathHintUnix": "e.g. /home/user/backups",
+  "exchangeRateHint": "e.g. 1.08  (1 primary = X secondary)"
 }

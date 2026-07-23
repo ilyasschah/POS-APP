@@ -16,6 +16,124 @@ import 'package:pos_app/security/security_key_provider.dart';
 import 'package:pos_app/utils/api_error_parser.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
 
+/// Display label for a security key. The keys themselves are the server's
+/// identity for the rule and must never be translated — only the label is.
+String _securityKeyLabel(BuildContext context, String key) {
+  final l10n = AppLocalizations.of(context);
+  switch (key) {
+    case 'Management':
+      return l10n.management;
+    case 'Settings':
+      return l10n.settings;
+    case 'BusinessDay.Close':
+      return l10n.endOfDay;
+    case 'UserProfile':
+      return l10n.userProfileLower;
+    case 'ShiftManagement':
+      return l10n.shiftManagement;
+    case 'CashMovement':
+      return l10n.cashInOut;
+    case 'FloorPlans.Design':
+      return l10n.designFloorPlans;
+    case 'FloorPlans.View':
+      return l10n.floorPlanTables;
+    case 'Bookings':
+      return l10n.posBookings;
+    case 'Bookings.History':
+      return l10n.bookingHistory;
+    case 'Order.All':
+      return l10n.viewAllOpenOrders;
+    case 'Order.Void':
+      return l10n.voidOrder;
+    case 'Order.Item.Void':
+      return l10n.voidItem;
+    case 'Order.Estimate':
+      return l10n.createEstimate;
+    case 'Order.Estimate.Clear':
+      return l10n.clearEstimate;
+    case 'Order.Transfer':
+      return l10n.transferOrder;
+    case 'Payment.Discount':
+      return l10n.applyDiscount;
+    case 'Invoices.Delete':
+      return l10n.deleteDocument;
+    case 'Refund':
+      return l10n.posRefund;
+    case 'Payment.TaxOverride':
+      return l10n.overrideTaxes;
+    case 'SalesHistory':
+      return l10n.viewSalesHistory;
+    case 'SalesHistory.Receipt':
+      return l10n.reprintReceipt;
+    case 'CreditPayments':
+      return l10n.creditPayments;
+    case 'StartingCash':
+      return l10n.startingCashLower;
+    case 'CashDrawer.Open':
+      return l10n.openCashDrawerLower;
+    case 'Stock.Control.NegativeQuantity':
+      return l10n.zeroStockQuantitySale;
+    case 'Management.Dashboard':
+      return l10n.dashboard;
+    case 'Management.Documents':
+      return l10n.documents;
+    case 'Management.Products':
+      return l10n.products;
+    case 'Management.ProductGroups':
+      return l10n.productGroups;
+    case 'Management.Stock':
+      return l10n.stock;
+    case 'Management.Warehouses':
+      return l10n.warehouses;
+    case 'Management.Reporting':
+      return l10n.reporting;
+    case 'Management.Customers':
+      return l10n.customersSuppliersLower;
+    case 'Management.Promotions':
+      return l10n.promotions;
+    case 'Management.Security':
+      return l10n.usersSecurityLower;
+    case 'Management.PaymentTypes':
+      return l10n.paymentTypesLower;
+    case 'Management.Countries':
+      return l10n.countriesLabel;
+    case 'Management.Currencies':
+      return l10n.currencies;
+    case 'Management.TaxRates':
+      return l10n.taxRatesLower;
+    case 'Management.Company':
+      return l10n.myCompanyLower;
+    case 'Management.VoidReasons':
+      return l10n.voidReasonsLower;
+    case 'Management.Stock.QuickInventory':
+      return l10n.quickInventory;
+    case 'Management.Stock.ShowCostPrices':
+      return l10n.viewCostPrices;
+    case 'Management.LoyaltyCards':
+      return l10n.loyaltyCardsLower;
+    default:
+      return key;
+  }
+}
+
+/// Display label for the four security-rule category ids. The ids are the
+/// grouping map's identity — only the label is translated.
+String _securityCategoryLabel(BuildContext context, String id) {
+  final l10n = AppLocalizations.of(context);
+  switch (id) {
+    case 'General':
+      return l10n.generalLabel;
+    case 'Sales':
+      return l10n.sales;
+    case 'Management':
+      return l10n.management;
+    case 'Stock':
+      return l10n.stock;
+    default:
+      return id;
+  }
+}
+
 class UsersScreen extends ConsumerWidget {
   /// Passed by ManagementLayout when the sidebar is hidden so the AppBar can
   /// show a menu icon rather than the default back arrow.
@@ -41,10 +159,14 @@ class UsersScreen extends ConsumerWidget {
                 )
               : null,
           title: Text(AppLocalizations.of(context).usersAndSecurity),
-          bottom: const TabBar(
+          bottom: TabBar(
             tabs: [
-              Tab(icon: Icon(Icons.people), text: "Users"),
-              Tab(icon: Icon(Icons.security), text: "Security Rules"),
+              Tab(
+                  icon: const Icon(Icons.people),
+                  text: AppLocalizations.of(context).users),
+              Tab(
+                  icon: const Icon(Icons.security),
+                  text: AppLocalizations.of(context).securityRules),
             ],
           ),
           actions: [
@@ -90,57 +212,6 @@ class _SecurityKeysTab extends ConsumerWidget {
       return 'General';
     }
     return 'Sales';
-  }
-
-  String _getFriendlyName(String key) {
-    final names = {
-      'Management': 'Management',
-      'Settings': 'Settings',
-      'BusinessDay.Close': 'End of day',
-      'UserProfile': 'User profile',
-      'ShiftManagement': 'Shift management',
-      'CashMovement': 'Cash in / out',
-      'FloorPlans.Design': 'Design floor plans',
-      'FloorPlans.View': 'Floor plan / tables',
-      'Bookings': 'Bookings',
-      'Bookings.History': 'Booking history',
-      'Order.All': 'View all open orders',
-      'Order.Void': 'Void order',
-      'Order.Item.Void': 'Void item',
-      'Order.Estimate': 'Create estimate',
-      'Order.Estimate.Clear': 'Clear estimate',
-      'Order.Transfer': 'Transfer order',
-      'Payment.Discount': 'Apply discount',
-      'Invoices.Delete': 'Delete document',
-      'Refund': 'Refund',
-      'Payment.TaxOverride': 'Override taxes',
-      'SalesHistory': 'View sales history',
-      'SalesHistory.Receipt': 'Reprint receipt',
-      'CreditPayments': 'Credit payments',
-      'StartingCash': 'Starting cash',
-      'CashDrawer.Open': 'Open cash drawer',
-      'Stock.Control.NegativeQuantity': 'Zero stock quantity sale',
-      'Management.Dashboard': 'Dashboard',
-      'Management.Documents': 'Documents',
-      'Management.Products': 'Products',
-      'Management.ProductGroups': 'Product groups',
-      'Management.Stock': 'Stock',
-      'Management.Warehouses': 'Warehouses',
-      'Management.Reporting': 'Reporting',
-      'Management.Customers': 'Customers & suppliers',
-      'Management.Promotions': 'Promotions',
-      'Management.Security': 'Users & security',
-      'Management.PaymentTypes': 'Payment types',
-      'Management.Countries': 'Countries',
-      'Management.Currencies': 'Currencies',
-      'Management.TaxRates': 'Tax rates',
-      'Management.Company': 'My company',
-      'Management.VoidReasons': 'Void reasons',
-      'Management.Stock.QuickInventory': 'Quick inventory',
-      'Management.Stock.ShowCostPrices': 'View cost prices',
-      'Management.LoyaltyCards': 'Loyalty cards',
-    };
-    return names[key] ?? key;
   }
 
   @override
@@ -190,7 +261,7 @@ class _SecurityKeysTab extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
-                    entry.key,
+                    _securityCategoryLabel(context, entry.key),
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -213,7 +284,7 @@ class _SecurityKeysTab extends ConsumerWidget {
                           children: [
                             Expanded(
                               child: Text(
-                                _getFriendlyName(keyItem.name),
+                                _securityKeyLabel(context, keyItem.name),
                                 style: const TextStyle(fontSize: 14),
                               ),
                             ),
@@ -282,7 +353,9 @@ class _SecurityLevelDropdownState
         showAppSnackbar(
           context,
           ref,
-          '${_getFriendlyName(widget.securityKey.name)} updated.',
+          AppLocalizations.of(context).securityRuleUpdated(
+            _securityKeyLabel(context, widget.securityKey.name),
+          ),
         );
       }
     } on DioException catch (e) {
@@ -306,7 +379,7 @@ class _SecurityLevelDropdownState
           showAppSnackbar(
             context,
             ref,
-            'Saved offline. Will sync when connected.',
+            AppLocalizations.of(context).savedOfflineWillSync,
           );
         }
       } else {
@@ -322,27 +395,14 @@ class _SecurityLevelDropdownState
             );
         if (mounted) {
           final msg =
-              e.response?.data?['message'] as String? ?? 'Update failed';
+              e.response?.data?['message'] as String? ??
+                  AppLocalizations.of(context).updateFailed;
           showAppSnackbar(context, ref, msg, isError: true);
         }
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
-  }
-
-  // Reuse the same friendly-name map from the parent widget.
-  String _getFriendlyName(String key) {
-    const names = {
-      'Management': 'Management',
-      'Settings': 'Settings',
-      'BusinessDay.Close': 'End of day',
-      'SalesHistory': 'View sales history',
-      'Order.All': 'View all open orders',
-      'CashMovement': 'Cash in / out',
-      'CreditPayments': 'Credit payments',
-    };
-    return names[key] ?? key;
   }
 
   @override
@@ -400,7 +460,7 @@ class _UsersListTab extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  "No users found.",
+                  AppLocalizations.of(context).noUsersFound,
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontSize: 16,
@@ -450,8 +510,8 @@ class _UsersListTab extends ConsumerWidget {
                       ),
               ),
               subtitle: Text(
-                "${user.accessLevel == 0 ? 'Admin' : 'Cashier'}"
-                "${!user.isEnabled ? ' · Disabled' : ''}"
+                '${user.accessLevel == 0 ? AppLocalizations.of(context).roleAdmin : AppLocalizations.of(context).roleCashier}'
+                "${!user.isEnabled ? ' · ${AppLocalizations.of(context).statusDisabled}' : ''}"
                 "${user.email != null && user.email!.isNotEmpty ? ' · ${user.email}' : ''}",
               ),
               trailing: Row(
@@ -507,7 +567,8 @@ class _UsersListTab extends ConsumerWidget {
                         builder: (ctx) => AlertDialog(
                           title: Text(AppLocalizations.of(context).deleteUser),
                           content: Text(
-                            "Are you sure you want to delete ${user.displayName}?",
+                            AppLocalizations.of(context)
+                                .confirmDeleteQuoted(user.displayName),
                           ),
                           actions: [
                             TextButton(
@@ -547,7 +608,8 @@ class _UsersListTab extends ConsumerWidget {
                             showAppSnackbar(
                               context,
                               ref,
-                              'User deleted successfully.',
+                              AppLocalizations.of(context)
+                                  .userDeletedSuccessfully,
                             );
                           }
                         } on DioException catch (e) {
@@ -556,9 +618,11 @@ class _UsersListTab extends ConsumerWidget {
                           ref.invalidate(seedUsersFromApiProvider(companyId));
                           if (context.mounted) {
                             final msg = e.response == null
-                                ? 'No connection. Deleting users requires connectivity.'
+                                ? AppLocalizations.of(context)
+                                    .noConnectionDeleteUsers
                                 : e.response?.data?['message'] ??
-                                      'Delete failed';
+                                      AppLocalizations.of(context)
+                                          .deleteFailed;
                             showAppSnackbar(context, ref, msg, isError: true);
                           }
                         }
@@ -623,7 +687,7 @@ class _EnableToggleState extends ConsumerState<_EnableToggle> {
           showAppSnackbar(
             context,
             ref,
-            'Saved offline. Will sync when connected.',
+            AppLocalizations.of(context).savedOfflineWillSync,
           );
         }
       } else {
@@ -633,7 +697,8 @@ class _EnableToggleState extends ConsumerState<_EnableToggle> {
             .write(UsersTableCompanion(isEnabled: Value(!newEnabled)));
         if (mounted) {
           final msg =
-              e.response?.data?['message'] as String? ?? 'Update failed';
+              e.response?.data?['message'] as String? ??
+                  AppLocalizations.of(context).updateFailed;
           showAppSnackbar(context, ref, msg, isError: true);
         }
       }
@@ -709,13 +774,14 @@ class _AddUserDialogState extends ConsumerState<_AddUserDialog> {
     } on DioException catch (e) {
       setState(() {
         _errorMessage = e.response == null
-            ? 'No connection. Adding users requires connectivity.'
-            : e.response?.data?['message'] ?? 'Failed to create user.';
+            ? AppLocalizations.of(context).noConnectionAddUsers
+            : e.response?.data?['message'] ??
+                AppLocalizations.of(context).failedToCreateUser;
         _isLoading = false;
       });
     } catch (e) {
       setState(() {
-        _errorMessage = 'An unexpected error occurred.';
+        _errorMessage = AppLocalizations.of(context).unexpectedErrorOccurred;
         _isLoading = false;
       });
     }
@@ -741,7 +807,9 @@ class _AddUserDialogState extends ConsumerState<_AddUserDialog> {
                         labelText: AppLocalizations.of(context).firstNameRequired,
                       ),
                       validator: (v) =>
-                          v == null || v.trim().isEmpty ? "Required" : null,
+                          v == null || v.trim().isEmpty
+                              ? AppLocalizations.of(context).requiredField
+                              : null,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -752,7 +820,9 @@ class _AddUserDialogState extends ConsumerState<_AddUserDialog> {
                         labelText: AppLocalizations.of(context).lastNameRequired,
                       ),
                       validator: (v) =>
-                          v == null || v.trim().isEmpty ? "Required" : null,
+                          v == null || v.trim().isEmpty
+                              ? AppLocalizations.of(context).requiredField
+                              : null,
                     ),
                   ),
                 ],
@@ -762,7 +832,9 @@ class _AddUserDialogState extends ConsumerState<_AddUserDialog> {
                 controller: _usernameCtrl,
                 decoration: InputDecoration(labelText: AppLocalizations.of(context).usernameRequired),
                 validator: (v) =>
-                    v == null || v.trim().isEmpty ? "Required" : null,
+                    v == null || v.trim().isEmpty
+                        ? AppLocalizations.of(context).requiredField
+                        : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
@@ -776,7 +848,9 @@ class _AddUserDialogState extends ConsumerState<_AddUserDialog> {
                 decoration: InputDecoration(labelText: AppLocalizations.of(context).passwordRequired),
                 obscureText: true,
                 validator: (v) =>
-                    v == null || v.trim().isEmpty ? "Required" : null,
+                    v == null || v.trim().isEmpty
+                        ? AppLocalizations.of(context).requiredField
+                        : null,
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<int>(
@@ -928,7 +1002,7 @@ class _EditUserDialogState extends ConsumerState<_EditUserDialog> {
           showAppSnackbar(
             context,
             ref,
-            'Saved offline. Will sync when connected.',
+            AppLocalizations.of(context).savedOfflineWillSync,
           );
           Navigator.of(context).pop();
         }
@@ -948,13 +1022,14 @@ class _EditUserDialogState extends ConsumerState<_EditUserDialog> {
         );
         setState(() {
           _errorMessage =
-              e.response?.data?['message'] ?? 'Failed to update user.';
+              e.response?.data?['message'] ??
+                  AppLocalizations.of(context).failedToUpdateUser;
           _isLoading = false;
         });
       }
     } catch (e) {
       setState(() {
-        _errorMessage = 'An unexpected error occurred.';
+        _errorMessage = AppLocalizations.of(context).unexpectedErrorOccurred;
         _isLoading = false;
       });
     }
@@ -995,7 +1070,9 @@ class _EditUserDialogState extends ConsumerState<_EditUserDialog> {
                 controller: _usernameCtrl,
                 decoration: InputDecoration(labelText: AppLocalizations.of(context).username),
                 validator: (v) =>
-                    v == null || v.trim().isEmpty ? "Required" : null,
+                    v == null || v.trim().isEmpty
+                        ? AppLocalizations.of(context).requiredField
+                        : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
@@ -1092,7 +1169,8 @@ Future<void> _adminResetPassword(
 
                       if (context.mounted) {
                         Navigator.pop(ctx);
-                        showAppSnackbar(context, ref, "Password forcibly reset!");
+                        showAppSnackbar(context, ref,
+                            AppLocalizations.of(context).passwordForciblyReset);
                       }
                     } on DioException catch (e, st) {
                       rethrowApiError(e, st);
@@ -1109,9 +1187,9 @@ Future<void> _adminResetPassword(
                       strokeWidth: 2,
                     ),
                   )
-                : const Text(
-                    "Force Reset",
-                    style: TextStyle(color: Colors.white),
+                : Text(
+                    AppLocalizations.of(context).forceReset,
+                    style: const TextStyle(color: Colors.white),
                   ),
           ),
         ],
@@ -1168,7 +1246,10 @@ Future<void> _adminResetPin(
                       if (context.mounted) {
                         Navigator.pop(ctx);
                         showAppSnackbar(
-                            context, ref, "PIN forcibly reset for this Device!");
+                            context,
+                            ref,
+                            AppLocalizations.of(context)
+                                .pinForciblyResetForDevice);
                         ref.invalidate(allUsersAdminProvider);
                       }
                     } on DioException catch (e, st) {
@@ -1186,9 +1267,9 @@ Future<void> _adminResetPin(
                       strokeWidth: 2,
                     ),
                   )
-                : const Text(
-                    "Force Reset",
-                    style: TextStyle(color: Colors.white),
+                : Text(
+                    AppLocalizations.of(context).forceReset,
+                    style: const TextStyle(color: Colors.white),
                   ),
           ),
         ],

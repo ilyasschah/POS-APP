@@ -9,6 +9,47 @@ import 'package:pos_app/sync/sync_notifier.dart';
 import 'package:pos_app/sync/sync_provider.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
 
+/// Display label for a `paymentTypeVisibleColumnsProvider` key.
+///
+/// 🚨 The keys (`'Quick Pay'`, `'Customer Req.'`, …) are the map's **identity** —
+/// they gate every column and are what the picker writes back. Translating the
+/// map itself would break the grid the moment the language changed. Only the
+/// label is localized, exactly like `documents_screen._columnLabel` and
+/// `sales_history_screen._masterColumnIds` / `_masterColumns`.
+String _paymentColumnLabel(BuildContext context, String id) {
+  final l10n = AppLocalizations.of(context);
+  switch (id) {
+    case 'Name':
+      return l10n.fieldName;
+    case 'Code':
+      return l10n.fieldCode;
+    case 'Position':
+      return l10n.fieldPosition;
+    case 'Enabled':
+      return l10n.fieldEnabled;
+    case 'Quick Pay':
+      return l10n.colQuickPay;
+    case 'Customer Req.':
+      return l10n.colCustomerRequired;
+    case 'Change':
+      return l10n.change;
+    case 'Mark Paid':
+      return l10n.colMarkPaid;
+    case 'Cash Drawer':
+      return l10n.setCashDrawer;
+    case 'Fiscal':
+      return l10n.fiscal;
+    case 'Slip':
+      return l10n.colSlip;
+    case 'Shortcut':
+      return l10n.fieldShortcut;
+    case 'Actions':
+      return l10n.actions;
+    default:
+      return id;
+  }
+}
+
 // ─────────────────────────────────────────────────────────────
 // SCREEN
 // ─────────────────────────────────────────────────────────────
@@ -70,7 +111,8 @@ class PaymentTypesScreen extends ConsumerWidget {
                               children: columns.entries.map((entry) {
                                 return CheckboxListTile(
                                   value: entry.value,
-                                  title: Text(entry.key),
+                                  title: Text(
+                                      _paymentColumnLabel(context, entry.key)),
                                   controlAffinity:
                                       ListTileControlAffinity.leading,
                                   onChanged: (v) {
@@ -216,7 +258,7 @@ class PaymentTypesScreen extends ConsumerWidget {
                           Expanded(
                             flex: 3,
                             child: Text(
-                              "Name",
+                              _paymentColumnLabel(context, 'Name'),
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: theme.textTheme.bodyMedium?.color,
@@ -227,7 +269,7 @@ class PaymentTypesScreen extends ConsumerWidget {
                           Expanded(
                             flex: 1,
                             child: Text(
-                              "Code",
+                              _paymentColumnLabel(context, 'Code'),
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: theme.textTheme.bodyMedium?.color,
@@ -238,7 +280,7 @@ class PaymentTypesScreen extends ConsumerWidget {
                           Expanded(
                             flex: 1,
                             child: Text(
-                              "Position",
+                              _paymentColumnLabel(context, 'Position'),
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: theme.textTheme.bodyMedium?.color,
@@ -249,7 +291,7 @@ class PaymentTypesScreen extends ConsumerWidget {
                           Expanded(
                             flex: 1,
                             child: Text(
-                              "Enabled",
+                              _paymentColumnLabel(context, 'Enabled'),
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: theme.textTheme.bodyMedium?.color,
@@ -260,7 +302,7 @@ class PaymentTypesScreen extends ConsumerWidget {
                           Expanded(
                             flex: 1,
                             child: Text(
-                              "Quick Pay",
+                              _paymentColumnLabel(context, 'Quick Pay'),
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: theme.textTheme.bodyMedium?.color,
@@ -271,7 +313,7 @@ class PaymentTypesScreen extends ConsumerWidget {
                           Expanded(
                             flex: 1,
                             child: Text(
-                              "Customer Req.",
+                              _paymentColumnLabel(context, 'Customer Req.'),
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: theme.textTheme.bodyMedium?.color,
@@ -282,7 +324,7 @@ class PaymentTypesScreen extends ConsumerWidget {
                           Expanded(
                             flex: 1,
                             child: Text(
-                              "Change",
+                              _paymentColumnLabel(context, 'Change'),
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: theme.textTheme.bodyMedium?.color,
@@ -293,7 +335,7 @@ class PaymentTypesScreen extends ConsumerWidget {
                           Expanded(
                             flex: 1,
                             child: Text(
-                              "Mark Paid",
+                              _paymentColumnLabel(context, 'Mark Paid'),
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: theme.textTheme.bodyMedium?.color,
@@ -304,7 +346,7 @@ class PaymentTypesScreen extends ConsumerWidget {
                           Expanded(
                             flex: 1,
                             child: Text(
-                              "Cash Drawer",
+                              _paymentColumnLabel(context, 'Cash Drawer'),
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: theme.textTheme.bodyMedium?.color,
@@ -315,7 +357,7 @@ class PaymentTypesScreen extends ConsumerWidget {
                           Expanded(
                             flex: 1,
                             child: Text(
-                              "Fiscal",
+                              _paymentColumnLabel(context, 'Fiscal'),
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: theme.textTheme.bodyMedium?.color,
@@ -326,7 +368,7 @@ class PaymentTypesScreen extends ConsumerWidget {
                           Expanded(
                             flex: 1,
                             child: Text(
-                              "Slip",
+                              _paymentColumnLabel(context, 'Slip'),
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: theme.textTheme.bodyMedium?.color,
@@ -337,7 +379,7 @@ class PaymentTypesScreen extends ConsumerWidget {
                           Expanded(
                             flex: 1,
                             child: Text(
-                              "Shortcut",
+                              _paymentColumnLabel(context, 'Shortcut'),
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: theme.textTheme.bodyMedium?.color,
@@ -348,7 +390,7 @@ class PaymentTypesScreen extends ConsumerWidget {
                           SizedBox(
                             width: 100,
                             child: Text(
-                              "Actions",
+                              _paymentColumnLabel(context, 'Actions'),
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
@@ -399,7 +441,7 @@ class PaymentTypesScreen extends ConsumerWidget {
                                 Expanded(
                                   flex: 1,
                                   child: Align(
-                                    alignment: Alignment.centerLeft,
+                                    alignment: AlignmentDirectional.centerStart,
                                     child: _BoolIcon(value: t.isEnabled),
                                   ),
                                 ),
@@ -407,7 +449,7 @@ class PaymentTypesScreen extends ConsumerWidget {
                                 Expanded(
                                   flex: 1,
                                   child: Align(
-                                    alignment: Alignment.centerLeft,
+                                    alignment: AlignmentDirectional.centerStart,
                                     child: _BoolIcon(value: t.isQuickPayment),
                                   ),
                                 ),
@@ -415,7 +457,7 @@ class PaymentTypesScreen extends ConsumerWidget {
                                 Expanded(
                                   flex: 1,
                                   child: Align(
-                                    alignment: Alignment.centerLeft,
+                                    alignment: AlignmentDirectional.centerStart,
                                     child: _BoolIcon(
                                       value: t.isCustomerRequired,
                                     ),
@@ -425,7 +467,7 @@ class PaymentTypesScreen extends ConsumerWidget {
                                 Expanded(
                                   flex: 1,
                                   child: Align(
-                                    alignment: Alignment.centerLeft,
+                                    alignment: AlignmentDirectional.centerStart,
                                     child: _BoolIcon(value: t.isChangeAllowed),
                                   ),
                                 ),
@@ -433,7 +475,7 @@ class PaymentTypesScreen extends ConsumerWidget {
                                 Expanded(
                                   flex: 1,
                                   child: Align(
-                                    alignment: Alignment.centerLeft,
+                                    alignment: AlignmentDirectional.centerStart,
                                     child: _BoolIcon(value: t.markAsPaid),
                                   ),
                                 ),
@@ -441,7 +483,7 @@ class PaymentTypesScreen extends ConsumerWidget {
                                 Expanded(
                                   flex: 1,
                                   child: Align(
-                                    alignment: Alignment.centerLeft,
+                                    alignment: AlignmentDirectional.centerStart,
                                     child: _BoolIcon(value: t.openCashDrawer),
                                   ),
                                 ),
@@ -449,7 +491,7 @@ class PaymentTypesScreen extends ConsumerWidget {
                                 Expanded(
                                   flex: 1,
                                   child: Align(
-                                    alignment: Alignment.centerLeft,
+                                    alignment: AlignmentDirectional.centerStart,
                                     child: _BoolIcon(value: t.isFiscal),
                                   ),
                                 ),
@@ -457,7 +499,7 @@ class PaymentTypesScreen extends ConsumerWidget {
                                 Expanded(
                                   flex: 1,
                                   child: Align(
-                                    alignment: Alignment.centerLeft,
+                                    alignment: AlignmentDirectional.centerStart,
                                     child: _BoolIcon(value: t.isSlipRequired),
                                   ),
                                 ),
@@ -530,7 +572,8 @@ class PaymentTypesScreen extends ConsumerWidget {
                                                           ctx,
                                                         ).pop(true),
                                                     child: Text(
-                                                      "Delete",
+                                                      AppLocalizations.of(context)
+                                                          .actionDelete,
                                                       style: TextStyle(
                                                         color: theme
                                                             .colorScheme
@@ -591,10 +634,12 @@ class PaymentTypesScreen extends ConsumerWidget {
       await ref.read(appDatabaseProvider).deletePaymentTypeLocal(id);
       ref.read(syncStateProvider.notifier).sync().catchError((_) {});
       if (!context.mounted) return;
-      showAppSnackbar(context, ref, 'Payment type deleted');
+      showAppSnackbar(
+          context, ref, AppLocalizations.of(context).paymentTypeDeleted);
     } catch (e) {
       if (!context.mounted) return;
-      showAppSnackbar(context, ref, 'Delete failed', isError: true);
+      showAppSnackbar(context, ref, AppLocalizations.of(context).deleteFailed,
+          isError: true);
     }
   }
 }
@@ -732,7 +777,7 @@ class _PaymentTypeFormDialogState
       Navigator.of(context).pop();
     } catch (e) {
       setState(() {
-        _errorMessage = "Operation failed.";
+        _errorMessage = AppLocalizations.of(context).operationFailed;
         _isLoading = false;
       });
     }
@@ -782,7 +827,9 @@ class _PaymentTypeFormDialogState
     final theme = Theme.of(context);
 
     return AlertDialog(
-      title: Text(_isEditing ? "Edit Payment Type" : "New Payment Type"),
+      title: Text(_isEditing
+          ? AppLocalizations.of(context).editPaymentType
+          : AppLocalizations.of(context).newPaymentType),
 
       content: SizedBox(
         width: 500,
@@ -794,7 +841,8 @@ class _PaymentTypeFormDialogState
             child: Column(
               children: [
                 // GENERAL INFO
-                _buildCard('General Info', Icons.info_outline, [
+                _buildCard(AppLocalizations.of(context).generalInfo,
+                    Icons.info_outline, [
                   Row(
                     children: [
                       Expanded(
@@ -812,7 +860,9 @@ class _PaymentTypeFormDialogState
                           ),
 
                           validator: (v) =>
-                              v == null || v.trim().isEmpty ? "Required" : null,
+                              v == null || v.trim().isEmpty
+                          ? AppLocalizations.of(context).requiredField
+                          : null,
                         ),
                       ),
 
@@ -876,21 +926,22 @@ class _PaymentTypeFormDialogState
                 const SizedBox(height: 16),
 
                 // CORE SETTINGS
-                _buildCard('Core Settings', Icons.settings_outlined, [
+                _buildCard(AppLocalizations.of(context).coreSettings,
+                    Icons.settings_outlined, [
                   _switchRow(
-                    "Enabled",
+                    AppLocalizations.of(context).fieldEnabled,
                     _isEnabled,
                     (v) => setState(() => _isEnabled = v),
                   ),
 
                   _switchRow(
-                    "Quick Payment",
+                    AppLocalizations.of(context).quickPayment,
                     _isQuickPayment,
                     (v) => setState(() => _isQuickPayment = v),
                   ),
 
                   _switchRow(
-                    "Mark As Paid",
+                    AppLocalizations.of(context).markAsPaid,
                     _markAsPaid,
                     (v) => setState(() => _markAsPaid = v),
                   ),
@@ -899,33 +950,34 @@ class _PaymentTypeFormDialogState
                 const SizedBox(height: 16),
 
                 // ADVANCED
-                _buildCard('Advanced / Hardware', Icons.hardware_outlined, [
+                _buildCard(AppLocalizations.of(context).advancedHardware,
+                    Icons.hardware_outlined, [
                   _switchRow(
-                    "Open Cash Drawer",
+                    AppLocalizations.of(context).openCashDrawerLower,
                     _openCashDrawer,
                     (v) => setState(() => _openCashDrawer = v),
                   ),
 
                   _switchRow(
-                    "Customer Required",
+                    AppLocalizations.of(context).customerRequiredLabel,
                     _isCustomerRequired,
                     (v) => setState(() => _isCustomerRequired = v),
                   ),
 
                   _switchRow(
-                    "Change Allowed",
+                    AppLocalizations.of(context).changeAllowed,
                     _isChangeAllowed,
                     (v) => setState(() => _isChangeAllowed = v),
                   ),
 
                   _switchRow(
-                    "Fiscal",
+                    AppLocalizations.of(context).fiscal,
                     _isFiscal,
                     (v) => setState(() => _isFiscal = v),
                   ),
 
                   _switchRow(
-                    "Slip Required",
+                    AppLocalizations.of(context).slipRequired,
                     _isSlipRequired,
                     (v) => setState(() => _isSlipRequired = v),
                   ),

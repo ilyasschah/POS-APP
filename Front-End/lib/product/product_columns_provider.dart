@@ -1,7 +1,10 @@
 import 'dart:convert';
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:pos_app/l10n/app_localizations.dart';
 
 /// Definition of a single column the Products grid is able to render.
 ///
@@ -10,6 +13,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// can never end up with nothing meaningful to show.
 class ProductColumnDef {
   final String key;
+
+  /// English fallback only — **not** what the grid renders. The visible text
+  /// comes from [productColumnLabel]; see the note on [kProductColumns].
   final String label;
   final bool defaultVisible;
   final bool mandatory;
@@ -27,6 +33,12 @@ class ProductColumnDef {
 /// The full, ordered catalogue of columns the grid can display. Every product
 /// field surfaced here is read straight from the local (offline-first) Drift
 /// row — no network call is involved in deciding what to show.
+///
+/// 🚨 [ProductColumnDef.key] is the column's **identity**: it gates rendering
+/// and is the JSON key persisted to SharedPreferences, so it must never be
+/// translated. `label` is a `const` English fallback — the grid and the picker
+/// both render [productColumnLabel] instead, because a `const` list cannot
+/// reach `AppLocalizations` (that needs a BuildContext).
 const kProductColumns = <ProductColumnDef>[
   ProductColumnDef('image', 'Image', defaultVisible: true),
   ProductColumnDef('color', 'Color'),
@@ -50,6 +62,42 @@ const kProductColumns = <ProductColumnDef>[
   ProductColumnDef('updated', 'Updated'),
   ProductColumnDef('actions', 'Edit', defaultVisible: true, mandatory: true),
 ];
+
+/// Localized header for a [ProductColumnDef.key]. Falls back to the `const`
+/// English `label` for any key without a translation, so a column added later
+/// still renders something rather than a blank cell.
+String productColumnLabel(BuildContext context, String key) {
+  final l = AppLocalizations.of(context);
+  return switch (key) {
+    'image' => l.colImage,
+    'color' => l.setColor,
+    'code' => l.fieldCode,
+    'name' => l.fieldName,
+    'category' => l.categoryLabel,
+    'price' => l.fieldPrice,
+    'cost' => l.fieldCost,
+    'plu' => l.plu,
+    'unit' => l.fieldUnit,
+    'markup' => l.markupPercent,
+    'lastPurchase' => l.lastPurchase,
+    'ageRestriction' => l.ageRestriction,
+    'rank' => l.fieldRank,
+    'taxInclusive' => l.taxInclusive,
+    'service' => l.serviceTag,
+    'priceChange' => l.priceChange,
+    'enabled' => l.fieldEnabled,
+    'description' => l.fieldDescription,
+    'created' => l.created,
+    'updated' => l.updatedLabel,
+    'actions' => l.actionEdit,
+    _ => kProductColumns
+        .firstWhere(
+          (c) => c.key == key,
+          orElse: () => const ProductColumnDef('', ''),
+        )
+        .label,
+  };
+}
 
 const _kPrefsKey = 'products.visibleColumns';
 

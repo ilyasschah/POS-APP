@@ -892,7 +892,9 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                                   showAppSnackbar(
                                     context,
                                     ref,
-                                    'Kitchen print error: $e',
+                                    AppLocalizations.of(
+                                      context,
+                                    ).kitchenPrintError('$e'),
                                     isError: true,
                                   );
                                 }
@@ -984,7 +986,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                         showAppSnackbar(
                           context,
                           ref,
-                          'Could not save order: $e',
+                          AppLocalizations.of(context).couldNotSaveOrder('$e'),
                           isError: true,
                         );
                       }
@@ -1142,7 +1144,8 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
           showAppSnackbar(
             context,
             ref,
-            'Scale barcode: product "${scaleData.productCode}" not found.',
+            AppLocalizations.of(context)
+                .scaleBarcodeProductNotFound(scaleData.productCode),
             isError: true,
           );
         }
@@ -1217,7 +1220,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
           showAppSnackbar(
             context,
             ref,
-            'Error creating order: $e',
+            AppLocalizations.of(context).errorCreatingOrder('$e'),
             isError: true,
           );
           return;
@@ -1379,9 +1382,11 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
         ),
         title: Text(AppLocalizations.of(context).productRunningLow(product.name)),
         content: Text(
-          'Adding this item leaves only ${_fmtQty(projectedQuantity)} '
-          '${product.measurementUnit ?? 'unit(s)'} in stock, at or below the '
-          'low-stock warning level.\n\nAdd it anyway?',
+          AppLocalizations.of(context).lowStockAddAnyway(
+            _fmtQty(projectedQuantity),
+            product.measurementUnit ??
+                AppLocalizations.of(context).unitsFallback,
+          ),
           style: tt.bodyMedium?.copyWith(color: context.navMuted),
         ),
         actions: [
@@ -1437,7 +1442,10 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'No stock available in ${selectedWh?.name ?? 'the selected warehouse'}.',
+                AppLocalizations.of(context).noStockAvailableIn(
+                  selectedWh?.name ??
+                      AppLocalizations.of(context).theSelectedWarehouse,
+                ),
                 style: tt.bodyMedium,
               ),
               const Gap(16),
@@ -1459,7 +1467,12 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
                         PhosphorIconsRegular.warehouse,
                         color: cs.primary,
                       ),
-                      title: Text(whNames[e.key] ?? 'Warehouse ${e.key}'),
+                      title: Text(
+                        whNames[e.key] ??
+                            AppLocalizations.of(
+                              context,
+                            ).warehouseNumbered('${e.key}'),
+                      ),
                       subtitle: Text(AppLocalizations.of(context).quantityInStock(_fmtQty(e.value))),
                       trailing: FilledButton.tonal(
                         onPressed: () {
@@ -1468,7 +1481,10 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
                           showAppSnackbar(
                             context,
                             ref,
-                            'Switched to ${whNames[e.key] ?? 'warehouse'} — tap the product to add it.',
+                            AppLocalizations.of(context).switchedToWarehouse(
+                              whNames[e.key] ??
+                                  AppLocalizations.of(context).warehouse,
+                            ),
                             isError: false,
                           );
                         },
@@ -1965,7 +1981,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
               showAppSnackbar(
                 context,
                 ref,
-                'Error creating order: $e',
+                AppLocalizations.of(context).errorCreatingOrder('$e'),
                 isError: true,
               );
               return;
@@ -2357,10 +2373,10 @@ class _CartSectionState extends ConsumerState<CartSection> {
         context,
         ref,
         wasBookingOrder
-            ? 'Booking Saved!'
+            ? AppLocalizations.of(context).bookingSaved
             : wasTableOrder
-            ? 'Order Saved to Table!'
-            : 'Order Saved!',
+            ? AppLocalizations.of(context).orderSavedToTable
+            : AppLocalizations.of(context).orderSaved,
       );
 
       // Step 3: Navigate back to where the order came from. A booking order —
@@ -2400,7 +2416,12 @@ class _CartSectionState extends ConsumerState<CartSection> {
       ref.read(syncStateProvider.notifier).sync().catchError((_) {});
     } catch (e) {
       if (context.mounted) {
-        showAppSnackbar(context, ref, 'Save failed: $e', isError: true);
+        showAppSnackbar(
+          context,
+          ref,
+          AppLocalizations.of(context).saveFailed('$e'),
+          isError: true,
+        );
       }
     }
   }
@@ -2562,7 +2583,12 @@ class _CartSectionState extends ConsumerState<CartSection> {
       ref.read(cartProvider.notifier).clearCart();
 
       if (!context.mounted) return;
-      showAppSnackbar(context, ref, 'Order Voided', isError: true);
+      showAppSnackbar(
+        context,
+        ref,
+        AppLocalizations.of(context).orderVoided,
+        isError: true,
+      );
 
       final bookingEnabled =
           settings[SettingKeys.featureBookingEnabled]?.toLowerCase() == 'true';
@@ -2591,7 +2617,12 @@ class _CartSectionState extends ConsumerState<CartSection> {
       }
     } catch (e) {
       if (context.mounted) {
-        showAppSnackbar(context, ref, 'Error: $e', isError: true);
+        showAppSnackbar(
+          context,
+          ref,
+          AppLocalizations.of(context).errorWithMessage('$e'),
+          isError: true,
+        );
       }
     }
   }
@@ -3118,7 +3149,9 @@ class _CartSectionState extends ConsumerState<CartSection> {
             children: [
               _totalsRow(
                 Text(
-                  taxIncluded ? "Subtotal (incl. tax)" : "Subtotal",
+                  taxIncluded
+                      ? AppLocalizations.of(context).subtotalInclTax
+                      : AppLocalizations.of(context).subtotal,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontSize: 16),
@@ -3227,7 +3260,9 @@ class _CartSectionState extends ConsumerState<CartSection> {
               const SizedBox(height: 6),
               _totalsRow(
                 Text(
-                  taxIncluded ? "Tax (incl.)" : "Taxes",
+                  taxIncluded
+                      ? AppLocalizations.of(context).taxInclLabel
+                      : AppLocalizations.of(context).taxesLabel,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -3989,7 +4024,11 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
 
       if (mounted) {
         Navigator.pop(context);
-        showAppSnackbar(context, ref, 'Order Transferred');
+        showAppSnackbar(
+          context,
+          ref,
+          AppLocalizations.of(context).orderTransferred,
+        );
       }
 
       ref.read(cartProvider.notifier).clearCart();
@@ -4000,7 +4039,12 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
       }
     } catch (e) {
       if (mounted) {
-        showAppSnackbar(context, ref, 'Transfer failed: $e', isError: true);
+        showAppSnackbar(
+          context,
+          ref,
+          AppLocalizations.of(context).transferFailed('$e'),
+          isError: true,
+        );
       }
     } finally {
       if (mounted) setState(() => _saving = false);

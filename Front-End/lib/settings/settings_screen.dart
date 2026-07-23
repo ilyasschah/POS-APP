@@ -86,7 +86,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     (icon: Icons.receipt_long, label: AppLocalizations.of(context).setOrderAndPayment),
     (icon: Icons.inventory_2, label: AppLocalizations.of(context).products),
     (icon: Icons.monitor_weight, label: AppLocalizations.of(context).setWeighingScale),
-    (icon: Icons.display_settings, label: 'Customer Display'),
+    (
+      icon: Icons.display_settings,
+      label: AppLocalizations.of(context).setCustomerDisplay,
+    ),
     (icon: Icons.kitchen, label: AppLocalizations.of(context).setKitchenDisplay),
     (icon: Icons.email, label: AppLocalizations.of(context).fieldEmail),
     (icon: Icons.print, label: AppLocalizations.of(context).setPrint),
@@ -417,7 +420,11 @@ class _SettingTextFieldState extends ConsumerState<_SettingTextField> {
     try {
       await notifier.set(widget.settingKey, _ctrl.text.trim());
       if (mounted) {
-        showAppSnackbar(context, ref, '${widget.label} saved');
+        showAppSnackbar(
+          context,
+          ref,
+          AppLocalizations.of(context).settingSaved(widget.label),
+        );
       }
     } catch (_) {
       if (mounted) {
@@ -655,7 +662,8 @@ class _CustomServiceTypesEditorState
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(AppLocalizations.of(context).setDeleteServiceType),
-        content: Text('Remove "${target.name}"?'),
+        content: Text(
+            AppLocalizations.of(context).removeNamedConfirm(target.name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -770,7 +778,9 @@ class _TypeFormDialogState extends State<_TypeFormDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.isEdit ? 'Edit Service Type' : 'Add Service Type'),
+      title: Text(widget.isEdit
+          ? AppLocalizations.of(context).editServiceType
+          : AppLocalizations.of(context).addServiceType),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -882,7 +892,8 @@ class _CustomServiceStatusesEditorState
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(AppLocalizations.of(context).setDeleteServiceStatus),
-        content: Text('Remove "${target.name}"?'),
+        content: Text(
+            AppLocalizations.of(context).removeNamedConfirm(target.name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -2764,6 +2775,12 @@ String _settingOptionLabel(BuildContext context, String value) {
     case 'Percentage': return l.percentage;
     case 'Top': return l.top;
     case 'Bottom': return l.bottom;
+    case 'After every save': return l.syncAfterEverySave;
+    case 'Every 1 hour': return l.syncEveryHour;
+    case 'Before tax': return l.beforeTax;
+    case 'After tax': return l.afterTax;
+    case 'List': return l.listLabel;
+    case 'Grid': return l.gridLabel;
     default: return value; // technical values stay verbatim
   }
 }
@@ -2885,11 +2902,12 @@ class _FontScalePicker extends ConsumerWidget {
   static const _min = kFontScaleMin;
   static const _max = kFontScaleMax;
 
-  String _label(double v) {
-    if (v <= 0.85) return 'Small';
-    if (v < 1.05) return 'Default';
-    if (v < 1.2) return 'Large';
-    return 'Larger';
+  String _label(BuildContext context, double v) {
+    final l10n = AppLocalizations.of(context);
+    if (v <= 0.85) return l10n.fontSizeSmall;
+    if (v < 1.05) return l10n.fontSizeDefault;
+    if (v < 1.2) return l10n.fontSizeLarge;
+    return l10n.fontSizeLarger;
   }
 
   @override
@@ -2913,7 +2931,7 @@ class _FontScalePicker extends ConsumerWidget {
               ),
               const Spacer(),
               Text(
-                '${_label(value)}  (${(value * 100).round()}%)',
+                '${_label(context, value)}  (${(value * 100).round()}%)',
                 style: TextStyle(
                   fontSize: 13,
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
@@ -5095,7 +5113,7 @@ class _CustomerDisplayTabState extends ConsumerState<_CustomerDisplayTab> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Scan the QR code to open the customer display on any internet-connected device.',
+                      AppLocalizations.of(context).customerDisplayQrHint,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -5147,7 +5165,7 @@ class _PrinterGroupDialogState extends ConsumerState<_PrinterGroupDialog> {
   void _save() {
     final name = _name.text.trim();
     if (name.isEmpty) {
-      showAppSnackbar(context, ref, 'Enter a group name.', isError: true);
+      showAppSnackbar(context, ref, AppLocalizations.of(context).enterAGroupName, isError: true);
       return;
     }
     Navigator.pop(
@@ -5195,7 +5213,7 @@ class _PrinterGroupDialogState extends ConsumerState<_PrinterGroupDialog> {
                 shrinkWrap: true,
                 children: [
                   // "No category" sentinel + every product group.
-                  _row(PrinterGroup.noCategoryId, 'No category'),
+                  _row(PrinterGroup.noCategoryId, AppLocalizations.of(context).noCategory),
                   ...widget.productGroups.map((g) => _row(g.id, g.name)),
                 ],
               ),
@@ -5206,7 +5224,7 @@ class _PrinterGroupDialogState extends ConsumerState<_PrinterGroupDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('CANCEL'),
+          child: Text(AppLocalizations.of(context).cancelUpper),
         ),
         TextButton(onPressed: _save, child: Text(AppLocalizations.of(context).saveUpper)),
       ],
@@ -5436,7 +5454,7 @@ class _KitchenDisplayTabState extends ConsumerState<_KitchenDisplayTab> {
               return ListTile(
                 leading: Icon(Icons.print, color: cs.primary),
                 title: Text(g.name, style: theme.textTheme.bodyMedium),
-                subtitle: Text('$n categor${n == 1 ? 'y' : 'ies'}'),
+                subtitle: Text(AppLocalizations.of(context).categoryCount(n)),
                 onTap: () => _editPrinterGroup(existing: g),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -5593,14 +5611,14 @@ class _KitchenDisplayTabState extends ConsumerState<_KitchenDisplayTab> {
                         ),
                         validator: (v) {
                           if (v == null || v.trim().isEmpty) {
-                            return 'Enter an IP address';
+                            return AppLocalizations.of(context).enterAnIpAddress;
                           }
                           final parts = v.trim().split('.');
                           if (parts.length != 4) {
-                            return 'Invalid IP (e.g. 192.168.1.100)';
+                            return AppLocalizations.of(context).invalidIpWithExample;
                           }
                           if (parts.any((p) => int.tryParse(p) == null)) {
-                            return 'Invalid IP';
+                            return AppLocalizations.of(context).invalidIp;
                           }
                           return null;
                         },
@@ -5711,7 +5729,7 @@ class _DualCurrencyTab extends ConsumerWidget {
             _SettingTextField(
               settingKey: SettingKeys.dualCurrencyRate,
               label: AppLocalizations.of(context).setExchangeRate,
-              hint: 'e.g. 1.08  (1 primary = X secondary)',
+              hint: AppLocalizations.of(context).exchangeRateHint,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
             ),
           ],
@@ -5733,12 +5751,13 @@ class _DatabaseTabState extends ConsumerState<_DatabaseTab> {
   bool _isBackingUp = false;
 
   Future<void> _doBackup() async {
+    final l = AppLocalizations.of(context);
     // If no backup location is configured yet, ask the user to pick one first.
     var backupDir =
         ref.read(appSettingsProvider)[SettingKeys.dbBackupPath] ?? '';
     if (backupDir.trim().isEmpty) {
       final picked = await FilePicker.platform.getDirectoryPath(
-        dialogTitle: 'Select Backup Folder',
+        dialogTitle: AppLocalizations.of(context).selectBackupFolder,
       );
       if (picked == null || !mounted) return;
       await ref
@@ -5770,11 +5789,11 @@ class _DatabaseTabState extends ConsumerState<_DatabaseTab> {
       }
 
       if (mounted) {
-        showAppSnackbar(context, ref, 'Backup saved: ${p.basename(destPath)}');
+        showAppSnackbar(context, ref, l.backupSaved(p.basename(destPath)));
       }
     } catch (e) {
       if (mounted) {
-        showAppSnackbar(context, ref, 'Backup failed: $e', isError: true);
+        showAppSnackbar(context, ref, l.backupFailed('$e'), isError: true);
       }
     } finally {
       if (mounted) setState(() => _isBackingUp = false);
@@ -5786,7 +5805,7 @@ class _DatabaseTabState extends ConsumerState<_DatabaseTab> {
     var dir = ref.read(appSettingsProvider)[SettingKeys.dbBackupPath] ?? '';
     if (dir.trim().isEmpty) {
       final picked = await FilePicker.platform.getDirectoryPath(
-        dialogTitle: 'Select Backup Folder',
+        dialogTitle: AppLocalizations.of(context).selectBackupFolder,
       );
       if (picked == null || !mounted) return;
       await ref
@@ -5831,6 +5850,8 @@ class _DatabaseTabState extends ConsumerState<_DatabaseTab> {
               _SettingDropdown(
                 settingKey: SettingKeys.autoSyncMode,
                 label: AppLocalizations.of(context).setWhenToSync,
+                // Persisted setting VALUES — never translate the list itself.
+                // _settingOptionLabel renders them per-locale.
                 options: const ['After every save', 'Every 1 hour'],
               ),
             _SettingSwitch(
@@ -5859,7 +5880,11 @@ class _DatabaseTabState extends ConsumerState<_DatabaseTab> {
                         ),
                       )
                     : const Icon(Icons.backup_outlined),
-                label: Text(_isBackingUp ? 'Backing up…' : 'Backup database'),
+                label: Text(
+                  _isBackingUp
+                      ? AppLocalizations.of(context).backingUpEllipsis
+                      : AppLocalizations.of(context).backupDatabase,
+                ),
                 style: FilledButton.styleFrom(
                   minimumSize: const Size(double.infinity, 48),
                 ),
@@ -5897,7 +5922,7 @@ class _DatabaseTabState extends ConsumerState<_DatabaseTab> {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 10, 20, 6),
               child: Text(
-                'Automatically create backup copies of your data to protect against loss or corruption',
+                AppLocalizations.of(context).autoBackupExplain,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -5927,7 +5952,7 @@ class _DatabaseTabState extends ConsumerState<_DatabaseTab> {
                       settingKey: SettingKeys.dbBackupIntervalHours,
                       min: 0,
                       max: 168,
-                      suffix: 'hours',
+                      suffix: AppLocalizations.of(context).unitHours,
                     ),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
@@ -5952,7 +5977,7 @@ class _DatabaseTabState extends ConsumerState<_DatabaseTab> {
                           settingKey: SettingKeys.dbBackupRetentionDays,
                           min: 1,
                           max: 365,
-                          suffix: 'days',
+                          suffix: AppLocalizations.of(context).unitDays,
                         ),
                       ),
                     ),
@@ -6004,7 +6029,7 @@ class _BackupLocationFieldState extends ConsumerState<_BackupLocationField> {
 
   Future<void> _browse() async {
     final result = await FilePicker.platform.getDirectoryPath(
-      dialogTitle: 'Select Backup Folder',
+      dialogTitle: AppLocalizations.of(context).selectBackupFolder,
     );
     if (result != null) {
       _ctrl.text = result;
@@ -6027,8 +6052,8 @@ class _BackupLocationFieldState extends ConsumerState<_BackupLocationField> {
               decoration: InputDecoration(
                 labelText: AppLocalizations.of(context).setBackupLocation,
                 hintText: Platform.isWindows
-                    ? r'e.g. D:\database\Backup'
-                    : 'e.g. /home/user/backups',
+                    ? AppLocalizations.of(context).backupPathHintWindows
+                    : AppLocalizations.of(context).backupPathHintUnix,
                 filled: true,
                 fillColor: theme.colorScheme.surface,
                 border: const OutlineInputBorder(),
@@ -6142,12 +6167,24 @@ class _SubscriptionStatusPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (label, icon, color) = switch (info.state) {
+      // daysLeft counts to the period end shown in the rows below, so it goes
+      // <= 0 while the terminal is still running on the grace window. "Expires
+      // in 0 days" would be nonsense there, and a green tick on an amber pill
+      // reads as broken — both branches get their own icon.
+      LicenseState.active when info.daysLeft <= 0 => (
+        AppLocalizations.of(context).statusGracePeriod,
+        Icons.warning_amber_rounded,
+        context.warningColor,
+      ),
+      LicenseState.active when info.daysLeft <= 7 => (
+        AppLocalizations.of(context).expiresInDays(info.daysLeft),
+        Icons.schedule,
+        context.warningColor,
+      ),
       LicenseState.active => (
-        info.daysLeft <= 7
-            ? AppLocalizations.of(context).expiresInDays(info.daysLeft)
-            : AppLocalizations.of(context).statusActive,
+        AppLocalizations.of(context).statusActive,
         Icons.check_circle,
-        info.daysLeft <= 7 ? context.warningColor : context.successColor,
+        context.successColor,
       ),
       LicenseState.expired => (
         AppLocalizations.of(context).statusExpired,

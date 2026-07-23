@@ -5,6 +5,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 
 import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/app_settings/app_settings_provider.dart';
+import 'package:pos_app/currency/currencies_provider.dart';
 import 'package:pos_app/customer/customer_model.dart';
 import 'package:pos_app/customer/customer_provider.dart';
 import 'package:pos_app/loyalty/loyalty_card_model.dart';
@@ -80,7 +81,7 @@ class _LoyaltyCardsScreenState extends ConsumerState<LoyaltyCardsScreen> {
                       color: cs.onSurface.withValues(alpha: 0.3)),
                   const SizedBox(height: 16),
                   Text(
-                    'No loyalty cards yet.',
+                    AppLocalizations.of(context).noLoyaltyCardsYet,
                     style: TextStyle(
                         color: cs.onSurface.withValues(alpha: 0.5)),
                   ),
@@ -129,11 +130,13 @@ class _LoyaltyCardsScreenState extends ConsumerState<LoyaltyCardsScreen> {
                   points: points,
                 );
             if (context.mounted) {
-              showAppSnackbar(context, ref, 'Loyalty card added');
+              showAppSnackbar(
+                  context, ref, AppLocalizations.of(context).loyaltyCardAdded);
             }
           } catch (e) {
             if (context.mounted) {
-              showAppSnackbar(context, ref, 'Failed to add card: $e',
+              showAppSnackbar(context, ref,
+                  AppLocalizations.of(context).failedToAddCard(e.toString()),
                   isError: true);
             }
           }
@@ -157,11 +160,13 @@ class _LoyaltyCardsScreenState extends ConsumerState<LoyaltyCardsScreen> {
                   points: points,
                 );
             if (context.mounted) {
-              showAppSnackbar(context, ref, 'Loyalty card updated');
+              showAppSnackbar(context, ref,
+                  AppLocalizations.of(context).loyaltyCardUpdated);
             }
           } catch (e) {
             if (context.mounted) {
-              showAppSnackbar(context, ref, 'Failed to update card: $e',
+              showAppSnackbar(context, ref,
+                  AppLocalizations.of(context).failedToUpdateCard(e.toString()),
                   isError: true);
             }
           }
@@ -180,7 +185,8 @@ class _LoyaltyCardsScreenState extends ConsumerState<LoyaltyCardsScreen> {
         backgroundColor: Theme.of(context).cardColor,
         title: Text(AppLocalizations.of(context).deleteLoyaltyCard),
         content: Text(
-            'Delete the loyalty card for ${card.customerName}? This cannot be undone.'),
+            AppLocalizations.of(context)
+                .deleteLoyaltyCardConfirm(card.customerName)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -196,11 +202,14 @@ class _LoyaltyCardsScreenState extends ConsumerState<LoyaltyCardsScreen> {
                     .read(loyaltyCardNotifierProvider.notifier)
                     .deleteCard(card.id);
                 if (context.mounted) {
-                  showAppSnackbar(context, ref, 'Loyalty card deleted');
+                  showAppSnackbar(context, ref,
+                      AppLocalizations.of(context).loyaltyCardDeleted);
                 }
               } catch (e) {
                 if (context.mounted) {
-                  showAppSnackbar(context, ref, 'Failed to delete: $e',
+                  showAppSnackbar(context, ref,
+                      AppLocalizations.of(context)
+                          .failedToDeleteCard(e.toString()),
                       isError: true);
                 }
               }
@@ -333,7 +342,8 @@ class _CardTile extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    card.cardNumber ?? 'No card number',
+                    card.cardNumber ??
+                        AppLocalizations.of(context).noCardNumber,
                     style: TextStyle(
                         color: cs.onSurface.withValues(alpha: 0.55),
                         fontSize: 13),
@@ -403,12 +413,14 @@ class _AddCardDialogState extends ConsumerState<_AddCardDialog> {
 
   Future<void> _save() async {
     if (_selectedCustomer == null) {
-      setState(() => _error = 'Please select a customer.');
+      setState(() =>
+          _error = AppLocalizations.of(context).pleaseSelectACustomer);
       return;
     }
     final points = double.tryParse(_pointsCtrl.text.trim()) ?? 0;
     if (points < 0) {
-      setState(() => _error = 'Points cannot be negative.');
+      setState(() =>
+          _error = AppLocalizations.of(context).pointsCannotBeNegative);
       return;
     }
     setState(() {
@@ -557,7 +569,8 @@ class _EditCardDialogState extends State<_EditCardDialog> {
   Future<void> _save() async {
     final points = double.tryParse(_pointsCtrl.text.trim());
     if (points == null || points < 0) {
-      setState(() => _error = 'Enter a valid non-negative points value.');
+      setState(() =>
+          _error = AppLocalizations.of(context).enterValidPointsValue);
       return;
     }
     setState(() {
@@ -670,7 +683,8 @@ class _LoyaltySettingsDialogState extends ConsumerState<_LoyaltySettingsDialog> 
     final val = double.tryParse(_pointValueCtrl.text.trim());
     if (minAmt == null || minAmt <= 0 || pts == null || pts <= 0 ||
         val == null || val <= 0) {
-      showAppSnackbar(context, ref, 'All values must be positive numbers.',
+      showAppSnackbar(
+          context, ref, AppLocalizations.of(context).allValuesMustBePositive,
           isError: true);
       return;
     }
@@ -682,13 +696,17 @@ class _LoyaltySettingsDialogState extends ConsumerState<_LoyaltySettingsDialog> 
     await notifier.set(SettingKeys.loyaltyPointValue, val.toString());
     if (mounted) {
       Navigator.pop(context);
-      showAppSnackbar(context, ref, 'Loyalty settings saved');
+      showAppSnackbar(
+          context, ref, AppLocalizations.of(context).loyaltySettingsSaved);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    // Was hardcoded 'DH' in four places, which is wrong for any company on a
+    // different currency — the rest of the app reads this provider.
+    final sym = ref.watch(currencySymbolProvider);
     return AlertDialog(
       backgroundColor: Theme.of(context).cardColor,
       title: Text(AppLocalizations.of(context).loyaltySettings),
@@ -720,7 +738,7 @@ class _LoyaltySettingsDialogState extends ConsumerState<_LoyaltySettingsDialog> 
                     decoration: InputDecoration(
                       labelText: AppLocalizations.of(context).minPurchaseAmount,
                       border: const OutlineInputBorder(),
-                      suffixText: 'DH',
+                      suffixText: sym,
                     ),
                     keyboardType:
                         const TextInputType.numberWithOptions(decimal: true),
@@ -748,7 +766,7 @@ class _LoyaltySettingsDialogState extends ConsumerState<_LoyaltySettingsDialog> 
             ),
             const SizedBox(height: 6),
             Text(
-              'e.g. every 100 DH spent earns 10 pts',
+              AppLocalizations.of(context).earningRuleExample(sym),
               style: TextStyle(
                   fontSize: 11,
                   color: cs.onSurface.withValues(alpha: 0.5)),
@@ -763,10 +781,10 @@ class _LoyaltySettingsDialogState extends ConsumerState<_LoyaltySettingsDialog> 
             const SizedBox(height: 10),
             TextField(
               controller: _pointValueCtrl,
-              decoration: const InputDecoration(
-                labelText: '1 point equals',
-                border: OutlineInputBorder(),
-                suffixText: 'DH',
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context).onePointEquals,
+                border: const OutlineInputBorder(),
+                suffixText: sym,
               ),
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
@@ -774,7 +792,7 @@ class _LoyaltySettingsDialogState extends ConsumerState<_LoyaltySettingsDialog> 
             ),
             const SizedBox(height: 6),
             Text(
-              'e.g. 1 pt = 1 DH discount at checkout',
+              AppLocalizations.of(context).redemptionRuleExample(sym),
               style: TextStyle(
                   fontSize: 11,
                   color: cs.onSurface.withValues(alpha: 0.5)),

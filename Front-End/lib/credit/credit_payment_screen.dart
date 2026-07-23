@@ -228,9 +228,11 @@ class _CreditPaymentsScreenState extends ConsumerState<CreditPaymentsScreen> {
         }
       });
     } catch (e) {
+      if (!mounted) return;
+      final message = AppLocalizations.of(context).errorLoadingDocuments('$e');
       setState(() {
         _isLoading = false;
-        _errorMessage = 'Failed to load documents: $e';
+        _errorMessage = message;
       });
     }
   }
@@ -246,17 +248,16 @@ class _CreditPaymentsScreenState extends ConsumerState<CreditPaymentsScreen> {
         _paymentTypeId ?? payTypes.where((p) => p.isEnabled).firstOrNull?.id;
     if (effectivePayId == null) return;
 
+    final l = AppLocalizations.of(context);
+
     final amount = double.tryParse(_amountCtrl.text) ?? 0;
     if (amount <= 0) {
-      setState(() => _errorMessage = 'Please enter a valid amount.');
+      setState(() => _errorMessage = l.enterValidAmount);
       return;
     }
 
     if (!_automaticDistribution && _selectedIds.isEmpty) {
-      setState(
-        () => _errorMessage =
-            'Please select at least one document, or enable Automatic distribution.',
-      );
+      setState(() => _errorMessage = l.selectDocumentOrAutoDistribute);
       return;
     }
 
@@ -303,8 +304,7 @@ class _CreditPaymentsScreenState extends ConsumerState<CreditPaymentsScreen> {
       if (!appliedToAny) {
         setState(() {
           _isSubmitting = false;
-          _errorMessage =
-              'Nothing to settle — the selected documents are already paid.';
+          _errorMessage = l.nothingToSettle;
         });
         return;
       }
@@ -315,7 +315,7 @@ class _CreditPaymentsScreenState extends ConsumerState<CreditPaymentsScreen> {
     } catch (e) {
       setState(() {
         _isSubmitting = false;
-        _errorMessage = 'An error occurred: $e';
+        _errorMessage = l.anErrorOccurred('$e');
       });
     }
   }
@@ -350,9 +350,9 @@ class _CreditPaymentsScreenState extends ConsumerState<CreditPaymentsScreen> {
               tooltip: AppLocalizations.of(context).back,
               onPressed: () => Navigator.pop(context),
             ),
-            title: const Text(
-              'Credit Payments',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            title: Text(
+              AppLocalizations.of(context).creditPayments,
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
           ),
 
@@ -451,7 +451,9 @@ class _CreditPaymentsScreenState extends ConsumerState<CreditPaymentsScreen> {
   }
 
   String _customerDisplayName(AsyncValue<List<Customer>> async) {
-    if (_customerId == null) return 'Select customer';
+    if (_customerId == null) {
+      return AppLocalizations.of(context).selectCustomerLower;
+    }
     return async.asData?.value
             .where((c) => c.id == _customerId)
             .firstOrNull
@@ -571,7 +573,7 @@ class _LeftPanel extends StatelessWidget {
                         child: GestureDetector(
                           onTap: () => onUseBalanceChanged(!useCustomerBalance),
                           child: Text(
-                            'Use customer balance',
+                            AppLocalizations.of(context).useCustomerBalance,
                             style: theme.textTheme.bodyMedium?.copyWith(
                               fontSize: 15,
                             ),
@@ -599,7 +601,7 @@ class _LeftPanel extends StatelessWidget {
                 GestureDetector(
                   onTap: () => onAutoChanged(!automaticDistrib),
                   child: Text(
-                    'Automatic distribution',
+                    AppLocalizations.of(context).automaticDistribution,
                     style: theme.textTheme.bodyMedium?.copyWith(fontSize: 15),
                   ),
                 ),
@@ -617,9 +619,9 @@ class _LeftPanel extends StatelessWidget {
                       child: CircularProgressIndicator(strokeWidth: 3),
                     )
                   : const Icon(Icons.sync, size: 24),
-              label: const Text(
-                'Load unpaid documents',
-                style: TextStyle(fontSize: 16),
+              label: Text(
+                AppLocalizations.of(context).loadUnpaidDocuments,
+                style: const TextStyle(fontSize: 16),
               ),
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 18),
@@ -784,6 +786,7 @@ class _SummaryHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -792,7 +795,7 @@ class _SummaryHeader extends StatelessWidget {
           color: _kCyan,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           child: Text(
-            'Summary',
+            l.summaryLabel,
             style: theme.textTheme.titleMedium?.copyWith(
               color: Colors.white,
               fontWeight: FontWeight.bold,
@@ -816,7 +819,7 @@ class _SummaryHeader extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Customer balance',
+                      l.customerBalance,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontSize: 15,
                         color: theme.colorScheme.onSurface.withValues(
@@ -832,7 +835,7 @@ class _SummaryHeader extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'Total in selected documents',
+                      l.totalInSelectedDocuments,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontSize: 15,
                         color: theme.colorScheme.onSurface.withValues(
@@ -880,6 +883,7 @@ class _ContentArea extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
 
     // No customer selected
     if (!hasCustomer) {
@@ -894,7 +898,7 @@ class _ContentArea extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Customer not selected.\nPlease select customer for reconciliation.',
+              l.customerNotSelectedReconcile,
               textAlign: TextAlign.center,
               style: theme.textTheme.titleMedium?.copyWith(
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
@@ -918,7 +922,7 @@ class _ContentArea extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             Text(
-              'Paid amount will be automatically distributed\nacross all unpaid sales.',
+              l.autoDistributeExplain,
               textAlign: TextAlign.center,
               style: theme.textTheme.titleMedium?.copyWith(
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
@@ -947,7 +951,7 @@ class _ContentArea extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'No unpaid documents found for this customer.',
+              l.noUnpaidDocumentsForCustomer,
               style: theme.textTheme.titleMedium?.copyWith(
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
               ),
@@ -1053,6 +1057,7 @@ class _HeaderRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     final style = theme.textTheme.titleSmall?.copyWith(
       color: _kCyan,
       fontWeight: FontWeight.bold,
@@ -1084,15 +1089,15 @@ class _HeaderRow extends StatelessWidget {
               ),
             ),
           ),
-          hdr(_kFlexNumber, 'Number'),
-          hdr(_kFlexDocType, 'Document type'),
-          hdr(_kFlexDate, 'Date'),
-          hdr(_kFlexUser, 'User'),
-          hdr(_kFlexTotal, 'Total', right: true),
-          hdr(_kFlexBalance, 'Balance', right: true),
-          hdr(_kFlexCreated, 'Created'),
-          hdr(_kFlexIntNote, 'Internal note'),
-          hdr(_kFlexNote, 'Note'),
+          hdr(_kFlexNumber, l.numberLabel),
+          hdr(_kFlexDocType, l.documentType),
+          hdr(_kFlexDate, l.dateLabel),
+          hdr(_kFlexUser, l.userLabel),
+          hdr(_kFlexTotal, l.totalLabel, right: true),
+          hdr(_kFlexBalance, l.balanceLabel, right: true),
+          hdr(_kFlexCreated, l.created),
+          hdr(_kFlexIntNote, l.internalNoteLabel),
+          hdr(_kFlexNote, l.noteLabel),
         ],
       ),
     );

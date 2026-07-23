@@ -25,10 +25,14 @@ class ShiftManagementScreen extends ConsumerWidget {
       child: Scaffold(
         appBar: AppBar(
           title: Text(AppLocalizations.of(context).shiftManagement),
-          bottom: const TabBar(
+          bottom: TabBar(
             tabs: [
-              Tab(icon: Icon(Icons.timer_outlined), text: 'My Shift'),
-              Tab(icon: Icon(Icons.bar_chart_outlined), text: 'Hours Report'),
+              Tab(
+                  icon: const Icon(Icons.timer_outlined),
+                  text: AppLocalizations.of(context).myShift),
+              Tab(
+                  icon: const Icon(Icons.bar_chart_outlined),
+                  text: AppLocalizations.of(context).hoursReport),
             ],
           ),
         ),
@@ -109,7 +113,7 @@ class _NoShiftViewState extends ConsumerState<_NoShiftView> {
                     size: 56, color: context.navAccent.withValues(alpha: 0.7)),
                 const SizedBox(height: 16),
                 Text(
-                  'No Active Shift',
+                  AppLocalizations.of(context).noActiveShift,
                   style: theme.textTheme.headlineSmall
                       ?.copyWith(fontWeight: FontWeight.bold),
                   textAlign: TextAlign.center,
@@ -126,7 +130,7 @@ class _NoShiftViewState extends ConsumerState<_NoShiftView> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Begin a tracking session to clock your hours.',
+                  AppLocalizations.of(context).beginTrackingSession,
                   style: theme.textTheme.bodySmall
                       ?.copyWith(color: cs.onSurface.withValues(alpha: 0.5)),
                   textAlign: TextAlign.center,
@@ -252,7 +256,7 @@ class _ActiveShiftViewState extends ConsumerState<_ActiveShiftView> {
                           color: cs.onPrimaryContainer, size: 20),
                       const SizedBox(width: 8),
                       Text(
-                        'Shift Open',
+                        AppLocalizations.of(context).shiftOpen,
                         style: theme.textTheme.titleMedium?.copyWith(
                           color: cs.onPrimaryContainer,
                           fontWeight: FontWeight.bold,
@@ -361,10 +365,14 @@ class _HoursTabState extends ConsumerState<_HoursTab> {
   void _doExport(
       BuildContext context, List<ShiftSessionRow> rows, String storeName) {
     if (rows.isEmpty) {
-      showAppSnackbarRaw(context, 'Nothing to export in this range');
+      showAppSnackbarRaw(
+          context, AppLocalizations.of(context).nothingToExportInRange);
       return;
     }
+    final openLabel = AppLocalizations.of(context).shiftStillOpen;
     final fmt = DateFormat('yyyy-MM-dd HH:mm');
+    // CSV header stays English on purpose — it is a machine-readable column
+    // header pasted into a spreadsheet, not screen text.
     final sb = StringBuffer('Clock in,Clock out,Employee,Store,Total Hours\n');
     for (final r in rows) {
       final emp = r.employeeName.contains(',')
@@ -372,12 +380,13 @@ class _HoursTabState extends ConsumerState<_HoursTab> {
           : r.employeeName;
       final store = storeName.contains(',') ? '"$storeName"' : storeName;
       final inStr = fmt.format(r.clockIn);
-      final outStr = r.isOpen ? 'Open' : fmt.format(r.clockOut!);
-      final hrs = r.isOpen ? 'Open' : _fmtHours(r.totalMinutes);
+      final outStr = r.isOpen ? openLabel : fmt.format(r.clockOut!);
+      final hrs = r.isOpen ? openLabel : _fmtHours(r.totalMinutes);
       sb.writeln('$inStr,$outStr,$emp,$store,$hrs');
     }
     Clipboard.setData(ClipboardData(text: sb.toString()));
-    showAppSnackbarRaw(context, 'Report copied to clipboard as CSV');
+    showAppSnackbarRaw(
+        context, AppLocalizations.of(context).reportCopiedAsCsv);
   }
 
   Future<void> _addTimeCard() async {
@@ -388,7 +397,7 @@ class _HoursTabState extends ConsumerState<_HoursTab> {
     // The list is a live stream off shiftsTable, so the new row appears
     // instantly — no manual refresh needed.
     if (saved == true && mounted) {
-      showAppSnackbarRaw(context, 'Time card added');
+      showAppSnackbarRaw(context, AppLocalizations.of(context).timeCardAdded);
     }
   }
 
@@ -493,7 +502,9 @@ class _HoursTabState extends ConsumerState<_HoursTab> {
                               value: u.id,
                               child: Text(
                                 name.isEmpty
-                                    ? (u.username ?? 'User #${u.id}')
+                                    ? (u.username ??
+                                        AppLocalizations.of(context)
+                                            .userNumbered('${u.id}'))
                                     : name,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(color: cs.onSurface),
@@ -661,8 +672,8 @@ class _SessionsReportCard extends StatelessWidget {
                 Expanded(
                   flex: 2,
                   child: Text(
-                    'Total hours',
-                    textAlign: TextAlign.right,
+                    AppLocalizations.of(context).totalHours,
+                    textAlign: TextAlign.end,
                     style: labelStyle?.copyWith(fontWeight: FontWeight.w600),
                   ),
                 ),
@@ -685,7 +696,7 @@ class _SessionsReportCard extends StatelessWidget {
                                 .withValues(alpha: 0.4)),
                         const SizedBox(height: 12),
                         Text(
-                          'No time entries in the selected range.',
+                          AppLocalizations.of(context).noTimeEntriesInRange,
                           style: TextStyle(color: cs.onSurfaceVariant),
                         ),
                       ],
@@ -714,7 +725,8 @@ class _SessionsReportCard extends StatelessWidget {
                               flex: 5,
                               child: row.isOpen
                                   ? Text(
-                                      'Open',
+                                      AppLocalizations.of(context)
+                                          .shiftStillOpen,
                                       style: theme.textTheme.bodyMedium
                                           ?.copyWith(
                                         color: cs.error,
@@ -739,9 +751,9 @@ class _SessionsReportCard extends StatelessWidget {
                               flex: 2,
                               child: Text(
                                 row.isOpen
-                                    ? 'Open'
+                                    ? AppLocalizations.of(context).shiftStillOpen
                                     : _fmtHours(row.totalMinutes),
-                                textAlign: TextAlign.right,
+                                textAlign: TextAlign.end,
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   color: row.isOpen
                                       ? cs.error
@@ -770,7 +782,7 @@ class _SessionsReportCard extends StatelessWidget {
                   Expanded(
                     flex: 14,
                     child: Text(
-                      'Total (completed)',
+                      AppLocalizations.of(context).totalCompleted,
                       style: theme.textTheme.bodyMedium
                           ?.copyWith(fontWeight: FontWeight.bold),
                     ),
@@ -893,7 +905,7 @@ class _InfoRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          Text('$label: ',
+          Text(AppLocalizations.of(context).labelWithColon(label),
               style: style.copyWith(fontWeight: FontWeight.w600)),
           Expanded(child: Text(value, style: style)),
         ],
@@ -953,11 +965,13 @@ class _AddTimeCardDialogState extends ConsumerState<_AddTimeCardDialog> {
 
   Future<void> _save() async {
     if (_userId == null) {
-      setState(() => _error = 'Select an employee.');
+      setState(() =>
+          _error = AppLocalizations.of(context).selectAnEmployeeError);
       return;
     }
     if (!_clockOut.isAfter(_clockIn)) {
-      setState(() => _error = 'Clock-out must be after clock-in.');
+      setState(() =>
+          _error = AppLocalizations.of(context).clockOutMustBeAfterClockIn);
       return;
     }
     setState(() {
@@ -1008,7 +1022,7 @@ class _AddTimeCardDialogState extends ConsumerState<_AddTimeCardDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const _FieldLabel('Employee'),
+            _FieldLabel(AppLocalizations.of(context).employee),
             usersAsync.when(
               loading: () => const LinearProgressIndicator(),
               error: (_, __) => Text(AppLocalizations.of(context).couldNotLoadEmployees,
@@ -1038,7 +1052,9 @@ class _AddTimeCardDialogState extends ConsumerState<_AddTimeCardDialog> {
                         value: u.id,
                         child: Text(
                           name.isEmpty
-                              ? (u.username ?? 'User #${u.id}')
+                              ? (u.username ??
+                                  AppLocalizations.of(context)
+                                      .userNumbered('${u.id}'))
                               : name,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(color: cs.onSurface),
@@ -1055,7 +1071,7 @@ class _AddTimeCardDialogState extends ConsumerState<_AddTimeCardDialog> {
             ),
             const SizedBox(height: 16),
 
-            const _FieldLabel('Clock in'),
+            _FieldLabel(AppLocalizations.of(context).clockIn),
             Row(children: [
               Expanded(
                 child: _PickerChip(
@@ -1067,7 +1083,7 @@ class _AddTimeCardDialogState extends ConsumerState<_AddTimeCardDialog> {
             ]),
             const SizedBox(height: 16),
 
-            const _FieldLabel('Clock out'),
+            _FieldLabel(AppLocalizations.of(context).clockOut),
             Row(children: [
               Expanded(
                 child: _PickerChip(
@@ -1080,7 +1096,8 @@ class _AddTimeCardDialogState extends ConsumerState<_AddTimeCardDialog> {
             const SizedBox(height: 16),
 
             Text(
-              'Total hours: ${_fmtHours(minutes)}',
+              AppLocalizations.of(context)
+                  .totalHoursWithValue(_fmtHours(minutes)),
               style: theme.textTheme.titleSmall
                   ?.copyWith(fontWeight: FontWeight.bold),
             ),

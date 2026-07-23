@@ -42,14 +42,16 @@ class _CashMovementDialogState extends ConsumerState<_CashMovementDialog> {
   Future<void> _save() async {
     final amount = double.tryParse(_amountCtrl.text.trim());
     if (amount == null || amount <= 0) {
-      setState(() => _error = 'Enter a valid amount greater than zero.');
+      setState(() =>
+          _error = AppLocalizations.of(context).enterValidAmountAboveZero);
       return;
     }
 
     final company = ref.read(selectedCompanyProvider);
     final user = ref.read(currentUserProvider);
     if (company == null || user == null) {
-      setState(() => _error = 'Missing company or user context.');
+      setState(() =>
+          _error = AppLocalizations.of(context).missingCompanyOrUserContext);
       return;
     }
 
@@ -191,7 +193,9 @@ class _CashMovementDialogState extends ConsumerState<_CashMovementDialog> {
                   child: CircularProgressIndicator(
                       strokeWidth: 2, color: Colors.white),
                 )
-              : Text(isCashIn ? 'Save Cash In' : 'Save Cash Out'),
+              : Text(isCashIn
+                ? AppLocalizations.of(context).saveCashIn
+                : AppLocalizations.of(context).saveCashOut),
         ),
       ],
     );

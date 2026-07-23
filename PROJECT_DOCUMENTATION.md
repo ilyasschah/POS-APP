@@ -211,19 +211,27 @@ Industry adaptation now lives in two orthogonal places:
 
 ### Localization (added 2026-07-23)
 
-**Stack:** `flutter_localizations` + `gen-l10n`. Config in `l10n.yaml` (`arb-dir: lib/l10n`, `output-class: AppLocalizations`, `nullable-getter: false`), `generate: true` in `pubspec.yaml`. Sources: `lib/l10n/app_en.arb` (template), `app_fr.arb`, `app_ar.arb` — **~1,100 keys each**. Generated `lib/l10n/app_localizations*.dart` is committed.
+**Stack:** `flutter_localizations` + `gen-l10n`. Config in `l10n.yaml` (`arb-dir: lib/l10n`, `output-class: AppLocalizations`, `nullable-getter: false`), `generate: true` in `pubspec.yaml`. Sources: `lib/l10n/app_en.arb` (template), `app_fr.arb`, `app_ar.arb` — **1,620 keys each** (parity is enforced; `test/l10n_test.dart` pins it). Generated `lib/l10n/app_localizations*.dart` is committed.
 
-**Wiring:** `MyApp` supplies `locale`, `supportedLocales`, `localizationsDelegates`. The locale comes from the `Application.Language` setting through `MyApp._resolveLocale()`.
+**Wiring:** `MyApp` supplies `locale`, `supportedLocales`, `localizationsDelegates`. The locale comes from the `Application.Language` setting through **`resolveAppLocale()`** in `lib/l10n/app_locale.dart`.
+
+**No BuildContext?** Providers and services call **`l10nOf(ref)`** from the same file — it resolves the locale through the guard below and returns `AppLocalizations`. It uses `ref.watch`, so a provider that formats a string rebuilds when the language changes instead of serving a stale one.
 
 **Three rules that are easy to get wrong:**
 
 1. **`MaterialApp.title` cannot use `AppLocalizations.of(context)`.** `title:` is evaluated *above* the `Localizations` widget MaterialApp creates → null → the non-nullable getter throws at boot. Use **`onGenerateTitle:`**.
-2. **Unknown locales resolve to `supportedLocales.first`, which gen-l10n emits alphabetically — i.e. `ar`.** `_resolveLocale()` maps anything not shipped to `en` first. Removing that guard makes a stale `es`/`de` setting render the whole app in Arabic. Pinned by `test/l10n_test.dart`.
+2. **Unknown locales resolve to `supportedLocales.first`, which gen-l10n emits alphabetically — i.e. `ar`.** `resolveAppLocale()` maps anything not shipped to `en` first. Removing that guard makes a stale `es`/`de` setting render the whole app in Arabic — and the Settings dropdown offered both for months, so those are real stored values. **Never hand a raw setting value to `MaterialApp.locale` or to `lookupAppLocalizations`.** Pinned by `test/l10n_test.dart`, whose 5 helper tests were verified to fail when the guard is deleted.
 3. **Language ≠ writing direction.** Picking `ar` does **not** flip the layout; `App.WritingDirection` (`LTR`/`RTL`) is the only thing that drives the app-wide `Directionality`. This is deliberate — a venue may want an Arabic UI left-to-right.
 
 **Enum values are stored in English, displayed translated.** Theme keys (`'light'`), accent names (`'Blue'`), and dropdown options (`'Tables'`, `'Fixed'`, `'Top'`) are *persisted setting values*. Translating the option lists would corrupt saved settings, so display goes through mappers in `settings_screen.dart` — `_themeModeLabel`, `_accentColorLabel`, `_settingOptionLabel` — which pass unknown values (COM ports, EAN formats, date patterns) through verbatim. The same id→label indirection exists in `reports_screen.dart` (`_reportLabel`, `_sectionName`) and `product_import_screen.dart` (`_fieldLabel`).
 
 ⚠️ **`product_import_screen`'s `_fields[].label` must stay English** — it doubles as the CSV header alias for column auto-matching. Localizing it breaks importing an English spreadsheet.
+
+⚠️ **Searching for un-localized strings must match BOTH quote styles.** Roughly half the app writes UI text with double quotes (`Text("Save Changes")`, `labelText: "Required"`). Eight management screens survived two localization passes because every sweep was anchored on `'…'`. Extract *every* string literal per line, then filter out identifiers/paths/format strings — and do not drop single-word literals, since `'Code'`, `'General'`, `'Service'` and `'Details'` are all real UI text.
+
+**Comma-separated list keys.** `monthAbbreviations` (12), `weekdayAbbreviations` (7, **Monday first**) and `weekdayInitials` (7, Monday first — the `app_date_picker` calendar header) are single `.arb` keys split on `,` rather than `intl`'s `DateFormat`, which would need `initializeDateFormatting` at boot — the app never calls it. The weekday order is load-bearing in both: index `i` maps to bit `1 << i` of the promotion `daysOfWeek` bitmask, and the calendar grid is built from a Monday-based week start. A locale must not re-sort its week.
+
+⚠️ **An id→label map's keys are often load-bearing far from the UI.** Before translating one, find every consumer. Real examples in this repo: `sync_status_provider._entities[].label` is **interpolated into the SQL** that builds the sync panel (`SELECT 'Sales orders' AS label …`); `paymentTypeVisibleColumnsProvider`'s keys gate the grid columns and are what the picker writes back; `booking_history._statusLabel` keys off the **server's** status ids; `documentVisibleColumnsProvider`'s keys are the map's identity. All use a `_xxxLabel(context, id)` split — const ids, translated labels. Where such a list is also **sorted**, sort on the translated label so it reads alphabetically in the operator's language.
 
 **Static/const data holding UI text needs converting**, since it has no `BuildContext`: settings tabs and the searchable-settings index, sales-history/documents columns, report labels, onboarding slides. Either make it a function of context (`_tabsFor(context)`) or split into a `const` id list + a context-taking labelled builder — see `sales_history_screen._masterColumnIds` vs `_masterColumns(context)` (the id list is read in `initState`, where `AppLocalizations` is not yet usable).
 

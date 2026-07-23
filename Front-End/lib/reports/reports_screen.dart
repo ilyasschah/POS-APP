@@ -7440,7 +7440,7 @@ class _FilterPanel extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Filter',
+              AppLocalizations.of(context).filterLabel,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
@@ -7451,8 +7451,8 @@ class _FilterPanel extends ConsumerWidget {
 
             _FilterLabel(
               reportId == 'transaction_history'
-                  ? 'Business partner (required)'
-                  : 'Customers & suppliers',
+                  ? AppLocalizations.of(context).businessPartnerRequired
+                  : AppLocalizations.of(context).customersAndSuppliers,
             ),
             const Gap(4),
             _FilterDropdown<int?>(
@@ -7473,7 +7473,7 @@ class _FilterPanel extends ConsumerWidget {
             if (reportId != 'transaction_history' &&
                 reportId != 'reorder_list' &&
                 reportId != 'low_stock_warning') ...[
-              const _FilterLabel('User'),
+              _FilterLabel(AppLocalizations.of(context).userLabel),
               const Gap(4),
               _FilterDropdown<int?>(
                 value: filter.userId,
@@ -7495,7 +7495,7 @@ class _FilterPanel extends ConsumerWidget {
               ),
               const Gap(12),
 
-              const _FilterLabel('Cash register'),
+              _FilterLabel(AppLocalizations.of(context).cashRegister),
               const Gap(4),
               _FilterDropdown<int?>(
                 value: filter.warehouseId,
@@ -7513,7 +7513,7 @@ class _FilterPanel extends ConsumerWidget {
               ),
               const Gap(12),
 
-              const _FilterLabel('Product'),
+              _FilterLabel(AppLocalizations.of(context).productLabel),
               const Gap(4),
               _FilterDropdown<int?>(
                 value: filter.productId,
@@ -7531,7 +7531,7 @@ class _FilterPanel extends ConsumerWidget {
               ),
               const Gap(12),
 
-              const _FilterLabel('Product group'),
+              _FilterLabel(AppLocalizations.of(context).fieldProductGroup),
               const Gap(4),
               _FilterDropdown<int?>(
                 value: filter.productGroupId,
@@ -7570,7 +7570,7 @@ class _FilterPanel extends ConsumerWidget {
 
             if (reportId != 'reorder_list' &&
                 reportId != 'low_stock_warning') ...[
-              const _FilterLabel('Period'),
+              _FilterLabel(AppLocalizations.of(context).periodLabel),
               const Gap(6),
               _DateButton(
                 label:

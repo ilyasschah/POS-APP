@@ -64,7 +64,7 @@ class TaxRatesScreen extends ConsumerWidget {
           ),
           // Add
           Padding(
-            padding: const EdgeInsets.only(right: 8.0),
+            padding: const EdgeInsetsDirectional.only(end: 8.0),
             child: IconButton(
               icon: const Icon(Icons.add_circle_outline),
               tooltip: AppLocalizations.of(context).newTaxRate,
@@ -336,7 +336,8 @@ class TaxRatesScreen extends ConsumerWidget {
                                                 ],
                                               ),
                                               content: Text(
-                                                "Are you sure you want to delete the tax rate '${t.name}'?",
+                                                AppLocalizations.of(context)
+                                                    .deleteTaxRateConfirm(t.name),
                                               ),
                                               actions: [
                                                 TextButton(
@@ -405,10 +406,11 @@ class TaxRatesScreen extends ConsumerWidget {
       await ref.read(appDatabaseProvider).deleteTaxLocal(id);
       ref.read(syncStateProvider.notifier).sync().catchError((_) {});
       if (!context.mounted) return;
-      showAppSnackbar(context, ref, "Tax rate deleted");
+      showAppSnackbar(context, ref, AppLocalizations.of(context).taxRateDeleted);
     } catch (e) {
       if (!context.mounted) return;
-      showAppSnackbar(context, ref, "Delete failed", isError: true);
+      showAppSnackbar(context, ref, AppLocalizations.of(context).deleteFailed,
+          isError: true);
     }
   }
 }
@@ -509,7 +511,7 @@ class _TaxFormDialogState extends ConsumerState<_TaxFormDialog> {
       Navigator.of(context).pop();
     } catch (e) {
       setState(() {
-        _errorMessage = "Operation failed.";
+        _errorMessage = AppLocalizations.of(context).operationFailed;
         _isLoading = false;
       });
     }
@@ -523,7 +525,9 @@ class _TaxFormDialogState extends ConsumerState<_TaxFormDialog> {
       backgroundColor: theme.colorScheme.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Text(
-        _isEditing ? "Edit Tax Rate" : "New Tax Rate",
+        _isEditing
+            ? AppLocalizations.of(context).editTaxRate
+            : AppLocalizations.of(context).newTaxRate,
         style: const TextStyle(fontWeight: FontWeight.bold),
       ),
       content: SizedBox(
@@ -546,7 +550,9 @@ class _TaxFormDialogState extends ConsumerState<_TaxFormDialog> {
                         ),
                       ),
                       validator: (v) =>
-                          v == null || v.trim().isEmpty ? "Required" : null,
+                          v == null || v.trim().isEmpty
+                              ? AppLocalizations.of(context).requiredField
+                              : null,
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -577,9 +583,11 @@ class _TaxFormDialogState extends ConsumerState<_TaxFormDialog> {
                   decimal: true,
                 ),
                 validator: (v) {
-                  if (v == null || v.trim().isEmpty) return "Required";
+                  if (v == null || v.trim().isEmpty) {
+                    return AppLocalizations.of(context).requiredField;
+                  }
                   if (double.tryParse(v.trim()) == null) {
-                    return "Enter a valid number";
+                    return AppLocalizations.of(context).enterValidNumber;
                   }
                   return null;
                 },
@@ -650,7 +658,9 @@ class _TaxFormDialogState extends ConsumerState<_TaxFormDialog> {
         else
           ElevatedButton.icon(
             icon: const Icon(Icons.save),
-            label: Text(_isEditing ? "Update" : "Save"),
+            label: Text(_isEditing
+                ? AppLocalizations.of(context).actionUpdate
+                : AppLocalizations.of(context).actionSave),
             style: ElevatedButton.styleFrom(
               backgroundColor: theme.colorScheme.primary,
               foregroundColor: theme.colorScheme.onPrimary,
@@ -705,11 +715,13 @@ class _SwitchTaxesDialogState extends ConsumerState<_SwitchTaxesDialog> {
 
   Future<void> _replace() async {
     if (_oldTaxId == null || _newTaxId == null) {
-      setState(() => _errorMessage = "Please select both taxes.");
+      setState(() =>
+          _errorMessage = AppLocalizations.of(context).pleaseSelectBothTaxes);
       return;
     }
     if (_oldTaxId == _newTaxId) {
-      setState(() => _errorMessage = "Old and new tax must be different.");
+      setState(() =>
+          _errorMessage = AppLocalizations.of(context).oldAndNewTaxMustDiffer);
       return;
     }
 
@@ -738,14 +750,18 @@ class _SwitchTaxesDialogState extends ConsumerState<_SwitchTaxesDialog> {
             isEnabled: newTax.isEnabled,
           );
       ref.read(syncStateProvider.notifier).sync().catchError((_) {});
+      if (!mounted) return;
       setState(
         () => _successMessage =
-            "Rate ${oldTax.rate}${oldTax.isFixed ? '' : '%'} from '${oldTax.name}' "
-            "applied to '${newTax.name}' successfully.",
+            AppLocalizations.of(context).taxRateAppliedSuccessfully(
+          '${oldTax.rate}${oldTax.isFixed ? '' : '%'}',
+          oldTax.name,
+          newTax.name,
+        ),
       );
     } catch (e) {
       setState(() {
-        _errorMessage = "Switch failed.";
+        _errorMessage = AppLocalizations.of(context).switchFailed;
       });
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -785,8 +801,7 @@ class _SwitchTaxesDialogState extends ConsumerState<_SwitchTaxesDialog> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      "Use this form to replace taxes for all products. "
-                      "Select the old tax you wish to replace with the new tax and click Replace.",
+                      AppLocalizations.of(context).replaceTaxesHint,
                       style: TextStyle(
                         fontSize: 13,
                         color: theme.colorScheme.onPrimaryContainer,

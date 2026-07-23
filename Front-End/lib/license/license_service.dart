@@ -60,7 +60,10 @@ class SubscriptionInfo {
   final String billingStatus;
   final LicenseState state;
 
-  /// Whole days until [validUntil] (negative once expired).
+  /// Whole days until [periodEnd] — the date the Subscription tab shows — so
+  /// the status pill can never contradict the row beneath it. Goes 0/negative
+  /// while the terminal is still running inside the grace window, which is the
+  /// state [validUntil] covers. Display only; enforcement uses [validUntil].
   final int daysLeft;
 
   const SubscriptionInfo({
@@ -154,12 +157,25 @@ class LicenseService {
         ? null
         : _decodePayload(lease);
 
+    final periodEnd = _claimDate(claims, 'periodEnd');
+
+    // Count down to the date the tab actually DISPLAYS (periodEnd), not to
+    // validUntil. They differ by Lease:GraceDays, so counting to validUntil put
+    // "expires in 3 days" directly above a "Renews / Ends" date that had already
+    // passed — and since the gap is the grace constant, the pill read exactly
+    // "3 days" for every lapsed subscription regardless of the real date.
+    // evaluation.daysLeft (→ validUntil) stays the enforcement number.
+    final displayEnd = periodEnd ?? evaluation.validUntil;
+    final daysLeft = displayEnd == null
+        ? evaluation.daysLeft
+        : displayEnd.difference(await _storage.trustedNow()).inHours ~/ 24;
+
     return SubscriptionInfo(
       state: evaluation.state,
-      daysLeft: evaluation.daysLeft,
+      daysLeft: daysLeft,
       validUntil: evaluation.validUntil,
       startedAt: _claimDate(claims, 'startedAt'),
-      periodEnd: _claimDate(claims, 'periodEnd'),
+      periodEnd: periodEnd,
       seatAllowance:
           int.tryParse(claims?['seatAllowance']?.toString() ?? '') ?? 0,
       billingStatus: claims?['billingStatus']?.toString() ?? 'unknown',

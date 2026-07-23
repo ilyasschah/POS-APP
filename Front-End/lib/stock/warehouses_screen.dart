@@ -140,7 +140,11 @@ class WarehousesScreen extends ConsumerWidget {
     try {
       stocks = await repo.stocksFor(w.id);
     } catch (e) {
-      if (context.mounted) _snack(context, ref, 'Could not check stock: $e', error: true);
+      if (context.mounted) {
+        _snack(context, ref,
+            AppLocalizations.of(context).couldNotCheckStock(e.toString()),
+            error: true);
+      }
       return;
     }
     if (!context.mounted) return;
@@ -166,7 +170,8 @@ class WarehousesScreen extends ConsumerWidget {
         ),
       );
       if (confirm == true && context.mounted) {
-        await _run(context, ref, () => repo.delete(w.id), "Warehouse deleted");
+        await _run(context, ref, () => repo.delete(w.id),
+            AppLocalizations.of(context).warehouseDeleted);
       }
       return;
     }
@@ -179,9 +184,8 @@ class WarehousesScreen extends ConsumerWidget {
       builder: (ctx) => AlertDialog(
         title: Text(AppLocalizations.of(context).warehouseHasStock),
         content: Text(
-          "'${w.name}' still holds ${stocks.length} stock item"
-          "${stocks.length == 1 ? '' : 's'}. What should happen to it before "
-          "the warehouse is deleted?",
+          AppLocalizations.of(context)
+              .warehouseStillHoldsStock(w.name, stocks.length),
         ),
         actions: [
           TextButton(
@@ -204,7 +208,7 @@ class WarehousesScreen extends ConsumerWidget {
 
     if (action == 'revoke') {
       await _run(context, ref, () => repo.delete(w.id, stockAction: 'revoke'),
-          "Warehouse and its stock deleted");
+          AppLocalizations.of(context).warehouseAndStockDeleted);
     } else if (action == 'move') {
       final target = await showDialog<Warehouse>(
         context: context,
@@ -216,7 +220,7 @@ class WarehousesScreen extends ConsumerWidget {
           ref,
           () => repo.delete(w.id,
               stockAction: 'move', targetWarehouseId: target.id),
-          "Stock moved to ${target.name}; warehouse deleted");
+          AppLocalizations.of(context).stockMovedWarehouseDeleted(target.name));
     }
   }
 
@@ -247,7 +251,7 @@ class _MoveTargetDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text("Move stock to…"),
+      title: Text(AppLocalizations.of(context).moveStockTo),
       content: SizedBox(
         width: 320,
         child: ListView(
@@ -332,7 +336,9 @@ class _WarehouseFormDialogState extends ConsumerState<_WarehouseFormDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(_isEditing ? "Edit Warehouse" : "New Warehouse"),
+      title: Text(_isEditing
+          ? AppLocalizations.of(context).editWarehouse
+          : AppLocalizations.of(context).newWarehouse),
       content: SizedBox(
         width: 320,
         child: Form(
@@ -346,7 +352,9 @@ class _WarehouseFormDialogState extends ConsumerState<_WarehouseFormDialog> {
                     InputDecoration(labelText: AppLocalizations.of(context).warehouseNameRequired),
                 autofocus: true,
                 validator: (v) =>
-                    v == null || v.trim().isEmpty ? "Required" : null,
+                    v == null || v.trim().isEmpty
+                        ? AppLocalizations.of(context).requiredField
+                        : null,
               ),
               if (_errorMessage != null) ...[
                 const SizedBox(height: 12),
@@ -369,7 +377,9 @@ class _WarehouseFormDialogState extends ConsumerState<_WarehouseFormDialog> {
         else
           ElevatedButton.icon(
             icon: const Icon(Icons.save),
-            label: Text(_isEditing ? "Update" : "Save"),
+            label: Text(_isEditing
+                ? AppLocalizations.of(context).actionUpdate
+                : AppLocalizations.of(context).actionSave),
             onPressed: _submit,
           ),
       ],

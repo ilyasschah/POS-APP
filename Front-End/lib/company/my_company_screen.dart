@@ -123,7 +123,7 @@ class _MyCompanyScreenState extends ConsumerState<MyCompanyScreen> {
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _loadError = 'An unexpected error occurred. Please try again.';
+        _loadError = AppLocalizations.of(context).unexpectedErrorTryAgain;
         _isLoadingCompany = false;
         _countriesLoading = false;
       });
@@ -179,13 +179,17 @@ class _MyCompanyScreenState extends ConsumerState<MyCompanyScreen> {
       ref.read(selectedCompanyProvider.notifier).updateLogo(base64Logo);
       ref.invalidate(allCompaniesProvider);
 
-      if (mounted) showAppSnackbar(context, ref, 'Logo updated successfully');
+      if (mounted) {
+        showAppSnackbar(
+            context, ref, AppLocalizations.of(context).logoUpdatedSuccessfully);
+      }
     } on DioException catch (e) {
       if (mounted) {
         setState(() => _selectedLogoBytes = null);
         showAppSnackbar(
           context, ref,
-          e.response?.data?.toString() ?? 'Failed to upload logo.',
+          e.response?.data?.toString() ??
+              AppLocalizations.of(context).failedToUploadLogo,
           isError: true,
         );
       }
@@ -200,7 +204,8 @@ class _MyCompanyScreenState extends ConsumerState<MyCompanyScreen> {
     if (company == null) return;
 
     if (_selectedCountryId == null) {
-      setState(() => _errorMessage = "Please select a country.");
+      setState(() =>
+          _errorMessage = AppLocalizations.of(context).pleaseSelectACountry);
       return;
     }
 
@@ -233,7 +238,8 @@ class _MyCompanyScreenState extends ConsumerState<MyCompanyScreen> {
       ref.read(syncStateProvider.notifier).sync().catchError((_) {});
 
       if (!mounted) return;
-      showAppSnackbar(context, ref, 'Company updated successfully');
+      showAppSnackbar(
+          context, ref, AppLocalizations.of(context).companyUpdatedSuccessfully);
 
       final countryName = _countries
           .where((c) => c.id == _selectedCountryId)
@@ -262,7 +268,8 @@ class _MyCompanyScreenState extends ConsumerState<MyCompanyScreen> {
       ref.read(selectedCompanyProvider.notifier).update(updatedCompany);
       ref.invalidate(allCompaniesProvider);
     } catch (e) {
-      setState(() => _errorMessage = "Failed to save changes.");
+      setState(() =>
+          _errorMessage = AppLocalizations.of(context).failedToSaveChanges);
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -276,7 +283,7 @@ class _MyCompanyScreenState extends ConsumerState<MyCompanyScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text(company?.name ?? "My Company"),
+        title: Text(company?.name ?? AppLocalizations.of(context).myCompany),
         elevation: 0,
         backgroundColor: Colors.transparent,
         centerTitle: false,
@@ -365,7 +372,7 @@ class _MyCompanyScreenState extends ConsumerState<MyCompanyScreen> {
                                 AppLocalizations.of(context).companyName,
                                 icon: Icons.storefront,
                                 validator: (v) => v == null || v.trim().isEmpty
-                                    ? "Required"
+                                    ? AppLocalizations.of(context).requiredField
                                     : null,
                               ),
                               _field(
@@ -499,7 +506,10 @@ class _MyCompanyScreenState extends ConsumerState<MyCompanyScreen> {
                                   )
                                 : const Icon(Icons.check_circle_outline),
                             label: Text(
-                              _isSaving ? "SAVING..." : "SAVE COMPANY CHANGES",
+                              _isSaving
+                                  ? AppLocalizations.of(context).savingUpper
+                                  : AppLocalizations.of(context)
+                                      .saveCompanyChangesUpper,
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -708,7 +718,8 @@ class _MyCompanyScreenState extends ConsumerState<MyCompanyScreen> {
                   )
                   .toList(),
               onChanged: (v) => setState(() => _selectedCountryId = v),
-              validator: (v) => v == null ? "Required" : null,
+              validator: (v) =>
+                  v == null ? AppLocalizations.of(context).requiredField : null,
             ),
       isRequired: true,
     );
@@ -769,7 +780,7 @@ class _MyCompanyScreenState extends ConsumerState<MyCompanyScreen> {
     return Column(
       children: [
         Stack(
-          alignment: Alignment.bottomRight,
+          alignment: AlignmentDirectional.bottomEnd,
           children: [
             if (hasLogo)
               Container(
@@ -846,9 +857,9 @@ class _MyCompanyScreenState extends ConsumerState<MyCompanyScreen> {
                 ),
               ),
             if (!_isUploadingLogo)
-              Positioned(
+              PositionedDirectional(
                 bottom: 2,
-                right: 2,
+                end: 2,
                 child: _CameraButton(theme: theme, onTap: _pickAndUploadLogo),
               ),
           ],
@@ -856,8 +867,8 @@ class _MyCompanyScreenState extends ConsumerState<MyCompanyScreen> {
         const SizedBox(height: 12),
         Text(
           hasLogo
-              ? 'Tap the camera icon to change logo'
-              : 'No logo uploaded yet',
+              ? AppLocalizations.of(context).tapCameraIconToChangeLogo
+              : AppLocalizations.of(context).noLogoUploadedYet,
           style: TextStyle(
             fontSize: 12,
             color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),

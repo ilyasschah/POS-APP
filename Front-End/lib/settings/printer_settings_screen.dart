@@ -1456,7 +1456,9 @@ class _CategorySubTab extends ConsumerWidget {
                   (g) => _GroupRadioTile(
                     title: g.name,
                     subtitle:
-                        '${g.productGroupIds.length} ${g.productGroupIds.length == 1 ? 'category' : 'categories'}',
+                        AppLocalizations.of(
+                          context,
+                        ).categoryCount(g.productGroupIds.length),
                     selected: selected == '${g.id}',
                     onTap: () => select('${g.id}'),
                   ),

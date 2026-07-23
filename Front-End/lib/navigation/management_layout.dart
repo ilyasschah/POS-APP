@@ -304,7 +304,7 @@ class _ManagementLayoutState extends ConsumerState<ManagementLayout> {
                               const SizedBox(width: 10),
                               Flexible(
                                 child: Text(
-                                  "Exit Management",
+                                  AppLocalizations.of(context).exitManagement,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(

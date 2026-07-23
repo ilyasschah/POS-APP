@@ -260,11 +260,14 @@ Future<void> _runExport(
     await File(path).writeAsString(content, encoding: const Utf8Codec());
 
     if (context.mounted) {
-      showAppSnackbar(context, ref, 'Exported ${rows.length} products to $path');
+      showAppSnackbar(context, ref,
+          AppLocalizations.of(context).exportedProductsTo(rows.length, path));
     }
   } catch (e) {
     if (context.mounted) {
-      showAppSnackbar(context, ref, 'Export failed: $e', isError: true);
+      showAppSnackbar(
+          context, ref, AppLocalizations.of(context).exportFailed(e.toString()),
+          isError: true);
     }
   }
 }
@@ -320,7 +323,7 @@ Future<void> _showExportDialog(BuildContext context, WidgetRef ref) async {
 }
 
 // --- HELPER ---
-String _parseApiError(dynamic e) {
+String _parseApiError(BuildContext context, dynamic e) {
   if (e is DioException && e.response?.data != null) {
     final data = e.response!.data;
     if (data is Map && data.containsKey('message')) {
@@ -330,7 +333,7 @@ String _parseApiError(dynamic e) {
       return data;
     }
   }
-  return "A server error occurred. Please check your inputs.";
+  return AppLocalizations.of(context).serverErrorCheckInputs;
 }
 
 // --- MAIN SCREEN ---
@@ -425,15 +428,14 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
           context,
           ref,
           deleted > 0
-              ? "$deleted deleted · $n product${n == 1 ? '' : 's'} kept — "
-                  "linked to existing orders or documents"
-              : "Can't delete $n product${n == 1 ? '' : 's'} — "
-                  "linked to existing orders or documents",
+              ? AppLocalizations.of(context)
+                  .deletedSomeProductsBlocked(deleted, n)
+              : AppLocalizations.of(context).cannotDeleteProductsLinked(n),
           isError: true,
         );
       } else {
-        showAppSnackbar(
-            context, ref, "$deleted product${deleted == 1 ? '' : 's'} deleted");
+        showAppSnackbar(context, ref,
+            AppLocalizations.of(context).productsDeletedCount(deleted));
       }
     }
   }
@@ -470,7 +472,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                   final isOn = visible[col.key] ?? col.defaultVisible;
                   return CheckboxListTile(
                     dense: true,
-                    title: Text(col.label),
+                    title: Text(productColumnLabel(context, col.key)),
                     // Mandatory columns (Name, Edit) stay locked on.
                     subtitle: col.mandatory ? Text(AppLocalizations.of(context).alwaysShown) : null,
                     value: isOn,
@@ -519,7 +521,10 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
             icon: Icon(Icons.delete_rounded,
                 color: hasSelection ? context.dangerColor : theme.disabledColor),
             label: Text(
-              hasSelection ? "Delete (${_selectedIds.length})" : "Delete",
+              hasSelection
+                  ? AppLocalizations.of(context)
+                      .deleteWithCount(_selectedIds.length)
+                  : AppLocalizations.of(context).actionDelete,
               style: TextStyle(
                   color:
                       hasSelection ? context.dangerColor : theme.disabledColor),
@@ -571,7 +576,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                   // Tax/barcode/stock setup requires a real server id; skip Phase 2
                   // and tell the user to sync first.
                   showAppSnackbar(context, ref,
-                      'Product saved locally. Sync to complete setup (taxes, barcodes, stock).');
+                      AppLocalizations.of(context).productSavedLocallySyncFirst);
                 } else {
                   showDialog(
                     context: context,
@@ -805,7 +810,7 @@ class _ProductListContent extends ConsumerWidget {
 
     return asyncProducts.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text(AppLocalizations.of(context).errorWithMessage(_parseApiError(e)))),
+        error: (e, _) => Center(child: Text(AppLocalizations.of(context).errorWithMessage(_parseApiError(context, e)))),
         data: (products) {
           if (products.isEmpty) {
             return Center(
@@ -901,8 +906,8 @@ class _ProductListContent extends ConsumerWidget {
                         const SizedBox(width: 6),
                         Tooltip(
                           message: p.isPendingCreate
-                              ? 'Pending sync (new)'
-                              : 'Pending sync (update)',
+                              ? AppLocalizations.of(context).pendingSyncNew
+                              : AppLocalizations.of(context).pendingSyncUpdate,
                           child: Icon(Icons.cloud_upload_outlined,
                               size: 14, color: theme.colorScheme.tertiary),
                         ),
@@ -1007,7 +1012,8 @@ class _ProductListContent extends ConsumerWidget {
                           val == true ? products.map((p) => p.id).toSet() : {}),
                       columns: activeCols
                           .map((c) => DataColumn(
-                              label: Text(c.label), numeric: c.numeric))
+                              label: Text(productColumnLabel(context, c.key)),
+                              numeric: c.numeric))
                           .toList(),
                       rows: products.map((p) {
                         return DataRow(
@@ -1247,7 +1253,8 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
     // SCENARIO 1: We are in "Phase 1" of creation (Only General Tab)
     if (widget.existingProduct == null && !widget.isPostCreation) {
       if (_nameCtrl.text.trim().isEmpty) {
-        setState(() => _errorMessage = "Please enter a Product Name.");
+        setState(() =>
+            _errorMessage = AppLocalizations.of(context).pleaseEnterProductName);
         return;
       }
       if (_formKey.currentState?.validate() == false) return;
@@ -1447,7 +1454,8 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
         } on DioException {
           // API unreachable — local write is queued. Will sync when online.
           if (mounted) {
-            showAppSnackbar(context, ref, 'Saved locally. Will sync when online.');
+            showAppSnackbar(context, ref,
+                AppLocalizations.of(context).savedLocallyWillSyncOnline);
             Navigator.of(context).pop();
           }
           return;
@@ -1470,13 +1478,13 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
             context,
             ref,
             widget.isPostCreation
-                ? "Setup Complete!"
-                : "Product updated successfully!");
+                ? AppLocalizations.of(context).setupComplete
+                : AppLocalizations.of(context).productUpdatedSuccessfully);
         Navigator.of(context).pop();
       }
     } catch (e) {
       setState(() {
-        _errorMessage = _parseApiError(e);
+        _errorMessage = _parseApiError(context, e);
         _isLoading = false;
       });
     }
@@ -1486,15 +1494,16 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     // 1. Determine Dialog Title and Button Text
-    String title = "New Product";
-    String buttonText = "Next: Taxes & Stock";
+    final l10n = AppLocalizations.of(context);
+    String title = l10n.newProduct;
+    String buttonText = l10n.nextTaxesAndStock;
 
     if (_isEditing) {
-      title = "Edit Product";
-      buttonText = "Save Changes";
+      title = l10n.editProduct;
+      buttonText = l10n.actionSaveChanges;
     } else if (widget.isPostCreation) {
-      title = "Set Taxes & Inventory: ${widget.existingProduct?.name}";
-      buttonText = "Finish Setup";
+      title = l10n.setTaxesAndInventoryFor(widget.existingProduct?.name ?? '');
+      buttonText = l10n.finishSetup;
     }
 
     // 2. Build Tabs Based on Current Mode
@@ -1503,16 +1512,16 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
 
     // Add General Tab (If creating Phase 1, OR if normal editing)
     if (!widget.isPostCreation) {
-      dialogTabs.add(const Tab(text: "General"));
+      dialogTabs.add(Tab(text: l10n.generalLabel));
       dialogTabViews.add(_buildGeneralTab());
     }
 
     // Add Advanced Tabs (If creating Phase 2, OR if normal editing)
     if (_isEditing || widget.isPostCreation) {
       dialogTabs.addAll([
-        const Tab(text: "Taxes"),
-        const Tab(text: "Barcodes"),
-        const Tab(text: "Comments"),
+        Tab(text: l10n.taxesLabel),
+        Tab(text: l10n.barcodesTab),
+        Tab(text: l10n.commentsTab),
       ]);
       dialogTabViews.addAll([
         _buildTaxesTab(),
@@ -1524,7 +1533,7 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
     // Appearance sits last (right after Comments when editing). Tied to the
     // same condition as General so creating a product still exposes it.
     if (!widget.isPostCreation) {
-      dialogTabs.add(const Tab(text: "Appearance"));
+      dialogTabs.add(Tab(text: l10n.setAppearance));
       dialogTabViews.add(_buildAppearanceTab());
     }
 
@@ -2035,7 +2044,7 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                           .catchError((Object _) => <String>[]));
                     } catch (e) {
                       if (mounted) {
-                        showAppSnackbar(context, ref, _parseApiError(e),
+                        showAppSnackbar(context, ref, _parseApiError(context, e),
                             isError: true);
                       }
                     }
@@ -2050,7 +2059,7 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
             child: asyncComments.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (e, _) => Center(
-                    child: Text(AppLocalizations.of(context).errorWithMessage(_parseApiError(e)),
+                    child: Text(AppLocalizations.of(context).errorWithMessage(_parseApiError(context, e)),
                         style: TextStyle(color: context.dangerColor))),
                 data: (comments) {
                   if (comments.isEmpty) {
@@ -2097,7 +2106,7 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                                     .catchError((Object _) => <String>[]));
                               } catch (e) {
                                 if (context.mounted) {
-                                  showAppSnackbar(context, ref, _parseApiError(e),
+                                  showAppSnackbar(context, ref, _parseApiError(context, e),
                                       isError: true);
                                 }
                               }
@@ -2156,14 +2165,18 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                       decoration: InputDecoration(
                         labelText: AppLocalizations.of(context).barcode,
                         hintText:
-                            _isBarcodeChipActive ? "" : "Scan or enter barcode",
+                            _isBarcodeChipActive
+                                ? ""
+                                : AppLocalizations.of(context)
+                                    .scanOrEnterBarcode,
                         filled: true,
                         fillColor: theme.colorScheme.surface,
                         border: const OutlineInputBorder(),
                         prefixIcon: const Icon(Icons.qr_code_scanner),
                         prefix: _isBarcodeChipActive
                             ? Padding(
-                                padding: const EdgeInsets.only(right: 8.0),
+                                padding:
+                                    const EdgeInsetsDirectional.only(end: 8.0),
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 10, vertical: 4),

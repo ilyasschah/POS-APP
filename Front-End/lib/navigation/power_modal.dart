@@ -19,7 +19,7 @@ class PowerModal extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              "Exit application",
+              AppLocalizations.of(context).exitApplication,
               style: TextStyle(
                 color: cs.onSurface,
                 fontSize: 22,
@@ -28,7 +28,7 @@ class PowerModal extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              "Are you sure you want to exit the application?",
+              AppLocalizations.of(context).exitApplicationConfirm,
               style: TextStyle(color: context.navMuted, fontSize: 16),
             ),
             const SizedBox(height: 32),

@@ -18,9 +18,10 @@ class PromotionsListScreen extends ConsumerWidget {
 
   const PromotionsListScreen({super.key, this.onMenuPressed});
 
-  String _formatDaysOfWeek(int bitmask) {
-    if (bitmask == 0 || bitmask == 127) return "Every day";
-    final days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  String _formatDaysOfWeek(BuildContext context, int bitmask) {
+    final l10n = AppLocalizations.of(context);
+    if (bitmask == 0 || bitmask == 127) return l10n.everyDay;
+    final days = l10n.weekdayAbbreviations.split(',');
     final activeDays = <String>[];
     for (int i = 0; i < 7; i++) {
       if ((bitmask & (1 << i)) != 0) activeDays.add(days[i]);
@@ -72,7 +73,8 @@ class PromotionsListScreen extends ConsumerWidget {
               Row(
                 children: [
                   Text(
-                    '${promotions.length} Promotion${promotions.length == 1 ? '' : 's'}',
+                    AppLocalizations.of(context)
+                        .promotionsCount(promotions.length),
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
@@ -126,7 +128,7 @@ class PromotionsListScreen extends ConsumerWidget {
                   child: promotions.isEmpty
                       ? Center(
                           child: Text(
-                            'No promotions yet. Tap "Add Promotion" to create one.',
+                            AppLocalizations.of(context).noPromotionsYet,
                             style: TextStyle(
                               color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                             ),
@@ -147,7 +149,7 @@ class PromotionsListScreen extends ConsumerWidget {
                                   Expanded(flex: 2, child: Text(AppLocalizations.of(context).startTime, style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface))),
                                   Expanded(flex: 2, child: Text(AppLocalizations.of(context).endDate, style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface))),
                                   Expanded(flex: 2, child: Text(AppLocalizations.of(context).endTime, style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface))),
-                                  Expanded(flex: 2, child: Align(alignment: Alignment.centerRight, child: Text(AppLocalizations.of(context).actions, style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)))),
+                                  Expanded(flex: 2, child: Align(alignment: AlignmentDirectional.centerEnd, child: Text(AppLocalizations.of(context).actions, style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)))),
                                 ],
                               ),
                             ),
@@ -169,7 +171,7 @@ class PromotionsListScreen extends ConsumerWidget {
                                             children: [
                                               if (promotion.isPendingSync)
                                                 Padding(
-                                                  padding: const EdgeInsets.only(right: 6),
+                                                  padding: const EdgeInsetsDirectional.only(end: 6),
                                                   child: Icon(
                                                     Icons.cloud_upload_outlined,
                                                     size: 16,
@@ -196,14 +198,25 @@ class PromotionsListScreen extends ConsumerWidget {
                                             // the tooltip on hover/long-press.
                                             final (label, color) =
                                                 !promotion.isEnabled
-                                                    ? ("Disabled", Colors.red)
+                                                    ? (
+                                                        AppLocalizations.of(context)
+                                                            .statusDisabled,
+                                                        Colors.red
+                                                      )
                                                     : isPromotionActiveNow(
                                                             promotion)
-                                                        ? ("Active", Colors.green)
-                                                        : ("Inactive",
-                                                            Colors.orange);
+                                                        ? (
+                                                            AppLocalizations.of(context)
+                                                                .statusActive,
+                                                            Colors.green
+                                                          )
+                                                        : (
+                                                            AppLocalizations.of(context)
+                                                                .statusInactive,
+                                                            Colors.orange
+                                                          );
                                             return Align(
-                                              alignment: Alignment.centerLeft,
+                                              alignment: AlignmentDirectional.centerStart,
                                               child: Tooltip(
                                                 message: label,
                                                 child: Container(
@@ -218,7 +231,7 @@ class PromotionsListScreen extends ConsumerWidget {
                                             );
                                           }),
                                         ),
-                                        Expanded(flex: 2, child: Text(_formatDaysOfWeek(promotion.daysOfWeek))),
+                                        Expanded(flex: 2, child: Text(_formatDaysOfWeek(context, promotion.daysOfWeek))),
                                         Expanded(flex: 2, child: Text(_formatDate(promotion.startDate))),
                                         Expanded(flex: 2, child: Text(promotion.startTime ?? "-")),
                                         Expanded(flex: 2, child: Text(_formatDate(promotion.endDate))),

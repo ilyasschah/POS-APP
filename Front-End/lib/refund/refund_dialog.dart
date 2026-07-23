@@ -88,6 +88,10 @@ class _RefundDialogState extends ConsumerState<RefundDialog> {
   Future<void> _lookupReceipt() async {
     final number = _receiptCtrl.text.trim();
     if (number.isEmpty) return;
+    // Resolved before the awaits below — reaching for `context` after one is
+    // use_build_context_synchronously, and this State's context is only valid
+    // while mounted.
+    final l = AppLocalizations.of(context);
 
     setState(() { _loading = true; _error = null; _document = null; _refundQty = {}; });
 
@@ -107,12 +111,11 @@ class _RefundDialogState extends ConsumerState<RefundDialog> {
           originalNumber: doc.number,
         );
         if (existingRefund != null) {
-          final ref0 = existingRefund.number ?? '(pending sync)';
+          final ref0 = existingRefund.number ?? '(${l.pendingSync})';
           setState(() {
             _document  = null;
             _refundQty = {};
-            _error     =
-                'This receipt has already been refunded (Ref: $ref0).';
+            _error     = l.receiptAlreadyRefunded(ref0);
           });
           return;
         }
@@ -120,7 +123,7 @@ class _RefundDialogState extends ConsumerState<RefundDialog> {
 
       setState(() {
         _document = doc;
-        _error    = doc == null ? 'Receipt "$number" not found.' : null;
+        _error    = doc == null ? l.receiptNotFound(number) : null;
         if (doc != null) {
           // default: refund full quantity of every item
           _refundQty = {for (final i in doc.items) i.productId: i.quantity};
@@ -157,7 +160,7 @@ class _RefundDialogState extends ConsumerState<RefundDialog> {
     final approver = await ref.read(refundServiceProvider).verifyManagerPin(pin);
     if (!mounted) return;
     if (approver == null) {
-      _showSnack('Manager PIN not recognised. Blind return needs an admin.');
+      _showSnack(AppLocalizations.of(context).managerPinNotRecognised);
       return;
     }
     setState(() {
@@ -204,9 +207,10 @@ class _RefundDialogState extends ConsumerState<RefundDialog> {
 
   Future<void> _submitBlind() async {
     final lines = _blindLines.where((l) => l.qty > 0).toList();
-    if (lines.isEmpty) { _showSnack('Add at least one item to return.'); return; }
+    final l = AppLocalizations.of(context);
+    if (lines.isEmpty) { _showSnack(l.addAtLeastOneItemToReturn); return; }
     if (_selectedPaymentTypeId == null) {
-      _showSnack('Select a refund payment type.');
+      _showSnack(l.selectRefundPaymentType);
       return;
     }
 
@@ -239,9 +243,12 @@ class _RefundDialogState extends ConsumerState<RefundDialog> {
       if (!mounted) return;
       ref.invalidate(allDocumentsProvider);
       if (result.queued) {
-        _showSnack('Blind refund queued — will sync automatically.', success: true);
+        _showSnack(l.blindRefundQueued, success: true);
       } else {
-        _showSnack('Blind refund ${result.refundNumber} processed.', success: true);
+        _showSnack(
+          l.blindRefundProcessed(result.refundNumber),
+          success: true,
+        );
       }
       Navigator.of(context).pop();
     } catch (e) {
@@ -253,14 +260,15 @@ class _RefundDialogState extends ConsumerState<RefundDialog> {
 
   Future<void> _submit() async {
     if (_blindMode) { await _submitBlind(); return; }
-    if (_document == null)             { _showSnack('Look up a receipt first.'); return; }
-    if (_selectedPaymentTypeId == null) { _showSnack('Select a refund payment type.'); return; }
+    final l = AppLocalizations.of(context);
+    if (_document == null)             { _showSnack(l.lookUpReceiptFirst); return; }
+    if (_selectedPaymentTypeId == null) { _showSnack(l.selectRefundPaymentType); return; }
 
     final selectedItems = _document!.items
         .where((i) => (_refundQty[i.productId] ?? 0) > 0)
         .toList();
     if (selectedItems.isEmpty) {
-      _showSnack('Select at least one item to refund.');
+      _showSnack(l.selectAtLeastOneItemToRefund);
       return;
     }
 
@@ -297,9 +305,9 @@ class _RefundDialogState extends ConsumerState<RefundDialog> {
       ref.invalidate(allDocumentsProvider);
 
       if (result.queued) {
-        _showSnack('Refund queued — will sync automatically.', success: true);
+        _showSnack(l.refundQueued, success: true);
       } else {
-        _showSnack('Refund ${result.refundNumber} processed.', success: true);
+        _showSnack(l.refundProcessed(result.refundNumber), success: true);
       }
       Navigator.of(context).pop();
     } catch (e) {
@@ -436,7 +444,10 @@ class _RefundDialogState extends ConsumerState<RefundDialog> {
                             fontWeight: FontWeight.w600,
                             color: cs.onSurface)),
                     Text(
-                      '${_fmt.format(item.price)} × max ${_fmt.format(item.quantity)}',
+                      AppLocalizations.of(context).priceTimesMaxQty(
+                        _fmt.format(item.price),
+                        _fmt.format(item.quantity),
+                      ),
                       style: TextStyle(
                           fontSize: 11, color: cs.onSurfaceVariant),
                     ),
@@ -563,8 +574,12 @@ class _RefundDialogState extends ConsumerState<RefundDialog> {
                             children: [
                               Text(
                                   _blindMode
-                                      ? "Customer's receipt # (optional)"
-                                      : 'Receipt number',
+                                      ? AppLocalizations.of(
+                                          context,
+                                        ).customerReceiptOptional
+                                      : AppLocalizations.of(
+                                          context,
+                                        ).receiptNumber,
                                   style: TextStyle(
                                       fontSize: 12,
                                       color: cs.onSurfaceVariant,
@@ -590,7 +605,9 @@ class _RefundDialogState extends ConsumerState<RefundDialog> {
                                       color: cs.onSurface),
                                   decoration: InputDecoration(
                                     hintText: _blindMode
-                                        ? 'optional — from paper receipt'
+                                        ? AppLocalizations.of(
+                                            context,
+                                          ).optionalFromPaperReceipt
                                         : 'e.g. 26-200-000001',
                                     isDense: true,
                                     filled: true,
@@ -655,7 +672,9 @@ class _RefundDialogState extends ConsumerState<RefundDialog> {
                                       const Gap(8),
                                       Expanded(
                                         child: Text(
-                                          'Blind return — manager authorised. No original receipt.',
+                                          AppLocalizations.of(
+                                            context,
+                                          ).blindReturnManagerAuthorised,
                                           style: TextStyle(
                                               fontSize: 11,
                                               fontWeight: FontWeight.w600,
@@ -941,7 +960,7 @@ class _ManagerPinDialogState extends State<_ManagerPinDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'A blind return refunds goods with no receipt. A manager must approve it.',
+            AppLocalizations.of(context).blindReturnExplain,
             style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
           ),
           const Gap(14),

@@ -59,7 +59,7 @@ class PromotionsScreen extends ConsumerWidget {
                   title: Text(promotion.name,
                       style: const TextStyle(fontWeight: FontWeight.bold)),
                   subtitle: Text(
-                      '${promotion.isEnabled ? "Active" : "Inactive"} | Items: ${promotion.items.length}'),
+                      '${promotion.isEnabled ? AppLocalizations.of(context).statusActive : AppLocalizations.of(context).statusInactive} | ${AppLocalizations.of(context).itemsCountValue(promotion.items.length)}'),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -110,7 +110,10 @@ class PromotionsScreen extends ConsumerWidget {
                                     .pullPromotions(companyId);
                               } catch (e) {
                                 if (context.mounted) {
-                                  showAppSnackbar(context, ref, 'Error: $e', isError: true);
+                                  showAppSnackbar(context, ref,
+                                      AppLocalizations.of(context)
+                                          .errorWithMessage(e.toString()),
+                                      isError: true);
                                 }
                               }
                             }

@@ -524,10 +524,13 @@ class _StockScreenState extends ConsumerState<StockScreen> {
         dialogTitle: 'Save Stock Report',
       );
       if (!mounted || path == null) return;
-      showAppSnackbar(context, ref, 'Saved to $path');
+      showAppSnackbar(
+          context, ref, AppLocalizations.of(context).savedToPath(path));
     } catch (e) {
       if (!mounted) return;
-      showAppSnackbar(context, ref, 'Save failed: $e', isError: true);
+      showAppSnackbar(
+          context, ref, AppLocalizations.of(context).saveFailed(e.toString()),
+          isError: true);
     }
   }
 
@@ -897,7 +900,9 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                     if (isLow || needsReorder) ...[
                       const SizedBox(width: 6),
                       _StockFlag(
-                        label: isLow ? 'LOW' : 'REORDER',
+                        label: isLow
+                            ? AppLocalizations.of(context).flagLow
+                            : AppLocalizations.of(context).flagReorder,
                         color: isLow ? Colors.red : Colors.orange,
                       ),
                     ],
@@ -910,10 +915,16 @@ class _StockScreenState extends ConsumerState<StockScreen> {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _tblBtn(Icons.add_box, context.successColor, "Assign / Add Stock",
+              _tblBtn(
+                  Icons.add_box,
+                  context.successColor,
+                  AppLocalizations.of(context).assignAddStock,
                   () => _showAssignDialog(context, product)),
               const SizedBox(width: 4),
-              _tblBtn(Icons.tune, context.warningColor, "Stock Control Rules",
+              _tblBtn(
+                  Icons.tune,
+                  context.warningColor,
+                  AppLocalizations.of(context).stockControlRules,
                   () => _showStockControlDialog(context, product)),
             ],
           ),
@@ -1082,7 +1093,9 @@ class _AssignStockDialogState
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
-        showAppSnackbar(context, ref, "Error: $e", isError: true);
+        showAppSnackbar(
+          context, ref, AppLocalizations.of(context).errorWithMessage(e.toString()),
+          isError: true);
         setState(() => _isSaving = false);
       }
     }
@@ -1152,7 +1165,9 @@ class _StockControlDialogState
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
-      showAppSnackbar(context, ref, "Error: $e", isError: true);
+      showAppSnackbar(
+          context, ref, AppLocalizations.of(context).errorWithMessage(e.toString()),
+          isError: true);
       setState(() => _isSaving = false);
     }
   }
@@ -1171,7 +1186,9 @@ class _StockControlDialogState
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
-      showAppSnackbar(context, ref, "Error: $e", isError: true);
+      showAppSnackbar(
+          context, ref, AppLocalizations.of(context).errorWithMessage(e.toString()),
+          isError: true);
       setState(() => _isSaving = false);
     }
   }
@@ -1211,7 +1228,8 @@ class _StockControlDialogState
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  "Stock Rules — ${widget.product.name}",
+                  AppLocalizations.of(context)
+                      .stockRulesForProduct(widget.product.name),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -1239,7 +1257,7 @@ class _StockControlDialogState
                   decoration: InputDecoration(
                     labelText: AppLocalizations.of(context).reorderPoint,
                     helperText:
-                        "Trigger reorder when stock drops below this level",
+                        AppLocalizations.of(context).reorderPointHelp,
                     isDense: true,
                   ),
                   keyboardType: TextInputType.number,
@@ -1250,7 +1268,7 @@ class _StockControlDialogState
                   decoration: InputDecoration(
                     labelText: AppLocalizations.of(context).preferredQuantity,
                     helperText:
-                        "Target quantity to maintain in stock",
+                        AppLocalizations.of(context).preferredQuantityHelp,
                     isDense: true,
                   ),
                   keyboardType: TextInputType.number,
@@ -1259,8 +1277,8 @@ class _StockControlDialogState
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   title: Text(AppLocalizations.of(context).lowStockWarning),
-                  subtitle: const Text(
-                      "Alert when stock falls below threshold"),
+                  subtitle:
+                      Text(AppLocalizations.of(context).lowStockWarningHelp),
                   value: _lowStockEnabled,
                   onChanged: (v) =>
                       setState(() => _lowStockEnabled = v),
@@ -1272,7 +1290,7 @@ class _StockControlDialogState
                     decoration: InputDecoration(
                       labelText: AppLocalizations.of(context).warningThreshold,
                       helperText:
-                          "Show warning when quantity is below this value",
+                          AppLocalizations.of(context).warningThresholdHelp,
                       isDense: true,
                     ),
                     keyboardType: TextInputType.number,
@@ -1300,7 +1318,9 @@ class _StockControlDialogState
                       height: 20,
                       child: CircularProgressIndicator(
                           strokeWidth: 2))
-                  : Text(control != null ? "Update" : "Create"),
+                  : Text(control != null
+                      ? AppLocalizations.of(context).actionUpdate
+                      : AppLocalizations.of(context).actionCreate),
             ),
           ],
         );
@@ -1376,7 +1396,9 @@ class _ProductDetailPanelState
       widget.onRefresh();
     } catch (e) {
       if (!mounted) return;
-      showAppSnackbar(context, ref, "Error: $e", isError: true);
+      showAppSnackbar(
+          context, ref, AppLocalizations.of(context).errorWithMessage(e.toString()),
+          isError: true);
       setState(() => _isSaving = false);
     }
   }
@@ -1389,7 +1411,8 @@ class _ProductDetailPanelState
       builder: (ctx) => AlertDialog(
         title: Text(AppLocalizations.of(context).removeStock),
         content: Text(
-            "Remove ${stock.productName} from ${stock.warehouseName}?"),
+            AppLocalizations.of(context).removeStockFromWarehouseConfirm(
+                stock.productName, stock.warehouseName)),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
@@ -1416,7 +1439,9 @@ class _ProductDetailPanelState
       widget.onRefresh();
     } catch (e) {
       if (!mounted) return;
-      showAppSnackbar(context, ref, "Error: $e", isError: true);
+      showAppSnackbar(
+          context, ref, AppLocalizations.of(context).errorWithMessage(e.toString()),
+          isError: true);
       setState(() => _isSaving = false);
     }
   }
@@ -1435,7 +1460,7 @@ class _ProductDetailPanelState
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         border:
-            Border(left: BorderSide(color: theme.dividerColor)),
+            BorderDirectional(start: BorderSide(color: theme.dividerColor)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.07),
@@ -1486,7 +1511,8 @@ class _ProductDetailPanelState
                       ),
                       if (product.code != null)
                         Text(
-                          "Code: ${product.code}",
+                          AppLocalizations.of(context)
+                              .codeWithValue(product.code!),
                           style: theme.textTheme.bodySmall?.copyWith(
                               color: theme
                                   .colorScheme.onSurfaceVariant),
@@ -1513,15 +1539,18 @@ class _ProductDetailPanelState
                   // Tags
                   Wrap(spacing: 6, children: [
                     if (product.isService)
-                      _tag("Service", context.infoColor),
+                      _tag(AppLocalizations.of(context).serviceTag,
+                          context.infoColor),
                     if (product.measurementUnit != null)
-                      _tag("UOM: ${product.measurementUnit}",
+                      _tag(
+                          AppLocalizations.of(context)
+                              .uomWithValue(product.measurementUnit!),
                           Colors.teal),
                   ]),
                   const SizedBox(height: 10),
-                  _infoRow("Selling Price",
+                  _infoRow(AppLocalizations.of(context).sellingPrice,
                       "${product.price.toStringAsFixed(2)} $sym"),
-                  _infoRow("Cost Price",
+                  _infoRow(AppLocalizations.of(context).costPrice,
                       "${product.cost.toStringAsFixed(2)} $sym"),
 
                   const Divider(height: 28),
@@ -1530,8 +1559,8 @@ class _ProductDetailPanelState
                   _sectionLabel(
                     context,
                     widget.warehouseId != null
-                        ? "STOCK IN WAREHOUSE"
-                        : "ALL STOCK ENTRIES",
+                        ? AppLocalizations.of(context).stockInWarehouseUpper
+                        : AppLocalizations.of(context).allStockEntriesUpper,
                   ),
                   const SizedBox(height: 8),
 
@@ -1582,7 +1611,8 @@ class _ProductDetailPanelState
                   const Divider(height: 28),
 
                   // ── Stock control rules ───────────────────────────
-                  _sectionLabel(context, "STOCK CONTROL RULES"),
+                  _sectionLabel(
+                      context, AppLocalizations.of(context).stockControlRulesUpper),
                   const SizedBox(height: 10),
 
                   asyncControl.when(
@@ -1617,10 +1647,21 @@ class _ProductDetailPanelState
                       final suggest = control.suggestedReorderQty(qty);
 
                       final (statusColor, statusText) = low
-                          ? (Colors.red, "Low stock — at/below warning level")
+                          ? (
+                              Colors.red,
+                              AppLocalizations.of(context).stockStatusLow
+                            )
                           : reorder
-                              ? (Colors.orange, "At/below reorder point")
-                              : (Colors.green, "Stock healthy");
+                              ? (
+                                  Colors.orange,
+                                  AppLocalizations.of(context)
+                                      .stockStatusReorder
+                                )
+                              : (
+                                  Colors.green,
+                                  AppLocalizations.of(context)
+                                      .stockStatusHealthy
+                                );
 
                       return Container(
                         padding: const EdgeInsets.all(12),
@@ -1650,19 +1691,25 @@ class _ProductDetailPanelState
                             ),
                           ]),
                           const SizedBox(height: 8),
-                          _infoRow("Reorder Point", "${control.reorderPoint}"),
-                          _infoRow("Preferred Qty",
+                          _infoRow(AppLocalizations.of(context).reorderPoint,
+                              "${control.reorderPoint}"),
+                          _infoRow(
+                              AppLocalizations.of(context).preferredQty,
                               "${control.preferredQuantity}"),
                           _infoRow(
-                            "Low Stock Warning",
+                            AppLocalizations.of(context).lowStockWarning,
                             control.isLowStockWarningEnabled
-                                ? "On — below ${control.lowStockWarningQuantity}"
-                                : "Disabled",
+                                ? AppLocalizations.of(context).onBelowValue(
+                                    control.lowStockWarningQuantity)
+                                : AppLocalizations.of(context).statusDisabled,
                           ),
                           if ((low || reorder) && suggest > 0)
                             _infoRow(
-                              "Suggested Order",
-                              "+${suggest.toStringAsFixed(suggest % 1 == 0 ? 0 : 2)} to reach ${control.preferredQuantity}",
+                              AppLocalizations.of(context).suggestedOrder,
+                              AppLocalizations.of(context).suggestedOrderValue(
+                                  suggest.toStringAsFixed(
+                                      suggest % 1 == 0 ? 0 : 2),
+                                  control.preferredQuantity),
                             ),
                         ]),
                       );
@@ -1806,11 +1853,17 @@ class _StockEntry extends StatelessWidget {
                       ?.copyWith(fontWeight: FontWeight.w600)),
             ),
             if (!isEditing) ...[
-              _iconBtn(Icons.edit_outlined, theme.colorScheme.primary,
-                  "Edit quantity", onEditTap),
+              _iconBtn(
+                  Icons.edit_outlined,
+                  theme.colorScheme.primary,
+                  AppLocalizations.of(context).editQuantity,
+                  onEditTap),
               const SizedBox(width: 2),
-              _iconBtn(Icons.delete_outline, context.dangerColor,
-                  "Remove", isSaving ? null : onDelete),
+              _iconBtn(
+                  Icons.delete_outline,
+                  context.dangerColor,
+                  AppLocalizations.of(context).actionRemove,
+                  isSaving ? null : onDelete),
             ],
           ]),
           const SizedBox(height: 8),
@@ -1836,10 +1889,10 @@ class _StockEntry extends StatelessWidget {
                     child: CircularProgressIndicator(
                         strokeWidth: 2))
               else ...[
-                _iconBtn(Icons.check, context.successColor, "Save",
-                    onSave),
-                _iconBtn(Icons.close, context.dangerColor, "Cancel",
-                    onCancel),
+                _iconBtn(Icons.check, context.successColor,
+                    AppLocalizations.of(context).actionSave, onSave),
+                _iconBtn(Icons.close, context.dangerColor,
+                    AppLocalizations.of(context).actionCancel, onCancel),
               ],
             ])
           else

@@ -60,9 +60,10 @@ class _BookingHistoryScreenState extends ConsumerState<BookingHistoryScreen>
           // left-middle, refresh pinned right. The TabBar drops just beneath it.
           PosTopBar(
             onMenuPressed: widget.onMenuPressed,
-            title: const Text(
-              'Booking History',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            title: Text(
+              AppLocalizations.of(context).bookingHistory,
+              style: const TextStyle(
+                  fontSize: 18, fontWeight: FontWeight.bold),
               overflow: TextOverflow.ellipsis,
             ),
             actions: [
@@ -81,9 +82,13 @@ class _BookingHistoryScreenState extends ConsumerState<BookingHistoryScreen>
             ),
             child: TabBar(
               controller: _tabController,
-              tabs: const [
-                Tab(icon: Icon(Icons.upcoming), text: 'Upcoming'),
-                Tab(icon: Icon(Icons.history), text: 'History'),
+              tabs: [
+                Tab(
+                    icon: const Icon(Icons.upcoming),
+                    text: AppLocalizations.of(context).upcoming),
+                Tab(
+                    icon: const Icon(Icons.history),
+                    text: AppLocalizations.of(context).historyTab),
               ],
             ),
           ),
@@ -138,12 +143,14 @@ class _BookingHistoryScreenState extends ConsumerState<BookingHistoryScreen>
                   children: [
                     _BookingList(
                       bookings: upcoming,
-                      emptyMessage: 'No upcoming bookings.',
+                      emptyMessage:
+                          AppLocalizations.of(context).noUpcomingBookings,
                       emptyIcon: Icons.event_available,
                     ),
                     _BookingList(
                       bookings: history,
-                      emptyMessage: 'No completed bookings yet.',
+                      emptyMessage:
+                          AppLocalizations.of(context).noCompletedBookings,
                       emptyIcon: Icons.history_toggle_off,
                     ),
                   ],
@@ -210,13 +217,25 @@ class _BookingCard extends StatelessWidget {
 
   const _BookingCard({required this.booking});
 
-  static const _statusLabel = {
-    1: 'Pending',
-    2: 'Arrived',
-    3: 'In Service',
-    4: 'Completed',
-    5: 'No Show',
-  };
+  /// Booking status id → label. The ids are the server's, so only the label
+  /// is localized — same id+lookup split as the security keys in users_screen.
+  static String _statusLabelFor(BuildContext context, int status) {
+    final l10n = AppLocalizations.of(context);
+    switch (status) {
+      case 1:
+        return l10n.bookingPending;
+      case 2:
+        return l10n.bookingArrived;
+      case 3:
+        return l10n.bookingInService;
+      case 4:
+        return l10n.bookingCompleted;
+      case 5:
+        return l10n.bookingNoShow;
+      default:
+        return l10n.unknownLabel;
+    }
+  }
 
   static const _statusColor = {
     1: Color(0xFFFFA726), // amber
@@ -234,7 +253,7 @@ class _BookingCard extends StatelessWidget {
     final timeFmt = DateFormat('HH:mm');
 
     final statusColor = _statusColor[booking.status] ?? cs.outline;
-    final statusLabel = _statusLabel[booking.status] ?? 'Unknown';
+    final statusLabel = _statusLabelFor(context, booking.status);
 
     final duration = booking.endTime.difference(booking.startTime);
     final durationLabel = duration.inMinutes >= 60
@@ -324,7 +343,8 @@ class _BookingCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        '${booking.guestCount} guest${booking.guestCount == 1 ? '' : 's'}',
+                        AppLocalizations.of(context)
+                            .guestsCount(booking.guestCount),
                         style: tt.bodySmall?.copyWith(
                           color: cs.onSurface.withValues(alpha: 0.7),
                         ),
@@ -338,7 +358,8 @@ class _BookingCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          '${booking.tableIds.length} table${booking.tableIds.length == 1 ? '' : 's'}',
+                          AppLocalizations.of(context)
+                              .tablesCount(booking.tableIds.length),
                           style: tt.bodySmall?.copyWith(
                             color: cs.onSurface.withValues(alpha: 0.7),
                           ),
@@ -353,7 +374,8 @@ class _BookingCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          'Order #${booking.posOrderId}',
+                          AppLocalizations.of(context)
+                              .orderNumbered('${booking.posOrderId}'),
                           style: tt.bodySmall?.copyWith(color: cs.primary),
                         ),
                       ],

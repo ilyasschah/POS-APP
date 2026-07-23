@@ -55,15 +55,16 @@ final allDocumentsProvider = FutureProvider.autoDispose<List<Document>>((
   final rows = await db.getDocuments(companyId: company.id);
 
   return rows.map((row) {
-    final pendingCreate =
-        row.syncStatus == 'pending' || row.syncStatus == 'pending_create';
-    final displayNumber = row.number?.isNotEmpty == true
-        ? row.number!
-        : (pendingCreate ? '(Pending sync)' : '—');
+    // `number` carries the real value only — the editor seeds its Number field
+    // from it and writes it straight back, so a "—" / "(Pending sync)" baked in
+    // here would be saved AS the document number. The list renders those two
+    // placeholders itself, off isPendingSync (see _displayNumber).
     return Document(
       id: row.serverId ?? 0,
       localId: row.localId,
-      number: displayNumber,
+      number: row.number ?? '',
+      isPendingSync:
+          row.syncStatus == 'pending' || row.syncStatus == 'pending_create',
       userId: row.userId,
       userName: userMap[row.userId],
       customerId: row.customerId ?? 0,
@@ -130,6 +131,17 @@ final documentVisibleColumnsProvider = StateProvider<Map<String, bool>>(
     'Actions': true,
   },
 );
+
+/// What to show in place of a document number that does not exist yet. Kept out
+/// of [Document.number] on purpose: that field seeds the editor's Number field
+/// and is written straight back to the DB on save, so a placeholder stored
+/// there would be persisted as the document's actual number.
+String _displayNumber(BuildContext context, Document d) {
+  if (d.number.isNotEmpty) return d.number;
+  return d.isPendingSync
+      ? '(${AppLocalizations.of(context).pendingSync})'
+      : '—';
+}
 
 // ── Screen ────────────────────────────────────────────────────────────────────
 
@@ -210,34 +222,23 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
     }
   }
 
-  String _monthAbbr(int m) => const [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ][m - 1];
+  String _monthAbbr(int m) =>
+      AppLocalizations.of(context).monthAbbreviations.split(',')[m - 1];
 
   // ── badges ────────────────────────────────────────────────────────────────
 
   Widget _paidBadge(BuildContext context, int status) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l = AppLocalizations.of(context);
     switch (status) {
       case 1:
-        return _badge("Paid", isDark ? Colors.greenAccent : Colors.green);
+        return _badge(l.paid, isDark ? Colors.greenAccent : Colors.green);
       case 2:
-        return _badge("Partial", isDark ? Colors.orangeAccent : Colors.orange);
+        return _badge(l.partial, isDark ? Colors.orangeAccent : Colors.orange);
       case 0:
-        return _badge("Unpaid", isDark ? Colors.redAccent : Colors.red);
+        return _badge(l.unpaid, isDark ? Colors.redAccent : Colors.red);
       default:
-        return _badge("N/A", Colors.grey);
+        return _badge(l.notAvailableShort, Colors.grey);
     }
   }
 
@@ -315,6 +316,31 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
 
   // ── column picker ─────────────────────────────────────────────────────────
 
+  /// The keys of [documentVisibleColumnsProvider] are stable English ids — they
+  /// are the map's identity, not display text — so the picker translates them
+  /// on the way out instead. Same id→label split the table headers use.
+  String _columnLabel(BuildContext context, String id) {
+    final l = AppLocalizations.of(context);
+    return switch (id) {
+      'ID' => l.idLabel,
+      'Number' => l.numberLabel,
+      'Doc Type' => l.documentType,
+      'Paid' => l.paidStatus,
+      'Customer' => l.customerLabel,
+      'Date' => l.dateLabel,
+      'Order #' => l.orderNumberLabel,
+      'User' => l.userLabel,
+      'Discount' => l.discountLabel,
+      'Total' => l.totalLabel,
+      'Internal Note' => l.internalNoteLabel,
+      'Note' => l.noteLabel,
+      'Created' => l.created,
+      'Updated' => l.updatedLabel,
+      'Actions' => l.actionsLabel,
+      _ => id,
+    };
+  }
+
   void _showColumnPicker(BuildContext context) {
     showDialog(
       context: context,
@@ -331,7 +357,7 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
                   children: columns.keys
                       .map(
                         (col) => CheckboxListTile(
-                          title: Text(col),
+                          title: Text(_columnLabel(context, col)),
                           value: columns[col],
                           onChanged: (val) => ref
                               .read(documentVisibleColumnsProvider.notifier)
@@ -437,16 +463,17 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
     required int totalResults,
   }) {
     final cs = theme.colorScheme;
+    final l = AppLocalizations.of(context);
 
     // Period display text
     final periodLabel = _filterDateRange == null
-        ? 'All dates'
+        ? l.allDates
         : '${_dateFmt.format(_filterDateRange!.start)} – ${_dateFmt.format(_filterDateRange!.end)}';
 
     // User display name
     String userName(User u) {
       final full = '${u.firstName ?? ''} ${u.lastName ?? ''}'.trim();
-      return full.isNotEmpty ? full : (u.username ?? 'User ${u.id}');
+      return full.isNotEmpty ? full : (u.username ?? l.userNumbered('${u.id}'));
     }
 
     final labelStyle = TextStyle(
@@ -497,7 +524,7 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               filterCol(
-                lbl: 'User',
+                lbl: l.userLabel,
                 control: _dropdownField<int?>(
                   cs: cs,
                   value: _filterUserId,
@@ -519,7 +546,7 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
               ),
               gap,
               filterCol(
-                lbl: 'Customer',
+                lbl: l.customerLabel,
                 control: _dropdownField<int?>(
                   cs: cs,
                   value: _filterCustomerId,
@@ -538,7 +565,7 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
               ),
               gap,
               filterCol(
-                lbl: 'Document type',
+                lbl: l.documentType,
                 control: _dropdownField<int?>(
                   cs: cs,
                   value: _filterDocTypeId,
@@ -563,7 +590,7 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               filterCol(
-                lbl: 'Paid status',
+                lbl: l.paidStatus,
                 control: _dropdownField<int?>(
                   cs: cs,
                   value: _filterPaidStatus,
@@ -582,7 +609,7 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
               ),
               gap,
               filterCol(
-                lbl: 'Warehouse',
+                lbl: l.warehouse,
                 control: _dropdownField<int?>(
                   cs: cs,
                   value: _filterWarehouseId,
@@ -601,11 +628,11 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
               ),
               gap,
               filterCol(
-                lbl: 'Document number',
+                lbl: l.documentNumber,
                 control: shadowWrapper(
                   TextField(
                     controller: _docNumberCtrl,
-                    decoration: _inputDeco(cs, 'e.g. 26-200-000001'),
+                    decoration: _inputDeco(cs, l.documentNumberHint),
                     style: TextStyle(
                       fontSize: 13,
                       color: cs.onSurface,
@@ -623,11 +650,11 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               filterCol(
-                lbl: 'External document',
+                lbl: l.externalDocument,
                 control: shadowWrapper(
                   TextField(
                     controller: _refNumberCtrl,
-                    decoration: _inputDeco(cs, 'Reference document'),
+                    decoration: _inputDeco(cs, l.referenceDocument),
                     style: TextStyle(
                       fontSize: 13,
                       color: cs.onSurface,
@@ -639,7 +666,7 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
               ),
               gap,
               filterCol(
-                lbl: 'Period',
+                lbl: l.periodLabel,
                 control: InkWell(
                   borderRadius: BorderRadius.circular(10),
                   onTap: () async {
@@ -747,7 +774,7 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                            'TOTAL RESULTS',
+                            l.totalResultsUpper,
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
@@ -909,7 +936,7 @@ class _DocumentTable extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              "No documents matching filters.",
+              AppLocalizations.of(context).noDocumentsMatchingFilters,
               style: TextStyle(color: theme.disabledColor, fontSize: 16),
             ),
           ],
@@ -991,6 +1018,7 @@ class _DocumentTable extends ConsumerWidget {
     ThemeData theme,
     String sym,
   ) {
+    final l = AppLocalizations.of(context);
     return [
       if (v['ID'] == true)
         DataCell(
@@ -1001,7 +1029,10 @@ class _DocumentTable extends ConsumerWidget {
         ),
       if (v['Number'] == true)
         DataCell(
-          Text(d.number, style: const TextStyle(fontWeight: FontWeight.bold)),
+          Text(
+            _displayNumber(context, d),
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
         ),
       if (v['Doc Type'] == true)
         DataCell(
@@ -1022,7 +1053,7 @@ class _DocumentTable extends ConsumerWidget {
       if (v['Customer'] == true) DataCell(Text(d.customerName ?? '-')),
       if (v['Date'] == true)
         DataCell(Text(formatDate(d.dateCreated ?? d.date))),
-      if (v['Order #'] == true) DataCell(Text(d.orderNumber ?? 'N/A')),
+      if (v['Order #'] == true) DataCell(Text(d.orderNumber ?? l.notAvailableShort)),
       if (v['User'] == true) DataCell(Text(d.userName ?? '-')),
       if (v['Discount'] == true)
         DataCell(
@@ -1093,7 +1124,10 @@ class _DocumentTable extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(AppLocalizations.of(context).deleteDocument),
-        content: Text(AppLocalizations.of(context).confirmDeleteQuoted(d.number)),
+        content: Text(
+          AppLocalizations.of(context)
+              .confirmDeleteQuoted(_displayNumber(context, d)),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -1143,12 +1177,12 @@ class _DocumentTable extends ConsumerWidget {
         );
       }
       if (!context.mounted) return;
-      showAppSnackbar(context, ref, 'Document deleted');
+      showAppSnackbar(context, ref, AppLocalizations.of(context).documentDeleted);
     } on DioException catch (e) {
       if (!context.mounted) return;
       final data = e.response?.data;
-      final msg =
-          (data is Map ? data['message'] : data?.toString()) ?? 'Delete failed';
+      final msg = (data is Map ? data['message'] : data?.toString()) ??
+          AppLocalizations.of(context).deleteFailed;
       showAppSnackbar(context, ref, msg, isError: true);
     }
   }

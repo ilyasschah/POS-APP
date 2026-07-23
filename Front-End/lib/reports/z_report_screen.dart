@@ -37,7 +37,8 @@ class _EndOfDayScreenState extends ConsumerState<EndOfDayScreen> {
     final currentUser = ref.read(currentUserProvider);
 
     if (companyId == null || currentUser == null) {
-      showAppSnackbar(context, ref, "Error: Missing company or user context.",
+      showAppSnackbar(
+          context, ref, AppLocalizations.of(context).errorMissingCompanyContext,
           isError: true);
       return;
     }
@@ -64,6 +65,8 @@ class _EndOfDayScreenState extends ConsumerState<EndOfDayScreen> {
       for (final p in payments) {
         final cur = byType[p.paymentTypeId];
         byType[p.paymentTypeId] = (
+          // Persisted into paymentBreakdownJson, so it stays English like every
+          // other value written to the DB — only the on-screen copy is translated.
           name: p.paymentTypeName ?? 'Unknown',
           amount: (cur?.amount ?? 0) + p.amount,
         );
@@ -160,7 +163,8 @@ class _EndOfDayScreenState extends ConsumerState<EndOfDayScreen> {
       }
     } catch (e) {
       if (mounted) {
-        showAppSnackbar(context, ref, 'Failed to queue Z-Report: $e',
+        showAppSnackbar(
+            context, ref, AppLocalizations.of(context).failedToQueueZReport('$e'),
             isError: true);
       }
     } finally {
@@ -173,6 +177,7 @@ class _EndOfDayScreenState extends ConsumerState<EndOfDayScreen> {
   void _showReceiptDialog(ZReportModel report) {
     final sym = ref.read(currencySymbolProvider);
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
 
     showDialog(
       context: context,
@@ -189,7 +194,7 @@ class _EndOfDayScreenState extends ConsumerState<EndOfDayScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              "Z-Report #${report.number}",
+              l.zReportNumber('${report.number}'),
               style: const TextStyle(fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
@@ -203,7 +208,7 @@ class _EndOfDayScreenState extends ConsumerState<EndOfDayScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  "SHIFT SUMMARY",
+                  l.shiftSummaryUpper,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: theme.colorScheme.onSurfaceVariant,
@@ -216,7 +221,7 @@ class _EndOfDayScreenState extends ConsumerState<EndOfDayScreen> {
                 Divider(color: theme.colorScheme.outlineVariant),
                 const SizedBox(height: 8),
                 _receiptRow(
-                  "Date/Time",
+                  l.dateTimeLabel,
                   report.dateCreated
                       .toIso8601String()
                       .split('.')[0]
@@ -224,13 +229,13 @@ class _EndOfDayScreenState extends ConsumerState<EndOfDayScreen> {
                   theme,
                 ),
                 _receiptRow(
-                  "Documents",
+                  l.documents,
                   report.documentCount?.toString() ?? "—",
                   theme,
                 ),
                 if (report.fromDocumentNumber != null)
                   _receiptRow(
-                    "Range",
+                    l.rangeLabel,
                     report.fromDocumentNumber == report.toDocumentNumber
                         ? report.fromDocumentNumber!
                         : "${report.fromDocumentNumber} → ${report.toDocumentNumber}",
@@ -240,27 +245,27 @@ class _EndOfDayScreenState extends ConsumerState<EndOfDayScreen> {
                 Divider(color: theme.colorScheme.outlineVariant),
                 const SizedBox(height: 8),
                 _receiptRow(
-                  "Total Sales",
+                  l.totalSales,
                   "${report.totalSales.toStringAsFixed(2)} $sym",
                   theme,
                 ),
                 _receiptRow(
-                  "Total Returns",
+                  l.totalReturns,
                   "${report.totalReturns.toStringAsFixed(2)} $sym",
                   theme,
                 ),
                 _receiptRow(
-                  "Discounts",
+                  l.discountsLabel,
                   "${report.discountsGranted.toStringAsFixed(2)} $sym",
                   theme,
                 ),
                 _receiptRow(
-                  "Taxable Total",
+                  l.taxableTotal,
                   "${report.taxableTotal.toStringAsFixed(2)} $sym",
                   theme,
                 ),
                 _receiptRow(
-                  "Total Tax",
+                  l.totalTax,
                   "${report.totalTax.toStringAsFixed(2)} $sym",
                   theme,
                 ),
@@ -268,7 +273,7 @@ class _EndOfDayScreenState extends ConsumerState<EndOfDayScreen> {
                 Divider(color: theme.colorScheme.outlineVariant),
                 const SizedBox(height: 8),
                 Text(
-                  "CASH MOVEMENTS",
+                  l.cashMovementsUpper,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: theme.colorScheme.onSurfaceVariant,
@@ -281,18 +286,18 @@ class _EndOfDayScreenState extends ConsumerState<EndOfDayScreen> {
                 Divider(color: theme.colorScheme.outlineVariant),
                 const SizedBox(height: 8),
                 _receiptRow(
-                  "Cash In",
+                  l.cashIn,
                   "+${report.totalCashIn.toStringAsFixed(2)} $sym",
                   theme,
                 ),
                 _receiptRow(
-                  "Cash Out",
+                  l.cashOut,
                   "-${report.totalCashOut.toStringAsFixed(2)} $sym",
                   theme,
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  "TENDER TYPES",
+                  l.tenderTypesUpper,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: theme.colorScheme.onSurfaceVariant,
@@ -306,7 +311,7 @@ class _EndOfDayScreenState extends ConsumerState<EndOfDayScreen> {
                 const SizedBox(height: 8),
                 if (report.paymentSummaries.isEmpty)
                   Text(
-                    "No payments recorded.",
+                    l.noPaymentsRecorded,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontStyle: FontStyle.italic,
@@ -315,7 +320,7 @@ class _EndOfDayScreenState extends ConsumerState<EndOfDayScreen> {
                   ),
                 ...report.paymentSummaries.map(
                   (p) => _receiptRow(
-                    p.paymentTypeName ?? "Unknown",
+                    p.paymentTypeName ?? l.unknownLabel,
                     "${p.totalAmount.toStringAsFixed(2)} $sym",
                     theme,
                   ),
@@ -328,7 +333,7 @@ class _EndOfDayScreenState extends ConsumerState<EndOfDayScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: _receiptRow(
-                    "GRAND TOTAL",
+                    l.grandTotalUpper,
                     "${report.grandTotal.toStringAsFixed(2)} $sym",
                     theme,
                     isBold: true,
@@ -423,9 +428,9 @@ class _EndOfDayScreenState extends ConsumerState<EndOfDayScreen> {
             indicatorColor: theme.colorScheme.primary,
             labelColor: theme.colorScheme.primary,
             unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
-            tabs: const [
-              Tab(text: "Current Shift (Open)"),
-              Tab(text: "History (Z-Reports)"),
+            tabs: [
+              Tab(text: AppLocalizations.of(context).currentShiftOpen),
+              Tab(text: AppLocalizations.of(context).historyZReports),
             ],
           ),
           actions: [
@@ -474,12 +479,13 @@ class _CurrentShiftTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final asyncUnreported = ref.watch(unreportedPaymentsProvider);
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
 
     return asyncUnreported.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(
         child: Text(
-          "Error: $e",
+          l.errorWithMessage('$e'),
           style: TextStyle(color: theme.colorScheme.error),
         ),
       ),
@@ -496,7 +502,7 @@ class _CurrentShiftTab extends ConsumerWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  "No open transactions.\nThe register is balanced.",
+                  l.noOpenTransactions,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 18,
@@ -512,7 +518,7 @@ class _CurrentShiftTab extends ConsumerWidget {
         double grandTotal = 0;
 
         for (var p in payments) {
-          final typeName = p.paymentTypeName ?? "Unknown";
+          final typeName = p.paymentTypeName ?? l.unknownLabel;
           totalsByType[typeName] = (totalsByType[typeName] ?? 0) + p.amount;
           grandTotal += p.amount;
         }
@@ -542,7 +548,7 @@ class _CurrentShiftTab extends ConsumerWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          "Tender Breakdown",
+                          l.tenderBreakdown,
                           style: TextStyle(
                             color: theme.colorScheme.onSurfaceVariant,
                             fontSize: 14,
@@ -589,7 +595,7 @@ class _CurrentShiftTab extends ConsumerWidget {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                "EXPECTED IN DRAWER",
+                                l.expectedInDrawer,
                                 style: TextStyle(
                                   color: theme.colorScheme.onPrimaryContainer,
                                   fontSize: 14,
@@ -633,7 +639,7 @@ class _CurrentShiftTab extends ConsumerWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          "Shift Details",
+                          l.shiftDetails,
                           style: TextStyle(
                             color: theme.colorScheme.onSurfaceVariant,
                             fontSize: 14,
@@ -643,30 +649,30 @@ class _CurrentShiftTab extends ConsumerWidget {
                         ),
                         const SizedBox(height: 24),
                         _buildDetailRow(
-                          "Cashier on Duty",
+                          l.cashierOnDuty,
                           ref.watch(currentUserProvider)?.displayName ??
-                              "UNKNOWN USER",
+                              l.unknownUser,
                           Icons.person_outline,
                           theme,
                         ),
                         const SizedBox(height: 24),
                         _buildDetailRow(
-                          "Transactions",
-                          "${payments.length} open payment(s)",
+                          l.transactionsLabel,
+                          l.openPaymentsCount(payments.length),
                           Icons.receipt_long,
                           theme,
                         ),
                         const SizedBox(height: 24),
                         _buildDetailRow(
-                          "Status",
-                          "Shift is Open",
+                          l.statusLabel,
+                          l.shiftIsOpen,
                           Icons.lock_open,
                           theme,
                           iconColor: context.successColor,
                         ),
                         const SizedBox(height: 32),
                         Text(
-                          "Closing the register will finalize these transactions, generate a Z-Report, and reset the day's totals. Ensure cash drops are complete before proceeding.",
+                          l.closeRegisterExplain,
                           style: TextStyle(
                             color: theme.colorScheme.onSurfaceVariant,
                             height: 1.5,
@@ -742,12 +748,13 @@ class _ZReportHistoryTab extends ConsumerWidget {
     final sym = ref.watch(currencySymbolProvider);
     final asyncReports = ref.watch(allZReportsProvider);
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
 
     return asyncReports.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(
         child: Text(
-          "Error: $e",
+          l.errorWithMessage('$e'),
           style: TextStyle(color: theme.colorScheme.error),
         ),
       ),
@@ -766,7 +773,7 @@ class _ZReportHistoryTab extends ConsumerWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  "No Z-Reports generated yet.",
+                  l.noZReportsYet,
                   style: TextStyle(
                     fontSize: 18,
                     color: theme.colorScheme.onSurfaceVariant,
@@ -812,19 +819,23 @@ class _ZReportHistoryTab extends ConsumerWidget {
                   ),
                 ),
                 title: Text(
-                  "Z-Report • ${report.dateCreated.toIso8601String().split('T').first}",
+                  l.zReportOnDate(
+                    report.dateCreated.toIso8601String().split('T').first,
+                  ),
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
                 subtitle: Padding(
                   padding: const EdgeInsets.only(top: 4.0),
                   child: Text(
-                    "Documents: ${report.documentCount ?? '—'}"
-                    "  •  Grand Total: ${report.grandTotal.toStringAsFixed(2)} $sym",
+                    l.zReportSubtitle(
+                      report.documentCount?.toString() ?? '—',
+                      "${report.grandTotal.toStringAsFixed(2)} $sym",
+                    ),
                     style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
                   ),
                 ),
                 trailing: Tooltip(
-                  message: AppLocalizations.of(context).viewPrintReceipt,
+                  message: l.viewPrintReceipt,
                   child: IconButton(
                     icon: Icon(
                       Icons.receipt_long,

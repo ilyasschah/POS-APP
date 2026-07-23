@@ -128,22 +128,26 @@ class _PromotionEditScreenState extends ConsumerState<PromotionEditScreen> {
   void _save() async {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      showAppSnackbar(context, ref, 'Name is required', isError: true);
+      showAppSnackbar(context, ref, AppLocalizations.of(context).nameIsRequiredShort,
+          isError: true);
       return;
     }
     if (_daysOfWeek == 0) {
-      showAppSnackbar(context, ref, 'Select at least one day of the week',
+      showAppSnackbar(
+          context, ref, AppLocalizations.of(context).selectAtLeastOneDay,
           isError: true);
       return;
     }
     if (_items.isEmpty) {
-      showAppSnackbar(context, ref, 'Add at least one product to the promotion',
+      showAppSnackbar(
+          context, ref, AppLocalizations.of(context).addAtLeastOneProduct,
           isError: true);
       return;
     }
     // A finite window must not end before it starts.
     if (_startDate != null && _endDate != null && _endDate!.isBefore(_startDate!)) {
-      showAppSnackbar(context, ref, 'End date is before the start date',
+      showAppSnackbar(
+          context, ref, AppLocalizations.of(context).endDateBeforeStartDate,
           isError: true);
       return;
     }
@@ -368,7 +372,9 @@ class _PromotionEditScreenState extends ConsumerState<PromotionEditScreen> {
         ),
       ),
       trailing: IconButton(
-        tooltip: added ? 'Remove from promotion' : 'Add to promotion',
+        tooltip: added
+            ? AppLocalizations.of(context).removeFromPromotion
+            : AppLocalizations.of(context).addToPromotion,
         icon: Icon(
           added ? Icons.check_circle : Icons.add_circle_outline,
           color: added ? cs.primary : cs.onSurfaceVariant,
@@ -403,7 +409,7 @@ class _PromotionEditScreenState extends ConsumerState<PromotionEditScreen> {
             // immediately instead of behind a collapsed folder.
             initiallyExpanded: parentId == null,
             tilePadding: const EdgeInsets.symmetric(horizontal: 16),
-            childrenPadding: const EdgeInsets.only(left: 16),
+            childrenPadding: const EdgeInsetsDirectional.only(start: 16),
             title: Text(
               g.name,
               style: const TextStyle(fontWeight: FontWeight.bold),
@@ -432,7 +438,7 @@ class _PromotionEditScreenState extends ConsumerState<PromotionEditScreen> {
         padding: const EdgeInsets.all(24),
         child: Center(
           child: Text(
-            'No products match "$_search"',
+            AppLocalizations.of(context).noProductsMatchQuery(_search),
             style: TextStyle(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
@@ -465,7 +471,8 @@ class _PromotionEditScreenState extends ConsumerState<PromotionEditScreen> {
   Widget build(BuildContext context) {
     final groupsAsync = ref.watch(allProductGroupsProvider);
     final productsAsync = ref.watch(allProductsListProvider);
-    final days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    final days =
+        AppLocalizations.of(context).weekdayAbbreviations.split(',');
     final cs = Theme.of(context).colorScheme;
     // Used as the suffix on a fixed-amount discount field.
     final currencySymbol =
@@ -474,7 +481,9 @@ class _PromotionEditScreenState extends ConsumerState<PromotionEditScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          widget.promotion == null ? 'Create Promotion' : 'Edit Promotion',
+          widget.promotion == null
+              ? AppLocalizations.of(context).createPromotion
+              : AppLocalizations.of(context).editPromotion,
         ),
         actions: [
           ElevatedButton.icon(
@@ -529,9 +538,9 @@ class _PromotionEditScreenState extends ConsumerState<PromotionEditScreen> {
                   spacing: 8,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    const Text(
-                      "Days of Week: ",
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                    Text(
+                      AppLocalizations.of(context).daysOfWeekLabel,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     ...List.generate(7, (i) {
                       bool isSelected = (_daysOfWeek & (1 << i)) != 0;
@@ -550,10 +559,10 @@ class _PromotionEditScreenState extends ConsumerState<PromotionEditScreen> {
                       );
                     }),
                     const SizedBox(width: 8),
-                    _dayPreset('All', 127),
-                    _dayPreset('Weekdays', 31),
-                    _dayPreset('Weekends', 96),
-                    _dayPreset('None', 0),
+                    _dayPreset(AppLocalizations.of(context).filterAll, 127),
+                    _dayPreset(AppLocalizations.of(context).weekdays, 31),
+                    _dayPreset(AppLocalizations.of(context).weekends, 96),
+                    _dayPreset(AppLocalizations.of(context).noneLabel, 0),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -566,7 +575,7 @@ class _PromotionEditScreenState extends ConsumerState<PromotionEditScreen> {
                       icon: const Icon(Icons.date_range),
                       label: Text(
                         _startDate == null
-                            ? "Start Date"
+                            ? AppLocalizations.of(context).startDate
                             : "${_startDate!.toLocal()}".split(' ')[0],
                       ),
                       onPressed: () async {
@@ -589,7 +598,7 @@ class _PromotionEditScreenState extends ConsumerState<PromotionEditScreen> {
                       icon: const Icon(Icons.access_time),
                       label: Text(
                         _startTime == null
-                            ? "Start Time"
+                            ? AppLocalizations.of(context).startTime
                             : _startTime!.format(context),
                       ),
                       onPressed: () async {
@@ -610,7 +619,7 @@ class _PromotionEditScreenState extends ConsumerState<PromotionEditScreen> {
                       icon: const Icon(Icons.date_range),
                       label: Text(
                         _endDate == null
-                            ? "End Date"
+                            ? AppLocalizations.of(context).endDate
                             : "${_endDate!.toLocal()}".split(' ')[0],
                       ),
                       onPressed: () async {
@@ -633,7 +642,7 @@ class _PromotionEditScreenState extends ConsumerState<PromotionEditScreen> {
                       icon: const Icon(Icons.access_time),
                       label: Text(
                         _endTime == null
-                            ? "End Time"
+                            ? AppLocalizations.of(context).endTime
                             : _endTime!.format(context),
                       ),
                       onPressed: () async {
@@ -744,7 +753,7 @@ class _PromotionEditScreenState extends ConsumerState<PromotionEditScreen> {
                         child: Row(
                           children: [
                             Text(
-                              'Selected Products',
+                              AppLocalizations.of(context).selectedProducts,
                               style: Theme.of(context)
                                   .textTheme
                                   .titleMedium
@@ -799,7 +808,8 @@ class _PromotionEditScreenState extends ConsumerState<PromotionEditScreen> {
                                     ),
                                     const SizedBox(height: 12),
                                     Text(
-                                      'Select products from the left to add to the promotion.',
+                                      AppLocalizations.of(context)
+                                          .selectProductsFromLeft,
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         color: Theme.of(context)
@@ -841,7 +851,9 @@ class _PromotionEditScreenState extends ConsumerState<PromotionEditScreen> {
                                         Expanded(
                                           child: Text(
                                             item.productName ??
-                                                'Product ID: ${item.productId}',
+                                                AppLocalizations.of(context)
+                                                    .productIdLabel(
+                                                        item.productId),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                             style: Theme.of(context)
@@ -920,8 +932,9 @@ class _PromotionEditScreenState extends ConsumerState<PromotionEditScreen> {
                                       dense: true,
                                       contentPadding: EdgeInsets.zero,
                                       visualDensity: VisualDensity.compact,
-                                      title: const Text(
-                                        'Conditional (e.g. Buy 2, get discount)',
+                                      title: Text(
+                                        AppLocalizations.of(context)
+                                            .conditionalPromoHint,
                                       ),
                                       value: item.isConditional,
                                       onChanged: (v) => setState(

@@ -3662,4 +3662,1786 @@ class AppLocalizationsFr extends AppLocalizations {
   String selectAvailableSpace(String space) {
     return 'Choisir $space disponible';
   }
+
+  @override
+  String get errorMissingCompanyContext =>
+      'Erreur : contexte société ou utilisateur manquant.';
+
+  @override
+  String failedToQueueZReport(String message) {
+    return 'Échec de la mise en file du rapport Z : $message';
+  }
+
+  @override
+  String zReportNumber(String number) {
+    return 'Rapport Z n° $number';
+  }
+
+  @override
+  String get shiftSummaryUpper => 'RÉSUMÉ DU POSTE';
+
+  @override
+  String get dateTimeLabel => 'Date / Heure';
+
+  @override
+  String get rangeLabel => 'Plage';
+
+  @override
+  String get totalSales => 'Total des ventes';
+
+  @override
+  String get totalReturns => 'Total des retours';
+
+  @override
+  String get discountsLabel => 'Remises';
+
+  @override
+  String get taxableTotal => 'Total imposable';
+
+  @override
+  String get totalTax => 'Total des taxes';
+
+  @override
+  String get cashMovementsUpper => 'MOUVEMENTS DE CAISSE';
+
+  @override
+  String get tenderTypesUpper => 'MOYENS DE PAIEMENT';
+
+  @override
+  String get noPaymentsRecorded => 'Aucun paiement enregistré.';
+
+  @override
+  String get grandTotalUpper => 'TOTAL GÉNÉRAL';
+
+  @override
+  String get unknownLabel => 'Inconnu';
+
+  @override
+  String get currentShiftOpen => 'Poste en cours (ouvert)';
+
+  @override
+  String get historyZReports => 'Historique (rapports Z)';
+
+  @override
+  String get noOpenTransactions =>
+      'Aucune transaction ouverte.\nLa caisse est équilibrée.';
+
+  @override
+  String get tenderBreakdown => 'Détail des encaissements';
+
+  @override
+  String get expectedInDrawer => 'ATTENDU EN CAISSE';
+
+  @override
+  String get shiftDetails => 'Détails du poste';
+
+  @override
+  String get cashierOnDuty => 'Caissier en service';
+
+  @override
+  String get unknownUser => 'UTILISATEUR INCONNU';
+
+  @override
+  String get transactionsLabel => 'Transactions';
+
+  @override
+  String openPaymentsCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count paiements ouverts',
+      one: '1 paiement ouvert',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get shiftIsOpen => 'Poste ouvert';
+
+  @override
+  String get closeRegisterExplain =>
+      'La clôture de la caisse finalisera ces transactions, générera un rapport Z et remettra à zéro les totaux du jour. Assurez-vous que les prélèvements d\'espèces sont terminés avant de continuer.';
+
+  @override
+  String get noZReportsYet => 'Aucun rapport Z généré pour l\'instant.';
+
+  @override
+  String zReportOnDate(String date) {
+    return 'Rapport Z • $date';
+  }
+
+  @override
+  String zReportSubtitle(String count, String total) {
+    return 'Documents : $count  •  Total général : $total';
+  }
+
+  @override
+  String get enterValidAmount => 'Veuillez saisir un montant valide.';
+
+  @override
+  String get selectDocumentOrAutoDistribute =>
+      'Veuillez sélectionner au moins un document ou activer la répartition automatique.';
+
+  @override
+  String get nothingToSettle =>
+      'Rien à régler — les documents sélectionnés sont déjà payés.';
+
+  @override
+  String anErrorOccurred(String message) {
+    return 'Une erreur est survenue : $message';
+  }
+
+  @override
+  String get useCustomerBalance => 'Utiliser le solde client';
+
+  @override
+  String get automaticDistribution => 'Répartition automatique';
+
+  @override
+  String get loadUnpaidDocuments => 'Charger les documents impayés';
+
+  @override
+  String get summaryLabel => 'Résumé';
+
+  @override
+  String get customerBalance => 'Solde du client';
+
+  @override
+  String get totalInSelectedDocuments => 'Total des documents sélectionnés';
+
+  @override
+  String get customerNotSelectedReconcile =>
+      'Aucun client sélectionné.\nVeuillez choisir un client pour le lettrage.';
+
+  @override
+  String get autoDistributeExplain =>
+      'Le montant payé sera réparti automatiquement\nsur toutes les ventes impayées.';
+
+  @override
+  String get noUnpaidDocumentsForCustomer =>
+      'Aucun document impayé pour ce client.';
+
+  @override
+  String get balanceLabel => 'Solde';
+
+  @override
+  String get internalNoteLabel => 'Note interne';
+
+  @override
+  String get allDates => 'Toutes les dates';
+
+  @override
+  String userNumbered(String id) {
+    return 'Utilisateur $id';
+  }
+
+  @override
+  String get periodLabel => 'Période';
+
+  @override
+  String get documentNumber => 'Numéro de document';
+
+  @override
+  String get documentNumberHint => 'ex. 26-200-000001';
+
+  @override
+  String get externalDocument => 'Document externe';
+
+  @override
+  String get paidStatus => 'Statut de paiement';
+
+  @override
+  String get totalResultsUpper => 'TOTAL DES RÉSULTATS';
+
+  @override
+  String get noDocumentsMatchingFilters =>
+      'Aucun document ne correspond aux filtres.';
+
+  @override
+  String get notAvailableShort => 'N/D';
+
+  @override
+  String get documentDeleted => 'Document supprimé';
+
+  @override
+  String get deleteFailed => 'Échec de la suppression';
+
+  @override
+  String get monthAbbreviations =>
+      'janv.,févr.,mars,avr.,mai,juin,juil.,août,sept.,oct.,nov.,déc.';
+
+  @override
+  String get selectDocumentTypeError =>
+      'Veuillez sélectionner un type de document.';
+
+  @override
+  String get selectCustomerSupplierError =>
+      'Veuillez sélectionner un client / fournisseur.';
+
+  @override
+  String get selectUserError => 'Veuillez sélectionner un utilisateur.';
+
+  @override
+  String get selectWarehouseError => 'Veuillez sélectionner un entrepôt.';
+
+  @override
+  String get couldNotResolveLocalDocument =>
+      'Impossible de retrouver le document local.';
+
+  @override
+  String get documentSaved => 'Document enregistré !';
+
+  @override
+  String get newDocument => 'Nouveau document';
+
+  @override
+  String editDocumentNumbered(String number) {
+    return 'Modifier le document — $number';
+  }
+
+  @override
+  String documentNumbered(String number) {
+    return 'Document — $number';
+  }
+
+  @override
+  String saveHeaderFirstHint(String action) {
+    return 'Enregistrez d\'abord l\'en-tête du document (Infos document → $action) pour gérer les articles, les remises et les paiements.';
+  }
+
+  @override
+  String get documentInfo => 'Infos document';
+
+  @override
+  String get partiesLogistics => 'Tiers et logistique';
+
+  @override
+  String get financialsNotes => 'Finances et notes';
+
+  @override
+  String get documentItems => 'Articles du document';
+
+  @override
+  String get paymentsTab => 'Paiements';
+
+  @override
+  String get dueDate => 'Date d\'échéance';
+
+  @override
+  String get stockDate => 'Date de stock';
+
+  @override
+  String get supplierRequired => 'Fournisseur *';
+
+  @override
+  String get applyAfterTax => 'Appliquer après taxe';
+
+  @override
+  String get saveHeaderChanges => 'Enregistrer l\'en-tête';
+
+  @override
+  String get createAndAddItems => 'Créer et ajouter des articles';
+
+  @override
+  String get noItemsAddedYet => 'Aucun article ajouté pour l\'instant.';
+
+  @override
+  String get clickAddProductToStart =>
+      'Cliquez sur « Ajouter un produit » pour commencer.';
+
+  @override
+  String get qtyShort => 'Qté';
+
+  @override
+  String get itemDiscShort => 'Rem. art.';
+
+  @override
+  String get actionsLabel => 'Actions';
+
+  @override
+  String get deleteItem => 'Supprimer l\'article';
+
+  @override
+  String deleteItemConfirm(String name) {
+    return 'Supprimer « $name » ?';
+  }
+
+  @override
+  String get itemsBaseTotal => 'Total de base des articles :';
+
+  @override
+  String get selectProductError => 'Veuillez sélectionner un produit.';
+
+  @override
+  String failedToAddItem(String message) {
+    return 'Échec de l\'ajout de l\'article : $message';
+  }
+
+  @override
+  String updateFailedWithMessage(String message) {
+    return 'Échec de la mise à jour : $message';
+  }
+
+  @override
+  String get itemTax => 'Taxe de l\'article';
+
+  @override
+  String get appliedPayments => 'Paiements appliqués';
+
+  @override
+  String get deleteAllPaymentsWarning =>
+      'Ce document est intégralement soldé.\n\nContinuer supprimera définitivement toutes les transactions de paiement associées. Confirmer ?';
+
+  @override
+  String get documentTotal => 'Total du document';
+
+  @override
+  String get totalPaid => 'Total payé';
+
+  @override
+  String get remainingBalance => 'Solde restant';
+
+  @override
+  String get noPaymentsAddedYet => 'Aucun paiement ajouté pour l\'instant.';
+
+  @override
+  String get deletePayment => 'Supprimer le paiement';
+
+  @override
+  String get deletePaymentConfirm =>
+      'Voulez-vous vraiment supprimer ce paiement ?';
+
+  @override
+  String get selectPaymentTypeError =>
+      'Veuillez sélectionner un type de paiement.';
+
+  @override
+  String get failedToAddPayment => 'Échec de l\'ajout du paiement.';
+
+  @override
+  String get updateFailedShort => 'Échec de la mise à jour.';
+
+  @override
+  String paymentTypeNamed(String name) {
+    return 'Type de paiement : $name';
+  }
+
+  @override
+  String get discountLabel => 'Remise';
+
+  @override
+  String get orderNumberLabel => 'Numéro de commande';
+
+  @override
+  String get updatedLabel => 'Mis à jour';
+
+  @override
+  String get statusGracePeriod => 'Renouvellement en retard';
+
+  @override
+  String get actionCreate => 'Créer';
+
+  @override
+  String get activeDevices => 'Appareils actifs';
+
+  @override
+  String get addAtLeastOneProduct =>
+      'Ajoutez au moins un produit à la promotion';
+
+  @override
+  String get addCustomerSupplier => 'Ajouter un client / fournisseur';
+
+  @override
+  String get addToPromotion => 'Ajouter à la promotion';
+
+  @override
+  String get administrator => 'Administrateur';
+
+  @override
+  String get allStockEntriesUpper => 'TOUTES LES ENTRÉES DE STOCK';
+
+  @override
+  String get assignAddStock => 'Affecter / ajouter du stock';
+
+  @override
+  String get barcodesTab => 'Codes-barres';
+
+  @override
+  String cannotDeleteProductsLinked(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Impossible de supprimer $count produits — liés à des commandes ou documents existants',
+      one:
+          'Impossible de supprimer 1 produit — lié à des commandes ou documents existants',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get clearEstimate => 'Effacer le devis';
+
+  @override
+  String codeWithValue(String code) {
+    return 'Code : $code';
+  }
+
+  @override
+  String get commentsTab => 'Commentaires';
+
+  @override
+  String get companyUpdatedSuccessfully => 'Société mise à jour avec succès';
+
+  @override
+  String get conditionalPromoHint =>
+      'Conditionnel (ex. : achetez-en 2, obtenez une remise)';
+
+  @override
+  String get costPrice => 'Prix de revient';
+
+  @override
+  String couldNotDeleteNamed(String name, String message) {
+    return 'Impossible de supprimer « $name » : $message';
+  }
+
+  @override
+  String couldNotSaveNamed(String name, String message) {
+    return 'Impossible d\'enregistrer « $name » : $message';
+  }
+
+  @override
+  String get countriesLabel => 'Pays';
+
+  @override
+  String get createEstimate => 'Créer un devis';
+
+  @override
+  String get createPromotion => 'Créer une promotion';
+
+  @override
+  String get customerAdded => 'Client ajouté';
+
+  @override
+  String get customerUpdated => 'Client mis à jour';
+
+  @override
+  String get daysOfWeekLabel => 'Jours de la semaine : ';
+
+  @override
+  String deleteWithCount(num count) {
+    return 'Supprimer ($count)';
+  }
+
+  @override
+  String deletedSomeProductsBlocked(num deleted, num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$deleted supprimé(s) · $count produits conservés — liés à des commandes ou documents existants',
+      one:
+          '$deleted supprimé(s) · 1 produit conservé — lié à des commandes ou documents existants',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get deletedSuccessfully => 'Supprimé avec succès';
+
+  @override
+  String get designFloorPlans => 'Concevoir les plans de salle';
+
+  @override
+  String get detailsTab => 'Détails';
+
+  @override
+  String get deviceRevokedSuccessfully => 'Appareil révoqué avec succès';
+
+  @override
+  String get displayRank => 'Ordre d\'affichage';
+
+  @override
+  String get dueDatePeriodDays => 'Délai d\'échéance (jours)';
+
+  @override
+  String get editCustomer => 'Modifier le client';
+
+  @override
+  String get editProduct => 'Modifier le produit';
+
+  @override
+  String get editPromotion => 'Modifier la promotion';
+
+  @override
+  String get editQuantity => 'Modifier la quantité';
+
+  @override
+  String get endDateBeforeStartDate =>
+      'La date de fin est antérieure à la date de début';
+
+  @override
+  String get everyDay => 'Tous les jours';
+
+  @override
+  String exportFailed(String message) {
+    return 'Échec de l\'exportation : $message';
+  }
+
+  @override
+  String exportedProductsTo(num count, String path) {
+    return '$count produits exportés vers $path';
+  }
+
+  @override
+  String get failedToCreateUser => 'Échec de la création de l\'utilisateur.';
+
+  @override
+  String get failedToSaveChanges =>
+      'Échec de l\'enregistrement des modifications.';
+
+  @override
+  String get failedToUpdateUser => 'Échec de la mise à jour de l\'utilisateur.';
+
+  @override
+  String get failedToUploadLogo => 'Échec du téléversement du logo.';
+
+  @override
+  String get finishSetup => 'Terminer la configuration';
+
+  @override
+  String get flagLow => 'BAS';
+
+  @override
+  String get flagReorder => 'RÉAPPRO';
+
+  @override
+  String get floorPlanTables => 'Plan de salle / tables';
+
+  @override
+  String get folderColor => 'Couleur du dossier';
+
+  @override
+  String get folderImage => 'Image du dossier';
+
+  @override
+  String get forceReset => 'Réinitialisation forcée';
+
+  @override
+  String get groupDeleted => 'Groupe supprimé';
+
+  @override
+  String get groupHasChildrenCannotDelete =>
+      'Ce groupe contient des produits ou des sous-groupes et ne peut pas être supprimé.';
+
+  @override
+  String get groupName => 'Nom du groupe';
+
+  @override
+  String get groupNameHint => 'ex. : Boissons, Desserts';
+
+  @override
+  String itemsCountValue(num count) {
+    return 'Articles : $count';
+  }
+
+  @override
+  String linkedAt(String date) {
+    return 'Lié : $date';
+  }
+
+  @override
+  String get logoUpdatedSuccessfully => 'Logo mis à jour avec succès';
+
+  @override
+  String get lowStockWarningHelp =>
+      'Alerter lorsque le stock passe sous le seuil';
+
+  @override
+  String get nameIsRequired => 'Le nom est obligatoire.';
+
+  @override
+  String get nameIsRequiredShort => 'Le nom est obligatoire';
+
+  @override
+  String get newPasswordsDoNotMatch =>
+      'Les nouveaux mots de passe ne correspondent pas';
+
+  @override
+  String get newProduct => 'Nouveau produit';
+
+  @override
+  String get newProductGroup => 'Nouveau groupe de produits';
+
+  @override
+  String get nextTaxesAndStock => 'Suivant : taxes et stock';
+
+  @override
+  String get noActiveDevicesFound => 'Aucun appareil actif trouvé.';
+
+  @override
+  String get noConnectionAddUsers =>
+      'Aucune connexion. L\'ajout d\'utilisateurs nécessite une connexion.';
+
+  @override
+  String get noConnectionDeleteUsers =>
+      'Aucune connexion. La suppression d\'utilisateurs nécessite une connexion.';
+
+  @override
+  String get noCountriesAvailable => 'Aucun pays disponible.';
+
+  @override
+  String get noCustomersFound => 'Aucun client trouvé.';
+
+  @override
+  String get noEmailProvided => 'Aucune adresse e-mail fournie';
+
+  @override
+  String get noLogoUploadedYet => 'Aucun logo téléversé pour le moment';
+
+  @override
+  String noProductsMatchQuery(String query) {
+    return 'Aucun produit ne correspond à « $query »';
+  }
+
+  @override
+  String get noPromotionsYet =>
+      'Aucune promotion pour le moment. Appuyez sur « Ajouter une promotion » pour en créer une.';
+
+  @override
+  String get noSuppliersFound => 'Aucun fournisseur trouvé.';
+
+  @override
+  String onBelowValue(num value) {
+    return 'Activé — en dessous de $value';
+  }
+
+  @override
+  String get operationFailed => 'L\'opération a échoué.';
+
+  @override
+  String get overrideTaxes => 'Remplacer les taxes';
+
+  @override
+  String get parentFolder => 'Dossier parent';
+
+  @override
+  String get passwordForciblyReset => 'Mot de passe réinitialisé de force !';
+
+  @override
+  String get passwordUpdatedSuccessfully =>
+      'Mot de passe mis à jour avec succès';
+
+  @override
+  String get pendingSyncNew => 'Synchronisation en attente (nouveau)';
+
+  @override
+  String get pendingSyncUpdate => 'Synchronisation en attente (mise à jour)';
+
+  @override
+  String get pinForciblyResetForDevice =>
+      'Code PIN réinitialisé de force pour cet appareil !';
+
+  @override
+  String get pinMustBeFourDigits => 'Le code PIN doit comporter 4 chiffres';
+
+  @override
+  String get pinUpdatedSuccessfully => 'Code PIN mis à jour avec succès';
+
+  @override
+  String get pleaseEnterProductName => 'Veuillez saisir un nom de produit.';
+
+  @override
+  String get pleaseSelectACountry => 'Veuillez sélectionner un pays.';
+
+  @override
+  String get preferredQty => 'Qté préférée';
+
+  @override
+  String get preferredQuantityHelp => 'Quantité cible à maintenir en stock';
+
+  @override
+  String productIdLabel(num id) {
+    return 'ID produit : $id';
+  }
+
+  @override
+  String get productSavedLocallySyncFirst =>
+      'Produit enregistré localement. Synchronisez pour terminer la configuration (taxes, codes-barres, stock).';
+
+  @override
+  String get productUpdatedSuccessfully => 'Produit mis à jour avec succès !';
+
+  @override
+  String get productsAssigned => 'Produits affectés avec succès';
+
+  @override
+  String productsDeletedCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count produits supprimés',
+      one: '1 produit supprimé',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String promotionsCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count promotions',
+      one: '1 promotion',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get quickInventory => 'Inventaire rapide';
+
+  @override
+  String get removeFromPromotion => 'Retirer de la promotion';
+
+  @override
+  String removeStockFromWarehouseConfirm(String product, String warehouse) {
+    return 'Retirer $product de $warehouse ?';
+  }
+
+  @override
+  String get reorderPointHelp =>
+      'Déclencher un réapprovisionnement lorsque le stock passe sous ce niveau';
+
+  @override
+  String get reprintReceipt => 'Réimprimer le reçu';
+
+  @override
+  String get requiredField => 'Obligatoire';
+
+  @override
+  String saveAssignmentsCount(num count) {
+    return 'Enregistrer les affectations ($count sélectionnés)';
+  }
+
+  @override
+  String get saveCompanyChangesUpper => 'ENREGISTRER LES MODIFICATIONS';
+
+  @override
+  String get saveFailedShort => 'Échec de l\'enregistrement.';
+
+  @override
+  String savedLocallyNoServerId(String name) {
+    return '« $name » enregistré localement, mais le serveur n\'a pas renvoyé d\'identifiant. Il sera renvoyé lors de la prochaine synchronisation.';
+  }
+
+  @override
+  String get savedLocallyWillSyncOnline =>
+      'Enregistré localement. Sera synchronisé une fois en ligne.';
+
+  @override
+  String get savedOfflineWillSync =>
+      'Enregistré hors ligne. Sera synchronisé une fois connecté.';
+
+  @override
+  String savedOfflineWillSyncNamed(String name) {
+    return '« $name » enregistré hors ligne — il sera synchronisé au retour du serveur.';
+  }
+
+  @override
+  String get savingUpper => 'ENREGISTREMENT...';
+
+  @override
+  String get scanOrEnterBarcode => 'Scannez ou saisissez le code-barres';
+
+  @override
+  String securityRuleUpdated(String rule) {
+    return '$rule mis à jour.';
+  }
+
+  @override
+  String get securityRules => 'Règles de sécurité';
+
+  @override
+  String get selectAtLeastOneDay =>
+      'Sélectionnez au moins un jour de la semaine';
+
+  @override
+  String get selectProductsFromLeft =>
+      'Sélectionnez des produits à gauche pour les ajouter à la promotion.';
+
+  @override
+  String get selectedProducts => 'Produits sélectionnés';
+
+  @override
+  String get sellingPrice => 'Prix de vente';
+
+  @override
+  String get serverErrorCheckInputs =>
+      'Une erreur serveur s\'est produite. Veuillez vérifier vos saisies.';
+
+  @override
+  String get serviceTag => 'Service';
+
+  @override
+  String setTaxesAndInventoryFor(String name) {
+    return 'Définir les taxes et l\'inventaire : $name';
+  }
+
+  @override
+  String get setupComplete => 'Configuration terminée !';
+
+  @override
+  String get startingCashLower => 'Fonds de caisse';
+
+  @override
+  String get statusInactive => 'Inactif';
+
+  @override
+  String get stockControlRules => 'Règles de contrôle du stock';
+
+  @override
+  String get stockControlRulesUpper => 'RÈGLES DE CONTRÔLE DU STOCK';
+
+  @override
+  String get stockInWarehouseUpper => 'STOCK DANS L\'ENTREPÔT';
+
+  @override
+  String stockRulesForProduct(String name) {
+    return 'Règles de stock — $name';
+  }
+
+  @override
+  String get stockStatusHealthy => 'Stock sain';
+
+  @override
+  String get stockStatusLow =>
+      'Stock faible — au niveau d\'alerte ou en dessous';
+
+  @override
+  String get stockStatusReorder =>
+      'Au point de réapprovisionnement ou en dessous';
+
+  @override
+  String get suggestedOrder => 'Commande suggérée';
+
+  @override
+  String suggestedOrderValue(String qty, num target) {
+    return '+$qty pour atteindre $target';
+  }
+
+  @override
+  String get tapCameraIconToChangeLogo =>
+      'Appuyez sur l\'icône appareil photo pour changer le logo';
+
+  @override
+  String get thisDevice => 'Cet appareil';
+
+  @override
+  String get unexpectedErrorOccurred =>
+      'Une erreur inattendue s\'est produite.';
+
+  @override
+  String get unexpectedErrorTryAgain =>
+      'Une erreur inattendue s\'est produite. Veuillez réessayer.';
+
+  @override
+  String uomWithValue(String unit) {
+    return 'UM : $unit';
+  }
+
+  @override
+  String get updateFailed => 'Échec de la mise à jour';
+
+  @override
+  String get userDeletedSuccessfully => 'Utilisateur supprimé avec succès.';
+
+  @override
+  String get userProfileLower => 'Profil utilisateur';
+
+  @override
+  String get viewAllOpenOrders => 'Voir toutes les commandes ouvertes';
+
+  @override
+  String get viewCostPrices => 'Voir les prix de revient';
+
+  @override
+  String get voidItem => 'Annuler l\'article';
+
+  @override
+  String get warningThresholdHelp =>
+      'Afficher un avertissement lorsque la quantité est inférieure à cette valeur';
+
+  @override
+  String get weekdayAbbreviations => 'lun.,mar.,mer.,jeu.,ven.,sam.,dim.';
+
+  @override
+  String get weekdays => 'Jours ouvrables';
+
+  @override
+  String get weekends => 'Week-ends';
+
+  @override
+  String get willDeleteWhenConnectionRestored =>
+      'Sera supprimé une fois la connexion rétablie';
+
+  @override
+  String get zeroStockQuantitySale => 'Vente avec stock à zéro';
+
+  @override
+  String addressWithValue(String address) {
+    return 'Adresse : $address';
+  }
+
+  @override
+  String get beginTrackingSession =>
+      'Démarrez une session de suivi pour pointer vos heures.';
+
+  @override
+  String cashEntriesCount(num count) {
+    return 'Mouvements de caisse ($count)';
+  }
+
+  @override
+  String checkoutError(String message) {
+    return 'Erreur d\'encaissement : $message';
+  }
+
+  @override
+  String get clockOutMustBeAfterClockIn =>
+      'La sortie doit être postérieure à l\'entrée.';
+
+  @override
+  String get completeTransaction => 'Valider\nla transaction';
+
+  @override
+  String couldNotLoadEntries(String message) {
+    return 'Impossible de charger les mouvements : $message';
+  }
+
+  @override
+  String get creditNeedsCustomer =>
+      'Le paiement à crédit nécessite un client sélectionné.\n\nVeuillez choisir un client avant de valider cette transaction.';
+
+  @override
+  String deleteDocumentConfirmPermanent(String number) {
+    return 'Supprimer « $number » ? Cette action est irréversible.';
+  }
+
+  @override
+  String discountWithAmount(String amount, String symbol) {
+    return 'Remise : $amount $symbol';
+  }
+
+  @override
+  String documentsCountValue(num count) {
+    return 'Nombre de documents : $count';
+  }
+
+  @override
+  String get enterValidAmountAboveZero =>
+      'Saisissez un montant valide supérieur à zéro.';
+
+  @override
+  String get exceedsMaximum => 'Dépasse le maximum';
+
+  @override
+  String get failedToLoadCustomers => 'Échec du chargement des clients';
+
+  @override
+  String get failedToLoadOrder => 'Échec du chargement de la commande.';
+
+  @override
+  String featureComingSoon(String feature) {
+    return '$feature — bientôt disponible';
+  }
+
+  @override
+  String get filterByCustomer => 'Filtrer par client';
+
+  @override
+  String get hoursReport => 'Rapport des heures';
+
+  @override
+  String labelWithColon(String label) {
+    return '$label : ';
+  }
+
+  @override
+  String get lastMonth => 'Le mois dernier';
+
+  @override
+  String get lastWeek => 'La semaine dernière';
+
+  @override
+  String get lastYear => 'L\'année dernière';
+
+  @override
+  String maxUsableThisOrder(String points) {
+    return 'Maximum utilisable pour cette commande : $points pts';
+  }
+
+  @override
+  String get missingCompanyOrUserContext =>
+      'Contexte société ou utilisateur manquant.';
+
+  @override
+  String get mySales => 'Mes ventes';
+
+  @override
+  String get myShift => 'Mon service';
+
+  @override
+  String get noActiveShift => 'Aucun service en cours';
+
+  @override
+  String get noCashMovementsToday => 'Aucun mouvement de caisse aujourd\'hui.';
+
+  @override
+  String get noItemsForDocument => 'Aucun article trouvé pour ce document.';
+
+  @override
+  String get noOpenOrders => 'Aucune commande ouverte';
+
+  @override
+  String noOrdersMatchQuery(String query) {
+    return 'Aucune commande ne correspond à « $query »';
+  }
+
+  @override
+  String get noSalesDocumentsForPeriod =>
+      'Aucun document de vente pour la période sélectionnée.';
+
+  @override
+  String get noTimeEntriesInRange =>
+      'Aucun pointage dans la période sélectionnée.';
+
+  @override
+  String get nothingToExportInRange => 'Rien à exporter dans cette période';
+
+  @override
+  String get nowSelectEndDate => 'Sélectionnez maintenant une date de fin';
+
+  @override
+  String get paymentMethod => 'Mode de paiement';
+
+  @override
+  String pointsBalanceWorth(String points, String value, String symbol) {
+    return 'Solde : $points pts = $value $symbol';
+  }
+
+  @override
+  String get predefinedPeriod => 'Période prédéfinie';
+
+  @override
+  String get receiptLabel => 'Reçu';
+
+  @override
+  String redeemingPoints(String points, String amount, String symbol) {
+    return 'Utilisation de $points pts (−$amount $symbol)';
+  }
+
+  @override
+  String get reportCopiedAsCsv =>
+      'Rapport copié dans le presse-papiers au format CSV';
+
+  @override
+  String get salesHistoryTitle => 'Historique des ventes';
+
+  @override
+  String get saveCashIn => 'Enregistrer l\'entrée';
+
+  @override
+  String get saveCashOut => 'Enregistrer la sortie';
+
+  @override
+  String get selectAll => 'Tout sélectionner';
+
+  @override
+  String get selectAnEmployeeError => 'Sélectionnez un employé.';
+
+  @override
+  String get selectDocumentToViewItems =>
+      'Sélectionnez un document ci-dessus pour afficher ses articles.';
+
+  @override
+  String get sendEmail => 'Envoyer un e-mail';
+
+  @override
+  String get shiftOpen => 'Service en cours';
+
+  @override
+  String get shiftStillOpen => 'En cours';
+
+  @override
+  String get tapToRedeemPoints => 'Appuyez pour utiliser les points';
+
+  @override
+  String taxNoWithValue(String number) {
+    return 'N° de TVA : $number';
+  }
+
+  @override
+  String get thisMonth => 'Ce mois-ci';
+
+  @override
+  String get thisWeek => 'Cette semaine';
+
+  @override
+  String get thisYear => 'Cette année';
+
+  @override
+  String get timeCardAdded => 'Pointage ajouté';
+
+  @override
+  String totalAmountWithValue(String amount, String symbol) {
+    return 'Montant total : $amount $symbol';
+  }
+
+  @override
+  String get totalCompleted => 'Total (terminés)';
+
+  @override
+  String get totalHours => 'Total des heures';
+
+  @override
+  String totalHoursWithValue(String hours) {
+    return 'Total des heures : $hours';
+  }
+
+  @override
+  String get weekdayInitials => 'Lu,Ma,Me,Je,Ve,Sa,Di';
+
+  @override
+  String get yesterday => 'Hier';
+
+  @override
+  String noStockAvailableIn(String warehouse) {
+    return 'Aucun stock disponible dans $warehouse.';
+  }
+
+  @override
+  String get theSelectedWarehouse => 'l\'entrepôt sélectionné';
+
+  @override
+  String warehouseNumbered(String id) {
+    return 'Entrepôt $id';
+  }
+
+  @override
+  String switchedToWarehouse(String warehouse) {
+    return 'Basculé sur $warehouse — touchez le produit pour l\'ajouter.';
+  }
+
+  @override
+  String lowStockAddAnyway(String qty, String unit) {
+    return 'L\'ajout de cet article ne laisse que $qty $unit en stock, au niveau d\'alerte de stock bas ou en dessous.\n\nL\'ajouter quand même ?';
+  }
+
+  @override
+  String get unitsFallback => 'unité(s)';
+
+  @override
+  String kitchenPrintError(String message) {
+    return 'Erreur d\'impression cuisine : $message';
+  }
+
+  @override
+  String couldNotSaveOrder(String message) {
+    return 'Impossible d\'enregistrer la commande : $message';
+  }
+
+  @override
+  String scaleBarcodeProductNotFound(String code) {
+    return 'Code-barres balance : produit « $code » introuvable.';
+  }
+
+  @override
+  String errorCreatingOrder(String message) {
+    return 'Erreur lors de la création de la commande : $message';
+  }
+
+  @override
+  String get orderSavedToTable => 'Commande enregistrée sur la table !';
+
+  @override
+  String get orderSaved => 'Commande enregistrée !';
+
+  @override
+  String get orderVoided => 'Commande annulée';
+
+  @override
+  String get orderTransferred => 'Commande transférée';
+
+  @override
+  String transferFailed(String message) {
+    return 'Échec du transfert : $message';
+  }
+
+  @override
+  String receiptAlreadyRefunded(String reference) {
+    return 'Ce ticket a déjà été remboursé (réf. : $reference).';
+  }
+
+  @override
+  String receiptNotFound(String number) {
+    return 'Ticket « $number » introuvable.';
+  }
+
+  @override
+  String get managerPinNotRecognised =>
+      'Code PIN gérant non reconnu. Un retour à l\'aveugle nécessite un administrateur.';
+
+  @override
+  String get addAtLeastOneItemToReturn =>
+      'Ajoutez au moins un article à retourner.';
+
+  @override
+  String get selectRefundPaymentType =>
+      'Sélectionnez un mode de remboursement.';
+
+  @override
+  String get blindRefundQueued =>
+      'Retour à l\'aveugle en file d\'attente — synchronisation automatique.';
+
+  @override
+  String blindRefundProcessed(String number) {
+    return 'Retour à l\'aveugle $number traité.';
+  }
+
+  @override
+  String get lookUpReceiptFirst => 'Recherchez d\'abord un ticket.';
+
+  @override
+  String get selectAtLeastOneItemToRefund =>
+      'Sélectionnez au moins un article à rembourser.';
+
+  @override
+  String get refundQueued =>
+      'Remboursement en file d\'attente — synchronisation automatique.';
+
+  @override
+  String refundProcessed(String number) {
+    return 'Remboursement $number traité.';
+  }
+
+  @override
+  String get customerReceiptOptional => 'N° de ticket du client (facultatif)';
+
+  @override
+  String get optionalFromPaperReceipt => 'facultatif — depuis le ticket papier';
+
+  @override
+  String get blindReturnManagerAuthorised =>
+      'Retour à l\'aveugle — autorisé par un gérant. Aucun ticket d\'origine.';
+
+  @override
+  String get blindReturnExplain =>
+      'Un retour à l\'aveugle rembourse des marchandises sans ticket. Un gérant doit l\'approuver.';
+
+  @override
+  String priceTimesMaxQty(String price, String qty) {
+    return '$price × max $qty';
+  }
+
+  @override
+  String get advancedHardware => 'Avancé / matériel';
+
+  @override
+  String get changeAllowed => 'Rendu de monnaie autorisé';
+
+  @override
+  String get colCustomerRequired => 'Client requis';
+
+  @override
+  String get colMarkPaid => 'Marquer payé';
+
+  @override
+  String get colQuickPay => 'Paiement rapide';
+
+  @override
+  String get colSlip => 'Bordereau';
+
+  @override
+  String get coreSettings => 'Paramètres principaux';
+
+  @override
+  String get customerRequiredLabel => 'Client requis';
+
+  @override
+  String deleteTaxRateConfirm(String name) {
+    return 'Voulez-vous vraiment supprimer le taux de taxe « $name » ?';
+  }
+
+  @override
+  String get editPaymentType => 'Modifier le mode de paiement';
+
+  @override
+  String get editTaxRate => 'Modifier le taux de taxe';
+
+  @override
+  String get enterValidNumber => 'Saisissez un nombre valide';
+
+  @override
+  String get fiscal => 'Fiscal';
+
+  @override
+  String get markAsPaid => 'Marquer comme payé';
+
+  @override
+  String get oldAndNewTaxMustDiffer =>
+      'L\'ancienne et la nouvelle taxe doivent être différentes.';
+
+  @override
+  String get paymentTypeDeleted => 'Mode de paiement supprimé';
+
+  @override
+  String get pleaseSelectBothTaxes => 'Veuillez sélectionner les deux taxes.';
+
+  @override
+  String get quickPayment => 'Paiement rapide';
+
+  @override
+  String get slipRequired => 'Bordereau requis';
+
+  @override
+  String get switchFailed => 'Échec du remplacement.';
+
+  @override
+  String taxRateAppliedSuccessfully(
+    String rate,
+    String oldName,
+    String newName,
+  ) {
+    return 'Taux $rate de « $oldName » appliqué à « $newName » avec succès.';
+  }
+
+  @override
+  String get taxRateDeleted => 'Taux de taxe supprimé';
+
+  @override
+  String get yearTotal => 'TOTAL DE L\'ANNÉE';
+
+  @override
+  String get topMonth => 'MEILLEUR MOIS';
+
+  @override
+  String monthlySalesYear(String year) {
+    return 'VENTES MENSUELLES — $year';
+  }
+
+  @override
+  String activeMonthsCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count mois actifs',
+      one: '1 mois actif',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get periodicReports => 'Rapports périodiques';
+
+  @override
+  String get selectDateRangeToFilter =>
+      'Sélectionnez une plage de dates pour filtrer les cartes ci-dessous';
+
+  @override
+  String get failedToLoadYearlyData =>
+      'Échec du chargement des données annuelles';
+
+  @override
+  String get noDataToDisplay => 'Aucune donnée à afficher';
+
+  @override
+  String get selectedPeriod => 'Période sélectionnée';
+
+  @override
+  String get filterLabel => 'Filtre';
+
+  @override
+  String get customersAndSuppliers => 'Clients et fournisseurs';
+
+  @override
+  String get cashRegister => 'Caisse';
+
+  @override
+  String get colImage => 'Image';
+
+  @override
+  String get fieldUnit => 'Unité';
+
+  @override
+  String get markupPercent => 'Marge %';
+
+  @override
+  String get lastPurchase => 'Dernier achat';
+
+  @override
+  String get fieldRank => 'Rang';
+
+  @override
+  String get taxInclusive => 'Taxe incluse';
+
+  @override
+  String get priceChange => 'Changement de prix';
+
+  @override
+  String get businessPartnerRequired => 'Partenaire commercial (obligatoire)';
+
+  @override
+  String get addServiceType => 'Ajouter un type de service';
+
+  @override
+  String get allValuesMustBePositive =>
+      'Toutes les valeurs doivent être des nombres positifs.';
+
+  @override
+  String get bookingArrived => 'Arrivé';
+
+  @override
+  String get bookingCompleted => 'Terminée';
+
+  @override
+  String get bookingInService => 'En service';
+
+  @override
+  String get bookingNoShow => 'Absent';
+
+  @override
+  String get bookingPending => 'En attente';
+
+  @override
+  String couldNotCheckStock(String message) {
+    return 'Impossible de vérifier le stock : $message';
+  }
+
+  @override
+  String deleteLoyaltyCardConfirm(String name) {
+    return 'Supprimer la carte de fidélité de $name ? Cette action est irréversible.';
+  }
+
+  @override
+  String earningRuleExample(String symbol) {
+    return 'ex. : 100 $symbol dépensés rapportent 10 pts';
+  }
+
+  @override
+  String get editServiceType => 'Modifier le type de service';
+
+  @override
+  String get editWarehouse => 'Modifier l\'entrepôt';
+
+  @override
+  String get enterValidPointsValue =>
+      'Saisissez une valeur de points valide et non négative.';
+
+  @override
+  String failedToAddCard(String message) {
+    return 'Échec de l\'ajout de la carte : $message';
+  }
+
+  @override
+  String failedToDeleteCard(String message) {
+    return 'Échec de la suppression : $message';
+  }
+
+  @override
+  String failedToUpdateCard(String message) {
+    return 'Échec de la mise à jour de la carte : $message';
+  }
+
+  @override
+  String guestsCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count invités',
+      one: '1 invité',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get historyTab => 'Historique';
+
+  @override
+  String get loyaltyCardAdded => 'Carte de fidélité ajoutée';
+
+  @override
+  String get loyaltyCardDeleted => 'Carte de fidélité supprimée';
+
+  @override
+  String get loyaltyCardUpdated => 'Carte de fidélité mise à jour';
+
+  @override
+  String get loyaltySettingsSaved => 'Paramètres de fidélité enregistrés';
+
+  @override
+  String get newWarehouse => 'Nouvel entrepôt';
+
+  @override
+  String get noCardNumber => 'Aucun numéro de carte';
+
+  @override
+  String get noCompletedBookings =>
+      'Aucune réservation terminée pour le moment.';
+
+  @override
+  String get noLoyaltyCardsYet => 'Aucune carte de fidélité pour le moment.';
+
+  @override
+  String get noUpcomingBookings => 'Aucune réservation à venir.';
+
+  @override
+  String get onePointEquals => '1 point équivaut à';
+
+  @override
+  String orderNumbered(String number) {
+    return 'Commande n° $number';
+  }
+
+  @override
+  String get pleaseSelectACustomer => 'Veuillez sélectionner un client.';
+
+  @override
+  String get pointsCannotBeNegative =>
+      'Les points ne peuvent pas être négatifs.';
+
+  @override
+  String redemptionRuleExample(String symbol) {
+    return 'ex. : 1 pt = 1 $symbol de remise à l\'encaissement';
+  }
+
+  @override
+  String removeNamedConfirm(String name) {
+    return 'Supprimer « $name » ?';
+  }
+
+  @override
+  String stockMovedWarehouseDeleted(String name) {
+    return 'Stock déplacé vers $name ; entrepôt supprimé';
+  }
+
+  @override
+  String tablesCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count tables',
+      one: '1 table',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get upcoming => 'À venir';
+
+  @override
+  String get warehouseAndStockDeleted => 'Entrepôt et son stock supprimés';
+
+  @override
+  String get warehouseDeleted => 'Entrepôt supprimé';
+
+  @override
+  String warehouseStillHoldsStock(String name, num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '« $name » contient encore $count articles en stock. Que faut-il en faire avant de supprimer l\'entrepôt ?',
+      one:
+          '« $name » contient encore 1 article en stock. Que faut-il en faire avant de supprimer l\'entrepôt ?',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get beforeTax => 'Avant taxe';
+
+  @override
+  String get afterTax => 'Après taxe';
+
+  @override
+  String get listLabel => 'Liste';
+
+  @override
+  String get gridLabel => 'Grille';
+
+  @override
+  String get cancelUpper => 'ANNULER';
+
+  @override
+  String get noCategory => 'Aucune catégorie';
+
+  @override
+  String get enterAGroupName => 'Saisissez un nom de groupe.';
+
+  @override
+  String categoryCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count catégories',
+      one: '1 catégorie',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get enterAnIpAddress => 'Saisissez une adresse IP';
+
+  @override
+  String get invalidIpWithExample => 'IP invalide (ex. 192.168.1.100)';
+
+  @override
+  String get invalidIp => 'IP invalide';
+
+  @override
+  String get backupDatabase => 'Sauvegarder la base de données';
+
+  @override
+  String get backingUpEllipsis => 'Sauvegarde en cours…';
+
+  @override
+  String backupSaved(String file) {
+    return 'Sauvegarde enregistrée : $file';
+  }
+
+  @override
+  String backupFailed(String message) {
+    return 'Échec de la sauvegarde : $message';
+  }
+
+  @override
+  String get selectBackupFolder => 'Choisir le dossier de sauvegarde';
+
+  @override
+  String get autoBackupExplain =>
+      'Créez automatiquement des copies de sauvegarde de vos données pour vous protéger contre les pertes ou les corruptions';
+
+  @override
+  String get unitHours => 'heures';
+
+  @override
+  String get unitDays => 'jours';
+
+  @override
+  String settingSaved(String setting) {
+    return '$setting enregistré';
+  }
+
+  @override
+  String get customerDisplayQrHint =>
+      'Scannez le code QR pour ouvrir l\'affichage client sur n\'importe quel appareil connecté à Internet.';
+
+  @override
+  String get everythingIsSynced => 'Tout est synchronisé';
+
+  @override
+  String get exitApplicationConfirm =>
+      'Voulez-vous vraiment quitter l\'application ?';
+
+  @override
+  String failedCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count échecs',
+      one: '1 échec',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get fontSizeDefault => 'Par défaut';
+
+  @override
+  String get fontSizeLarge => 'Grande';
+
+  @override
+  String get fontSizeLarger => 'Très grande';
+
+  @override
+  String get fontSizeSmall => 'Petite';
+
+  @override
+  String itemsPendingCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count éléments en attente',
+      one: '1 élément en attente',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pendingCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count en attente',
+      one: '1 en attente',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get syncAfterEverySave => 'Après chaque enregistrement';
+
+  @override
+  String get syncCashMovements => 'Mouvements de caisse';
+
+  @override
+  String get syncCustomerDiscounts => 'Remises client';
+
+  @override
+  String get syncEveryHour => 'Toutes les heures';
+
+  @override
+  String get syncNow => 'Synchroniser maintenant';
+
+  @override
+  String get syncProductComments => 'Commentaires produit';
+
+  @override
+  String get syncProductTaxes => 'Taxes produit';
+
+  @override
+  String get syncSalesOrders => 'Commandes de vente';
+
+  @override
+  String get syncShifts => 'Services';
+
+  @override
+  String get syncStatusTitle => 'État de synchronisation';
+
+  @override
+  String get syncStockCounts => 'Inventaires';
+
+  @override
+  String get syncStockTransfers => 'Transferts de stock';
+
+  @override
+  String get syncVoids => 'Annulations';
+
+  @override
+  String get syncZReports => 'Rapports Z';
+
+  @override
+  String get syncedStatus => 'Synchronisé';
+
+  @override
+  String get syncingEllipsis => 'Synchronisation…';
+
+  @override
+  String get backupPathHintWindows => 'ex. D:\\database\\Backup';
+
+  @override
+  String get backupPathHintUnix => 'ex. /home/user/backups';
+
+  @override
+  String get exchangeRateHint => 'ex. 1.08  (1 principale = X secondaire)';
 }

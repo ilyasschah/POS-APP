@@ -54,14 +54,16 @@ class _CashMovementScreenState extends ConsumerState<CashMovementScreen> {
   Future<void> _save() async {
     final amount = double.tryParse(_amountCtrl.text.trim().replaceAll(',', ''));
     if (amount == null || amount <= 0) {
-      setState(() => _error = 'Enter a valid amount greater than zero.');
+      setState(() =>
+          _error = AppLocalizations.of(context).enterValidAmountAboveZero);
       return;
     }
 
     final company = ref.read(selectedCompanyProvider);
     final user    = ref.read(currentUserProvider);
     if (company == null || user == null) {
-      setState(() => _error = 'Missing company or user context.');
+      setState(() =>
+          _error = AppLocalizations.of(context).missingCompanyOrUserContext);
       return;
     }
 
@@ -137,9 +139,9 @@ class _CashMovementScreenState extends ConsumerState<CashMovementScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Cash In / Out',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          AppLocalizations.of(context).cashInOut,
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: false,
       ),
@@ -180,7 +182,7 @@ class _CashMovementScreenState extends ConsumerState<CashMovementScreen> {
 
                       // ── Amount ────────────────────────────────────────────
                       Text(
-                        'Amount',
+                        AppLocalizations.of(context).amount,
                         style: TextStyle(
                           color: accent,
                           fontWeight: FontWeight.w600,
@@ -214,9 +216,9 @@ class _CashMovementScreenState extends ConsumerState<CashMovementScreen> {
                       const SizedBox(height: 16),
 
                       // ── Description ───────────────────────────────────────
-                      const Text(
-                        'Description',
-                        style: TextStyle(
+                      Text(
+                        AppLocalizations.of(context).description,
+                        style: const TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 13,
                         ),
@@ -260,7 +262,8 @@ class _CashMovementScreenState extends ConsumerState<CashMovementScreen> {
                           ),
                         ),
                         error: (e, _) => Text(
-                          'Could not load entries: $e',
+                          AppLocalizations.of(context)
+                              .couldNotLoadEntries(e.toString()),
                           style: TextStyle(color: cs.error, fontSize: 12),
                         ),
                         data: (rows) {
@@ -278,18 +281,22 @@ class _CashMovementScreenState extends ConsumerState<CashMovementScreen> {
                                     .join(' ')
                                     .trim();
                                 return full.isEmpty
-                                    ? (u.username ?? 'User #$uid')
+                                    ? (u.username ??
+                                        AppLocalizations.of(context)
+                                            .userNumbered('$uid'))
                                     : full;
                               }
                             }
-                            return 'User #$uid';
+                            return AppLocalizations.of(context)
+                                .userNumbered('$uid');
                           }
 
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Cash entries (${rows.length})',
+                                AppLocalizations.of(context)
+                                    .cashEntriesCount(rows.length),
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,
@@ -298,7 +305,8 @@ class _CashMovementScreenState extends ConsumerState<CashMovementScreen> {
                               const SizedBox(height: 8),
                               if (rows.isEmpty)
                                 Text(
-                                  'No cash movements today.',
+                                  AppLocalizations.of(context)
+                                      .noCashMovementsToday,
                                   style: TextStyle(
                                     color: cs.onSurfaceVariant,
                                     fontSize: 13,
@@ -360,7 +368,9 @@ class _CashMovementScreenState extends ConsumerState<CashMovementScreen> {
                                     strokeWidth: 2, color: onAccent),
                               )
                             : Text(
-                                isCashIn ? 'Save Cash In' : 'Save Cash Out',
+                                isCashIn
+                                    ? AppLocalizations.of(context).saveCashIn
+                                    : AppLocalizations.of(context).saveCashOut,
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 15,
@@ -460,7 +470,9 @@ class _EntryTile extends StatelessWidget {
     final sign      = isCashOut ? '-' : '+';
     final desc      = row.note?.isNotEmpty == true
         ? row.note!
-        : (isCashOut ? 'Cash out' : 'Cash in');
+        : (isCashOut
+            ? AppLocalizations.of(context).cashOut
+            : AppLocalizations.of(context).cashIn);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),

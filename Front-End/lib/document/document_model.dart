@@ -6,7 +6,16 @@ class Document {
   /// list so the editor can write paid-status / payments through to local SQLite.
   /// Null for documents built straight from an API payload (e.g. bookings).
   final String? localId;
+
+  /// The document's real number, or `''` when it does not have one yet. It is
+  /// seeded straight into the editor's Number field and written back on save,
+  /// so it must never hold display text — see [isPendingSync].
   final String number;
+
+  /// True when this row is a local create the server has not numbered yet.
+  /// Purely a display hint: the list renders "(Pending sync)" in place of the
+  /// empty [number]. Always false for documents built from an API payload.
+  final bool isPendingSync;
   final int userId;
   final String? userName;
   final int customerId;
@@ -37,6 +46,7 @@ class Document {
     required this.id,
     this.localId,
     required this.number,
+    this.isPendingSync = false,
     required this.userId,
     this.userName,
     required this.customerId,

@@ -105,7 +105,11 @@ class _PromotionEditDialogState extends ConsumerState<PromotionEditDialog> {
       }
       if (mounted) Navigator.pop(context);
     } catch (e) {
-      if (mounted) showAppSnackbar(context, ref, 'Error: $e', isError: true);
+      if (mounted) {
+        showAppSnackbar(context, ref,
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            isError: true);
+      }
     }
   }
 
@@ -125,7 +129,9 @@ class _PromotionEditDialogState extends ConsumerState<PromotionEditDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(
-        widget.promotion == null ? 'Create Promotion' : 'Edit Promotion',
+        widget.promotion == null
+            ? AppLocalizations.of(context).createPromotion
+            : AppLocalizations.of(context).editPromotion,
       ),
       content: SizedBox(
         width: 600,
@@ -150,9 +156,10 @@ class _PromotionEditDialogState extends ConsumerState<PromotionEditDialog> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Items',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                Text(
+                  AppLocalizations.of(context).setItems,
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 ElevatedButton.icon(
                   onPressed: _addItem,

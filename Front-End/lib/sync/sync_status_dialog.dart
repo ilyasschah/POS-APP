@@ -7,6 +7,75 @@ import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/sync/sync_notifier.dart';
 import 'package:pos_app/sync/sync_status_provider.dart';
 
+/// Display label for a sync entity.
+///
+/// 🚨 `SyncEntityStatus.label` is an **identifier, not screen text** — it is
+/// embedded verbatim in the UNION-ALL query built by
+/// `sync_status_provider._buildSql()` (`SELECT 'Sales orders' AS label …`) and
+/// comes back out of SQLite as the row key. Translating `_entities` would
+/// change the SQL and break the mapping. Only the label is localized here.
+String _syncEntityLabel(BuildContext context, String id) {
+  final l10n = AppLocalizations.of(context);
+  switch (id) {
+    case 'Sales orders':
+      return l10n.syncSalesOrders;
+    case 'Documents':
+      return l10n.documents;
+    case 'Payments':
+      return l10n.paymentsTab;
+    case 'Voids':
+      return l10n.syncVoids;
+    case 'Cash movements':
+      return l10n.syncCashMovements;
+    case 'Z-reports':
+      return l10n.syncZReports;
+    case 'Shifts':
+      return l10n.syncShifts;
+    case 'Time clock':
+      return l10n.timeClock;
+    case 'Products':
+      return l10n.products;
+    case 'Product groups':
+      return l10n.productGroups;
+    case 'Product comments':
+      return l10n.syncProductComments;
+    case 'Barcodes':
+      return l10n.barcodesTab;
+    case 'Taxes':
+      return l10n.taxesLabel;
+    case 'Product taxes':
+      return l10n.syncProductTaxes;
+    case 'Payment types':
+      return l10n.paymentTypes;
+    case 'Void reasons':
+      return l10n.voidReasons;
+    case 'Customers':
+      return l10n.customersLabel;
+    case 'Customer discounts':
+      return l10n.syncCustomerDiscounts;
+    case 'Loyalty cards':
+      return l10n.loyaltyCards;
+    case 'Promotions':
+      return l10n.promotions;
+    case 'Stock':
+      return l10n.stock;
+    case 'Stock counts':
+      return l10n.syncStockCounts;
+    case 'Stock transfers':
+      return l10n.syncStockTransfers;
+    case 'Warehouses':
+      return l10n.warehouses;
+    case 'Users':
+      return l10n.users;
+    case 'Company':
+      return l10n.setCompany;
+    case 'Settings':
+      return l10n.settings;
+    default:
+      return id;
+  }
+}
+
 /// Opens the Sync Status panel — a per-entity summary of what's still pending
 /// vs. fully synced, with a "Sync now" action that runs a full sync in place.
 Future<void> showSyncStatusDialog(BuildContext context) {
@@ -48,7 +117,7 @@ class SyncStatusDialog extends ConsumerWidget {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'Sync Status',
+                      AppLocalizations.of(context).syncStatusTitle,
                       style: theme.textTheme.titleLarge
                           ?.copyWith(fontWeight: FontWeight.bold),
                     ),
@@ -88,7 +157,9 @@ class SyncStatusDialog extends ConsumerWidget {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : Icon(PhosphorIcons.arrowsClockwise(), size: 18),
-                    label: Text(isSyncing ? 'Syncing…' : 'Sync now'),
+                    label: Text(isSyncing
+            ? AppLocalizations.of(context).syncingEllipsis
+            : AppLocalizations.of(context).syncNow),
                   ),
                 ],
               ),
@@ -116,7 +187,12 @@ class _StatusBody extends StatelessWidget {
         int rank(SyncEntityStatus e) =>
             e.failed > 0 ? 0 : (e.pending > 0 ? 1 : 2);
         final r = rank(a).compareTo(rank(b));
-        return r != 0 ? r : a.label.compareTo(b.label);
+        // Sort on the TRANSLATED label so the list reads alphabetically in
+        // the operator's own language, not in English.
+        return r != 0
+            ? r
+            : _syncEntityLabel(context, a.label)
+                .compareTo(_syncEntityLabel(context, b.label));
       });
 
     final pendingTotal = entities.fold<int>(0, (s, e) => s + e.pending);
@@ -148,12 +224,13 @@ class _StatusBody extends StatelessWidget {
               Expanded(
                 child: Text(
                   allClean
-                      ? 'Everything is synced'
+                      ? AppLocalizations.of(context).everythingIsSynced
                       : [
                           if (pendingTotal > 0)
-                            '$pendingTotal item${pendingTotal == 1 ? '' : 's'} pending',
+                            AppLocalizations.of(context)
+                              .itemsPendingCount(pendingTotal),
                           if (failedTotal > 0)
-                            '$failedTotal failed',
+                            AppLocalizations.of(context).failedCount(failedTotal),
                         ].join(' · '),
                   style: theme.textTheme.titleMedium
                       ?.copyWith(fontWeight: FontWeight.w600),
@@ -197,16 +274,16 @@ class _EntityRow extends StatelessWidget {
       icon = PhosphorIcons.warningCircle(PhosphorIconsStyle.fill);
       color = cs.error;
       trailing = entity.pending > 0
-          ? '${entity.failed} failed · ${entity.pending} pending'
-          : '${entity.failed} failed';
+          ? '${AppLocalizations.of(context).failedCount(entity.failed)} · ${AppLocalizations.of(context).pendingCount(entity.pending)}'
+          : AppLocalizations.of(context).failedCount(entity.failed);
     } else if (entity.pending > 0) {
       icon = PhosphorIcons.arrowsClockwise();
       color = context.warningColor;
-      trailing = '${entity.pending} pending';
+      trailing = AppLocalizations.of(context).pendingCount(entity.pending);
     } else {
       icon = PhosphorIcons.checkCircle(PhosphorIconsStyle.fill);
       color = context.successColor;
-      trailing = 'Synced';
+      trailing = AppLocalizations.of(context).syncedStatus;
     }
 
     // A stored reason only makes sense to show for the rows that need
@@ -227,7 +304,8 @@ class _EntityRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(entity.label, style: theme.textTheme.bodyLarge),
+                Text(_syncEntityLabel(context, entity.label),
+                    style: theme.textTheme.bodyLarge),
                 if (reason != null && reason.isNotEmpty) ...[
                   const SizedBox(height: 2),
                   Text(

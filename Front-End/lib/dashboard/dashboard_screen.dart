@@ -23,21 +23,14 @@ const _kPieColors = [
   Color(0xFF9F7AEA),
 ];
 
-const _kMonths = [
-  '',
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec',
-];
+/// Month abbreviations for the chart axis, 1-indexed (`[0]` is a filler so
+/// `_months(context)[month]` works directly against `DateTime.month`).
+///
+/// Read from the `monthAbbreviations` .arb key rather than `intl`'s
+/// `DateFormat.MMM(locale)` — that needs `initializeDateFormatting` at boot,
+/// which this app never calls. Same source the document screens use.
+List<String> _months(BuildContext context) =>
+    ['', ...AppLocalizations.of(context).monthAbbreviations.split(',')];
 
 TextStyle _mono({
   double size = 13,
@@ -104,7 +97,7 @@ class DashboardScreen extends ConsumerWidget {
             ),
             const SizedBox(width: 10),
             Text(
-              'Dashboard',
+              AppLocalizations.of(context).dashboard,
               style: _sans(
                 size: 18,
                 weight: FontWeight.w700,
@@ -188,7 +181,7 @@ class _YearlyOverviewCard extends ConsumerWidget {
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, _) => Center(
                 child: Text(
-                  'Failed to load yearly data',
+                  AppLocalizations.of(context).failedToLoadYearlyData,
                   style: _sans(color: cs.error),
                 ),
               ),
@@ -244,7 +237,7 @@ class _YearlyContent extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'MONTHLY SALES — $year',
+                  AppLocalizations.of(context).monthlySalesYear('$year'),
                   style: _sans(
                     size: 11,
                     weight: FontWeight.w600,
@@ -287,7 +280,7 @@ class _YearlyContent extends StatelessWidget {
                               return SideTitleWidget(
                                 meta: meta,
                                 child: Text(
-                                  _kMonths[idx + 1],
+                                  _months(context)[idx + 1],
                                   style: _sans(
                                     size: 9,
                                     color: cs.onSurface.withValues(alpha: 0.4),
@@ -329,7 +322,7 @@ class _YearlyContent extends StatelessWidget {
                         touchTooltipData: BarTouchTooltipData(
                           getTooltipColor: (_) => tooltipBg,
                           getTooltipItem: (group, _, rod, __) {
-                            final label = _kMonths[group.x + 1];
+                            final label = _months(context)[group.x + 1];
                             return BarTooltipItem(
                               '$label\n',
                               _sans(
@@ -376,7 +369,7 @@ class _YearlyContent extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  'YEAR TOTAL',
+                  AppLocalizations.of(context).yearTotal,
                   style: _sans(
                     size: 10,
                     weight: FontWeight.w600,
@@ -404,7 +397,7 @@ class _YearlyContent extends StatelessWidget {
                 const SizedBox(height: 20),
                 if (topMonth != null) ...[
                   Text(
-                    'TOP MONTH',
+                    AppLocalizations.of(context).topMonth,
                     style: _sans(
                       size: 10,
                       weight: FontWeight.w600,
@@ -429,7 +422,7 @@ class _YearlyContent extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          _kMonths[topMonth.month].toUpperCase(),
+                          _months(context)[topMonth.month].toUpperCase(),
                           style: _sans(
                             size: 13,
                             weight: FontWeight.w800,
@@ -447,7 +440,9 @@ class _YearlyContent extends StatelessWidget {
                 ],
                 const SizedBox(height: 16),
                 Text(
-                  '${data.monthlySales.length} active months',
+                  AppLocalizations.of(
+                    context,
+                  ).activeMonthsCount(data.monthlySales.length),
                   style: _sans(
                     size: 11,
                     color: cs.onSurface.withValues(alpha: 0.3),
@@ -480,7 +475,7 @@ class _PeriodicFilterBar extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Periodic Reports',
+              AppLocalizations.of(context).periodicReports,
               style: _sans(
                 size: 20,
                 weight: FontWeight.w700,
@@ -489,7 +484,7 @@ class _PeriodicFilterBar extends ConsumerWidget {
             ),
             const SizedBox(height: 2),
             Text(
-              'Select a date range to filter the cards below',
+              AppLocalizations.of(context).selectDateRangeToFilter,
               style: _sans(
                 size: 12,
                 color: cs.onSurface.withValues(alpha: 0.4),
@@ -653,8 +648,11 @@ class _DashCard extends StatelessWidget {
 // ── Empty state ───────────────────────────────────────────────────────────────
 
 class _EmptyState extends StatelessWidget {
-  final String message;
-  const _EmptyState({this.message = 'No data to display'});
+  /// Null falls back to the localized "no data" copy. It cannot be a default
+  /// parameter value: those must be `const`, and `AppLocalizations` needs a
+  /// BuildContext — which only exists once [build] runs.
+  final String? message;
+  const _EmptyState({this.message});
 
   @override
   Widget build(BuildContext context) {
@@ -670,7 +668,7 @@ class _EmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            message,
+            message ?? AppLocalizations.of(context).noDataToDisplay,
             style: _sans(size: 12, color: cs.onSurface.withValues(alpha: 0.32)),
           ),
         ],
@@ -820,7 +818,7 @@ class _TotalSalesCard extends ConsumerWidget {
                       ),
                     ),
                     child: Text(
-                      'Selected Period',
+                      AppLocalizations.of(context).selectedPeriod,
                       style: _sans(
                         size: 11,
                         color: cs.onSurface.withValues(alpha: 0.45),

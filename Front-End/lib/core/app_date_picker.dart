@@ -118,7 +118,11 @@ class _AppDatePickerDialogState extends State<_AppDatePickerDialog> {
   late DateTime _viewMonth;
   bool _pickingEnd = false;
 
-  static const _dayLabels = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+  /// Column headers for the calendar grid, MONDAY first — the grid is built
+  /// from `_weekStart`, which is Monday-based, so the order is load-bearing and
+  /// a locale must not re-sort its week.
+  List<String> get _dayLabels =>
+      AppLocalizations.of(context).weekdayInitials.split(',');
 
   static DateTime _d(DateTime dt) => DateTime(dt.year, dt.month, dt.day);
   static DateTime _today() => _d(DateTime.now());
@@ -150,31 +154,33 @@ class _AppDatePickerDialogState extends State<_AppDatePickerDialog> {
   }
 
   List<_DatePreset> _presets() {
+    final l10n = AppLocalizations.of(context);
     final now = _today();
     final wS = _weekStart(now);
     final lwS = _weekStart(now.subtract(const Duration(days: 7)));
     return [
-      _DatePreset('Today', now, now),
+      _DatePreset(l10n.today, now, now),
       _DatePreset(
-        'Yesterday',
+        l10n.yesterday,
         now.subtract(const Duration(days: 1)),
         now.subtract(const Duration(days: 1)),
       ),
-      _DatePreset('This week', wS, _weekEnd(now)),
-      _DatePreset('Last week', lwS, _weekEnd(lwS)),
+      _DatePreset(l10n.thisWeek, wS, _weekEnd(now)),
+      _DatePreset(l10n.lastWeek, lwS, _weekEnd(lwS)),
       _DatePreset(
-        'This month',
+        l10n.thisMonth,
         DateTime(now.year, now.month, 1),
         DateTime(now.year, now.month + 1, 0),
       ),
       _DatePreset(
-        'Last month',
+        l10n.lastMonth,
         DateTime(now.year, now.month - 1, 1),
         DateTime(now.year, now.month, 0),
       ),
-      _DatePreset('This year', DateTime(now.year, 1, 1), DateTime(now.year, 12, 31)),
       _DatePreset(
-        'Last year',
+          l10n.thisYear, DateTime(now.year, 1, 1), DateTime(now.year, 12, 31)),
+      _DatePreset(
+        l10n.lastYear,
         DateTime(now.year - 1, 1, 1),
         DateTime(now.year - 1, 12, 31),
       ),
@@ -261,7 +267,7 @@ class _AppDatePickerDialogState extends State<_AppDatePickerDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Predefined period',
+              AppLocalizations.of(context).predefinedPeriod,
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
@@ -365,7 +371,7 @@ class _AppDatePickerDialogState extends State<_AppDatePickerDialog> {
                   ? (_end != null
                         ? '${fmt.format(_start)}  →  ${fmt.format(_end!)}'
                         : _pickingEnd
-                        ? 'Now select an end date'
+                        ? AppLocalizations.of(context).nowSelectEndDate
                         : fmt.format(_start))
                   : fmt.format(_start),
               style: TextStyle(

@@ -84,14 +84,15 @@ class _VoidReasonsScreenState extends ConsumerState<VoidReasonsScreen> {
   Future<void> _save() async {
     final name = _nameCtrl.text.trim();
     final rank = int.tryParse(_rankCtrl.text.trim()) ?? 0;
+    final l10n = AppLocalizations.of(context);
     if (name.isEmpty) {
-      setState(() => _error = 'Name is required.');
+      setState(() => _error = l10n.nameIsRequired);
       return;
     }
 
     final companyId = ref.read(selectedCompanyProvider)?.id;
     if (companyId == null) {
-      setState(() => _error = 'No company selected.');
+      setState(() => _error = l10n.noCompanySelectedShort);
       return;
     }
 
@@ -108,7 +109,7 @@ class _VoidReasonsScreenState extends ConsumerState<VoidReasonsScreen> {
       ref.read(syncStateProvider.notifier).sync().catchError((_) {});
       _clearSelection();
     } catch (e) {
-      setState(() => _error = 'Save failed.');
+      setState(() => _error = l10n.saveFailedShort);
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -140,7 +141,8 @@ class _VoidReasonsScreenState extends ConsumerState<VoidReasonsScreen> {
       if (_selectedId == id) _clearSelection();
     } catch (e) {
       if (mounted) {
-        showAppSnackbar(context, ref, 'Delete failed.', isError: true);
+        showAppSnackbar(context, ref, AppLocalizations.of(context).deleteFailed,
+            isError: true);
       }
     }
   }
@@ -230,7 +232,8 @@ class _VoidReasonsScreenState extends ConsumerState<VoidReasonsScreen> {
           Container(
             width: 320,
             decoration: BoxDecoration(
-              border: Border(left: BorderSide(color: cs.outlineVariant)),
+              border:
+                  BorderDirectional(start: BorderSide(color: cs.outlineVariant)),
             ),
             padding: const EdgeInsets.all(24),
             child: Column(

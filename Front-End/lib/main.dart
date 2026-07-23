@@ -9,6 +9,7 @@ import 'package:pos_app/auth/master_login_screen.dart';
 import 'package:pos_app/sync/account_status_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pos_app/auth/login_screen.dart';
+import 'package:pos_app/l10n/app_locale.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:pos_app/license/license_service.dart';
 import 'package:pos_app/license/subscription_blocked_screen.dart';
@@ -204,17 +205,6 @@ class _MyAppState extends ConsumerState<MyApp> {
     return _BootDecision(true, license);
   }
 
-  /// Maps the stored `Application.Language` code onto a locale we actually
-  /// ship. The Settings dropdown also offers es/de/it, which have no .arb yet —
-  /// those must fall back to English rather than crash the delegate lookup.
-  Locale _resolveLocale(String? code) {
-    final lang = (code ?? 'en').toLowerCase().split(RegExp('[-_]')).first;
-    return AppLocalizations.supportedLocales
-            .any((l) => l.languageCode == lang)
-        ? Locale(lang)
-        : const Locale('en');
-  }
-
   Color _parseAccentColor(String? hex) {
     if (hex == null) return Colors.blue;
     try {
@@ -233,7 +223,12 @@ class _MyAppState extends ConsumerState<MyApp> {
     // Arabic does not force RTL. App.WritingDirection (Settings → General →
     // Application Style) is the only thing that flips the layout, so a venue
     // can run an Arabic UI left-to-right if that is what they want.
-    final locale = _resolveLocale(settings[SettingKeys.language]);
+    // Maps the stored `Application.Language` onto a locale we actually ship.
+    // Companies seeded before the dropdown was trimmed can still hold es/de/it,
+    // which have no .arb — and Flutter's own fallback is supportedLocales.first,
+    // i.e. ARABIC. Never hand MaterialApp a raw setting value. See
+    // resolveAppLocale's doc comment and test/l10n_test.dart.
+    final locale = resolveAppLocale(settings[SettingKeys.language]);
     final isRtl =
         settings[SettingKeys.writingDirection]?.toUpperCase() == 'RTL';
 

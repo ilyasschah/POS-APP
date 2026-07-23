@@ -9,6 +9,8 @@ import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/database/database_provider.dart';
+import 'package:pos_app/l10n/app_locale.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PROVIDERS
@@ -170,6 +172,7 @@ final hoursReportProvider =
   (ref, params) async {
     if (params.companyId == 0) return const [];
     final db = ref.watch(appDatabaseProvider);
+    final l10n = l10nOf(ref);
 
     final usersQuery = db.select(db.usersTable)
       ..where((t) => t.companyId.equals(params.companyId));
@@ -206,7 +209,8 @@ final hoursReportProvider =
           .join(' ')
           .trim();
       results.add(HoursReportRow(
-        employeeName: name.isEmpty ? (u.username ?? 'User #${u.id}') : name,
+        employeeName:
+            name.isEmpty ? (u.username ?? l10n.userNumbered('${u.id}')) : name,
         totalMinutes: mins,
       ));
     }
@@ -236,13 +240,16 @@ class ShiftSessionRow {
   }
 }
 
-String _userDisplayName(UsersTableData u) {
+/// Full name, else username, else a numbered placeholder. [l10n] comes from
+/// `l10nOf(ref)` because these rows are built in providers, where there is no
+/// BuildContext to read `AppLocalizations.of` from.
+String _userDisplayName(UsersTableData u, AppLocalizations l10n) {
   final name = [u.firstName, u.lastName]
       .whereType<String>()
       .where((s) => s.isNotEmpty)
       .join(' ')
       .trim();
-  return name.isEmpty ? (u.username ?? 'User #${u.id}') : name;
+  return name.isEmpty ? (u.username ?? l10n.userNumbered('${u.id}')) : name;
 }
 
 /// Detailed, **reactive** per-session reader: one row per shift (clock-in
@@ -254,6 +261,7 @@ final shiftSessionsProvider =
   (ref, params) {
     if (params.companyId == 0) return Stream.value(const []);
     final db = ref.watch(appDatabaseProvider);
+    final l10n = l10nOf(ref);
 
     final query = db.select(db.shiftsTable)
       ..where((t) => t.companyId.equals(params.companyId))
@@ -263,7 +271,7 @@ final shiftSessionsProvider =
       final users = await (db.select(db.usersTable)
             ..where((t) => t.companyId.equals(params.companyId)))
           .get();
-      final namesById = {for (final u in users) u.id: _userDisplayName(u)};
+      final namesById = {for (final u in users) u.id: _userDisplayName(u, l10n)};
 
       final results = <ShiftSessionRow>[];
       for (final s in shifts) {
@@ -274,7 +282,8 @@ final shiftSessionsProvider =
           continue;
         }
         results.add(ShiftSessionRow(
-          employeeName: namesById[s.userId] ?? 'User #${s.userId}',
+          employeeName:
+              namesById[s.userId] ?? l10n.userNumbered('${s.userId}'),
           clockIn: s.openedAt.toLocal(),
           clockOut: s.closedAt?.toLocal(),
         ));
