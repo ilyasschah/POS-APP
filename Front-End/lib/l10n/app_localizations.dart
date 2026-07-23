@@ -4780,6 +4780,78 @@ abstract class AppLocalizations {
   /// **'Error loading taxes: {message}'**
   String errorLoadingTaxesMsg(Object message);
 
+  /// No description provided for @orderTypeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Order Type'**
+  String get orderTypeLabel;
+
+  /// No description provided for @noServiceStatuses.
+  ///
+  /// In en, this message translates to:
+  /// **'No service statuses configured.'**
+  String get noServiceStatuses;
+
+  /// No description provided for @quantityCannotBeNegative.
+  ///
+  /// In en, this message translates to:
+  /// **'Quantity cannot be negative.'**
+  String get quantityCannotBeNegative;
+
+  /// No description provided for @cannotCalcQuantity.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot calculate quantity: unit price is zero.'**
+  String get cannotCalcQuantity;
+
+  /// No description provided for @parsedQuantityZero.
+  ///
+  /// In en, this message translates to:
+  /// **'Parsed quantity is zero — check scale barcode configuration.'**
+  String get parsedQuantityZero;
+
+  /// No description provided for @selectTableFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a table first!'**
+  String get selectTableFirst;
+
+  /// No description provided for @notAvailableOtherWarehouse.
+  ///
+  /// In en, this message translates to:
+  /// **'This product is not available in any other warehouse.'**
+  String get notAvailableOtherWarehouse;
+
+  /// No description provided for @selectTableFromFloorPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a Table from the Floor Plan first!'**
+  String get selectTableFromFloorPlan;
+
+  /// No description provided for @cartIsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Cart is empty'**
+  String get cartIsEmpty;
+
+  /// No description provided for @totalPromotionalDiscount.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Promotional Discount'**
+  String get totalPromotionalDiscount;
+
+  /// No description provided for @calendarBookingUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar booking will be updated automatically.'**
+  String get calendarBookingUpdated;
+
+  /// No description provided for @confirmTransfer.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Transfer'**
+  String get confirmTransfer;
+
   /// No description provided for @setAbout.
   ///
   /// In en, this message translates to:

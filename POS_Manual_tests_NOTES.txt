@@ -1,7 +1,7 @@
 POS NOTES
 arabic and FR
 
-if i selected a product in carte adn i calick on refund i want that product to be added to the product 
+if i selected a product in carte and i calick on refund i want that product to be added to the product list in the refund dailog
 
 in the reciept when i have enable dual currency it doesnt print the other curenccy
 

@@ -6091,7 +6091,23 @@ class _SubscriptionTab extends ConsumerWidget {
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
-                child: Row(children: [_SubscriptionStatusPill(info: info)]),
+                child: Row(
+                  children: [
+                    _SubscriptionStatusPill(info: info),
+                    const Spacer(),
+                    // The tab lives in a LazyIndexedStack, so once built it is
+                    // never disposed and the autoDispose provider won't re-run
+                    // while the operator sits on it. This is the only way to
+                    // pull a lease changed in the admin portal without a
+                    // restart.
+                    IconButton(
+                      icon: const Icon(Icons.refresh),
+                      tooltip: AppLocalizations.of(context).refresh,
+                      onPressed: () =>
+                          ref.invalidate(subscriptionInfoProvider),
+                    ),
+                  ],
+                ),
               ),
               _InfoRow(
                 label: AppLocalizations.of(context).setStarted,

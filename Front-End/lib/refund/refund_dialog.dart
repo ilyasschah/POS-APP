@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:intl/intl.dart';
+import 'package:pos_app/cart/cart_provider.dart';
 import 'package:pos_app/cart/payment_type_model.dart';
 import 'package:pos_app/cart/payment_type_provider.dart';
 import 'package:pos_app/core/status_colors.dart';
@@ -51,6 +52,30 @@ class _RefundDialogState extends ConsumerState<RefundDialog> {
       _receiptCtrl.text = widget.initialDocumentNumber!;
       WidgetsBinding.instance.addPostFrameCallback((_) => _lookupReceipt());
     }
+    _seedFromSelectedCartItem();
+  }
+
+  /// Pre-loads the line the operator had selected in the cart so a blind return
+  /// opens with it already listed instead of making them find it in the picker.
+  ///
+  /// This only fills the LIST — it deliberately does not set [_blindMode], which
+  /// still requires the manager PIN in [_authoriseBlind]. Seeding here is a
+  /// convenience, never a way around that authorisation.
+  void _seedFromSelectedCartItem() {
+    final cart = ref.read(cartProvider);
+    final selectedId = cart.selectedCartItemId;
+    if (selectedId == null) return;
+    final item =
+        cart.items.where((i) => i.cartItemId == selectedId).firstOrNull;
+    if (item == null) return;
+    _blindLines.add(_BlindLine(
+      productId: item.productId,
+      name: item.productName,
+      // The cart's per-unit price already nets item discounts out; the blind
+      // line is priced the same way the picker would price it.
+      price: item.price,
+      qty: item.quantity,
+    ));
   }
 
   @override

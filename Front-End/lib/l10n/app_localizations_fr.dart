@@ -2512,6 +2512,48 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String get orderTypeLabel => 'Type de commande';
+
+  @override
+  String get noServiceStatuses => 'Aucun statut de service configuré.';
+
+  @override
+  String get quantityCannotBeNegative =>
+      'La quantité ne peut pas être négative.';
+
+  @override
+  String get cannotCalcQuantity =>
+      'Impossible de calculer la quantité : le prix unitaire est nul.';
+
+  @override
+  String get parsedQuantityZero =>
+      'La quantité lue est nulle — vérifiez la configuration du code-barres de la balance.';
+
+  @override
+  String get selectTableFirst => 'Veuillez d\'abord sélectionner une table !';
+
+  @override
+  String get notAvailableOtherWarehouse =>
+      'Ce produit n\'est disponible dans aucun autre entrepôt.';
+
+  @override
+  String get selectTableFromFloorPlan =>
+      'Veuillez d\'abord sélectionner une table depuis le plan de salle !';
+
+  @override
+  String get cartIsEmpty => 'Le panier est vide';
+
+  @override
+  String get totalPromotionalDiscount => 'Total des remises promotionnelles';
+
+  @override
+  String get calendarBookingUpdated =>
+      'La réservation du calendrier sera mise à jour automatiquement.';
+
+  @override
+  String get confirmTransfer => 'Confirmer le transfert';
+
+  @override
   String get setAbout => 'À propos';
 
   @override

@@ -2495,6 +2495,47 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get orderTypeLabel => 'Order Type';
+
+  @override
+  String get noServiceStatuses => 'No service statuses configured.';
+
+  @override
+  String get quantityCannotBeNegative => 'Quantity cannot be negative.';
+
+  @override
+  String get cannotCalcQuantity =>
+      'Cannot calculate quantity: unit price is zero.';
+
+  @override
+  String get parsedQuantityZero =>
+      'Parsed quantity is zero — check scale barcode configuration.';
+
+  @override
+  String get selectTableFirst => 'Please select a table first!';
+
+  @override
+  String get notAvailableOtherWarehouse =>
+      'This product is not available in any other warehouse.';
+
+  @override
+  String get selectTableFromFloorPlan =>
+      'Please select a Table from the Floor Plan first!';
+
+  @override
+  String get cartIsEmpty => 'Cart is empty';
+
+  @override
+  String get totalPromotionalDiscount => 'Total Promotional Discount';
+
+  @override
+  String get calendarBookingUpdated =>
+      'Calendar booking will be updated automatically.';
+
+  @override
+  String get confirmTransfer => 'Confirm Transfer';
+
+  @override
   String get setAbout => 'About';
 
   @override

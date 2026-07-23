@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -116,13 +117,13 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
             children: [
               Icon(Icons.star, color: ctx.warningColor),
               const SizedBox(width: 8),
-              const Text('Active Promotions'),
+              Text(AppLocalizations.of(context).activePromotions),
             ],
           ),
           content: SizedBox(
             width: 380,
             child: _activePromos.isEmpty
-                ? const Text('No active promotions right now.')
+                ? Text(AppLocalizations.of(context).noActivePromotions)
                 : Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -154,7 +155,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Close'),
+              child: Text(AppLocalizations.of(context).actionClose),
             ),
           ],
         );
@@ -308,7 +309,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
               return Padding(
                 padding: const EdgeInsets.only(right: 4),
                 child: IconButton(
-                  tooltip: '$readyCount order(s) ready',
+                  tooltip: AppLocalizations.of(context).ordersReady(readyCount),
                   onPressed: () =>
                       ref.read(mainNavigationIndexProvider.notifier).state = 1,
                   icon: Badge.count(
@@ -384,7 +385,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                               .where((t) => t.id == cartState.serviceType)
                               .map((t) => t.name)
                               .firstOrNull ??
-                          'Order Type',
+                          AppLocalizations.of(context).orderTypeLabel,
                       customTint:
                           _kOrderTypePalette[customServiceTypes
                               .indexWhere((t) => t.id == cartState.serviceType)
@@ -393,7 +394,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                         final val = await showDialog<int>(
                           context: context,
                           builder: (ctx) => AlertDialog(
-                            title: const Text('Select Order Type'),
+                            title: Text(AppLocalizations.of(context).selectOrderType),
                             contentPadding: const EdgeInsets.fromLTRB(
                               16,
                               16,
@@ -563,20 +564,20 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                           builder: (ctx) {
                             if (customServiceStatuses.isEmpty) {
                               return AlertDialog(
-                                title: const Text('Service Status'),
-                                content: const Text(
-                                  'No service statuses configured.',
+                                title: Text(AppLocalizations.of(context).serviceStatus),
+                                content: Text(
+                                  AppLocalizations.of(context).noServiceStatuses,
                                 ),
                                 actions: [
                                   TextButton(
                                     onPressed: () => Navigator.pop(ctx),
-                                    child: const Text('Close'),
+                                    child: Text(AppLocalizations.of(context).actionClose),
                                   ),
                                 ],
                               );
                             }
                             return AlertDialog(
-                              title: const Text('Select Service Status'),
+                              title: Text(AppLocalizations.of(context).selectServiceStatus),
                               contentPadding: const EdgeInsets.fromLTRB(
                                 16,
                                 16,
@@ -641,7 +642,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                   if (showDiscountBtn)
                     _MenuHeaderActionBtn(
                       icon: Icons.percent,
-                      label: 'Discount',
+                      label: AppLocalizations.of(context).posDiscount,
                       onTap: () => ref
                           .read(securityGuardProvider)
                           .guard(
@@ -656,7 +657,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                   if (showQuantityBtn)
                     _MenuHeaderActionBtn(
                       icon: Icons.dialpad,
-                      label: 'Quantity',
+                      label: AppLocalizations.of(context).fieldQuantity,
                       // Greyed out until a cart line is selected — same gating
                       // the Tax button uses.
                       onTap: cartState.selectedCartItemId == null
@@ -673,7 +674,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                                 showAppSnackbar(
                                   context,
                                   ref,
-                                  'Selected item not found.',
+                                  AppLocalizations.of(context).selectedItemNotFound,
                                   isError: true,
                                 );
                                 return;
@@ -689,7 +690,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                                 showAppSnackbar(
                                   context,
                                   ref,
-                                  'Quantity cannot be negative.',
+                                  AppLocalizations.of(context).quantityCannotBeNegative,
                                   isError: true,
                                 );
                                 return;
@@ -732,7 +733,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                   if (showCommentBtn)
                     _MenuHeaderActionBtn(
                       icon: Icons.comment_outlined,
-                      label: 'Comment',
+                      label: AppLocalizations.of(context).posComment,
                       // Greyed out until a cart line is selected — a comment
                       // belongs to one line, so there is nothing to edit
                       // otherwise. Same gating as Quantity.
@@ -798,7 +799,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                   if (showTransferBtn)
                     _MenuHeaderActionBtn(
                       icon: Icons.swap_horiz,
-                      label: 'Transfer',
+                      label: AppLocalizations.of(context).posTransfer,
                       onTap: cartState.activePosOrderId == null
                           ? null
                           : () => ref
@@ -817,7 +818,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                   if (showRefundBtn)
                     _MenuHeaderActionBtn(
                       icon: Icons.undo,
-                      label: 'Refund',
+                      label: AppLocalizations.of(context).posRefund,
                       onTap: () => ref
                           .read(securityGuardProvider)
                           .guard(
@@ -833,7 +834,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                   if (showKitchenBtn)
                     _MenuHeaderActionBtn(
                       icon: Icons.soup_kitchen,
-                      label: 'Kitchen',
+                      label: AppLocalizations.of(context).posKitchen,
                       onTap: cartState.items.isEmpty
                           ? null
                           : () async {
@@ -933,7 +934,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
           if (bookingEnabled && showBookingBtn)
             _MenuHeaderActionBtn(
               icon: Icons.calendar_month,
-              label: 'Bookings',
+              label: AppLocalizations.of(context).posBookings,
               onTap: () {
                 ref.read(cartProvider.notifier).clearCart();
                 Navigator.pushAndRemoveUntil(
@@ -1009,7 +1010,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
           if (_activePromos.isNotEmpty)
             _MenuHeaderActionBtn(
               icon: Icons.star,
-              label: 'Promos',
+              label: AppLocalizations.of(context).posPromos,
               iconColor: context.warningColor,
               badgeCount: _activePromos.length,
               onTap: () => _showActivePromosPopup(context),
@@ -1155,7 +1156,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
             showAppSnackbar(
               context,
               ref,
-              'Cannot calculate quantity: unit price is zero.',
+              AppLocalizations.of(context).cannotCalcQuantity,
               isError: true,
             );
           }
@@ -1171,7 +1172,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
           showAppSnackbar(
             context,
             ref,
-            'Parsed quantity is zero — check scale barcode configuration.',
+            AppLocalizations.of(context).parsedQuantityZero,
             isError: true,
           );
         }
@@ -1226,7 +1227,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
           showAppSnackbar(
             context,
             ref,
-            'Please select a table first!',
+            AppLocalizations.of(context).selectTableFirst,
             isError: true,
           );
         }
@@ -1376,7 +1377,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
           color: cs.error,
           size: 32,
         ),
-        title: Text('${product.name} is running low'),
+        title: Text(AppLocalizations.of(context).productRunningLow(product.name)),
         content: Text(
           'Adding this item leaves only ${_fmtQty(projectedQuantity)} '
           '${product.measurementUnit ?? 'unit(s)'} in stock, at or below the '
@@ -1386,7 +1387,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
@@ -1394,7 +1395,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
               foregroundColor: cs.onError,
             ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Proceed Anyway'),
+            child: Text(AppLocalizations.of(context).actionProceedAnyway),
           ),
         ],
       ),
@@ -1430,7 +1431,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
             color: cs.error,
             size: 32,
           ),
-          title: Text('${product.name} is out of stock'),
+          title: Text(AppLocalizations.of(context).productOutOfStock(product.name)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1442,11 +1443,11 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
               const Gap(16),
               if (fallbacks.isEmpty)
                 Text(
-                  'This product is not available in any other warehouse.',
+                  AppLocalizations.of(context).notAvailableOtherWarehouse,
                   style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
                 )
               else ...[
-                Text('Available in:', style: tt.labelLarge),
+                Text(AppLocalizations.of(context).availableIn, style: tt.labelLarge),
                 const Gap(8),
                 ...fallbacks.map(
                   (e) => Card(
@@ -1459,7 +1460,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
                         color: cs.primary,
                       ),
                       title: Text(whNames[e.key] ?? 'Warehouse ${e.key}'),
-                      subtitle: Text('${_fmtQty(e.value)} in stock'),
+                      subtitle: Text(AppLocalizations.of(context).quantityInStock(_fmtQty(e.value))),
                       trailing: FilledButton.tonal(
                         onPressed: () {
                           ref.read(cartProvider.notifier).setWarehouseId(e.key);
@@ -1471,7 +1472,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
                             isError: false,
                           );
                         },
-                        child: const Text('Switch'),
+                        child: Text(AppLocalizations.of(context).actionSwitch),
                       ),
                     ),
                   ),
@@ -1482,7 +1483,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Close'),
+              child: Text(AppLocalizations.of(context).actionClose),
             ),
           ],
         );
@@ -1515,15 +1516,15 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
     final settings = ref.watch(appSettingsProvider);
 
     if (selectedCompany == null) {
-      return const Center(
-        child: Text("No company selected. Open the menu and pick a company."),
+      return Center(
+        child: Text(AppLocalizations.of(context).noCompanySelected),
       );
     }
     if (asyncGroups.isLoading || asyncProducts.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
     if (asyncGroups.hasError || asyncProducts.hasError) {
-      return const Center(child: Text("Error loading data"));
+      return Center(child: Text(AppLocalizations.of(context).errorLoadingData));
     }
 
     final allGroups = asyncGroups.value ?? [];
@@ -1608,7 +1609,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
                     controller: _searchCtrl,
                     textInputAction: TextInputAction.search,
                     decoration: InputDecoration(
-                      hintText: 'Search products...',
+                      hintText: AppLocalizations.of(context).searchProductsHint,
                       prefixIcon: const PhosphorIcon(
                         PhosphorIconsRegular.magnifyingGlass,
                         size: 20,
@@ -1974,7 +1975,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
             showAppSnackbar(
               context,
               ref,
-              'Please select a Table from the Floor Plan first!',
+              AppLocalizations.of(context).selectTableFromFloorPlan,
               isError: true,
             );
             return;
@@ -2240,12 +2241,12 @@ class _PaginationBar extends StatelessWidget {
         children: [
           _NavButton(
             icon: PhosphorIconsRegular.skipBack,
-            tooltip: 'First',
+            tooltip: AppLocalizations.of(context).paginationFirst,
             onTap: isFirst ? null : onFirst,
           ),
           _NavButton(
             icon: PhosphorIconsRegular.caretLeft,
-            tooltip: 'Previous',
+            tooltip: AppLocalizations.of(context).paginationPrevious,
             onTap: isFirst ? null : onPrevious,
           ),
           const Gap(12),
@@ -2269,12 +2270,12 @@ class _PaginationBar extends StatelessWidget {
           const Gap(12),
           _NavButton(
             icon: PhosphorIconsRegular.caretRight,
-            tooltip: 'Next',
+            tooltip: AppLocalizations.of(context).paginationNext,
             onTap: isLast ? null : onNext,
           ),
           _NavButton(
             icon: PhosphorIconsRegular.skipForward,
-            tooltip: 'Last',
+            tooltip: AppLocalizations.of(context).paginationLast,
             onTap: isLast ? null : onLast,
           ),
         ],
@@ -2424,16 +2425,16 @@ class _CartSectionState extends ConsumerState<CartSection> {
             color: Theme.of(ctx).colorScheme.onSurfaceVariant,
           ),
         ),
-        title: const Text('Void order'),
-        content: const Text('Are you sure you want to void this order?'),
+        title: Text(AppLocalizations.of(context).voidOrder),
+        content: Text(AppLocalizations.of(context).voidOrderConfirm),
         actions: [
           OutlinedButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('No'),
+            child: Text(AppLocalizations.of(context).actionNo),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Yes'),
+            child: Text(AppLocalizations.of(context).actionYes),
           ),
         ],
       ),
@@ -2789,7 +2790,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
 
               IconButton(
                 icon: const Icon(Icons.refresh, size: 20),
-                tooltip: 'Refresh order number',
+                tooltip: AppLocalizations.of(context).refreshOrderNumber,
                 onPressed: () async {
                   final companyId = ref.read(selectedCompanyProvider)?.id;
                   if (companyId == null) return;
@@ -2806,9 +2807,9 @@ class _CartSectionState extends ConsumerState<CartSection> {
                     ? null
                     : () => _handleSave(context, ref),
                 icon: const Icon(Icons.save, size: 18, color: Colors.white),
-                label: const Text(
-                  "SAVE",
-                  style: TextStyle(
+                label: Text(
+                  AppLocalizations.of(context).saveUpper,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                   ),
@@ -2825,7 +2826,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
           child: cartItems.isEmpty
               ? Center(
                   child: Text(
-                    "Cart is empty",
+                    AppLocalizations.of(context).cartIsEmpty,
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
@@ -2999,7 +3000,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
                                     showDialog(
                                       context: context,
                                       builder: (ctx) => AlertDialog(
-                                        title: const Text("Enter Quantity"),
+                                        title: Text(AppLocalizations.of(context).enterQuantity),
                                         content: TextField(
                                           controller: controller,
                                           keyboardType:
@@ -3008,14 +3009,14 @@ class _CartSectionState extends ConsumerState<CartSection> {
                                               ),
                                           autofocus: true,
                                           decoration: InputDecoration(
-                                            labelText: "Quantity",
+                                            labelText: AppLocalizations.of(context).fieldQuantity,
                                             suffixText: item.measurementUnit,
                                           ),
                                         ),
                                         actions: [
                                           TextButton(
                                             onPressed: () => Navigator.pop(ctx),
-                                            child: const Text("Cancel"),
+                                            child: Text(AppLocalizations.of(context).actionCancel),
                                           ),
                                           ElevatedButton(
                                             onPressed: () {
@@ -3033,7 +3034,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
                                               }
                                               Navigator.pop(ctx);
                                             },
-                                            child: const Text("Set"),
+                                            child: Text(AppLocalizations.of(context).actionSet),
                                           ),
                                         ],
                                       ),
@@ -3133,7 +3134,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
                   padding: const EdgeInsets.only(top: 6),
                   child: _totalsRow(
                     Text(
-                      "Item Discounts",
+                      AppLocalizations.of(context).itemDiscountsPlural,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -3159,7 +3160,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
                     // The deducted amount is shown on the right, so the label
                     // stays plain (no parenthetical value).
                     Text(
-                      "Customer Discount",
+                      AppLocalizations.of(context).customerDiscountLabel,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -3182,7 +3183,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
                   padding: const EdgeInsets.only(top: 6),
                   child: _totalsRow(
                     Text(
-                      "Cart Discount",
+                      AppLocalizations.of(context).cartDiscountLabel,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -3205,7 +3206,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
                   padding: const EdgeInsets.only(top: 6),
                   child: _totalsRow(
                     Text(
-                      "Total Promotional Discount",
+                      AppLocalizations.of(context).totalPromotionalDiscount,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -3257,7 +3258,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
               ),
               _totalsRow(
                 Text(
-                  "Total Due",
+                  AppLocalizations.of(context).totalDue,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -3307,7 +3308,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
                     flex: 2,
                     child: _CartFooterButton(
                       icon: Icons.block,
-                      label: 'VOID',
+                      label: AppLocalizations.of(context).posVoid,
                       color: context.dangerColor,
                       onTap: cartState.activePosOrderId == null
                           ? null
@@ -3330,7 +3331,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
                     flex: 3,
                     child: _CartFooterButton(
                       icon: Icons.payments,
-                      label: 'PAY',
+                      label: AppLocalizations.of(context).posPay,
                       color: context.successColor,
                       onTap: cartItems.isEmpty
                           ? null
@@ -3562,24 +3563,24 @@ Future<double?> _showQuantityInputDialog(
     context: context,
     barrierDismissible: false,
     builder: (ctx) => AlertDialog(
-      title: const Text('Enter Quantity'),
+      title: Text(AppLocalizations.of(context).enterQuantity),
       content: TextField(
         controller: controller,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
         autofocus: true,
-        decoration: InputDecoration(labelText: 'Quantity', suffixText: unit),
+        decoration: InputDecoration(labelText: AppLocalizations.of(context).fieldQuantity, suffixText: unit),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(ctx, null),
-          child: const Text('Cancel'),
+          child: Text(AppLocalizations.of(context).actionCancel),
         ),
         ElevatedButton(
           onPressed: () {
             final val = double.tryParse(controller.text);
             if (val != null && val > 0) Navigator.pop(ctx, val);
           },
-          child: const Text('Confirm'),
+          child: Text(AppLocalizations.of(context).actionConfirm),
         ),
       ],
     ),
@@ -3602,13 +3603,13 @@ Future<double?> _showPriceInputDialog(
     barrierDismissible: false,
     builder: (ctx) => StatefulBuilder(
       builder: (ctx, setState) => AlertDialog(
-        title: const Text('Set Sale Price'),
+        title: Text(AppLocalizations.of(context).setSalePrice),
         content: TextField(
           controller: controller,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           autofocus: true,
           decoration: InputDecoration(
-            labelText: 'Price',
+            labelText: AppLocalizations.of(context).priceLabel,
             suffixText: ' $currencySymbol',
             errorText: errorText,
           ),
@@ -3616,7 +3617,7 @@ Future<double?> _showPriceInputDialog(
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, null),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           ElevatedButton(
             onPressed: () {
@@ -3630,7 +3631,7 @@ Future<double?> _showPriceInputDialog(
               }
               Navigator.pop(ctx, val);
             },
-            child: const Text('Confirm'),
+            child: Text(AppLocalizations.of(context).actionConfirm),
           ),
         ],
       ),
@@ -3647,7 +3648,7 @@ Future<bool> _showAgeRestrictionDialog(BuildContext context, int minAge) async {
         children: [
           Icon(Icons.warning_amber_rounded, color: ctx.warningColor),
           const SizedBox(width: 8),
-          const Text('Age Restriction'),
+          Text(AppLocalizations.of(context).ageRestriction),
         ],
       ),
       content: Text(
@@ -3657,11 +3658,11 @@ Future<bool> _showAgeRestrictionDialog(BuildContext context, int minAge) async {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(ctx, false),
-          child: const Text('Cancel'),
+          child: Text(AppLocalizations.of(context).actionCancel),
         ),
         ElevatedButton(
           onPressed: () => Navigator.pop(ctx, true),
-          child: Text('Confirm ($minAge+)'),
+          child: Text(AppLocalizations.of(context).confirmMinimumAge(minAge.toString())),
         ),
       ],
     ),
@@ -3728,7 +3729,7 @@ class _ProductCommentsDialogState extends State<_ProductCommentsDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('Comments: ${widget.productName}'),
+      title: Text(AppLocalizations.of(context).commentsForProduct(widget.productName)),
       content: SizedBox(
         width: 360,
         child: SingleChildScrollView(
@@ -3747,10 +3748,10 @@ class _ProductCommentsDialogState extends State<_ProductCommentsDialog> {
               const SizedBox(height: 8),
               TextField(
                 controller: _customController,
-                decoration: const InputDecoration(
-                  labelText: 'Custom comment',
-                  hintText: 'Add a note...',
-                  prefixIcon: Icon(Icons.edit_note),
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context).customComment,
+                  hintText: AppLocalizations.of(context).addANoteHint,
+                  prefixIcon: const Icon(Icons.edit_note),
                 ),
               ),
             ],
@@ -3760,7 +3761,7 @@ class _ProductCommentsDialogState extends State<_ProductCommentsDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context, null),
-          child: const Text('Cancel'),
+          child: Text(AppLocalizations.of(context).actionCancel),
         ),
         ElevatedButton(
           onPressed: () {
@@ -3821,13 +3822,13 @@ class _ItemTaxDialogState extends ConsumerState<_ItemTaxDialog> {
           ),
           error: (e, _) => Padding(
             padding: const EdgeInsets.all(16),
-            child: Text("Error: $e"),
+            child: Text(AppLocalizations.of(context).errorWithMessage(e.toString())),
           ),
           data: (taxes) {
             if (taxes.isEmpty) {
-              return const Padding(
-                padding: EdgeInsets.all(16),
-                child: Text("No taxes available in system."),
+              return Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(AppLocalizations.of(context).noTaxesAvailable),
               );
             }
             return ConstrainedBox(
@@ -3881,7 +3882,7 @@ class _ItemTaxDialogState extends ConsumerState<_ItemTaxDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text("Cancel"),
+          child: Text(AppLocalizations.of(context).actionCancel),
         ),
         FilledButton(
           onPressed: () {
@@ -3890,7 +3891,7 @@ class _ItemTaxDialogState extends ConsumerState<_ItemTaxDialog> {
                 .updateItemTaxes(widget.item.cartItemId, _selectedTaxes);
             Navigator.pop(context);
           },
-          child: const Text("Apply"),
+          child: Text(AppLocalizations.of(context).actionApply),
         ),
       ],
     );
@@ -4019,11 +4020,11 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
         'true';
 
     return AlertDialog(
-      title: const Row(
+      title: Row(
         children: [
-          Icon(Icons.swap_horiz),
-          SizedBox(width: 8),
-          Text('Transfer Order'),
+          const Icon(Icons.swap_horiz),
+          const SizedBox(width: 8),
+          Text(AppLocalizations.of(context).transferOrder),
         ],
       ),
       content: SizedBox(
@@ -4038,15 +4039,15 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                 final enabled = users.where((u) => u.isEnabled).toList();
                 return DropdownButtonFormField<User?>(
                   initialValue: _selectedStaff,
-                  decoration: const InputDecoration(
-                    labelText: 'Assign Staff',
-                    prefixIcon: Icon(Icons.badge),
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).assignStaff,
+                    prefixIcon: const Icon(Icons.badge),
+                    border: const OutlineInputBorder(),
                   ),
                   items: [
-                    const DropdownMenuItem<User?>(
+                    DropdownMenuItem<User?>(
                       value: null,
-                      child: Text('Unassigned'),
+                      child: Text(AppLocalizations.of(context).unassigned),
                     ),
                     ...enabled.map(
                       (u) => DropdownMenuItem<User?>(
@@ -4078,15 +4079,15 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                   ];
                   return DropdownButtonFormField<FloorPlanTable?>(
                     initialValue: _selectedRoom,
-                    decoration: const InputDecoration(
-                      labelText: 'Assign Room / Resource',
-                      prefixIcon: Icon(Icons.meeting_room),
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context).assignRoomOrResource,
+                      prefixIcon: const Icon(Icons.meeting_room),
+                      border: const OutlineInputBorder(),
                     ),
                     items: [
-                      const DropdownMenuItem<FloorPlanTable?>(
+                      DropdownMenuItem<FloorPlanTable?>(
                         value: null,
-                        child: Text('No room'),
+                        child: Text(AppLocalizations.of(context).noRoom),
                       ),
                       ...rooms.map(
                         (t) => DropdownMenuItem<FloorPlanTable?>(
@@ -4112,7 +4113,7 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
-                      'Calendar booking will be updated automatically.',
+                      AppLocalizations.of(context).calendarBookingUpdated,
                       style: TextStyle(
                         fontSize: 11,
                         color: Theme.of(context).colorScheme.primary,
@@ -4128,7 +4129,7 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
       actions: [
         TextButton(
           onPressed: _saving ? null : () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(AppLocalizations.of(context).actionCancel),
         ),
         ElevatedButton.icon(
           icon: _saving
@@ -4141,9 +4142,9 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                   ),
                 )
               : const Icon(Icons.swap_horiz, color: Colors.white),
-          label: const Text(
-            'Confirm Transfer',
-            style: TextStyle(color: Colors.white),
+          label: Text(
+            AppLocalizations.of(context).confirmTransfer,
+            style: const TextStyle(color: Colors.white),
           ),
           style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
           onPressed: _saving ? null : _confirm,
@@ -4165,7 +4166,7 @@ class _SelectAvailableSpaceDialog extends ConsumerWidget {
         'Table';
 
     return AlertDialog(
-      title: Text('Select Available $spaceLabel'),
+      title: Text(AppLocalizations.of(context).selectAvailableSpace(spaceLabel)),
       contentPadding: const EdgeInsets.fromLTRB(0, 12, 0, 0),
       content: SizedBox(
         width: 380,
@@ -4242,7 +4243,7 @@ class _SelectAvailableSpaceDialog extends ConsumerWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(AppLocalizations.of(context).actionCancel),
         ),
       ],
     );
@@ -4280,9 +4281,9 @@ class _VoidReasonDialogState extends ConsumerState<_VoidReasonDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(
-            'Enter void reason',
-            style: TextStyle(fontWeight: FontWeight.bold),
+          Text(
+            AppLocalizations.of(context).enterVoidReason,
+            style: const TextStyle(fontWeight: FontWeight.bold),
           ),
           if (widget.orderNumber != null)
             Text(
@@ -4332,7 +4333,7 @@ class _VoidReasonDialogState extends ConsumerState<_VoidReasonDialog> {
             TextField(
               controller: _customCtrl,
               decoration: InputDecoration(
-                hintText: 'Enter void reason here',
+                hintText: AppLocalizations.of(context).enterVoidReason,
                 border: const OutlineInputBorder(),
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.edit),
@@ -4349,7 +4350,7 @@ class _VoidReasonDialogState extends ConsumerState<_VoidReasonDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context, null),
-          child: const Text('Cancel'),
+          child: Text(AppLocalizations.of(context).actionCancel),
         ),
         FilledButton(
           onPressed: () {
@@ -4357,7 +4358,7 @@ class _VoidReasonDialogState extends ConsumerState<_VoidReasonDialog> {
             if (reason.isEmpty) return;
             Navigator.pop(context, reason);
           },
-          child: const Text('Continue'),
+          child: Text(AppLocalizations.of(context).actionContinue),
         ),
       ],
     );

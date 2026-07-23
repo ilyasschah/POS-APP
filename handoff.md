@@ -1,8 +1,10 @@
 # Handoff
 
-_Last updated: 2026-07-22._
+_Last updated: 2026-07-23._
 
-> **Current phase: final polish.** The headline remaining feature is **French + Arabic localization — see §2.6**, which is where the next real work is. Everything above it is either done or parked.
+> **Current phase: final polish.** **French + Arabic localization is DONE** (§2.6) — ~1,100 keys across `en`/`fr`/`ar`, plus bundled PDF fonts so Arabic actually prints. What remains is the punch-list in §2.5 and whatever the user reports next.
+
+> 🚨 **READ FIRST — commit `b32a090` CONTAINS CORRUPTED FILES.** `menu_screen.dart` and `time_clock_screen.dart` in that commit have a blanket `A`→`p` character corruption (`pppLocalizations`, `toStringpsFixed`). `git checkout HEAD -- <those files>` restores BROKEN code. The working tree was repaired from `10b7839` and re-localized; **commit the fix and never reset those two files to `b32a090`.** Cause and prevention: §3 "Bulk-edit tooling".
 
 > **⚠️ This file was RESET on 2026-07-16**, at the user's request, back into a *working plan* instead of an archive. Removed: the §4 "Changes Made (DONE)" log (37 items), the per-session "Active Files" lists, the runtime-verification blocks and the old next-steps. **§3 Gotchas was deliberately KEPT** — every one of those was paid for with a real bug and several are still live traps. Their "(item NN)" references point at the deleted log; read them as historical labels, not links. The deleted content was **never committed** (`handoff.md` was modified-but-unstaged), so `git show HEAD:handoff.md` predates all of it — it is gone unless recovered from a session transcript.
 
@@ -23,7 +25,25 @@ Work the task list in §2. Constraints that do not change:
 
 Ordered roughly by dependency/value, not by the order asked. **Status keys are verified against the code — §2.0 / §2.6 as of 2026-07-22, the rest as of 2026-07-16** — so trust the "wired/inert" labels below over intuition. Where a label has since been proven wrong it is struck through and corrected in place rather than deleted (see the virtual-keyboard entry in §2.4): a confidently-wrong "inert" costs a session of rebuilding something that already exists.
 
-### 2.0 — DONE 2026-07-22 (latest session)
+### 2.0 — DONE 2026-07-23 (latest session)
+
+- ✅ **French + Arabic localization SHIPPED.** `flutter_localizations` + `gen-l10n` (`l10n.yaml`, `generate: true`), **~1,100 keys** in each of `lib/l10n/app_{en,fr,ar}.arb`. `Application.Language` now actually drives `MaterialApp.locale` — it was a dropdown into the void for months. Scope: every screen the operator touches (POS menu, cart, checkout, discount dialog, products, settings + printer settings, reports, documents, stock, users, customers, taxes, promotions, bookings, onboarding, login/PIN, customer display).
+  - **Language and writing direction stay INDEPENDENT** (user's explicit call). Picking `ar` does **not** force RTL; `App.WritingDirection` remains the only thing that flips the layout. An earlier build auto-linked them and was reverted.
+  - **Dropdown/enum values are stored in English and only *displayed* translated**, via three mappers in `settings_screen.dart`: `_themeModeLabel` (theme keys), `_accentColorLabel` (accent names), `_settingOptionLabel` (screen / search mode / discount type / message position). **Never translate the option lists themselves** — those strings are the persisted values.
+  - Same id→label pattern for `reports_screen` (`_reportLabel` / `_sectionName`, incl. search filtering on the *translated* label) and `product_import_screen` (`_fieldLabel`).
+  - Remaining English is **deliberate**: reports const-table fallbacks, product-import **CSV header aliases** (translating them breaks column auto-matching), receipt/PDF body text, keycaps, technical dropdown values (COM ports, EAN formats, date patterns), and config defaults like the `WELCOME!` placeholder.
+- ✅ **PDF fonts bundled — Arabic receipts now print glyphs, and printing is fully offline.** New `lib/printer/pdf_fonts.dart` (`PdfFonts.latin()` / `.arabic()`, parse-cached). `assets/fonts/` carries Noto Sans + Noto Naskh Arabic (~1.15 MB). **All 76 `PdfGoogleFonts` calls are gone** across receipts, invoices, 36 report exports and the stock report — that helper *downloads on first use*, which on an offline-first POS meant the first print after a fresh install could fail outright.
+  - Arabic is attached as **`fontFallback`, never the base font**, so the operator's chosen face still drives Latin and a mixed-script receipt needs no language detection. Report/stock PDFs get it via `pw.ThemeData.withFont(fontFallback: …)`.
+  - `test/receipt_arabic_font_test.dart` pins it and **reproduces the bug**: rendering Arabic without the fallback yields a measurably smaller PDF (nothing embedded), and the `pdf` package logs *"Unable to find a font to draw ا"*.
+- ✅ **Boot order reworked: master login now comes BEFORE onboarding.** Was: onboarding gated everything. Now `MyApp.home` → registration → licence → onboarding (first run only) → PIN. `MasterLoginScreen` routes to onboarding itself on a fresh install; `OnboardingScreen` takes an injected `onFinished` callback (null when it *is* `home`, since flipping `onboardingCompleteProvider` rebuilds past it — calling Navigator there would fight the rebuild).
+  - **Required a real fix, not just a reorder:** master login only saved the company *id*; `selectedCompanyProvider` stayed null until the PIN screen, and `appSettingsProvider.set()` **silently returns when there is no selected company**. Onboarding's writes would have been dropped. `loadFallbackCompany(companyId)` is now called right after the session is saved.
+- ✅ **Theme/accent changes apply instantly again.** `appSettingsProvider._set()` wrote `boot_theme_color` / `boot_theme_mode` straight to SharedPreferences, bypassing `deviceAccentColorProvider` / `deviceThemeModeProvider` — which `MyApp` reads **first**. Disk updated, notifier stale, so the app kept the old theme until relaunch. Now writes go through the notifiers (same keys, so the 0 ms boot-flash cache still works).
+- ✅ **Three bugs reported 2026-07-23:**
+  - **Refund dialog now pre-loads the selected cart line.** `_seedFromSelectedCartItem()` in `refund_dialog.initState` seeds `_blindLines` from `cartProvider.selectedCartItemId`. It deliberately does **not** set `_blindMode` — blind return still requires the manager PIN in `_authoriseBlind`. Seeding is convenience, not an auth bypass.
+  - **Dual currency now prints.** `Receipt`/`Kitchen` PDFs never read `DualCurrency.*` at all — only the cart UI did. `receipt_printer_service` now reads the same three keys and prints `≈ <amount> <sym>` under the totals, converting **`owedAmount`** (points already deducted), not `grandTotal`, so the printed conversion matches what is actually collected.
+  - **Subscription expiry now refreshes.** `subscriptionInfoProvider` was explicitly *"offline-safe — decodes the cached lease, never the network"*, and the lease was only pulled at boot — so changing the expiry in the admin portal left the badge stale until an app restart. It now does a best-effort `refreshFromServer` first (wrapped; offline falls through to the cached lease). Settings tabs live in a **`LazyIndexedStack`**, so a built tab is never disposed and `autoDispose` won't re-run while you sit on it — hence the added **refresh button** on the pill row.
+
+### 2.0.1 — DONE 2026-07-22
 
 - ✅ **SQL Server pre-login timeouts fixed at the config level.** The API was intermittently throwing `Win32Exception (258): The wait operation timed out` with `initialization=16012; handshake=0` — a *connectivity* failure before authentication, not a schema or EF problem, which 500s every DB-touching request while it lasts. Cause: `appsettings.json` dialled the **LAN IP** (`Data Source=192.168.11.103`) even though SQL Server runs on the same box, forcing every call through the Ethernet NIC on a machine with several virtual adapters (Radmin VPN, Tailscale, two VMware). Both `DefaultConnection` and `MasterConnection` now use `Data Source=localhost` + `Connect Timeout=30` (the missing timeout defaulted to 15s — exactly the 16012 ms failure). Verified live with the app's own `pos_app_user`: both DBs connect over **`net_transport = Shared memory`** in 231 ms / 122 ms, so the NIC is bypassed entirely. **The Flutter app is unaffected** — it still reaches the API at `192.168.11.103:5002`; only the API→SQL hop changed.
   - 🚧 **Still outstanding, needs an elevated shell (user's job):** `MSSQLSERVER` startup type is **Manual**, so SQL does not come back after a reboot. `sc.exe config MSSQLSERVER start= auto`.
@@ -78,14 +98,19 @@ Ordered roughly by dependency/value, not by the order asked. **Status keys are v
 - **Pre-fix rows are not repaired.** Sales rung under `DiscountApplyRule = "After tax"` **with a discount** before the tax fix carry a line tax short by (discount × rate) — e.g. `POS1-200-000005` stores tax 6.00 against a 37.00 total. Z-report #2 inherits that (Tax 26.00 where truth is 27.00). The Z-report is a **snapshot**, so repairing the document would not retro-change the issued report. Left as-is by decision (dev data).
 - **`pullDocuments` carries no item taxes** (`buildItems` sets neither `taxRate` nor `taxAmount`), so a document pulled from **another terminal** shows no tax and contributes 0 tax to this device's Z-report.
 - **Re-enable Pillar-3 encryption before production** — `kPillar3Encryption = false` in `app_database.dart` is a deliberate dev toggle. Set `true`, relaunch (auto re-encrypts, data preserved), then `flutter test integration_test/cipher_test.dart -d windows` must pass.
-- **Settings still inert:** email/SMTP; dateFormat/timezone. (Localization is no longer "inert, someday" — it is the active phase; see **§2.6**.)
+- **Settings still inert:** email/SMTP; dateFormat/timezone. (Localization is **done** — see §2.0/§2.6.)
+- **Numbers and dates are still not locale-aware.** `dashboard_screen.dart` hardcodes `NumberFormat.compact(locale: 'en')`, and money/date formatting is `intl` with fixed patterns. **Undecided by the user:** whether Arabic should use Eastern Arabic numerals (٠١٢٣) or Western — for a POS, Eastern numerals on prices are often *unwanted* even with an Arabic UI. Ask before changing.
+- **`kitchen_display/` is NOT localized** — separate Flutter app, own strings. The user deferred it ("for kitchen display we will do it also later"). Kitchen staff are plausibly the most Arabic-first users in the building.
+- **`General.TaxIncludedByDefault` is still a real bug** (see §2.6.1): the Settings toggle exists but `products_screen.dart` hardcodes `bool _isTaxInclusive = true`, so new products ignore it. Still unfixed — the user was asked and hasn't chosen.
 - **Backend/security follow-ups:** tighten `/api/Master/*` to `[Authorize(Policy="ManagerOnly")]`; move the DB password out of the committed connection string; server-side per-user audit; per-user salt on the local PIN.
 - **Production prerequisites:** set `Jwt__Secret` + `AdminPortal__AccessKey` in the **deployment** environment (not just this machine's `setx`); decide whether to scrub the old placeholders from git history.
 - **Untested surface:** the serial scale has never met real hardware; several OPT-4 `mounted`-guard changes live in dialogs that booting the app never opens.
 
-### 2.6 — NEXT PHASE: French + Arabic 🎯
+### 2.6 — ✅ DONE 2026-07-23: French + Arabic
 
-The user's stated goal for the polish phase. **Everything in the table below was verified against the code on 2026-07-22** — do not re-estimate from intuition, and in particular do not assume RTL is unbuilt or that translation is half-done. It is the opposite of what you'd guess: **the hard part (RTL mirroring) exists; the easy part (strings) does not.**
+**Shipped.** The table below is the *original* 2026-07-22 survey, kept because it explains the shape of the work and several rows are still true (RTL was already built; receipts are still configured separately). What changed: `flutter_localizations` + `gen-l10n` now exist, `Application.Language` drives the locale, and ~1,100 keys are translated — see §2.0 for what landed and what is deliberately still English.
+
+**If you are adding a new screen or string, read §3 "Localization" first** — the two traps (multi-line `Text(`, and enum values that are stored English but displayed translated) are what caused every missed batch during this work.
 
 | Piece | State | Where |
 |---|---|---|
@@ -135,6 +160,53 @@ Ten keys checked against every consumer in Flutter **and** the API. **4 of 10 ar
 
 _Each of these cost a real bug. The "(item NN)" refs point at the removed change log; treat them as labels._
 
+### Bulk-edit tooling (🚨 cost more than any bug this session)
+
+- **🚨 PowerShell FLATTENS a single-element array-of-arrays — and it silently turns a string replace into a CHARACTER replace.** This corrupted **8 files** across one session in three separate incidents (`T`→`e`, `h`→`i`, `A`→`p`), each a *blanket* substitution over the whole file (`AppLocalizations`→`pppLocalizations`, `TextStyle`→`eextStyle`, `child`→`ciild`, `startTime`→`starteime`).
+  ```powershell
+  # BROKEN: @( @(a,b) ) collapses to @(a,b), so $p is a STRING and
+  # $p[0]/$p[1] are CHARS -> .Replace('A','p') runs over the entire file.
+  foreach ($p in @( @('old','new') )) { $t = $t.Replace($p[0], $p[1]) }
+  ```
+  **Always use an ordered hashtable for replacement maps, never arrays:**
+  ```powershell
+  $map = [ordered]@{ 'old' = 'new' }
+  foreach ($k in $map.Keys) { $t = $t.Replace($k, $map[$k]) }
+  ```
+  Multi-pair calls happened to work, which is why it only ever hit a few files and looked random.
+- **🚨 A blanket character corruption is NOT reversible by pattern** — real `e`/`i`/`p` characters are everywhere. Recovery is git-only. And **check what HEAD actually contains before trusting `git checkout HEAD`**: commit `b32a090` captured corrupted files mid-session, so restoring from it re-introduced the damage; `10b7839` was the clean baseline.
+- **Regex `[regex]::Replace` with a MatchEvaluator scriptblock is banned for bulk edits here.** Plain `.Replace(string,string)` cannot cause the above. Every localization pass after the incidents used plain string replacement only.
+- **After ANY bulk edit, run this before believing the result:**
+  ```
+  grep -rlE "\b(pppLocal|Textplign|ciild|Tieme|eext|eype|toStringpsFixed)\b" lib/
+  ```
+  `flutter analyze` catches it too (a corrupted identifier is undefined), but the grep names the file instantly.
+
+### Localization
+
+- **⚠️ `MaterialApp.title` CANNOT use `AppLocalizations.of(context)` — it crashes the app at boot.** `title:` is evaluated in `MyApp.build`, which is *above* the `Localizations` widget `MaterialApp` itself creates, so the lookup returns null and the generated non-nullable getter throws **"Null check operator used on a null value"** on a red screen before any UI renders. Use **`onGenerateTitle: (context) => …`**, whose callback runs below `Localizations`. (Shipped broken once; `main.dart` now carries the comment.)
+- **⚠️ The bulk passes kept missing MULTI-LINE `Text(`.** Settings and printer settings are written as
+  ```dart
+  Text(
+    'Resource Mode',      // <- string on the NEXT line
+    style: …,
+  )
+  ```
+  A regex anchored on `Text\('` matches none of these. **Match on the quoted literal itself** (`'Resource Mode'`), which is newline-agnostic. Nearly the entire settings tab content and printer dialog slipped through the first pass for exactly this reason.
+- **⚠️ Enum-ish values are STORED in English and only DISPLAYED translated.** Theme keys (`'light'`), accent names (`'Blue'`), and dropdown options (`'Tables'`, `'Fixed'`, `'Top'`) are persisted settings values. Translating the option lists would corrupt saved settings. The display goes through `_themeModeLabel` / `_accentColorLabel` / `_settingOptionLabel` in `settings_screen.dart`; unknown values (COM ports, EAN formats, date patterns, currency codes) pass through verbatim. Same pattern in `reports_screen` and `product_import_screen`.
+- **⚠️ `product_import_screen`'s `_fields[].label` MUST stay English** — it doubles as the **CSV header alias** for column auto-matching (`_fieldAliases[f.key] ?? [f.label]`). Localizing it in place means an Arabic UI stops matching an English spreadsheet. Display goes through the separate `_fieldLabel(context, key)`.
+- **⚠️ Static/const data holding user-visible text cannot be localized in place** — it needs a `BuildContext`. Six of these came up: settings tabs + search index, sales-history columns, documents columns, report labels, onboarding feature slides, import fields. Convert to a **function of context** (`_tabsFor(context)`) or an **id + lookup**. Where an id list is also read in `initState` (before `AppLocalizations` is usable), split it: a `const` id list plus a context-taking labelled version — see `sales_history_screen._masterColumnIds` / `_masterColumns(context)`.
+- **⚠️ Any widget test that pumps a localized screen needs the delegates**, or it throws a `_TypeError` at *build* time, not at the assertion:
+  ```dart
+  MaterialApp(
+    locale: const Locale('en'),   // pin it — see below
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+    …)
+  ```
+- **⚠️ An unsupported locale resolves to ARABIC, not English.** Flutter falls back to `supportedLocales.first` and gen-l10n emits that list **alphabetically**, so `ar` is first. `MyApp._resolveLocale()` maps anything unknown to `en` before `MaterialApp` sees it — **do not delete that guard as redundant**; without it a stale `es`/`de` value renders the whole app in Arabic. Pinned by `test/l10n_test.dart`.
+- **Receipts/PDFs are language-independent of the UI on purpose.** Receipt body text, `discount_display.dart`'s labels (they print), and values written to the DB (`discount_lines.label`) stay English. The per-printer `{Role}.RightToLeft` setting already implies the receipt is configured separately.
+
 ### The expensive ones
 
 - **NEVER restart the backend API.** The user runs it under the **Visual Studio debugger** (`devenv.exe` → `VsDebugConsole.exe`, `https` profile on :5002 + :7002). Killing it drops their debug session. Build (`dotnet build -t:Compile`), report, and **ask them to restart it** (Ctrl+Shift+F5). Stated explicitly by the user on 2026-07-16.
@@ -162,6 +234,9 @@ _Each of these cost a real bug. The "(item NN)" refs point at the removed change
 
 - **"Save as PDF" ≠ "print to a PDF printer" — and the dialog tells you which.** `FilePicker.saveFile` (app-controlled name, *"Save as type: Files (\*.pdf)"*) vs Windows Print-to-PDF (**driver**-controlled name, seeded from the print job's `lpszDocName`, *"PDF Document (\*.pdf)"*). Only the first is fully ours. `Printing.layoutPdf(name:)` and `directPrintPdf(name:)` both reach the same native `StartDoc`, so the printer branch makes **no** difference to naming — don't go looking there.
 - **`FilePicker.saveFile` behaves oppositely on desktop vs mobile.** Android/iOS **require** `bytes` (`ArgumentError` otherwise) and write the file for you; desktop **ignores** `bytes` and hands back a path to a file that does not exist yet, which you must write. Always pass `bytes` **and** write on desktop — `lib/printer/pdf_save_service.dart` is the only place this should be spelled out. It also throws `IllegalCharacterInFileNameException` on Windows for a bad name, so sanitize.
+- **⚠️ PDF fonts are BUNDLED — never reintroduce `PdfGoogleFonts`.** It downloads the face over the network on first use, so on an offline-first POS the first print after a fresh install can fail to render at all. Everything goes through `lib/printer/pdf_fonts.dart` (`PdfFonts.latin()` / `.arabic()`, parse-cached) reading `assets/fonts/`. All 76 call sites were converted on 2026-07-23.
+- **⚠️ Arabic on a receipt fails INVISIBLY — correct layout, empty boxes.** No Latin face carries Arabic glyphs (PDF standard-14 are Latin-1; Noto Sans is the Latin subset), and `{Role}.RightToLeft` already flips the *layout*, so the ticket comes out shaped perfectly with every Arabic word blank. Noto Naskh is attached as **`fontFallback`, not the base font**, so the chosen face still drives Latin and mixed-script needs no detection. Report/stock PDFs need it on `pw.ThemeData.withFont(fontFallback: …)` — a per-style `font:` sets only the base face, which is why the stock report was missed at first.
+- **Dual currency must convert `owedAmount`, not `grandTotal`** — points redemption is deducted from what the customer actually pays, so converting `grandTotal` would print a figure larger than the amount collected.
 - **The receipt RE-DERIVES tax from the rate using the CURRENT `discountApplyRule`.** So reprinting a sale rung under the other rule would contradict its own document. The sales-history reprint therefore carries the **stored** per-line tax as a *fixed* `MenuTax` (a fixed tax is only ever multiplied by quantity), which reproduces the banked figure under either setting. Don't "simplify" that back to a percentage rate.
 
 ### Backend / EF

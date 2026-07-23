@@ -78,10 +78,29 @@ final licenseServiceProvider = Provider<LicenseService>(
   (ref) => LicenseService(ref.read(authStorageProvider)),
 );
 
-/// Subscription details for the Settings tab. Offline-safe — decodes the cached
-/// lease, never the network.
+/// Subscription details for the Settings tab.
+///
+/// Pulls a fresh lease FIRST (best-effort), then decodes it. Without that pull
+/// the tab only ever showed the lease cached at app launch, so changing the
+/// expiry in the admin portal left the badge stale until the operator restarted
+/// the POS — which reads as "the app didn't sync".
+///
+/// Still offline-safe: the refresh is wrapped, and any failure (no network, API
+/// down) simply falls through to the cached lease, which is what [describe]
+/// reads anyway. Nothing here can block or fail the tab.
 final subscriptionInfoProvider = FutureProvider.autoDispose<SubscriptionInfo>(
-  (ref) => ref.read(licenseServiceProvider).describe(),
+  (ref) async {
+    final service = ref.read(licenseServiceProvider);
+    final companyId = await ref.read(authStorageProvider).getCompanyId();
+    if (companyId != null) {
+      try {
+        await service.refreshFromServer(companyId);
+      } catch (_) {
+        // Offline / server unreachable — keep the cached lease.
+      }
+    }
+    return service.describe();
+  },
 );
 
 /// Verifies and enforces the signed offline subscription lease entirely on the

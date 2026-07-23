@@ -322,6 +322,15 @@ class ReceiptPrinterService {
       }
     }
 
+    // Dual currency — same three keys the cart totals panel reads, so the
+    // receipt and the on-screen "≈ …" line always agree.
+    final dualEnabled =
+        roleSettings[SettingKeys.dualCurrencyEnabled]?.toLowerCase() == 'true';
+    final dualSym = roleSettings[SettingKeys.dualCurrencySymbol] ?? '€';
+    final dualRate =
+        double.tryParse(roleSettings[SettingKeys.dualCurrencyRate] ?? '1.0') ??
+            1.0;
+
     // Outstanding balance for Receipt.PrintOutstandingBalance.
     final owedAmount =
         (grandTotal - pointsUsed * pointValue).clamp(0.0, double.infinity);
@@ -632,6 +641,14 @@ class ReceiptPrinterService {
                 bold: true,
               ),
             ],
+            // Dual currency — mirrors the cart's "≈ 12.34 €" line. Converts the
+            // amount actually owed (points already deducted), not grandTotal,
+            // so the printed conversion matches what the customer pays.
+            if (dualEnabled)
+              rowW(
+                '',
+                '≈ ${money(owedAmount * dualRate)} $dualSym',
+              ),
             pw.Divider(),
             pw.SizedBox(height: 6),
 

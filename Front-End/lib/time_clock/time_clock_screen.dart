@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
@@ -139,7 +140,7 @@ class _TimeClockScreenState extends ConsumerState<TimeClockScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Time Clock'),
+        title: Text(AppLocalizations.of(context).timeClockTitle),
       ),
       body: Center(
         child: ConstrainedBox(
@@ -161,7 +162,7 @@ class _TimeClockScreenState extends ConsumerState<TimeClockScreen> {
 
               // ── PIN dots ───────────────────────────────────────────────
               Text(
-                'Enter PIN',
+                AppLocalizations.of(context).enterPin,
                 style: theme.textTheme.bodyMedium
                     ?.copyWith(color: cs.onSurface.withValues(alpha: 0.6)),
               ),
@@ -262,7 +263,7 @@ class _ModeToggle extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         _ModeButton(
-          label: 'CLOCK IN',
+          label: AppLocalizations.of(context).clockInUpper,
           icon: Icons.login,
           selected: mode == 0,
           selectedColor: context.successColor,
@@ -272,7 +273,7 @@ class _ModeToggle extends StatelessWidget {
         Icon(Icons.access_time, size: 36, color: cs.onSurface.withValues(alpha: 0.4)),
         const SizedBox(width: 12),
         _ModeButton(
-          label: 'CLOCK OUT',
+          label: AppLocalizations.of(context).clockOutUpper,
           icon: Icons.logout,
           selected: mode == 1,
           selectedColor: cs.error,

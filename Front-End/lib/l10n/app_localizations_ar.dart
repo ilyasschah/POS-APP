@@ -2492,6 +2492,45 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get orderTypeLabel => 'نوع الطلب';
+
+  @override
+  String get noServiceStatuses => 'لم يتم إعداد حالات خدمة.';
+
+  @override
+  String get quantityCannotBeNegative => 'لا يمكن أن تكون الكمية سالبة.';
+
+  @override
+  String get cannotCalcQuantity => 'تعذّر حساب الكمية: سعر الوحدة صفر.';
+
+  @override
+  String get parsedQuantityZero =>
+      'الكمية المقروءة صفر — تحقّق من إعداد رمز الميزان.';
+
+  @override
+  String get selectTableFirst => 'يرجى اختيار طاولة أولاً!';
+
+  @override
+  String get notAvailableOtherWarehouse =>
+      'هذا المنتج غير متوفر في أي مستودع آخر.';
+
+  @override
+  String get selectTableFromFloorPlan =>
+      'يرجى اختيار طاولة من مخطط القاعة أولاً!';
+
+  @override
+  String get cartIsEmpty => 'السلة فارغة';
+
+  @override
+  String get totalPromotionalDiscount => 'إجمالي الخصم الترويجي';
+
+  @override
+  String get calendarBookingUpdated => 'سيتم تحديث حجز التقويم تلقائياً.';
+
+  @override
+  String get confirmTransfer => 'تأكيد التحويل';
+
+  @override
   String get setAbout => 'حول';
 
   @override

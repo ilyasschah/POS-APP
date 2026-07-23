@@ -209,6 +209,34 @@ Industry adaptation now lives in two orthogonal places:
 > as a service so stock deduction is skipped (see the inventory rules in `CLAUDE.md`). It only ever
 > shared a name with the removed `industryMode`-derived `isService` UI flag.
 
+### Localization (added 2026-07-23)
+
+**Stack:** `flutter_localizations` + `gen-l10n`. Config in `l10n.yaml` (`arb-dir: lib/l10n`, `output-class: AppLocalizations`, `nullable-getter: false`), `generate: true` in `pubspec.yaml`. Sources: `lib/l10n/app_en.arb` (template), `app_fr.arb`, `app_ar.arb` — **~1,100 keys each**. Generated `lib/l10n/app_localizations*.dart` is committed.
+
+**Wiring:** `MyApp` supplies `locale`, `supportedLocales`, `localizationsDelegates`. The locale comes from the `Application.Language` setting through `MyApp._resolveLocale()`.
+
+**Three rules that are easy to get wrong:**
+
+1. **`MaterialApp.title` cannot use `AppLocalizations.of(context)`.** `title:` is evaluated *above* the `Localizations` widget MaterialApp creates → null → the non-nullable getter throws at boot. Use **`onGenerateTitle:`**.
+2. **Unknown locales resolve to `supportedLocales.first`, which gen-l10n emits alphabetically — i.e. `ar`.** `_resolveLocale()` maps anything not shipped to `en` first. Removing that guard makes a stale `es`/`de` setting render the whole app in Arabic. Pinned by `test/l10n_test.dart`.
+3. **Language ≠ writing direction.** Picking `ar` does **not** flip the layout; `App.WritingDirection` (`LTR`/`RTL`) is the only thing that drives the app-wide `Directionality`. This is deliberate — a venue may want an Arabic UI left-to-right.
+
+**Enum values are stored in English, displayed translated.** Theme keys (`'light'`), accent names (`'Blue'`), and dropdown options (`'Tables'`, `'Fixed'`, `'Top'`) are *persisted setting values*. Translating the option lists would corrupt saved settings, so display goes through mappers in `settings_screen.dart` — `_themeModeLabel`, `_accentColorLabel`, `_settingOptionLabel` — which pass unknown values (COM ports, EAN formats, date patterns) through verbatim. The same id→label indirection exists in `reports_screen.dart` (`_reportLabel`, `_sectionName`) and `product_import_screen.dart` (`_fieldLabel`).
+
+⚠️ **`product_import_screen`'s `_fields[].label` must stay English** — it doubles as the CSV header alias for column auto-matching. Localizing it breaks importing an English spreadsheet.
+
+**Static/const data holding UI text needs converting**, since it has no `BuildContext`: settings tabs and the searchable-settings index, sales-history/documents columns, report labels, onboarding slides. Either make it a function of context (`_tabsFor(context)`) or split into a `const` id list + a context-taking labelled builder — see `sales_history_screen._masterColumnIds` vs `_masterColumns(context)` (the id list is read in `initState`, where `AppLocalizations` is not yet usable).
+
+**Deliberately still English:** receipt/PDF body text (customer-facing, configured per printer), `discount_display.dart` labels (they print), values written to the DB, CSV aliases, keycaps, and technical dropdown values.
+
+**Widget tests** that pump a localized screen must supply the delegates or they throw at build time:
+```dart
+MaterialApp(
+  locale: const Locale('en'),
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales, …)
+```
+
 ### Core UI Modules
 
 | Module | Location | Notes |
@@ -348,6 +376,14 @@ Receipt.RightToLeft     Kitchen.RightToLeft
 - `printZReport({..., roleSettings: appSettings})` — end-of-day Z-report
 
 **PDF generation:** Uses the `pdf` package. `PdfPageFormat.roll57` (58mm) or `PdfPageFormat.roll80` (80mm) based on `PaperSize` setting. Margins, font scale, font family, and copy count all read from `roleSettings`.
+
+**Fonts (reworked 2026-07-23) — `lib/printer/pdf_fonts.dart`:** every generated PDF (receipt, kitchen ticket, Z-report, invoice, all 36 report exports, stock report) loads faces from **bundled `assets/fonts/`** via `PdfFonts.latin()` / `PdfFonts.arabic()`, parse-cached per file.
+
+⚠️ **Never reintroduce `PdfGoogleFonts`.** It downloads the face over the network on first use — on an offline-first POS that means the first print after a fresh install can fail to render at all. All 76 call sites were removed.
+
+⚠️ **Arabic fails invisibly without a fallback.** No Latin face carries Arabic glyphs (PDF standard-14 are Latin-1; Noto Sans is the Latin subset), and `{Role}.RightToLeft` already flips the *layout* — so an Arabic ticket prints perfectly shaped with every word rendered as an empty box. Noto Naskh Arabic is attached as **`fontFallback`**, not the base font, so the operator's chosen face still drives Latin text and a mixed-script receipt needs no language detection. For `MultiPage` report/stock PDFs the fallback must go on **`pw.ThemeData.withFont(fontFallback: …)`** — a per-`TextStyle` `font:` sets only the base face. Pinned by `test/receipt_arabic_font_test.dart`, which reproduces the bug by measuring that a no-fallback render embeds nothing.
+
+**Dual currency:** when `DualCurrency.Enabled` is true the receipt prints `≈ <amount> <DualCurrency.Symbol>` under the totals, using `DualCurrency.ExchangeRate` — the same three keys the cart totals panel reads, so screen and paper agree. It converts **`owedAmount`** (loyalty points already deducted), not `grandTotal`, so the conversion matches what is actually collected.
 
 **Dispatch:** `Printing.listPrinters()` finds the named Windows printer. Falls back to system default if not found. Loops `copies` times calling `Printing.directPrintPdf(...)`.
 
