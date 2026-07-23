@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
@@ -133,14 +134,14 @@ class _ProductGroupsScreenState extends ConsumerState<ProductGroupsScreen> {
             title: Row(children: [
               Icon(Icons.warning_amber_rounded, color: c.warningColor),
               const SizedBox(width: 8),
-              const Text("Cannot Delete"),
+              Text(AppLocalizations.of(context).cannotDelete),
             ]),
             content: const Text(
                 "This group has products or sub-groups and cannot be deleted."),
             actions: [
               TextButton(
                   onPressed: () => Navigator.pop(c),
-                  child: const Text("OK"))
+                  child: Text(AppLocalizations.of(context).actionOk))
             ],
           ),
         );
@@ -152,19 +153,20 @@ class _ProductGroupsScreenState extends ConsumerState<ProductGroupsScreen> {
     final confirm = await showDialog<bool>(
       context: ctx,
       builder: (c) => AlertDialog(
-        title: const Text("Delete Group"),
-        content: Text("Are you sure you want to delete '${group.name}'?"),
+        title: Text(AppLocalizations.of(context).deleteGroup),
+        content: Text(
+            AppLocalizations.of(context).deleteGroupConfirm(group.name)),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(c, false),
-              child: const Text("Cancel")),
+              child: Text(AppLocalizations.of(context).actionCancel)),
           ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Theme.of(c).colorScheme.error,
                 foregroundColor: Theme.of(c).colorScheme.onError,
               ),
               onPressed: () => Navigator.pop(c, true),
-              child: const Text("Delete")),
+              child: Text(AppLocalizations.of(context).actionDelete)),
         ],
       ),
     );
@@ -237,14 +239,14 @@ class _ProductGroupsScreenState extends ConsumerState<ProductGroupsScreen> {
                 onPressed: widget.onMenuPressed,
               )
             : null,
-        title: const Text("Product Groups"),
+        title: Text(AppLocalizations.of(context).productGroups),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: FilledButton.icon(
               onPressed: _createGroup,
               icon: const Icon(Icons.add, size: 18),
-              label: const Text("New Group"),
+              label: Text(AppLocalizations.of(context).newGroup),
             ),
           ),
         ],
@@ -370,8 +372,8 @@ class _WideLayout extends StatelessWidget {
                       : null,
                   onSaved: onSaved,
                 )
-              : const _SelectionPlaceholder(
-                  message: "Select a group to edit, or create a new one."),
+              : _SelectionPlaceholder(
+                  message: AppLocalizations.of(context).selectGroupToEdit),
         ),
       ],
     );
@@ -565,7 +567,7 @@ class _TreeNodeTileState extends State<_TreeNodeTile> {
                         color:
                             theme.colorScheme.onSurface.withAlpha(100)),
                     onPressed: () => widget.onDelete(group),
-                    tooltip: "Delete",
+                    tooltip: AppLocalizations.of(context).actionDelete,
                     padding: const EdgeInsets.all(4),
                     constraints: const BoxConstraints(),
                   ),
@@ -958,7 +960,7 @@ class _GroupEditorPanelState extends ConsumerState<_GroupEditorPanel>
                       icon: Icon(Icons.delete_rounded,
                           color: theme.colorScheme.error),
                       onPressed: widget.onDelete,
-                      tooltip: "Delete group",
+                      tooltip: AppLocalizations.of(context).deleteGroupTooltip,
                     ),
                   if (widget.onClose != null)
                     IconButton(
@@ -1132,7 +1134,7 @@ class _DetailsTab extends StatelessWidget {
             const SizedBox(height: 8),
             allGroupsAsync.when(
               loading: () => const LinearProgressIndicator(),
-              error: (_, __) => Text("Failed to load groups",
+              error: (_, __) => Text(AppLocalizations.of(context).failedToLoadGroups,
                   style: TextStyle(color: theme.colorScheme.error)),
               data: (groups) {
                 final validParents = groups
@@ -1143,8 +1145,9 @@ class _DetailsTab extends StatelessWidget {
                   initialValue: selectedParentId,
                   decoration: _inputDecoration(context, null),
                   items: [
-                    const DropdownMenuItem(
-                        value: null, child: Text("None (Root)")),
+                    DropdownMenuItem(
+                        value: null,
+                        child: Text(AppLocalizations.of(context).noneRoot)),
                     ...validParents.map((g) => DropdownMenuItem(
                         value: g.id, child: Text(g.name))),
                   ],
@@ -1195,7 +1198,7 @@ class _DetailsTab extends StatelessWidget {
                   ElevatedButton.icon(
                     onPressed: onPickImage,
                     icon: const Icon(Icons.upload, size: 16),
-                    label: const Text("Choose Image"),
+                    label: Text(AppLocalizations.of(context).chooseImage),
                   ),
                   if (selectedImageBase64 != null &&
                       selectedImageBase64!.isNotEmpty) ...[
@@ -1203,7 +1206,7 @@ class _DetailsTab extends StatelessWidget {
                     TextButton.icon(
                       onPressed: onRemoveImage,
                       icon: const Icon(Icons.close, size: 16),
-                      label: const Text("Remove"),
+                      label: Text(AppLocalizations.of(context).actionRemove),
                       style: TextButton.styleFrom(
                           foregroundColor: theme.colorScheme.error),
                     ),
@@ -1345,7 +1348,7 @@ class _ProductsTab extends StatelessWidget {
           child: TextField(
             onChanged: onSearchChanged,
             decoration: InputDecoration(
-              hintText: "Search products…",
+              hintText: AppLocalizations.of(context).searchProductsEllipsis,
               prefixIcon: const Icon(Icons.search),
               filled: true,
               fillColor: theme.colorScheme.surfaceContainerHighest,
@@ -1364,7 +1367,7 @@ class _ProductsTab extends StatelessWidget {
             loading: () =>
                 const Center(child: CircularProgressIndicator()),
             error: (e, _) => Center(
-                child: Text("Failed to load products",
+                child: Text(AppLocalizations.of(context).failedToLoadProducts,
                     style:
                         TextStyle(color: theme.colorScheme.error))),
             data: (products) {
@@ -1376,7 +1379,7 @@ class _ProductsTab extends StatelessWidget {
               }).toList();
 
               if (filtered.isEmpty) {
-                return const Center(child: Text("No products found"));
+                return Center(child: Text(AppLocalizations.of(context).noProductsFoundShort));
               }
 
               return ListView.builder(
@@ -1550,17 +1553,17 @@ class _EmptyView extends StatelessWidget {
           Icon(Icons.folder_open,
               size: 80, color: theme.colorScheme.primary.withAlpha(64)),
           const SizedBox(height: 24),
-          Text("No product groups yet",
+          Text(AppLocalizations.of(context).noProductGroupsYet,
               style: theme.textTheme.headlineSmall),
           const SizedBox(height: 8),
-          Text("Create one to organize your products",
+          Text(AppLocalizations.of(context).createOneToOrganize,
               style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurface.withAlpha(128))),
           const SizedBox(height: 32),
           FilledButton.icon(
             onPressed: onAdd,
             icon: const Icon(Icons.add),
-            label: const Text("Create Group"),
+            label: Text(AppLocalizations.of(context).createGroup),
           ),
         ],
       ),
@@ -1583,7 +1586,7 @@ class _ErrorView extends StatelessWidget {
               size: 64,
               color: theme.colorScheme.error.withAlpha(128)),
           const SizedBox(height: 16),
-          Text("Error loading groups",
+          Text(AppLocalizations.of(context).errorLoadingGroups,
               style: theme.textTheme.titleMedium),
           const SizedBox(height: 8),
           Text(error,

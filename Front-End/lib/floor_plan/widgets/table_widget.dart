@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/floor_plan/floor_plan_provider.dart';
 import 'package:pos_app/floor_plan/floor_plan_table.dart';
@@ -108,7 +109,7 @@ class _TableWidgetState extends ConsumerState<TableWidget> {
       context: context,
       builder: (dialogCtx) => AlertDialog(
         backgroundColor: theme.colorScheme.surface,
-        title: const Text('Reserved table'),
+        title: Text(AppLocalizations.of(context).reservedTable),
         content: Text(
           'This table is held by a reservation for '
           '"${booking.reservationName}".',
@@ -116,18 +117,18 @@ class _TableWidgetState extends ConsumerState<TableWidget> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogCtx),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           if (allowWalkIn)
             TextButton(
               onPressed: () =>
                   Navigator.pop(dialogCtx, _BookedTableAction.walkIn),
-              child: const Text('Walk-in'),
+              child: Text(AppLocalizations.of(context).walkIn),
             ),
           FilledButton(
             onPressed: () =>
                 Navigator.pop(dialogCtx, _BookedTableAction.reservation),
-            child: const Text('Open reservation'),
+            child: Text(AppLocalizations.of(context).openReservation),
           ),
         ],
       ),

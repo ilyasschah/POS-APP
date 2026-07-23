@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -60,7 +61,7 @@ class SyncStatusDialog extends ConsumerWidget {
                   loading: () =>
                       const Center(child: CircularProgressIndicator()),
                   error: (e, _) => Center(
-                    child: Text('Couldn\'t read sync status: $e',
+                    child: Text(AppLocalizations.of(context).couldNotReadSyncStatus(e.toString()),
                         style: TextStyle(color: cs.error)),
                   ),
                   data: (list) => _StatusBody(entities: list),
@@ -73,7 +74,7 @@ class SyncStatusDialog extends ConsumerWidget {
                 children: [
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Close'),
+                    child: Text(AppLocalizations.of(context).actionClose),
                   ),
                   const SizedBox(width: 8),
                   FilledButton.icon(

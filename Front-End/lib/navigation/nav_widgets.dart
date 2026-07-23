@@ -1,5 +1,6 @@
 // Shared design tokens and primitive widgets for the two-tier navigation shell.
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/company/company_provider.dart';
@@ -128,7 +129,7 @@ class NavSidebarHeader extends ConsumerWidget {
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
               icon: Icon(Icons.menu_open, color: context.navMuted),
-              tooltip: "Hide Sidebar",
+              tooltip: AppLocalizations.of(context).hideSidebar,
               onPressed: onHideSidebar,
             ),
         ],
@@ -406,7 +407,7 @@ class PosTopBar extends StatelessWidget implements PreferredSizeWidget {
               else if (onMenuPressed != null)
                 IconButton(
                   icon: Icon(Icons.menu, size: 26, color: onSurface),
-                  tooltip: 'Menu',
+                  tooltip: AppLocalizations.of(context).menuLabel,
                   onPressed: onMenuPressed,
                 )
               else

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/database/database_provider.dart';
@@ -117,14 +118,14 @@ class _VoidReasonsScreenState extends ConsumerState<VoidReasonsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Void Reason'),
-        content: const Text('Are you sure you want to delete this void reason?'),
+        title: Text(AppLocalizations.of(context).deleteVoidReason),
+        content: Text(AppLocalizations.of(context).deleteVoidReasonConfirm),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppLocalizations.of(context).actionCancel)),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
-            child: const Text('Delete'),
+            child: Text(AppLocalizations.of(context).actionDelete),
           ),
         ],
       ),
@@ -153,14 +154,14 @@ class _VoidReasonsScreenState extends ConsumerState<VoidReasonsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Void Reasons', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(AppLocalizations.of(context).voidReasons, style: const TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: false,
         // Suppress the auto back-arrow — ManagementLayout controls navigation.
         automaticallyImplyLeading: false,
         leading: widget.onMenuPressed != null
             ? IconButton(
                 icon: const Icon(Icons.menu),
-                tooltip: 'Show navigation',
+                tooltip: AppLocalizations.of(context).showNavigation,
                 onPressed: widget.onMenuPressed,
               )
             : null,
@@ -173,11 +174,11 @@ class _VoidReasonsScreenState extends ConsumerState<VoidReasonsScreen> {
             flex: 2,
             child: reasons.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error: $e', style: TextStyle(color: cs.error))),
+              error: (e, _) => Center(child: Text(AppLocalizations.of(context).errorWithMessage(e.toString()), style: TextStyle(color: cs.error))),
               data: (list) {
                 if (list.isEmpty) {
                   return Center(
-                    child: Text('No void reasons yet.',
+                    child: Text(AppLocalizations.of(context).noVoidReasonsYet,
                         style: TextStyle(color: cs.onSurfaceVariant)),
                   );
                 }
@@ -214,7 +215,7 @@ class _VoidReasonsScreenState extends ConsumerState<VoidReasonsScreen> {
                         onTap: () => _selectReason(r),
                         trailing: IconButton(
                           icon: Icon(Icons.delete_outline, color: cs.error),
-                          tooltip: 'Delete',
+                          tooltip: AppLocalizations.of(context).actionDelete,
                           onPressed: () => _delete(r.id),
                         ),
                       ),
@@ -236,26 +237,26 @@ class _VoidReasonsScreenState extends ConsumerState<VoidReasonsScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  isEditing ? 'Edit Void Reason' : 'Add Void Reason',
+                  isEditing ? AppLocalizations.of(context).editVoidReason : AppLocalizations.of(context).addVoidReason,
                   style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 20),
                 TextField(
                   controller: _nameCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Name *',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.label_outline),
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).nameRequired,
+                    border: const OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.label_outline),
                   ),
                 ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: _rankCtrl,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Rank (display order)',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.sort),
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).rankDisplayOrderLower,
+                    border: const OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.sort),
                   ),
                 ),
                 if (_error != null) ...[
@@ -269,14 +270,14 @@ class _VoidReasonsScreenState extends ConsumerState<VoidReasonsScreen> {
                       ? const SizedBox(width: 16, height: 16,
                           child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                       : Icon(isEditing ? Icons.save : Icons.add),
-                  label: Text(isEditing ? 'Save Changes' : 'Add Reason'),
+                  label: Text(isEditing ? AppLocalizations.of(context).actionSaveChanges : AppLocalizations.of(context).addReason),
                 ),
                 if (isEditing) ...[
                   const SizedBox(height: 8),
                   OutlinedButton.icon(
                     onPressed: _clearSelection,
                     icon: const Icon(Icons.close),
-                    label: const Text('Cancel Edit'),
+                    label: Text(AppLocalizations.of(context).cancelEdit),
                   ),
                 ],
               ],

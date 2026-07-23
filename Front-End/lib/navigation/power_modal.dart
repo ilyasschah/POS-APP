@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:pos_app/navigation/nav_widgets.dart';
 
 class PowerModal extends StatelessWidget {
@@ -36,13 +37,13 @@ class PowerModal extends StatelessWidget {
               children: [
                 _PowerOptionCard(
                   icon: Icons.power_settings_new,
-                  label: "Exit application",
+                  label: AppLocalizations.of(context).exitApplication,
                   iconColor: cs.onSurface,
                   onTap: () => exit(0),
                 ),
                 _PowerOptionCard(
                   icon: Icons.refresh,
-                  label: "Restart application",
+                  label: AppLocalizations.of(context).restartApplication,
                   iconColor: cs.onSurface,
                   onTap: () async {
                     try {
@@ -60,7 +61,7 @@ class PowerModal extends StatelessWidget {
                 ),
                 _PowerOptionCard(
                   icon: Icons.power_settings_new,
-                  label: "Turn off PC",
+                  label: AppLocalizations.of(context).turnOffPc,
                   iconColor: cs.error,
                   textColor: cs.error,
                   onTap: () async {
@@ -86,7 +87,7 @@ class PowerModal extends StatelessWidget {
             OutlinedButton.icon(
               onPressed: () => Navigator.pop(context),
               icon: Icon(Icons.close, color: cs.onSurface),
-              label: Text("Cancel", style: TextStyle(color: cs.onSurface)),
+              label: Text(AppLocalizations.of(context).actionCancel, style: TextStyle(color: cs.onSurface)),
               style: OutlinedButton.styleFrom(
                 side: BorderSide(color: context.navDivider),
                 padding: const EdgeInsets.symmetric(

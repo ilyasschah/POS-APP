@@ -3,6 +3,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
@@ -78,19 +79,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   // Sidebar stays put on tab select — only manual toggles hide it.
   void _selectTab(int i) => setState(() => _selectedIndex = i);
 
-  static const _tabs = [
-    (icon: Icons.tune, label: 'General'),
-    (icon: Icons.receipt_long, label: 'Order & Payment'),
-    (icon: Icons.inventory_2, label: 'Products'),
-    (icon: Icons.monitor_weight, label: 'Weighing Scale'),
+  // Built per-frame rather than static const: the labels are localized, so
+  // they can only be resolved once a BuildContext exists.
+  static List<({IconData icon, String label})> _tabsFor(BuildContext context) => [
+    (icon: Icons.tune, label: AppLocalizations.of(context).generalLower),
+    (icon: Icons.receipt_long, label: AppLocalizations.of(context).setOrderAndPayment),
+    (icon: Icons.inventory_2, label: AppLocalizations.of(context).products),
+    (icon: Icons.monitor_weight, label: AppLocalizations.of(context).setWeighingScale),
     (icon: Icons.display_settings, label: 'Customer Display'),
-    (icon: Icons.kitchen, label: 'Kitchen Display'),
-    (icon: Icons.email, label: 'Email'),
-    (icon: Icons.print, label: 'Print'),
-    (icon: Icons.currency_exchange, label: 'Dual Currency'),
-    (icon: Icons.storage, label: 'Database'),
-    (icon: Icons.workspace_premium, label: 'Subscription'),
-    (icon: Icons.info_outline, label: 'About'),
+    (icon: Icons.kitchen, label: AppLocalizations.of(context).setKitchenDisplay),
+    (icon: Icons.email, label: AppLocalizations.of(context).fieldEmail),
+    (icon: Icons.print, label: AppLocalizations.of(context).setPrint),
+    (icon: Icons.currency_exchange, label: AppLocalizations.of(context).dualCurrencyLower),
+    (icon: Icons.storage, label: AppLocalizations.of(context).databaseLower),
+    (icon: Icons.workspace_premium, label: AppLocalizations.of(context).setSubscription),
+    (icon: Icons.info_outline, label: AppLocalizations.of(context).setAbout),
   ];
 
   static const _tabViews = [
@@ -173,10 +176,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     Expanded(
                       child: ListView.builder(
                         padding: const EdgeInsets.symmetric(vertical: 8),
-                        itemCount: _tabs.length,
+                        itemCount: _tabsFor(context).length,
                         itemBuilder: (context, i) => NavItem(
-                          icon: _tabs[i].icon,
-                          label: _tabs[i].label,
+                          icon: _tabsFor(context)[i].icon,
+                          label: _tabsFor(context)[i].label,
                           isActive: i == _selectedIndex,
                           onTap: () => _selectTab(i),
                         ),
@@ -210,7 +213,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                   ),
                                   const SizedBox(width: 10),
                                   Text(
-                                    'Save & Restart',
+                                    AppLocalizations.of(context).saveAndRestart,
                                     style: TextStyle(
                                       color: cs.onPrimary,
                                       fontSize: 15,
@@ -299,11 +302,11 @@ class SettingsHeaderBar extends StatelessWidget implements PreferredSizeWidget {
       title: Stack(
         alignment: Alignment.center,
         children: [
-          const Align(
+          Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              'Settings',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              AppLocalizations.of(context).settings,
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
           Align(
@@ -421,7 +424,7 @@ class _SettingTextFieldState extends ConsumerState<_SettingTextField> {
         showAppSnackbar(
           context,
           ref,
-          'Failed to save ${widget.label}',
+          AppLocalizations.of(context).savedFieldFailed(widget.label),
           isError: true,
         );
       }
@@ -470,7 +473,7 @@ class _SettingTextFieldState extends ConsumerState<_SettingTextField> {
                     Icons.check_circle_outline,
                     color: theme.colorScheme.primary,
                   ),
-                  tooltip: 'Save',
+                  tooltip: AppLocalizations.of(context).actionSave,
                   onPressed: _save,
                 ),
         ],
@@ -490,6 +493,7 @@ class _SettingSwitch extends ConsumerWidget {
   /// whose parent feature is off, so it stays visible (and self-explanatory)
   /// instead of disappearing. The stored value is left untouched.
   final bool enabled;
+  final IconData? icon;
 
   const _SettingSwitch({
     required this.settingKey,
@@ -497,6 +501,7 @@ class _SettingSwitch extends ConsumerWidget {
     this.subtitle,
     this.onChanged,
     this.enabled = true,
+    this.icon,
   });
 
   @override
@@ -506,6 +511,12 @@ class _SettingSwitch extends ConsumerWidget {
         ref.watch(appSettingsProvider)[settingKey]?.toLowerCase() == 'true';
 
     return SwitchListTile(
+      secondary: icon != null
+          ? Icon(
+              icon,
+              color: enabled ? theme.colorScheme.primary : theme.disabledColor,
+            )
+          : null,
       title: Text(label),
       subtitle: subtitle != null ? Text(subtitle!) : null,
       value: value,
@@ -563,7 +574,7 @@ class _SettingDropdown extends ConsumerWidget {
               ),
               dropdownColor: theme.colorScheme.surfaceContainerHighest,
               items: options
-                  .map((o) => DropdownMenuItem(value: o, child: Text(o)))
+                  .map((o) => DropdownMenuItem(value: o, child: Text(_settingOptionLabel(context, o))))
                   .toList(),
               onChanged: (v) {
                 if (v != null) {
@@ -643,19 +654,19 @@ class _CustomServiceTypesEditorState
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Service Type'),
+        title: Text(AppLocalizations.of(context).setDeleteServiceType),
         content: Text('Remove "${target.name}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: Theme.of(ctx).colorScheme.error,
             ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete'),
+            child: Text(AppLocalizations.of(context).actionDelete),
           ),
         ],
       ),
@@ -678,12 +689,12 @@ class _CustomServiceTypesEditorState
         children: [
           Row(
             children: [
-              Text('Service Types', style: theme.textTheme.labelLarge),
+              Text(AppLocalizations.of(context).setServiceTypes, style: theme.textTheme.labelLarge),
               const Spacer(),
               TextButton.icon(
                 onPressed: () => _showTypeDialog(),
                 icon: const Icon(Icons.add, size: 16),
-                label: const Text('Add'),
+                label: Text(AppLocalizations.of(context).actionAdd),
               ),
             ],
           ),
@@ -713,7 +724,7 @@ class _CustomServiceTypesEditorState
                   ),
                   title: Text(t.name),
                   subtitle: Text(
-                    'Prefix: ${t.prefix}',
+                    AppLocalizations.of(context).prefixColonValue(t.prefix),
                     style: theme.textTheme.bodySmall,
                   ),
                   trailing: Row(
@@ -765,18 +776,18 @@ class _TypeFormDialogState extends State<_TypeFormDialog> {
         children: [
           TextField(
             controller: widget.nameCtrl,
-            decoration: const InputDecoration(
-              labelText: 'Name',
-              hintText: 'e.g. Uber Eats',
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context).fieldName,
+              hintText: AppLocalizations.of(context).setHintUberEats,
             ),
             textCapitalization: TextCapitalization.words,
           ),
           const SizedBox(height: 12),
           TextField(
             controller: widget.prefixCtrl,
-            decoration: const InputDecoration(
-              labelText: 'Order Number Prefix',
-              hintText: 'e.g. UBER',
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context).setOrderNumberPrefix,
+              hintText: AppLocalizations.of(context).setHintUber,
             ),
             onChanged: (v) {
               final upper = v.toUpperCase();
@@ -793,7 +804,7 @@ class _TypeFormDialogState extends State<_TypeFormDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(AppLocalizations.of(context).actionCancel),
         ),
         ElevatedButton(
           onPressed: () {
@@ -803,7 +814,7 @@ class _TypeFormDialogState extends State<_TypeFormDialog> {
               Navigator.pop(context, [name, prefix]);
             }
           },
-          child: const Text('Save'),
+          child: Text(AppLocalizations.of(context).actionSave),
         ),
       ],
     );
@@ -870,19 +881,19 @@ class _CustomServiceStatusesEditorState
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Service Status'),
+        title: Text(AppLocalizations.of(context).setDeleteServiceStatus),
         content: Text('Remove "${target.name}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: Theme.of(ctx).colorScheme.error,
             ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete'),
+            child: Text(AppLocalizations.of(context).actionDelete),
           ),
         ],
       ),
@@ -904,12 +915,12 @@ class _CustomServiceStatusesEditorState
         children: [
           Row(
             children: [
-              Text('Service Statuses', style: theme.textTheme.labelLarge),
+              Text(AppLocalizations.of(context).setServiceStatuses, style: theme.textTheme.labelLarge),
               const Spacer(),
               TextButton.icon(
                 onPressed: () => _showStatusDialog(),
                 icon: const Icon(Icons.add, size: 16),
-                label: const Text('Add'),
+                label: Text(AppLocalizations.of(context).actionAdd),
               ),
             ],
           ),
@@ -1009,14 +1020,14 @@ class _StatusFormDialogState extends State<_StatusFormDialog> {
         children: [
           TextField(
             controller: widget.nameCtrl,
-            decoration: const InputDecoration(
-              labelText: 'Name',
-              hintText: 'e.g. Waiting',
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context).fieldName,
+              hintText: AppLocalizations.of(context).setHintWaiting,
             ),
             textCapitalization: TextCapitalization.words,
           ),
           const SizedBox(height: 16),
-          const Text('Color', style: TextStyle(fontSize: 12)),
+          Text(AppLocalizations.of(context).setColor, style: const TextStyle(fontSize: 12)),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
@@ -1050,7 +1061,7 @@ class _StatusFormDialogState extends State<_StatusFormDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(AppLocalizations.of(context).actionCancel),
         ),
         ElevatedButton(
           onPressed: () {
@@ -1059,7 +1070,7 @@ class _StatusFormDialogState extends State<_StatusFormDialog> {
               Navigator.pop(context, {'name': name, 'colorValue': _selected});
             }
           },
-          child: const Text('Save'),
+          child: Text(AppLocalizations.of(context).actionSave),
         ),
       ],
     );
@@ -1093,7 +1104,7 @@ class _BookingSettingsCardState extends ConsumerState<_BookingSettingsCard> {
     final theme = Theme.of(context);
 
     return _SettingsCard(
-      title: 'BOOKING',
+      title: AppLocalizations.of(context).setBooking,
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -1108,14 +1119,14 @@ class _BookingSettingsCardState extends ConsumerState<_BookingSettingsCard> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Resource Mode',
+                          AppLocalizations.of(context).resourceMode,
                           style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'What a booking slot is assigned to',
+                          AppLocalizations.of(context).resourceModeHint,
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurface.withValues(
                               alpha: 0.6,
@@ -1130,14 +1141,14 @@ class _BookingSettingsCardState extends ConsumerState<_BookingSettingsCard> {
                     value: s.resourceMode,
                     underline: const SizedBox.shrink(),
                     borderRadius: BorderRadius.circular(8),
-                    items: const [
+                    items: [
                       DropdownMenuItem(
                         value: 'table',
                         child: Row(
                           children: [
-                            Icon(Icons.table_restaurant, size: 16),
-                            SizedBox(width: 6),
-                            Text('Table'),
+                            const Icon(Icons.table_restaurant, size: 16),
+                            const SizedBox(width: 6),
+                            Text(AppLocalizations.of(context).setTable),
                           ],
                         ),
                       ),
@@ -1145,9 +1156,9 @@ class _BookingSettingsCardState extends ConsumerState<_BookingSettingsCard> {
                         value: 'room',
                         child: Row(
                           children: [
-                            Icon(Icons.meeting_room, size: 16),
-                            SizedBox(width: 6),
-                            Text('Room'),
+                            const Icon(Icons.meeting_room, size: 16),
+                            const SizedBox(width: 6),
+                            Text(AppLocalizations.of(context).setRoom),
                           ],
                         ),
                       ),
@@ -1155,9 +1166,9 @@ class _BookingSettingsCardState extends ConsumerState<_BookingSettingsCard> {
                         value: 'staff',
                         child: Row(
                           children: [
-                            Icon(Icons.person, size: 16),
-                            SizedBox(width: 6),
-                            Text('Staff'),
+                            const Icon(Icons.person, size: 16),
+                            const SizedBox(width: 6),
+                            Text(AppLocalizations.of(context).setStaff),
                           ],
                         ),
                       ),
@@ -1178,14 +1189,14 @@ class _BookingSettingsCardState extends ConsumerState<_BookingSettingsCard> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Default Duration',
+                          AppLocalizations.of(context).defaultDuration,
                           style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'Pre-filled slot length when adding a booking',
+                          AppLocalizations.of(context).defaultDurationHint,
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurface.withValues(
                               alpha: 0.6,
@@ -1228,14 +1239,14 @@ class _BookingSettingsCardState extends ConsumerState<_BookingSettingsCard> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Time Snapping',
+                          AppLocalizations.of(context).timeSnapping,
                           style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'Grid interval when picking start/end times',
+                          AppLocalizations.of(context).timeSnappingHint,
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurface.withValues(
                               alpha: 0.6,
@@ -1305,7 +1316,7 @@ class _CurrencyDropdown extends ConsumerWidget {
           ],
         ),
         error: (_, __) => Text(
-          'Could not load currencies',
+          AppLocalizations.of(context).couldNotLoadCurrencies,
           style: TextStyle(color: context.dangerColor),
         ),
         data: (currencies) {
@@ -1319,7 +1330,7 @@ class _CurrencyDropdown extends ConsumerWidget {
           return DropdownButtonFormField<String>(
             initialValue: safeValue,
             decoration: InputDecoration(
-              labelText: 'Currency',
+              labelText: AppLocalizations.of(context).setCurrency,
               filled: true,
               fillColor: theme.colorScheme.surface,
               border: const OutlineInputBorder(),
@@ -1548,7 +1559,7 @@ class _SettingsSearchFieldState extends ConsumerState<_SettingsSearchField> {
         isDense: true,
         filled: true,
         fillColor: context.navSidebarBg,
-        hintText: 'Search all settings...',
+        hintText: AppLocalizations.of(context).setSearchAllSettings,
         hintStyle: TextStyle(color: context.navMuted, fontSize: 14),
         prefixIcon: Icon(Icons.search, size: 18, color: context.navMuted),
         prefixIconConstraints: const BoxConstraints(
@@ -1559,7 +1570,7 @@ class _SettingsSearchFieldState extends ConsumerState<_SettingsSearchField> {
             ? IconButton(
                 icon: Icon(Icons.close, size: 16, color: context.navMuted),
                 splashRadius: 16,
-                tooltip: 'Clear',
+                tooltip: AppLocalizations.of(context).actionReset,
                 onPressed: _clear,
               )
             : null,
@@ -1596,7 +1607,7 @@ class SearchableSetting {
   final bool navigational;
   final Widget Function(VoidCallback openTab)? trailingBuilder;
 
-  const SearchableSetting({
+  SearchableSetting({
     required this.title,
     required this.tabName,
     required this.tabIndex,
@@ -1623,7 +1634,7 @@ class _SearchResultsView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final matches = _kSearchableSettings
+    final matches = _kSearchableSettings(context)
         .where((s) => s.matches(query))
         .toList();
 
@@ -1727,7 +1738,7 @@ class _DropdownControl extends ConsumerWidget {
         borderRadius: BorderRadius.circular(8),
         dropdownColor: Theme.of(context).colorScheme.surfaceContainerHighest,
         items: options
-            .map((o) => DropdownMenuItem(value: o, child: Text(o)))
+            .map((o) => DropdownMenuItem(value: o, child: Text(_settingOptionLabel(context, o))))
             .toList(),
         onChanged: (v) {
           if (v != null) {
@@ -1858,7 +1869,7 @@ class _OpenTabButton extends StatelessWidget {
         visualDensity: VisualDensity.compact,
         padding: const EdgeInsets.symmetric(horizontal: 14),
       ),
-      child: const Text('Open'),
+      child: Text(AppLocalizations.of(context).setOpen),
     );
   }
 }
@@ -1868,10 +1879,11 @@ class _OpenTabButton extends StatelessWidget {
 /// so editing from search and editing in a tab are the same operation.
 ///
 /// Tab indices mirror `_SettingsScreenState._tabs`.
-final _kSearchableSettings = <SearchableSetting>[
+List<SearchableSetting> _kSearchableSettings(BuildContext context) =>
+    <SearchableSetting>[
   // ── General ────────────────────────────────────────────────────────────────
   SearchableSetting(
-    title: 'Default screen',
+    title: AppLocalizations.of(context).setDefaultScreen,
     tabName: 'General · Startup',
     tabIndex: 0,
     trailingBuilder: (_) => const _DropdownControl(SettingKeys.defaultScreen, [
@@ -1881,27 +1893,25 @@ final _kSearchableSettings = <SearchableSetting>[
     ]),
   ),
   SearchableSetting(
-    title: 'Currency',
+    title: AppLocalizations.of(context).setCurrency,
     tabName: 'General · Regional',
     tabIndex: 0,
     trailingBuilder: (openTab) => _OpenTabButton(openTab),
   ),
   SearchableSetting(
-    title: 'Language',
+    title: AppLocalizations.of(context).languageLabel,
     tabName: 'General · Regional',
     tabIndex: 0,
+    // Only the languages that actually have an .arb file — offering a code we
+    // cannot render is what made this dropdown a no-op for years.
     trailingBuilder: (_) => const _DropdownControl(SettingKeys.language, [
       'en',
       'fr',
       'ar',
-      'es',
-      'de',
-      'it',
-      'pt',
     ]),
   ),
   SearchableSetting(
-    title: 'Date Format',
+    title: AppLocalizations.of(context).dateFormatLabel,
     tabName: 'General · Regional',
     tabIndex: 0,
     trailingBuilder: (_) => const _DropdownControl(SettingKeys.dateFormat, [
@@ -1912,52 +1922,52 @@ final _kSearchableSettings = <SearchableSetting>[
     ]),
   ),
   SearchableSetting(
-    title: 'Timezone',
+    title: AppLocalizations.of(context).setTimezone,
     tabName: 'General · Regional',
     tabIndex: 0,
     trailingBuilder: (openTab) => _OpenTabButton(openTab),
   ),
   SearchableSetting(
-    title: 'Tax Included in Price by Default',
+    title: AppLocalizations.of(context).setTaxIncludedByDefault,
     tabName: 'General · Tax',
     tabIndex: 0,
     trailingBuilder: (_) =>
         const _SwitchControl(SettingKeys.taxIncludedByDefault),
   ),
   SearchableSetting(
-    title: 'Theme Mode',
+    title: AppLocalizations.of(context).setThemeMode,
     tabName: 'General · Appearance',
     tabIndex: 0,
     trailingBuilder: (_) => const _ThemeModeControl(),
   ),
   SearchableSetting(
-    title: 'Accent Color',
+    title: AppLocalizations.of(context).setAccentColor,
     tabName: 'General · Appearance',
     tabIndex: 0,
     trailingBuilder: (openTab) => _OpenTabButton(openTab),
   ),
   SearchableSetting(
-    title: 'Font Size',
+    title: AppLocalizations.of(context).setFontSize,
     tabName: 'General · Appearance',
     tabIndex: 0,
     trailingBuilder: (openTab) => _OpenTabButton(openTab),
   ),
   SearchableSetting(
-    title: 'Writing Direction',
+    title: AppLocalizations.of(context).setWritingDirection,
     tabName: 'General · Application Style',
     tabIndex: 0,
     trailingBuilder: (_) =>
         const _DropdownControl(SettingKeys.writingDirection, ['LTR', 'RTL']),
   ),
   SearchableSetting(
-    title: 'Enable Virtual Keyboard',
+    title: AppLocalizations.of(context).setEnableVirtualKeyboard,
     tabName: 'General · Application Style',
     tabIndex: 0,
     trailingBuilder: (_) =>
         const _SwitchControl(SettingKeys.enableVirtualKeyboard),
   ),
   SearchableSetting(
-    title: 'Message Duration (seconds)',
+    title: AppLocalizations.of(context).setMessageDuration,
     tabName: 'General · Messages',
     tabIndex: 0,
     trailingBuilder: (_) => const _NumericStepper(
@@ -1967,105 +1977,105 @@ final _kSearchableSettings = <SearchableSetting>[
     ),
   ),
   SearchableSetting(
-    title: 'Message Position',
+    title: AppLocalizations.of(context).setMessagePosition,
     tabName: 'General · Messages',
     tabIndex: 0,
     trailingBuilder: (_) =>
         const _DropdownControl(SettingKeys.messagePosition, ['Top', 'Bottom']),
   ),
   SearchableSetting(
-    title: 'Show cash in on application start',
+    title: AppLocalizations.of(context).setShowCashInOnStart,
     tabName: 'General · Business Day',
     tabIndex: 0,
     trailingBuilder: (_) => const _SwitchControl(SettingKeys.showCashInOnStart),
   ),
   SearchableSetting(
-    title: 'Select business day on application start',
+    title: AppLocalizations.of(context).setSelectBusinessDayOnStart,
     tabName: 'General · Business Day',
     tabIndex: 0,
     trailingBuilder: (_) =>
         const _SwitchControl(SettingKeys.selectBusinessDayOnStart),
   ),
   SearchableSetting(
-    title: 'Search button',
+    title: AppLocalizations.of(context).setSearchButton,
     tabName: 'General · POS Buttons',
     tabIndex: 0,
     trailingBuilder: (_) => const _SwitchControl(SettingKeys.showSearchBtn),
   ),
   SearchableSetting(
-    title: 'Transfer button',
+    title: AppLocalizations.of(context).setTransferButton,
     tabName: 'General · POS Buttons',
     tabIndex: 0,
     trailingBuilder: (_) => const _SwitchControl(SettingKeys.showTransferBtn),
   ),
   SearchableSetting(
-    title: 'Customer button',
+    title: AppLocalizations.of(context).setCustomerButton,
     tabName: 'General · POS Buttons',
     tabIndex: 0,
     trailingBuilder: (_) => const _SwitchControl(SettingKeys.showCustomerBtn),
   ),
   SearchableSetting(
-    title: 'Discount button',
+    title: AppLocalizations.of(context).setDiscountButton,
     tabName: 'General · POS Buttons',
     tabIndex: 0,
     trailingBuilder: (_) => const _SwitchControl(SettingKeys.showDiscountBtn),
   ),
   SearchableSetting(
-    title: 'Comment button',
+    title: AppLocalizations.of(context).setCommentButton,
     tabName: 'General · POS Buttons',
     tabIndex: 0,
     trailingBuilder: (_) => const _SwitchControl(SettingKeys.showCommentBtn),
   ),
   SearchableSetting(
-    title: 'Refund button',
+    title: AppLocalizations.of(context).setRefundButton,
     tabName: 'General · POS Buttons',
     tabIndex: 0,
     trailingBuilder: (_) => const _SwitchControl(SettingKeys.showRefundBtn),
   ),
   SearchableSetting(
-    title: 'Cash Drawer button',
+    title: AppLocalizations.of(context).setCashDrawerButton,
     tabName: 'General · POS Buttons',
     tabIndex: 0,
     trailingBuilder: (_) => const _SwitchControl(SettingKeys.showCashDrawerBtn),
   ),
   SearchableSetting(
-    title: 'Warehouse Switcher button',
+    title: AppLocalizations.of(context).setWarehouseSwitcherButton,
     tabName: 'General · POS Buttons',
     tabIndex: 0,
     trailingBuilder: (_) => const _SwitchControl(SettingKeys.showWarehouseBtn),
   ),
   SearchableSetting(
-    title: 'Bookings button',
+    title: AppLocalizations.of(context).setBookingsButton,
     tabName: 'General · POS Buttons',
     tabIndex: 0,
     trailingBuilder: (_) => const _SwitchControl(SettingKeys.showBookingBtn),
   ),
   SearchableSetting(
-    title: 'Tables / Floor Plan button',
+    title: AppLocalizations.of(context).setTablesFloorPlanButton,
     tabName: 'General · POS Buttons',
     tabIndex: 0,
     trailingBuilder: (_) => const _SwitchControl(SettingKeys.showTablesBtn),
   ),
   SearchableSetting(
-    title: 'Send to Kitchen button',
+    title: AppLocalizations.of(context).setSendToKitchenButton,
     tabName: 'General · POS Buttons',
     tabIndex: 0,
     trailingBuilder: (_) => const _SwitchControl(SettingKeys.showKitchenBtn),
   ),
   SearchableSetting(
-    title: 'Tax button',
+    title: AppLocalizations.of(context).setTaxButton,
     tabName: 'General · POS Buttons',
     tabIndex: 0,
     trailingBuilder: (_) => const _SwitchControl(SettingKeys.showTaxBtn),
   ),
   SearchableSetting(
-    title: 'Change quantity button',
+    title: AppLocalizations.of(context).setChangeQuantityButton,
     tabName: 'General · POS Buttons',
     tabIndex: 0,
     trailingBuilder: (_) => const _SwitchControl(SettingKeys.showQuantityBtn),
   ),
   SearchableSetting(
-    title: 'API Base URL',
+    title: AppLocalizations.of(context).setApiBaseUrl,
     tabName: 'General · API',
     tabIndex: 0,
     trailingBuilder: (_) => const _TextFieldControl(
@@ -2077,7 +2087,7 @@ final _kSearchableSettings = <SearchableSetting>[
 
   // ── Order & Payment ──────────────────────────────────────────────────────────
   SearchableSetting(
-    title: 'Enable Floor Plan / Tables',
+    title: AppLocalizations.of(context).setEnableFloorPlan,
     tabName: 'Order & Payment · Features',
     tabIndex: 1,
     trailingBuilder: (_) => _SwitchControl(
@@ -2092,7 +2102,7 @@ final _kSearchableSettings = <SearchableSetting>[
     ),
   ),
   SearchableSetting(
-    title: 'Enable Bookings / Calendar',
+    title: AppLocalizations.of(context).setEnableBookings,
     tabName: 'Order & Payment · Features',
     tabIndex: 1,
     trailingBuilder: (_) => _SwitchControl(
@@ -2107,7 +2117,7 @@ final _kSearchableSettings = <SearchableSetting>[
     ),
   ),
   SearchableSetting(
-    title: 'Tables Button Label',
+    title: AppLocalizations.of(context).setTablesButtonLabel,
     tabName: 'Order & Payment · Features',
     tabIndex: 1,
     trailingBuilder: (_) => const _TextFieldControl(
@@ -2116,27 +2126,27 @@ final _kSearchableSettings = <SearchableSetting>[
     ),
   ),
   SearchableSetting(
-    title: 'Allow table-less orders',
+    title: AppLocalizations.of(context).setAllowTablelessOrders,
     tabName: 'Order & Payment · Features',
     tabIndex: 1,
     trailingBuilder: (_) =>
         const _SwitchControl(SettingKeys.allowTablelessOrders),
   ),
   SearchableSetting(
-    title: 'Allow walk-in table orders',
+    title: AppLocalizations.of(context).setAllowWalkInTableOrders,
     tabName: 'Order & Payment · Features',
     tabIndex: 1,
     trailingBuilder: (_) =>
         const _SwitchControl(SettingKeys.allowWalkInTableOrders),
   ),
   SearchableSetting(
-    title: 'Booking settings',
+    title: AppLocalizations.of(context).setBookingSettings,
     tabName: 'Order & Payment · Booking',
     tabIndex: 1,
     trailingBuilder: (openTab) => _OpenTabButton(openTab),
   ),
   SearchableSetting(
-    title: 'Default search',
+    title: AppLocalizations.of(context).setDefaultSearch,
     tabName: 'Order & Payment · Items',
     tabIndex: 1,
     trailingBuilder: (_) => const _DropdownControl(SettingKeys.defaultSearch, [
@@ -2147,13 +2157,13 @@ final _kSearchableSettings = <SearchableSetting>[
     ]),
   ),
   SearchableSetting(
-    title: 'Show search options',
+    title: AppLocalizations.of(context).setShowSearchOptions,
     tabName: 'Order & Payment · Items',
     tabIndex: 1,
     trailingBuilder: (_) => const _SwitchControl(SettingKeys.showSearchOptions),
   ),
   SearchableSetting(
-    title: 'Default discount type',
+    title: AppLocalizations.of(context).setDefaultDiscountType,
     tabName: 'Order & Payment · Items',
     tabIndex: 1,
     trailingBuilder: (_) => const _DropdownControl(
@@ -2162,41 +2172,41 @@ final _kSearchableSettings = <SearchableSetting>[
     ),
   ),
   SearchableSetting(
-    title: 'Separate row for each item',
+    title: AppLocalizations.of(context).setSeparateRowPerItem,
     tabName: 'Order & Payment · Items',
     tabIndex: 1,
     trailingBuilder: (_) =>
         const _SwitchControl(SettingKeys.separateRowForEachItem),
   ),
   SearchableSetting(
-    title: 'Prevent sale below cost price',
+    title: AppLocalizations.of(context).setPreventSaleBelowCost,
     tabName: 'Order & Payment · Items',
     tabIndex: 1,
     trailingBuilder: (_) =>
         const _SwitchControl(SettingKeys.preventSaleBelowCostPrice),
   ),
   SearchableSetting(
-    title: 'Prevent negative inventory',
+    title: AppLocalizations.of(context).setPreventNegativeInventory,
     tabName: 'Order & Payment · Items',
     tabIndex: 1,
     trailingBuilder: (_) =>
         const _SwitchControl(SettingKeys.preventNegativeInventory),
   ),
   SearchableSetting(
-    title: 'Single user',
+    title: AppLocalizations.of(context).setSingleUser,
     tabName: 'Order & Payment · Users',
     tabIndex: 1,
     trailingBuilder: (_) => const _SwitchControl(SettingKeys.singleUser),
   ),
   SearchableSetting(
-    title: 'Display receipt print dialog',
+    title: AppLocalizations.of(context).setShowPrintDialog,
     tabName: 'Order & Payment · Payment',
     tabIndex: 1,
     trailingBuilder: (_) =>
         const _SwitchControl(SettingKeys.displayReceiptPrintDialog),
   ),
   SearchableSetting(
-    title: 'Default due date (days)',
+    title: AppLocalizations.of(context).setDefaultDueDays,
     tabName: 'Order & Payment · Payment',
     tabIndex: 1,
     trailingBuilder: (_) => const _NumericStepper(
@@ -2206,42 +2216,42 @@ final _kSearchableSettings = <SearchableSetting>[
     ),
   ),
   SearchableSetting(
-    title: 'Merge items on receipt',
+    title: AppLocalizations.of(context).setMergeItemsOnReceipt,
     tabName: 'Order & Payment · Payment',
     tabIndex: 1,
     trailingBuilder: (_) =>
         const _SwitchControl(SettingKeys.mergeItemsOnReceipt),
   ),
   SearchableSetting(
-    title: 'Single item discount allowed',
+    title: AppLocalizations.of(context).setSingleItemDiscount,
     tabName: 'Order & Payment · Payment',
     tabIndex: 1,
     trailingBuilder: (_) =>
         const _SwitchControl(SettingKeys.singleItemDiscountAllowed),
   ),
   SearchableSetting(
-    title: 'Require reason on void',
+    title: AppLocalizations.of(context).setRequireReasonOnVoid,
     tabName: 'Order & Payment · Void Items',
     tabIndex: 1,
     trailingBuilder: (_) =>
         const _SwitchControl(SettingKeys.requireReasonOnVoid),
   ),
   SearchableSetting(
-    title: 'Track unconfirmed voided items',
+    title: AppLocalizations.of(context).setTrackUnconfirmedVoids,
     tabName: 'Order & Payment · Void Items',
     tabIndex: 1,
     trailingBuilder: (_) =>
         const _SwitchControl(SettingKeys.trackUnconfirmedVoidedItems),
   ),
   SearchableSetting(
-    title: 'Request service type automatically',
+    title: AppLocalizations.of(context).setRequestServiceTypeAuto,
     tabName: 'Order & Payment · Service Type',
     tabIndex: 1,
     trailingBuilder: (_) =>
         const _SwitchControl(SettingKeys.requestServiceTypeAutomatically),
   ),
   SearchableSetting(
-    title: 'Default service type',
+    title: AppLocalizations.of(context).setDefaultServiceType,
     tabName: 'Order & Payment · Service Type',
     tabIndex: 1,
     trailingBuilder: (_) => const _DropdownControl(
@@ -2250,42 +2260,42 @@ final _kSearchableSettings = <SearchableSetting>[
     ),
   ),
   SearchableSetting(
-    title: 'Print large order number in receipt',
+    title: AppLocalizations.of(context).setPrintLargeOrderNumber,
     tabName: 'Order & Payment · Service Type',
     tabIndex: 1,
     trailingBuilder: (_) =>
         const _SwitchControl(SettingKeys.printLargeOrderNumberInReceipt),
   ),
   SearchableSetting(
-    title: 'Service Type Selector',
+    title: AppLocalizations.of(context).setServiceTypeSelector,
     tabName: 'Order & Payment · Service Type',
     tabIndex: 1,
     trailingBuilder: (_) =>
         const _SwitchControl(SettingKeys.featureServiceTypeEnabled),
   ),
   SearchableSetting(
-    title: 'Service Status Selector',
+    title: AppLocalizations.of(context).setServiceStatusSelector,
     tabName: 'Order & Payment · Service Type',
     tabIndex: 1,
     trailingBuilder: (_) =>
         const _SwitchControl(SettingKeys.featureServiceStatusEnabled),
   ),
   SearchableSetting(
-    title: 'Reset order number on day close',
+    title: AppLocalizations.of(context).setResetOrderNumber,
     tabName: 'Order & Payment · Advanced',
     tabIndex: 1,
     trailingBuilder: (_) =>
         const _SwitchControl(SettingKeys.resetOrderNumberOnDayClose),
   ),
   SearchableSetting(
-    title: 'Show items on payment form',
+    title: AppLocalizations.of(context).setShowItemsOnPaymentForm,
     tabName: 'Order & Payment · Advanced',
     tabIndex: 1,
     trailingBuilder: (_) =>
         const _SwitchControl(SettingKeys.showItemsOnPaymentForm),
   ),
   SearchableSetting(
-    title: 'Number of payment type rows',
+    title: AppLocalizations.of(context).setPaymentTypeRows,
     tabName: 'Order & Payment · Advanced',
     tabIndex: 1,
     trailingBuilder: (_) => const _NumericStepper(
@@ -2295,7 +2305,7 @@ final _kSearchableSettings = <SearchableSetting>[
     ),
   ),
   SearchableSetting(
-    title: 'Show all occupied tables in floor plan',
+    title: AppLocalizations.of(context).setShowAllOccupied,
     tabName: 'Order & Payment · Advanced',
     tabIndex: 1,
     trailingBuilder: (_) =>
@@ -2304,14 +2314,14 @@ final _kSearchableSettings = <SearchableSetting>[
 
   // ── Products ─────────────────────────────────────────────────────────────────
   SearchableSetting(
-    title: 'Display and print items with tax included',
+    title: AppLocalizations.of(context).setDisplayPrintTaxIncluded,
     tabName: 'Products · General',
     tabIndex: 2,
     trailingBuilder: (_) =>
         const _SwitchControl(SettingKeys.displayAndPrintTaxIncluded),
   ),
   SearchableSetting(
-    title: 'Discount apply rule',
+    title: AppLocalizations.of(context).setDiscountApplyRule,
     tabName: 'Products · General',
     tabIndex: 2,
     trailingBuilder: (_) => const _DropdownControl(
@@ -2320,7 +2330,7 @@ final _kSearchableSettings = <SearchableSetting>[
     ),
   ),
   SearchableSetting(
-    title: 'Sorting',
+    title: AppLocalizations.of(context).setSorting,
     tabName: 'Products · General',
     tabIndex: 2,
     trailingBuilder: (_) => const _DropdownControl(SettingKeys.productSorting, [
@@ -2330,32 +2340,32 @@ final _kSearchableSettings = <SearchableSetting>[
     ]),
   ),
   SearchableSetting(
-    title: 'Allow negative price',
+    title: AppLocalizations.of(context).setAllowNegativePrice,
     tabName: 'Products · General',
     tabIndex: 2,
     trailingBuilder: (_) =>
         const _SwitchControl(SettingKeys.allowNegativePrice),
   ),
   SearchableSetting(
-    title: 'Show Product Images in POS Grid',
+    title: AppLocalizations.of(context).setShowProductImages,
     tabName: 'Products · General',
     tabIndex: 2,
     trailingBuilder: (_) => const _SwitchControl(SettingKeys.showProductImages),
   ),
   SearchableSetting(
-    title: 'Default warehouse',
+    title: AppLocalizations.of(context).setDefaultWarehouse,
     tabName: 'Products · Inventory',
     tabIndex: 2,
     trailingBuilder: (openTab) => _OpenTabButton(openTab),
   ),
   SearchableSetting(
-    title: 'Default tax rate',
+    title: AppLocalizations.of(context).setDefaultTaxRate,
     tabName: 'Products · Product Defaults',
     tabIndex: 2,
     trailingBuilder: (openTab) => _OpenTabButton(openTab),
   ),
   SearchableSetting(
-    title: 'Default Measurement Unit',
+    title: AppLocalizations.of(context).setDefaultMeasurementUnit,
     tabName: 'Products · Product Defaults',
     tabIndex: 2,
     trailingBuilder: (_) => const _TextFieldControl(
@@ -2364,7 +2374,7 @@ final _kSearchableSettings = <SearchableSetting>[
     ),
   ),
   SearchableSetting(
-    title: 'Default Barcode Format',
+    title: AppLocalizations.of(context).setDefaultBarcodeFormat,
     tabName: 'Products · Product Defaults',
     tabIndex: 2,
     trailingBuilder: (_) => const _DropdownControl(SettingKeys.barcodeFormat, [
@@ -2376,49 +2386,49 @@ final _kSearchableSettings = <SearchableSetting>[
     ]),
   ),
   SearchableSetting(
-    title: 'Cost price based markup',
+    title: AppLocalizations.of(context).setCostPriceMarkup,
     tabName: 'Products · Product Defaults',
     tabIndex: 2,
     trailingBuilder: (_) =>
         const _SwitchControl(SettingKeys.costPriceBasedMarkup),
   ),
   SearchableSetting(
-    title: 'Automatically update cost price on purchase',
+    title: AppLocalizations.of(context).setAutoUpdateCostPrice,
     tabName: 'Products · Product Defaults',
     tabIndex: 2,
     trailingBuilder: (_) =>
         const _SwitchControl(SettingKeys.autoUpdateCostPrice),
   ),
   SearchableSetting(
-    title: 'Update sale price based on markup',
+    title: AppLocalizations.of(context).setUpdateSalePriceFromMarkup,
     tabName: 'Products · Product Defaults',
     tabIndex: 2,
     trailingBuilder: (_) =>
         const _SwitchControl(SettingKeys.updateSalePriceOnMarkup),
   ),
   SearchableSetting(
-    title: 'Enable moving average price',
+    title: AppLocalizations.of(context).setEnableMovingAverage,
     tabName: 'Products · Moving Average Price',
     tabIndex: 2,
     trailingBuilder: (_) =>
         const _SwitchControl(SettingKeys.enableMovingAveragePrice),
   ),
   SearchableSetting(
-    title: 'Menu Layout (List / Grid)',
+    title: AppLocalizations.of(context).setMenuLayout,
     tabName: 'Products · Menu Grid',
     tabIndex: 2,
     trailingBuilder: (_) =>
         const _DropdownControl(SettingKeys.menuLayoutMode, ['List', 'Grid']),
   ),
   SearchableSetting(
-    title: 'Menu Grid Columns',
+    title: AppLocalizations.of(context).setMenuGridColumns,
     tabName: 'Products · Menu Grid',
     tabIndex: 2,
     trailingBuilder: (_) =>
         const _DropdownControl(SettingKeys.menuGridCols, ['4', '5']),
   ),
   SearchableSetting(
-    title: 'Menu Grid Rows',
+    title: AppLocalizations.of(context).setMenuGridRows,
     tabName: 'Products · Menu Grid',
     tabIndex: 2,
     trailingBuilder: (_) =>
@@ -2427,14 +2437,14 @@ final _kSearchableSettings = <SearchableSetting>[
 
   // ── Weighing Scale ───────────────────────────────────────────────────────────
   SearchableSetting(
-    title: 'Enable weighing scales barcode',
+    title: AppLocalizations.of(context).setEnableScaleBarcode,
     tabName: 'Weighing Scale · Barcode Parsing',
     tabIndex: 3,
     trailingBuilder: (_) =>
         const _SwitchControl(SettingKeys.scaleBarcodeEnabled),
   ),
   SearchableSetting(
-    title: 'First two digits / prefix',
+    title: AppLocalizations.of(context).setFirstTwoDigits,
     tabName: 'Weighing Scale · Barcode Parsing',
     tabIndex: 3,
     trailingBuilder: (_) => const _TextFieldControl(
@@ -2443,7 +2453,7 @@ final _kSearchableSettings = <SearchableSetting>[
     ),
   ),
   SearchableSetting(
-    title: 'Number of digits for product code',
+    title: AppLocalizations.of(context).setProductCodeDigits,
     tabName: 'Weighing Scale · Barcode Parsing',
     tabIndex: 3,
     trailingBuilder: (_) => const _NumericStepper(
@@ -2453,7 +2463,7 @@ final _kSearchableSettings = <SearchableSetting>[
     ),
   ),
   SearchableSetting(
-    title: 'Number of decimal places',
+    title: AppLocalizations.of(context).setNumberOfDecimals,
     tabName: 'Weighing Scale · Barcode Parsing',
     tabIndex: 3,
     trailingBuilder: (_) => const _NumericStepper(
@@ -2463,14 +2473,14 @@ final _kSearchableSettings = <SearchableSetting>[
     ),
   ),
   SearchableSetting(
-    title: 'Remove zeros from product code (trim zeros)',
+    title: AppLocalizations.of(context).trimZerosFromCode,
     tabName: 'Weighing Scale · Barcode Parsing',
     tabIndex: 3,
     trailingBuilder: (_) =>
         const _SwitchControl(SettingKeys.scaleBarcodeTrimZeros),
   ),
   SearchableSetting(
-    title: 'Scale prints price instead of quantity',
+    title: AppLocalizations.of(context).setScalePrintsPrice,
     tabName: 'Weighing Scale · Barcode Parsing',
     tabIndex: 3,
     trailingBuilder: (_) =>
@@ -2479,14 +2489,14 @@ final _kSearchableSettings = <SearchableSetting>[
 
   // ── Customer Display ─────────────────────────────────────────────────────────
   SearchableSetting(
-    title: 'Customer display enabled',
+    title: AppLocalizations.of(context).setCustomerDisplayEnabled,
     tabName: 'Customer Display',
     tabIndex: 4,
     trailingBuilder: (_) =>
         const _SwitchControl(SettingKeys.customerDisplayEnabled),
   ),
   SearchableSetting(
-    title: 'COM port',
+    title: AppLocalizations.of(context).setComPort,
     tabName: 'Customer Display',
     tabIndex: 4,
     trailingBuilder: (_) =>
@@ -2504,7 +2514,7 @@ final _kSearchableSettings = <SearchableSetting>[
         ]),
   ),
   SearchableSetting(
-    title: 'Bits per second',
+    title: AppLocalizations.of(context).setBitsPerSecond,
     tabName: 'Customer Display',
     tabIndex: 4,
     trailingBuilder: (_) => const _DropdownControl(
@@ -2513,7 +2523,7 @@ final _kSearchableSettings = <SearchableSetting>[
     ),
   ),
   SearchableSetting(
-    title: 'Data bits',
+    title: AppLocalizations.of(context).setDataBits,
     tabName: 'Customer Display',
     tabIndex: 4,
     trailingBuilder: (_) => const _DropdownControl(
@@ -2522,7 +2532,7 @@ final _kSearchableSettings = <SearchableSetting>[
     ),
   ),
   SearchableSetting(
-    title: 'Parity',
+    title: AppLocalizations.of(context).setParity,
     tabName: 'Customer Display',
     tabIndex: 4,
     trailingBuilder: (_) => const _DropdownControl(
@@ -2531,7 +2541,7 @@ final _kSearchableSettings = <SearchableSetting>[
     ),
   ),
   SearchableSetting(
-    title: 'Stop bits',
+    title: AppLocalizations.of(context).setStopBits,
     tabName: 'Customer Display',
     tabIndex: 4,
     trailingBuilder: (_) => const _DropdownControl(
@@ -2540,7 +2550,7 @@ final _kSearchableSettings = <SearchableSetting>[
     ),
   ),
   SearchableSetting(
-    title: 'Flow control',
+    title: AppLocalizations.of(context).setFlowControl,
     tabName: 'Customer Display',
     tabIndex: 4,
     trailingBuilder: (_) => const _DropdownControl(
@@ -2549,7 +2559,7 @@ final _kSearchableSettings = <SearchableSetting>[
     ),
   ),
   SearchableSetting(
-    title: 'Number of characters',
+    title: AppLocalizations.of(context).setNumberOfCharacters,
     tabName: 'Customer Display',
     tabIndex: 4,
     trailingBuilder: (_) => const _NumericStepper(
@@ -2559,7 +2569,7 @@ final _kSearchableSettings = <SearchableSetting>[
     ),
   ),
   SearchableSetting(
-    title: 'Welcome message top line',
+    title: AppLocalizations.of(context).setWelcomeTopLine,
     tabName: 'Customer Display · Welcome Message',
     tabIndex: 4,
     trailingBuilder: (_) => const _TextFieldControl(
@@ -2568,14 +2578,14 @@ final _kSearchableSettings = <SearchableSetting>[
     ),
   ),
   SearchableSetting(
-    title: 'Welcome message bottom line',
+    title: AppLocalizations.of(context).setWelcomeBottomLine,
     tabName: 'Customer Display · Welcome Message',
     tabIndex: 4,
     trailingBuilder: (_) =>
         const _TextFieldControl(SettingKeys.customerDisplayWelcomeBottom),
   ),
   SearchableSetting(
-    title: 'Enable live web customer display',
+    title: AppLocalizations.of(context).setEnableLiveWebDisplay,
     tabName: 'Customer Display · Screen Display (Web)',
     tabIndex: 4,
     trailingBuilder: (_) =>
@@ -2584,7 +2594,7 @@ final _kSearchableSettings = <SearchableSetting>[
 
   // ── Email ────────────────────────────────────────────────────────────────────
   SearchableSetting(
-    title: 'SMTP Host',
+    title: AppLocalizations.of(context).setSmtpHost,
     tabName: 'Email · SMTP Server',
     tabIndex: 6,
     trailingBuilder: (_) => const _TextFieldControl(
@@ -2594,7 +2604,7 @@ final _kSearchableSettings = <SearchableSetting>[
     ),
   ),
   SearchableSetting(
-    title: 'SMTP Port',
+    title: AppLocalizations.of(context).setSmtpPort,
     tabName: 'Email · SMTP Server',
     tabIndex: 6,
     trailingBuilder: (_) => const _TextFieldControl(
@@ -2604,7 +2614,7 @@ final _kSearchableSettings = <SearchableSetting>[
     ),
   ),
   SearchableSetting(
-    title: 'From Email Address',
+    title: AppLocalizations.of(context).setFromEmailAddress,
     tabName: 'Email · Sender',
     tabIndex: 6,
     trailingBuilder: (_) => const _TextFieldControl(
@@ -2614,14 +2624,14 @@ final _kSearchableSettings = <SearchableSetting>[
     ),
   ),
   SearchableSetting(
-    title: 'From Name',
+    title: AppLocalizations.of(context).setFromName,
     tabName: 'Email · Sender',
     tabIndex: 6,
     trailingBuilder: (_) =>
-        const _TextFieldControl(SettingKeys.emailFromName, hint: 'POS System'),
+        _TextFieldControl(SettingKeys.emailFromName, hint: AppLocalizations.of(context).posSystem),
   ),
   SearchableSetting(
-    title: 'Account / User Email',
+    title: AppLocalizations.of(context).accountUserEmail,
     tabName: 'Email · Sender',
     tabIndex: 6,
     trailingBuilder: (_) => const _TextFieldControl(
@@ -2633,21 +2643,21 @@ final _kSearchableSettings = <SearchableSetting>[
 
   // ── Dual Currency ────────────────────────────────────────────────────────────
   SearchableSetting(
-    title: 'Dual Currency Enabled',
+    title: AppLocalizations.of(context).setDualCurrencyEnabled,
     tabName: 'Dual Currency',
     tabIndex: 8,
     trailingBuilder: (_) =>
         const _SwitchControl(SettingKeys.dualCurrencyEnabled),
   ),
   SearchableSetting(
-    title: 'Secondary Currency Symbol',
+    title: AppLocalizations.of(context).setSecondaryCurrencySymbol,
     tabName: 'Dual Currency',
     tabIndex: 8,
     trailingBuilder: (_) =>
         const _TextFieldControl(SettingKeys.dualCurrencySymbol, hint: 'e.g. €'),
   ),
   SearchableSetting(
-    title: 'Exchange Rate',
+    title: AppLocalizations.of(context).setExchangeRate,
     tabName: 'Dual Currency',
     tabIndex: 8,
     trailingBuilder: (_) => const _TextFieldControl(
@@ -2658,32 +2668,32 @@ final _kSearchableSettings = <SearchableSetting>[
   ),
 
   // ── Whole-screen panels (tap the row to open the tab) ────────────────────────
-  const SearchableSetting(
-    title: 'Kitchen Display',
+  SearchableSetting(
+    title: AppLocalizations.of(context).setKitchenDisplay,
     tabName: 'Kitchen Display',
     tabIndex: 5,
     navigational: true,
   ),
-  const SearchableSetting(
-    title: 'Printer & Receipt Settings',
+  SearchableSetting(
+    title: AppLocalizations.of(context).setPrinterReceiptSettings,
     tabName: 'Print',
     tabIndex: 7,
     navigational: true,
   ),
-  const SearchableSetting(
-    title: 'Database & Backup',
+  SearchableSetting(
+    title: AppLocalizations.of(context).setDatabaseBackup,
     tabName: 'Database',
     tabIndex: 9,
     navigational: true,
   ),
-  const SearchableSetting(
-    title: 'Subscription',
+  SearchableSetting(
+    title: AppLocalizations.of(context).setSubscription,
     tabName: 'Subscription',
     tabIndex: 10,
     navigational: true,
   ),
-  const SearchableSetting(
-    title: 'About',
+  SearchableSetting(
+    title: AppLocalizations.of(context).setAbout,
     tabName: 'About',
     tabIndex: 11,
     navigational: true,
@@ -2710,31 +2720,71 @@ class _TabScrollView extends StatelessWidget {
   }
 }
 
+// Localized display names for enum-ish settings values that are STORED in
+// English (theme keys, accent names, dropdown option values). The stored value
+// never changes; only what the operator sees is translated. Unknown values
+// (COM ports, EAN formats, currency codes, date patterns) pass through as-is.
+String _accentColorLabel(BuildContext context, String name) {
+  final l = AppLocalizations.of(context);
+  switch (name) {
+    case 'Blue': return l.colorBlue;
+    case 'Green': return l.colorGreen;
+    case 'Pink': return l.colorPink;
+    case 'Purple': return l.colorPurple;
+    case 'Orange': return l.colorOrange;
+    case 'Red': return l.colorRed;
+    default: return name;
+  }
+}
+
+String _themeModeLabel(BuildContext context, String key) {
+  final l = AppLocalizations.of(context);
+  switch (key) {
+    case 'light': return l.themeLight;
+    case 'dark': return l.themeDark;
+    case 'dimmed': return l.themeDimmed;
+    case 'night': return l.themeNight;
+    case 'gray': return l.themeGray;
+    case 'high_contrast': return l.themeHighContrast;
+    default: return key;
+  }
+}
+
+String _settingOptionLabel(BuildContext context, String value) {
+  final l = AppLocalizations.of(context);
+  switch (value) {
+    case 'POS': return l.posLabel;
+    case 'Tables': return l.tablesLabel;
+    case 'Booking': return l.bookingLabel;
+    case 'Name': return l.fieldName;
+    case 'Code': return l.fieldCode;
+    case 'Barcode': return l.barcode;
+    case 'All fields': return l.allFields;
+    case 'Fixed': return l.fixed;
+    case 'Percentage': return l.percentage;
+    case 'Top': return l.top;
+    case 'Bottom': return l.bottom;
+    default: return value; // technical values stay verbatim
+  }
+}
+
 // ── Accent Color Picker ───────────────────────────────────────────────────────
 
 class _AccentColorPicker extends ConsumerWidget {
   const _AccentColorPicker();
 
+  // Replace the old list with these 6 main colors
   static const _colors = [
     ('Blue', Color(0xFF2196F3)),
-    ('Sky', Color(0xFF03A9F4)),
-    ('Indigo', Color(0xFF3F51B5)),
     ('Green', Color(0xFF4CAF50)),
-    ('Teal', Color(0xFF009688)),
-    ('Emerald', Color(0xFF10B981)),
     ('Pink', Color(0xFFE91E63)),
-    ('Rose', Color(0xFFF43F5E)),
     ('Purple', Color(0xFF9C27B0)),
-    ('Violet', Color(0xFF7C3AED)),
     ('Orange', Color(0xFFFF9800)),
     ('Red', Color(0xFFF44336)),
-    ('Amber', Color(0xFFFFC107)),
-    ('Deep Orange', Color(0xFFFF5722)),
   ];
 
   static String _toHex(Color c) =>
       '#${c.toARGB32().toRadixString(16).substring(2).toUpperCase()}';
-
   static Color? _fromHex(String? hex) {
     if (hex == null) return null;
     try {
@@ -2757,7 +2807,7 @@ class _AccentColorPicker extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Accent Color',
+            AppLocalizations.of(context).setAccentColor,
             style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurface),
           ),
           const SizedBox(height: 12),
@@ -2805,7 +2855,7 @@ class _AccentColorPicker extends ConsumerWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      name,
+                      _accentColorLabel(context, name),
                       style: TextStyle(
                         fontSize: 10,
                         color: theme.colorScheme.onSurface.withValues(
@@ -2855,7 +2905,7 @@ class _FontScalePicker extends ConsumerWidget {
           Row(
             children: [
               Text(
-                'Font Size',
+                AppLocalizations.of(context).setFontSize,
                 style: TextStyle(
                   fontSize: 14,
                   color: theme.colorScheme.onSurface,
@@ -2884,7 +2934,7 @@ class _FontScalePicker extends ConsumerWidget {
                 ref.read(fontScaleProvider.notifier).setAndPersist(v),
           ),
           Text(
-            'Preview: the quick brown fox',
+            AppLocalizations.of(context).fontPreview,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
             ),
@@ -2977,7 +3027,7 @@ class _ThemeModePicker extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Theme Mode',
+            AppLocalizations.of(context).setThemeMode,
             style: TextStyle(fontSize: 14, color: cs.onSurface),
           ),
           const SizedBox(height: 8),
@@ -2996,7 +3046,7 @@ class _ThemeModePicker extends ConsumerWidget {
                   Icon(opt.icon, size: 17, color: cs.primary),
                   const SizedBox(width: 10),
                   Text(
-                    opt.label,
+                    _themeModeLabel(context, opt.key),
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
@@ -3149,19 +3199,19 @@ class _ThemePickerDialog extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 8, 16, 6),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
               child: Row(
                 children: [
-                  Icon(
+                  const Icon(
                     PhosphorIconsRegular.palette,
                     size: 14,
                     color: Colors.white38,
                   ),
-                  SizedBox(width: 7),
+                  const SizedBox(width: 7),
                   Text(
-                    'CHOOSE THEME',
-                    style: TextStyle(
+                    AppLocalizations.of(context).chooseTheme,
+                    style: const TextStyle(
                       color: Colors.white38,
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
@@ -3224,7 +3274,7 @@ class _OptionTile extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  opt.label,
+                  _themeModeLabel(context, opt.key),
                   style: TextStyle(
                     color: selected ? Colors.white : Colors.white70,
                     fontSize: 14,
@@ -3278,18 +3328,16 @@ class _DeviceCardState extends ConsumerState<_DeviceCard> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Sign Out Device'),
+        title: Text(AppLocalizations.of(context).setSignOutDevice),
         content: Text(
           _email != null
-              ? 'This will unlink $_email from this terminal. '
-                    'You will need to sign in online to use the POS again.'
-              : 'This will unlink this terminal. '
-                    'You will need to sign in online to use the POS again.',
+              ? AppLocalizations.of(context).unlinkEmailWarning(_email!)
+              : AppLocalizations.of(context).unlinkTerminalWarning,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
@@ -3297,7 +3345,7 @@ class _DeviceCardState extends ConsumerState<_DeviceCard> {
               foregroundColor: cs.onError,
             ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Sign Out Device'),
+            child: Text(AppLocalizations.of(context).setSignOutDevice),
           ),
         ],
       ),
@@ -3322,25 +3370,23 @@ class _DeviceCardState extends ConsumerState<_DeviceCard> {
     final result = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Device Name'),
+        title: Text(AppLocalizations.of(context).setDeviceName),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'A short, UNIQUE name for this terminal. It becomes the prefix of '
-              'every document number (e.g. CAISSE1-200-000045), so two POS never '
-              'produce the same number. Letters & digits only.',
-              style: TextStyle(fontSize: 12),
+            Text(
+              AppLocalizations.of(context).posNameFullHint,
+              style: const TextStyle(fontSize: 12),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: ctrl,
               autofocus: true,
               textCapitalization: TextCapitalization.characters,
-              decoration: const InputDecoration(
-                labelText: 'Device name',
-                hintText: 'e.g. CAISSE1',
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context).deviceNameLower,
+                hintText: AppLocalizations.of(context).setHintCaisse,
               ),
             ),
           ],
@@ -3348,11 +3394,11 @@ class _DeviceCardState extends ConsumerState<_DeviceCard> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, ctrl.text),
-            child: const Text('Save'),
+            child: Text(AppLocalizations.of(context).actionSave),
           ),
         ],
       ),
@@ -3368,7 +3414,7 @@ class _DeviceCardState extends ConsumerState<_DeviceCard> {
     final deviceName = ref.watch(deviceNameProvider);
 
     return _SettingsCard(
-      title: 'DEVICE',
+      title: AppLocalizations.of(context).setDevice,
       children: [
         ListTile(
           contentPadding: const EdgeInsets.symmetric(horizontal: 20),
@@ -3384,10 +3430,10 @@ class _DeviceCardState extends ConsumerState<_DeviceCard> {
             deviceName.isEmpty ? 'Not set' : deviceName,
             style: const TextStyle(fontWeight: FontWeight.w600),
           ),
-          subtitle: const Text('POS name — prefix for document numbers'),
+          subtitle: Text(AppLocalizations.of(context).setPosNameHint),
           trailing: TextButton.icon(
             icon: const Icon(Icons.edit, size: 16),
-            label: const Text('Edit'),
+            label: Text(AppLocalizations.of(context).actionEdit),
             onPressed: _editDeviceName,
           ),
         ),
@@ -3405,10 +3451,10 @@ class _DeviceCardState extends ConsumerState<_DeviceCard> {
             _email ?? 'Unknown',
             style: const TextStyle(fontWeight: FontWeight.w600),
           ),
-          subtitle: const Text('Registered account'),
+          subtitle: Text(AppLocalizations.of(context).setRegisteredAccount),
           trailing: TextButton.icon(
             icon: Icon(Icons.logout, size: 16, color: cs.error),
-            label: Text('Sign Out', style: TextStyle(color: cs.error)),
+            label: Text(AppLocalizations.of(context).setSignOut, style: TextStyle(color: cs.error)),
             onPressed: _signOut,
           ),
         ),
@@ -3439,166 +3485,312 @@ class _GeneralTab extends ConsumerWidget {
       cards: [
         const _DeviceCard(),
         _SettingsCard(
-          title: 'STARTUP',
+          title: AppLocalizations.of(context).setStartup,
           children: [
             _SettingDropdown(
               settingKey: SettingKeys.defaultScreen,
-              label: 'Default screen',
+              label: AppLocalizations.of(context).setDefaultScreen,
               options: defaultScreenOptions,
             ),
           ],
         ),
-        const _SettingsCard(
-          title: 'REGIONAL',
+        _SettingsCard(
+          // <-- Make sure to remove the 'const' keyword here
+          title: AppLocalizations.of(context).setRegional,
           children: [
-            _CurrencyDropdown(),
-            _SettingDropdown(
-              settingKey: SettingKeys.language,
-              label: 'Language',
-              options: ['en', 'fr', 'ar', 'es', 'de', 'it', 'pt'],
+            LayoutBuilder(
+              builder: (context, constraints) {
+                // Responsive: 2 columns on tablets/desktops (>600px), 1 column on phones
+                final isWide = constraints.maxWidth > 600;
+                final itemWidth = isWide
+                    ? constraints.maxWidth / 2
+                    : constraints.maxWidth;
+
+                return Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.start,
+                  children: [
+                    SizedBox(
+                      width: itemWidth,
+                      child: const _CurrencyDropdown(),
+                    ),
+                    SizedBox(
+                      width: itemWidth,
+                      child: _SettingDropdown(
+                        settingKey: SettingKeys.language,
+                        label: AppLocalizations.of(context).languageLabel,
+                        // Must stay in sync with lib/l10n/*.arb — see the
+                        // matching list in the searchable-settings index.
+                        options: const ['en', 'fr', 'ar'],
+                      ),
+                    ),
+                    SizedBox(
+                      width: itemWidth,
+                      child: _SettingDropdown(
+                        settingKey: SettingKeys.dateFormat,
+                        label: AppLocalizations.of(context).dateFormatLabel,
+                        options: const [
+                          'dd-MM-yyyy',
+                          'MM/dd/yyyy',
+                          'yyyy-MM-dd',
+                          'dd/MM/yyyy',
+                        ],
+                      ),
+                    ),
+                    SizedBox(width: itemWidth, child: const _TimezoneCard()),
+                  ],
+                );
+              },
             ),
-            _SettingDropdown(
-              settingKey: SettingKeys.dateFormat,
-              label: 'Date Format',
-              options: ['dd-MM-yyyy', 'MM/dd/yyyy', 'yyyy-MM-dd', 'dd/MM/yyyy'],
-            ),
-            _TimezoneCard(),
+            const SizedBox(height: 8), // Bottom padding buffer
           ],
         ),
-        const _SettingsCard(
-          title: 'TAX',
+        _SettingsCard(
+          title: AppLocalizations.of(context).setTaxHeader,
           children: [
             _SettingSwitch(
               settingKey: SettingKeys.taxIncludedByDefault,
-              label: 'Tax Included in Price by Default',
+              label: AppLocalizations.of(context).setTaxIncludedByDefault,
               subtitle:
-                  'All new products will default to tax-inclusive pricing',
+                  AppLocalizations.of(context).setTaxInclusiveDefaultHint,
             ),
           ],
         ),
-        const _SettingsCard(
-          title: 'APPEARANCE',
-          children: [
+        _SettingsCard(
+          title: AppLocalizations.of(context).setAppearance,
+          children: const [
             _ThemeModePicker(),
             _AccentColorPicker(),
             _FontScalePicker(),
           ],
         ),
-        const _SettingsCard(
-          title: 'APPLICATION STYLE',
+        _SettingsCard(
+          // <-- Make sure to remove the 'const' keyword here
+          title: AppLocalizations.of(context).setApplicationStyle,
           children: [
-            _SettingDropdown(
-              settingKey: SettingKeys.writingDirection,
-              label: 'Writing Direction',
-              options: ['LTR', 'RTL'],
+            LayoutBuilder(
+              builder: (context, constraints) {
+                // Responsive: 2 columns on tablets/desktops (>600px), 1 column on phones
+                final isWide = constraints.maxWidth > 600;
+                final itemWidth = isWide
+                    ? constraints.maxWidth / 2
+                    : constraints.maxWidth;
+
+                return Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: itemWidth,
+                      child: _SettingDropdown(
+                        settingKey: SettingKeys.writingDirection,
+                        label: AppLocalizations.of(context).setWritingDirection,
+                        options: const ['LTR', 'RTL'],
+                      ),
+                    ),
+                    SizedBox(
+                      width: itemWidth,
+                      child: _SettingSwitch(
+                        settingKey: SettingKeys.enableVirtualKeyboard,
+                        label: AppLocalizations.of(context).setEnableVirtualKeyboard,
+                        icon: Icons
+                            .keyboard_outlined, // Added an icon for consistency
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
-            _SettingSwitch(
-              settingKey: SettingKeys.enableVirtualKeyboard,
-              label: 'Enable Virtual Keyboard',
-            ),
-          ],
-        ),
-        const _SettingsCard(
-          title: 'MESSAGES (NOTIFICATIONS)',
-          children: [
-            _StepperRow(
-              label: 'Message Duration (seconds)',
-              settingKey: SettingKeys.messageDuration,
-              min: 1,
-              max: 10,
-            ),
-            _SettingDropdown(
-              settingKey: SettingKeys.messagePosition,
-              label: 'Message Position',
-              options: ['Top', 'Bottom'],
-            ),
-          ],
-        ),
-        const _SettingsCard(
-          title: 'BUSINESS DAY',
-          children: [
-            _SettingSwitch(
-              settingKey: SettingKeys.showCashInOnStart,
-              label: 'Show cash in on application start',
-            ),
-            _SettingSwitch(
-              settingKey: SettingKeys.selectBusinessDayOnStart,
-              label: 'Select business day on application start',
-            ),
+            const SizedBox(height: 8), // Bottom padding buffer
           ],
         ),
         _SettingsCard(
-          title: 'POS BUTTON BAR',
+          // <-- Make sure to remove the 'const' keyword here
+          title: AppLocalizations.of(context).setMessages,
+          children: [
+            LayoutBuilder(
+              builder: (context, constraints) {
+                // Responsive: 2 columns on tablets/desktops (>600px), 1 column on phones
+                final isWide = constraints.maxWidth > 600;
+                final itemWidth = isWide
+                    ? constraints.maxWidth / 2
+                    : constraints.maxWidth;
+
+                return Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: itemWidth,
+                      child: _StepperRow(
+                        label: AppLocalizations.of(context).setMessageDuration,
+                        settingKey: SettingKeys.messageDuration,
+                        min: 1,
+                        max: 10,
+                      ),
+                    ),
+                    SizedBox(
+                      width: itemWidth,
+                      child: _SettingDropdown(
+                        settingKey: SettingKeys.messagePosition,
+                        label: AppLocalizations.of(context).setMessagePosition,
+                        options: const ['Top', 'Bottom'],
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+            const SizedBox(height: 8), // Bottom padding buffer
+          ],
+        ),
+        _SettingsCard(
+          // <-- Make sure to remove the 'const' keyword here
+          title: AppLocalizations.of(context).setBusinessDay,
+          children: [
+            LayoutBuilder(
+              builder: (context, constraints) {
+                // Responsive: 2 columns on tablets/desktops (>600px), 1 column on phones
+                final isWide = constraints.maxWidth > 600;
+                final itemWidth = isWide
+                    ? constraints.maxWidth / 2
+                    : constraints.maxWidth;
+
+                return Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: itemWidth,
+                      child: _SettingSwitch(
+                        settingKey: SettingKeys.showCashInOnStart,
+                        label: AppLocalizations.of(context).setShowCashInOnStart,
+                        icon: Icons.payments_outlined, // <-- Added icon here
+                      ),
+                    ),
+                    SizedBox(
+                      width: itemWidth,
+                      child: _SettingSwitch(
+                        settingKey: SettingKeys.selectBusinessDayOnStart,
+                        label: AppLocalizations.of(context).setSelectBusinessDayOnStart,
+                        icon: Icons
+                            .calendar_today_outlined, // <-- Added icon here
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+            const SizedBox(height: 8), // Bottom padding buffer
+          ],
+        ),
+        _SettingsCard(
+          title: AppLocalizations.of(context).setPosButtonBar,
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
               child: Text(
-                'Select which action buttons appear on the main POS screen.',
+                AppLocalizations.of(context).posButtonsHint,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Theme.of(context).hintColor,
                 ),
               ),
             ),
-            const _SettingSwitch(
-              settingKey: SettingKeys.showSearchBtn,
-              label: 'Search',
+            LayoutBuilder(
+              builder: (context, constraints) {
+                // Responsive: 2 columns on tablets/desktops (>600px), 1 column on phones
+                final isWide = constraints.maxWidth > 600;
+                final itemWidth = isWide
+                    ? constraints.maxWidth / 2
+                    : constraints.maxWidth;
+
+                final posButtons = [
+                  (
+                    key: SettingKeys.showSearchBtn,
+                    label: AppLocalizations.of(context).actionSearch,
+                    icon: Icons.search,
+                  ),
+                  (
+                    key: SettingKeys.showTransferBtn,
+                    label: AppLocalizations.of(context).posTransfer,
+                    icon: Icons.swap_horiz,
+                  ),
+                  (
+                    key: SettingKeys.showCustomerBtn,
+                    label: AppLocalizations.of(context).customerLabel,
+                    icon: Icons.person_outline,
+                  ),
+                  (
+                    key: SettingKeys.showDiscountBtn,
+                    label: AppLocalizations.of(context).posDiscount,
+                    icon: Icons.local_offer_outlined,
+                  ),
+                  (
+                    key: SettingKeys.showCommentBtn,
+                    label: AppLocalizations.of(context).posComment,
+                    icon: Icons.chat_bubble_outline,
+                  ),
+                  (
+                    key: SettingKeys.showRefundBtn,
+                    label: AppLocalizations.of(context).posRefund,
+                    icon: Icons.assignment_return_outlined,
+                  ),
+                  (
+                    key: SettingKeys.showCashDrawerBtn,
+                    label: AppLocalizations.of(context).setCashDrawer,
+                    icon: Icons.point_of_sale,
+                  ),
+                  (
+                    key: SettingKeys.showWarehouseBtn,
+                    label: AppLocalizations.of(context).setWarehouseSwitcher,
+                    icon: Icons.warehouse_outlined,
+                  ),
+                  (
+                    key: SettingKeys.showBookingBtn,
+                    label: AppLocalizations.of(context).posBookings,
+                    icon: Icons.calendar_month_outlined,
+                  ),
+                  (
+                    key: SettingKeys.showTablesBtn,
+                    label: AppLocalizations.of(context).setTablesFloorPlan,
+                    icon: Icons.table_restaurant_outlined,
+                  ),
+                  (
+                    key: SettingKeys.showKitchenBtn,
+                    label: AppLocalizations.of(context).setSendToKitchen,
+                    icon: Icons.kitchen_outlined,
+                  ),
+                  (
+                    key: SettingKeys.showTaxBtn,
+                    label: AppLocalizations.of(context).fieldTax,
+                    icon: Icons.account_balance_outlined,
+                  ),
+                  (
+                    key: SettingKeys.showQuantityBtn,
+                    label: AppLocalizations.of(context).setChangeQuantity,
+                    icon: Icons.numbers,
+                  ),
+                ];
+
+                return Wrap(
+                  children: posButtons.map((btn) {
+                    return SizedBox(
+                      width: itemWidth,
+                      child: _SettingSwitch(
+                        settingKey: btn.key,
+                        label: btn.label,
+                        icon: btn.icon,
+                      ),
+                    );
+                  }).toList(),
+                );
+              },
             ),
-            const _SettingSwitch(
-              settingKey: SettingKeys.showTransferBtn,
-              label: 'Transfer',
-            ),
-            const _SettingSwitch(
-              settingKey: SettingKeys.showCustomerBtn,
-              label: 'Customer',
-            ),
-            const _SettingSwitch(
-              settingKey: SettingKeys.showDiscountBtn,
-              label: 'Discount',
-            ),
-            const _SettingSwitch(
-              settingKey: SettingKeys.showCommentBtn,
-              label: 'Comment',
-            ),
-            const _SettingSwitch(
-              settingKey: SettingKeys.showRefundBtn,
-              label: 'Refund',
-            ),
-            const _SettingSwitch(
-              settingKey: SettingKeys.showCashDrawerBtn,
-              label: 'Cash Drawer',
-            ),
-            const _SettingSwitch(
-              settingKey: SettingKeys.showWarehouseBtn,
-              label: 'Warehouse Switcher',
-            ),
-            const _SettingSwitch(
-              settingKey: SettingKeys.showBookingBtn,
-              label: 'Bookings',
-            ),
-            const _SettingSwitch(
-              settingKey: SettingKeys.showTablesBtn,
-              label: 'Tables / Floor Plan',
-            ),
-            const _SettingSwitch(
-              settingKey: SettingKeys.showKitchenBtn,
-              label: 'Send to Kitchen',
-            ),
-            const _SettingSwitch(
-              settingKey: SettingKeys.showTaxBtn,
-              label: 'Tax',
-            ),
-            const _SettingSwitch(
-              settingKey: SettingKeys.showQuantityBtn,
-              label: 'Change quantity',
-            ),
+            const SizedBox(height: 8), // Bottom padding buffer
           ],
         ),
-        const _SettingsCard(
-          title: 'API',
+        _SettingsCard(
+          title: AppLocalizations.of(context).setApi,
           children: [
             _SettingTextField(
               settingKey: SettingKeys.apiBaseUrl,
-              label: 'API Base URL',
+              label: AppLocalizations.of(context).setApiBaseUrl,
               hint: 'http://192.168.1.1:5002/api',
               keyboardType: TextInputType.url,
             ),
@@ -3624,162 +3816,205 @@ class _OrderPaymentTab extends ConsumerWidget {
         'true';
     final floorPlanEnabled =
         settings[SettingKeys.featureFloorPlanEnabled]?.toLowerCase() == 'true';
+    // Helper method to wrap card children in a responsive 2-column grid
+    Widget buildGrid(List<Widget> children) {
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final isWide = constraints.maxWidth > 600;
+          final itemWidth = isWide
+              ? constraints.maxWidth / 2
+              : constraints.maxWidth;
+
+          return Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: children
+                .map((child) => SizedBox(width: itemWidth, child: child))
+                .toList(),
+          );
+        },
+      );
+    }
 
     return _TabScrollView(
       cards: [
         _SettingsCard(
-          title: 'FEATURES',
+          title: AppLocalizations.of(context).setFeatures,
           children: [
-            _SettingSwitch(
-              settingKey: SettingKeys.featureFloorPlanEnabled,
-              label: 'Enable Floor Plan / Tables',
-              subtitle:
-                  'Show the Tables button in the POS and allow floor plan navigation',
-              onChanged: (ref, enabled) {
-                if (!enabled) {
-                  ref
-                      .read(appSettingsProvider.notifier)
-                      .setBool(SettingKeys.featureBookingEnabled, false);
-                }
-              },
-            ),
-            _SettingSwitch(
-              settingKey: SettingKeys.featureBookingEnabled,
-              label: 'Enable Bookings / Calendar',
-              subtitle: 'Requires Floor Plan / Tables to be enabled',
-              onChanged: (ref, enabled) {
-                if (enabled) {
-                  ref
-                      .read(appSettingsProvider.notifier)
-                      .setBool(SettingKeys.featureFloorPlanEnabled, true);
-                }
-              },
-            ),
-            const _SettingTextField(
-              settingKey: SettingKeys.tablesButtonLabel,
-              label: 'Tables Button Label',
-              hint: 'e.g. Tables, Rooms, Resources',
-            ),
-            // Both only apply while the floor plan is on, so they're greyed out
-            // (rather than hidden) when it's off — a control that silently
-            // vanishes reads as a bug, one that's visibly disabled explains why.
-            _SettingSwitch(
-              settingKey: SettingKeys.allowTablelessOrders,
-              label: 'Allow table-less orders',
-              subtitle:
-                  'Ring up a dine-in order without picking a table, even with '
-                  'Floor Plan / Tables enabled',
-              enabled: floorPlanEnabled,
-            ),
-            _SettingSwitch(
-              settingKey: SettingKeys.allowWalkInTableOrders,
-              label: 'Allow walk-in table orders',
-              subtitle:
-                  'Start an order on a free table without a booking. When off, '
-                  'a table can only be opened from its booking',
-              enabled: floorPlanEnabled,
-            ),
+            buildGrid([
+              _SettingSwitch(
+                settingKey: SettingKeys.featureFloorPlanEnabled,
+                label: AppLocalizations.of(context).setEnableFloorPlan,
+                subtitle: AppLocalizations.of(context).setShowTablesButton,
+                icon: Icons.table_bar_outlined,
+                onChanged: (ref, enabled) {
+                  if (!enabled) {
+                    ref
+                        .read(appSettingsProvider.notifier)
+                        .setBool(SettingKeys.featureBookingEnabled, false);
+                  }
+                },
+              ),
+              _SettingSwitch(
+                settingKey: SettingKeys.featureBookingEnabled,
+                label: AppLocalizations.of(context).setEnableBookings,
+                subtitle: AppLocalizations.of(context).setRequiresFloorPlan,
+                icon: Icons.edit_calendar_outlined,
+                onChanged: (ref, enabled) {
+                  if (enabled) {
+                    ref
+                        .read(appSettingsProvider.notifier)
+                        .setBool(SettingKeys.featureFloorPlanEnabled, true);
+                  }
+                },
+              ),
+              _SettingTextField(
+                settingKey: SettingKeys.tablesButtonLabel,
+                label: AppLocalizations.of(context).setTablesButtonLabel,
+                hint: 'e.g. Tables, Rooms',
+              ),
+              _SettingSwitch(
+                settingKey: SettingKeys.allowTablelessOrders,
+                label: AppLocalizations.of(context).setAllowTablelessOrders,
+                subtitle: AppLocalizations.of(context).setWalkInHint,
+                enabled: floorPlanEnabled,
+                icon: Icons.no_meals_outlined,
+              ),
+              _SettingSwitch(
+                settingKey: SettingKeys.allowWalkInTableOrders,
+                label: AppLocalizations.of(context).setAllowWalkInTableOrders,
+                subtitle: AppLocalizations.of(context).setStartOrderFreeTable,
+                enabled: floorPlanEnabled,
+                icon: Icons.directions_walk_outlined,
+              ),
+            ]),
+            const SizedBox(height: 8),
           ],
         ),
         const _BookingSettingsCard(),
-        const _SettingsCard(
-          title: 'ITEMS',
+        _SettingsCard(
+          title: AppLocalizations.of(context).setItems,
           children: [
-            _SettingDropdown(
-              settingKey: SettingKeys.defaultSearch,
-              label: 'Default search',
-              options: ['Name', 'Code', 'Barcode', 'All fields'],
-            ),
-            _SettingSwitch(
-              settingKey: SettingKeys.showSearchOptions,
-              label: 'Show search options',
-            ),
-            _SettingDropdown(
-              settingKey: SettingKeys.defaultDiscountType,
-              label: 'Default discount type',
-              options: ['Percentage', 'Fixed'],
-            ),
-            _SettingSwitch(
-              settingKey: SettingKeys.separateRowForEachItem,
-              label: 'Separate row for each item',
-            ),
-            _SettingSwitch(
-              settingKey: SettingKeys.preventSaleBelowCostPrice,
-              label: 'Prevent sale below cost price',
-            ),
-            _SettingSwitch(
-              settingKey: SettingKeys.preventNegativeInventory,
-              label: 'Prevent negative inventory',
-            ),
-          ],
-        ),
-        const _SettingsCard(
-          title: 'USERS',
-          children: [
-            _SettingSwitch(
-              settingKey: SettingKeys.singleUser,
-              label: 'Single user',
-            ),
-          ],
-        ),
-        const _SettingsCard(
-          title: 'PAYMENT',
-          children: [
-            _SettingSwitch(
-              settingKey: SettingKeys.displayReceiptPrintDialog,
-              label: 'Display receipt print dialog',
-            ),
-            _StepperRow(
-              label: 'Default due date (days)',
-              settingKey: SettingKeys.defaultDueDateDays,
-              min: 0,
-              max: 90,
-            ),
-            _SettingSwitch(
-              settingKey: SettingKeys.mergeItemsOnReceipt,
-              label: 'Merge items on receipt',
-            ),
-            _SettingSwitch(
-              settingKey: SettingKeys.singleItemDiscountAllowed,
-              label: 'Single item discount allowed',
-            ),
-          ],
-        ),
-        const _SettingsCard(
-          title: 'VOID ITEMS',
-          children: [
-            _SettingSwitch(
-              settingKey: SettingKeys.requireReasonOnVoid,
-              label: 'Require reason on void',
-            ),
-            _SettingSwitch(
-              settingKey: SettingKeys.trackUnconfirmedVoidedItems,
-              label: 'Track unconfirmed voided items',
-            ),
+            buildGrid([
+              _SettingDropdown(
+                settingKey: SettingKeys.defaultSearch,
+                label: AppLocalizations.of(context).setDefaultSearch,
+                options: const ['Name', 'Code', 'Barcode', 'All fields'],
+              ),
+              _SettingSwitch(
+                settingKey: SettingKeys.showSearchOptions,
+                label: AppLocalizations.of(context).setShowSearchOptions,
+                icon: Icons.manage_search_outlined,
+              ),
+              _SettingDropdown(
+                settingKey: SettingKeys.defaultDiscountType,
+                label: AppLocalizations.of(context).setDefaultDiscountType,
+                options: const ['Percentage', 'Fixed'],
+              ),
+              _SettingSwitch(
+                settingKey: SettingKeys.separateRowForEachItem,
+                label: AppLocalizations.of(context).setSeparateRowPerItem,
+                icon: Icons.format_list_bulleted_outlined,
+              ),
+              _SettingSwitch(
+                settingKey: SettingKeys.preventSaleBelowCostPrice,
+                label: AppLocalizations.of(context).setPreventSaleBelowCost,
+                icon: Icons.money_off_outlined,
+              ),
+              _SettingSwitch(
+                settingKey: SettingKeys.preventNegativeInventory,
+                label: AppLocalizations.of(context).setPreventNegativeInventory,
+                icon: Icons.inventory_2_outlined,
+              ),
+            ]),
+            const SizedBox(height: 8),
           ],
         ),
         _SettingsCard(
-          title: 'SERVICE TYPE',
+          title: AppLocalizations.of(context).setUsers,
           children: [
-            const _SettingSwitch(
-              settingKey: SettingKeys.requestServiceTypeAutomatically,
-              label: 'Request service type automatically',
-            ),
-            const _SettingDropdown(
-              settingKey: SettingKeys.defaultServiceType,
-              label: 'Default service type',
-              options: ['Dine-in', 'Takeaway', 'Delivery'],
-            ),
-            const _SettingSwitch(
-              settingKey: SettingKeys.printLargeOrderNumberInReceipt,
-              label: 'Print large order number in receipt',
-            ),
-            const _SettingSwitch(
-              settingKey: SettingKeys.featureServiceTypeEnabled,
-              label: 'Service Type Selector',
-              subtitle:
-                  'Show order type buttons (e.g. Dine-In, Takeaway) on the POS',
-            ),
+            buildGrid([
+              _SettingSwitch(
+                settingKey: SettingKeys.singleUser,
+                label: AppLocalizations.of(context).setSingleUser,
+                icon: Icons.person_outline,
+              ),
+            ]),
+            const SizedBox(height: 8),
+          ],
+        ),
+        _SettingsCard(
+          title: AppLocalizations.of(context).setPayment,
+          children: [
+            buildGrid([
+              _SettingSwitch(
+                settingKey: SettingKeys.displayReceiptPrintDialog,
+                label: AppLocalizations.of(context).setShowPrintDialog,
+                icon: Icons.receipt_long_outlined,
+              ),
+              _StepperRow(
+                label: AppLocalizations.of(context).setDefaultDueDays,
+                settingKey: SettingKeys.defaultDueDateDays,
+                min: 0,
+                max: 90,
+              ),
+              _SettingSwitch(
+                settingKey: SettingKeys.mergeItemsOnReceipt,
+                label: AppLocalizations.of(context).setMergeItemsOnReceipt,
+                icon: Icons.merge_type_outlined,
+              ),
+              _SettingSwitch(
+                settingKey: SettingKeys.singleItemDiscountAllowed,
+                label: AppLocalizations.of(context).setSingleItemDiscount,
+                icon: Icons.local_offer_outlined,
+              ),
+            ]),
+            const SizedBox(height: 8),
+          ],
+        ),
+        _SettingsCard(
+          title: AppLocalizations.of(context).setVoidItems,
+          children: [
+            buildGrid([
+              _SettingSwitch(
+                settingKey: SettingKeys.requireReasonOnVoid,
+                label: AppLocalizations.of(context).setRequireReasonOnVoid,
+                icon: Icons.remove_circle_outline,
+              ),
+              _SettingSwitch(
+                settingKey: SettingKeys.trackUnconfirmedVoidedItems,
+                label: AppLocalizations.of(context).setTrackUnconfirmedVoids,
+                icon: Icons.track_changes_outlined,
+              ),
+            ]),
+            const SizedBox(height: 8),
+          ],
+        ),
+        _SettingsCard(
+          title: AppLocalizations.of(context).setServiceTypeHeader,
+          children: [
+            buildGrid([
+              _SettingSwitch(
+                settingKey: SettingKeys.requestServiceTypeAutomatically,
+                label: AppLocalizations.of(context).setRequestServiceTypeAuto,
+                icon: Icons.room_service_outlined,
+              ),
+              _SettingDropdown(
+                settingKey: SettingKeys.defaultServiceType,
+                label: AppLocalizations.of(context).setDefaultServiceType,
+                options: const ['Dine-in', 'Takeaway', 'Delivery'],
+              ),
+              _SettingSwitch(
+                settingKey: SettingKeys.printLargeOrderNumberInReceipt,
+                label: AppLocalizations.of(context).setPrintLargeOrderNumber,
+                icon: Icons.numbers_outlined,
+              ),
+              _SettingSwitch(
+                settingKey: SettingKeys.featureServiceTypeEnabled,
+                label: AppLocalizations.of(context).setServiceTypeSelector,
+                subtitle: AppLocalizations.of(context).setShowOrderTypeButtons,
+                icon: Icons.touch_app_outlined,
+              ),
+            ]),
             Opacity(
               opacity: typeEnabled ? 1.0 : 0.4,
               child: IgnorePointer(
@@ -3787,11 +4022,14 @@ class _OrderPaymentTab extends ConsumerWidget {
                 child: const _CustomServiceTypesEditor(),
               ),
             ),
-            const _SettingSwitch(
-              settingKey: SettingKeys.featureServiceStatusEnabled,
-              label: 'Service Status Selector',
-              subtitle: 'Show service status badge on table/booking cards',
-            ),
+            buildGrid([
+              _SettingSwitch(
+                settingKey: SettingKeys.featureServiceStatusEnabled,
+                label: AppLocalizations.of(context).setServiceStatusSelector,
+                subtitle: AppLocalizations.of(context).setShowServiceStatusBadge,
+                icon: Icons.toggle_on_outlined,
+              ),
+            ]),
             Opacity(
               opacity: statusEnabled ? 1.0 : 0.4,
               child: IgnorePointer(
@@ -3799,29 +4037,36 @@ class _OrderPaymentTab extends ConsumerWidget {
                 child: const _CustomServiceStatusesEditor(),
               ),
             ),
+            const SizedBox(height: 8),
           ],
         ),
-        const _SettingsCard(
-          title: 'ADVANCED SETTINGS',
+        _SettingsCard(
+          title: AppLocalizations.of(context).setAdvancedSettings,
           children: [
-            _SettingSwitch(
-              settingKey: SettingKeys.resetOrderNumberOnDayClose,
-              label: 'Reset order number on day close',
-            ),
-            _SettingSwitch(
-              settingKey: SettingKeys.showItemsOnPaymentForm,
-              label: 'Show items on payment form',
-            ),
-            _StepperRow(
-              label: 'Number of payment type rows',
-              settingKey: SettingKeys.numberOfPaymentTypeRows,
-              min: 0,
-              max: 10,
-            ),
-            _SettingSwitch(
-              settingKey: SettingKeys.showAllOccupiedTablesInFloorPlan,
-              label: 'Show all occupied tables in floor plan',
-            ),
+            buildGrid([
+              _SettingSwitch(
+                settingKey: SettingKeys.resetOrderNumberOnDayClose,
+                label: AppLocalizations.of(context).setResetOrderNumber,
+                icon: Icons.restart_alt_outlined,
+              ),
+              _SettingSwitch(
+                settingKey: SettingKeys.showItemsOnPaymentForm,
+                label: AppLocalizations.of(context).setShowItemsOnPaymentForm,
+                icon: Icons.list_alt_outlined,
+              ),
+              _StepperRow(
+                label: AppLocalizations.of(context).setPaymentTypeRows,
+                settingKey: SettingKeys.numberOfPaymentTypeRows,
+                min: 0,
+                max: 10,
+              ),
+              _SettingSwitch(
+                settingKey: SettingKeys.showAllOccupiedTablesInFloorPlan,
+                label: AppLocalizations.of(context).setShowAllOccupied,
+                icon: Icons.event_seat_outlined,
+              ),
+            ]),
+            const SizedBox(height: 8),
           ],
         ),
       ],
@@ -3873,15 +4118,14 @@ class _DefaultTaxRatesSelector extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Default tax rate',
+            AppLocalizations.of(context).setDefaultTaxRate,
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.w500,
             ),
           ),
           const SizedBox(height: 2),
           Text(
-            'Automatically applied to products added to the cart that have no '
-            'tax of their own.',
+            AppLocalizations.of(context).defaultTaxRateFullHint,
             style: theme.textTheme.bodySmall?.copyWith(
               color: cs.onSurface.withValues(alpha: 0.5),
             ),
@@ -3897,14 +4141,14 @@ class _DefaultTaxRatesSelector extends ConsumerWidget {
               ),
             ),
             error: (_, __) => Text(
-              'Could not load tax rates',
+              AppLocalizations.of(context).couldNotLoadTaxRates,
               style: theme.textTheme.bodySmall?.copyWith(color: cs.error),
             ),
             data: (taxes) {
               final enabled = taxes.where((t) => t.isEnabled).toList();
               if (enabled.isEmpty) {
                 return Text(
-                  'No tax rates defined yet. Add them under Tax Rates.',
+                  AppLocalizations.of(context).noTaxRatesDefined,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: cs.onSurface.withValues(alpha: 0.6),
                     fontStyle: FontStyle.italic,
@@ -3982,7 +4226,7 @@ class _DefaultWarehouseDropdown extends ConsumerWidget {
             children: [
               Expanded(
                 child: Text(
-                  'Default warehouse',
+                  AppLocalizations.of(context).setDefaultWarehouse,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w500,
                   ),
@@ -4000,7 +4244,7 @@ class _DefaultWarehouseDropdown extends ConsumerWidget {
                     ),
                   ),
                   error: (_, __) => Text(
-                    'Could not load warehouses',
+                    AppLocalizations.of(context).couldNotLoadWarehouses,
                     textAlign: TextAlign.end,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.error,
@@ -4052,7 +4296,7 @@ class _DefaultWarehouseDropdown extends ConsumerWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Used to check product stock availability in the POS menu.',
+            AppLocalizations.of(context).defaultWarehouseHint,
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
             ),
@@ -4076,59 +4320,59 @@ class _ProductsTab extends ConsumerWidget {
 
     return _TabScrollView(
       cards: [
-        const _SettingsCard(
-          title: 'GENERAL',
+        _SettingsCard(
+          title: AppLocalizations.of(context).setGeneral,
           children: [
             _SettingSwitch(
               settingKey: SettingKeys.displayAndPrintTaxIncluded,
-              label: 'Display and print items with tax included',
+              label: AppLocalizations.of(context).setDisplayPrintTaxIncluded,
             ),
             _SettingDropdown(
               settingKey: SettingKeys.discountApplyRule,
-              label: 'Discount apply rule',
-              options: ['Before tax', 'After tax'],
+              label: AppLocalizations.of(context).setDiscountApplyRule,
+              options: const ['Before tax', 'After tax'],
             ),
             _SettingDropdown(
               settingKey: SettingKeys.productSorting,
-              label: 'Sorting',
-              options: ['Name', 'Code', 'Barcode'],
+              label: AppLocalizations.of(context).setSorting,
+              options: const ['Name', 'Code', 'Barcode'],
             ),
             _SettingSwitch(
               settingKey: SettingKeys.allowNegativePrice,
-              label: 'Allow negative price',
+              label: AppLocalizations.of(context).setAllowNegativePrice,
             ),
             _SettingSwitch(
               settingKey: SettingKeys.showProductImages,
-              label: 'Show Product Images in POS Grid',
+              label: AppLocalizations.of(context).setShowProductImages,
             ),
           ],
         ),
-        const _SettingsCard(
-          title: 'INVENTORY',
-          children: [_DefaultWarehouseDropdown()],
+        _SettingsCard(
+          title: AppLocalizations.of(context).setInventory,
+          children: const [_DefaultWarehouseDropdown()],
         ),
         _SettingsCard(
-          title: 'PRODUCT DEFAULTS',
+          title: AppLocalizations.of(context).setProductDefaults,
           children: [
             const _DefaultTaxRatesSelector(),
             const Divider(height: 1, indent: 20, endIndent: 20),
-            const _SettingTextField(
+            _SettingTextField(
               settingKey: SettingKeys.defaultMeasurementUnit,
-              label: 'Default Measurement Unit',
+              label: AppLocalizations.of(context).setDefaultMeasurementUnit,
               hint: 'e.g. pcs, kg, L',
             ),
-            const _SettingDropdown(
+            _SettingDropdown(
               settingKey: SettingKeys.barcodeFormat,
-              label: 'Default Barcode Format',
-              options: ['EAN-13', 'EAN-8', 'UPC-A', 'Code128', 'QR'],
+              label: AppLocalizations.of(context).setDefaultBarcodeFormat,
+              options: const ['EAN-13', 'EAN-8', 'UPC-A', 'Code128', 'QR'],
             ),
-            const _SettingSwitch(
+            _SettingSwitch(
               settingKey: SettingKeys.costPriceBasedMarkup,
-              label: 'Cost price based markup',
+              label: AppLocalizations.of(context).setCostPriceMarkup,
             ),
-            const _SettingSwitch(
+            _SettingSwitch(
               settingKey: SettingKeys.autoUpdateCostPrice,
-              label: 'Automatically update cost price on purchase',
+              label: AppLocalizations.of(context).setAutoUpdateCostPrice,
             ),
             Padding(
               padding: const EdgeInsets.only(left: 24),
@@ -4136,43 +4380,43 @@ class _ProductsTab extends ConsumerWidget {
                 opacity: autoUpdateCost ? 1.0 : 0.4,
                 child: IgnorePointer(
                   ignoring: !autoUpdateCost,
-                  child: const _SettingSwitch(
+                  child: _SettingSwitch(
                     settingKey: SettingKeys.updateSalePriceOnMarkup,
-                    label: 'Update sale price based on markup',
+                    label: AppLocalizations.of(context).setUpdateSalePriceFromMarkup,
                   ),
                 ),
               ),
             ),
           ],
         ),
-        const _SettingsCard(
-          title: 'MOVING AVERAGE PRICE',
+        _SettingsCard(
+          title: AppLocalizations.of(context).setMovingAveragePrice,
           children: [
             _SettingSwitch(
               settingKey: SettingKeys.enableMovingAveragePrice,
-              label: 'Enable moving average price',
+              label: AppLocalizations.of(context).setEnableMovingAverage,
             ),
           ],
         ),
         _SettingsCard(
-          title: 'MENU GRID',
+          title: AppLocalizations.of(context).setMenuGrid,
           children: [
-            const _SettingDropdown(
+            _SettingDropdown(
               settingKey: SettingKeys.menuLayoutMode,
-              label: 'Layout',
-              options: ['List', 'Grid'],
+              label: AppLocalizations.of(context).setLayout,
+              options: const ['List', 'Grid'],
             ),
-            const _SettingDropdown(
+            _SettingDropdown(
               settingKey: SettingKeys.menuGridCols,
-              label: 'Columns',
-              options: ['4', '5'],
+              label: AppLocalizations.of(context).columns,
+              options: const ['4', '5'],
             ),
             // Rows only matter in the paged Grid layout; List scrolls freely.
             if (menuIsGrid)
-              const _SettingDropdown(
+              _SettingDropdown(
                 settingKey: SettingKeys.menuGridRows,
-                label: 'Rows',
-                options: ['3', '4', '5'],
+                label: AppLocalizations.of(context).setRows,
+                options: const ['3', '4', '5'],
               ),
           ],
         ),
@@ -4196,48 +4440,48 @@ class _WeighingScaleTab extends ConsumerWidget {
     return _TabScrollView(
       cards: [
         _SettingsCard(
-          title: 'BARCODE PARSING',
+          title: AppLocalizations.of(context).setBarcodeParsing,
           children: [
-            const _SettingSwitch(
+            _SettingSwitch(
               settingKey: SettingKeys.scaleBarcodeEnabled,
-              label: 'Enable weighing scales barcode',
+              label: AppLocalizations.of(context).setEnableScaleBarcode,
               subtitle:
-                  'Parse weight/price from barcodes printed by a weighing scale',
+                  AppLocalizations.of(context).setScaleBarcodeHint,
             ),
             Opacity(
               opacity: barcodeOn ? 1.0 : 0.4,
               child: IgnorePointer(
                 ignoring: !barcodeOn,
-                child: const Column(
+                child: Column(
                   children: [
                     _SettingTextField(
                       settingKey: SettingKeys.scaleBarcodePrefix,
-                      label: 'First two digits / prefix',
+                      label: AppLocalizations.of(context).setFirstTwoDigits,
                       hint: 'e.g. 21',
                     ),
                     _StepperRow(
-                      label: 'Number of digits for product code',
+                      label: AppLocalizations.of(context).setProductCodeDigits,
                       settingKey: SettingKeys.scaleBarcodeCodeLength,
                       min: 1,
                       max: 10,
                     ),
                     _StepperRow(
-                      label: 'Number of decimal places',
+                      label: AppLocalizations.of(context).setNumberOfDecimals,
                       settingKey: SettingKeys.scaleBarcodeDecimalPlaces,
                       min: 0,
                       max: 5,
                     ),
                     _SettingSwitch(
                       settingKey: SettingKeys.scaleBarcodeTrimZeros,
-                      label: 'Remove zeros from product code (trim zeros)',
+                      label: AppLocalizations.of(context).trimZerosFromCode,
                       subtitle:
-                          'Strip leading zeros before looking up the product',
+                          AppLocalizations.of(context).setStripLeadingZeros,
                     ),
                     _SettingSwitch(
                       settingKey: SettingKeys.scaleBarcodePrintsPrice,
-                      label: 'Scale prints price instead of quantity',
+                      label: AppLocalizations.of(context).setScalePrintsPrice,
                       subtitle:
-                          'When on, the encoded value is a price and quantity is calculated as price ÷ unit price',
+                          AppLocalizations.of(context).scaleBarcodePriceHint,
                     ),
                   ],
                 ),
@@ -4246,30 +4490,30 @@ class _WeighingScaleTab extends ConsumerWidget {
           ],
         ),
         _SettingsCard(
-          title: 'SERIAL CONNECTION',
+          title: AppLocalizations.of(context).setSerialConnection,
           children: [
             if (!kScaleSupported)
               const _ScaleUnsupportedNotice()
             else ...[
-              const _SettingSwitch(
+              _SettingSwitch(
                 settingKey: SettingKeys.scaleEnabled,
-                label: 'Read live weight from a serial scale',
+                label: AppLocalizations.of(context).setReadLiveWeight,
                 subtitle:
-                    'Streams the weight from a scale on a COM port into the quantity keypad',
+                    AppLocalizations.of(context).setScaleStreamHint,
               ),
               Opacity(
                 opacity: serialOn ? 1.0 : 0.4,
                 child: IgnorePointer(
                   ignoring: !serialOn,
-                  child: const Column(
+                  child: Column(
                     children: [
-                      _ScalePortDropdown(),
+                      const _ScalePortDropdown(),
                       _SettingDropdown(
                         settingKey: SettingKeys.scaleBaudRate,
-                        label: 'Baud rate',
+                        label: AppLocalizations.of(context).setBaudRate,
                         options: _kBaudRates,
                       ),
-                      _ScaleLiveTest(),
+                      const _ScaleLiveTest(),
                     ],
                   ),
                 ),
@@ -4310,8 +4554,7 @@ class _ScaleUnsupportedNotice extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Serial scales are supported on Windows only. On this device, use '
-              'the barcode parsing option above with a label-printing scale.',
+              AppLocalizations.of(context).serialScaleWindowsOnly,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -4357,7 +4600,7 @@ class _ScalePortDropdown extends ConsumerWidget {
           padding: const EdgeInsets.only(right: 12),
           child: IconButton(
             icon: const Icon(Icons.refresh),
-            tooltip: 'Rescan ports',
+            tooltip: AppLocalizations.of(context).setRescanPorts,
             onPressed: () => ref.invalidate(availableSerialPortsProvider),
           ),
         ),
@@ -4391,7 +4634,7 @@ class _ScaleLiveTest extends ConsumerWidget {
       _ => (
         theme.colorScheme.onSurfaceVariant,
         Icons.hourglass_empty,
-        'Waiting for the scale to send a weight…',
+        AppLocalizations.of(context).waitingForScale,
       ),
     };
 
@@ -4508,13 +4751,13 @@ class _CustomerDisplayTabState extends ConsumerState<_CustomerDisplayTab> {
     return _TabScrollView(
       cards: [
         _SettingsCard(
-          title: 'CUSTOMER DISPLAY',
+          title: AppLocalizations.of(context).setCustomerDisplay,
           children: [
             // Enabled
-            const _SettingSwitch(
+            _SettingSwitch(
               settingKey: SettingKeys.customerDisplayEnabled,
-              label: 'Enabled',
-              subtitle: 'Show order total on a serial VFD / LCD pole display',
+              label: AppLocalizations.of(context).fieldEnabled,
+              subtitle: AppLocalizations.of(context).setShowOrderTotalOnPole,
             ),
             Opacity(
               opacity: enabled ? 1.0 : 0.4,
@@ -4531,11 +4774,11 @@ class _CustomerDisplayTabState extends ConsumerState<_CustomerDisplayTab> {
                       ),
                       child: Row(
                         children: [
-                          const Expanded(
+                          Expanded(
                             child: _SettingDropdown(
                               settingKey: SettingKeys.customerDisplayPort,
-                              label: 'COM port',
-                              options: [
+                              label: AppLocalizations.of(context).setComPort,
+                              options: const [
                                 'COM1',
                                 'COM2',
                                 'COM3',
@@ -4583,10 +4826,10 @@ class _CustomerDisplayTabState extends ConsumerState<_CustomerDisplayTab> {
                         ),
                         child: Column(
                           children: [
-                            const _SettingDropdown(
+                            _SettingDropdown(
                               settingKey: SettingKeys.customerDisplayBaudRate,
-                              label: 'Bits per second',
-                              options: [
+                              label: AppLocalizations.of(context).setBitsPerSecond,
+                              options: const [
                                 '1200',
                                 '2400',
                                 '4800',
@@ -4597,26 +4840,26 @@ class _CustomerDisplayTabState extends ConsumerState<_CustomerDisplayTab> {
                                 '115200',
                               ],
                             ),
-                            const _SettingDropdown(
+                            _SettingDropdown(
                               settingKey: SettingKeys.customerDisplayDataBits,
-                              label: 'Data bits',
-                              options: ['5', '6', '7', '8'],
+                              label: AppLocalizations.of(context).setDataBits,
+                              options: const ['5', '6', '7', '8'],
                             ),
-                            const _SettingDropdown(
+                            _SettingDropdown(
                               settingKey: SettingKeys.customerDisplayParity,
-                              label: 'Parity',
-                              options: ['None', 'Even', 'Odd', 'Mark', 'Space'],
+                              label: AppLocalizations.of(context).setParity,
+                              options: const ['None', 'Even', 'Odd', 'Mark', 'Space'],
                             ),
-                            const _SettingDropdown(
+                            _SettingDropdown(
                               settingKey: SettingKeys.customerDisplayStopBits,
-                              label: 'Stop bits',
-                              options: ['1', '1.5', '2'],
+                              label: AppLocalizations.of(context).setStopBits,
+                              options: const ['1', '1.5', '2'],
                             ),
-                            const _SettingDropdown(
+                            _SettingDropdown(
                               settingKey:
                                   SettingKeys.customerDisplayFlowControl,
-                              label: 'Flow control',
-                              options: ['None', 'RTS/CTS', 'XON/XOFF'],
+                              label: AppLocalizations.of(context).setFlowControl,
+                              options: const ['None', 'RTS/CTS', 'XON/XOFF'],
                             ),
                             Padding(
                               padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
@@ -4625,7 +4868,7 @@ class _CustomerDisplayTabState extends ConsumerState<_CustomerDisplayTab> {
                                 child: TextButton(
                                   onPressed: _restorePortDefaults,
                                   child: Text(
-                                    'Restore defaults',
+                                    AppLocalizations.of(context).restoreDefaults,
                                     style: TextStyle(
                                       color: theme.colorScheme.primary,
                                       fontSize: 12,
@@ -4639,8 +4882,8 @@ class _CustomerDisplayTabState extends ConsumerState<_CustomerDisplayTab> {
                       ),
 
                     // Number of characters
-                    const _StepperRow(
-                      label: 'Number of characters',
+                    _StepperRow(
+                      label: AppLocalizations.of(context).setNumberOfCharacters,
                       settingKey: SettingKeys.customerDisplayNumChars,
                       min: 1,
                       max: 40,
@@ -4654,23 +4897,23 @@ class _CustomerDisplayTabState extends ConsumerState<_CustomerDisplayTab> {
 
         // Welcome message card
         _SettingsCard(
-          title: 'WELCOME MESSAGE',
+          title: AppLocalizations.of(context).setWelcomeMessage,
           children: [
-            const _SettingTextField(
+            _SettingTextField(
               settingKey: SettingKeys.customerDisplayWelcomeMessage,
-              label: 'Top line',
+              label: AppLocalizations.of(context).setTopLine,
               hint: 'WELCOME!',
             ),
-            const _SettingTextField(
+            _SettingTextField(
               settingKey: SettingKeys.customerDisplayWelcomeBottom,
-              label: 'Bottom line',
+              label: AppLocalizations.of(context).setBottomLine,
               hint: '',
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
               child: OutlinedButton(
                 onPressed: enabled ? _testDisplay : null,
-                child: const Text('Test display'),
+                child: Text(AppLocalizations.of(context).setTestDisplay),
               ),
             ),
           ],
@@ -4678,13 +4921,12 @@ class _CustomerDisplayTabState extends ConsumerState<_CustomerDisplayTab> {
 
         // ── Open on this device (always available, no web server needed) ───
         _SettingsCard(
-          title: 'OPEN ON THIS DEVICE',
+          title: AppLocalizations.of(context).setOpenOnThisDevice,
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
               child: Text(
-                'Opens the customer display as a full-screen Flutter view on this machine. '
-                'Ideal for a second monitor — drag the window over and press F11.',
+                AppLocalizations.of(context).openCustomerDisplayFullHint,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -4694,7 +4936,7 @@ class _CustomerDisplayTabState extends ConsumerState<_CustomerDisplayTab> {
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
               child: FilledButton.icon(
                 icon: const Icon(Icons.open_in_new, size: 18),
-                label: const Text('Open customer display'),
+                label: Text(AppLocalizations.of(context).setOpenCustomerDisplay),
                 onPressed: () async {
                   // Auto-start the WS server if it isn't running yet —
                   // the native screen connects to ws://localhost:8181/ws
@@ -4732,13 +4974,13 @@ class _CustomerDisplayTabState extends ConsumerState<_CustomerDisplayTab> {
 
         // ── Web / Screen Display ────────────────────────────────────────────
         _SettingsCard(
-          title: 'SCREEN DISPLAY (WEB)',
+          title: AppLocalizations.of(context).setScreenDisplayWeb,
           children: [
             _SettingSwitch(
               settingKey: SettingKeys.customerDisplayWebEnabled,
-              label: 'Enable live web customer display',
+              label: AppLocalizations.of(context).setEnableLiveWebDisplay,
               subtitle:
-                  'Host an interactive order screen accessible from any browser on your network',
+                  AppLocalizations.of(context).webDisplayHint,
               onChanged: (_, on) => on ? _startWeb() : _stopWeb(),
             ),
             if (serverRunning) ...[
@@ -4758,7 +5000,7 @@ class _CustomerDisplayTabState extends ConsumerState<_CustomerDisplayTab> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Same machine / second monitor',
+                            AppLocalizations.of(context).sameMachineSecondMonitor,
                             style: theme.textTheme.labelMedium,
                           ),
                           SelectableText(
@@ -4774,7 +5016,7 @@ class _CustomerDisplayTabState extends ConsumerState<_CustomerDisplayTab> {
                     ),
                     IconButton(
                       icon: const Icon(Icons.open_in_browser),
-                      tooltip: 'Open in browser (drag to second monitor)',
+                      tooltip: AppLocalizations.of(context).setOpenInBrowser,
                       onPressed: () => launchUrl(
                         Uri.parse(
                           'http://localhost:${CustomerDisplayWebServer.port}',
@@ -4801,7 +5043,7 @@ class _CustomerDisplayTabState extends ConsumerState<_CustomerDisplayTab> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Other device on same network',
+                            AppLocalizations.of(context).otherDeviceSameNetwork,
                             style: theme.textTheme.labelMedium,
                           ),
                           SelectableText(
@@ -4817,7 +5059,7 @@ class _CustomerDisplayTabState extends ConsumerState<_CustomerDisplayTab> {
                     ),
                     IconButton(
                       icon: const Icon(Icons.copy, size: 18),
-                      tooltip: 'Copy LAN URL',
+                      tooltip: AppLocalizations.of(context).setCopyLanUrl,
                       onPressed: () {
                         Clipboard.setData(ClipboardData(text: displayUrl));
                         showAppSnackbar(context, ref, 'URL copied');
@@ -4934,15 +5176,15 @@ class _PrinterGroupDialogState extends ConsumerState<_PrinterGroupDialog> {
               controller: _name,
               autofocus: true,
               style: theme.textTheme.titleLarge,
-              decoration: const InputDecoration(
-                hintText: 'Name',
-                border: UnderlineInputBorder(),
+              decoration: InputDecoration(
+                hintText: AppLocalizations.of(context).fieldName,
+                border: const UnderlineInputBorder(),
               ),
             ),
             const SizedBox(height: 18),
-            Text('Categories', style: theme.textTheme.titleMedium),
+            Text(AppLocalizations.of(context).categoriesLabel, style: theme.textTheme.titleMedium),
             Text(
-              'Categories printed on this printer group',
+              AppLocalizations.of(context).categoriesPrintedOnGroup,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: cs.onSurfaceVariant,
               ),
@@ -4966,7 +5208,7 @@ class _PrinterGroupDialogState extends ConsumerState<_PrinterGroupDialog> {
           onPressed: () => Navigator.pop(context),
           child: const Text('CANCEL'),
         ),
-        TextButton(onPressed: _save, child: const Text('SAVE')),
+        TextButton(onPressed: _save, child: Text(AppLocalizations.of(context).saveUpper)),
       ],
     );
   }
@@ -5044,8 +5286,7 @@ class _KitchenDisplayTabState extends ConsumerState<_KitchenDisplayTab> {
     showAppSnackbar(
       context,
       ref,
-      'Pairing request sent to $ip — the KDS should switch to '
-      'the kitchen view.',
+      AppLocalizations.of(context).pairingRequestSent(ip),
     );
   }
 
@@ -5165,14 +5406,12 @@ class _KitchenDisplayTabState extends ConsumerState<_KitchenDisplayTab> {
       cards: [
         // ── Printer groups (stations) ──────────────────────────────────────
         _SettingsCard(
-          title: 'PRINTER GROUPS',
+          title: AppLocalizations.of(context).setPrinterGroups,
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Text(
-                'Group product categories into stations (e.g. Kitchen, Barman). '
-                'Assign a group to a display below and that display only shows '
-                'the items in those categories.',
+                AppLocalizations.of(context).printerGroupsHelp,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: cs.onSurfaceVariant,
                 ),
@@ -5186,7 +5425,7 @@ class _KitchenDisplayTabState extends ConsumerState<_KitchenDisplayTab> {
                   vertical: 14,
                 ),
                 child: Text(
-                  'No printer groups yet.',
+                  AppLocalizations.of(context).noPrinterGroupsYet,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: cs.onSurfaceVariant,
                   ),
@@ -5208,7 +5447,7 @@ class _KitchenDisplayTabState extends ConsumerState<_KitchenDisplayTab> {
                         color: cs.secondary,
                         size: 20,
                       ),
-                      tooltip: 'Edit',
+                      tooltip: AppLocalizations.of(context).actionEdit,
                       onPressed: () => _editPrinterGroup(existing: g),
                     ),
                     IconButton(
@@ -5217,7 +5456,7 @@ class _KitchenDisplayTabState extends ConsumerState<_KitchenDisplayTab> {
                         color: cs.error,
                         size: 20,
                       ),
-                      tooltip: 'Delete',
+                      tooltip: AppLocalizations.of(context).actionDelete,
                       onPressed: () => _deletePrinterGroup(g),
                     ),
                   ],
@@ -5232,21 +5471,19 @@ class _KitchenDisplayTabState extends ConsumerState<_KitchenDisplayTab> {
                 child: FilledButton.icon(
                   onPressed: () => _editPrinterGroup(),
                   icon: const Icon(Icons.add, size: 18),
-                  label: const Text('Add Printer Group'),
+                  label: Text(AppLocalizations.of(context).setAddPrinterGroup),
                 ),
               ),
             ),
           ],
         ),
         _SettingsCard(
-          title: 'KITCHEN DISPLAY TABLETS',
+          title: AppLocalizations.of(context).setKdsTablets,
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Text(
-                'Each Kitchen Display tablet listens on port $kKdsPort. Adding its '
-                'IP pairs it with this POS and pushes orders directly over the '
-                'local network — the KDS works fully offline, no internet needed.',
+                AppLocalizations.of(context).kdsTabletsHelp(kKdsPort.toString()),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: cs.onSurfaceVariant,
                 ),
@@ -5261,7 +5498,7 @@ class _KitchenDisplayTabState extends ConsumerState<_KitchenDisplayTab> {
                   vertical: 14,
                 ),
                 child: Text(
-                  'No kitchen displays configured.',
+                  AppLocalizations.of(context).noKitchenDisplays,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: cs.onSurfaceVariant,
                   ),
@@ -5280,7 +5517,7 @@ class _KitchenDisplayTabState extends ConsumerState<_KitchenDisplayTab> {
                       children: [
                         IconButton(
                           icon: Icon(Icons.link, color: cs.secondary, size: 20),
-                          tooltip: 'Re-pair',
+                          tooltip: AppLocalizations.of(context).setRepair,
                           onPressed: () => _pairIp(ip),
                         ),
                         IconButton(
@@ -5289,7 +5526,7 @@ class _KitchenDisplayTabState extends ConsumerState<_KitchenDisplayTab> {
                             color: cs.error,
                             size: 20,
                           ),
-                          tooltip: 'Remove',
+                          tooltip: AppLocalizations.of(context).actionRemove,
                           onPressed: () => _removeIp(ip),
                         ),
                       ],
@@ -5301,8 +5538,7 @@ class _KitchenDisplayTabState extends ConsumerState<_KitchenDisplayTab> {
                     padding: const EdgeInsets.fromLTRB(72, 0, 16, 12),
                     child: printerGroups.isEmpty
                         ? Text(
-                            'Receives all items. Create printer groups above to '
-                            'route by category.',
+                            AppLocalizations.of(context).receivesAllItems,
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: cs.onSurfaceVariant,
                             ),
@@ -5322,7 +5558,7 @@ class _KitchenDisplayTabState extends ConsumerState<_KitchenDisplayTab> {
                                 Padding(
                                   padding: const EdgeInsets.only(top: 6),
                                   child: Text(
-                                    'No group selected → receives all items.',
+                                    AppLocalizations.of(context).noGroupSelectedReceivesAll,
                                     style: theme.textTheme.bodySmall?.copyWith(
                                       color: cs.onSurfaceVariant,
                                     ),
@@ -5345,12 +5581,12 @@ class _KitchenDisplayTabState extends ConsumerState<_KitchenDisplayTab> {
                     Expanded(
                       child: TextFormField(
                         controller: _ipController,
-                        decoration: const InputDecoration(
-                          labelText: 'KDS IP address',
+                        decoration: InputDecoration(
+                          labelText: AppLocalizations.of(context).setKdsIp,
                           hintText: '192.168.1.100',
-                          border: OutlineInputBorder(),
+                          border: const OutlineInputBorder(),
                           isDense: true,
-                          prefixIcon: Icon(Icons.lan_outlined, size: 18),
+                          prefixIcon: const Icon(Icons.lan_outlined, size: 18),
                         ),
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
@@ -5375,7 +5611,7 @@ class _KitchenDisplayTabState extends ConsumerState<_KitchenDisplayTab> {
                     FilledButton.icon(
                       onPressed: _addIp,
                       icon: const Icon(Icons.add, size: 18),
-                      label: const Text('Add'),
+                      label: Text(AppLocalizations.of(context).actionAdd),
                     ),
                   ],
                 ),
@@ -5394,42 +5630,42 @@ class _EmailTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return const _TabScrollView(
+    return _TabScrollView(
       cards: [
         _SettingsCard(
-          title: 'SMTP SERVER',
+          title: AppLocalizations.of(context).setSmtpServer,
           children: [
             _SettingTextField(
               settingKey: SettingKeys.emailSmtpHost,
-              label: 'SMTP Host',
+              label: AppLocalizations.of(context).setSmtpHost,
               hint: 'smtp.gmail.com',
               keyboardType: TextInputType.url,
             ),
             _SettingTextField(
               settingKey: SettingKeys.emailSmtpPort,
-              label: 'SMTP Port',
+              label: AppLocalizations.of(context).setSmtpPort,
               hint: '587',
               keyboardType: TextInputType.number,
             ),
           ],
         ),
         _SettingsCard(
-          title: 'SENDER',
+          title: AppLocalizations.of(context).setSender,
           children: [
             _SettingTextField(
               settingKey: SettingKeys.emailFromAddress,
-              label: 'From Email Address',
+              label: AppLocalizations.of(context).setFromEmailAddress,
               hint: 'pos@yourbusiness.com',
               keyboardType: TextInputType.emailAddress,
             ),
             _SettingTextField(
               settingKey: SettingKeys.emailFromName,
-              label: 'From Name',
-              hint: 'POS System',
+              label: AppLocalizations.of(context).setFromName,
+              hint: AppLocalizations.of(context).posSystem,
             ),
             _SettingTextField(
               settingKey: SettingKeys.emailUserEmail,
-              label: 'Account / User Email',
+              label: AppLocalizations.of(context).accountUserEmail,
               hint: 'your@email.com',
               keyboardType: TextInputType.emailAddress,
             ),
@@ -5456,27 +5692,27 @@ class _DualCurrencyTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return const _TabScrollView(
+    return _TabScrollView(
       cards: [
         _SettingsCard(
-          title: 'DUAL CURRENCY',
+          title: AppLocalizations.of(context).setDualCurrency,
           children: [
             _SettingSwitch(
               settingKey: SettingKeys.dualCurrencyEnabled,
-              label: 'Dual Currency Enabled',
+              label: AppLocalizations.of(context).setDualCurrencyEnabled,
               subtitle:
-                  'Display prices and totals in a second currency simultaneously',
+                  AppLocalizations.of(context).setDualCurrencyHint,
             ),
             _SettingTextField(
               settingKey: SettingKeys.dualCurrencySymbol,
-              label: 'Secondary Currency Symbol',
+              label: AppLocalizations.of(context).setSecondaryCurrencySymbol,
               hint: 'e.g. €',
             ),
             _SettingTextField(
               settingKey: SettingKeys.dualCurrencyRate,
-              label: 'Exchange Rate',
+              label: AppLocalizations.of(context).setExchangeRate,
               hint: 'e.g. 1.08  (1 primary = X secondary)',
-              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
             ),
           ],
         ),
@@ -5576,39 +5812,38 @@ class _DatabaseTabState extends ConsumerState<_DatabaseTab> {
       cards: [
         // ── Auto sync ─────────────────────────────────────────────────────────
         _SettingsCard(
-          title: 'AUTO SYNC',
+          title: AppLocalizations.of(context).setAutoSync,
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 10, 20, 6),
               child: Text(
-                'Push your local changes and pull fresh data automatically in '
-                'the background.',
+                AppLocalizations.of(context).autoSyncFullHint,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
             ),
-            const _SettingSwitch(
+            _SettingSwitch(
               settingKey: SettingKeys.autoSyncEnabled,
-              label: 'Enable auto-sync',
+              label: AppLocalizations.of(context).setEnableAutoSync,
             ),
             if (autoSyncEnabled)
-              const _SettingDropdown(
+              _SettingDropdown(
                 settingKey: SettingKeys.autoSyncMode,
-                label: 'When to sync',
-                options: ['After every save', 'Every 1 hour'],
+                label: AppLocalizations.of(context).setWhenToSync,
+                options: const ['After every save', 'Every 1 hour'],
               ),
-            const _SettingSwitch(
+            _SettingSwitch(
               settingKey: SettingKeys.autoSyncShowNotification,
-              label: 'Show sync notification',
-              subtitle: 'Display a toast each time a sync completes',
+              label: AppLocalizations.of(context).setShowSyncNotification,
+              subtitle: AppLocalizations.of(context).setSyncToast,
             ),
           ],
         ),
 
         // ── Backup now ────────────────────────────────────────────────────────
         _SettingsCard(
-          title: 'DATABASE',
+          title: AppLocalizations.of(context).setDatabase,
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 6),
@@ -5640,7 +5875,7 @@ class _DatabaseTabState extends ConsumerState<_DatabaseTab> {
                   color: theme.colorScheme.primary,
                 ),
                 label: Text(
-                  'Open database location',
+                  AppLocalizations.of(context).openDatabaseLocation,
                   style: TextStyle(color: theme.colorScheme.primary),
                 ),
                 style: TextButton.styleFrom(
@@ -5657,7 +5892,7 @@ class _DatabaseTabState extends ConsumerState<_DatabaseTab> {
 
         // ── Automatic backups ─────────────────────────────────────────────────
         _SettingsCard(
-          title: 'AUTOMATIC BACKUPS',
+          title: AppLocalizations.of(context).setAutomaticBackups,
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 10, 20, 6),
@@ -5668,9 +5903,9 @@ class _DatabaseTabState extends ConsumerState<_DatabaseTab> {
                 ),
               ),
             ),
-            const _SettingSwitch(
+            _SettingSwitch(
               settingKey: SettingKeys.dbAutoBackup,
-              label: 'Enable automatic backups',
+              label: AppLocalizations.of(context).setEnableAutomaticBackups,
             ),
             Opacity(
               opacity: autoEnabled ? 1.0 : 0.4,
@@ -5679,16 +5914,16 @@ class _DatabaseTabState extends ConsumerState<_DatabaseTab> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const _SettingSwitch(
+                    _SettingSwitch(
                       settingKey: SettingKeys.dbBackupOnStart,
-                      label: 'Backup database on application start',
+                      label: AppLocalizations.of(context).setBackupOnStart,
                     ),
-                    const _SettingSwitch(
+                    _SettingSwitch(
                       settingKey: SettingKeys.dbBackupOnClose,
-                      label: 'Backup database on application close',
+                      label: AppLocalizations.of(context).setBackupOnClose,
                     ),
-                    const _StepperRow(
-                      label: 'Back up automatically every',
+                    _StepperRow(
+                      label: AppLocalizations.of(context).setBackUpEvery,
                       settingKey: SettingKeys.dbBackupIntervalHours,
                       min: 0,
                       max: 168,
@@ -5697,23 +5932,23 @@ class _DatabaseTabState extends ConsumerState<_DatabaseTab> {
                     Padding(
                       padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
                       child: Text(
-                        'Set to 0 to turn off scheduled backups',
+                        AppLocalizations.of(context).setZeroToDisableBackups,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ),
                     const _BackupLocationField(),
-                    const _SettingSwitch(
+                    _SettingSwitch(
                       settingKey: SettingKeys.dbBackupAutoDelete,
-                      label: 'Delete old backups automatically',
+                      label: AppLocalizations.of(context).setDeleteOldBackups,
                     ),
                     Opacity(
                       opacity: autoDelete ? 1.0 : 0.4,
                       child: IgnorePointer(
                         ignoring: !autoDelete,
-                        child: const _StepperRow(
-                          label: 'Delete backups older than',
+                        child: _StepperRow(
+                          label: AppLocalizations.of(context).setDeleteBackupsOlderThan,
                           settingKey: SettingKeys.dbBackupRetentionDays,
                           min: 1,
                           max: 365,
@@ -5790,7 +6025,7 @@ class _BackupLocationFieldState extends ConsumerState<_BackupLocationField> {
             child: TextField(
               controller: _ctrl,
               decoration: InputDecoration(
-                labelText: 'Backup location',
+                labelText: AppLocalizations.of(context).setBackupLocation,
                 hintText: Platform.isWindows
                     ? r'e.g. D:\database\Backup'
                     : 'e.g. /home/user/backups',
@@ -5844,35 +6079,34 @@ class _SubscriptionTab extends ConsumerWidget {
       error: (e, _) => _TabScrollView(
         cards: [
           _SettingsCard(
-            title: 'SUBSCRIPTION',
-            children: [_InfoRow(label: 'Error', value: e.toString())],
+            title: AppLocalizations.of(context).subscriptionUpper,
+            children: [_InfoRow(label: AppLocalizations.of(context).errorLabel, value: e.toString())],
           ),
         ],
       ),
       data: (info) => _TabScrollView(
         cards: [
           _SettingsCard(
-            title: 'SUBSCRIPTION',
+            title: AppLocalizations.of(context).subscriptionUpper,
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
                 child: Row(children: [_SubscriptionStatusPill(info: info)]),
               ),
               _InfoRow(
-                label: 'Started',
+                label: AppLocalizations.of(context).setStarted,
                 value: _fmtSubscriptionDate(info.startedAt),
               ),
               _InfoRow(
-                label: 'Renews / ends',
+                label: AppLocalizations.of(context).setRenewsEnds,
                 value: _fmtSubscriptionDate(info.periodEnd ?? info.validUntil),
               ),
               // Allowance 0 = no subscription row provisioned upstream, NOT an
               // unlimited plan — say nothing rather than imply a cap either way.
               _InfoRow(
-                label: 'Devices',
+                label: AppLocalizations.of(context).setDevices,
                 value: info.seatAllowance > 0
-                    ? '${info.seatAllowance} '
-                          '${info.seatAllowance == 1 ? 'device' : 'devices'}'
+                    ? AppLocalizations.of(context).deviceCount(info.seatAllowance)
                     : '–',
               ),
             ],
@@ -5894,24 +6128,23 @@ class _SubscriptionStatusPill extends StatelessWidget {
     final (label, icon, color) = switch (info.state) {
       LicenseState.active => (
         info.daysLeft <= 7
-            ? 'Expires in ${info.daysLeft} '
-                  '${info.daysLeft == 1 ? 'day' : 'days'}'
-            : 'Active',
+            ? AppLocalizations.of(context).expiresInDays(info.daysLeft)
+            : AppLocalizations.of(context).statusActive,
         Icons.check_circle,
         info.daysLeft <= 7 ? context.warningColor : context.successColor,
       ),
       LicenseState.expired => (
-        'Expired',
+        AppLocalizations.of(context).statusExpired,
         Icons.error,
         Theme.of(context).colorScheme.error,
       ),
       LicenseState.tampered => (
-        'Invalid',
+        AppLocalizations.of(context).statusInvalid,
         Icons.gpp_bad,
         Theme.of(context).colorScheme.error,
       ),
       LicenseState.unknown => (
-        'Not activated',
+        AppLocalizations.of(context).statusNotActivated,
         Icons.help_outline,
         Theme.of(context).hintColor,
       ),
@@ -6097,20 +6330,20 @@ class _AboutTab extends ConsumerWidget {
 
           // ── Company ───────────────────────────────────────────────────────
           _SettingsCard(
-            title: 'COMPANY',
+            title: AppLocalizations.of(context).setCompany,
             children: [
-              _InfoRow(label: 'Name', value: company?.name ?? '–'),
-              _InfoRow(label: 'Tax No', value: company?.taxNumber ?? '–'),
-              _InfoRow(label: 'Phone', value: company?.phoneNumber ?? '–'),
-              _InfoRow(label: 'Address', value: company?.address ?? '–'),
+              _InfoRow(label: AppLocalizations.of(context).fieldName, value: company?.name ?? '–'),
+              _InfoRow(label: AppLocalizations.of(context).setTaxNo, value: company?.taxNumber ?? '–'),
+              _InfoRow(label: AppLocalizations.of(context).setPhone, value: company?.phoneNumber ?? '–'),
+              _InfoRow(label: AppLocalizations.of(context).setAddress, value: company?.address ?? '–'),
             ],
           ),
 
           // ── Database ──────────────────────────────────────────────────────
           statsAsync.when(
-            loading: () => const _SettingsCard(
-              title: 'DATABASE',
-              children: [
+            loading: () => _SettingsCard(
+              title: AppLocalizations.of(context).setDatabase,
+              children: const [
                 Padding(
                   padding: EdgeInsets.symmetric(vertical: 24),
                   child: Center(child: CircularProgressIndicator()),
@@ -6118,18 +6351,18 @@ class _AboutTab extends ConsumerWidget {
               ],
             ),
             error: (e, _) => _SettingsCard(
-              title: 'DATABASE',
-              children: [_InfoRow(label: 'Error', value: e.toString())],
+              title: AppLocalizations.of(context).setDatabase,
+              children: [_InfoRow(label: AppLocalizations.of(context).errorLabel, value: e.toString())],
             ),
             data: (s) => _SettingsCard(
-              title: 'DATABASE',
+              title: AppLocalizations.of(context).setDatabase,
               children: [
-                _InfoRow(label: 'Products', value: '${s.productCount}'),
-                _InfoRow(label: 'Customers', value: '${s.customerCount}'),
-                _InfoRow(label: 'Users', value: '${s.userCount}'),
-                _InfoRow(label: 'DB Size', value: s.dbSizeFormatted),
+                _InfoRow(label: AppLocalizations.of(context).products, value: '${s.productCount}'),
+                _InfoRow(label: AppLocalizations.of(context).customersLabel, value: '${s.customerCount}'),
+                _InfoRow(label: AppLocalizations.of(context).users, value: '${s.userCount}'),
+                _InfoRow(label: AppLocalizations.of(context).setDbSize, value: s.dbSizeFormatted),
                 _InfoRow(
-                  label: 'Last Sync',
+                  label: AppLocalizations.of(context).setLastSync,
                   value: s.lastSync != null
                       ? _fmtAboutDt(s.lastSync!)
                       : 'Never',
@@ -6140,38 +6373,38 @@ class _AboutTab extends ConsumerWidget {
 
           // ── System ────────────────────────────────────────────────────────
           _SettingsCard(
-            title: 'SYSTEM INFO',
+            title: AppLocalizations.of(context).setSystemInfo,
             children: [
               _InfoRow(
-                label: 'Currency',
+                label: AppLocalizations.of(context).setCurrency,
                 value: settings[SettingKeys.currencySymbol] ?? '–',
               ),
               _InfoRow(
-                label: 'Language',
+                label: AppLocalizations.of(context).languageLabel,
                 value: settings[SettingKeys.language] ?? '–',
               ),
               _InfoRow(
-                label: 'Date Format',
+                label: AppLocalizations.of(context).dateFormatLabel,
                 value: settings[SettingKeys.dateFormat] ?? '–',
               ),
               _InfoRow(
-                label: 'Dual Currency',
+                label: AppLocalizations.of(context).dualCurrencyLower,
                 value: settings[SettingKeys.dualCurrencyEnabled] == 'true'
-                    ? 'Enabled'
-                    : 'Disabled',
+                    ? AppLocalizations.of(context).statusEnabled
+                    : AppLocalizations.of(context).statusDisabled,
               ),
               _InfoRow(
-                label: 'Auto Backup',
+                label: AppLocalizations.of(context).setAutoBackup,
                 value: settings[SettingKeys.dbAutoBackup] == 'true'
-                    ? 'On'
-                    : 'Off',
+                    ? AppLocalizations.of(context).statusOn
+                    : AppLocalizations.of(context).statusOff,
               ),
             ],
           ),
 
           // ── Onboarding ────────────────────────────────────────────────────
           _SettingsCard(
-            title: 'ONBOARDING',
+            title: AppLocalizations.of(context).setOnboarding,
             children: [
               Padding(
                 padding: const EdgeInsets.all(20),
@@ -6179,8 +6412,7 @@ class _AboutTab extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        'Replay the first-run welcome tour. It shows again the '
-                        'next time you open the app on this device.',
+                        AppLocalizations.of(context).replayOnboardingHint,
                         style: TextStyle(
                           color: Theme.of(context).hintColor,
                           fontSize: 14,
@@ -6190,7 +6422,7 @@ class _AboutTab extends ConsumerWidget {
                     const SizedBox(width: 12),
                     OutlinedButton.icon(
                       icon: const Icon(Icons.restart_alt, size: 18),
-                      label: const Text('Replay'),
+                      label: Text(AppLocalizations.of(context).setReplay),
                       style: OutlinedButton.styleFrom(
                         minimumSize: const Size(0, 44),
                       ),
@@ -6206,7 +6438,7 @@ class _AboutTab extends ConsumerWidget {
                           showAppSnackbar(
                             context,
                             ref,
-                            'Onboarding will show the next time you open the app.',
+                            AppLocalizations.of(context).onboardingWillShow,
                           );
                         }
                       },
@@ -6342,7 +6574,7 @@ class _TimezoneCardState extends ConsumerState<_TimezoneCard> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Timezone',
+                      AppLocalizations.of(context).setTimezone,
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
@@ -6400,7 +6632,7 @@ class _TimezoneCardState extends ConsumerState<_TimezoneCard> {
               initialValue: safeId,
               isExpanded: true,
               decoration: InputDecoration(
-                labelText: 'IANA Timezone',
+                labelText: AppLocalizations.of(context).setIanaTimezone,
                 labelStyle: TextStyle(fontSize: 13, color: theme.hintColor),
                 filled: true,
                 fillColor: theme.colorScheme.surface,

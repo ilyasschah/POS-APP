@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import 'package:pos_app/onboarding/onboarding_model.dart';
@@ -9,41 +10,43 @@ import 'package:pos_app/onboarding/onboarding_model.dart';
 class FeaturesSlide extends StatelessWidget {
   const FeaturesSlide({super.key});
 
-  static const _features = <OnboardingSlide>[
+  // Built per-frame: the titles are localized, so they need a BuildContext.
+  static List<OnboardingSlide> _featuresFor(BuildContext context) =>
+      <OnboardingSlide>[
     OnboardingSlide(
       icon: Icons.qr_code_scanner,
-      title: 'Barcode scanning',
-      body: 'Scan to ring up or find any product instantly.',
+      title: AppLocalizations.of(context).barcodeScanning,
+      body: AppLocalizations.of(context).featBarcodeBody,
     ),
     OnboardingSlide(
       icon: Icons.tv,
-      title: 'Customer display',
-      body: 'Show the order and total on a second screen.',
+      title: AppLocalizations.of(context).customerDisplayLower,
+      body: AppLocalizations.of(context).featCustomerDisplayBody,
     ),
     OnboardingSlide(
       icon: Icons.kitchen,
-      title: 'Kitchen display',
-      body: 'Send orders straight to the kitchen (KDS).',
+      title: AppLocalizations.of(context).kitchenDisplayLower,
+      body: AppLocalizations.of(context).featKitchenBody,
     ),
     OnboardingSlide(
       icon: Icons.backup,
-      title: 'Backups',
-      body: 'Automatic local backups keep your data safe.',
+      title: AppLocalizations.of(context).backups,
+      body: AppLocalizations.of(context).featBackupsBody,
     ),
     OnboardingSlide(
       icon: Icons.monitor_weight,
-      title: 'Weighing scale',
-      body: 'Sell by weight over a connected serial scale.',
+      title: AppLocalizations.of(context).weighingScaleLower,
+      body: AppLocalizations.of(context).featScaleBody,
     ),
     OnboardingSlide(
       icon: Icons.local_offer,
-      title: 'Promotions',
-      body: 'Automatic discounts and special pricing.',
+      title: AppLocalizations.of(context).promotions,
+      body: AppLocalizations.of(context).featPromotionsBody,
     ),
     OnboardingSlide(
       icon: Icons.card_membership,
-      title: 'Loyalty cards',
-      body: 'Points and rewards that bring guests back.',
+      title: AppLocalizations.of(context).loyaltyCardsLower,
+      body: AppLocalizations.of(context).featLoyaltyBody,
     ),
   ];
 
@@ -75,8 +78,8 @@ class FeaturesSlide extends StatelessWidget {
               spacing: 14,
               runSpacing: 14,
               children: [
-                for (var i = 0; i < _features.length; i++)
-                  _FeatureTile(_features[i])
+                for (var i = 0; i < _featuresFor(context).length; i++)
+                  _FeatureTile(_featuresFor(context)[i])
                       .animate(delay: (i * 70).ms)
                       .fadeIn(duration: 300.ms)
                       .slideY(begin: 0.14, end: 0, curve: Curves.easeOut),

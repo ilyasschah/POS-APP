@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:pos_app/customer_display/customer_display_web_server.dart';
 
 // Internal item model — parsed from the WebSocket JSON broadcast.
@@ -507,10 +508,10 @@ class _TotalsBlock extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (tax > 0) _TotRow('Taxes', '$currency ${tax.toStringAsFixed(2)}'),
+          if (tax > 0) _TotRow(AppLocalizations.of(context).taxesLabel, '$currency ${tax.toStringAsFixed(2)}'),
           if (discount > 0)
             _TotRow(
-              'Discount',
+              AppLocalizations.of(context).posDiscount,
               '−$currency ${discount.toStringAsFixed(2)}',
               valueColor: _kGreen,
             ),
@@ -520,9 +521,9 @@ class _TotalsBlock extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Total',
-                style: TextStyle(
+              Text(
+                AppLocalizations.of(context).totalLabel,
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 26,
                   fontWeight: FontWeight.w900,

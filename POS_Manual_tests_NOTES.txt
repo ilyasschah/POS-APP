@@ -1,3 +1,8 @@
 POS NOTES
 arabic and FR
-how to make an installtion and what the app need form the OS are required like is it needd a version of .net run time to be installed 
+
+if i selected a product in carte adn i calick on refund i want that product to be added to the product 
+
+in the reciept when i have enable dual currency it doesnt print the other curenccy
+
+i have updated the expire date on the admin platform but the POS app still didnt sync the new expire date in the yellow badge in the subscription tab in the settings

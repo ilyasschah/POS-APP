@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -157,7 +158,7 @@ class _CashMovementScreenState extends ConsumerState<CashMovementScreen> {
                       Row(
                         children: [
                           _TypeButton(
-                            label: 'Add cash',
+                            label: AppLocalizations.of(context).addCash,
                             icon: Icons.arrow_downward_rounded,
                             selected: isCashIn,
                             activeColor: context.navAccent,
@@ -166,7 +167,7 @@ class _CashMovementScreenState extends ConsumerState<CashMovementScreen> {
                           ),
                           const SizedBox(width: 4),
                           _TypeButton(
-                            label: 'Remove cash',
+                            label: AppLocalizations.of(context).removeCash,
                             icon: Icons.arrow_upward_rounded,
                             selected: !isCashIn,
                             activeColor: cs.error,
@@ -225,7 +226,7 @@ class _CashMovementScreenState extends ConsumerState<CashMovementScreen> {
                         controller: _descCtrl,
                         maxLines: 3,
                         decoration: InputDecoration(
-                          hintText: 'Enter the reason for adding or removing cash...',
+                          hintText: AppLocalizations.of(context).cashReasonHint,
                           hintStyle: TextStyle(
                             color: cs.onSurfaceVariant,
                             fontSize: 13,
@@ -338,7 +339,7 @@ class _CashMovementScreenState extends ConsumerState<CashMovementScreen> {
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),
                         ),
-                        child: const Text('Cancel'),
+                        child: Text(AppLocalizations.of(context).actionCancel),
                       ),
                     ),
                     const SizedBox(width: 12),

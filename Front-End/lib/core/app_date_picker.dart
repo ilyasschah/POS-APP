@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
 
 /// App-wide date / date-range / date-time pickers.
@@ -394,13 +395,13 @@ class _AppDatePickerDialogState extends State<_AppDatePickerDialog> {
                       _viewMonth = DateTime(_start.year, _start.month);
                     })
                   : null,
-              child: const Text('Today'),
+              child: Text(AppLocalizations.of(context).today),
             ),
           const Spacer(),
           OutlinedButton.icon(
             onPressed: () => Navigator.pop(context),
             icon: const Icon(Icons.close, size: 14),
-            label: const Text('Cancel'),
+            label: Text(AppLocalizations.of(context).actionCancel),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             ),
@@ -418,7 +419,7 @@ class _AppDatePickerDialogState extends State<_AppDatePickerDialog> {
               }
             },
             icon: const Icon(Icons.check, size: 14),
-            label: const Text('OK'),
+            label: Text(AppLocalizations.of(context).actionOk),
             style: FilledButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             ),

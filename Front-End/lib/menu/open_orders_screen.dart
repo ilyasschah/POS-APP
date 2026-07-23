@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -283,7 +284,7 @@ class _OpenOrdersScreenState extends ConsumerState<OpenOrdersScreen> {
                 onPressed: widget.onMenuPressed,
               )
             : null,
-        title: const Text('Open Orders'),
+        title: Text(AppLocalizations.of(context).openOrders),
         actions: [
           if (_syncing)
             const Padding(
@@ -297,7 +298,7 @@ class _OpenOrdersScreenState extends ConsumerState<OpenOrdersScreen> {
           else
             IconButton(
               icon: const PhosphorIcon(PhosphorIconsRegular.arrowClockwise),
-              tooltip: 'Refresh',
+              tooltip: AppLocalizations.of(context).refresh,
               onPressed: _pullFromServer,
             ),
         ],
@@ -314,7 +315,7 @@ class _OpenOrdersScreenState extends ConsumerState<OpenOrdersScreen> {
                 onChanged: (v) => setState(() => _search = v),
                 textInputAction: TextInputAction.search,
                 decoration: InputDecoration(
-                  hintText: 'Search by order, staff or table',
+                  hintText: AppLocalizations.of(context).searchByOrderStaffTable,
                   prefixIcon: const PhosphorIcon(
                       PhosphorIconsRegular.magnifyingGlass, size: 20),
                   suffixIcon: _search.isEmpty
@@ -322,7 +323,7 @@ class _OpenOrdersScreenState extends ConsumerState<OpenOrdersScreen> {
                       : IconButton(
                           icon: const PhosphorIcon(PhosphorIconsRegular.x,
                               size: 18),
-                          tooltip: 'Clear',
+                          tooltip: AppLocalizations.of(context).actionReset,
                           onPressed: () {
                             _searchController.clear();
                             setState(() => _search = '');
@@ -353,7 +354,7 @@ class _OpenOrdersScreenState extends ConsumerState<OpenOrdersScreen> {
                 color: Theme.of(context).colorScheme.error,
               ),
               const Gap(12),
-              Text('Failed to load orders',
+              Text(AppLocalizations.of(context).failedToLoadOrders,
                   style: Theme.of(context).textTheme.titleMedium),
               const Gap(4),
               Padding(
@@ -374,7 +375,7 @@ class _OpenOrdersScreenState extends ConsumerState<OpenOrdersScreen> {
                 onPressed: () => ref.invalidate(openOrdersProvider),
                 icon: const PhosphorIcon(PhosphorIconsRegular.arrowClockwise,
                     size: 18),
-                label: const Text('Retry'),
+                label: Text(AppLocalizations.of(context).actionRetry),
               ),
             ],
           ),

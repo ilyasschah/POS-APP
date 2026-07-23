@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 
 import 'package:pos_app/onboarding/widgets/onboarding_scaffold.dart';
 
@@ -8,9 +9,9 @@ class WelcomeSlide extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const OnboardingSlideLayout(
-      illustration: OnboardingIllustration(Icons.point_of_sale),
-      title: 'Welcome to your POS',
+    return OnboardingSlideLayout(
+      illustration: const OnboardingIllustration(Icons.point_of_sale),
+      title: AppLocalizations.of(context).welcomeToYourPos,
       body: 'A fast, offline-first point of sale for your counter and your '
           'tablets. Set it up in a few quick taps.',
     );

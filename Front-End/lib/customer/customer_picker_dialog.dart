@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/cart/cart_provider.dart';
 import 'package:pos_app/company/company_provider.dart';
@@ -77,7 +78,7 @@ class _CustomerPickerDialogState extends ConsumerState<CustomerPickerDialog> {
 
     return AlertDialog(
       backgroundColor: theme.cardColor,
-      title: const Text('Select Customer'),
+      title: Text(AppLocalizations.of(context).selectCustomer),
       contentPadding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       content: SizedBox(
         width: 400,
@@ -89,7 +90,7 @@ class _CustomerPickerDialogState extends ConsumerState<CustomerPickerDialog> {
               controller: _ctrl,
               autofocus: true,
               decoration: InputDecoration(
-                hintText: 'Search name, phone or card number…',
+                hintText: AppLocalizations.of(context).searchNamePhoneCard,
                 prefixIcon: const Icon(Icons.search, size: 20),
                 isDense: true,
                 border: const OutlineInputBorder(),

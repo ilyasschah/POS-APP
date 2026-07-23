@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:pos_app/core/app_date_picker.dart';
@@ -87,7 +88,7 @@ class DashboardScreen extends ConsumerWidget {
         leading: onMenuPressed != null
             ? IconButton(
                 icon: const Icon(Icons.menu),
-                tooltip: 'Show navigation',
+                tooltip: AppLocalizations.of(context).showNavigation,
                 onPressed: onMenuPressed,
               )
             : null,
@@ -115,7 +116,7 @@ class DashboardScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Refresh all',
+            tooltip: AppLocalizations.of(context).refreshAll,
             onPressed: () {
               ref.invalidate(yearlyDashboardProvider);
               ref.invalidate(periodicDashboardProvider);
@@ -690,11 +691,11 @@ class _TopProductsCard extends ConsumerWidget {
     final cs = Theme.of(context).colorScheme;
 
     return _DashCard(
-      title: 'TOP PRODUCTS',
+      title: AppLocalizations.of(context).topProducts,
       accent: _kTeal,
       child: async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => const _EmptyState(message: 'Error loading data'),
+        error: (_, __) => _EmptyState(message: AppLocalizations.of(context).errorLoadingData),
         data: (data) {
           if (data.topProducts.isEmpty) return const _EmptyState();
           final maxT = data.topProducts.first.total;
@@ -775,11 +776,11 @@ class _TotalSalesCard extends ConsumerWidget {
     final cs = Theme.of(context).colorScheme;
 
     return _DashCard(
-      title: 'TOTAL REVENUE',
+      title: AppLocalizations.of(context).totalRevenue,
       accent: _kTeal,
       child: async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => const _EmptyState(message: 'Error loading data'),
+        error: (_, __) => _EmptyState(message: AppLocalizations.of(context).errorLoadingData),
         data: (data) {
           final fmt = NumberFormat.currency(symbol: sym, decimalDigits: 2);
           return Center(
@@ -837,15 +838,15 @@ class _TotalSalesCard extends ConsumerWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         _MiniStat(
-                          label: 'Products',
+                          label: AppLocalizations.of(context).products,
                           value: '${data.topProducts.length}',
                         ),
                         _MiniStat(
-                          label: 'Customers',
+                          label: AppLocalizations.of(context).customersLabel,
                           value: '${data.topCustomers.length}',
                         ),
                         _MiniStat(
-                          label: 'Categories',
+                          label: AppLocalizations.of(context).categoriesLabel,
                           value: '${data.topProductGroups.length}',
                         ),
                       ],
@@ -903,11 +904,11 @@ class _TopGroupsCardState extends ConsumerState<_TopGroupsCard> {
     final cs = Theme.of(context).colorScheme;
 
     return _DashCard(
-      title: 'PRODUCT GROUPS',
+      title: AppLocalizations.of(context).productGroupsUpper,
       accent: _kPieColors[1],
       child: async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => const _EmptyState(message: 'Error loading data'),
+        error: (_, __) => _EmptyState(message: AppLocalizations.of(context).errorLoadingData),
         data: (data) {
           final total = data.topProductGroups.fold<double>(
             0,
@@ -1033,11 +1034,11 @@ class _TopCustomersCard extends ConsumerWidget {
     final cs = Theme.of(context).colorScheme;
 
     return _DashCard(
-      title: 'TOP CUSTOMERS',
+      title: AppLocalizations.of(context).topCustomers,
       accent: _kAmber,
       child: async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => const _EmptyState(message: 'Error loading data'),
+        error: (_, __) => _EmptyState(message: AppLocalizations.of(context).errorLoadingData),
         data: (data) {
           if (data.topCustomers.isEmpty) return const _EmptyState();
           final fmt = NumberFormat.currency(symbol: sym, decimalDigits: 2);

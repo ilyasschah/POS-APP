@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pos_app/core/device_theme_mode_provider.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:pos_app/onboarding/onboarding_prefs.dart';
 import 'package:pos_app/onboarding/onboarding_screen.dart';
 import 'package:pos_app/onboarding/onboarding_seed.dart';
@@ -32,7 +33,14 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: const MaterialApp(home: OnboardingScreen()),
+        // The delegates are required: onboarding now reads its copy through
+        // AppLocalizations.of(context), which throws without them (MyApp
+        // supplies them in the real app).
+        child: const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: OnboardingScreen(),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -65,8 +73,8 @@ void main() {
       (tester) async {
     final c = await pump(tester, width: 400);
 
-    // 5 pages: welcome, features, quick-start, setup, activity → 3 Next taps
-    // reach the setup slide.
+    // 6 pages: welcome, features, quick-start, setup, layout, activity → 3
+    // Next taps reach the setup slide.
     for (var i = 0; i < 3; i++) {
       await tester.tap(find.text('Next'));
       await tester.pumpAndSettle();
@@ -78,9 +86,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(c.read(deviceThemeModeProvider), 'light');
 
-    // On to the activity slide (the last page).
-    await tester.tap(find.text('Next'));
-    await tester.pumpAndSettle();
+    // Through the layout slide, then on to the activity slide (the last page).
+    for (var i = 0; i < 2; i++) {
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+    }
     expect(find.text("What's your business?"), findsOneWidget);
     expect(find.text('Get Started'), findsOneWidget);
 

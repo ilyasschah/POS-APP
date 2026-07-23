@@ -4,6 +4,7 @@ import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/cart/payment_type_model.dart';
 import 'package:pos_app/cart/payment_type_provider.dart';
 import 'package:pos_app/database/database_provider.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:pos_app/sync/sync_notifier.dart';
 import 'package:pos_app/sync/sync_provider.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
@@ -32,13 +33,13 @@ class PaymentTypesScreen extends ConsumerWidget {
       backgroundColor: theme.scaffoldBackgroundColor,
 
       appBar: AppBar(
-        title: const Text("Payment Types"),
+        title: Text(AppLocalizations.of(context).paymentTypes),
         // Suppress the auto back-arrow — ManagementLayout controls navigation.
         automaticallyImplyLeading: false,
         leading: onMenuPressed != null
             ? IconButton(
                 icon: const Icon(Icons.menu),
-                tooltip: 'Show navigation',
+                tooltip: AppLocalizations.of(context).showNavigation,
                 onPressed: onMenuPressed,
               )
             : null,
@@ -47,7 +48,7 @@ class PaymentTypesScreen extends ConsumerWidget {
           // COLUMN PICKER
           IconButton(
             icon: const Icon(Icons.view_column_rounded),
-            tooltip: "Columns",
+            tooltip: AppLocalizations.of(context).columnsTooltip,
             onPressed: () {
               showDialog(
                 context: context,
@@ -59,7 +60,7 @@ class PaymentTypesScreen extends ConsumerWidget {
                       );
 
                       return AlertDialog(
-                        title: const Text("Visible Columns"),
+                        title: Text(AppLocalizations.of(context).visibleColumns),
 
                         content: SizedBox(
                           width: 320,
@@ -96,7 +97,7 @@ class PaymentTypesScreen extends ConsumerWidget {
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.of(context).pop(),
-                            child: const Text("Close"),
+                            child: Text(AppLocalizations.of(context).actionClose),
                           ),
                         ],
                       );
@@ -109,7 +110,7 @@ class PaymentTypesScreen extends ConsumerWidget {
 
           IconButton(
             icon: const Icon(Icons.refresh),
-            tooltip: "Refresh",
+            tooltip: AppLocalizations.of(context).refreshTooltip,
             onPressed: company == null
                 ? null
                 : () => ref
@@ -119,7 +120,7 @@ class PaymentTypesScreen extends ConsumerWidget {
 
           IconButton(
             icon: const Icon(Icons.add),
-            tooltip: "New Payment Type",
+            tooltip: AppLocalizations.of(context).newPaymentType,
             onPressed: company == null
                 ? null
                 : () async {
@@ -140,11 +141,15 @@ class PaymentTypesScreen extends ConsumerWidget {
       body: asyncTypes.when(
         loading: () => const Center(child: CircularProgressIndicator()),
 
-        error: (e, _) => Center(child: Text("Error loading payment types: $e")),
+        error: (e, _) => Center(
+          child: Text(
+            AppLocalizations.of(context).errorLoadingPaymentTypes(e.toString()),
+          ),
+        ),
 
         data: (types) {
           if (company == null) {
-            return const Center(child: Text("No company selected."));
+            return Center(child: Text(AppLocalizations.of(context).noCompanySelectedShort));
           }
 
           final int companyId = company.id;
@@ -155,7 +160,7 @@ class PaymentTypesScreen extends ConsumerWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    "No payment types found.",
+                    AppLocalizations.of(context).noPaymentTypesFound,
                     style: TextStyle(color: theme.disabledColor, fontSize: 16),
                   ),
 
@@ -163,7 +168,7 @@ class PaymentTypesScreen extends ConsumerWidget {
 
                   ElevatedButton.icon(
                     icon: const Icon(Icons.add),
-                    label: const Text("Add First Payment Type"),
+                    label: Text(AppLocalizations.of(context).addFirstPaymentType),
 
                     onPressed: () async {
                       await showDialog(
@@ -468,7 +473,7 @@ class PaymentTypesScreen extends ConsumerWidget {
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Tooltip(
-                                        message: "Edit",
+                                        message: AppLocalizations.of(context).actionEdit,
                                         child: InkWell(
                                           onTap: () async {
                                             await showDialog(
@@ -495,15 +500,15 @@ class PaymentTypesScreen extends ConsumerWidget {
                                       ),
                                       const SizedBox(width: 8),
                                       Tooltip(
-                                        message: "Delete",
+                                        message: AppLocalizations.of(context).actionDelete,
                                         child: InkWell(
                                           onTap: () async {
                                             final confirm = await showDialog<bool>(
                                               context: context,
                                               builder: (ctx) => AlertDialog(
-                                                title: const Text("Delete"),
+                                                title: Text(AppLocalizations.of(context).actionDelete),
                                                 content: Text(
-                                                  "Delete payment type '${t.name}'?",
+                                                  AppLocalizations.of(context).deletePaymentTypeConfirm(t.name),
                                                 ),
                                                 actions: [
                                                   TextButton(
@@ -511,7 +516,7 @@ class PaymentTypesScreen extends ConsumerWidget {
                                                         Navigator.of(
                                                           ctx,
                                                         ).pop(false),
-                                                    child: const Text("Cancel"),
+                                                    child: Text(AppLocalizations.of(context).actionCancel),
                                                   ),
                                                   ElevatedButton(
                                                     style:
@@ -798,12 +803,12 @@ class _PaymentTypeFormDialogState
                         child: TextFormField(
                           controller: _nameCtrl,
 
-                          decoration: const InputDecoration(
-                            labelText: "Name *",
+                          decoration: InputDecoration(
+                            labelText: AppLocalizations.of(context).fieldNameRequired,
 
-                            prefixIcon: Icon(Icons.payment),
+                            prefixIcon: const Icon(Icons.payment),
 
-                            border: OutlineInputBorder(),
+                            border: const OutlineInputBorder(),
                           ),
 
                           validator: (v) =>
@@ -817,12 +822,12 @@ class _PaymentTypeFormDialogState
                         child: TextFormField(
                           controller: _codeCtrl,
 
-                          decoration: const InputDecoration(
-                            labelText: "Code",
+                          decoration: InputDecoration(
+                            labelText: AppLocalizations.of(context).fieldCode,
 
-                            prefixIcon: Icon(Icons.code),
+                            prefixIcon: const Icon(Icons.code),
 
-                            border: OutlineInputBorder(),
+                            border: const OutlineInputBorder(),
                           ),
                         ),
                       ),
@@ -839,12 +844,12 @@ class _PaymentTypeFormDialogState
 
                           keyboardType: TextInputType.number,
 
-                          decoration: const InputDecoration(
-                            labelText: "Position",
+                          decoration: InputDecoration(
+                            labelText: AppLocalizations.of(context).fieldPosition,
 
-                            prefixIcon: Icon(Icons.format_list_numbered),
+                            prefixIcon: const Icon(Icons.format_list_numbered),
 
-                            border: OutlineInputBorder(),
+                            border: const OutlineInputBorder(),
                           ),
                         ),
                       ),
@@ -855,12 +860,12 @@ class _PaymentTypeFormDialogState
                         child: TextFormField(
                           controller: _shortcutCtrl,
 
-                          decoration: const InputDecoration(
-                            labelText: "Shortcut",
+                          decoration: InputDecoration(
+                            labelText: AppLocalizations.of(context).fieldShortcut,
 
-                            prefixIcon: Icon(Icons.keyboard),
+                            prefixIcon: const Icon(Icons.keyboard),
 
-                            border: OutlineInputBorder(),
+                            border: const OutlineInputBorder(),
                           ),
                         ),
                       ),
@@ -959,7 +964,7 @@ class _PaymentTypeFormDialogState
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
 
-          child: const Text("Cancel"),
+          child: Text(AppLocalizations.of(context).actionCancel),
         ),
 
         if (_isLoading)
@@ -972,7 +977,7 @@ class _PaymentTypeFormDialogState
           ElevatedButton.icon(
             icon: const Icon(Icons.save),
 
-            label: Text(_isEditing ? "Update" : "Save"),
+            label: Text(_isEditing ? AppLocalizations.of(context).actionUpdate : AppLocalizations.of(context).actionSave),
 
             onPressed: _submit,
           ),

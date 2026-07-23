@@ -13,6 +13,7 @@ import 'package:pos_app/auth/auth_storage.dart';
 import 'package:pos_app/auth/master_login_screen.dart';
 import 'package:pos_app/auth/user_model.dart';
 import 'package:pos_app/company/company_provider.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:pos_app/navigation/main_layout.dart';
 import 'package:pos_app/settings/settings_provider.dart';
 import 'package:pos_app/sync/sync_provider.dart';
@@ -40,7 +41,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         showAppSnackbar(
           context,
           ref,
-          'Your session expired. Please sign in again.',
+          AppLocalizations.of(context).sessionExpiredMsg,
           isError: true,
         );
       }
@@ -55,15 +56,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   void _handleUnlinkDevice() {
     final cs = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text("Developer Mode"),
-        content: const Text("Are you sure you want to unlink this device?"),
+        title: Text(l10n.developerMode),
+        content: Text(l10n.unlinkDeviceConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text("Cancel"),
+            child: Text(l10n.actionCancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
@@ -84,7 +86,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 );
               }
             },
-            child: const Text("Unlink Device"),
+            child: Text(l10n.unlinkDevice),
           ),
         ],
       ),
@@ -141,7 +143,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
             const Gap(4),
             Text(
-              isAdmin ? "Admin" : "Cashier",
+              isAdmin
+                  ? AppLocalizations.of(context).roleAdmin
+                  : AppLocalizations.of(context).roleCashier,
               style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
             ),
           ],
@@ -174,10 +178,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ?.toLowerCase() ==
               'true')
             Padding(
-              padding: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsetsDirectional.only(end: 8),
               child: OutlinedButton.icon(
                 icon: const Icon(Icons.access_time, size: 16),
-                label: const Text('TIME CLOCK'),
+                label: Text(AppLocalizations.of(context).timeClock),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: cs.primary,
                   side: BorderSide(color: cs.primary),
@@ -275,7 +279,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               backgroundColor: cs.surfaceContainerHighest,
               foregroundColor: cs.onSurface,
               elevation: 0,
-              tooltip: 'Power Options',
+              tooltip: AppLocalizations.of(context).powerOptions,
               onPressed: () {
                 showDialog(
                   context: context,
@@ -347,8 +351,8 @@ class _NoUsersRecoveryState extends ConsumerState<_NoUsersRecovery> {
             const Gap(16),
             Text(
               widget.error != null
-                  ? "Couldn't load users on this terminal."
-                  : "No users cached on this terminal.",
+                  ? AppLocalizations.of(context).couldNotLoadUsers
+                  : AppLocalizations.of(context).noUsersCached,
               textAlign: TextAlign.center,
               style: GoogleFonts.inter(
                 fontSize: 18,
@@ -359,8 +363,8 @@ class _NoUsersRecoveryState extends ConsumerState<_NoUsersRecovery> {
             const Gap(8),
             Text(
               _busy
-                  ? "Restoring users from the server…"
-                  : "Reconnect to restore them, or re-link this device to sign in again.",
+                  ? AppLocalizations.of(context).restoringUsersFromServer
+                  : AppLocalizations.of(context).reconnectToRestoreUsers,
               textAlign: TextAlign.center,
               style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14),
             ),
@@ -376,12 +380,12 @@ class _NoUsersRecoveryState extends ConsumerState<_NoUsersRecovery> {
                   FilledButton.tonalIcon(
                     onPressed: _reload,
                     icon: const Icon(Icons.refresh),
-                    label: const Text('Reload users'),
+                    label: Text(AppLocalizations.of(context).reloadUsers),
                   ),
                   OutlinedButton.icon(
                     onPressed: _relink,
                     icon: const Icon(Icons.link_off),
-                    label: const Text('Re-link device'),
+                    label: Text(AppLocalizations.of(context).relinkDevice),
                   ),
                 ],
               ),
@@ -514,10 +518,10 @@ class _PinPadModalState extends ConsumerState<_PinPadModal> {
     final avatarBg = isAdmin ? cs.primaryContainer : cs.secondaryContainer;
     final avatarFg = isAdmin ? cs.onPrimaryContainer : cs.onSecondaryContainer;
     final title = _isSyncing
-        ? "Syncing master data…"
+        ? AppLocalizations.of(context).syncingMasterData
         : !widget.user.hasPinForThisDevice
-        ? (_isConfirming ? "Confirm New PIN" : "Create 4-Digit PIN")
-        : "Enter PIN";
+        ? (_isConfirming ? AppLocalizations.of(context).confirmNewPin : AppLocalizations.of(context).createFourDigitPin)
+        : AppLocalizations.of(context).enterPin;
 
     final screen = MediaQuery.sizeOf(context);
     final scale = (screen.shortestSide / 600).clamp(0.7, 1.0).toDouble();

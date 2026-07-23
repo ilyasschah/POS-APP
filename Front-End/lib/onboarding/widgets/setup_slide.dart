@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:pos_app/core/device_theme_mode_provider.dart';
@@ -60,19 +61,19 @@ class SetupSlide extends ConsumerWidget {
 
               const _SectionLabel('APPEARANCE'),
               _Row(
-                label: 'Theme',
+                label: AppLocalizations.of(context).theme,
                 child: SegmentedButton<bool>(
                   showSelectedIcon: false,
-                  segments: const [
+                  segments: [
                     ButtonSegment(
                       value: true,
-                      label: Text('Light'),
-                      icon: Icon(Icons.light_mode, size: 18),
+                      label: Text(AppLocalizations.of(context).themeLight),
+                      icon: const Icon(Icons.light_mode, size: 18),
                     ),
                     ButtonSegment(
                       value: false,
-                      label: Text('Dark'),
-                      icon: Icon(Icons.dark_mode, size: 18),
+                      label: Text(AppLocalizations.of(context).themeDark),
+                      icon: const Icon(Icons.dark_mode, size: 18),
                     ),
                   ],
                   selected: {isLight},
@@ -82,7 +83,7 @@ class SetupSlide extends ConsumerWidget {
                 ),
               ),
               _Row(
-                label: 'Accent',
+                label: AppLocalizations.of(context).accent,
                 child: Wrap(
                   spacing: 12,
                   runSpacing: 8,
@@ -99,7 +100,7 @@ class SetupSlide extends ConsumerWidget {
                 ),
               ),
               _Row(
-                label: 'Text size',
+                label: AppLocalizations.of(context).textSize,
                 child: Row(
                   children: [
                     const Text('A', style: TextStyle(fontSize: 13)),
@@ -126,8 +127,8 @@ class SetupSlide extends ConsumerWidget {
               const _SectionLabel('INPUT'),
               OnboardingSwitchRow(
                 icon: Icons.keyboard,
-                title: 'On-screen keyboard',
-                subtitle: 'Show a touch keyboard when typing.',
+                title: AppLocalizations.of(context).onScreenKeyboard,
+                subtitle: AppLocalizations.of(context).touchKeyboardHint,
                 // Company setting → defaults off; parked until first login.
                 value: seed.virtualKeyboard ?? false,
                 onChanged: (v) => ref

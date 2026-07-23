@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:pos_app/api/api_client.dart';
 import 'package:pos_app/company/company_provider.dart';
+import 'package:pos_app/core/device_theme_mode_provider.dart';
 import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/app_settings/app_settings_model.dart';
@@ -112,11 +113,16 @@ class AppSettingsNotifier extends Notifier<Map<String, String>> {
     _pendingOverrides[key] = value;
     state = {...state, key: value};
 
-    // Cache theme to SharedPreferences for instant 0ms booting
+    // Cache theme to SharedPreferences for instant 0ms booting.
+    // MUST go through the device notifiers, not setString directly: MyApp reads
+    // deviceAccentColorProvider / deviceThemeModeProvider FIRST and only falls
+    // back to the cloud setting, so a raw write updates the disk but leaves the
+    // notifier holding its old value — the app then keeps rendering the previous
+    // theme until the next launch. The notifiers write the same keys.
     if (key == SettingKeys.themeAccentColor) {
-      ref.read(sharedPreferencesProvider).setString('boot_theme_color', value);
+      await ref.read(deviceAccentColorProvider.notifier).set(value);
     } else if (key == SettingKeys.themeMode) {
-      ref.read(sharedPreferencesProvider).setString('boot_theme_mode', value);
+      await ref.read(deviceThemeModeProvider.notifier).set(value);
     } else if (key == SettingKeys.apiBaseUrl) {
       // Per-device connection setting: persist locally + apply immediately so the
       // next createDio() targets the new endpoint (it's not cloud-synced).

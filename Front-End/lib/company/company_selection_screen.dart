@@ -1,6 +1,7 @@
 // ignore_for_file: invalid_use_of_visible_for_testing_member, invalid_use_of_protected_member
 
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:pos_app/settings/settings_provider.dart';
@@ -24,8 +25,8 @@ class CompanySelectionScreen extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text("Select Your Company",
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+              Text(AppLocalizations.of(context).selectYourCompany,
+                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
               const SizedBox(height: 20),
               companiesAsync.when(
                 data: (list) => ListView.builder(
@@ -78,7 +79,7 @@ class CompanySelectionScreen extends ConsumerWidget {
                   ),
                 ),
                 loading: () => const CircularProgressIndicator(),
-                error: (e, _) => Text("Error: $e"),
+                error: (e, _) => Text(AppLocalizations.of(context).errorWithMessage(e.toString())),
               ),
             ],
           ),
@@ -162,8 +163,8 @@ class _CreateFirstUserDialogState
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("No Users Found",
-              style: TextStyle(fontWeight: FontWeight.bold)),
+          Text(AppLocalizations.of(context).noUsersFound,
+              style: const TextStyle(fontWeight: FontWeight.bold)),
           Text(
             "Create the first admin user for ${widget.companyName}",
             style: const TextStyle(fontSize: 13, color: Colors.grey),
@@ -183,7 +184,7 @@ class _CreateFirstUserDialogState
                     child: TextFormField(
                       controller: _firstNameCtrl,
                       decoration:
-                          const InputDecoration(labelText: "First Name"),
+                          InputDecoration(labelText: AppLocalizations.of(context).firstName),
                       validator: (v) =>
                           v == null || v.trim().isEmpty ? "Required" : null,
                     ),
@@ -192,7 +193,7 @@ class _CreateFirstUserDialogState
                   Expanded(
                     child: TextFormField(
                       controller: _lastNameCtrl,
-                      decoration: const InputDecoration(labelText: "Last Name"),
+                      decoration: InputDecoration(labelText: AppLocalizations.of(context).lastName),
                       validator: (v) =>
                           v == null || v.trim().isEmpty ? "Required" : null,
                     ),
@@ -202,23 +203,23 @@ class _CreateFirstUserDialogState
               const SizedBox(height: 12),
               TextFormField(
                 controller: _usernameCtrl,
-                decoration: const InputDecoration(labelText: "Username"),
+                decoration: InputDecoration(labelText: AppLocalizations.of(context).username),
                 validator: (v) =>
                     v == null || v.trim().isEmpty ? "Required" : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _emailCtrl,
-                decoration: const InputDecoration(labelText: "Email"),
+                decoration: InputDecoration(labelText: AppLocalizations.of(context).fieldEmail),
                 keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<int>(
                 initialValue: _accessLevel,
-                decoration: const InputDecoration(labelText: "Access Level"),
-                items: const [
-                  DropdownMenuItem(value: 0, child: Text("Admin")),
-                  DropdownMenuItem(value: 1, child: Text("Cashier")),
+                decoration: InputDecoration(labelText: AppLocalizations.of(context).accessLevel),
+                items: [
+                  DropdownMenuItem(value: 0, child: Text(AppLocalizations.of(context).roleAdmin)),
+                  DropdownMenuItem(value: 1, child: Text(AppLocalizations.of(context).roleCashier)),
                 ],
                 onChanged: (v) => setState(() => _accessLevel = v ?? 0),
               ),
@@ -240,7 +241,7 @@ class _CreateFirstUserDialogState
         else
           ElevatedButton.icon(
             icon: const Icon(Icons.person_add),
-            label: const Text("Create User"),
+            label: Text(AppLocalizations.of(context).createUser),
             onPressed: _submit,
           ),
       ],

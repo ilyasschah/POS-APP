@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:pos_app/onboarding/onboarding_seed.dart';
@@ -22,7 +23,7 @@ class LayoutSlide extends ConsumerWidget {
         ref.read(onboardingFeatureSeedProvider.notifier).setLayoutIsGrid(grid);
 
     final listCard = _LayoutCard(
-      label: 'List',
+      label: AppLocalizations.of(context).listView,
       description:
           'Everything scrolls in one continuous view. Set the columns.',
       paged: false,
@@ -30,7 +31,7 @@ class LayoutSlide extends ConsumerWidget {
       onTap: () => pick(false),
     );
     final gridCard = _LayoutCard(
-      label: 'Grid',
+      label: AppLocalizations.of(context).gridView,
       description:
           'Fixed pages that fit the screen, with next / previous buttons. '
           'Set columns × rows.',

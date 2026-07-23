@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -346,7 +347,7 @@ class _CreditPaymentsScreenState extends ConsumerState<CreditPaymentsScreen> {
                 Icons.arrow_back,
                 size: 28,
               ), // Larger icon for touch
-              tooltip: 'Back',
+              tooltip: AppLocalizations.of(context).back,
               onPressed: () => Navigator.pop(context),
             ),
             title: const Text(
@@ -506,7 +507,7 @@ class _LeftPanel extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Customer
-            Text('Customer', style: theme.textTheme.titleMedium),
+            Text(AppLocalizations.of(context).customerLabel, style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             _CustomerDropdown(
               customersAsync: customersAsync,
@@ -516,7 +517,7 @@ class _LeftPanel extends StatelessWidget {
             const SizedBox(height: 24),
 
             // Payment type
-            Text('Payment type', style: theme.textTheme.titleMedium),
+            Text(AppLocalizations.of(context).paymentTypeLower, style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             _PaymentTypeDropdown(
               payTypesAsync: payTypesAsync,
@@ -526,7 +527,7 @@ class _LeftPanel extends StatelessWidget {
             const SizedBox(height: 24),
 
             // Amount + use balance
-            Text('Amount', style: theme.textTheme.titleMedium),
+            Text(AppLocalizations.of(context).amount, style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -658,7 +659,7 @@ class _CustomerDropdown extends StatelessWidget {
 
     return _StyledDropdown<int?>(
       value: selectedId,
-      hint: const Text('Select customer', style: TextStyle(fontSize: 16)),
+      hint: Text(AppLocalizations.of(context).selectCustomerLower, style: const TextStyle(fontSize: 16)),
       items: customers
           .map(
             (c) => DropdownMenuItem<int?>(
@@ -1257,7 +1258,7 @@ class _ActionBar extends StatelessWidget {
                     ),
                   )
                 : const Icon(Icons.check, size: 24),
-            label: const Text('OK', style: TextStyle(fontSize: 16)),
+            label: Text(AppLocalizations.of(context).actionOk, style: const TextStyle(fontSize: 16)),
             style: FilledButton.styleFrom(
               backgroundColor: context.successColor,
               foregroundColor: context.onStatusColor,
@@ -1268,7 +1269,7 @@ class _ActionBar extends StatelessWidget {
           FilledButton.icon(
             onPressed: onCancel,
             icon: const Icon(Icons.close, size: 24),
-            label: const Text('Cancel', style: TextStyle(fontSize: 16)),
+            label: Text(AppLocalizations.of(context).actionCancel, style: const TextStyle(fontSize: 16)),
             style: FilledButton.styleFrom(
               backgroundColor: context.dangerColor,
               foregroundColor: context.onStatusColor,

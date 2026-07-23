@@ -9,7 +9,10 @@ import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/auth/auth_storage.dart';
 import 'package:pos_app/auth/login_screen.dart';
 import 'package:pos_app/company/company_provider.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:pos_app/license/license_service.dart';
+import 'package:pos_app/onboarding/onboarding_prefs.dart';
+import 'package:pos_app/onboarding/onboarding_screen.dart';
 import 'package:pos_app/settings/settings_provider.dart';
 import 'package:pos_app/sync/sync_provider.dart';
 import 'package:pos_app/utils/api_error_parser.dart';
@@ -92,6 +95,14 @@ class _MasterLoginScreenState extends ConsumerState<MasterLoginScreen> {
 
       ref.read(defaultCompanyIdProvider.notifier).setDefaultCompany(companyId);
 
+      // Populate selectedCompanyProvider NOW, while we are provably online.
+      // Saving the session only records the company *id*; without this the
+      // provider stays null until the PIN screen loads it — and
+      // appSettingsProvider.set() silently no-ops when there is no selected
+      // company, so anything onboarding writes next would be dropped.
+      // Fully guarded internally (API → Drift cache → stub); never throws.
+      await ref.read(authServiceProvider).loadFallbackCompany(companyId);
+
       try {
         await ref.read(seedUsersFromApiProvider(companyId).future);
       } catch (_) {}
@@ -105,9 +116,24 @@ class _MasterLoginScreenState extends ConsumerState<MasterLoginScreen> {
       } catch (_) {}
 
       if (mounted) {
+        // First install: run onboarding HERE, after registration, so every
+        // choice made in it has a company to be written against. An already
+        // onboarded device goes straight to the PIN screen.
+        final onboarded = ref.read(onboardingCompleteProvider);
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
+          MaterialPageRoute(
+            builder: (routeContext) => onboarded
+                ? const LoginScreen()
+                : OnboardingScreen(
+                    // This route replaced the master-login route, so there is
+                    // no `home` rebuild to carry us onward — hand off directly.
+                    onFinished: () => Navigator.pushReplacement(
+                      routeContext,
+                      MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    ),
+                  ),
+          ),
         );
       }
     } on DioException catch (e) {
@@ -130,6 +156,7 @@ class _MasterLoginScreenState extends ConsumerState<MasterLoginScreen> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       body: Center(
@@ -166,7 +193,7 @@ class _MasterLoginScreenState extends ConsumerState<MasterLoginScreen> {
                 const Gap(24),
 
                 Text(
-                  "Device Registration",
+                  l10n.deviceRegistrationTitle,
                   textAlign: TextAlign.center,
                   style: GoogleFonts.inter(
                     fontSize: 26,
@@ -178,7 +205,7 @@ class _MasterLoginScreenState extends ConsumerState<MasterLoginScreen> {
                 const Gap(8),
 
                 Text(
-                  "Sign in with your account to link this terminal",
+                  l10n.deviceRegistrationSubtitle,
                   textAlign: TextAlign.center,
                   style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14),
                 ),
@@ -191,7 +218,7 @@ class _MasterLoginScreenState extends ConsumerState<MasterLoginScreen> {
                   textInputAction: TextInputAction.next,
                   autocorrect: false,
                   decoration: InputDecoration(
-                    labelText: "Email",
+                    labelText: l10n.fieldEmail,
                     filled: true,
                     fillColor: cs.surfaceContainerHighest,
                     border: OutlineInputBorder(
@@ -210,7 +237,7 @@ class _MasterLoginScreenState extends ConsumerState<MasterLoginScreen> {
                   textInputAction: TextInputAction.done,
                   onSubmitted: (_) => _isLoading ? null : _registerDevice(),
                   decoration: InputDecoration(
-                    labelText: "Password",
+                    labelText: l10n.fieldPassword,
                     filled: true,
                     fillColor: cs.surfaceContainerHighest,
                     border: OutlineInputBorder(

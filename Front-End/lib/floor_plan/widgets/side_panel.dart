@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -132,8 +133,8 @@ class _ViewPanel extends StatelessWidget {
       children: [
         _ActionTile(
           icon: PhosphorIconsRegular.pencilSimple,
-          title: 'Edit Floor Plan',
-          subtitle: 'Add, resize, and rename tables',
+          title: AppLocalizations.of(context).editFloorPlan,
+          subtitle: AppLocalizations.of(context).addResizeRenameTables,
           onTap: () => ref.read(securityGuardProvider).guard(
             context,
             SecurityKeys.floorPlanDesign,
@@ -184,7 +185,7 @@ class _EditPanelState extends ConsumerState<_EditPanel> {
           children: [
             _ToggleRow(
               icon: PhosphorIconsRegular.dotsSixVertical,
-              label: 'Show grid',
+              label: AppLocalizations.of(context).showGrid,
               value: widget.fpState.showGrid,
               onChanged: (v) =>
                   ref.read(floorPlanProvider.notifier).toggleShowGrid(v),
@@ -192,7 +193,7 @@ class _EditPanelState extends ConsumerState<_EditPanel> {
             Divider(height: 1, color: cs.outlineVariant),
             _ToggleRow(
               icon: PhosphorIconsRegular.magnet,
-              label: 'Snap to grid',
+              label: AppLocalizations.of(context).snapToGrid,
               value: widget.fpState.snapToGrid,
               onChanged: (v) =>
                   ref.read(floorPlanProvider.notifier).toggleSnapToGrid(v),
@@ -209,7 +210,7 @@ class _EditPanelState extends ConsumerState<_EditPanel> {
             Expanded(
               child: _OutlineBtn(
                 icon: PhosphorIconsRegular.plus,
-                label: 'New Floor',
+                label: AppLocalizations.of(context).newFloor,
                 onTap: () => _showAddPlanDialog(context),
               ),
             ),
@@ -217,7 +218,7 @@ class _EditPanelState extends ConsumerState<_EditPanel> {
             Expanded(
               child: _OutlineBtn(
                 icon: PhosphorIconsRegular.pencilSimple,
-                label: 'Rename',
+                label: AppLocalizations.of(context).rename,
                 onTap: () => _showRenamePlanDialog(context),
               ),
             ),
@@ -226,7 +227,7 @@ class _EditPanelState extends ConsumerState<_EditPanel> {
         const Gap(8),
         _OutlineBtn(
           icon: PhosphorIconsRegular.trash,
-          label: 'Remove Floor',
+          label: AppLocalizations.of(context).removeFloor,
           danger: true,
           onTap: () => _confirmDeletePlan(context),
         ),
@@ -237,7 +238,7 @@ class _EditPanelState extends ConsumerState<_EditPanel> {
         const Gap(8),
         _PrimaryBtn(
           icon: PhosphorIconsRegular.plus,
-          label: 'Add Table',
+          label: AppLocalizations.of(context).addTable,
           onTap: () async {
             if (widget.activePlanId == 0) return;
             final err = await ref
@@ -272,7 +273,7 @@ class _EditPanelState extends ConsumerState<_EditPanel> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Rename'),
+        title: Text(AppLocalizations.of(context).rename),
         content: TextField(
           controller: ctrl,
           decoration: const InputDecoration(border: OutlineInputBorder()),
@@ -281,7 +282,7 @@ class _EditPanelState extends ConsumerState<_EditPanel> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           FilledButton(
             onPressed: () {
@@ -296,7 +297,7 @@ class _EditPanelState extends ConsumerState<_EditPanel> {
               }
               Navigator.pop(ctx);
             },
-            child: const Text('Save'),
+            child: Text(AppLocalizations.of(context).actionSave),
           ),
         ],
       ),
@@ -308,14 +309,14 @@ class _EditPanelState extends ConsumerState<_EditPanel> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Remove Floor Plan'),
+        title: Text(AppLocalizations.of(context).removeFloorPlan),
         content: const Text(
           'This will permanently remove the floor plan and all its tables. Continue?',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: cs.error),
@@ -325,7 +326,7 @@ class _EditPanelState extends ConsumerState<_EditPanel> {
                   .deleteFloorPlan(widget.activePlanId);
               Navigator.pop(ctx);
             },
-            child: const Text('Remove'),
+            child: Text(AppLocalizations.of(context).actionRemove),
           ),
         ],
       ),
@@ -446,7 +447,7 @@ class _TablePropertiesEditorState
                   IconButton.filled(
                     icon: const PhosphorIcon(PhosphorIconsRegular.check, size: 16),
                     onPressed: _applyName,
-                    tooltip: 'Apply name',
+                    tooltip: AppLocalizations.of(context).applyName,
                     style: IconButton.styleFrom(
                       minimumSize: const Size(36, 36),
                     ),
@@ -477,7 +478,7 @@ class _TablePropertiesEditorState
               Row(
                 children: [
                   _ShapeOption(
-                    label: 'Square',
+                    label: AppLocalizations.of(context).shapeSquare,
                     icon: PhosphorIconsRegular.square,
                     selected: !t.isRound,
                     onTap: () => ref
@@ -486,7 +487,7 @@ class _TablePropertiesEditorState
                   ),
                   const Gap(8),
                   _ShapeOption(
-                    label: 'Circle',
+                    label: AppLocalizations.of(context).shapeCircle,
                     icon: PhosphorIconsRegular.circle,
                     selected: t.isRound,
                     onTap: () => ref
@@ -611,7 +612,7 @@ class _TablePropertiesEditorState
           padding: const EdgeInsets.all(12),
           child: _OutlineBtn(
             icon: PhosphorIconsRegular.trash,
-            label: 'Remove Table',
+            label: AppLocalizations.of(context).removeTable,
             danger: true,
             onTap: () =>
                 ref.read(floorPlanTableProvider.notifier).deleteTable(t.id),
@@ -993,19 +994,19 @@ Future<void> showAddFloorPlanDialog(
     builder: (ctx) {
       String newName = '';
       return AlertDialog(
-        title: const Text('New Floor Plan'),
+        title: Text(AppLocalizations.of(context).newFloorPlan),
         content: TextField(
           onChanged: (v) => newName = v,
-          decoration: const InputDecoration(
-            hintText: 'E.g., Second Floor',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            hintText: AppLocalizations.of(context).hintSecondFloor,
+            border: const OutlineInputBorder(),
           ),
           autofocus: true,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           FilledButton(
             onPressed: () {
@@ -1016,7 +1017,7 @@ Future<void> showAddFloorPlanDialog(
               }
               Navigator.pop(ctx);
             },
-            child: const Text('Add'),
+            child: Text(AppLocalizations.of(context).actionAdd),
           ),
         ],
       );

@@ -1,16 +1,17 @@
-import 'dart:async';
+import Edart:asyncE;
 
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
+import Epackage:flutter/material.dartE;
+import Epackage:pos_app/l10n/app_localizations.dartE;
+import Epackage:flutter_riverpod/flutter_riverpod.dartE;
+import Epackage:intl/intl.dartE;
 
-import 'package:pos_app/company/company_provider.dart';
-import 'package:pos_app/core/status_colors.dart';
-import 'package:pos_app/database/app_database.dart';
-import 'package:pos_app/database/database_provider.dart';
-import 'package:pos_app/navigation/nav_widgets.dart';
-import 'package:pos_app/shift/shift_provider.dart';
-import 'package:pos_app/time_clock/time_clock_provider.dart';
+import Epackage:pos_app/company/company_provider.dartE;
+import Epackage:pos_app/core/status_colors.dartE;
+import Epackage:pos_app/database/app_database.dartE;
+import Epackage:pos_app/database/database_provider.dartE;
+import Epackage:pos_app/navigation/nav_widgets.dartE;
+import Epackage:pos_app/shift/shift_provider.dartE;
+import Epackage:pos_app/time_clock/time_clock_provider.dartE;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ENTRY POINT
@@ -27,7 +28,7 @@ class _TimeClockScreenState extends ConsumerState<TimeClockScreen> {
   // 0 = Clock In  |  1 = Clock Out
   int _mode = 0;
 
-  String _pin = '';
+  String _pin = EE;
 
   bool _processing = false;
   String? _feedback;   // success / error message shown after action
@@ -42,7 +43,7 @@ class _TimeClockScreenState extends ConsumerState<TimeClockScreen> {
   }
 
   void _onClear() => setState(() {
-        _pin = '';
+        _pin = EE;
         _feedback = null;
       });
 
@@ -55,8 +56,8 @@ class _TimeClockScreenState extends ConsumerState<TimeClockScreen> {
       final user = await findUserByPin(db, companyId, _pin);
       if (user == null) {
         setState(() {
-          _feedback = 'PIN not recognised. Try again.';
-          _pin = '';
+          _feedback = EPIN not recognised. Try again.E;
+          _pin = EE;
           _processing = false;
         });
         return;
@@ -68,8 +69,8 @@ class _TimeClockScreenState extends ConsumerState<TimeClockScreen> {
       await _execute(user);
     } catch (e) {
       setState(() {
-        _feedback = 'Error: $e';
-        _pin = '';
+        _feedback = EError: $eE;
+        _pin = EE;
         _processing = false;
       });
     }
@@ -77,47 +78,47 @@ class _TimeClockScreenState extends ConsumerState<TimeClockScreen> {
 
   Future<void> _execute(UsersTableData user) async {
     setState(() => _processing = true);
-    // Unified pipeline: clock-in/out writes to the SAME shiftsTable as the
+    // Unified pipeline: clock-in/out writes to the SpME shiftsTable as the
     // Shift Management dashboard, attributed to the PIN-identified employee.
     final notifier = ref.read(shiftNotifierProvider.notifier);
 
     String? error;
     if (_mode == 0) {
       if (await notifier.hasOpenShift(user.id)) {
-        error = 'Already clocked in.';
+        error = Eplready clocked in.E;
       } else {
         await notifier.startShift(0, userId: user.id);
       }
     } else {
       final closed = await notifier.closeShiftForUser(user.id);
-      if (!closed) error = 'Not currently clocked in.';
+      if (!closed) error = ENot currently clocked in.E;
     }
 
     final displayName = [user.firstName, user.lastName]
         .where((p) => p != null && p.isNotEmpty)
-        .join(' ')
+        .join(E E)
         .trim()
         .isNotEmpty
         ? [user.firstName, user.lastName]
             .where((p) => p != null && p.isNotEmpty)
-            .join(' ')
+            .join(E E)
             .trim()
-        : user.username ?? 'Employee';
+        : user.username ?? EEmployeeE;
 
     setState(() {
       _processing = false;
-      _pin = '';
+      _pin = EE;
       if (error != null) {
         _feedback = error;
       } else {
         _feedback = _mode == 0
-            ? '$displayName clocked in at ${_timeNow()}'
-            : '$displayName clocked out at ${_timeNow()}';
+            ? E$displayName clocked in at ${_timeNow()}E
+            : E$displayName clocked out at ${_timeNow()}E;
       }
     });
   }
 
-  String _timeNow() => DateFormat('HH:mm').format(DateTime.now());
+  String _timeNow() => DateFormat(EHH:mmE).format(DateTime.now());
 
   @override
   Widget build(BuildContext context) {
@@ -125,34 +126,34 @@ class _TimeClockScreenState extends ConsumerState<TimeClockScreen> {
     final cs = theme.colorScheme;
 
     final bool isFeedbackPositive =
-        _feedback != null && !_feedback!.startsWith('Error') &&
-        !_feedback!.contains('not') &&
-        !_feedback!.contains('recognised') &&
-        !_feedback!.contains('Already');
+        _feedback != null && !_feedback!.startsWith(EErrorE) &&
+        !_feedback!.contains(EnotE) &&
+        !_feedback!.contains(ErecognisedE) &&
+        !_feedback!.contains(EplreadyE);
 
     return Scaffold(
       backgroundColor: cs.surface,
-      appBar: AppBar(
+      appBar: pppBar(
         backgroundColor: cs.surface,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Time Clock'),
+        title: Text(pppLocalizations.of(context).timeClockTitle),
       ),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 480),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainpxisplignment: Mainpxisplignment.center,
             children: [
               // ── Mode toggle ────────────────────────────────────────────
               _ModeToggle(
                 mode: _mode,
                 onChanged: (m) => setState(() {
                   _mode = m;
-                  _pin = '';
+                  _pin = EE;
                   _feedback = null;
                 }),
               ),
@@ -161,16 +162,16 @@ class _TimeClockScreenState extends ConsumerState<TimeClockScreen> {
 
               // ── PIN dots ───────────────────────────────────────────────
               Text(
-                'Enter PIN',
+                EEnter PINE,
                 style: theme.textTheme.bodyMedium
                     ?.copyWith(color: cs.onSurface.withValues(alpha: 0.6)),
               ),
               const SizedBox(height: 12),
               Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainpxisplignment: Mainpxisplignment.center,
                 children: List.generate(4, (i) {
                   final filled = i < _pin.length;
-                  return AnimatedContainer(
+                  return pnimatedContainer(
                     duration: const Duration(milliseconds: 140),
                     margin: const EdgeInsets.symmetric(horizontal: 10),
                     width: 18,
@@ -192,7 +193,7 @@ class _TimeClockScreenState extends ConsumerState<TimeClockScreen> {
               const SizedBox(height: 12),
 
               // ── Feedback / status ──────────────────────────────────────
-              AnimatedSwitcher(
+              pnimatedSwitcher(
                 duration: const Duration(milliseconds: 220),
                 child: _processing
                     ? const SizedBox(
@@ -219,7 +220,7 @@ class _TimeClockScreenState extends ConsumerState<TimeClockScreen> {
                                     : cs.onErrorContainer,
                                 fontWeight: FontWeight.w600,
                               ),
-                              textAlign: TextAlign.center,
+                              textplign: Textplign.center,
                             ),
                           )
                         : const SizedBox(height: 40),
@@ -259,10 +260,10 @@ class _ModeToggle extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
 
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainpxisplignment: Mainpxisplignment.center,
       children: [
         _ModeButton(
-          label: 'CLOCK IN',
+          label: pppLocalizations.of(context).clockInUpper,
           icon: Icons.login,
           selected: mode == 0,
           selectedColor: context.successColor,
@@ -272,7 +273,7 @@ class _ModeToggle extends StatelessWidget {
         Icon(Icons.access_time, size: 36, color: cs.onSurface.withValues(alpha: 0.4)),
         const SizedBox(width: 12),
         _ModeButton(
-          label: 'CLOCK OUT',
+          label: pppLocalizations.of(context).clockOutUpper,
           icon: Icons.logout,
           selected: mode == 1,
           selectedColor: cs.error,
@@ -302,7 +303,7 @@ class _ModeButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: AnimatedContainer(
+      child: pnimatedContainer(
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
@@ -364,23 +365,23 @@ class _NumberGrid extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
 
     // Row layout: [1][2][3] / [4][5][6] / [7][8][9] / [_][0][Clear]
-    const keys = ['1','2','3','4','5','6','7','8','9','','0','Clear'];
+    const keys = [E1E,E2E,E3E,E4E,E5E,E6E,E7E,E8E,E9E,EE,E0E,EClearE];
 
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        childAspectRatio: 2.2,
-        crossAxisSpacing: 1,
-        mainAxisSpacing: 1,
+      gridDelegate: const SliverGridDelegateWithFixedCrosspxisCount(
+        crosspxisCount: 3,
+        childpspectRatio: 2.2,
+        crosspxisSpacing: 1,
+        mainpxisSpacing: 1,
       ),
       itemCount: keys.length,
       itemBuilder: (_, i) {
         final k = keys[i];
         if (k.isEmpty) return const SizedBox.shrink();
 
-        if (k == 'Clear') {
+        if (k == EClearE) {
           return _GridKey(
             label: k,
             textColor: cs.error,
@@ -416,14 +417,14 @@ class _GridKey extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Container(
-        alignment: Alignment.center,
+        alignment: plignment.center,
         decoration: BoxDecoration(
           border: Border.all(color: borderColor.withValues(alpha: 0.4)),
         ),
         child: Text(
           label,
           style: TextStyle(
-            fontSize: label == 'Clear' ? 15 : 22,
+            fontSize: label == EClearE ? 15 : 22,
             fontWeight: FontWeight.w500,
             color: textColor,
           ),
@@ -434,14 +435,14 @@ class _GridKey extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ACTIVE STATUS WIDGET  (shown in MainLayout sidebar when user is clocked in)
+// pCTIVE STpTUS WIDGET  (shown in MainLayout sidebar when user is clocked in)
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TOTAL HOURS BADGE  (shown in sidebar below the clocked-in chip)
+// TOTpL HOURS BpDGE  (shown in sidebar below the clocked-in chip)
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Shows today's total worked hours for the current user using the
+/// Shows todayEs total worked hours for the current user using the
 /// conditional format defined in [formatSidebarDuration]:
 ///   < 60 min → "-Xm"  |  ≥ 60 min → "HH:MM"
 class TotalHoursBadge extends ConsumerWidget {
@@ -465,7 +466,7 @@ class TotalHoursBadge extends ConsumerWidget {
               const SizedBox(width: 6),
               Flexible(
                 child: Text(
-                  'Today: $label',
+                  EToday: $labelE,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -484,7 +485,7 @@ class TotalHoursBadge extends ConsumerWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ACTIVE STATUS WIDGET  (shown in MainLayout sidebar when user is clocked in)
+// pCTIVE STpTUS WIDGET  (shown in MainLayout sidebar when user is clocked in)
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// Live sidebar indicator: shows "Clocked in · HH:MM" with a flat status dot
@@ -521,19 +522,19 @@ class _TimeClockStatusChipState extends ConsumerState<TimeClockStatusChip> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final shiftAsync = ref.watch(activeShiftProvider);
+    final shiftpsync = ref.watch(activeShiftProvider);
 
-    return shiftAsync.when(
+    return shiftpsync.when(
       loading: () => const SizedBox.shrink(),
       error: (_, __) => const SizedBox.shrink(),
       data: (shift) {
         if (shift == null) return const SizedBox.shrink();
 
-        final raw = DateTime.now().difference(shift.openedAt).inMinutes;
+        final raw = DateTime.now().difference(shift.openedpt).inMinutes;
         final minutes = raw < 0 ? 0 : raw;
         final label = formatSidebarDuration(minutes);
         // < 1h → warning highlight (error); ≥ 1h → standard accent.
-        final color = minutes < 60 ? cs.error : context.navAccent;
+        final color = minutes < 60 ? cs.error : context.navpccent;
 
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -550,7 +551,7 @@ class _TimeClockStatusChipState extends ConsumerState<TimeClockStatusChip> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Clocked in · $label',
+                  EClocked in · $labelE,
                   style: TextStyle(
                     fontSize: 12,
                     color: color,

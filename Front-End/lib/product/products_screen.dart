@@ -17,6 +17,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:pos_app/api/api_client.dart';
 import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/core/status_colors.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:pos_app/product/product_group_provider.dart';
 import 'package:pos_app/currency/currencies_provider.dart';
 import 'package:pos_app/product/product_model.dart';
@@ -274,7 +275,7 @@ Future<void> _showExportDialog(BuildContext context, WidgetRef ref) async {
     context: context,
     builder: (ctx) => StatefulBuilder(
       builder: (ctx, setState) => AlertDialog(
-        title: const Text('Select export type'),
+        title: Text(AppLocalizations.of(context).selectExportType),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -285,7 +286,7 @@ Future<void> _showExportDialog(BuildContext context, WidgetRef ref) async {
               title: Row(children: [
                 Icon(Icons.table_chart, color: ctx.successColor, size: 20),
                 const SizedBox(width: 10),
-                const Text('CSV (Excel)'),
+                Text(AppLocalizations.of(context).exportCsv),
               ]),
             ),
             RadioListTile<String>(
@@ -295,7 +296,7 @@ Future<void> _showExportDialog(BuildContext context, WidgetRef ref) async {
               title: Row(children: [
                 Icon(Icons.code, color: ctx.infoColor, size: 20),
                 const SizedBox(width: 10),
-                const Text('XML'),
+                Text(AppLocalizations.of(context).exportXml),
               ]),
             ),
           ],
@@ -303,14 +304,14 @@ Future<void> _showExportDialog(BuildContext context, WidgetRef ref) async {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           FilledButton(
             onPressed: () {
               Navigator.pop(ctx);
               _runExport(context, ref, selected);
             },
-            child: const Text('Continue'),
+            child: Text(AppLocalizations.of(context).actionContinue),
           ),
         ],
       ),
@@ -362,17 +363,17 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text("Delete Products"),
+        title: Text(AppLocalizations.of(context).deleteProducts),
         content: Text(
-            "Delete $count product${count == 1 ? '' : 's'}? This cannot be undone."),
+            AppLocalizations.of(context).deleteProductsConfirm(count)),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text("Cancel")),
+              child: Text(AppLocalizations.of(context).actionCancel)),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: ctx.dangerColor),
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text("Delete", style: TextStyle(color: ctx.onStatusColor)),
+            child: Text(AppLocalizations.of(context).actionDelete, style: TextStyle(color: ctx.onStatusColor)),
           ),
         ],
       ),
@@ -459,7 +460,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
         final visible = ref.watch(productVisibleColumnsProvider);
         final notifier = ref.read(productVisibleColumnsProvider.notifier);
         return AlertDialog(
-          title: const Text("Show / Hide Columns"),
+          title: Text(AppLocalizations.of(context).showHideColumns),
           content: SizedBox(
             width: 320,
             child: SingleChildScrollView(
@@ -471,7 +472,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                     dense: true,
                     title: Text(col.label),
                     // Mandatory columns (Name, Edit) stay locked on.
-                    subtitle: col.mandatory ? const Text("Always shown") : null,
+                    subtitle: col.mandatory ? Text(AppLocalizations.of(context).alwaysShown) : null,
                     value: isOn,
                     onChanged: col.mandatory
                         ? null
@@ -484,11 +485,11 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
           actions: [
             TextButton(
               onPressed: () => notifier.resetToDefaults(),
-              child: const Text("Reset"),
+              child: Text(AppLocalizations.of(context).actionReset),
             ),
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Close"),
+              child: Text(AppLocalizations.of(context).actionClose),
             ),
           ],
         );
@@ -511,7 +512,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                 onPressed: widget.onMenuPressed,
               )
             : null,
-        title: const Text("Products"),
+        title: Text(AppLocalizations.of(context).products),
         backgroundColor: theme.colorScheme.surface,
         actions: [
           TextButton.icon(
@@ -528,13 +529,13 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
           const SizedBox(width: 4),
           TextButton.icon(
             icon: const Icon(Icons.view_column_rounded),
-            label: const Text("Columns"),
+            label: Text(AppLocalizations.of(context).columns),
             onPressed: () => _showColumnPicker(context),
           ),
           const SizedBox(width: 4),
           TextButton.icon(
             icon: const Icon(Icons.download_rounded),
-            label: const Text("Import"),
+            label: Text(AppLocalizations.of(context).importLabel),
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const ProductImportScreen()),
@@ -547,13 +548,13 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
           const SizedBox(width: 4),
           TextButton.icon(
             icon: const Icon(Icons.upload_rounded),
-            label: const Text("Export"),
+            label: Text(AppLocalizations.of(context).exportLabel),
             onPressed: () => _showExportDialog(context, ref),
           ),
           const SizedBox(width: 8),
           ElevatedButton.icon(
             icon: const Icon(Icons.add),
-            label: const Text("Add Product"),
+            label: Text(AppLocalizations.of(context).addProduct),
             style: ElevatedButton.styleFrom(
                 backgroundColor: theme.colorScheme.primary,
                 foregroundColor: theme.colorScheme.onPrimary),
@@ -597,7 +598,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   color: theme.colorScheme.surfaceContainerHighest,
-                  child: Text("CATEGORIES",
+                  child: Text(AppLocalizations.of(context).categoriesHeader,
                       style: theme.textTheme.labelMedium?.copyWith(
                           fontWeight: FontWeight.bold, letterSpacing: 1.2)),
                 ),
@@ -652,7 +653,7 @@ class _GroupTreeSidebar extends ConsumerWidget {
 
     return asyncGroups.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => const Center(child: Text("Error loading groups")),
+        error: (e, _) => Center(child: Text(AppLocalizations.of(context).errorLoadingGroups)),
         data: (groups) {
           final rootGroups = groups
               .where((g) => g.parentGroupId == null)
@@ -665,8 +666,8 @@ class _GroupTreeSidebar extends ConsumerWidget {
                 color: Colors.transparent,
                 child: ListTile(
                   leading: Icon(Icons.all_inbox, color: Theme.of(context).colorScheme.primary),
-                  title: const Text("All Products",
-                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  title: Text(AppLocalizations.of(context).allProducts,
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
                   selected: ref.watch(selectedProductGroupIdProvider) == null,
                   selectedTileColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                   onTap: () => ref
@@ -804,12 +805,13 @@ class _ProductListContent extends ConsumerWidget {
 
     return asyncProducts.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text("Error: ${_parseApiError(e)}")),
+        error: (e, _) => Center(child: Text(AppLocalizations.of(context).errorWithMessage(_parseApiError(e)))),
         data: (products) {
           if (products.isEmpty) {
-            return const Center(
-                child: Text("No products found.",
-                    style: TextStyle(color: Colors.grey, fontSize: 18)));
+            return Center(
+                child: Text(AppLocalizations.of(context).noProductsFound,
+                    style: TextStyle(
+                        color: Theme.of(context).hintColor, fontSize: 18)));
           }
 
           final effectiveSelected =
@@ -1562,7 +1564,7 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel")),
+              child: Text(AppLocalizations.of(context).actionCancel)),
           if (_isLoading)
             const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -1607,7 +1609,7 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                         child: TextFormField(
                             controller: _nameCtrl,
                             decoration: InputDecoration(
-                                labelText: "Product Name *",
+                                labelText: AppLocalizations.of(context).productNameRequired,
                                 filled: true,
                                 fillColor: theme.colorScheme.surface,
                                 border: const OutlineInputBorder()))),
@@ -1615,18 +1617,18 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                     Expanded(
                       child: allGroupsAsync.when(
                         loading: () => const LinearProgressIndicator(),
-                        error: (_, __) => const Text("Error loading groups"),
+                        error: (_, __) => Text(AppLocalizations.of(context).errorLoadingGroups),
                         data: (groups) => DropdownButtonFormField<int?>(
                           initialValue: _selectedGroupId,
                           decoration: InputDecoration(
-                              labelText: "Category / Group",
+                              labelText: AppLocalizations.of(context).categoryGroup,
                               filled: true,
                               fillColor: theme.colorScheme.surface,
                               border: const OutlineInputBorder()),
                           items: [
-                            const DropdownMenuItem(
+                            DropdownMenuItem(
                                 value: null,
-                                child: Text("None (Uncategorized)")),
+                                child: Text(AppLocalizations.of(context).noneUncategorized)),
                             ...groups.map((g) => DropdownMenuItem(
                                 value: g.id, child: Text(g.name))),
                           ],
@@ -1644,7 +1646,7 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                         child: TextFormField(
                             controller: _codeCtrl,
                             decoration: InputDecoration(
-                                labelText: "Product Code / SKU",
+                                labelText: AppLocalizations.of(context).productCodeSku,
                                 filled: true,
                                 fillColor: theme.colorScheme.surface,
                                 border: const OutlineInputBorder()))),
@@ -1653,7 +1655,7 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                         child: TextFormField(
                             controller: _pluCtrl,
                             decoration: InputDecoration(
-                                labelText: "PLU",
+                                labelText: AppLocalizations.of(context).plu,
                                 filled: true,
                                 fillColor: theme.colorScheme.surface,
                                 border: const OutlineInputBorder()),
@@ -1667,21 +1669,21 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                         child: TextFormField(
                             controller: _measurementUnitCtrl,
                             decoration: InputDecoration(
-                                labelText: "Measurement Unit",
+                                labelText: AppLocalizations.of(context).measurementUnit,
                                 filled: true,
                                 fillColor: theme.colorScheme.surface,
                                 border: const OutlineInputBorder(),
-                                hintText: "e.g. kg, pcs"))),
+                                hintText: AppLocalizations.of(context).measurementUnitHint))),
                     const SizedBox(width: 16),
                     Expanded(
                         child: TextFormField(
                             controller: _ageRestrictionCtrl,
                             decoration: InputDecoration(
-                                labelText: "Age Restriction",
+                                labelText: AppLocalizations.of(context).ageRestriction,
                                 filled: true,
                                 fillColor: theme.colorScheme.surface,
                                 border: const OutlineInputBorder(),
-                                hintText: "e.g. 18"),
+                                hintText: AppLocalizations.of(context).ageRestrictionHint),
                             keyboardType: TextInputType.number)),
                   ],
                 ),
@@ -1692,7 +1694,7 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                         child: TextFormField(
                             controller: _priceCtrl,
                             decoration: InputDecoration(
-                                labelText: "Selling Price *",
+                                labelText: AppLocalizations.of(context).sellingPriceRequired,
                                 filled: true,
                                 fillColor: theme.colorScheme.surface,
                                 border: const OutlineInputBorder(),
@@ -1704,7 +1706,7 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                         child: TextFormField(
                             controller: _costCtrl,
                             decoration: InputDecoration(
-                                labelText: "Purchase Cost",
+                                labelText: AppLocalizations.of(context).purchaseCost,
                                 filled: true,
                                 fillColor: theme.colorScheme.surface,
                                 border: const OutlineInputBorder(),
@@ -1721,7 +1723,7 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                           child: TextFormField(
                               controller: _markupCtrl,
                               decoration: InputDecoration(
-                                  labelText: "Margin / Markup (%)",
+                                  labelText: AppLocalizations.of(context).marginMarkup,
                                   filled: true,
                                   fillColor: theme.colorScheme.surface,
                                   border: const OutlineInputBorder(),
@@ -1734,7 +1736,7 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                         child: TextFormField(
                             controller: _rankCtrl,
                             decoration: InputDecoration(
-                                labelText: "Rank (Display Order)",
+                                labelText: AppLocalizations.of(context).rankDisplayOrder,
                                 filled: true,
                                 fillColor: theme.colorScheme.surface,
                                 border: const OutlineInputBorder()),
@@ -1746,7 +1748,7 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                     controller: _descriptionCtrl,
                     maxLines: 3,
                     decoration: InputDecoration(
-                        labelText: "Description",
+                        labelText: AppLocalizations.of(context).description,
                         filled: true,
                         fillColor: theme.colorScheme.surface,
                         border: const OutlineInputBorder(),
@@ -1767,23 +1769,23 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                   child: Column(
                     children: [
                       SwitchListTile(
-                          title: const Text("Product Price is Tax Inclusive"),
+                          title: Text(AppLocalizations.of(context).priceIsTaxInclusive),
                           value: _isTaxInclusive,
                           onChanged: (v) => setState(() => _isTaxInclusive = v),
                           visualDensity: VisualDensity.compact),
                       SwitchListTile(
-                          title: const Text("Is Service (Not physical)"),
+                          title: Text(AppLocalizations.of(context).isServiceNotPhysical),
                           value: _isService,
                           onChanged: (v) => setState(() => _isService = v),
                           visualDensity: VisualDensity.compact),
                       SwitchListTile(
-                          title: const Text("Change Price Allowed"),
+                          title: Text(AppLocalizations.of(context).changePriceAllowed),
                           value: _isPriceChangeAllowed,
                           onChanged: (v) =>
                               setState(() => _isPriceChangeAllowed = v),
                           visualDensity: VisualDensity.compact),
                       SwitchListTile(
-                          title: const Text("Is Enabled (Visible)"),
+                          title: Text(AppLocalizations.of(context).isEnabledVisible),
                           value: _isEnabled,
                           onChanged: (v) => setState(() => _isEnabled = v),
                           visualDensity: VisualDensity.compact),
@@ -1812,12 +1814,12 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Product Color Marker",
+                Text(AppLocalizations.of(context).productColorMarker,
                     style: TextStyle(
                         fontWeight: FontWeight.bold, color: theme.hintColor)),
                 const SizedBox(height: 4),
                 Text(
-                    "Tints the product tile in the POS menu and the products list.",
+                    AppLocalizations.of(context).colorMarkerHint,
                     style: theme.textTheme.bodySmall
                         ?.copyWith(color: theme.hintColor)),
                 const SizedBox(height: 12),
@@ -1867,11 +1869,11 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Product Image",
+                Text(AppLocalizations.of(context).productImage,
                     style: TextStyle(
                         fontWeight: FontWeight.bold, color: theme.hintColor)),
                 const SizedBox(height: 4),
-                Text("Replaces the placeholder icon on the POS menu tile.",
+                Text(AppLocalizations.of(context).productImageHint,
                     style: theme.textTheme.bodySmall
                         ?.copyWith(color: theme.hintColor)),
                 const SizedBox(height: 12),
@@ -1900,7 +1902,7 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                       children: [
                         ElevatedButton.icon(
                             icon: const Icon(Icons.upload, size: 18),
-                            label: const Text("Upload"),
+                            label: Text(AppLocalizations.of(context).actionUpload),
                             onPressed: _pickImage),
                         if (_selectedImageBase64 != null &&
                             _selectedImageBase64!.isNotEmpty) ...[
@@ -1908,7 +1910,7 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                           TextButton(
                               onPressed: () =>
                                   setState(() => _selectedImageBase64 = null),
-                              child: Text("Remove Image",
+                              child: Text(AppLocalizations.of(context).removeImage,
                                   style: TextStyle(color: context.dangerColor))),
                         ]
                       ],
@@ -1931,22 +1933,22 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Apply Taxes",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(AppLocalizations.of(context).applyTaxes,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
           allTaxesAsync.when(
               loading: () => const CircularProgressIndicator(),
-              error: (_, __) => const Text("Failed to load taxes"),
+              error: (_, __) => Text(AppLocalizations.of(context).failedToLoadTaxes),
               data: (taxes) {
                 return DropdownButtonFormField<int?>(
                   initialValue: _selectedTaxId,
                   decoration: InputDecoration(
-                      labelText: "Primary Tax Rate",
+                      labelText: AppLocalizations.of(context).primaryTaxRate,
                       filled: true,
                       fillColor: theme.colorScheme.surface,
                       border: const OutlineInputBorder()),
                   items: [
-                    const DropdownMenuItem(value: null, child: Text("No Tax")),
+                    DropdownMenuItem(value: null, child: Text(AppLocalizations.of(context).noTax)),
                     ...taxes.map((t) => DropdownMenuItem(
                         value: t.id, child: Text("${t.name} (${t.rate}%)"))),
                   ],
@@ -1972,10 +1974,10 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Product Modifiers & Comments",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(AppLocalizations.of(context).productModifiersComments,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           Text(
-              "Add specific notes like 'Extra Spicy' or 'Contains Nuts'.",
+              AppLocalizations.of(context).modifiersHint,
               style: TextStyle(color: theme.hintColor)),
           const SizedBox(height: 24),
 
@@ -1986,8 +1988,8 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                 child: TextField(
                   controller: _newCommentCtrl,
                   decoration: InputDecoration(
-                    labelText: "New Modifier / Comment",
-                    hintText: "e.g. No Onions",
+                    labelText: AppLocalizations.of(context).newModifierComment,
+                    hintText: AppLocalizations.of(context).newModifierHint,
                     filled: true,
                     fillColor: theme.colorScheme.surface,
                     border: const OutlineInputBorder(),
@@ -1997,7 +1999,7 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
               const SizedBox(width: 16),
               ElevatedButton.icon(
                   icon: const Icon(Icons.add),
-                  label: const Text("Add"),
+                  label: Text(AppLocalizations.of(context).actionAdd),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: theme.colorScheme.primary,
                     foregroundColor: theme.colorScheme.onPrimary,
@@ -2048,12 +2050,12 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
             child: asyncComments.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (e, _) => Center(
-                    child: Text("Error: ${_parseApiError(e)}",
+                    child: Text(AppLocalizations.of(context).errorWithMessage(_parseApiError(e)),
                         style: TextStyle(color: context.dangerColor))),
                 data: (comments) {
                   if (comments.isEmpty) {
                     return Center(
-                        child: Text("No comments added yet.",
+                        child: Text(AppLocalizations.of(context).noCommentsYet,
                             style:
                                 TextStyle(color: theme.hintColor, fontSize: 16)));
                   }
@@ -2076,7 +2078,7 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                                   const TextStyle(fontWeight: FontWeight.bold)),
                           trailing: IconButton(
                             icon: Icon(Icons.delete, color: context.dangerColor),
-                            tooltip: "Delete Comment",
+                            tooltip: AppLocalizations.of(context).deleteComment,
                             onPressed: () async {
                               if (companyId == null) return;
                               try {
@@ -2128,10 +2130,10 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Product Barcodes",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(AppLocalizations.of(context).productBarcodes,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           Text(
-              "Assign multiple barcodes (e.g., individual item, box, or pallet).",
+              AppLocalizations.of(context).barcodesHint,
               style: TextStyle(color: theme.hintColor)),
           const SizedBox(height: 24),
 
@@ -2152,7 +2154,7 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                         }
                       },
                       decoration: InputDecoration(
-                        labelText: "Barcode",
+                        labelText: AppLocalizations.of(context).barcode,
                         hintText:
                             _isBarcodeChipActive ? "" : "Scan or enter barcode",
                         filled: true,
@@ -2211,7 +2213,7 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                             DateTime.now().millisecondsSinceEpoch.toString();
                         _isBarcodeChipActive = true;
                       }),
-                      child: Text("Generate barcode",
+                      child: Text(AppLocalizations.of(context).generateBarcode,
                           style: TextStyle(color: context.infoColor)),
                     ),
                   ],
@@ -2220,7 +2222,7 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
               const SizedBox(width: 16),
               ElevatedButton.icon(
                 icon: const Icon(Icons.add),
-                label: const Text("Add"),
+                label: Text(AppLocalizations.of(context).actionAdd),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: theme.colorScheme.primary,
                   foregroundColor: theme.colorScheme.onPrimary,
@@ -2279,12 +2281,12 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
               loading: () =>
                   const Center(child: CircularProgressIndicator()),
               error: (e, _) => Center(
-                  child: Text("Error: $e",
+                  child: Text(AppLocalizations.of(context).errorWithMessage(e.toString()),
                       style: TextStyle(color: context.dangerColor))),
               data: (barcodes) {
                 if (barcodes.isEmpty) {
                   return Center(
-                      child: Text("No barcodes assigned yet.",
+                      child: Text(AppLocalizations.of(context).noBarcodesYet,
                           style: TextStyle(
                               color: theme.hintColor, fontSize: 16)));
                 }
@@ -2308,14 +2310,14 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 1.5)),
                         subtitle: b.isPendingSync
-                            ? Text('Pending sync',
+                            ? Text(AppLocalizations.of(context).pendingSync,
                                 style: TextStyle(
                                     fontSize: 11,
                                     color: theme.colorScheme.tertiary))
                             : null,
                         trailing: IconButton(
                           icon: Icon(Icons.delete, color: context.dangerColor),
-                          tooltip: "Delete Barcode",
+                          tooltip: AppLocalizations.of(context).deleteBarcode,
                           onPressed: () async {
                             if (companyId == null) return;
                             final db = ref.read(appDatabaseProvider);

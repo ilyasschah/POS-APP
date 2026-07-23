@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:pos_app/stock/warehouse_model.dart';
 
 /// Centered warehouse picker — mirrors `showCustomerPickerDialog` so choosing a
@@ -53,7 +54,7 @@ class _WarehousePickerDialogState extends State<_WarehousePickerDialog> {
 
     return AlertDialog(
       backgroundColor: theme.cardColor,
-      title: const Text('Select Warehouse'),
+      title: Text(AppLocalizations.of(context).selectWarehouse),
       contentPadding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       content: SizedBox(
         width: 360,
@@ -65,12 +66,12 @@ class _WarehousePickerDialogState extends State<_WarehousePickerDialog> {
               TextField(
                 controller: _ctrl,
                 autofocus: true,
-                decoration: const InputDecoration(
-                  hintText: 'Search warehouse…',
-                  prefixIcon: Icon(Icons.search, size: 20),
+                decoration: InputDecoration(
+                  hintText: AppLocalizations.of(context).searchWarehouse,
+                  prefixIcon: const Icon(Icons.search, size: 20),
                   isDense: true,
-                  border: OutlineInputBorder(),
-                  contentPadding: EdgeInsets.symmetric(
+                  border: const OutlineInputBorder(),
+                  contentPadding: const EdgeInsets.symmetric(
                     horizontal: 12,
                     vertical: 10,
                   ),

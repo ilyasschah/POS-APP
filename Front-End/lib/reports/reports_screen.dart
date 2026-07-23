@@ -1,10 +1,12 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
+import 'package:pos_app/printer/pdf_fonts.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:pos_app/auth/auth_provider.dart';
@@ -22,6 +24,66 @@ import 'package:pos_app/utils/snackbar_helper.dart';
 import 'package:pos_app/settings/settings_provider.dart';
 
 // ─── Data models ──────────────────────────────────────────────────────────────
+
+/// Localized display label for a report. The label baked into the const
+/// [_ReportType] tables stays English on purpose — those lists are top-level
+/// const, so they cannot call AppLocalizations, and the English text doubles
+/// as the fallback for any id added without a translation.
+String _reportLabel(BuildContext context, String id) {
+  final l = AppLocalizations.of(context);
+  switch (id) {
+    case 'sales_by_product': case 'purchase_products':
+    case 'stock_return_products': case 'loss_and_damage_products':
+      return l.rptSalesByProduct;
+    case 'sales_by_group': return l.rptSalesByGroup;
+    case 'sales_by_customer': return l.rptSalesByCustomer;
+    case 'sales_tax': case 'purchase_tax': return l.rptTaxRates;
+    case 'sales_users': return l.rptUsers;
+    case 'sales_item_list': return l.rptItemList;
+    case 'sales_payment_types': return l.rptPaymentTypes;
+    case 'sales_payment_by_user': return l.rptPaymentByUser;
+    case 'sales_payment_by_customer': return l.rptPaymentByCustomer;
+    case 'sales_refunds': return l.rptRefunds;
+    case 'sales_invoice_list': return l.rptInvoiceList;
+    case 'sales_daily': return l.rptDailySales;
+    case 'sales_hourly': return l.rptHourlySales;
+    case 'sales_hourly_group': return l.rptHourlyByGroup;
+    case 'sales_by_table': return l.rptByTable;
+    case 'sales_profit': return l.rptProfitMargin;
+    case 'sales_unpaid': return l.rptUnpaidSales;
+    case 'sales_starting_cash': return l.rptStartingCash;
+    case 'sales_voided': return l.rptVoidedItems;
+    case 'sales_discounts': return l.rptDiscountsGranted;
+    case 'sales_discounts_by_source': return l.rptDiscountsBySource;
+    case 'sales_item_discounts': return l.rptItemDiscounts;
+    case 'sales_stock_movement': return l.rptStockMovement;
+    case 'purchase_suppliers': return l.rptSuppliers;
+    case 'purchase_unpaid': return l.rptUnpaidPurchase;
+    case 'purchase_discounts': return l.rptPurchaseDiscounts;
+    case 'purchase_items_discounts': return l.rptPurchasedItemDiscounts;
+    case 'purchase_invoice_list': return l.rptPurchaseInvoiceList;
+    case 'purchase_expiration': return l.rptExpirationDate;
+    case 'reorder_list': return l.rptReorderList;
+    case 'low_stock_warning': return l.rptLowStockWarning;
+    case 'transaction_history': return l.rptTransactionHistory;
+    default: return id;
+  }
+}
+
+/// Localized name of a report section (the const _allSections keys stay English
+/// for the same reason as [_reportLabel]).
+String _sectionName(BuildContext context, String section) {
+  final l = AppLocalizations.of(context);
+  switch (section) {
+    case 'Sales': return l.secSales;
+    case 'Purchase': return l.secPurchase;
+    case 'Stock Return': return l.secStockReturn;
+    case 'Loss and damage': return l.secLossAndDamage;
+    case 'Stock control': return l.secStockControl;
+    case 'Finance': return l.secFinance;
+    default: return section;
+  }
+}
 
 class _ReportType {
   final String id;
@@ -893,14 +955,14 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     return Scaffold(
       backgroundColor: cs.surface,
       appBar: AppBar(
-        title: const Text('Reports'),
+        title: Text(AppLocalizations.of(context).reports),
         elevation: 0,
         // Suppress the auto back-arrow — ManagementLayout controls navigation.
         automaticallyImplyLeading: false,
         leading: widget.onMenuPressed != null
             ? IconButton(
                 icon: const Icon(Icons.menu),
-                tooltip: 'Show navigation',
+                tooltip: AppLocalizations.of(context).showNavigation,
                 onPressed: widget.onMenuPressed,
               )
             : null,
@@ -918,7 +980,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                 children: [
                   _TabChip(
                     id: 'home',
-                    label: 'Select report',
+                    label: AppLocalizations.of(context).selectReport,
                     icon: Icons.search,
                     active: _activeTabId == 'home',
                     onTap: () => setState(() => _activeTabId = 'home'),
@@ -926,7 +988,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                   ..._tabs.map(
                     (t) => _TabChip(
                       id: t.id,
-                      label: t.reportType.label,
+                      label: _reportLabel(context, t.reportType.id),
                       active: _activeTabId == t.id,
                       onTap: () => setState(() => _activeTabId = t.id),
                       onClose: () => _closeTab(t.id),
@@ -965,7 +1027,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                     )
                   : activeTab != null
                   ? _TabPdfView(tab: activeTab)
-                  : const Center(child: Text('Tab not found')),
+                  : Center(child: Text(AppLocalizations.of(context).tabNotFound)),
             ),
           ),
         ],
@@ -1104,7 +1166,7 @@ class _HomeView extends StatelessWidget {
         ),
       );
 
-  Widget _reportTile(ColorScheme cs, _ReportType r, {String? prefixLabel}) {
+  Widget _reportTile(BuildContext context, ColorScheme cs, _ReportType r, {String? prefixLabel}) {
     final active = selected?.id == r.id;
     final isFav = favorites.contains(r.id);
     return ListTile(
@@ -1115,7 +1177,7 @@ class _HomeView extends StatelessWidget {
         color: active ? cs.primary : cs.onSurfaceVariant,
       ),
       title: Text(
-        prefixLabel ?? r.label,
+        prefixLabel ?? _reportLabel(context, r.id),
         style: TextStyle(
           fontSize: 14,
           color: active ? cs.primary : cs.onSurface,
@@ -1150,7 +1212,7 @@ class _HomeView extends StatelessWidget {
         : [
             for (final (section, reports) in _allSections)
               for (final r in reports)
-                if (r.label.toLowerCase().contains(q) ||
+                if (_reportLabel(context, r.id).toLowerCase().contains(q) ||
                     section.toLowerCase().contains(q))
                   (section, r),
           ];
@@ -1190,7 +1252,7 @@ class _HomeView extends StatelessWidget {
                         onChanged: onSearchChanged,
                         style: TextStyle(fontSize: 13, color: cs.onSurface),
                         decoration: InputDecoration(
-                          hintText: 'Search reports',
+                          hintText: AppLocalizations.of(context).searchReports,
                           hintStyle: TextStyle(
                             fontSize: 13,
                             color: cs.onSurfaceVariant,
@@ -1246,9 +1308,10 @@ class _HomeView extends StatelessWidget {
                             ),
                           for (final (section, r) in searchResults) ...[
                             _reportTile(
+                              context,
                               cs,
                               r,
-                              prefixLabel: '$section / ${r.label}',
+                              prefixLabel: '${_sectionName(context, section)} / ${_reportLabel(context, r.id)}',
                             ),
                             Divider(height: 1, color: cs.outlineVariant),
                           ],
@@ -1282,9 +1345,10 @@ class _HomeView extends StatelessWidget {
                             const Divider(height: 1),
                             for (final r in favoriteReports) ...[
                               _reportTile(
+                                context,
                                 cs,
                                 r,
-                                prefixLabel: '${_sectionOf(r.id)} / ${r.label}',
+                                prefixLabel: '${_sectionName(context, _sectionOf(r.id))} / ${_reportLabel(context, r.id)}',
                               ),
                               Divider(height: 1, color: cs.outlineVariant),
                             ],
@@ -1294,7 +1358,7 @@ class _HomeView extends StatelessWidget {
                             _sectionLabel(cs, section),
                             const Divider(height: 1),
                             for (final r in reports) ...[
-                              _reportTile(cs, r),
+                              _reportTile(context, cs, r),
                               Divider(height: 1, color: cs.outlineVariant),
                             ],
                           ],
@@ -1339,7 +1403,7 @@ class _TabPdfView extends ConsumerWidget {
     // two exports of the same report don't overwrite each other on disk. Built
     // from the tab, so a new report type gets a real name without touching this.
     final baseName = reportPdfName(
-      tab.reportType.label,
+      _reportLabel(context, tab.reportType.id),
       tab.filter.startDate,
       tab.filter.endDate,
     );
@@ -2372,9 +2436,9 @@ Future<Uint8List> _buildProductsPdf({
   final fmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfGoogleFonts.notoSansRegular();
-  final bold = await PdfGoogleFonts.notoSansBold();
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold);
+  final regular = await PdfFonts.latin();
+  final bold = await PdfFonts.latin(bold: true);
+  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
 
   doc.addPage(
     pw.MultiPage(
@@ -2465,9 +2529,9 @@ Future<Uint8List> _buildProductGroupsPdf({
   final fmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfGoogleFonts.notoSansRegular();
-  final bold = await PdfGoogleFonts.notoSansBold();
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold);
+  final regular = await PdfFonts.latin();
+  final bold = await PdfFonts.latin(bold: true);
+  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
 
   doc.addPage(
     pw.MultiPage(
@@ -2545,9 +2609,9 @@ Future<Uint8List> _buildTaxPdf({
   final fmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfGoogleFonts.notoSansRegular();
-  final bold = await PdfGoogleFonts.notoSansBold();
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold);
+  final regular = await PdfFonts.latin();
+  final bold = await PdfFonts.latin(bold: true);
+  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
 
   doc.addPage(
     pw.MultiPage(
@@ -2625,9 +2689,9 @@ Future<Uint8List> _buildCustomersPdf({
   final fmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfGoogleFonts.notoSansRegular();
-  final bold = await PdfGoogleFonts.notoSansBold();
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold);
+  final regular = await PdfFonts.latin();
+  final bold = await PdfFonts.latin(bold: true);
+  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
 
   doc.addPage(
     pw.MultiPage(
@@ -2701,9 +2765,9 @@ Future<Uint8List> _buildPaymentTypesByCustomerPdf({
   final fmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfGoogleFonts.notoSansRegular();
-  final bold = await PdfGoogleFonts.notoSansBold();
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold);
+  final regular = await PdfFonts.latin();
+  final bold = await PdfFonts.latin(bold: true);
+  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
 
   final paymentTypes = rows.map((r) => r.paymentTypeName).toSet().toList()
     ..sort();
@@ -2792,9 +2856,9 @@ Future<Uint8List> _buildPaymentTypesByUserPdf({
   final fmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfGoogleFonts.notoSansRegular();
-  final bold = await PdfGoogleFonts.notoSansBold();
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold);
+  final regular = await PdfFonts.latin();
+  final bold = await PdfFonts.latin(bold: true);
+  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
 
   final paymentTypes = rows.map((r) => r.paymentTypeName).toSet().toList()
     ..sort();
@@ -2883,9 +2947,9 @@ Future<Uint8List> _buildPaymentTypesPdf({
   final fmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfGoogleFonts.notoSansRegular();
-  final bold = await PdfGoogleFonts.notoSansBold();
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold);
+  final regular = await PdfFonts.latin();
+  final bold = await PdfFonts.latin(bold: true);
+  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
 
   // Pivot data
   final paymentTypes = rows.map((r) => r.paymentTypeName).toSet().toList()
@@ -2983,9 +3047,9 @@ Future<Uint8List> _buildItemListPdf({
   final dateFmt = DateFormat('dd/MM/yyyy');
   final dtFmt = DateFormat('dd/MM/yyyy HH:mm:ss');
 
-  final regular = await PdfGoogleFonts.notoSansRegular();
-  final bold = await PdfGoogleFonts.notoSansBold();
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold);
+  final regular = await PdfFonts.latin();
+  final bold = await PdfFonts.latin(bold: true);
+  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
 
   doc.addPage(
     pw.MultiPage(
@@ -3115,9 +3179,9 @@ Future<Uint8List> _buildProfitPdf({
   final pctFmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfGoogleFonts.notoSansRegular();
-  final bold = await PdfGoogleFonts.notoSansBold();
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold);
+  final regular = await PdfFonts.latin();
+  final bold = await PdfFonts.latin(bold: true);
+  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
 
   final grandQty = rows.fold(0.0, (s, r) => s + r.quantity);
   final grandCost = rows.fold(0.0, (s, r) => s + r.cost);
@@ -3331,9 +3395,9 @@ Future<Uint8List> _buildStockMovementPdf({
   final doc = pw.Document();
   final hdrFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfGoogleFonts.notoSansRegular();
-  final bold = await PdfGoogleFonts.notoSansBold();
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold);
+  final regular = await PdfFonts.latin();
+  final bold = await PdfFonts.latin(bold: true);
+  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
 
   final total = rows.fold(0.0, (s, r) => s + r.numSales);
   final average = rows.isEmpty ? 0.0 : total / rows.length;
@@ -3485,9 +3549,9 @@ Future<Uint8List> _buildItemsDiscountsPdf({
   final fmt = NumberFormat('#,##0.00');
   final hdrFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfGoogleFonts.notoSansRegular();
-  final bold = await PdfGoogleFonts.notoSansBold();
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold);
+  final regular = await PdfFonts.latin();
+  final bold = await PdfFonts.latin(bold: true);
+  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
 
   final grandTotal = rows.fold(0.0, (s, r) => s + r.totalDiscount);
 
@@ -3623,9 +3687,9 @@ Future<Uint8List> _buildDiscountsBySourcePdf({
   final fmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfGoogleFonts.notoSansRegular();
-  final bold = await PdfGoogleFonts.notoSansBold();
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold);
+  final regular = await PdfFonts.latin();
+  final bold = await PdfFonts.latin(bold: true);
+  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
 
   final grandTotal = rows.fold(0.0, (s, r) => s + r.amount);
 
@@ -3710,9 +3774,9 @@ Future<Uint8List> _buildDiscountsGrantedPdf({
   final dateFmt = DateFormat('dd/MM/yyyy');
   final hdrFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfGoogleFonts.notoSansRegular();
-  final bold = await PdfGoogleFonts.notoSansBold();
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold);
+  final regular = await PdfFonts.latin();
+  final bold = await PdfFonts.latin(bold: true);
+  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
 
   // Group by customer (order preserved from backend: alphabetical)
   final grouped = <String, List<DiscountsGrantedRow>>{};
@@ -3897,9 +3961,9 @@ Future<Uint8List> _buildVoidedItemsPdf({
   final dtFmt = DateFormat('dd/MM/yyyy HH:mm:ss');
   final hdrFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfGoogleFonts.notoSansRegular();
-  final bold = await PdfGoogleFonts.notoSansBold();
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold);
+  final regular = await PdfFonts.latin();
+  final bold = await PdfFonts.latin(bold: true);
+  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
 
   final grandTotal = rows.fold(0.0, (s, r) => s + r.total);
 
@@ -4062,9 +4126,9 @@ Future<Uint8List> _buildStartingCashPdf({
   final dateFmt = DateFormat('dd/MM/yyyy HH:mm');
   final hdrFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfGoogleFonts.notoSansRegular();
-  final bold = await PdfGoogleFonts.notoSansBold();
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold);
+  final regular = await PdfFonts.latin();
+  final bold = await PdfFonts.latin(bold: true);
+  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
 
   final totalCashIn = rows
       .where((r) => !r.isCashOut)
@@ -4301,9 +4365,9 @@ Future<Uint8List> _buildUnpaidSalesPdf({
   final dateFmt = DateFormat('dd/MM/yyyy');
   final hdrDatFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfGoogleFonts.notoSansRegular();
-  final bold = await PdfGoogleFonts.notoSansBold();
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold);
+  final regular = await PdfFonts.latin();
+  final bold = await PdfFonts.latin(bold: true);
+  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
 
   // Group by customer (data already sorted by customerName from backend)
   final byCustomer = <String, List<UnpaidSalesRow>>{};
@@ -4552,9 +4616,9 @@ Future<Uint8List> _buildHourlySalesByGroupPdf({
   final dateFmt = DateFormat('dd/MM/yyyy');
   final timeFmt = DateFormat('h:mm a');
 
-  final regular = await PdfGoogleFonts.notoSansRegular();
-  final bold = await PdfGoogleFonts.notoSansBold();
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold);
+  final regular = await PdfFonts.latin();
+  final bold = await PdfFonts.latin(bold: true);
+  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
 
   final hours = rows.map((r) => r.hour).toSet().toList()..sort();
   final groups = rows.map((r) => r.productGroup).toSet().toList()..sort();
@@ -4742,9 +4806,9 @@ Future<Uint8List> _buildSalesByTablePdf({
   final fmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfGoogleFonts.notoSansRegular();
-  final bold = await PdfGoogleFonts.notoSansBold();
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold);
+  final regular = await PdfFonts.latin();
+  final bold = await PdfFonts.latin(bold: true);
+  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
 
   final grandCount = rows.fold(0, (s, r) => s + r.numberOfSales);
   final grandTotal = rows.fold(0.0, (s, r) => s + r.total);
@@ -4910,9 +4974,9 @@ Future<Uint8List> _buildHourlySalesPdf({
   final dateFmt = DateFormat('dd/MM/yyyy');
   final timeFmt = DateFormat('h:mm a');
 
-  final regular = await PdfGoogleFonts.notoSansRegular();
-  final bold = await PdfGoogleFonts.notoSansBold();
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold);
+  final regular = await PdfFonts.latin();
+  final bold = await PdfFonts.latin(bold: true);
+  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
 
   final grandTotal = rows.fold(0.0, (s, r) => s + r.totalSales);
   final grandCount = rows.fold(0, (s, r) => s + r.salesCount);
@@ -5086,9 +5150,9 @@ Future<Uint8List> _buildDailySalesPdf({
   final dayFmt = DateFormat('dd/MM/yyyy (EEE)');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfGoogleFonts.notoSansRegular();
-  final bold = await PdfGoogleFonts.notoSansBold();
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold);
+  final regular = await PdfFonts.latin();
+  final bold = await PdfFonts.latin(bold: true);
+  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
 
   doc.addPage(
     pw.MultiPage(
@@ -5244,9 +5308,9 @@ Future<Uint8List> _buildInvoiceListPdf({
   final fmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfGoogleFonts.notoSansRegular();
-  final bold = await PdfGoogleFonts.notoSansBold();
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold);
+  final regular = await PdfFonts.latin();
+  final bold = await PdfFonts.latin(bold: true);
+  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
 
   doc.addPage(
     pw.MultiPage(
@@ -5433,9 +5497,9 @@ Future<Uint8List> _buildRefundsPdf({
   final fmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfGoogleFonts.notoSansRegular();
-  final bold = await PdfGoogleFonts.notoSansBold();
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold);
+  final regular = await PdfFonts.latin();
+  final bold = await PdfFonts.latin(bold: true);
+  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
 
   doc.addPage(
     pw.MultiPage(
@@ -5552,9 +5616,9 @@ Future<Uint8List> _buildUsersPdf({
   final fmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfGoogleFonts.notoSansRegular();
-  final bold = await PdfGoogleFonts.notoSansBold();
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold);
+  final regular = await PdfFonts.latin();
+  final bold = await PdfFonts.latin(bold: true);
+  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
 
   doc.addPage(
     pw.MultiPage(
@@ -5628,9 +5692,9 @@ Future<Uint8List> _buildUnpaidPurchasePdf({
   final dateFmt = DateFormat('dd/MM/yyyy');
   final hdrDatFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfGoogleFonts.notoSansRegular();
-  final bold = await PdfGoogleFonts.notoSansBold();
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold);
+  final regular = await PdfFonts.latin();
+  final bold = await PdfFonts.latin(bold: true);
+  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
 
   final bySupplier = <String, List<UnpaidPurchaseRow>>{};
   for (final r in rows) {
@@ -5891,9 +5955,9 @@ Future<Uint8List> _buildPurchaseBySupplierPdf({
   final fmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfGoogleFonts.notoSansRegular();
-  final bold = await PdfGoogleFonts.notoSansBold();
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold);
+  final regular = await PdfFonts.latin();
+  final bold = await PdfFonts.latin(bold: true);
+  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
 
   doc.addPage(
     pw.MultiPage(
@@ -5981,9 +6045,9 @@ Future<Uint8List> _buildPurchaseByProductPdf({
   final fmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfGoogleFonts.notoSansRegular();
-  final bold = await PdfGoogleFonts.notoSansBold();
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold);
+  final regular = await PdfFonts.latin();
+  final bold = await PdfFonts.latin(bold: true);
+  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
 
   doc.addPage(
     pw.MultiPage(
@@ -6088,9 +6152,9 @@ Future<Uint8List> _buildPurchaseExpirationDatePdf({
   final fmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfGoogleFonts.notoSansRegular();
-  final bold = await PdfGoogleFonts.notoSansBold();
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold);
+  final regular = await PdfFonts.latin();
+  final bold = await PdfFonts.latin(bold: true);
+  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
 
   doc.addPage(
     pw.MultiPage(
@@ -6187,9 +6251,9 @@ Future<Uint8List> _buildPurchaseTaxPdf({
   final fmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfGoogleFonts.notoSansRegular();
-  final bold = await PdfGoogleFonts.notoSansBold();
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold);
+  final regular = await PdfFonts.latin();
+  final bold = await PdfFonts.latin(bold: true);
+  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
 
   doc.addPage(
     pw.MultiPage(
@@ -6280,9 +6344,9 @@ Future<Uint8List> _buildPurchaseInvoiceListPdf({
   final fmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfGoogleFonts.notoSansRegular();
-  final bold = await PdfGoogleFonts.notoSansBold();
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold);
+  final regular = await PdfFonts.latin();
+  final bold = await PdfFonts.latin(bold: true);
+  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
 
   final grandTotal = rows.fold(0.0, (s, r) => s + r.total);
 
@@ -6381,9 +6445,9 @@ Future<Uint8List> _buildPurchaseItemsDiscountsPdf({
   final fmt = NumberFormat('#,##0.00');
   final hdrFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfGoogleFonts.notoSansRegular();
-  final bold = await PdfGoogleFonts.notoSansBold();
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold);
+  final regular = await PdfFonts.latin();
+  final bold = await PdfFonts.latin(bold: true);
+  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
 
   // Group by supplier
   final grouped = <String, List<PurchaseItemsDiscountsRow>>{};
@@ -6599,9 +6663,9 @@ Future<Uint8List> _buildPurchaseDiscountsPdf({
   final dateFmt = DateFormat('dd/MM/yyyy');
   final hdrFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfGoogleFonts.notoSansRegular();
-  final bold = await PdfGoogleFonts.notoSansBold();
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold);
+  final regular = await PdfFonts.latin();
+  final bold = await PdfFonts.latin(bold: true);
+  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
 
   final grouped = <String, List<PurchaseDiscountsRow>>{};
   for (final r in rows) {
@@ -6837,9 +6901,9 @@ Future<Uint8List> _buildStockReturnByProductPdf({
   final fmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfGoogleFonts.notoSansRegular();
-  final bold = await PdfGoogleFonts.notoSansBold();
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold);
+  final regular = await PdfFonts.latin();
+  final bold = await PdfFonts.latin(bold: true);
+  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
 
   doc.addPage(
     pw.MultiPage(
@@ -6946,9 +7010,9 @@ Future<Uint8List> _buildLossAndDamageByProductPdf({
   final fmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfGoogleFonts.notoSansRegular();
-  final bold = await PdfGoogleFonts.notoSansBold();
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold);
+  final regular = await PdfFonts.latin();
+  final bold = await PdfFonts.latin(bold: true);
+  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
 
   doc.addPage(
     pw.MultiPage(
@@ -7054,9 +7118,9 @@ Future<Uint8List> _buildReorderProductListPdf({
   final doc = pw.Document();
   final fmt = NumberFormat('#,##0.00');
 
-  final regular = await PdfGoogleFonts.notoSansRegular();
-  final bold = await PdfGoogleFonts.notoSansBold();
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold);
+  final regular = await PdfFonts.latin();
+  final bold = await PdfFonts.latin(bold: true);
+  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
 
   // Build grouped table data
   final tableData = <List<String>>[];
@@ -7141,9 +7205,9 @@ Future<Uint8List> _buildLowStockWarningPdf({
   final doc = pw.Document();
   final fmt = NumberFormat('#,##0.00');
 
-  final regular = await PdfGoogleFonts.notoSansRegular();
-  final bold = await PdfGoogleFonts.notoSansBold();
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold);
+  final regular = await PdfFonts.latin();
+  final bold = await PdfFonts.latin(bold: true);
+  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
 
   // Build grouped table data
   final tableData = <List<String>>[];
@@ -7246,9 +7310,9 @@ Future<Uint8List> _buildTransactionHistoryPdf({
   final fmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfGoogleFonts.notoSansRegular();
-  final bold = await PdfGoogleFonts.notoSansBold();
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold);
+  final regular = await PdfFonts.latin();
+  final bold = await PdfFonts.latin(bold: true);
+  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
 
   doc.addPage(
     pw.MultiPage(
@@ -7394,7 +7458,7 @@ class _FilterPanel extends ConsumerWidget {
             _FilterDropdown<int?>(
               value: filter.customerId,
               items: [
-                const DropdownMenuItem(value: null, child: Text('All')),
+                DropdownMenuItem(value: null, child: Text(AppLocalizations.of(context).filterAll)),
                 ...customers.map(
                   (c) => DropdownMenuItem(
                     value: c.id,
@@ -7414,7 +7478,7 @@ class _FilterPanel extends ConsumerWidget {
               _FilterDropdown<int?>(
                 value: filter.userId,
                 items: [
-                  const DropdownMenuItem(value: null, child: Text('All')),
+                  DropdownMenuItem(value: null, child: Text(AppLocalizations.of(context).filterAll)),
                   ...users.map((u) {
                     final name = '${u.firstName ?? ''} ${u.lastName ?? ''}'
                         .trim();
@@ -7436,7 +7500,7 @@ class _FilterPanel extends ConsumerWidget {
               _FilterDropdown<int?>(
                 value: filter.warehouseId,
                 items: [
-                  const DropdownMenuItem(value: null, child: Text('All')),
+                  DropdownMenuItem(value: null, child: Text(AppLocalizations.of(context).filterAll)),
                   ...warehouses.map(
                     (w) => DropdownMenuItem(
                       value: w.id,
@@ -7454,7 +7518,7 @@ class _FilterPanel extends ConsumerWidget {
               _FilterDropdown<int?>(
                 value: filter.productId,
                 items: [
-                  const DropdownMenuItem(value: null, child: Text('All')),
+                  DropdownMenuItem(value: null, child: Text(AppLocalizations.of(context).filterAll)),
                   ...products.map(
                     (p) => DropdownMenuItem(
                       value: p.id,
@@ -7472,7 +7536,7 @@ class _FilterPanel extends ConsumerWidget {
               _FilterDropdown<int?>(
                 value: filter.productGroupId,
                 items: [
-                  const DropdownMenuItem(value: null, child: Text('All')),
+                  DropdownMenuItem(value: null, child: Text(AppLocalizations.of(context).filterAll)),
                   ...groups.map(
                     (g) => DropdownMenuItem(
                       value: g.id,
@@ -7520,7 +7584,7 @@ class _FilterPanel extends ConsumerWidget {
 
             FilledButton.icon(
               icon: const Icon(Icons.search, size: 16),
-              label: const Text('Show report'),
+              label: Text(AppLocalizations.of(context).showReport),
               onPressed: onShowReport,
             ),
             const Gap(8),
@@ -7529,7 +7593,7 @@ class _FilterPanel extends ConsumerWidget {
                 Expanded(
                   child: OutlinedButton.icon(
                     icon: const Icon(Icons.grid_on_outlined, size: 14),
-                    label: const Text('Excel'),
+                    label: Text(AppLocalizations.of(context).excel),
                     onPressed: onExportCsv,
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 10),

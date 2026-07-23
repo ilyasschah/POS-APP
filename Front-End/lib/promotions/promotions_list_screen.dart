@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/database/app_database.dart';
@@ -39,7 +40,7 @@ class PromotionsListScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Promotions'),
+        title: Text(AppLocalizations.of(context).promotions),
         // Suppress the auto back-arrow — ManagementLayout controls navigation.
         automaticallyImplyLeading: false,
         // Inside ManagementLayout: a menu icon (when the sidebar is hidden).
@@ -48,13 +49,13 @@ class PromotionsListScreen extends ConsumerWidget {
         leading: onMenuPressed != null
             ? IconButton(
                 icon: const Icon(Icons.menu),
-                tooltip: 'Show navigation',
+                tooltip: AppLocalizations.of(context).showNavigation,
                 onPressed: onMenuPressed,
               )
             : (Navigator.of(context).canPop()
                 ? IconButton(
                     icon: const Icon(Icons.arrow_back),
-                    tooltip: 'Back',
+                    tooltip: AppLocalizations.of(context).back,
                     onPressed: () => Navigator.of(context).maybePop(),
                   )
                 : null),
@@ -63,7 +64,7 @@ class PromotionsListScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(24),
         child: promotionsAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (err, _) => Center(child: Text('Error: $err')),
+          error: (err, _) => Center(child: Text(AppLocalizations.of(context).errorWithMessage(err.toString()))),
           data: (promotions) => Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -80,7 +81,7 @@ class PromotionsListScreen extends ConsumerWidget {
                   const Spacer(),
                   OutlinedButton.icon(
                     icon: const Icon(Icons.refresh),
-                    label: const Text("Refresh"),
+                    label: Text(AppLocalizations.of(context).refresh),
                     // The list streams live from Drift, so it needs no manual
                     // provider refresh — "Refresh" pulls the latest from the
                     // server (best-effort) and the stream reflects the new rows.
@@ -99,7 +100,7 @@ class PromotionsListScreen extends ConsumerWidget {
                   const SizedBox(width: 12),
                   ElevatedButton.icon(
                     icon: const Icon(Icons.add),
-                    label: const Text("Add Promotion"),
+                    label: Text(AppLocalizations.of(context).addPromotion),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: context.successColor,
                       foregroundColor: context.onStatusColor,
@@ -139,14 +140,14 @@ class PromotionsListScreen extends ConsumerWidget {
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                               child: Row(
                                 children: [
-                                  Expanded(flex: 3, child: Text('Name', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface))),
-                                  Expanded(flex: 2, child: Text('Status', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface))),
-                                  Expanded(flex: 2, child: Text('Days', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface))),
-                                  Expanded(flex: 2, child: Text('Start Date', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface))),
-                                  Expanded(flex: 2, child: Text('Start Time', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface))),
-                                  Expanded(flex: 2, child: Text('End Date', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface))),
-                                  Expanded(flex: 2, child: Text('End Time', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface))),
-                                  Expanded(flex: 2, child: Align(alignment: Alignment.centerRight, child: Text('Actions', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)))),
+                                  Expanded(flex: 3, child: Text(AppLocalizations.of(context).fieldName, style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface))),
+                                  Expanded(flex: 2, child: Text(AppLocalizations.of(context).statusLabel, style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface))),
+                                  Expanded(flex: 2, child: Text(AppLocalizations.of(context).days, style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface))),
+                                  Expanded(flex: 2, child: Text(AppLocalizations.of(context).startDate, style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface))),
+                                  Expanded(flex: 2, child: Text(AppLocalizations.of(context).startTime, style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface))),
+                                  Expanded(flex: 2, child: Text(AppLocalizations.of(context).endDate, style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface))),
+                                  Expanded(flex: 2, child: Text(AppLocalizations.of(context).endTime, style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface))),
+                                  Expanded(flex: 2, child: Align(alignment: Alignment.centerRight, child: Text(AppLocalizations.of(context).actions, style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)))),
                                 ],
                               ),
                             ),
@@ -229,7 +230,7 @@ class PromotionsListScreen extends ConsumerWidget {
                                             children: [
                                               IconButton(
                                                 icon: Icon(Icons.edit, color: context.infoColor),
-                                                tooltip: "Edit",
+                                                tooltip: AppLocalizations.of(context).actionEdit,
                                                 padding: const EdgeInsets.all(10),
                                                 onPressed: () => Navigator.push(
                                                   context,
@@ -240,18 +241,18 @@ class PromotionsListScreen extends ConsumerWidget {
                                               ),
                                               IconButton(
                                                 icon: Icon(Icons.delete, color: context.dangerColor),
-                                                tooltip: "Delete",
+                                                tooltip: AppLocalizations.of(context).actionDelete,
                                                 padding: const EdgeInsets.all(10),
                                                 onPressed: () async {
                                                   final confirm = await showDialog<bool>(
                                                     context: context,
                                                     builder: (ctx) => AlertDialog(
-                                                      title: const Text('Confirm Delete'),
-                                                      content: Text('Delete "${promotion.name}"?'),
+                                                      title: Text(AppLocalizations.of(context).confirmDelete),
+                                                      content: Text(AppLocalizations.of(context).deleteQuotedConfirm(promotion.name)),
                                                       actions: [
                                                         TextButton(
                                                           onPressed: () => Navigator.pop(ctx, false),
-                                                          child: const Text('Cancel'),
+                                                          child: Text(AppLocalizations.of(context).actionCancel),
                                                         ),
                                                         ElevatedButton(
                                                           style: ElevatedButton.styleFrom(
@@ -259,7 +260,7 @@ class PromotionsListScreen extends ConsumerWidget {
                                                             foregroundColor: ctx.onStatusColor,
                                                           ),
                                                           onPressed: () => Navigator.pop(ctx, true),
-                                                          child: const Text('Delete'),
+                                                          child: Text(AppLocalizations.of(context).actionDelete),
                                                         ),
                                                       ],
                                                     ),

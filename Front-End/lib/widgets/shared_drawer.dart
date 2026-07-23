@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/auth/users_screen.dart';
@@ -61,7 +62,7 @@ class SharedDrawer extends ConsumerWidget {
           ),
           ListTile(
             leading: const Icon(Icons.dashboard_rounded),
-            title: const Text('Dashboard'),
+            title: Text(AppLocalizations.of(context).dashboard),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(context,
@@ -71,7 +72,7 @@ class SharedDrawer extends ConsumerWidget {
           const Divider(),
           ListTile(
             leading: const Icon(Icons.business),
-            title: const Text('My Company'),
+            title: Text(AppLocalizations.of(context).myCompany),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(context,
@@ -80,7 +81,7 @@ class SharedDrawer extends ConsumerWidget {
           ),
           ListTile(
             leading: const Icon(Icons.description),
-            title: const Text('Documents'),
+            title: Text(AppLocalizations.of(context).documents),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(context,
@@ -89,7 +90,7 @@ class SharedDrawer extends ConsumerWidget {
           ),
           ListTile(
             leading: const Icon(Icons.people),
-            title: const Text('Customers'),
+            title: Text(AppLocalizations.of(context).customersLabel),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(context,
@@ -98,7 +99,7 @@ class SharedDrawer extends ConsumerWidget {
           ),
           ListTile(
             leading: const Icon(Icons.payment),
-            title: const Text('Payment Types'),
+            title: Text(AppLocalizations.of(context).paymentTypesShort),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(context,
@@ -107,7 +108,7 @@ class SharedDrawer extends ConsumerWidget {
           ),
           ListTile(
             leading: const Icon(Icons.inventory),
-            title: const Text('Stock'),
+            title: Text(AppLocalizations.of(context).stock),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(context,
@@ -116,7 +117,7 @@ class SharedDrawer extends ConsumerWidget {
           ),
           ListTile(
             leading: const Icon(Icons.currency_exchange),
-            title: const Text('Currencies'),
+            title: Text(AppLocalizations.of(context).currencies),
             onTap: () => ref.read(securityGuardProvider).guard(
               context,
               SecurityKeys.currencies,
@@ -129,7 +130,7 @@ class SharedDrawer extends ConsumerWidget {
           ),
           ListTile(
             leading: const Icon(Icons.percent),
-            title: const Text('Tax Rates'),
+            title: Text(AppLocalizations.of(context).taxRates),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(context,
@@ -138,7 +139,7 @@ class SharedDrawer extends ConsumerWidget {
           ),
           ListTile(
             leading: const Icon(Icons.warehouse),
-            title: const Text('Warehouses'),
+            title: Text(AppLocalizations.of(context).warehouses),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(context,
@@ -147,7 +148,7 @@ class SharedDrawer extends ConsumerWidget {
           ),
           ListTile(
             leading: const Icon(Icons.fastfood),
-            title: const Text('Products'),
+            title: Text(AppLocalizations.of(context).products),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(context,
@@ -156,7 +157,7 @@ class SharedDrawer extends ConsumerWidget {
           ),
           ListTile(
             leading: const Icon(Icons.folder_special),
-            title: const Text('Product Groups'),
+            title: Text(AppLocalizations.of(context).productGroups),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(context,
@@ -166,7 +167,7 @@ class SharedDrawer extends ConsumerWidget {
           ),
           ListTile(
             leading: const Icon(Icons.local_offer),
-            title: const Text('Promotions'),
+            title: Text(AppLocalizations.of(context).promotions),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(context,
@@ -176,7 +177,7 @@ class SharedDrawer extends ConsumerWidget {
           ),
           ListTile(
             leading: const Icon(Icons.manage_accounts),
-            title: const Text('Users'),
+            title: Text(AppLocalizations.of(context).users),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(context,
@@ -185,7 +186,7 @@ class SharedDrawer extends ConsumerWidget {
           ),
           ListTile(
             leading: const Icon(Icons.bar_chart),
-            title: const Text('Reports'),
+            title: Text(AppLocalizations.of(context).reports),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(context,
@@ -194,7 +195,7 @@ class SharedDrawer extends ConsumerWidget {
           ),
           ListTile(
             leading: const Icon(Icons.lock_clock),
-            title: const Text('End of Day'),
+            title: Text(AppLocalizations.of(context).endOfDay),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(context,
@@ -203,7 +204,7 @@ class SharedDrawer extends ConsumerWidget {
           ),
           ListTile(
             leading: const Icon(Icons.pending_actions),
-            title: const Text('Open Orders'),
+            title: Text(AppLocalizations.of(context).openOrders),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(context,
@@ -213,7 +214,7 @@ class SharedDrawer extends ConsumerWidget {
           const Divider(),
           ListTile(
             leading: const Icon(Icons.settings),
-            title: const Text('Settings'),
+            title: Text(AppLocalizations.of(context).settings),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(context,
@@ -223,7 +224,7 @@ class SharedDrawer extends ConsumerWidget {
           const Divider(),
           ListTile(
             leading: Icon(Icons.logout, color: context.dangerColor),
-            title: Text('Logout', style: TextStyle(color: context.dangerColor)),
+            title: Text(AppLocalizations.of(context).logout, style: TextStyle(color: context.dangerColor)),
             onTap: () {
               ref.invalidate(currentUserProvider);
               ref.read(cartProvider.notifier).clearCart();

@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:pos_app/api/api_client.dart';
@@ -29,13 +30,13 @@ class CustomersScreen extends ConsumerWidget {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text("Customers & Suppliers"),
+          title: Text(AppLocalizations.of(context).customersSuppliers),
           // Suppress the auto back-arrow — ManagementLayout controls navigation.
           automaticallyImplyLeading: false,
           leading: onMenuPressed != null
               ? IconButton(
                   icon: const Icon(Icons.menu),
-                  tooltip: 'Show navigation',
+                  tooltip: AppLocalizations.of(context).showNavigation,
                   onPressed: onMenuPressed,
                 )
               : null,
@@ -48,7 +49,7 @@ class CustomersScreen extends ConsumerWidget {
           actions: [
             IconButton(
               icon: const Icon(Icons.person_add),
-              tooltip: "Add",
+              tooltip: AppLocalizations.of(context).actionAdd,
               onPressed: company == null
                   ? null
                   : () => showDialog(
@@ -61,10 +62,10 @@ class CustomersScreen extends ConsumerWidget {
         ),
         body: asyncCustomers.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(child: Text("Error loading customers: $e")),
+          error: (e, _) => Center(child: Text(AppLocalizations.of(context).errorLoadingCustomers(e.toString()))),
           data: (all) {
             if (company == null) {
-              return const Center(child: Text("No company selected."));
+              return Center(child: Text(AppLocalizations.of(context).noCompanySelectedShort));
             }
             final int companyId = company.id;
 
@@ -155,7 +156,7 @@ class _CustomerList extends ConsumerWidget {
               ),
               IconButton(
                 icon: Icon(Icons.edit, color: cs.primary),
-                tooltip: "Edit",
+                tooltip: AppLocalizations.of(context).actionEdit,
                 onPressed: () => showDialog(
                   context: context,
                   builder: (_) =>
@@ -164,19 +165,19 @@ class _CustomerList extends ConsumerWidget {
               ),
               IconButton(
                 icon: Icon(Icons.delete, color: cs.error),
-                tooltip: "Delete",
+                tooltip: AppLocalizations.of(context).actionDelete,
                 onPressed: () async {
                   final confirm = await showDialog<bool>(
                     context: context,
                     builder: (ctx) => AlertDialog(
-                      title: const Text("Delete"),
+                      title: Text(AppLocalizations.of(context).actionDelete),
                       content: Text(
                         "Are you sure you want to delete ${c.name}?",
                       ),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.of(ctx).pop(false),
-                          child: const Text("Cancel"),
+                          child: Text(AppLocalizations.of(context).actionCancel),
                         ),
                         FilledButton(
                           style: FilledButton.styleFrom(
@@ -184,7 +185,7 @@ class _CustomerList extends ConsumerWidget {
                             foregroundColor: cs.onError,
                           ),
                           onPressed: () => Navigator.of(ctx).pop(true),
-                          child: const Text("Delete"),
+                          child: Text(AppLocalizations.of(context).actionDelete),
                         ),
                       ],
                     ),
@@ -963,21 +964,21 @@ class _CustomerFormDialogState extends ConsumerState<_CustomerFormDialog> {
                       value: _isCustomer,
                       onChanged: (v) => setState(() => _isCustomer = v ?? true),
                     ),
-                    const Text("Customer"),
+                    Text(AppLocalizations.of(context).customerLabel),
                     const SizedBox(width: 16),
                     Checkbox(
                       value: _isSupplier,
                       onChanged: (v) =>
                           setState(() => _isSupplier = v ?? false),
                     ),
-                    const Text("Supplier"),
+                    Text(AppLocalizations.of(context).fieldSupplier),
                     const SizedBox(width: 16),
                     Checkbox(
                       value: _isTaxExempt,
                       onChanged: (v) =>
                           setState(() => _isTaxExempt = v ?? false),
                     ),
-                    const Text("Tax Exempt"),
+                    Text(AppLocalizations.of(context).taxExempt),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -1026,22 +1027,22 @@ class _CustomerFormDialogState extends ConsumerState<_CustomerFormDialog> {
                     // Fill the field width so a longer label (e.g. "Fixed
                     // Amount (MAD)") ellipsizes instead of overflowing the Row.
                     isExpanded: true,
-                    decoration: const InputDecoration(
-                      labelText: "Discount Type",
-                      border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context).discountType,
+                      border: const OutlineInputBorder(),
+                      contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 10,
                       ),
                     ),
                     items: [
-                      const DropdownMenuItem(
+                      DropdownMenuItem(
                         value: 0,
-                        child: Text('Percentage (%)'),
+                        child: Text(AppLocalizations.of(context).percentageSign),
                       ),
                       DropdownMenuItem(
                         value: 1,
-                        child: Text('Fixed Amount ($sym)'),
+                        child: Text(AppLocalizations.of(context).fixedAmountSymLabel(sym)),
                       ),
                     ],
                     onChanged: (v) => setState(() => _discountType = v!),
@@ -1065,10 +1066,10 @@ class _CustomerFormDialogState extends ConsumerState<_CustomerFormDialog> {
                       )
                     : DropdownButtonFormField<int>(
                         initialValue: _selectedCountryId,
-                        decoration: const InputDecoration(
-                          labelText: "Country",
-                          border: OutlineInputBorder(),
-                          contentPadding: EdgeInsets.symmetric(
+                        decoration: InputDecoration(
+                          labelText: AppLocalizations.of(context).country,
+                          border: const OutlineInputBorder(),
+                          contentPadding: const EdgeInsets.symmetric(
                             horizontal: 12,
                             vertical: 10,
                           ),
@@ -1099,7 +1100,7 @@ class _CustomerFormDialogState extends ConsumerState<_CustomerFormDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text("Cancel"),
+          child: Text(AppLocalizations.of(context).actionCancel),
         ),
         if (_isLoading)
           const Padding(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:pos_app/bookings/booking_model.dart';
@@ -67,7 +68,7 @@ class _BookingHistoryScreenState extends ConsumerState<BookingHistoryScreen>
             actions: [
               IconButton(
                 icon: const Icon(Icons.refresh),
-                tooltip: 'Refresh',
+                tooltip: AppLocalizations.of(context).refresh,
                 onPressed: _refresh,
               ),
             ],
@@ -90,7 +91,7 @@ class _BookingHistoryScreenState extends ConsumerState<BookingHistoryScreen>
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
             child: TextField(
               decoration: InputDecoration(
-                hintText: 'Search by name…',
+                hintText: AppLocalizations.of(context).searchByName,
                 prefixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -105,7 +106,7 @@ class _BookingHistoryScreenState extends ConsumerState<BookingHistoryScreen>
             child: asyncBookings.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, _) =>
-                  Center(child: Text('Error loading bookings: $e')),
+                  Center(child: Text(AppLocalizations.of(context).errorLoadingBookings(e.toString()))),
               data: (bookings) {
                 final filtered = _search.isEmpty
                     ? bookings

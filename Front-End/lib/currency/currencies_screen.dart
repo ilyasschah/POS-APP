@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:pos_app/api/api_client.dart';
@@ -37,16 +38,16 @@ class CurrenciesScreen extends ConsumerWidget {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text("Delete Currency"),
-        content: Text("Are you sure you want to delete '${currency.name}'?"),
+        title: Text(AppLocalizations.of(context).deleteCurrency),
+        content: Text(AppLocalizations.of(context).confirmDeleteQuoted(currency.name)),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text("Cancel")),
+              child: Text(AppLocalizations.of(context).actionCancel)),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: ctx.dangerColor),
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text("Delete", style: TextStyle(color: ctx.onStatusColor)),
+            child: Text(AppLocalizations.of(context).actionDelete, style: TextStyle(color: ctx.onStatusColor)),
           ),
         ],
       ),
@@ -77,12 +78,12 @@ class CurrenciesScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
       appBar: AppBar(
-        title: const Text("Global Currencies"),
+        title: Text(AppLocalizations.of(context).globalCurrencies),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       floatingActionButton: FloatingActionButton.extended(
         icon: const Icon(Icons.payments),
-        label: const Text("New Currency"),
+        label: Text(AppLocalizations.of(context).newCurrency),
         onPressed: () => showDialog(
                 context: context, builder: (_) => const _CurrencyEditorDialog())
             .then((_) => ref.invalidate(allCurrenciesProvider)),
@@ -90,13 +91,13 @@ class CurrenciesScreen extends ConsumerWidget {
       body: asyncCurrencies.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-            child: Text("Error: ${_parseApiError(e)}",
+            child: Text(AppLocalizations.of(context).errorWithMessage(_parseApiError(e)),
                 style: TextStyle(color: context.dangerColor))),
         data: (currencies) {
           if (currencies.isEmpty) {
-            return const Center(
-                child: Text("No currencies found.",
-                    style: TextStyle(color: Colors.grey, fontSize: 16)));
+            return Center(
+                child: Text(AppLocalizations.of(context).noCurrenciesFound,
+                    style: const TextStyle(color: Colors.grey, fontSize: 16)));
           }
 
           return ListView.separated(
@@ -115,7 +116,7 @@ class CurrenciesScreen extends ConsumerWidget {
                   title: Text(currency.name,
                       style: const TextStyle(
                           fontWeight: FontWeight.bold, fontSize: 16)),
-                  subtitle: Text("Code: ${currency.code ?? 'N/A'}",
+                  subtitle: Text(AppLocalizations.of(context).codeValueLabel(currency.code ?? 'N/A'),
                       style: TextStyle(color: Colors.grey[600])),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -232,18 +233,18 @@ class _CurrencyEditorDialogState extends State<_CurrencyEditorDialog> {
             children: [
               TextFormField(
                 controller: _nameCtrl,
-                decoration: const InputDecoration(
-                    labelText: "Currency Name (e.g. US Dollar) *",
-                    border: OutlineInputBorder()),
+                decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).currencyNameRequired,
+                    border: const OutlineInputBorder()),
                 validator: (v) =>
                     v == null || v.trim().isEmpty ? "Required" : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _codeCtrl,
-                decoration: const InputDecoration(
-                    labelText: "Currency Code (e.g. USD) *",
-                    border: OutlineInputBorder()),
+                decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).currencyCodeRequired,
+                    border: const OutlineInputBorder()),
                 textCapitalization: TextCapitalization.characters,
                 validator: (v) =>
                     v == null || v.trim().isEmpty ? "Required" : null,
@@ -277,7 +278,7 @@ class _CurrencyEditorDialogState extends State<_CurrencyEditorDialog> {
       actions: [
         TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel")),
+            child: Text(AppLocalizations.of(context).actionCancel)),
         if (_isLoading)
           const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),

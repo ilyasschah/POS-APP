@@ -1,9 +1,11 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
+import 'package:pos_app/printer/pdf_fonts.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:pos_app/company/company_provider.dart';
@@ -206,8 +208,8 @@ class _StockScreenState extends ConsumerState<StockScreen> {
     const borderClr  = PdfColor.fromInt(0xFFCFD8DC);
     const accentClr  = PdfColor.fromInt(0xFF00897B); // teal 600
 
-    final font      = await PdfGoogleFonts.notoSansRegular();
-    final bold      = await PdfGoogleFonts.notoSansBold();
+    final font      = await PdfFonts.latin();
+    final bold      = await PdfFonts.latin(bold: true);
     final moneyFmt  = NumberFormat('#,##0.00');
     final qtyFmt    = NumberFormat('#,##0.##');
     final now       = DateTime.now();
@@ -298,6 +300,14 @@ class _StockScreenState extends ConsumerState<StockScreen> {
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4.landscape,
+        // The per-style `font:` below only sets the BASE face. The fallback has
+        // to come from the page theme, or Arabic product names print as empty
+        // boxes — Noto Sans carries no Arabic glyphs.
+        theme: pw.ThemeData.withFont(
+          base: font,
+          bold: bold,
+          fontFallback: [await PdfFonts.arabic()],
+        ),
         margin: const pw.EdgeInsets.fromLTRB(28, 28, 28, 40),
         build: (ctx) => [
           // ── Report header ─────────────────────────────────────────────────
@@ -536,20 +546,20 @@ class _StockScreenState extends ConsumerState<StockScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text("Inventory Master List"),
+        title: Text(AppLocalizations.of(context).inventoryMasterList),
         // Suppress the auto back-arrow — ManagementLayout controls navigation.
         automaticallyImplyLeading: false,
         leading: widget.onMenuPressed != null
             ? IconButton(
                 icon: const Icon(Icons.menu),
-                tooltip: 'Show navigation',
+                tooltip: AppLocalizations.of(context).showNavigation,
                 onPressed: widget.onMenuPressed,
               )
             : null,
         actions: [
           IconButton(
             icon: const Icon(Icons.warehouse_outlined),
-            tooltip: "Manage Warehouses",
+            tooltip: AppLocalizations.of(context).manageWarehouses,
             onPressed: () => ref.read(securityGuardProvider).guard(
               context,
               SecurityKeys.warehouses,
@@ -566,12 +576,12 @@ class _StockScreenState extends ConsumerState<StockScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.picture_as_pdf_outlined),
-            tooltip: "Print Stock Report (PDF)",
+            tooltip: AppLocalizations.of(context).printStockReportPdf,
             onPressed: () => _withReportArgs(_printPdf),
           ),
           IconButton(
             icon: const Icon(Icons.save_alt),
-            tooltip: "Save Stock Report as PDF",
+            tooltip: AppLocalizations.of(context).saveStockReportPdf,
             onPressed: () => _withReportArgs(_savePdf),
           ),
           IconButton(
@@ -582,7 +592,7 @@ class _StockScreenState extends ConsumerState<StockScreen> {
       ),
       body: asyncMaster.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text("Error: $e")),
+        error: (e, _) => Center(child: Text(AppLocalizations.of(context).errorWithMessage(e.toString()))),
         data: (masterList) {
           final filtered = _applyFilters(masterList);
           final selectedItem = _findSelected(masterList);
@@ -606,7 +616,7 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                       child: TextField(
                         controller: _searchCtrl,
                         decoration: InputDecoration(
-                          hintText: "Search product name or code…",
+                          hintText: AppLocalizations.of(context).searchProductNameOrCode,
                           prefixIcon: const Icon(Icons.search, size: 20),
                           isDense: true,
                           border: OutlineInputBorder(
@@ -634,13 +644,13 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                         leadingIcon: const Icon(
                             Icons.warehouse_outlined,
                             size: 18),
-                        label: const Text("Warehouse"),
+                        label: Text(AppLocalizations.of(context).warehouse),
                         onSelected: (v) => setState(
                             () => _selectedWarehouseId = v),
                         dropdownMenuEntries: [
-                          const DropdownMenuEntry<int?>(
+                          DropdownMenuEntry<int?>(
                               value: null,
-                              label: "All Warehouses"),
+                              label: AppLocalizations.of(context).allWarehousesCap),
                           ...warehouses.map((w) =>
                               DropdownMenuEntry<int?>(
                                   value: w.id, label: w.name)),
@@ -651,7 +661,7 @@ class _StockScreenState extends ConsumerState<StockScreen> {
 
                     // Filter chips
                     FilterChip(
-                      label: const Text("Unassigned"),
+                      label: Text(AppLocalizations.of(context).unassigned),
                       selected: _showUnassigned,
                       onSelected: (v) =>
                           setState(() => _showUnassigned = v),
@@ -661,7 +671,7 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                     ),
                     const SizedBox(width: 8),
                     FilterChip(
-                      label: const Text("Low Stock"),
+                      label: Text(AppLocalizations.of(context).lowStock),
                       selected: _showLowStock,
                       onSelected: (v) =>
                           setState(() => _showLowStock = v),
@@ -671,7 +681,7 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                     ),
                     const SizedBox(width: 8),
                     FilterChip(
-                      label: const Text("Needs Reorder"),
+                      label: Text(AppLocalizations.of(context).needsReorder),
                       selected: _showReorder,
                       onSelected: (v) =>
                           setState(() => _showReorder = v),
@@ -715,13 +725,13 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                               ),
                               columnSpacing: 12,
                               horizontalMargin: 12,
-                              columns: const [
-                                DataColumn(label: Text("Product")),
-                                DataColumn(label: Text("Code")),
-                                DataColumn(label: Text("Quantity")),
+                              columns: [
+                                DataColumn(label: Text(AppLocalizations.of(context).productLabel)),
+                                DataColumn(label: Text(AppLocalizations.of(context).fieldCode)),
+                                DataColumn(label: Text(AppLocalizations.of(context).fieldQuantity)),
                                 DataColumn(
-                                    label: Text("Value (Total)")),
-                                DataColumn(label: Text("Actions")),
+                                    label: Text(AppLocalizations.of(context).valueTotal)),
+                                DataColumn(label: Text(AppLocalizations.of(context).actions)),
                               ],
                               rows: filtered
                                   .map((item) => _buildRow(
@@ -834,7 +844,7 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                     color: context.infoColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(4),
                   ),
-                  child: Text('SVC',
+                  child: Text(AppLocalizations.of(context).colSvc,
                       style: TextStyle(
                           color: context.infoColor,
                           fontSize: 8,
@@ -862,7 +872,7 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                       Icon(Icons.warning_amber,
                           size: 14, color: context.dangerColor),
                       const SizedBox(width: 4),
-                      Text("Unassigned",
+                      Text(AppLocalizations.of(context).unassigned,
                           style: TextStyle(
                               color: context.dangerColor,
                               fontWeight: FontWeight.bold,
@@ -1007,16 +1017,16 @@ class _AssignStockDialogState
     final asyncWarehouses = ref.watch(allWarehousesProvider);
 
     return AlertDialog(
-      title: Text("Assign ${widget.product.name} to Warehouse"),
+      title: Text(AppLocalizations.of(context).assignProductToWarehouse(widget.product.name)),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           asyncWarehouses.when(
             loading: () => const CircularProgressIndicator(),
-            error: (e, _) => Text("Error: $e"),
+            error: (e, _) => Text(AppLocalizations.of(context).errorWithMessage(e.toString())),
             data: (warehouses) => DropdownButtonFormField<int>(
               decoration:
-                  const InputDecoration(labelText: "Warehouse"),
+                  InputDecoration(labelText: AppLocalizations.of(context).warehouse),
               items: warehouses
                   .map((w) => DropdownMenuItem(
                       value: w.id, child: Text(w.name)))
@@ -1029,7 +1039,7 @@ class _AssignStockDialogState
           TextField(
             controller: _qtyCtrl,
             decoration:
-                const InputDecoration(labelText: "Initial Quantity"),
+                InputDecoration(labelText: AppLocalizations.of(context).initialQuantity),
             keyboardType: TextInputType.number,
           ),
         ],
@@ -1037,7 +1047,7 @@ class _AssignStockDialogState
       actions: [
         TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel")),
+            child: Text(AppLocalizations.of(context).actionCancel)),
         ElevatedButton(
           onPressed: _isSaving ? null : _save,
           child: _isSaving
@@ -1046,7 +1056,7 @@ class _AssignStockDialogState
                   height: 20,
                   child:
                       CircularProgressIndicator(strokeWidth: 2))
-              : const Text("Save"),
+              : Text(AppLocalizations.of(context).actionSave),
         ),
       ],
     );
@@ -1179,12 +1189,12 @@ class _StockControlDialogState
         ),
       ),
       error: (e, _) => AlertDialog(
-        title: const Text("Error"),
+        title: Text(AppLocalizations.of(context).errorLabel),
         content: Text("$e"),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Close")),
+              child: Text(AppLocalizations.of(context).actionClose)),
         ],
       ),
       data: (control) {
@@ -1217,7 +1227,7 @@ class _StockControlDialogState
                   Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: Chip(
-                      label: const Text("Rule exists — editing"),
+                      label: Text(AppLocalizations.of(context).ruleExistsEditing),
                       backgroundColor:
                           context.successColor.withValues(alpha: 0.15),
                       side: BorderSide(
@@ -1226,8 +1236,8 @@ class _StockControlDialogState
                   ),
                 TextField(
                   controller: _reorderCtrl,
-                  decoration: const InputDecoration(
-                    labelText: "Reorder Point",
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).reorderPoint,
                     helperText:
                         "Trigger reorder when stock drops below this level",
                     isDense: true,
@@ -1237,8 +1247,8 @@ class _StockControlDialogState
                 const SizedBox(height: 16),
                 TextField(
                   controller: _preferredCtrl,
-                  decoration: const InputDecoration(
-                    labelText: "Preferred Quantity",
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).preferredQuantity,
                     helperText:
                         "Target quantity to maintain in stock",
                     isDense: true,
@@ -1248,7 +1258,7 @@ class _StockControlDialogState
                 const SizedBox(height: 8),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text("Low Stock Warning"),
+                  title: Text(AppLocalizations.of(context).lowStockWarning),
                   subtitle: const Text(
                       "Alert when stock falls below threshold"),
                   value: _lowStockEnabled,
@@ -1259,8 +1269,8 @@ class _StockControlDialogState
                   const SizedBox(height: 4),
                   TextField(
                     controller: _lowStockQtyCtrl,
-                    decoration: const InputDecoration(
-                      labelText: "Warning Threshold",
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context).warningThreshold,
                       helperText:
                           "Show warning when quantity is below this value",
                       isDense: true,
@@ -1277,11 +1287,11 @@ class _StockControlDialogState
                 style: TextButton.styleFrom(
                     foregroundColor: context.dangerColor),
                 onPressed: _isSaving ? null : _delete,
-                child: const Text("Delete Rule"),
+                child: Text(AppLocalizations.of(context).deleteRule),
               ),
             TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text("Cancel")),
+                child: Text(AppLocalizations.of(context).actionCancel)),
             ElevatedButton(
               onPressed: _isSaving ? null : _save,
               child: _isSaving
@@ -1377,18 +1387,18 @@ class _ProductDetailPanelState
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text("Remove Stock"),
+        title: Text(AppLocalizations.of(context).removeStock),
         content: Text(
             "Remove ${stock.productName} from ${stock.warehouseName}?"),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text("Cancel")),
+              child: Text(AppLocalizations.of(context).actionCancel)),
           TextButton(
             style:
                 TextButton.styleFrom(foregroundColor: ctx.dangerColor),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text("Remove"),
+            child: Text(AppLocalizations.of(context).actionRemove),
           ),
         ],
       ),
@@ -1487,7 +1497,7 @@ class _ProductDetailPanelState
                 IconButton(
                   icon: const Icon(Icons.close),
                   onPressed: widget.onClose,
-                  tooltip: "Close",
+                  tooltip: AppLocalizations.of(context).actionClose,
                 ),
               ],
             ),
@@ -1530,8 +1540,9 @@ class _ProductDetailPanelState
                       context,
                       icon: Icons.warning_amber,
                       color: context.warningColor,
-                      message: "No stock assigned to this"
-                          "${widget.warehouseId != null ? " warehouse" : " product"}",
+                      message: widget.warehouseId != null
+                          ? AppLocalizations.of(context).noStockAssignedWarehouse
+                          : AppLocalizations.of(context).noStockAssignedProduct,
                     )
                   else
                     ...stocks.map((stock) {
@@ -1563,7 +1574,7 @@ class _ProductDetailPanelState
                     child: OutlinedButton.icon(
                       icon: const Icon(Icons.add_box_outlined,
                           size: 18),
-                      label: const Text("Assign to Warehouse"),
+                      label: Text(AppLocalizations.of(context).assignToWarehouse),
                       onPressed: widget.onShowAssignDialog,
                     ),
                   ),
@@ -1582,14 +1593,14 @@ class _ProductDetailPanelState
                             child: CircularProgressIndicator(
                                 strokeWidth: 2))),
                     error: (_, __) =>
-                        const Text("Could not load rules"),
+                        Text(AppLocalizations.of(context).couldNotLoadRules),
                     data: (control) {
                       if (control == null) {
                         return _emptyBox(
                           context,
                           icon: Icons.tune,
                           color: Colors.grey,
-                          message: "No stock control rules configured",
+                          message: AppLocalizations.of(context).noStockControlRules,
                         );
                       }
                       // Evaluate the rules against the current (warehouse-
@@ -1663,7 +1674,7 @@ class _ProductDetailPanelState
                     width: double.infinity,
                     child: OutlinedButton.icon(
                       icon: const Icon(Icons.tune, size: 18),
-                      label: const Text("Edit Rules"),
+                      label: Text(AppLocalizations.of(context).editRules),
                       onPressed: widget.onShowControlDialog,
                     ),
                   ),
@@ -1810,10 +1821,10 @@ class _StockEntry extends StatelessWidget {
                   controller: editCtrl,
                   autofocus: true,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: "New Quantity",
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).newQuantity,
                     isDense: true,
-                    border: OutlineInputBorder(),
+                    border: const OutlineInputBorder(),
                   ),
                 ),
               ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/promotions/promotion_provider.dart';
 import 'package:pos_app/promotions/promotion_edit_dialog.dart';
@@ -24,7 +25,7 @@ class PromotionsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Promotions Management'),
+        title: Text(AppLocalizations.of(context).promotionsManagement),
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
@@ -43,10 +44,10 @@ class PromotionsScreen extends ConsumerWidget {
       ),
       body: promotionsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('Error: $err')),
+        error: (err, stack) => Center(child: Text(AppLocalizations.of(context).errorWithMessage(err.toString()))),
         data: (promotions) {
           if (promotions.isEmpty) {
-            return const Center(child: Text('No promotions found.'));
+            return Center(child: Text(AppLocalizations.of(context).noPromotionsFound));
           }
           return ListView.builder(
             itemCount: promotions.length,
@@ -78,21 +79,21 @@ class PromotionsScreen extends ConsumerWidget {
                           final confirm = await showDialog<bool>(
                               context: context,
                               builder: (ctx) => AlertDialog(
-                                      title: const Text('Confirm Delete'),
+                                      title: Text(AppLocalizations.of(context).confirmDelete),
                                       content:
-                                          Text('Delete ${promotion.name}?'),
+                                          Text(AppLocalizations.of(context).deletePlainConfirm(promotion.name)),
                                       actions: [
                                         TextButton(
                                             onPressed: () =>
                                                 Navigator.pop(ctx, false),
-                                            child: const Text('Cancel')),
+                                            child: Text(AppLocalizations.of(context).actionCancel)),
                                         ElevatedButton(
                                             style: ElevatedButton.styleFrom(
                                                 backgroundColor: cs.error,
                                                 foregroundColor: cs.onError),
                                             onPressed: () =>
                                                 Navigator.pop(ctx, true),
-                                            child: const Text('Delete')),
+                                            child: Text(AppLocalizations.of(context).actionDelete)),
                                       ]));
                           if (confirm == true) {
                             final companyId =

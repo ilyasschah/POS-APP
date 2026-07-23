@@ -7,6 +7,7 @@ import 'package:pos_app/cart/checkout_models.dart';
 import 'package:pos_app/cart/discount_display.dart';
 import 'package:pos_app/company/company_model.dart';
 import 'package:pos_app/customer/customer_model.dart';
+import 'package:pos_app/printer/pdf_fonts.dart';
 import 'package:pos_app/printer/pdf_file_name.dart';
 import 'package:pos_app/printer/pdf_save_service.dart';
 import 'package:pos_app/reports/z_report_model.dart';
@@ -46,7 +47,7 @@ class ReceiptPrinterService {
       case 'Times':
         return pw.Font.times();
       default:
-        return await PdfGoogleFonts.notoSansRegular();
+        return await PdfFonts.latin();
     }
   }
 
@@ -59,7 +60,7 @@ class ReceiptPrinterService {
       case 'Times':
         return pw.Font.timesBold();
       default:
-        return await PdfGoogleFonts.notoSansBold();
+        return await PdfFonts.latin(bold: true);
     }
   }
 
@@ -267,6 +268,8 @@ class ReceiptPrinterService {
     final fontScale = _fontScale(roleSettings, role);
     final font = await _font(roleSettings, role);
     final boldFont = await _fontBold(roleSettings, role);
+    final arabicRegular = await PdfFonts.arabic();
+    final arabicBold = await PdfFonts.arabic(bold: true);
     final rtl = _flag(roleSettings, '$role.RightToLeft');
     final logoFull = _flag(roleSettings, '$role.LogoFullWidth');
     final showBarcode = _flag(roleSettings, '$role.PrintBarcode');
@@ -339,6 +342,7 @@ class ReceiptPrinterService {
 
     pw.TextStyle ts(double size, {bool bold = false}) => pw.TextStyle(
       font: bold ? boldFont : font,
+      fontFallback: [bold ? arabicBold : arabicRegular],
       fontWeight: bold ? pw.FontWeight.bold : null,
       fontSize: size * fontScale,
     );
@@ -728,11 +732,14 @@ class ReceiptPrinterService {
     final fontScale = _fontScale(roleSettings, role);
     final font = await _font(roleSettings, role);
     final boldFont = await _fontBold(roleSettings, role);
+    final arabicRegular = await PdfFonts.arabic();
+    final arabicBold = await PdfFonts.arabic(bold: true);
     final printerName = roleSettings['$role.PrinterName'];
 
     pw.TextStyle ts(double size, {bool bold = false, bool italic = false}) =>
         pw.TextStyle(
           font: bold ? boldFont : font,
+          fontFallback: [bold ? arabicBold : arabicRegular],
           fontWeight: bold ? pw.FontWeight.bold : null,
           fontStyle: italic ? pw.FontStyle.italic : null,
           fontSize: size * fontScale,
@@ -824,8 +831,10 @@ class ReceiptPrinterService {
     String currencySymbol, {
     required Map<String, String> roleSettings,
   }) async {
-    final font = await PdfGoogleFonts.notoSansRegular();
-    final boldFont = await PdfGoogleFonts.notoSansBold();
+    final font = await PdfFonts.latin();
+    final boldFont = await PdfFonts.latin(bold: true);
+    final arabicRegular = await PdfFonts.arabic();
+    final arabicBold = await PdfFonts.arabic(bold: true);
     final pdf = pw.Document();
 
     // Standard 80mm thermal receipt format
@@ -833,6 +842,7 @@ class ReceiptPrinterService {
 
     pw.TextStyle ts(double size, {bool bold = false}) => pw.TextStyle(
       font: bold ? boldFont : font,
+      fontFallback: [bold ? arabicBold : arabicRegular],
       fontWeight: bold ? pw.FontWeight.bold : pw.FontWeight.normal,
       fontSize: size,
     );

@@ -3,6 +3,7 @@
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/api/api_client.dart';
 import 'package:pos_app/auth/auth_provider.dart';
@@ -137,6 +138,39 @@ Map<String, dynamic> _parseXmlProduct(
 // ---------------------------------------------------------------------------
 
 typedef _Field = ({String key, String label, bool required});
+
+/// Display label for an import column, localized. Deliberately SEPARATE from
+/// [_Field.label]: that one is also used as a CSV header alias when
+/// auto-matching columns (see _fieldAliases), so it must stay English or an
+/// English spreadsheet would stop matching once the UI is switched to another
+/// language.
+String _fieldLabel(BuildContext context, String key) {
+  final l = AppLocalizations.of(context);
+  switch (key) {
+    case 'name': return l.fieldName;
+    case 'productGroup': return l.fieldProductGroup;
+    case 'code': return l.fieldSku;
+    case 'barcode': return l.barcode;
+    case 'measurementUnit': return l.fieldMeasurementUnit;
+    case 'cost': return l.fieldCost;
+    case 'markup': return l.fieldMarkup;
+    case 'price': return l.fieldPrice;
+    case 'tax': return l.fieldTax;
+    case 'isTaxInclusivePrice': return l.fieldTaxInclusivePrice;
+    case 'isPriceChangeAllowed': return l.fieldPriceChangeAllowed;
+    case 'isUsingDefaultQuantity': return l.fieldUsingDefaultQuantity;
+    case 'isService': return l.fieldServiceNotStock;
+    case 'isEnabled': return l.fieldEnabled;
+    case 'description': return l.fieldDescription;
+    case 'quantity': return l.fieldQuantity;
+    case 'supplier': return l.fieldSupplier;
+    case 'reorderPoint': return l.fieldReorderPoint;
+    case 'preferredQuantity': return l.fieldPreferredQuantity;
+    case 'isLowStockWarningEnabled': return l.fieldLowStockWarning;
+    case 'lowStockWarningQuantity': return l.fieldLowStockWarningQuantity;
+    default: return key;
+  }
+}
 
 const _fields = <_Field>[
   (key: 'name',                    label: 'Name',                       required: true),
@@ -384,7 +418,7 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Import complete'),
+        title: Text(AppLocalizations.of(context).importComplete),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -400,8 +434,8 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
               Row(children: [
                 const Icon(Icons.receipt_long, color: Colors.teal, size: 18),
                 const SizedBox(width: 8),
-                const Text('Document created: ',
-                    style: TextStyle(fontWeight: FontWeight.bold)),
+                Text(AppLocalizations.of(context).documentCreated,
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
                 Text(documentNumber,
                     style: const TextStyle(
                         color: Colors.teal, fontWeight: FontWeight.bold)),
@@ -409,7 +443,7 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
             ],
             if (errors.isNotEmpty) ...[
               const SizedBox(height: 12),
-              Text('${errors.length} error(s):',
+              Text(AppLocalizations.of(context).importErrorCount(errors.length),
                   style: TextStyle(color: context.dangerColor)),
               ...errors.take(5).map((e) => Text('• $e',
                   style: const TextStyle(fontSize: 12))),
@@ -419,7 +453,7 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
         actions: [
           FilledButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Close')),
+              child: Text(AppLocalizations.of(context).actionClose)),
         ],
       ),
     );
@@ -430,7 +464,7 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Import'),
+        title: Text(AppLocalizations.of(context).importTitle),
         backgroundColor: cs.surface,
         bottom: TabBar(
           controller: _tabs,
@@ -463,7 +497,7 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
           child: Row(children: [
             OutlinedButton.icon(
               icon: const Icon(Icons.folder_outlined, size: 18),
-              label: const Text('Select file'),
+              label: Text(AppLocalizations.of(context).selectFile),
               onPressed: _pickCsv,
             ),
             if (_csvPath != null) ...[
@@ -494,7 +528,7 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
                     children: [
                       ..._fields.map((f) => _mappingRow(cs, f)),
                       const SizedBox(height: 8),
-                      Text('* Indicates required field',
+                      Text(AppLocalizations.of(context).indicatesRequiredField,
                           style: TextStyle(
                               color: cs.error, fontSize: 12)),
                     ],
@@ -535,7 +569,7 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
             child: Row(children: [
               if (isRequired)
                 Text('* ', style: TextStyle(color: cs.error, fontSize: 13)),
-              Text(f.label,
+              Text(_fieldLabel(context, f.key),
                   style: TextStyle(
                       fontSize: 13, color: cs.onSurface)),
             ]),
@@ -559,7 +593,7 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
                   value: options.contains(selected) ? selected : null,
                   isDense: true,
                   isExpanded: true,
-                  hint: Text('(Skip)',
+                  hint: Text(AppLocalizations.of(context).skipColumn,
                       style: TextStyle(
                           color: cs.onSurfaceVariant, fontSize: 13)),
                   items: options.map((h) {
@@ -589,7 +623,7 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('What happens if duplicates are found?',
+        Text(AppLocalizations.of(context).duplicatesQuestion,
             style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
         const SizedBox(height: 8),
         _checkRow(cs, 'Skip duplicates', _skipDuplicates,
@@ -597,7 +631,7 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
         _checkRow(cs, 'Merge duplicates', _mergeDuplicates,
             (v) => setState(() => _mergeDuplicates = v)),
         const SizedBox(height: 16),
-        Text('Create document from specified quantity',
+        Text(AppLocalizations.of(context).createDocumentFromQuantity,
             style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
         const SizedBox(height: 8),
         _radioRow(cs, 'Inventory count', 'inventoryCount'),
@@ -638,7 +672,7 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
       child: Row(children: [
         OutlinedButton.icon(
           icon: const Icon(Icons.visibility_outlined, size: 18),
-          label: const Text('Preview'),
+          label: Text(AppLocalizations.of(context).actionPreview),
           onPressed: _csvReady && _dataRows.isNotEmpty
               ? () => setState(() => _showPreview = !_showPreview)
               : null,
@@ -650,7 +684,7 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
                   width: 14, height: 14,
                   child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
               : const Icon(Icons.download_rounded, size: 18),
-          label: const Text('Import'),
+          label: Text(AppLocalizations.of(context).importTitle),
           style: FilledButton.styleFrom(
               backgroundColor: _csvReady ? context.successColor : null),
           onPressed: _csvReady ? _importCsv : null,
@@ -695,7 +729,7 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
                   columnSpacing: 24,
                   columns: visibleFields
                       .map((f) => DataColumn(
-                          label: Text(f.label,
+                          label: Text(_fieldLabel(context, f.key),
                               style: const TextStyle(fontSize: 12))))
                       .toList(),
                   rows: _dataRows.take(50).map((row) {
@@ -732,7 +766,7 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
           child: Row(children: [
             OutlinedButton.icon(
               icon: const Icon(Icons.folder_outlined, size: 18),
-              label: const Text('Select file'),
+              label: Text(AppLocalizations.of(context).selectFile),
               onPressed: _pickXml,
             ),
             if (_xmlPath != null) ...[
@@ -757,7 +791,7 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
                     child: CircularProgressIndicator(
                         strokeWidth: 2, color: Colors.white))
                 : const Icon(Icons.download_rounded, size: 18),
-            label: const Text('Import'),
+            label: Text(AppLocalizations.of(context).importTitle),
             style: FilledButton.styleFrom(
                 backgroundColor: _xmlPath != null && !_isImportingXml
                     ? context.successColor

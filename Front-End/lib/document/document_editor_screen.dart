@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:pos_app/cart/payment_model.dart';
@@ -755,7 +756,7 @@ class _DocumentEditorDialogState extends ConsumerState<_DocumentEditorDialog> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Close"),
+            child: Text(AppLocalizations.of(context).actionClose),
           ),
         ],
       ),
@@ -783,17 +784,17 @@ class _SelectDocumentTypeDialogState
     final asyncTypes = ref.watch(allDocumentTypesProvider);
 
     return AlertDialog(
-      title: const Text("Select document type"),
+      title: Text(AppLocalizations.of(context).selectDocumentType),
       contentPadding: EdgeInsets.zero,
       content: SizedBox(
         width: 520,
         height: 380,
         child: asyncCategories.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(child: Text("Error: $e")),
+          error: (e, _) => Center(child: Text(AppLocalizations.of(context).errorWithMessage(e.toString()))),
           data: (categories) => asyncTypes.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text("Error: $e")),
+            error: (e, _) => Center(child: Text(AppLocalizations.of(context).errorWithMessage(e.toString()))),
             data: (types) {
               if (_selectedCategoryId == null && categories.isNotEmpty) {
                 _selectedCategoryId = categories.first.id;
@@ -863,13 +864,13 @@ class _SelectDocumentTypeDialogState
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(null),
-          child: const Text("Cancel"),
+          child: Text(AppLocalizations.of(context).actionCancel),
         ),
         ElevatedButton(
           onPressed: _selectedType == null
               ? null
               : () => Navigator.of(context).pop(_selectedType),
-          child: const Text("OK"),
+          child: Text(AppLocalizations.of(context).actionOk),
         ),
       ],
     );
@@ -1022,10 +1023,10 @@ class _HeaderForm extends ConsumerWidget {
                 flex: 1,
                 child: TextFormField(
                   controller: numberCtrl,
-                  decoration: const InputDecoration(
-                    labelText: "Number",
-                    prefixIcon: Icon(Icons.tag),
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).numberLabel,
+                    prefixIcon: const Icon(Icons.tag),
+                    border: const OutlineInputBorder(),
                   ),
                 ),
               ),
@@ -1059,7 +1060,7 @@ class _HeaderForm extends ConsumerWidget {
           // Customer / Supplier
           asyncCustomers.when(
             loading: () => const LinearProgressIndicator(),
-            error: (e, _) => Text("Error: $e"),
+            error: (e, _) => Text(AppLocalizations.of(context).errorWithMessage(e.toString())),
             data: (customers) {
               final filtered = isSupplier
                   ? customers.where((c) => c.isSupplier).toList()
@@ -1090,17 +1091,17 @@ class _HeaderForm extends ConsumerWidget {
               Expanded(
                 child: asyncUsers.when(
                   loading: () => const LinearProgressIndicator(),
-                  error: (e, _) => Text("Error: $e"),
+                  error: (e, _) => Text(AppLocalizations.of(context).errorWithMessage(e.toString())),
                   data: (users) {
                     final isValidUser =
                         selectedUserId == null ||
                         users.any((u) => u.id == selectedUserId);
                     return DropdownButtonFormField<int>(
                       initialValue: isValidUser ? selectedUserId : null,
-                      decoration: const InputDecoration(
-                        labelText: "User *",
-                        prefixIcon: Icon(Icons.person),
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: AppLocalizations.of(context).userRequired,
+                        prefixIcon: const Icon(Icons.person),
+                        border: const OutlineInputBorder(),
                       ),
                       items: users
                           .map(
@@ -1120,17 +1121,17 @@ class _HeaderForm extends ConsumerWidget {
               Expanded(
                 child: asyncWarehouses.when(
                   loading: () => const LinearProgressIndicator(),
-                  error: (e, _) => Text("Error: $e"),
+                  error: (e, _) => Text(AppLocalizations.of(context).errorWithMessage(e.toString())),
                   data: (warehouses) {
                     final isValidWH =
                         selectedWarehouseId == null ||
                         warehouses.any((w) => w.id == selectedWarehouseId);
                     return DropdownButtonFormField<int>(
                       initialValue: isValidWH ? selectedWarehouseId : null,
-                      decoration: const InputDecoration(
-                        labelText: "Warehouse *",
-                        prefixIcon: Icon(Icons.warehouse_outlined),
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: AppLocalizations.of(context).warehouseRequired,
+                        prefixIcon: const Icon(Icons.warehouse_outlined),
+                        border: const OutlineInputBorder(),
                       ),
                       items: warehouses
                           .map(
@@ -1155,10 +1156,10 @@ class _HeaderForm extends ConsumerWidget {
         _buildCard('Financials & Notes', Icons.request_quote_outlined, [
           TextFormField(
             controller: refDocCtrl,
-            decoration: const InputDecoration(
-              labelText: "Reference Document",
-              prefixIcon: Icon(Icons.link),
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context).referenceDocument,
+              prefixIcon: const Icon(Icons.link),
+              border: const OutlineInputBorder(),
             ),
           ),
           const SizedBox(height: 16),
@@ -1168,10 +1169,10 @@ class _HeaderForm extends ConsumerWidget {
                 flex: 2,
                 child: TextFormField(
                   initialValue: discount.toString(),
-                  decoration: const InputDecoration(
-                    labelText: "Discount",
-                    prefixIcon: Icon(Icons.percent),
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).posDiscount,
+                    prefixIcon: const Icon(Icons.percent),
+                    border: const OutlineInputBorder(),
                   ),
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
@@ -1183,14 +1184,14 @@ class _HeaderForm extends ConsumerWidget {
               Expanded(
                 child: DropdownButtonFormField<int>(
                   initialValue: discountType,
-                  decoration: const InputDecoration(
-                    labelText: "Type",
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12),
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).typeLabel,
+                    border: const OutlineInputBorder(),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12),
                   ),
-                  items: const [
-                    DropdownMenuItem(value: 0, child: Text("%")),
-                    DropdownMenuItem(value: 1, child: Text("Fixed")),
+                  items: [
+                    const DropdownMenuItem(value: 0, child: Text("%")),
+                    DropdownMenuItem(value: 1, child: Text(AppLocalizations.of(context).fixed)),
                   ],
                   onChanged: (v) => onDiscountTypeChanged(v ?? 0),
                 ),
@@ -1221,9 +1222,9 @@ class _HeaderForm extends ConsumerWidget {
                 child: TextFormField(
                   controller: internalNoteCtrl,
                   maxLines: 2,
-                  decoration: const InputDecoration(
-                    labelText: "Internal Note",
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).internalNote,
+                    border: const OutlineInputBorder(),
                   ),
                 ),
               ),
@@ -1232,9 +1233,9 @@ class _HeaderForm extends ConsumerWidget {
                 child: TextFormField(
                   controller: noteCtrl,
                   maxLines: 2,
-                  decoration: const InputDecoration(
-                    labelText: "Note",
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).noteLabel,
+                    border: const OutlineInputBorder(),
                   ),
                 ),
               ),
@@ -1378,7 +1379,7 @@ class _ItemsView extends ConsumerWidget {
                 ),
                 ElevatedButton.icon(
                   icon: const Icon(Icons.add, size: 16),
-                  label: const Text("Add Product"),
+                  label: Text(AppLocalizations.of(context).addProduct),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: theme.colorScheme.secondary,
                     foregroundColor: theme.colorScheme.onSecondary,
@@ -1669,7 +1670,7 @@ class _ItemsView extends ConsumerWidget {
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Tooltip(
-                                        message: "Edit Item",
+                                        message: AppLocalizations.of(context).editItemAction,
                                         child: InkWell(
                                           onTap: () async {
                                             await showDialog(
@@ -1692,7 +1693,7 @@ class _ItemsView extends ConsumerWidget {
                                       ),
                                       const SizedBox(width: 4),
                                       Tooltip(
-                                        message: "Delete Item",
+                                        message: AppLocalizations.of(context).deleteItemAction,
                                         child: InkWell(
                                           onTap: () async {
                                             final confirm = await showDialog<bool>(
@@ -1710,7 +1711,7 @@ class _ItemsView extends ConsumerWidget {
                                                         Navigator.of(
                                                           ctx,
                                                         ).pop(false),
-                                                    child: const Text("Cancel"),
+                                                    child: Text(AppLocalizations.of(context).actionCancel),
                                                   ),
                                                   ElevatedButton(
                                                     style:
@@ -1973,7 +1974,7 @@ class _AddItemDialogState extends ConsumerState<_AddItemDialog> {
     String fmt(double v) => v.toStringAsFixed(2);
 
     return AlertDialog(
-      title: const Text("Add Product"),
+      title: Text(AppLocalizations.of(context).addProduct),
       content: SizedBox(
         width: 460,
         child: SingleChildScrollView(
@@ -1983,12 +1984,12 @@ class _AddItemDialogState extends ConsumerState<_AddItemDialog> {
               // Product
               asyncProducts.when(
                 loading: () => const CircularProgressIndicator(),
-                error: (e, _) => Text("Error: $e"),
+                error: (e, _) => Text(AppLocalizations.of(context).errorWithMessage(e.toString())),
                 data: (products) => DropdownButtonFormField<int>(
                   initialValue: _selectedProductId,
-                  decoration: const InputDecoration(
-                    labelText: "Product *",
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).productRequired,
+                    border: const OutlineInputBorder(),
                   ),
                   items: products
                       .map(
@@ -2019,9 +2020,9 @@ class _AddItemDialogState extends ConsumerState<_AddItemDialog> {
                     child: TextFormField(
                       controller: _qtyCtrl,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: "Quantity",
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: AppLocalizations.of(context).fieldQuantity,
+                        border: const OutlineInputBorder(),
                       ),
                       onChanged: (_) => setState(() {}),
                     ),
@@ -2031,9 +2032,9 @@ class _AddItemDialogState extends ConsumerState<_AddItemDialog> {
                     child: TextFormField(
                       controller: _priceCtrl,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: "Price before tax",
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: AppLocalizations.of(context).priceBeforeTax,
+                        border: const OutlineInputBorder(),
                       ),
                       onChanged: (_) => setState(() {}),
                     ),
@@ -2050,14 +2051,14 @@ class _AddItemDialogState extends ConsumerState<_AddItemDialog> {
                   final enabled = taxes.where((t) => t.isEnabled).toList();
                   return DropdownButtonFormField<int>(
                     initialValue: _selectedTaxId,
-                    decoration: const InputDecoration(
-                      labelText: "Tax (optional)",
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context).taxOptional,
+                      border: const OutlineInputBorder(),
                     ),
                     items: [
-                      const DropdownMenuItem<int>(
+                      DropdownMenuItem<int>(
                         value: null,
-                        child: Text("None"),
+                        child: Text(AppLocalizations.of(context).noneLabel),
                       ),
                       ...enabled.map(
                         (t) => DropdownMenuItem(
@@ -2087,9 +2088,9 @@ class _AddItemDialogState extends ConsumerState<_AddItemDialog> {
                     child: TextFormField(
                       controller: _discountCtrl,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: "Item Discount",
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: AppLocalizations.of(context).itemDiscount,
+                        border: const OutlineInputBorder(),
                       ),
                       onChanged: (_) => setState(() {}),
                     ),
@@ -2101,9 +2102,9 @@ class _AddItemDialogState extends ConsumerState<_AddItemDialog> {
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),
                       ),
-                      items: const [
-                        DropdownMenuItem(value: 0, child: Text("%")),
-                        DropdownMenuItem(value: 1, child: Text("Fixed")),
+                      items: [
+                        const DropdownMenuItem(value: 0, child: Text("%")),
+                        DropdownMenuItem(value: 1, child: Text(AppLocalizations.of(context).fixed)),
                       ],
                       onChanged: (v) => setState(() => _discountType = v ?? 0),
                     ),
@@ -2117,7 +2118,7 @@ class _AddItemDialogState extends ConsumerState<_AddItemDialog> {
                 controller: _expDateCtrl,
                 readOnly: true,
                 decoration: InputDecoration(
-                  labelText: "Expiration Date (optional)",
+                  labelText: AppLocalizations.of(context).expirationDateOptional,
                   border: const OutlineInputBorder(),
                   suffixIcon: _expirationDate != null
                       ? IconButton(
@@ -2159,12 +2160,12 @@ class _AddItemDialogState extends ConsumerState<_AddItemDialog> {
                 child: Column(
                   children: [
                     _PreviewRow(
-                      label: "Price (after tax)",
+                      label: AppLocalizations.of(context).priceAfterTax,
                       value: "${fmt(_price)} $sym",
                     ),
                     const Divider(height: 8),
                     _PreviewRow(
-                      label: "Total",
+                      label: AppLocalizations.of(context).totalLabel,
                       value: "${fmt(_total)} $sym",
                       bold: true,
                     ),
@@ -2189,7 +2190,7 @@ class _AddItemDialogState extends ConsumerState<_AddItemDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text("Cancel"),
+          child: Text(AppLocalizations.of(context).actionCancel),
         ),
         if (_isLoading)
           const Padding(
@@ -2199,7 +2200,7 @@ class _AddItemDialogState extends ConsumerState<_AddItemDialog> {
         else
           ElevatedButton.icon(
             icon: const Icon(Icons.add),
-            label: const Text("Add"),
+            label: Text(AppLocalizations.of(context).actionAdd),
             style: ElevatedButton.styleFrom(
               backgroundColor: theme.colorScheme.primary,
               foregroundColor: theme.colorScheme.onPrimary,
@@ -2337,7 +2338,7 @@ class _EditItemDialogState extends ConsumerState<_EditItemDialog> {
     String fmt(double v) => v.toStringAsFixed(2);
 
     return AlertDialog(
-      title: Text("Edit — ${widget.item.productName ?? ''}"),
+      title: Text(AppLocalizations.of(context).editDashTitle(widget.item.productName ?? '')),
       content: SizedBox(
         width: 800,
         height: 420,
@@ -2357,9 +2358,9 @@ class _EditItemDialogState extends ConsumerState<_EditItemDialog> {
                           child: TextFormField(
                             controller: _qtyCtrl,
                             keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: "Quantity",
-                              border: OutlineInputBorder(),
+                            decoration: InputDecoration(
+                              labelText: AppLocalizations.of(context).fieldQuantity,
+                              border: const OutlineInputBorder(),
                             ),
                             onChanged: (_) => setState(() {}),
                           ),
@@ -2369,9 +2370,9 @@ class _EditItemDialogState extends ConsumerState<_EditItemDialog> {
                           child: TextFormField(
                             controller: _priceCtrl,
                             keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: "Price before tax",
-                              border: OutlineInputBorder(),
+                            decoration: InputDecoration(
+                              labelText: AppLocalizations.of(context).priceBeforeTax,
+                              border: const OutlineInputBorder(),
                             ),
                             onChanged: (_) => setState(() {}),
                           ),
@@ -2385,9 +2386,9 @@ class _EditItemDialogState extends ConsumerState<_EditItemDialog> {
                           child: TextFormField(
                             controller: _discountCtrl,
                             keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: "Discount",
-                              border: OutlineInputBorder(),
+                            decoration: InputDecoration(
+                              labelText: AppLocalizations.of(context).posDiscount,
+                              border: const OutlineInputBorder(),
                             ),
                             onChanged: (_) => setState(() {}),
                           ),
@@ -2399,9 +2400,9 @@ class _EditItemDialogState extends ConsumerState<_EditItemDialog> {
                             decoration: const InputDecoration(
                               border: OutlineInputBorder(),
                             ),
-                            items: const [
-                              DropdownMenuItem(value: 0, child: Text("%")),
-                              DropdownMenuItem(value: 1, child: Text("Fixed")),
+                            items: [
+                              const DropdownMenuItem(value: 0, child: Text("%")),
+                              DropdownMenuItem(value: 1, child: Text(AppLocalizations.of(context).fixed)),
                             ],
                             onChanged: (v) =>
                                 setState(() => _discountType = v ?? 0),
@@ -2433,7 +2434,7 @@ class _EditItemDialogState extends ConsumerState<_EditItemDialog> {
                         }
                       },
                       decoration: InputDecoration(
-                        labelText: "Expiration Date",
+                        labelText: AppLocalizations.of(context).expirationDate,
                         border: const OutlineInputBorder(),
                         suffixIcon: _expirationDate != null
                             ? IconButton(
@@ -2460,12 +2461,12 @@ class _EditItemDialogState extends ConsumerState<_EditItemDialog> {
                       child: Column(
                         children: [
                           _PreviewRow(
-                            label: "Price (after tax)",
+                            label: AppLocalizations.of(context).priceAfterTax,
                             value: "${fmt(previewPrice)} $sym",
                           ),
                           const Divider(height: 8),
                           _PreviewRow(
-                            label: "Total",
+                            label: AppLocalizations.of(context).totalLabel,
                             value: "${fmt(previewTotal)} $sym",
                             bold: true,
                           ),
@@ -2504,7 +2505,7 @@ class _EditItemDialogState extends ConsumerState<_EditItemDialog> {
                   const SizedBox(height: 12),
                   allTaxesAsync.when(
                     loading: () => const LinearProgressIndicator(),
-                    error: (_, __) => const Text("Error loading taxes"),
+                    error: (_, __) => Text(AppLocalizations.of(context).errorLoadingTaxes),
                     data: (taxes) {
                       // Recover the tax selection for older rows that stored a
                       // rate but no taxId (checkout used to not persist taxId) —
@@ -2529,18 +2530,18 @@ class _EditItemDialogState extends ConsumerState<_EditItemDialog> {
                       return DropdownButtonFormField<int?>(
                       initialValue: _selectedTaxId,
                       isExpanded: true,
-                      decoration: const InputDecoration(
-                        labelText: "Tax",
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(
+                      decoration: InputDecoration(
+                        labelText: AppLocalizations.of(context).fieldTax,
+                        border: const OutlineInputBorder(),
+                        contentPadding: const EdgeInsets.symmetric(
                           horizontal: 12,
                           vertical: 8,
                         ),
                       ),
                       items: [
-                        const DropdownMenuItem<int?>(
+                        DropdownMenuItem<int?>(
                           value: null,
-                          child: Text("No tax"),
+                          child: Text(AppLocalizations.of(context).noTaxShort),
                         ),
                         ...taxes.map(
                           (t) => DropdownMenuItem<int?>(
@@ -2570,7 +2571,7 @@ class _EditItemDialogState extends ConsumerState<_EditItemDialog> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: _PreviewRow(
-                      label: "Tax amount",
+                      label: AppLocalizations.of(context).taxAmount,
                       value: "${fmt((_price - _pbt) * _qty)} $sym",
                     ),
                   ),
@@ -2583,7 +2584,7 @@ class _EditItemDialogState extends ConsumerState<_EditItemDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text("Cancel"),
+          child: Text(AppLocalizations.of(context).actionCancel),
         ),
         if (_isLoading)
           const Padding(
@@ -2593,7 +2594,7 @@ class _EditItemDialogState extends ConsumerState<_EditItemDialog> {
         else
           ElevatedButton.icon(
             icon: const Icon(Icons.save),
-            label: const Text("Update Item"),
+            label: Text(AppLocalizations.of(context).updateItem),
             style: ElevatedButton.styleFrom(
               backgroundColor: theme.colorScheme.primary,
               foregroundColor: theme.colorScheme.onPrimary,
@@ -2730,7 +2731,7 @@ class _PaymentsView extends ConsumerWidget {
                       final confirmed = await showDialog<bool>(
                         context: context,
                         builder: (ctx) => AlertDialog(
-                          title: const Text('Mark as Unpaid?'),
+                          title: Text(AppLocalizations.of(context).markAsUnpaid),
                           content: const Text(
                             'This document has a complete payment balance.\n\n'
                             'Proceeding will permanently delete all associated '
@@ -2739,13 +2740,13 @@ class _PaymentsView extends ConsumerWidget {
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(ctx, false),
-                              child: const Text('Cancel'),
+                              child: Text(AppLocalizations.of(context).actionCancel),
                             ),
                             FilledButton(
                               style: FilledButton.styleFrom(
                                   backgroundColor: ctx.dangerColor),
                               onPressed: () => Navigator.pop(ctx, true),
-                              child: const Text('Yes, delete payments'),
+                              child: Text(AppLocalizations.of(context).yesDeletePayments),
                             ),
                           ],
                         ),
@@ -2758,7 +2759,7 @@ class _PaymentsView extends ConsumerWidget {
                 const SizedBox(width: 12),
                 ElevatedButton.icon(
                   icon: const Icon(Icons.payment, size: 16),
-                  label: const Text("Add Payment"),
+                  label: Text(AppLocalizations.of(context).addPayment),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: theme.colorScheme.secondary,
                     foregroundColor: theme.colorScheme.onSecondary,
@@ -2840,13 +2841,13 @@ class _PaymentsView extends ConsumerWidget {
                             theme.colorScheme.surfaceContainerHighest
                                 .withValues(alpha: 0.3),
                           ),
-                          columns: const [
-                            DataColumn(label: Text("ID")),
-                            DataColumn(label: Text("Status")),
-                            DataColumn(label: Text("Payment Type")),
-                            DataColumn(label: Text("Date")),
-                            DataColumn(label: Text("Amount"), numeric: true),
-                            DataColumn(label: Text("Actions")),
+                          columns: [
+                            DataColumn(label: Text(AppLocalizations.of(context).idLabel)),
+                            DataColumn(label: Text(AppLocalizations.of(context).statusLabel)),
+                            DataColumn(label: Text(AppLocalizations.of(context).paymentType)),
+                            DataColumn(label: Text(AppLocalizations.of(context).dateLabel)),
+                            DataColumn(label: Text(AppLocalizations.of(context).amount), numeric: true),
+                            DataColumn(label: Text(AppLocalizations.of(context).actions)),
                           ],
                           rows: payments.map((payment) {
                             final isLocked = payment.zReportId != null;
@@ -3187,7 +3188,7 @@ class _AddPaymentDialogState extends ConsumerState<_AddPaymentDialog> {
     final theme = Theme.of(context);
 
     return AlertDialog(
-      title: const Text("Add Payment"),
+      title: Text(AppLocalizations.of(context).addPayment),
       content: SizedBox(
         width: 350,
         child: Column(
@@ -3195,16 +3196,16 @@ class _AddPaymentDialogState extends ConsumerState<_AddPaymentDialog> {
           children: [
             paymentTypesAsync.when(
               loading: () => const CircularProgressIndicator(),
-              error: (e, _) => Text("Error: $e"),
+              error: (e, _) => Text(AppLocalizations.of(context).errorWithMessage(e.toString())),
               data: (types) {
                 if (_selectedPaymentTypeId == null && types.isNotEmpty) {
                   _selectedPaymentTypeId = types.first.id;
                 }
                 return DropdownButtonFormField<int>(
                   initialValue: _selectedPaymentTypeId,
-                  decoration: const InputDecoration(
-                    labelText: "Payment Type",
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).paymentType,
+                    border: const OutlineInputBorder(),
                   ),
                   items: types
                       .map(
@@ -3219,9 +3220,9 @@ class _AddPaymentDialogState extends ConsumerState<_AddPaymentDialog> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _amountCtrl,
-              decoration: const InputDecoration(
-                labelText: "Amount",
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context).amount,
+                border: const OutlineInputBorder(),
               ),
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
@@ -3259,7 +3260,7 @@ class _AddPaymentDialogState extends ConsumerState<_AddPaymentDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text("Cancel"),
+          child: Text(AppLocalizations.of(context).actionCancel),
         ),
         if (_isLoading)
           const Padding(
@@ -3269,7 +3270,7 @@ class _AddPaymentDialogState extends ConsumerState<_AddPaymentDialog> {
         else
           ElevatedButton.icon(
             icon: const Icon(Icons.payment),
-            label: const Text("Add Payment"),
+            label: Text(AppLocalizations.of(context).addPayment),
             style: ElevatedButton.styleFrom(
               backgroundColor: theme.colorScheme.primary,
               foregroundColor: theme.colorScheme.onPrimary,
@@ -3370,7 +3371,7 @@ class _EditPaymentDialogState extends ConsumerState<_EditPaymentDialog> {
     final theme = Theme.of(context);
 
     return AlertDialog(
-      title: Text("Edit Payment #${widget.payment.id}"),
+      title: Text(AppLocalizations.of(context).editPaymentTitle(widget.payment.id.toString())),
       content: SizedBox(
         width: 350,
         child: Column(
@@ -3384,9 +3385,9 @@ class _EditPaymentDialogState extends ConsumerState<_EditPaymentDialog> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _amountCtrl,
-              decoration: const InputDecoration(
-                labelText: "Amount",
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context).amount,
+                border: const OutlineInputBorder(),
               ),
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
@@ -3424,7 +3425,7 @@ class _EditPaymentDialogState extends ConsumerState<_EditPaymentDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text("Cancel"),
+          child: Text(AppLocalizations.of(context).actionCancel),
         ),
         if (_isLoading)
           const Padding(
@@ -3434,7 +3435,7 @@ class _EditPaymentDialogState extends ConsumerState<_EditPaymentDialog> {
         else
           ElevatedButton.icon(
             icon: const Icon(Icons.save),
-            label: const Text("Save Changes"),
+            label: Text(AppLocalizations.of(context).actionSaveChanges),
             style: ElevatedButton.styleFrom(
               backgroundColor: theme.colorScheme.primary,
               foregroundColor: theme.colorScheme.onPrimary,
@@ -3497,12 +3498,12 @@ class _DiscountBreakdownCard extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Row(
+                  Row(
                     children: [
-                      Icon(Icons.sell_outlined, size: 24),
-                      SizedBox(width: 12),
-                      Text('Discount Breakdown',
-                          style: TextStyle(
+                      const Icon(Icons.sell_outlined, size: 24),
+                      const SizedBox(width: 12),
+                      Text(AppLocalizations.of(context).discountBreakdown,
+                          style: const TextStyle(
                               fontSize: 16, fontWeight: FontWeight.bold)),
                     ],
                   ),
@@ -3538,7 +3539,7 @@ class _DiscountBreakdownCard extends ConsumerWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: Text('Total discounts',
+                        child: Text(AppLocalizations.of(context).totalDiscounts,
                             style: theme.textTheme.titleSmall),
                       ),
                       Text(

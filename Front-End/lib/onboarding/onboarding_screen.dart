@@ -12,11 +12,22 @@ import 'package:pos_app/onboarding/widgets/welcome_slide.dart';
 
 /// First-run flow: welcome → feature tour → theme setup → Get Started.
 ///
-/// Completing (or skipping) flips [onboardingCompleteProvider]; `MyApp` watches
-/// it and rebuilds straight into the normal boot flow — this screen never calls
-/// Navigator itself.
+/// Completing (or skipping) always flips [onboardingCompleteProvider]. What
+/// happens next depends on how this screen was reached, which is why the
+/// handoff is injected rather than hardcoded:
+///
+///  - **As `MyApp`'s `home`** (already-registered device that has never been
+///    onboarded): pass nothing. Flipping the provider rebuilds `MyApp` straight
+///    past this screen, and calling Navigator here would fight that.
+///  - **Pushed by `MasterLoginScreen`** (the first-install path): there is no
+///    `home` rebuild to fall back on, so it passes an [onFinished] that
+///    replaces this route with the PIN screen.
 class OnboardingScreen extends ConsumerStatefulWidget {
-  const OnboardingScreen({super.key});
+  const OnboardingScreen({super.key, this.onFinished});
+
+  /// Invoked once onboarding has been marked complete. Null means "nothing to
+  /// do" — see the class docs.
+  final VoidCallback? onFinished;
 
   @override
   ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -62,8 +73,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
-  Future<void> _finish() =>
-      ref.read(onboardingCompleteProvider.notifier).complete();
+  Future<void> _finish() async {
+    await ref.read(onboardingCompleteProvider.notifier).complete();
+    if (!mounted) return;
+    widget.onFinished?.call();
+  }
 
   @override
   Widget build(BuildContext context) {

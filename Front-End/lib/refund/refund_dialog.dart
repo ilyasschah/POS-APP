@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
@@ -301,14 +302,14 @@ class _RefundDialogState extends ConsumerState<RefundDialog> {
               child: OutlinedButton.icon(
                 onPressed: _addBlindProduct,
                 icon: const Icon(Icons.add, size: 16),
-                label: const Text('Add product'),
+                label: Text(AppLocalizations.of(context).addProductLower),
               ),
             ),
           ),
           Expanded(
             child: _blindLines.isEmpty
                 ? Center(
-                    child: Text('Add the products being returned',
+                    child: Text(AppLocalizations.of(context).addReturnedProducts,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                             color: cs.onSurfaceVariant, fontSize: 13)),
@@ -382,7 +383,7 @@ class _RefundDialogState extends ConsumerState<RefundDialog> {
 
     if (_document == null) {
       return Center(
-        child: Text('Search a receipt to see its items',
+        child: Text(AppLocalizations.of(context).searchReceiptToSeeItems,
             textAlign: TextAlign.center,
             style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
       );
@@ -462,7 +463,7 @@ class _RefundDialogState extends ConsumerState<RefundDialog> {
                 children: [
                   Icon(Icons.undo, color: cs.primary),
                   const Gap(10),
-                  Text('Refund items',
+                  Text(AppLocalizations.of(context).refundItems,
                       style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
@@ -494,7 +495,7 @@ class _RefundDialogState extends ConsumerState<RefundDialog> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              Text('TOTAL REFUND AMOUNT',
+                              Text(AppLocalizations.of(context).totalRefundAmount,
                                   style: TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.w700,
@@ -605,8 +606,8 @@ class _RefundDialogState extends ConsumerState<RefundDialog> {
                                   child: TextButton.icon(
                                     onPressed: _submitting ? null : _startBlindReturn,
                                     icon: const Icon(Icons.shield_outlined, size: 16),
-                                    label: const Text('No receipt? Blind return',
-                                        style: TextStyle(fontSize: 12)),
+                                    label: Text(AppLocalizations.of(context).blindReturn,
+                                        style: const TextStyle(fontSize: 12)),
                                     style: TextButton.styleFrom(
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: 8, vertical: 4),
@@ -656,14 +657,14 @@ class _RefundDialogState extends ConsumerState<RefundDialog> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Refund payment type',
+                                Text(AppLocalizations.of(context).refundPaymentType,
                                     style: TextStyle(
                                         fontSize: 12,
                                         color: cs.onSurfaceVariant,
                                         fontWeight: FontWeight.w600)),
                                 const Gap(10),
                                 paymentTypes.isEmpty
-                                    ? Text('Loading payment types…',
+                                    ? Text(AppLocalizations.of(context).loadingPaymentTypes,
                                         style: TextStyle(
                                             color: cs.onSurfaceVariant,
                                             fontSize: 12))
@@ -703,7 +704,7 @@ class _RefundDialogState extends ConsumerState<RefundDialog> {
                 children: [
                   OutlinedButton.icon(
                     icon: const Icon(Icons.close, size: 16),
-                    label: const Text('Cancel'),
+                    label: Text(AppLocalizations.of(context).actionCancel),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                   const Gap(10),
@@ -715,7 +716,7 @@ class _RefundDialogState extends ConsumerState<RefundDialog> {
                             child: CircularProgressIndicator(
                                 strokeWidth: 2, color: context.onStatusColor))
                         : const Icon(Icons.check, size: 16),
-                    label: const Text('OK'),
+                    label: Text(AppLocalizations.of(context).actionOk),
                     onPressed: _submitting ? null : _submit,
                     style: FilledButton.styleFrom(
                         backgroundColor: context.successColor),
@@ -909,7 +910,7 @@ class _ManagerPinDialogState extends State<_ManagerPinDialog> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return AlertDialog(
-      title: const Text('Manager authorisation'),
+      title: Text(AppLocalizations.of(context).managerAuthorisation),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -924,9 +925,9 @@ class _ManagerPinDialogState extends State<_ManagerPinDialog> {
             autofocus: true,
             obscureText: true,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              labelText: 'Manager PIN',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context).managerPin,
+              border: const OutlineInputBorder(),
             ),
             onSubmitted: (v) => Navigator.of(context).pop(v.trim()),
           ),
@@ -935,11 +936,11 @@ class _ManagerPinDialogState extends State<_ManagerPinDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(AppLocalizations.of(context).actionCancel),
         ),
         FilledButton(
           onPressed: () => Navigator.of(context).pop(_ctrl.text.trim()),
-          child: const Text('Authorise'),
+          child: Text(AppLocalizations.of(context).authorise),
         ),
       ],
     );
@@ -984,11 +985,11 @@ class _ProductPickerDialogState extends ConsumerState<_ProductPickerDialog> {
               child: TextField(
                 controller: _searchCtrl,
                 autofocus: true,
-                decoration: const InputDecoration(
-                  hintText: 'Search product…',
-                  prefixIcon: Icon(Icons.search),
+                decoration: InputDecoration(
+                  hintText: AppLocalizations.of(context).searchProductEllipsis,
+                  prefixIcon: const Icon(Icons.search),
                   isDense: true,
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
                 ),
                 onChanged: (v) =>
                     setState(() => _query = v.trim().toLowerCase()),
@@ -1017,7 +1018,7 @@ class _ProductPickerDialogState extends ConsumerState<_ProductPickerDialog> {
                       a.name.toLowerCase().compareTo(b.name.toLowerCase()));
                   if (products.isEmpty) {
                     return Center(
-                      child: Text('No products found',
+                      child: Text(AppLocalizations.of(context).noProductsFoundShort,
                           style: TextStyle(color: cs.onSurfaceVariant)),
                     );
                   }
@@ -1053,7 +1054,7 @@ class _ProductPickerDialogState extends ConsumerState<_ProductPickerDialog> {
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancel'),
+                  child: Text(AppLocalizations.of(context).actionCancel),
                 ),
               ),
             ),

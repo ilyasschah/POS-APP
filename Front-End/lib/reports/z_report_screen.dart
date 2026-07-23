@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/cart/payment_provider.dart';
@@ -342,11 +343,11 @@ class _EndOfDayScreenState extends ConsumerState<EndOfDayScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text("Close"),
+            child: Text(AppLocalizations.of(context).actionClose),
           ),
           ElevatedButton.icon(
             icon: const Icon(Icons.print),
-            label: const Text("Print Receipt"),
+            label: Text(AppLocalizations.of(context).printReceipt),
             style: ElevatedButton.styleFrom(
               backgroundColor: theme.colorScheme.primary,
               foregroundColor: theme.colorScheme.onPrimary,
@@ -411,11 +412,11 @@ class _EndOfDayScreenState extends ConsumerState<EndOfDayScreen> {
           leading: widget.onMenuPressed != null
               ? IconButton(
                   icon: const Icon(Icons.menu),
-                  tooltip: "Menu",
+                  tooltip: AppLocalizations.of(context).menuLabel,
                   onPressed: widget.onMenuPressed,
                 )
               : null,
-          title: const Text("End of Day"),
+          title: Text(AppLocalizations.of(context).endOfDay),
           centerTitle: false,
           elevation: 0,
           bottom: TabBar(
@@ -441,7 +442,7 @@ class _EndOfDayScreenState extends ConsumerState<EndOfDayScreen> {
                     )
                   : ElevatedButton.icon(
                       icon: const Icon(Icons.lock_clock),
-                      label: const Text("Close Register"),
+                      label: Text(AppLocalizations.of(context).closeRegister),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: theme.colorScheme.errorContainer,
                         foregroundColor: theme.colorScheme.onErrorContainer,
@@ -823,7 +824,7 @@ class _ZReportHistoryTab extends ConsumerWidget {
                   ),
                 ),
                 trailing: Tooltip(
-                  message: "View & Print Receipt",
+                  message: AppLocalizations.of(context).viewPrintReceipt,
                   child: IconButton(
                     icon: Icon(
                       Icons.receipt_long,

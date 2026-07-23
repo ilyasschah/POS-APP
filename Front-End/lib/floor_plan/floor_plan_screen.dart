@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:pos_app/floor_plan/floor_plan_provider.dart';
@@ -158,7 +159,7 @@ class _FloorPlanScreenState extends ConsumerState<FloorPlanScreen> {
                     PhosphorIconsRegular.calendarBlank,
                     color: cs.primary,
                   ),
-                  tooltip: 'Bookings',
+                  tooltip: AppLocalizations.of(context).posBookings,
                   onPressed: () {
                     ref.read(mainNavigationIndexProvider.notifier).state = 2;
                   },
@@ -168,7 +169,7 @@ class _FloorPlanScreenState extends ConsumerState<FloorPlanScreen> {
                   PhosphorIconsRegular.arrowClockwise,
                   color: cs.onSurfaceVariant,
                 ),
-                tooltip: 'Refresh',
+                tooltip: AppLocalizations.of(context).refresh,
                 onPressed: () {
                   try {
                     ref.invalidate(allFloorPlansProvider);
@@ -187,7 +188,7 @@ class _FloorPlanScreenState extends ConsumerState<FloorPlanScreen> {
                     PhosphorIconsRegular.slidersHorizontal,
                     color: cs.onSurfaceVariant,
                   ),
-                  tooltip: 'Settings',
+                  tooltip: AppLocalizations.of(context).settings,
                   onPressed: () => Scaffold.of(ctx).openEndDrawer(),
                 ),
               ),
@@ -206,7 +207,7 @@ class _FloorPlanScreenState extends ConsumerState<FloorPlanScreen> {
                     loading: () =>
                         const Center(child: CircularProgressIndicator()),
                     error: (_, __) =>
-                        const Center(child: Text('Error loading tables')),
+                        Center(child: Text(AppLocalizations.of(context).errorLoadingTables)),
                     data: (plans) {
                       // No rooms/resources exist yet → guide the user to create
                       // the first one. Without this the screen spins forever:
@@ -222,7 +223,7 @@ class _FloorPlanScreenState extends ConsumerState<FloorPlanScreen> {
                         loading: () =>
                             const Center(child: CircularProgressIndicator()),
                         error: (_, __) =>
-                            const Center(child: Text('Error loading tables')),
+                            Center(child: Text(AppLocalizations.of(context).errorLoadingTables)),
                         data: (tables) {
                           if (tables.isEmpty) {
                             final activePlanId = fpState.activeFloorPlanId;

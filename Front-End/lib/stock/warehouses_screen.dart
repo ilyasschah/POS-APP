@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/core/status_colors.dart';
@@ -18,16 +19,16 @@ class WarehousesScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Warehouses"),
+        title: Text(AppLocalizations.of(context).warehouses),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            tooltip: "Refresh",
+            tooltip: AppLocalizations.of(context).refresh,
             onPressed: () => ref.invalidate(allWarehousesProvider),
           ),
           IconButton(
             icon: const Icon(Icons.add),
-            tooltip: "Add Warehouse",
+            tooltip: AppLocalizations.of(context).addWarehouse,
             onPressed: company == null
                 ? null
                 : () async {
@@ -43,10 +44,10 @@ class WarehousesScreen extends ConsumerWidget {
       ),
       body: asyncWarehouses.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text("Error loading warehouses: $e")),
+        error: (e, _) => Center(child: Text(AppLocalizations.of(context).errorLoadingWarehouses(e.toString()))),
         data: (warehouses) {
           if (company == null) {
-            return const Center(child: Text("No company selected."));
+            return Center(child: Text(AppLocalizations.of(context).noCompanySelectedShort));
           }
           final int companyId = company.id;
 
@@ -55,12 +56,12 @@ class WarehousesScreen extends ConsumerWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text("No warehouses found.",
-                      style: TextStyle(color: Colors.grey, fontSize: 16)),
+                  Text(AppLocalizations.of(context).noWarehousesFound,
+                      style: const TextStyle(color: Colors.grey, fontSize: 16)),
                   const SizedBox(height: 12),
                   ElevatedButton.icon(
                     icon: const Icon(Icons.add),
-                    label: const Text("Add First Warehouse"),
+                    label: Text(AppLocalizations.of(context).addFirstWarehouse),
                     onPressed: () async {
                       await showDialog(
                         context: context,
@@ -88,14 +89,14 @@ class WarehousesScreen extends ConsumerWidget {
                 ),
                 title: Text(w.name,
                     style: const TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text("ID: ${w.id}"),
+                subtitle: Text(AppLocalizations.of(context).idValueLabel(w.id.toString())),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     // Edit
                     IconButton(
                       icon: const Icon(Icons.edit, color: Colors.blueGrey),
-                      tooltip: "Edit",
+                      tooltip: AppLocalizations.of(context).actionEdit,
                       onPressed: () async {
                         await showDialog(
                           context: context,
@@ -110,7 +111,7 @@ class WarehousesScreen extends ConsumerWidget {
                     // Delete
                     IconButton(
                       icon: Icon(Icons.delete, color: context.dangerColor),
-                      tooltip: "Delete",
+                      tooltip: AppLocalizations.of(context).actionDelete,
                       onPressed: () => _handleDelete(
                           context, ref, w, companyId, warehouses),
                     ),
@@ -149,17 +150,17 @@ class WarehousesScreen extends ConsumerWidget {
       final confirm = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text("Delete Warehouse"),
-          content: Text("Are you sure you want to delete '${w.name}'?"),
+          title: Text(AppLocalizations.of(context).deleteWarehouse),
+          content: Text(AppLocalizations.of(context).confirmDeleteQuoted(w.name)),
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text("Cancel")),
+                child: Text(AppLocalizations.of(context).actionCancel)),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: ctx.dangerColor),
               onPressed: () => Navigator.pop(ctx, true),
               child:
-                  Text("Delete", style: TextStyle(color: ctx.onStatusColor)),
+                  Text(AppLocalizations.of(context).actionDelete, style: TextStyle(color: ctx.onStatusColor)),
             ),
           ],
         ),
@@ -176,7 +177,7 @@ class WarehousesScreen extends ConsumerWidget {
     final action = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text("Warehouse has stock"),
+        title: Text(AppLocalizations.of(context).warehouseHasStock),
         content: Text(
           "'${w.name}' still holds ${stocks.length} stock item"
           "${stocks.length == 1 ? '' : 's'}. What should happen to it before "
@@ -185,16 +186,16 @@ class WarehousesScreen extends ConsumerWidget {
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text("Cancel")),
+              child: Text(AppLocalizations.of(context).actionCancel)),
           TextButton(
             onPressed: () => Navigator.pop(ctx, 'revoke'),
-            child: Text("Revoke stock",
+            child: Text(AppLocalizations.of(context).revokeStock,
                 style: TextStyle(color: ctx.dangerColor)),
           ),
           if (others.isNotEmpty)
             FilledButton(
               onPressed: () => Navigator.pop(ctx, 'move'),
-              child: const Text("Move stock"),
+              child: Text(AppLocalizations.of(context).moveStock),
             ),
         ],
       ),
@@ -263,7 +264,7 @@ class _MoveTargetDialog extends StatelessWidget {
       actions: [
         TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel")),
+            child: Text(AppLocalizations.of(context).actionCancel)),
       ],
     );
   }
@@ -342,7 +343,7 @@ class _WarehouseFormDialogState extends ConsumerState<_WarehouseFormDialog> {
               TextFormField(
                 controller: _nameCtrl,
                 decoration:
-                    const InputDecoration(labelText: "Warehouse Name *"),
+                    InputDecoration(labelText: AppLocalizations.of(context).warehouseNameRequired),
                 autofocus: true,
                 validator: (v) =>
                     v == null || v.trim().isEmpty ? "Required" : null,
@@ -359,7 +360,7 @@ class _WarehouseFormDialogState extends ConsumerState<_WarehouseFormDialog> {
       actions: [
         TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text("Cancel")),
+            child: Text(AppLocalizations.of(context).actionCancel)),
         if (_isLoading)
           const Padding(
             padding: EdgeInsets.all(8.0),

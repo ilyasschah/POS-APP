@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
+import 'package:pos_app/printer/pdf_fonts.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:pos_app/app_settings/app_settings_model.dart';
@@ -149,8 +150,10 @@ class InvoicePdfService {
     final globalHeader = (settings[SettingKeys.invoiceGlobalHeader] ?? '').trim();
     final globalFooter = (settings[SettingKeys.invoiceGlobalFooter] ?? '').trim();
 
-    // Invoice.FontFamily — mirror the receipt's font handling. Courier/Times are
-    // PDF core fonts (no download); anything else uses the Noto Sans web font.
+    // Invoice.FontFamily — mirror the receipt's font handling. Courier/Times
+    // are PDF core fonts; anything else uses the BUNDLED Noto Sans (not
+    // PdfGoogleFonts, which downloads on first use and would leave an offline
+    // terminal unable to print its first invoice).
     final fontFamily = settings[SettingKeys.invoiceFontFamily] ?? '(None)';
     pw.Font font;
     pw.Font boldFont;
@@ -167,13 +170,21 @@ class InvoicePdfService {
           boldFont = pw.Font.timesBold();
           break;
         default:
-          font = await PdfGoogleFonts.notoSansRegular();
-          boldFont = await PdfGoogleFonts.notoSansBold();
+          font = await PdfFonts.latin();
+          boldFont = await PdfFonts.latin(bold: true);
       }
     } catch (_) {
       font = pw.Font.helvetica();
       boldFont = pw.Font.helveticaBold();
     }
+
+    // Arabic glyphs: none of the faces above carry them (the standard-14 faces
+    // are Latin-1, Noto Sans is the Latin subset). Attached as a FALLBACK so
+    // the operator's chosen face still drives Latin text and only the glyphs it
+    // cannot draw come from Noto Naskh — a mixed-script invoice then needs no
+    // language detection.
+    final arabicRegular = await PdfFonts.arabic();
+    final arabicBold = await PdfFonts.arabic(bold: true);
 
     // Row visibility toggles (both default ON → unchanged output).
     final showPaymentMethods =
@@ -195,6 +206,7 @@ class InvoicePdfService {
     pw.TextStyle ts(double size, {bool bold = false, PdfColor? color}) =>
         pw.TextStyle(
           font: bold ? boldFont : font,
+          fontFallback: [bold ? arabicBold : arabicRegular],
           fontSize: size,
           fontWeight: bold ? pw.FontWeight.bold : null,
           color: color,

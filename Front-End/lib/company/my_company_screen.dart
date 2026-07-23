@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
@@ -284,7 +285,7 @@ class _MyCompanyScreenState extends ConsumerState<MyCompanyScreen> {
         leading: widget.onMenuPressed != null
             ? IconButton(
                 icon: const Icon(Icons.menu),
-                tooltip: 'Show navigation',
+                tooltip: AppLocalizations.of(context).showNavigation,
                 onPressed: widget.onMenuPressed,
               )
             : null,
@@ -300,7 +301,7 @@ class _MyCompanyScreenState extends ConsumerState<MyCompanyScreen> {
           : company == null
           ? Center(
               child: Text(
-                "No company selected.",
+                AppLocalizations.of(context).noCompanySelectedShort,
                 style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
               ),
             )
@@ -354,14 +355,14 @@ class _MyCompanyScreenState extends ConsumerState<MyCompanyScreen> {
                         // --- MODULAR CARDS FOR WIDER LAYOUT ---
                         _buildSectionCard(
                           context: context,
-                          title: "General Info",
+                          title: AppLocalizations.of(context).generalInfo,
                           icon: Icons.business,
                           children: [
                             _buildRow([
                               _field(
                                 context,
                                 _nameCtrl,
-                                "Company Name",
+                                AppLocalizations.of(context).companyName,
                                 icon: Icons.storefront,
                                 validator: (v) => v == null || v.trim().isEmpty
                                     ? "Required"
@@ -370,7 +371,7 @@ class _MyCompanyScreenState extends ConsumerState<MyCompanyScreen> {
                               _field(
                                 context,
                                 _taxNumberCtrl,
-                                "Tax Number",
+                                AppLocalizations.of(context).taxNumberLabel,
                                 icon: Icons.receipt_long,
                               ),
                             ]),
@@ -378,13 +379,13 @@ class _MyCompanyScreenState extends ConsumerState<MyCompanyScreen> {
                               _field(
                                 context,
                                 _emailCtrl,
-                                "Email Address",
+                                AppLocalizations.of(context).emailAddress,
                                 icon: Icons.email_outlined,
                               ),
                               _field(
                                 context,
                                 _phoneCtrl,
-                                "Phone Number",
+                                AppLocalizations.of(context).phoneNumber,
                                 icon: Icons.phone_outlined,
                               ),
                             ]),
@@ -394,26 +395,26 @@ class _MyCompanyScreenState extends ConsumerState<MyCompanyScreen> {
 
                         _buildSectionCard(
                           context: context,
-                          title: "Location & Address",
+                          title: AppLocalizations.of(context).locationAddress,
                           icon: Icons.location_on_outlined,
                           children: [
                             _buildRow([
                               _field(
                                 context,
                                 _streetNameCtrl,
-                                "Street Name",
+                                AppLocalizations.of(context).streetName,
                                 icon: Icons.add_road,
                               ),
                               _field(
                                 context,
                                 _buildingNumberCtrl,
-                                "Building No.",
+                                AppLocalizations.of(context).buildingNo,
                                 icon: Icons.numbers,
                               ),
                               _field(
                                 context,
                                 _additionalStreetCtrl,
-                                "Additional Street",
+                                AppLocalizations.of(context).additionalStreet,
                                 icon: Icons.edit_road,
                               ),
                             ]),
@@ -421,19 +422,19 @@ class _MyCompanyScreenState extends ConsumerState<MyCompanyScreen> {
                               _field(
                                 context,
                                 _plotIdCtrl,
-                                "Plot ID",
+                                AppLocalizations.of(context).plotId,
                                 icon: Icons.map_outlined,
                               ),
                               _field(
                                 context,
                                 _citySubdivisionCtrl,
-                                "District / Subdivision",
+                                AppLocalizations.of(context).districtSubdivision,
                                 icon: Icons.holiday_village_outlined,
                               ),
                               _field(
                                 context,
                                 _postalCodeCtrl,
-                                "Postal Code",
+                                AppLocalizations.of(context).postalCode,
                                 icon: Icons.local_post_office_outlined,
                               ),
                             ]),
@@ -441,13 +442,13 @@ class _MyCompanyScreenState extends ConsumerState<MyCompanyScreen> {
                               _field(
                                 context,
                                 _cityCtrl,
-                                "City",
+                                AppLocalizations.of(context).cityLabel,
                                 icon: Icons.location_city_outlined,
                               ),
                               _field(
                                 context,
                                 _countrySubentityCtrl,
-                                "State / Province",
+                                AppLocalizations.of(context).stateProvince,
                                 icon: Icons.public_outlined,
                               ),
                               _buildCountryDropdown(theme),
@@ -458,14 +459,14 @@ class _MyCompanyScreenState extends ConsumerState<MyCompanyScreen> {
 
                         _buildSectionCard(
                           context: context,
-                          title: "Financial Info",
+                          title: AppLocalizations.of(context).financialInfo,
                           icon: Icons.account_balance_outlined,
                           children: [
                             _buildRow([
                               _field(
                                 context,
                                 _bankAccountCtrl,
-                                "Bank Account Number",
+                                AppLocalizations.of(context).bankAccountNumber,
                                 icon: Icons.account_balance_wallet_outlined,
                               ),
                             ]),
@@ -473,7 +474,7 @@ class _MyCompanyScreenState extends ConsumerState<MyCompanyScreen> {
                               _field(
                                 context,
                                 _bankDetailsCtrl,
-                                "Bank Details (IBAN, SWIFT, etc.)",
+                                AppLocalizations.of(context).bankDetails,
                                 icon: Icons.description_outlined,
                                 maxLines: 3,
                               ),
@@ -674,7 +675,7 @@ class _MyCompanyScreenState extends ConsumerState<MyCompanyScreen> {
         decoration: _inputDecoration(
           theme,
           icon: icon,
-          hintText: "Enter $label",
+          hintText: AppLocalizations.of(context).enterFieldHint(label),
         ),
         validator: validator,
       ),
@@ -685,7 +686,7 @@ class _MyCompanyScreenState extends ConsumerState<MyCompanyScreen> {
   Widget _buildCountryDropdown(ThemeData theme) {
     return _fieldWrapper(
       context,
-      "Country",
+      AppLocalizations.of(context).country,
       _countriesLoading
           ? const SizedBox(
               height: 54,
@@ -738,7 +739,7 @@ class _MyCompanyScreenState extends ConsumerState<MyCompanyScreen> {
             ElevatedButton.icon(
               onPressed: _loadCompanyAndCountries,
               icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Retry'),
+              label: Text(AppLocalizations.of(context).actionRetry),
               style: ElevatedButton.styleFrom(
                 backgroundColor: theme.colorScheme.primary,
                 foregroundColor: theme.colorScheme.onPrimary,

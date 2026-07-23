@@ -1,0 +1,3592 @@
+// ignore: unused_import
+import 'package:intl/intl.dart' as intl;
+import 'app_localizations.dart';
+
+// ignore_for_file: type=lint
+
+/// The translations for English (`en`).
+class AppLocalizationsEn extends AppLocalizations {
+  AppLocalizationsEn([String locale = 'en']) : super(locale);
+
+  @override
+  String get actionCancel => 'Cancel';
+
+  @override
+  String get actionSave => 'Save';
+
+  @override
+  String get actionSaveChanges => 'Save Changes';
+
+  @override
+  String get actionDelete => 'Delete';
+
+  @override
+  String get actionEdit => 'Edit';
+
+  @override
+  String get actionAdd => 'Add';
+
+  @override
+  String get actionClose => 'Close';
+
+  @override
+  String get actionConfirm => 'Confirm';
+
+  @override
+  String get actionRetry => 'Retry';
+
+  @override
+  String get actionSearch => 'Search';
+
+  @override
+  String get actionRemove => 'Remove';
+
+  @override
+  String get actionUpload => 'Upload';
+
+  @override
+  String get actionSkip => 'Skip';
+
+  @override
+  String get deviceRegistrationTitle => 'Device Registration';
+
+  @override
+  String get deviceRegistrationSubtitle =>
+      'Sign in with your account to link this terminal';
+
+  @override
+  String get fieldEmail => 'Email';
+
+  @override
+  String get fieldPassword => 'Password';
+
+  @override
+  String get developerMode => 'Developer Mode';
+
+  @override
+  String get unlinkDeviceConfirm =>
+      'Are you sure you want to unlink this device?';
+
+  @override
+  String get unlinkDevice => 'Unlink Device';
+
+  @override
+  String get timeClock => 'TIME CLOCK';
+
+  @override
+  String get roleAdmin => 'Admin';
+
+  @override
+  String get roleCashier => 'Cashier';
+
+  @override
+  String get reloadUsers => 'Reload users';
+
+  @override
+  String get relinkDevice => 'Re-link device';
+
+  @override
+  String get couldNotLoadUsers => 'Couldn\'t load users on this terminal.';
+
+  @override
+  String get noUsersCached => 'No users cached on this terminal.';
+
+  @override
+  String get restoringUsersFromServer => 'Restoring users from the server…';
+
+  @override
+  String get reconnectToRestoreUsers =>
+      'Reconnect to restore them, or re-link this device to sign in again.';
+
+  @override
+  String get actionYes => 'Yes';
+
+  @override
+  String get actionNo => 'No';
+
+  @override
+  String get actionApply => 'Apply';
+
+  @override
+  String get actionContinue => 'Continue';
+
+  @override
+  String get actionSet => 'Set';
+
+  @override
+  String get actionSwitch => 'Switch';
+
+  @override
+  String get actionProceedAnyway => 'Proceed Anyway';
+
+  @override
+  String deleteProductsConfirm(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Delete $count products? This cannot be undone.',
+      one: 'Delete 1 product? This cannot be undone.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get colorMarkerHint =>
+      'Tints the product tile in the POS menu and the products list.';
+
+  @override
+  String get modifiersHint =>
+      'Add specific notes like \'Extra Spicy\' or \'Contains Nuts\'.';
+
+  @override
+  String get barcodesHint =>
+      'Assign multiple barcodes (e.g., individual item, box, or pallet).';
+
+  @override
+  String get importComplete => 'Import complete';
+
+  @override
+  String get documentCreated => 'Document created: ';
+
+  @override
+  String importErrorCount(num count) {
+    return '$count error(s):';
+  }
+
+  @override
+  String get importTitle => 'Import';
+
+  @override
+  String get selectFile => 'Select file';
+
+  @override
+  String get indicatesRequiredField => '* Indicates required field';
+
+  @override
+  String get skipColumn => '(Skip)';
+
+  @override
+  String get duplicatesQuestion => 'What happens if duplicates are found?';
+
+  @override
+  String get createDocumentFromQuantity =>
+      'Create document from specified quantity';
+
+  @override
+  String get actionPreview => 'Preview';
+
+  @override
+  String get fieldName => 'Name';
+
+  @override
+  String get fieldProductGroup => 'Product group';
+
+  @override
+  String get fieldSku => 'SKU';
+
+  @override
+  String get fieldMeasurementUnit => 'Measurement unit';
+
+  @override
+  String get fieldCost => 'Cost';
+
+  @override
+  String get fieldMarkup => 'Markup';
+
+  @override
+  String get fieldTax => 'Tax';
+
+  @override
+  String get fieldTaxInclusivePrice => 'Tax inclusive price';
+
+  @override
+  String get fieldPriceChangeAllowed => 'Price change allowed';
+
+  @override
+  String get fieldUsingDefaultQuantity => 'Using default quantity';
+
+  @override
+  String get fieldServiceNotStock => 'Service (not using stock)';
+
+  @override
+  String get fieldEnabled => 'Enabled';
+
+  @override
+  String get fieldDescription => 'Description';
+
+  @override
+  String get fieldQuantity => 'Quantity';
+
+  @override
+  String get fieldSupplier => 'Supplier';
+
+  @override
+  String get fieldReorderPoint => 'Reorder point';
+
+  @override
+  String get fieldPreferredQuantity => 'Preferred quantity';
+
+  @override
+  String get fieldLowStockWarning => 'Low stock warning';
+
+  @override
+  String get fieldLowStockWarningQuantity => 'Low stock warning quantity';
+
+  @override
+  String get cannotDelete => 'Cannot Delete';
+
+  @override
+  String get deleteGroup => 'Delete Group';
+
+  @override
+  String deleteGroupConfirm(String name) {
+    return 'Are you sure you want to delete \'$name\'?';
+  }
+
+  @override
+  String get productGroups => 'Product Groups';
+
+  @override
+  String get newGroup => 'New Group';
+
+  @override
+  String get deleteGroupTooltip => 'Delete group';
+
+  @override
+  String get failedToLoadGroups => 'Failed to load groups';
+
+  @override
+  String get noneRoot => 'None (Root)';
+
+  @override
+  String get chooseImage => 'Choose Image';
+
+  @override
+  String get searchProductsEllipsis => 'Search products…';
+
+  @override
+  String get failedToLoadProducts => 'Failed to load products';
+
+  @override
+  String get noProductsFoundShort => 'No products found';
+
+  @override
+  String get noProductGroupsYet => 'No product groups yet';
+
+  @override
+  String get createOneToOrganize => 'Create one to organize your products';
+
+  @override
+  String get createGroup => 'Create Group';
+
+  @override
+  String get customersLabel => 'Customers';
+
+  @override
+  String get customerLabel => 'Customer';
+
+  @override
+  String get languageLabel => 'Language';
+
+  @override
+  String get categoriesLabel => 'Categories';
+
+  @override
+  String get errorLabel => 'Error';
+
+  @override
+  String get accountUserEmail => 'Account / User Email';
+
+  @override
+  String get dateFormatLabel => 'Date Format';
+
+  @override
+  String get accessLevel => 'Access Level';
+
+  @override
+  String get actions => 'Actions';
+
+  @override
+  String get addFirstUser => 'Add First User';
+
+  @override
+  String get addNewUser => 'Add New User';
+
+  @override
+  String get addPayment => 'Add Payment';
+
+  @override
+  String get addUser => 'Add User';
+
+  @override
+  String get adminResetDevicePin => 'Admin: Reset Device PIN';
+
+  @override
+  String get adminResetPassword => 'Admin: Reset Password';
+
+  @override
+  String get filterAll => 'All';
+
+  @override
+  String get allCustomers => 'All customers';
+
+  @override
+  String get allDocumentTypes => 'All document types';
+
+  @override
+  String get allTransactions => 'All transactions';
+
+  @override
+  String get allUsers => 'All users';
+
+  @override
+  String get allWarehouses => 'All warehouses';
+
+  @override
+  String get amount => 'Amount';
+
+  @override
+  String get assignToWarehouse => 'Assign to Warehouse';
+
+  @override
+  String get couldNotLoadRules => 'Could not load rules';
+
+  @override
+  String get colCreated => 'CREATED';
+
+  @override
+  String get colCustomer => 'CUSTOMER';
+
+  @override
+  String get dateLabel => 'Date';
+
+  @override
+  String get deleteDocument => 'Delete Document';
+
+  @override
+  String get deleteRule => 'Delete Rule';
+
+  @override
+  String get deleteUser => 'Delete User';
+
+  @override
+  String get colDisc => 'DISC';
+
+  @override
+  String get discountBreakdown => 'Discount Breakdown';
+
+  @override
+  String get documentExplorer => 'Document Explorer';
+
+  @override
+  String get editRules => 'Edit Rules';
+
+  @override
+  String get editUser => 'Edit User';
+
+  @override
+  String get errorLoadingTaxes => 'Error loading taxes';
+
+  @override
+  String get excel => 'Excel';
+
+  @override
+  String get expirationDate => 'Expiration Date';
+
+  @override
+  String get expirationDateOptional => 'Expiration Date (optional)';
+
+  @override
+  String get firstName => 'First Name';
+
+  @override
+  String get firstNameRequired => 'First Name *';
+
+  @override
+  String get fixed => 'Fixed';
+
+  @override
+  String get idLabel => 'ID';
+
+  @override
+  String get initialQuantity => 'Initial Quantity';
+
+  @override
+  String get internalNote => 'INTERNAL NOTE';
+
+  @override
+  String get inventoryMasterList => 'Inventory Master List';
+
+  @override
+  String get itemDiscount => 'Item Discount';
+
+  @override
+  String get lastName => 'Last Name';
+
+  @override
+  String get lastNameRequired => 'Last Name *';
+
+  @override
+  String get lowStock => 'Low Stock';
+
+  @override
+  String get lowStockWarning => 'Low Stock Warning';
+
+  @override
+  String get manageWarehouses => 'Manage Warehouses';
+
+  @override
+  String get markAsUnpaid => 'Mark as Unpaid?';
+
+  @override
+  String get needsReorder => 'Needs Reorder';
+
+  @override
+  String get colNew => 'NEW';
+
+  @override
+  String get newFourDigitPin => 'New 4-Digit PIN';
+
+  @override
+  String get newPassword => 'New Password';
+
+  @override
+  String get newQuantity => 'New Quantity';
+
+  @override
+  String get noSecurityRules => 'No security rules found.';
+
+  @override
+  String get noTaxShort => 'No tax';
+
+  @override
+  String get noneLabel => 'None';
+
+  @override
+  String get noteLabel => 'Note';
+
+  @override
+  String get colNumber => 'NUMBER';
+
+  @override
+  String get colOrderNo => 'ORDER #';
+
+  @override
+  String get paid => 'Paid';
+
+  @override
+  String get partial => 'Partial';
+
+  @override
+  String get passwordRequired => 'Password *';
+
+  @override
+  String get paymentType => 'Payment Type';
+
+  @override
+  String get preferredQuantity => 'Preferred Quantity';
+
+  @override
+  String get priceAfterTax => 'Price (after tax)';
+
+  @override
+  String get priceBeforeTax => 'Price before tax';
+
+  @override
+  String get printStockReportPdf => 'Print Stock Report (PDF)';
+
+  @override
+  String get productLabel => 'Product';
+
+  @override
+  String get productRequired => 'Product *';
+
+  @override
+  String get referenceDocument => 'Reference Document';
+
+  @override
+  String get removeStock => 'Remove Stock';
+
+  @override
+  String get reorderPoint => 'Reorder Point';
+
+  @override
+  String get reports => 'Reports';
+
+  @override
+  String get ruleExistsEditing => 'Rule exists — editing';
+
+  @override
+  String get saveStockReportPdf => 'Save Stock Report as PDF';
+
+  @override
+  String get searchProductNameOrCode => 'Search product name or code…';
+
+  @override
+  String get searchReports => 'Search reports';
+
+  @override
+  String get securityActions => 'Security Actions';
+
+  @override
+  String get selectDocumentType => 'Select document type';
+
+  @override
+  String get selectReport => 'Select report';
+
+  @override
+  String get showReport => 'Show report';
+
+  @override
+  String get colStatus => 'STATUS';
+
+  @override
+  String get colSvc => 'SVC';
+
+  @override
+  String get syncAndRefresh => 'Sync & Refresh';
+
+  @override
+  String get tabNotFound => 'Tab not found';
+
+  @override
+  String get taxOptional => 'Tax (optional)';
+
+  @override
+  String get taxAmount => 'Tax amount';
+
+  @override
+  String get totalDiscounts => 'Total discounts';
+
+  @override
+  String get typeLabel => 'Type';
+
+  @override
+  String get unpaid => 'Unpaid';
+
+  @override
+  String get updateItem => 'Update Item';
+
+  @override
+  String get colUpdated => 'UPDATED';
+
+  @override
+  String get colUser => 'USER';
+
+  @override
+  String get userRequired => 'User *';
+
+  @override
+  String get username => 'Username';
+
+  @override
+  String get usernameRequired => 'Username *';
+
+  @override
+  String get usersAndSecurity => 'Users & Security';
+
+  @override
+  String get valueTotal => 'Value (Total)';
+
+  @override
+  String get warehouse => 'Warehouse';
+
+  @override
+  String get warehouseRequired => 'Warehouse *';
+
+  @override
+  String get warningThreshold => 'Warning Threshold';
+
+  @override
+  String get yesDeletePayments => 'Yes, delete payments';
+
+  @override
+  String errorLoadingDocuments(String message) {
+    return 'Error loading documents: $message';
+  }
+
+  @override
+  String errorLoadingSecurityRules(String message) {
+    return 'Error loading security rules: $message';
+  }
+
+  @override
+  String errorLoadingUsers(String message) {
+    return 'Error loading users: $message';
+  }
+
+  @override
+  String saveFailed(String message) {
+    return 'Save failed: $message';
+  }
+
+  @override
+  String savedToPath(String path) {
+    return 'Saved to $path';
+  }
+
+  @override
+  String get addBooking => 'Add Booking';
+
+  @override
+  String get addCard => 'Add Card';
+
+  @override
+  String get addFirstTaxRate => 'Add First Tax Rate';
+
+  @override
+  String get addFirstWarehouse => 'Add First Warehouse';
+
+  @override
+  String get addLoyaltyCard => 'Add Loyalty Card';
+
+  @override
+  String get addPromotion => 'Add Promotion';
+
+  @override
+  String get addTable => 'Add Table';
+
+  @override
+  String get addTimeCard => 'Add Time Card';
+
+  @override
+  String get addWarehouse => 'Add Warehouse';
+
+  @override
+  String get addResizeRenameTables => 'Add, resize, and rename tables';
+
+  @override
+  String get allEmployees => 'All employees ...';
+
+  @override
+  String get applyName => 'Apply name';
+
+  @override
+  String get endShiftConfirm => 'Are you sure you want to end your shift?';
+
+  @override
+  String get back => 'Back';
+
+  @override
+  String get bookingAlerts => 'Booking Alerts';
+
+  @override
+  String get bookingSaved => 'Booking Saved!';
+
+  @override
+  String get cardNumber => 'Card Number';
+
+  @override
+  String get shapeCircle => 'Circle';
+
+  @override
+  String get clockIn => 'Clock in';
+
+  @override
+  String get clockOut => 'Clock out';
+
+  @override
+  String get confirmDelete => 'Confirm Delete';
+
+  @override
+  String get couldNotLoadEmployees => 'Could not load employees';
+
+  @override
+  String get created => 'Created';
+
+  @override
+  String get currencies => 'Currencies';
+
+  @override
+  String get customerRequired => 'Customer *';
+
+  @override
+  String get dashboard => 'Dashboard';
+
+  @override
+  String get days => 'Days';
+
+  @override
+  String get deleteBooking => 'Delete Booking';
+
+  @override
+  String get deleteLoyaltyCard => 'Delete Loyalty Card';
+
+  @override
+  String get deleteTax => 'Delete Tax';
+
+  @override
+  String get deleteWarehouse => 'Delete Warehouse';
+
+  @override
+  String get documentItemsColumns => 'Document items columns';
+
+  @override
+  String get documentType => 'Document type';
+
+  @override
+  String get documents => 'Documents';
+
+  @override
+  String get documentsColumns => 'Documents columns';
+
+  @override
+  String get hintTwentyPercent => 'e.g. 20 for 20%';
+
+  @override
+  String get hintSecondFloor => 'E.g., Second Floor';
+
+  @override
+  String get earningRule => 'Earning Rule';
+
+  @override
+  String get editFloorPlan => 'Edit Floor Plan';
+
+  @override
+  String get employee => 'Employee';
+
+  @override
+  String get enableLoyaltyPoints => 'Enable Loyalty Points';
+
+  @override
+  String get endDate => 'End Date';
+
+  @override
+  String get endOfDay => 'End of Day';
+
+  @override
+  String get endShift => 'End Shift';
+
+  @override
+  String get endTime => 'End Time';
+
+  @override
+  String get colExport => 'EXPORT';
+
+  @override
+  String get externalRef => 'External ref';
+
+  @override
+  String get floorPlan => 'Floor Plan';
+
+  @override
+  String get gotIt => 'Got it';
+
+  @override
+  String get guestNameRequired => 'Guest Name *';
+
+  @override
+  String get guests => 'Guests';
+
+  @override
+  String get leaveBlankAutoAssign => 'Leave blank to auto-assign';
+
+  @override
+  String get logout => 'Logout';
+
+  @override
+  String get loyaltyCards => 'Loyalty Cards';
+
+  @override
+  String get loyaltySettings => 'Loyalty Settings';
+
+  @override
+  String get minPurchaseAmount => 'Min. purchase amount';
+
+  @override
+  String get moveStock => 'Move stock';
+
+  @override
+  String get moveStockTo => 'Move stock to…';
+
+  @override
+  String get myCompany => 'My Company';
+
+  @override
+  String get nameRequired => 'Name *';
+
+  @override
+  String get newFloor => 'New Floor';
+
+  @override
+  String get newFloorPlan => 'New Floor Plan';
+
+  @override
+  String get newTax => 'New Tax';
+
+  @override
+  String get newTaxRate => 'New Tax Rate';
+
+  @override
+  String get nextDay => 'Next day';
+
+  @override
+  String get noWarehousesFound => 'No warehouses found.';
+
+  @override
+  String get notesOptional => 'Notes (optional)';
+
+  @override
+  String get numberLabel => 'Number';
+
+  @override
+  String get oldTax => 'Old Tax';
+
+  @override
+  String get openDocument => 'Open Document';
+
+  @override
+  String get openOrder => 'Open Order';
+
+  @override
+  String get openOrders => 'Open Orders';
+
+  @override
+  String get openService => 'Open Service';
+
+  @override
+  String get openedAt => 'Opened at';
+
+  @override
+  String get orderNoLabel => 'Order #';
+
+  @override
+  String get pageLabel => 'Page:';
+
+  @override
+  String get paymentLabel => 'Payment';
+
+  @override
+  String get paymentTypesShort => 'Payment Types';
+
+  @override
+  String get pendingLower => 'pending';
+
+  @override
+  String get points => 'Points';
+
+  @override
+  String get pointsEarned => 'Points earned';
+
+  @override
+  String get posLabel => 'POS';
+
+  @override
+  String get previousDay => 'Previous day';
+
+  @override
+  String get priceLabel => 'Price';
+
+  @override
+  String get promotions => 'Promotions';
+
+  @override
+  String get rateRequired => 'Rate *';
+
+  @override
+  String get redemptionRule => 'Redemption Rule';
+
+  @override
+  String get refresh => 'Refresh';
+
+  @override
+  String get removeFloor => 'Remove Floor';
+
+  @override
+  String get removeFloorPlan => 'Remove Floor Plan';
+
+  @override
+  String get removeTable => 'Remove Table';
+
+  @override
+  String get rename => 'Rename';
+
+  @override
+  String get replace => 'Replace';
+
+  @override
+  String get revokeStock => 'Revoke stock';
+
+  @override
+  String get rowsPerPage => 'Rows per page:';
+
+  @override
+  String get sales => 'Sales';
+
+  @override
+  String get saveUpper => 'SAVE';
+
+  @override
+  String get searchCustomer => 'Search customer...';
+
+  @override
+  String get searchDocument => 'Search document...';
+
+  @override
+  String get selectEmployee => 'Select employee';
+
+  @override
+  String get selectTablesRequired => 'Select Tables *';
+
+  @override
+  String get settings => 'Settings';
+
+  @override
+  String get shiftManagement => 'Shift Management';
+
+  @override
+  String get showGrid => 'Show grid';
+
+  @override
+  String get showQr => 'Show QR';
+
+  @override
+  String get snapToGrid => 'Snap to grid';
+
+  @override
+  String get shapeSquare => 'Square';
+
+  @override
+  String get startDate => 'Start Date';
+
+  @override
+  String get startService => 'Start Service';
+
+  @override
+  String get startShift => 'Start Shift';
+
+  @override
+  String get startTime => 'Start Time';
+
+  @override
+  String get startingPoints => 'Starting Points';
+
+  @override
+  String get statusLabel => 'Status';
+
+  @override
+  String get stayOnCalendar => 'Stay on Calendar';
+
+  @override
+  String get stock => 'Stock';
+
+  @override
+  String get switchTaxes => 'Switch Taxes';
+
+  @override
+  String get taxRates => 'Tax Rates';
+
+  @override
+  String get totalBeforeDiscount => 'Total bef. discount';
+
+  @override
+  String get totalBeforeTax => 'Total before tax';
+
+  @override
+  String get unitOfMeasure => 'Unit of measure';
+
+  @override
+  String get userLabel => 'User';
+
+  @override
+  String get users => 'Users';
+
+  @override
+  String get warehouseHasStock => 'Warehouse has stock';
+
+  @override
+  String get warehouseNameRequired => 'Warehouse Name *';
+
+  @override
+  String get warehouses => 'Warehouses';
+
+  @override
+  String get whichTableForOrder =>
+      'Which table should this order be placed on?';
+
+  @override
+  String errorLoadingLoyaltyCards(String message) {
+    return 'Error loading loyalty cards: $message';
+  }
+
+  @override
+  String errorLoadingWarehouses(String message) {
+    return 'Error loading warehouses: $message';
+  }
+
+  @override
+  String get colActions => 'ACTIONS';
+
+  @override
+  String get addCash => 'Add cash';
+
+  @override
+  String get addItem => 'Add Item';
+
+  @override
+  String get addProductLower => 'Add product';
+
+  @override
+  String get addPromotionItem => 'Add Promotion Item';
+
+  @override
+  String get addReturnedProducts => 'Add the products being returned';
+
+  @override
+  String get addTimeCardUpper => 'ADD TIME CARD';
+
+  @override
+  String get allWarehousesCap => 'All Warehouses';
+
+  @override
+  String get appliesTo => 'Applies To';
+
+  @override
+  String get deleteVoidReasonConfirm =>
+      'Are you sure you want to delete this void reason?';
+
+  @override
+  String get authorise => 'Authorise';
+
+  @override
+  String get bookingHistory => 'Booking History';
+
+  @override
+  String get cancelEdit => 'Cancel Edit';
+
+  @override
+  String get cashIn => 'Cash In';
+
+  @override
+  String get cashInOut => 'Cash In / Out';
+
+  @override
+  String get cashMovement => 'Cash Movement';
+
+  @override
+  String get cashOut => 'Cash Out';
+
+  @override
+  String get changePassword => 'Change Password';
+
+  @override
+  String get clearAll => 'Clear all';
+
+  @override
+  String get closeRegister => 'Close Register';
+
+  @override
+  String get confirmNewPassword => 'Confirm New Password';
+
+  @override
+  String get country => 'Country';
+
+  @override
+  String get createUser => 'Create User';
+
+  @override
+  String get creditPayments => 'Credit payments';
+
+  @override
+  String get currencyCodeRequired => 'Currency Code (e.g. USD) *';
+
+  @override
+  String get currencyNameRequired => 'Currency Name (e.g. US Dollar) *';
+
+  @override
+  String get customersSuppliers => 'Customers & Suppliers';
+
+  @override
+  String get colDate => 'DATE';
+
+  @override
+  String get deleteCurrency => 'Delete Currency';
+
+  @override
+  String get deleteVoidReason => 'Delete Void Reason';
+
+  @override
+  String get descriptionOptional => 'Description (optional)';
+
+  @override
+  String get discountType => 'Discount Type';
+
+  @override
+  String get discountValue => 'Discount Value';
+
+  @override
+  String get hintWifiBill => 'e.g. wifi bill, pre started';
+
+  @override
+  String get cashReasonHint =>
+      'Enter the reason for adding or removing cash...';
+
+  @override
+  String get errorLoadingTables => 'Error loading tables';
+
+  @override
+  String get exitApplication => 'Exit application';
+
+  @override
+  String get failedToLoadOrders => 'Failed to load orders';
+
+  @override
+  String get feedback => 'Feedback';
+
+  @override
+  String get financialInfo => 'Financial Info';
+
+  @override
+  String get fixedAmount => 'Fixed Amount';
+
+  @override
+  String get fullScreen => 'Full Screen';
+
+  @override
+  String get generalInfo => 'General Info';
+
+  @override
+  String get globalCurrencies => 'Global Currencies';
+
+  @override
+  String get gridView => 'Grid';
+
+  @override
+  String get hideSidebar => 'Hide Sidebar';
+
+  @override
+  String get isActive => 'Is Active';
+
+  @override
+  String get isEnabled => 'Is Enabled';
+
+  @override
+  String get listView => 'List';
+
+  @override
+  String get loadingPaymentTypes => 'Loading payment types…';
+
+  @override
+  String get locationAddress => 'Location & Address';
+
+  @override
+  String get management => 'Management';
+
+  @override
+  String get managerAuthorisation => 'Manager authorisation';
+
+  @override
+  String get managerPin => 'Manager PIN';
+
+  @override
+  String get menuLabel => 'Menu';
+
+  @override
+  String get newCurrency => 'New Currency';
+
+  @override
+  String get noCurrenciesFound => 'No currencies found.';
+
+  @override
+  String get noPromotionsFound => 'No promotions found.';
+
+  @override
+  String get blindReturn => 'No receipt? Blind return';
+
+  @override
+  String get noUserLoggedIn => 'No user is currently logged in.';
+
+  @override
+  String get noUsersFound => 'No Users Found';
+
+  @override
+  String get noVoidReasonsYet => 'No void reasons yet.';
+
+  @override
+  String get colNote => 'NOTE';
+
+  @override
+  String get oldPassword => 'Old Password';
+
+  @override
+  String get paymentMethodColon => 'Payment method:';
+
+  @override
+  String get paymentTypeLower => 'Payment type';
+
+  @override
+  String get percentage => 'Percentage';
+
+  @override
+  String get percentageSign => 'Percentage (%)';
+
+  @override
+  String get posSystem => 'POS System';
+
+  @override
+  String get power => 'Power';
+
+  @override
+  String get powerOptions => 'Power Options';
+
+  @override
+  String get promotionName => 'Promotion Name';
+
+  @override
+  String get promotionsManagement => 'Promotions Management';
+
+  @override
+  String get quickSettings => 'Quick Settings';
+
+  @override
+  String get rankDisplayOrderLower => 'Rank (display order)';
+
+  @override
+  String get refundItems => 'Refund items';
+
+  @override
+  String get refundPaymentType => 'Refund payment type';
+
+  @override
+  String get removeCash => 'Remove cash';
+
+  @override
+  String get requiredQty => 'Required Qty';
+
+  @override
+  String get restartApplication => 'Restart application';
+
+  @override
+  String get sameProduct => 'Same Product';
+
+  @override
+  String get savePin => 'Save PIN';
+
+  @override
+  String get searchReceiptToSeeItems => 'Search a receipt to see its items';
+
+  @override
+  String get searchByName => 'Search by name…';
+
+  @override
+  String get searchByOrderStaffTable => 'Search by order, staff or table';
+
+  @override
+  String get searchNamePhoneCard => 'Search name, phone or card number…';
+
+  @override
+  String get searchProductEllipsis => 'Search product…';
+
+  @override
+  String get searchWarehouse => 'Search warehouse…';
+
+  @override
+  String get selectCustomer => 'Select Customer';
+
+  @override
+  String get selectWarehouse => 'Select Warehouse';
+
+  @override
+  String get selectYourCompany => 'Select Your Company';
+
+  @override
+  String get signOut => 'Sign out';
+
+  @override
+  String get supplier => 'Supplier';
+
+  @override
+  String get targetUid => 'Target UID (e.g. Product ID)';
+
+  @override
+  String get taxExempt => 'Tax Exempt';
+
+  @override
+  String get totalRefundAmount => 'TOTAL REFUND AMOUNT';
+
+  @override
+  String get turnOffPc => 'Turn off PC';
+
+  @override
+  String get colType => 'TYPE';
+
+  @override
+  String get updateDevicePin => 'Update Device PIN';
+
+  @override
+  String get updatePinForDevice => 'Update PIN for this Device';
+
+  @override
+  String get useWeight => 'Use weight';
+
+  @override
+  String get userInfo => 'User info';
+
+  @override
+  String get userInfoSecurity => 'User Info & Security';
+
+  @override
+  String get viewOpenSales => 'View open sales';
+
+  @override
+  String get viewSalesHistory => 'View sales history';
+
+  @override
+  String get voidReasons => 'Void Reasons';
+
+  @override
+  String get welcomeToYourPos => 'Welcome to your POS';
+
+  @override
+  String errorLoadingBookings(String message) {
+    return 'Error loading bookings: $message';
+  }
+
+  @override
+  String errorLoadingCustomers(String message) {
+    return 'Error loading customers: $message';
+  }
+
+  @override
+  String get addPrinter => 'Add printer';
+
+  @override
+  String get addressFormat => 'Address Format';
+
+  @override
+  String get allProducts2 => 'All products';
+
+  @override
+  String get forceOnCreditSales =>
+      'Always shown on credit sales; this forces it even when paid';
+
+  @override
+  String get amountDue => 'Amount due';
+
+  @override
+  String get bottom => 'Bottom';
+
+  @override
+  String get cashDrawerCommand => 'Cash drawer command';
+
+  @override
+  String get change => 'Change';
+
+  @override
+  String get collapseSidebar => 'Collapse Sidebar';
+
+  @override
+  String get companyHeader => 'Company Header';
+
+  @override
+  String get companyPhoneTel => 'Company phone (Tel)';
+
+  @override
+  String get companyTaxNumber => 'Company tax number';
+
+  @override
+  String get customLabels => 'Custom Labels';
+
+  @override
+  String get customerDetailLabels => 'Customer Detail Labels';
+
+  @override
+  String get customerDetails => 'Customer Details';
+
+  @override
+  String get customizeReceipt => 'Customize Receipt';
+
+  @override
+  String get decimalPlaces => 'Decimal places';
+
+  @override
+  String get deletePrinter => 'Delete printer';
+
+  @override
+  String get discountColumn => 'Discount column';
+
+  @override
+  String get hintBarPrinter => 'e.g. Bar printer';
+
+  @override
+  String get expandSidebar => 'Expand Sidebar';
+
+  @override
+  String get font => 'Font';
+
+  @override
+  String get fontFamily => 'Font family';
+
+  @override
+  String get fontSettings => 'Font Settings';
+
+  @override
+  String get footer => 'Footer';
+
+  @override
+  String get footerText => 'Footer text';
+
+  @override
+  String get forRtlLanguages => 'For RTL languages (Arabic, Hebrew)';
+
+  @override
+  String get globalFooter => 'Global footer';
+
+  @override
+  String get globalHeader => 'Global header';
+
+  @override
+  String get header => 'Header';
+
+  @override
+  String get headerAndFooter => 'Header & Footer';
+
+  @override
+  String get headerText => 'Header text';
+
+  @override
+  String get invoiceFont => 'Invoice font';
+
+  @override
+  String get invoiceSettings => 'Invoice Settings';
+
+  @override
+  String get itemsCount => 'Items count';
+
+  @override
+  String get kitchenPrinting => 'Kitchen Printing';
+
+  @override
+  String get leftSide => 'Left';
+
+  @override
+  String get localizeText => 'Localize Text';
+
+  @override
+  String get marginsMm => 'Margins (in millimeters)';
+
+  @override
+  String get mergeIdenticalItems => 'Merge identical items';
+
+  @override
+  String get noCategoryFilter => 'No category filter — prints every item';
+
+  @override
+  String get noPrintersFound => 'No printers found';
+
+  @override
+  String get numberOfCopies => 'Number of Copies';
+
+  @override
+  String get openCashDrawerLower => 'Open cash drawer';
+
+  @override
+  String get options => 'Options';
+
+  @override
+  String get orderNumberLower => 'Order number';
+
+  @override
+  String get otherSettings => 'Other Settings';
+
+  @override
+  String get outstandingBalance => 'Outstanding balance';
+
+  @override
+  String get paidAmount => 'Paid amount';
+
+  @override
+  String get paymentMethods => 'Payment methods';
+
+  @override
+  String get phoneNumber => 'Phone number';
+
+  @override
+  String get printAddress => 'Print address';
+
+  @override
+  String get printBarcode => 'Print barcode';
+
+  @override
+  String get printCategory => 'Print Category';
+
+  @override
+  String get printDemoReceipt => 'Print demo receipt';
+
+  @override
+  String get printInA5 => 'Print in A5 size';
+
+  @override
+  String get printItemsCount => 'Print items count';
+
+  @override
+  String get printKitchenTicket => 'Print kitchen ticket';
+
+  @override
+  String get printLargeOrderNumber => 'Print large order number';
+
+  @override
+  String get printLogoFullWidth => 'Print logo full width';
+
+  @override
+  String get printMeasurementUnit => 'Print measurement unit';
+
+  @override
+  String get printTrailingCounter =>
+      'Print only the trailing counter (e.g. 000008)';
+
+  @override
+  String get printOrderNumber => 'Print order number';
+
+  @override
+  String get printOutstandingBalance => 'Print outstanding balance';
+
+  @override
+  String get printPhoneTel => 'Print phone (Tel)';
+
+  @override
+  String get printTaxName => 'Print tax name';
+
+  @override
+  String get printTaxNumber => 'Print tax number';
+
+  @override
+  String get printTaxTotals => 'Print tax totals';
+
+  @override
+  String get printTemplates => 'Print Templates';
+
+  @override
+  String get printTotalQuantity => 'Print total quantity';
+
+  @override
+  String get printerName => 'Printer name';
+
+  @override
+  String get printerSettings => 'Printer settings';
+
+  @override
+  String get printers => 'Printers';
+
+  @override
+  String get productGroupsUpper => 'PRODUCT GROUPS';
+
+  @override
+  String get receiptContent => 'Receipt Content';
+
+  @override
+  String get receiptLabels => 'Receipt Labels';
+
+  @override
+  String get receiptNumber => 'Receipt number';
+
+  @override
+  String get refreshAll => 'Refresh all';
+
+  @override
+  String get refreshPrinters => 'Refresh printers';
+
+  @override
+  String get renamePrinter => 'Rename printer';
+
+  @override
+  String get reporting => 'Reporting';
+
+  @override
+  String get restricted => 'Restricted';
+
+  @override
+  String get rightSide => 'Right';
+
+  @override
+  String get rightToLeft => 'Right to left';
+
+  @override
+  String get cashDrawerSignalHint =>
+      'Sends a signal to the cash drawer after checkout';
+
+  @override
+  String get shortReceiptNumber => 'Short receipt number';
+
+  @override
+  String get subtotal => 'Subtotal';
+
+  @override
+  String get taxColumn => 'Tax column';
+
+  @override
+  String get taxNumber => 'Tax number';
+
+  @override
+  String get titleLabel => 'Title';
+
+  @override
+  String get top => 'Top';
+
+  @override
+  String get topCustomers => 'TOP CUSTOMERS';
+
+  @override
+  String get topProducts => 'TOP PRODUCTS';
+
+  @override
+  String get totalRevenue => 'TOTAL REVENUE';
+
+  @override
+  String get fallbackWordingHint =>
+      'Turn off to fall back to the built-in wording';
+
+  @override
+  String get useCustomLabels => 'Use custom labels in reports and invoices';
+
+  @override
+  String get kitchenFireHint =>
+      'Fire this printer when the Kitchen button is pressed. With';
+
+  @override
+  String get myCompanyLower => 'My company';
+
+  @override
+  String get customersSuppliersLower => 'Customers & suppliers';
+
+  @override
+  String get usersSecurityLower => 'Users & security';
+
+  @override
+  String get voidReasonsLower => 'Void reasons';
+
+  @override
+  String get taxRatesLower => 'Tax rates';
+
+  @override
+  String get paymentTypesLower => 'Payment types';
+
+  @override
+  String get rptSalesByProduct => 'Products';
+
+  @override
+  String get rptSalesByGroup => 'Product groups';
+
+  @override
+  String get rptSalesByCustomer => 'Customers';
+
+  @override
+  String get rptTaxRates => 'Tax rates';
+
+  @override
+  String get rptUsers => 'Users';
+
+  @override
+  String get rptItemList => 'Item list';
+
+  @override
+  String get rptPaymentTypes => 'Payment types';
+
+  @override
+  String get rptPaymentByUser => 'Payment types by users';
+
+  @override
+  String get rptPaymentByCustomer => 'Payment types by customers';
+
+  @override
+  String get rptRefunds => 'Refunds';
+
+  @override
+  String get rptInvoiceList => 'Invoice list';
+
+  @override
+  String get rptDailySales => 'Daily sales';
+
+  @override
+  String get rptHourlySales => 'Hourly sales';
+
+  @override
+  String get rptHourlyByGroup => 'Hourly sales by product groups';
+
+  @override
+  String get rptByTable => 'Table or order number';
+
+  @override
+  String get rptProfitMargin => 'Profit & margin';
+
+  @override
+  String get rptUnpaidSales => 'Unpaid sales';
+
+  @override
+  String get rptStartingCash => 'Starting cash entries';
+
+  @override
+  String get rptVoidedItems => 'Voided items';
+
+  @override
+  String get rptDiscountsGranted => 'Discounts granted';
+
+  @override
+  String get rptDiscountsBySource => 'Discounts by source';
+
+  @override
+  String get rptItemDiscounts => 'Items discounts';
+
+  @override
+  String get rptStockMovement => 'Stock movement';
+
+  @override
+  String get rptSuppliers => 'Suppliers';
+
+  @override
+  String get rptUnpaidPurchase => 'Unpaid purchase';
+
+  @override
+  String get rptPurchaseDiscounts => 'Purchase discounts';
+
+  @override
+  String get rptPurchasedItemDiscounts => 'Purchased items discounts';
+
+  @override
+  String get rptPurchaseInvoiceList => 'Purchase invoice list';
+
+  @override
+  String get rptExpirationDate => 'Expiration date';
+
+  @override
+  String get rptReorderList => 'Reorder product list';
+
+  @override
+  String get rptLowStockWarning => 'Low stock warning';
+
+  @override
+  String get rptTransactionHistory => 'Transaction history';
+
+  @override
+  String get secSales => 'Sales';
+
+  @override
+  String get secPurchase => 'Purchase';
+
+  @override
+  String get secStockReturn => 'Stock Return';
+
+  @override
+  String get secLossAndDamage => 'Loss and damage';
+
+  @override
+  String get secStockControl => 'Stock control';
+
+  @override
+  String get secFinance => 'Finance';
+
+  @override
+  String get accent => 'Accent';
+
+  @override
+  String get backups => 'Backups';
+
+  @override
+  String get barcodeScanning => 'Barcode scanning';
+
+  @override
+  String get clockInUpper => 'CLOCK IN';
+
+  @override
+  String get clockOutUpper => 'CLOCK OUT';
+
+  @override
+  String get customerDisplayLower => 'Customer display';
+
+  @override
+  String get themeDark => 'Dark';
+
+  @override
+  String get themeLight => 'Light';
+
+  @override
+  String get databaseLower => 'Database';
+
+  @override
+  String get deviceNameLower => 'Device name';
+
+  @override
+  String get dualCurrencyLower => 'Dual Currency';
+
+  @override
+  String get enableBookings => 'Enable bookings';
+
+  @override
+  String get endOfDayLower => 'End of day';
+
+  @override
+  String get generalLower => 'General';
+
+  @override
+  String get kitchenDisplayLower => 'Kitchen display';
+
+  @override
+  String get loadingCurrencies => 'Loading currencies…';
+
+  @override
+  String get loyaltyCardsLower => 'Loyalty cards';
+
+  @override
+  String get onScreenKeyboard => 'On-screen keyboard';
+
+  @override
+  String get openReservation => 'Open reservation';
+
+  @override
+  String get reservedTable => 'Reserved table';
+
+  @override
+  String get selectCustomerLower => 'Select customer';
+
+  @override
+  String get selectEllipsisShort => 'Select…';
+
+  @override
+  String get touchKeyboardHint => 'Show a touch keyboard when typing.';
+
+  @override
+  String get subscriptionUpper => 'SUBSCRIPTION';
+
+  @override
+  String get takeReservationsHint => 'Take reservations in advance.';
+
+  @override
+  String get textSize => 'Text size';
+
+  @override
+  String get theme => 'Theme';
+
+  @override
+  String get timeClockTitle => 'Time Clock';
+
+  @override
+  String get today => 'Today';
+
+  @override
+  String get totalUpper => 'TOTAL';
+
+  @override
+  String get walkIn => 'Walk-in';
+
+  @override
+  String get weighingScaleLower => 'Weighing scale';
+
+  @override
+  String get trimZerosFromCode => 'Remove zeros from product code (trim zeros)';
+
+  @override
+  String get posNamePrefixHint => 'POS name — prefix for document numbers';
+
+  @override
+  String get promotionsLower => 'Promotions';
+
+  @override
+  String get welcomeBody =>
+      'A fast, offline-first point of sale for your counter and your tablets. Set it up in a few quick taps.';
+
+  @override
+  String get featBarcodeBody =>
+      'Scan to ring up or find any product instantly.';
+
+  @override
+  String get featCustomerDisplayBody =>
+      'Show the order and total on a second screen.';
+
+  @override
+  String get featKitchenBody => 'Send orders straight to the kitchen (KDS).';
+
+  @override
+  String get featBackupsBody => 'Automatic local backups keep your data safe.';
+
+  @override
+  String get featScaleBody => 'Sell by weight over a connected serial scale.';
+
+  @override
+  String get featPromotionsBody => 'Automatic discounts and special pricing.';
+
+  @override
+  String get featLoyaltyBody => 'Points and rewards that bring guests back.';
+
+  @override
+  String get exitManagement => 'Exit Management';
+
+  @override
+  String get chooseColumns => 'Choose columns';
+
+  @override
+  String get viewPrintReceipt => 'View & Print Receipt';
+
+  @override
+  String get deleteItemAction => 'Delete Item';
+
+  @override
+  String get editItemAction => 'Edit Item';
+
+  @override
+  String get noStockAssigned => 'No stock assigned to this';
+
+  @override
+  String get noStockControlRules => 'No stock control rules configured';
+
+  @override
+  String get selectGroupToEdit =>
+      'Select a group to edit, or create a new one.';
+
+  @override
+  String editNamedTitle(Object name) {
+    return 'Edit $name';
+  }
+
+  @override
+  String forceResetPinTitle(Object name) {
+    return 'Force Reset PIN: $name';
+  }
+
+  @override
+  String forceResetPasswordTitle(Object name) {
+    return 'Force Reset Password: $name';
+  }
+
+  @override
+  String editPaymentTitle(Object id) {
+    return 'Edit Payment #$id';
+  }
+
+  @override
+  String editDashTitle(Object name) {
+    return 'Edit — $name';
+  }
+
+  @override
+  String confirmDeleteQuoted(Object name) {
+    return 'Are you sure you want to delete \'$name\'?';
+  }
+
+  @override
+  String codeValueLabel(Object code) {
+    return 'Code: $code';
+  }
+
+  @override
+  String idValueLabel(Object id) {
+    return 'ID: $id';
+  }
+
+  @override
+  String assignProductToWarehouse(Object name) {
+    return 'Assign $name to Warehouse';
+  }
+
+  @override
+  String deleteQuotedConfirm(Object name) {
+    return 'Delete \"$name\"?';
+  }
+
+  @override
+  String deletePlainConfirm(Object name) {
+    return 'Delete $name?';
+  }
+
+  @override
+  String removeDiscardConfirm(Object name) {
+    return 'Remove \"$name\"? Its settings will be discarded.';
+  }
+
+  @override
+  String removeQuotedConfirm(Object name) {
+    return 'Remove \"$name\"?';
+  }
+
+  @override
+  String typeValueLabel(Object type) {
+    return 'Type: $type';
+  }
+
+  @override
+  String ofPagesLabel(Object total) {
+    return 'of $total';
+  }
+
+  @override
+  String fixedAmountSymLabel(Object sym) {
+    return 'Fixed Amount ($sym)';
+  }
+
+  @override
+  String couldNotReadSyncStatus(Object message) {
+    return 'Couldn\'t read sync status: $message';
+  }
+
+  @override
+  String uidValueLabel(Object uid, Object value) {
+    return 'UID: $uid | Value: $value';
+  }
+
+  @override
+  String enterFieldHint(Object field) {
+    return 'Enter $field';
+  }
+
+  @override
+  String get actionClear => 'Clear';
+
+  @override
+  String get noStockAssignedWarehouse => 'No stock assigned to this warehouse';
+
+  @override
+  String get noStockAssignedProduct => 'No stock assigned to this product';
+
+  @override
+  String get orderSummary => 'Order Summary';
+
+  @override
+  String get promotionLabel => 'Promotion';
+
+  @override
+  String get subtotalInclTax => 'Subtotal (incl. tax)';
+
+  @override
+  String get customerDiscountLabel => 'Customer discount';
+
+  @override
+  String get cartDiscountLabel => 'Cart discount';
+
+  @override
+  String get taxInclLabel => 'Tax (incl.)';
+
+  @override
+  String get itemDiscountLabel => 'Item discount';
+
+  @override
+  String get itemDiscountsPlural => 'Item discounts';
+
+  @override
+  String get taxesLabel => 'Taxes';
+
+  @override
+  String get pointsRedeemed => 'Points Redeemed';
+
+  @override
+  String get subtotalLabel => 'Subtotal';
+
+  @override
+  String get applyDiscount => 'Apply Discount';
+
+  @override
+  String get cartTab => 'Cart';
+
+  @override
+  String get itemTab => 'Item';
+
+  @override
+  String get selectItemFirst => 'Please select an item in the cart first.';
+
+  @override
+  String get noItemSelected => 'No item selected!';
+
+  @override
+  String get selectedItemNotFound => 'Selected item not found.';
+
+  @override
+  String get discountBelowCost => 'Discount would price item below cost.';
+
+  @override
+  String get discountNegativePrice =>
+      'Discount would result in a negative price.';
+
+  @override
+  String inclPrefix(Object name) {
+    return 'incl. $name';
+  }
+
+  @override
+  String get saveAndRestart => 'Save & Restart';
+
+  @override
+  String get resourceMode => 'Resource Mode';
+
+  @override
+  String get resourceModeHint => 'What a booking slot is assigned to';
+
+  @override
+  String get defaultDuration => 'Default Duration';
+
+  @override
+  String get defaultDurationHint =>
+      'Pre-filled slot length when adding a booking';
+
+  @override
+  String get timeSnapping => 'Time Snapping';
+
+  @override
+  String get timeSnappingHint => 'Grid interval when picking start/end times';
+
+  @override
+  String get couldNotLoadCurrencies => 'Could not load currencies';
+
+  @override
+  String get fontPreview => 'Preview: the quick brown fox';
+
+  @override
+  String get chooseTheme => 'CHOOSE THEME';
+
+  @override
+  String get posButtonsHint =>
+      'Select which action buttons appear on the main POS screen.';
+
+  @override
+  String get couldNotLoadTaxRates => 'Could not load tax rates';
+
+  @override
+  String get noTaxRatesDefined =>
+      'No tax rates defined yet. Add them under Tax Rates.';
+
+  @override
+  String get couldNotLoadWarehouses => 'Could not load warehouses';
+
+  @override
+  String get defaultWarehouseHint =>
+      'Used to check product stock availability in the POS menu.';
+
+  @override
+  String get waitingForScale => 'Waiting for the scale to send a weight…';
+
+  @override
+  String get restoreDefaults => 'Restore defaults';
+
+  @override
+  String get sameMachineSecondMonitor => 'Same machine / second monitor';
+
+  @override
+  String get otherDeviceSameNetwork => 'Other device on same network';
+
+  @override
+  String get categoriesPrintedOnGroup =>
+      'Categories printed on this printer group';
+
+  @override
+  String get noPrinterGroupsYet => 'No printer groups yet.';
+
+  @override
+  String get noKitchenDisplays => 'No kitchen displays configured.';
+
+  @override
+  String get noGroupSelectedReceivesAll =>
+      'No group selected → receives all items.';
+
+  @override
+  String get openDatabaseLocation => 'Open database location';
+
+  @override
+  String get setZeroToDisableBackups =>
+      'Set to 0 to turn off scheduled backups';
+
+  @override
+  String get statusExpired => 'Expired';
+
+  @override
+  String get statusInvalid => 'Invalid';
+
+  @override
+  String get statusNotActivated => 'Not activated';
+
+  @override
+  String get onboardingWillShow =>
+      'Onboarding will show the next time you open the app.';
+
+  @override
+  String get autoLabel => 'Auto';
+
+  @override
+  String get themeDimmed => 'Dimmed';
+
+  @override
+  String get themeNight => 'Night';
+
+  @override
+  String get themeGray => 'Gray';
+
+  @override
+  String get themeHighContrast => 'High Contrast';
+
+  @override
+  String get colorBlue => 'Blue';
+
+  @override
+  String get colorGreen => 'Green';
+
+  @override
+  String get colorPink => 'Pink';
+
+  @override
+  String get colorPurple => 'Purple';
+
+  @override
+  String get colorOrange => 'Orange';
+
+  @override
+  String get colorRed => 'Red';
+
+  @override
+  String get allFields => 'All fields';
+
+  @override
+  String get signInOnlineAgain =>
+      'You will need to sign in online to use the POS again.';
+
+  @override
+  String get tablesLabel => 'Tables';
+
+  @override
+  String get bookingLabel => 'Booking';
+
+  @override
+  String get posNameFullHint =>
+      'A short, UNIQUE name for this terminal. It becomes the prefix of every document number (e.g. CAISSE1-200-000045), so two POS never produce the same number. Letters & digits only.';
+
+  @override
+  String get defaultTaxRateFullHint =>
+      'Automatically applied to products added to the cart that have no tax of their own.';
+
+  @override
+  String get serialScaleWindowsOnly =>
+      'Serial scales are supported on Windows only. On this device, use the barcode parsing option above with a label-printing scale.';
+
+  @override
+  String get openCustomerDisplayFullHint =>
+      'Opens the customer display as a full-screen Flutter view on this machine. Ideal for a second monitor — drag the window over and press F11.';
+
+  @override
+  String get printerGroupsHelp =>
+      'Group product categories into stations (e.g. Kitchen, Barman). Assign a group to a display below and that display only shows the items in those categories.';
+
+  @override
+  String get receivesAllItems =>
+      'Receives all items. Create printer groups above to route by category.';
+
+  @override
+  String get autoSyncFullHint =>
+      'Push your local changes and pull fresh data automatically in the background.';
+
+  @override
+  String get replayOnboardingHint =>
+      'Replay the first-run welcome tour. It shows again the next time you open the app on this device.';
+
+  @override
+  String pairingRequestSent(Object ip) {
+    return 'Pairing request sent to $ip — the KDS should switch to the kitchen view.';
+  }
+
+  @override
+  String kdsTabletsHelp(Object port) {
+    return 'Each Kitchen Display tablet listens on port $port. Adding its IP pairs it with this POS and pushes orders directly over the local network — the KDS works fully offline, no internet needed.';
+  }
+
+  @override
+  String get statusActive => 'Active';
+
+  @override
+  String get statusEnabled => 'Enabled';
+
+  @override
+  String get statusDisabled => 'Disabled';
+
+  @override
+  String get statusOn => 'On';
+
+  @override
+  String get statusOff => 'Off';
+
+  @override
+  String expiresInDays(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Expires in $count days',
+      one: 'Expires in 1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String deviceCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count devices',
+      one: '1 device',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get scaleBarcodePriceHint =>
+      'When on, the encoded value is a price and quantity is calculated as price ÷ unit price';
+
+  @override
+  String get webDisplayHint =>
+      'Host an interactive order screen accessible from any browser on your network';
+
+  @override
+  String savedFieldFailed(Object field) {
+    return 'Failed to save $field';
+  }
+
+  @override
+  String prefixColonValue(Object prefix) {
+    return 'Prefix: $prefix';
+  }
+
+  @override
+  String unlinkEmailWarning(Object email) {
+    return 'This will unlink $email from this terminal. You will need to sign in online to use the POS again.';
+  }
+
+  @override
+  String get unlinkTerminalWarning =>
+      'This will unlink this terminal. You will need to sign in online to use the POS again.';
+
+  @override
+  String get builtInBadge => 'BUILT-IN';
+
+  @override
+  String get printerType => 'Printer type';
+
+  @override
+  String get paperSize => 'Paper size';
+
+  @override
+  String get copiesPerTransaction => 'Copies per transaction';
+
+  @override
+  String get headerPrintedTopHint => 'Printed at the top of every receipt';
+
+  @override
+  String get footerThankYouHint => 'e.g. Thank you for shopping with us!';
+
+  @override
+  String get generalLabel => 'General';
+
+  @override
+  String get categoryLabel => 'Category';
+
+  @override
+  String get chooseCustomerDetailsHint =>
+      'Choose what customer details are printed on the receipt.';
+
+  @override
+  String get addressFormatFullHint =>
+      'Specify how address lines are printed on receipts and invoices.';
+
+  @override
+  String get tapPlaceholderHint => 'Tap a placeholder to insert it:';
+
+  @override
+  String get invoiceTitleHint => 'e.g. TAX INVOICE';
+
+  @override
+  String get invoiceHeaderHint => 'Printed above the invoice';
+
+  @override
+  String get invoiceFooterHint => 'e.g. bank details, terms';
+
+  @override
+  String get addPrinterHint =>
+      'Add a printer for each station, then open its settings to configure paper size, margins, header/footer and the cash drawer.';
+
+  @override
+  String get kitchenFireFullHint =>
+      'Fire this printer when the Kitchen button is pressed. With several enabled, the category below decides what each prints.';
+
+  @override
+  String get categoryFilterHint =>
+      'This printer only prints products whose category belongs to the selected group (e.g. Barman → drinks). Pick \"All products\" to print the whole ticket here.';
+
+  @override
+  String get noPrinterGroupsDefined =>
+      'No printer groups defined yet. Create them in Settings → Customer Display → Printer Groups.';
+
+  @override
+  String get headerDetailsFullHint =>
+      'Details printed under the logo / business name at the top of the receipt. The header and footer text themselves are set per printer (⚙ → General).';
+
+  @override
+  String get sessionExpiredMsg => 'Your session expired. Please sign in again.';
+
+  @override
+  String get enterPin => 'Enter PIN';
+
+  @override
+  String get syncingMasterData => 'Syncing master data…';
+
+  @override
+  String get confirmNewPin => 'Confirm New PIN';
+
+  @override
+  String get createFourDigitPin => 'Create 4-Digit PIN';
+
+  @override
+  String get companyName => 'Company Name';
+
+  @override
+  String get taxNumberLabel => 'Tax Number';
+
+  @override
+  String get emailAddress => 'Email Address';
+
+  @override
+  String get streetName => 'Street Name';
+
+  @override
+  String get buildingNo => 'Building No.';
+
+  @override
+  String get additionalStreet => 'Additional Street';
+
+  @override
+  String get plotId => 'Plot ID';
+
+  @override
+  String get districtSubdivision => 'District / Subdivision';
+
+  @override
+  String get postalCode => 'Postal Code';
+
+  @override
+  String get cityLabel => 'City';
+
+  @override
+  String get stateProvince => 'State / Province';
+
+  @override
+  String get bankAccountNumber => 'Bank Account Number';
+
+  @override
+  String get bankDetails => 'Bank Details (IBAN, SWIFT, etc.)';
+
+  @override
+  String get rateLabel => 'Rate';
+
+  @override
+  String get taxOnTotal => 'Tax on Total';
+
+  @override
+  String get noTaxRatesFound => 'No tax rates found.';
+
+  @override
+  String get editVoidReason => 'Edit Void Reason';
+
+  @override
+  String get addVoidReason => 'Add Void Reason';
+
+  @override
+  String get addReason => 'Add Reason';
+
+  @override
+  String get totalDue => 'Total Due';
+
+  @override
+  String get replaceTaxesHint =>
+      'Use this form to replace taxes for all products. Select the old tax you wish to replace with the new tax and click Replace.';
+
+  @override
+  String errorLoadingTaxesMsg(Object message) {
+    return 'Error loading taxes: $message';
+  }
+
+  @override
+  String get setAbout => 'About';
+
+  @override
+  String get setAccentColor => 'Accent Color';
+
+  @override
+  String get setAddPrinterGroup => 'Add Printer Group';
+
+  @override
+  String get setAddress => 'Address';
+
+  @override
+  String get setAdvancedSettings => 'ADVANCED SETTINGS';
+
+  @override
+  String get setTaxInclusiveDefaultHint =>
+      'All new products will default to tax-inclusive pricing';
+
+  @override
+  String get setAllowNegativePrice => 'Allow negative price';
+
+  @override
+  String get setAllowTablelessOrders => 'Allow table-less orders';
+
+  @override
+  String get setAllowWalkInTableOrders => 'Allow walk-in table orders';
+
+  @override
+  String get setApi => 'API';
+
+  @override
+  String get setApiBaseUrl => 'API Base URL';
+
+  @override
+  String get setAppearance => 'APPEARANCE';
+
+  @override
+  String get setApplicationStyle => 'APPLICATION STYLE';
+
+  @override
+  String get setAutoBackup => 'Auto Backup';
+
+  @override
+  String get setAutoSync => 'AUTO SYNC';
+
+  @override
+  String get setAutomaticBackups => 'AUTOMATIC BACKUPS';
+
+  @override
+  String get setAutoUpdateCostPrice =>
+      'Automatically update cost price on purchase';
+
+  @override
+  String get setBackUpEvery => 'Back up automatically every';
+
+  @override
+  String get setBackupOnClose => 'Backup database on application close';
+
+  @override
+  String get setBackupOnStart => 'Backup database on application start';
+
+  @override
+  String get setBackupLocation => 'Backup location';
+
+  @override
+  String get setBarcodeParsing => 'BARCODE PARSING';
+
+  @override
+  String get setBaudRate => 'Baud rate';
+
+  @override
+  String get setBitsPerSecond => 'Bits per second';
+
+  @override
+  String get setBooking => 'BOOKING';
+
+  @override
+  String get setBookingSettings => 'Booking settings';
+
+  @override
+  String get setBookingsButton => 'Bookings button';
+
+  @override
+  String get setBottomLine => 'Bottom line';
+
+  @override
+  String get setBusinessDay => 'BUSINESS DAY';
+
+  @override
+  String get setCashDrawer => 'Cash Drawer';
+
+  @override
+  String get setCashDrawerButton => 'Cash Drawer button';
+
+  @override
+  String get setChangeQuantity => 'Change quantity';
+
+  @override
+  String get setChangeQuantityButton => 'Change quantity button';
+
+  @override
+  String get setColor => 'Color';
+
+  @override
+  String get setComPort => 'COM port';
+
+  @override
+  String get setCommentButton => 'Comment button';
+
+  @override
+  String get setCompany => 'COMPANY';
+
+  @override
+  String get setCopyLanUrl => 'Copy LAN URL';
+
+  @override
+  String get setCostPriceMarkup => 'Cost price based markup';
+
+  @override
+  String get setCurrency => 'Currency';
+
+  @override
+  String get setCustomerButton => 'Customer button';
+
+  @override
+  String get setCustomerDisplay => 'CUSTOMER DISPLAY';
+
+  @override
+  String get setCustomerDisplayEnabled => 'Customer display enabled';
+
+  @override
+  String get setDataBits => 'Data bits';
+
+  @override
+  String get setDatabase => 'DATABASE';
+
+  @override
+  String get setDatabaseBackup => 'Database & Backup';
+
+  @override
+  String get setDbSize => 'DB Size';
+
+  @override
+  String get setDefaultBarcodeFormat => 'Default Barcode Format';
+
+  @override
+  String get setDefaultDiscountType => 'Default discount type';
+
+  @override
+  String get setDefaultDueDays => 'Default due date (days)';
+
+  @override
+  String get setDefaultMeasurementUnit => 'Default Measurement Unit';
+
+  @override
+  String get setDefaultScreen => 'Default screen';
+
+  @override
+  String get setDefaultSearch => 'Default search';
+
+  @override
+  String get setDefaultServiceType => 'Default service type';
+
+  @override
+  String get setDefaultTaxRate => 'Default tax rate';
+
+  @override
+  String get setDefaultWarehouse => 'Default warehouse';
+
+  @override
+  String get setDeleteBackupsOlderThan => 'Delete backups older than';
+
+  @override
+  String get setDeleteOldBackups => 'Delete old backups automatically';
+
+  @override
+  String get setDeleteServiceStatus => 'Delete Service Status';
+
+  @override
+  String get setDeleteServiceType => 'Delete Service Type';
+
+  @override
+  String get setDevice => 'DEVICE';
+
+  @override
+  String get setDeviceName => 'Device Name';
+
+  @override
+  String get setDevices => 'Devices';
+
+  @override
+  String get setDiscountApplyRule => 'Discount apply rule';
+
+  @override
+  String get setDiscountButton => 'Discount button';
+
+  @override
+  String get setSyncToast => 'Display a toast each time a sync completes';
+
+  @override
+  String get setDisplayPrintTaxIncluded =>
+      'Display and print items with tax included';
+
+  @override
+  String get setDualCurrencyHint =>
+      'Display prices and totals in a second currency simultaneously';
+
+  @override
+  String get setShowPrintDialog => 'Display receipt print dialog';
+
+  @override
+  String get setDualCurrency => 'DUAL CURRENCY';
+
+  @override
+  String get setDualCurrencyEnabled => 'Dual Currency Enabled';
+
+  @override
+  String get setEnableAutomaticBackups => 'Enable automatic backups';
+
+  @override
+  String get setEnableAutoSync => 'Enable auto-sync';
+
+  @override
+  String get setEnableBookings => 'Enable Bookings / Calendar';
+
+  @override
+  String get setEnableFloorPlan => 'Enable Floor Plan / Tables';
+
+  @override
+  String get setEnableLiveWebDisplay => 'Enable live web customer display';
+
+  @override
+  String get setEnableMovingAverage => 'Enable moving average price';
+
+  @override
+  String get setEnableVirtualKeyboard => 'Enable Virtual Keyboard';
+
+  @override
+  String get setEnableScaleBarcode => 'Enable weighing scales barcode';
+
+  @override
+  String get setExchangeRate => 'Exchange Rate';
+
+  @override
+  String get setFeatures => 'FEATURES';
+
+  @override
+  String get setFirstTwoDigits => 'First two digits / prefix';
+
+  @override
+  String get setFlowControl => 'Flow control';
+
+  @override
+  String get setFontSize => 'Font Size';
+
+  @override
+  String get setFromEmailAddress => 'From Email Address';
+
+  @override
+  String get setFromName => 'From Name';
+
+  @override
+  String get setGeneral => 'GENERAL';
+
+  @override
+  String get setIanaTimezone => 'IANA Timezone';
+
+  @override
+  String get setInventory => 'INVENTORY';
+
+  @override
+  String get setItems => 'ITEMS';
+
+  @override
+  String get setKdsIp => 'KDS IP address';
+
+  @override
+  String get setKitchenDisplay => 'Kitchen Display';
+
+  @override
+  String get setKdsTablets => 'KITCHEN DISPLAY TABLETS';
+
+  @override
+  String get setLastSync => 'Last Sync';
+
+  @override
+  String get setLayout => 'Layout';
+
+  @override
+  String get setLoadingCurrencies => 'Loading currencies…';
+
+  @override
+  String get setMenuGrid => 'MENU GRID';
+
+  @override
+  String get setMenuGridColumns => 'Menu Grid Columns';
+
+  @override
+  String get setMenuGridRows => 'Menu Grid Rows';
+
+  @override
+  String get setMenuLayout => 'Menu Layout (List / Grid)';
+
+  @override
+  String get setMergeItemsOnReceipt => 'Merge items on receipt';
+
+  @override
+  String get setMessageDuration => 'Message Duration (seconds)';
+
+  @override
+  String get setMessagePosition => 'Message Position';
+
+  @override
+  String get setMessages => 'MESSAGES (NOTIFICATIONS)';
+
+  @override
+  String get setMovingAveragePrice => 'MOVING AVERAGE PRICE';
+
+  @override
+  String get setNumberOfCharacters => 'Number of characters';
+
+  @override
+  String get setNumberOfDecimals => 'Number of decimal places';
+
+  @override
+  String get setProductCodeDigits => 'Number of digits for product code';
+
+  @override
+  String get setPaymentTypeRows => 'Number of payment type rows';
+
+  @override
+  String get setOnboarding => 'ONBOARDING';
+
+  @override
+  String get setOpen => 'Open';
+
+  @override
+  String get setOpenCustomerDisplay => 'Open customer display';
+
+  @override
+  String get setOpenInBrowser => 'Open in browser (drag to second monitor)';
+
+  @override
+  String get setOpenOnThisDevice => 'OPEN ON THIS DEVICE';
+
+  @override
+  String get setOrderAndPayment => 'Order & Payment';
+
+  @override
+  String get setOrderNumberPrefix => 'Order Number Prefix';
+
+  @override
+  String get setParity => 'Parity';
+
+  @override
+  String get setScaleBarcodeHint =>
+      'Parse weight/price from barcodes printed by a weighing scale';
+
+  @override
+  String get setPayment => 'PAYMENT';
+
+  @override
+  String get setPhone => 'Phone';
+
+  @override
+  String get setPosButtonBar => 'POS BUTTON BAR';
+
+  @override
+  String get setPosNameHint => 'POS name — prefix for document numbers';
+
+  @override
+  String get setPreventNegativeInventory => 'Prevent negative inventory';
+
+  @override
+  String get setPreventSaleBelowCost => 'Prevent sale below cost price';
+
+  @override
+  String get setPrint => 'Print';
+
+  @override
+  String get setPrintLargeOrderNumber => 'Print large order number in receipt';
+
+  @override
+  String get setPrinterReceiptSettings => 'Printer & Receipt Settings';
+
+  @override
+  String get setPrinterGroups => 'PRINTER GROUPS';
+
+  @override
+  String get setProductDefaults => 'PRODUCT DEFAULTS';
+
+  @override
+  String get setReadLiveWeight => 'Read live weight from a serial scale';
+
+  @override
+  String get setRefundButton => 'Refund button';
+
+  @override
+  String get setRegional => 'REGIONAL';
+
+  @override
+  String get setRegisteredAccount => 'Registered account';
+
+  @override
+  String get setRenewsEnds => 'Renews / ends';
+
+  @override
+  String get setRepair => 'Re-pair';
+
+  @override
+  String get setReplay => 'Replay';
+
+  @override
+  String get setRequestServiceTypeAuto => 'Request service type automatically';
+
+  @override
+  String get setRequireReasonOnVoid => 'Require reason on void';
+
+  @override
+  String get setRequiresFloorPlan =>
+      'Requires Floor Plan / Tables to be enabled';
+
+  @override
+  String get setRescanPorts => 'Rescan ports';
+
+  @override
+  String get setResetOrderNumber => 'Reset order number on day close';
+
+  @override
+  String get setWalkInHint => 'Ring up a dine-in order without picking a table';
+
+  @override
+  String get setRoom => 'Room';
+
+  @override
+  String get setRows => 'Rows';
+
+  @override
+  String get setScalePrintsPrice => 'Scale prints price instead of quantity';
+
+  @override
+  String get setScreenDisplayWeb => 'SCREEN DISPLAY (WEB)';
+
+  @override
+  String get setSearchAllSettings => 'Search all settings...';
+
+  @override
+  String get setSearchButton => 'Search button';
+
+  @override
+  String get setSecondaryCurrencySymbol => 'Secondary Currency Symbol';
+
+  @override
+  String get setSelectBusinessDayOnStart =>
+      'Select business day on application start';
+
+  @override
+  String get setSelectEllipsis => 'Select…';
+
+  @override
+  String get setSendToKitchen => 'Send to Kitchen';
+
+  @override
+  String get setSendToKitchenButton => 'Send to Kitchen button';
+
+  @override
+  String get setSender => 'SENDER';
+
+  @override
+  String get setSeparateRowPerItem => 'Separate row for each item';
+
+  @override
+  String get setSerialConnection => 'SERIAL CONNECTION';
+
+  @override
+  String get setServiceStatusSelector => 'Service Status Selector';
+
+  @override
+  String get setServiceStatuses => 'Service Statuses';
+
+  @override
+  String get setServiceTypeHeader => 'SERVICE TYPE';
+
+  @override
+  String get setServiceTypeSelector => 'Service Type Selector';
+
+  @override
+  String get setServiceTypes => 'Service Types';
+
+  @override
+  String get setShowAllOccupied => 'Show all occupied tables in floor plan';
+
+  @override
+  String get setShowCashInOnStart => 'Show cash in on application start';
+
+  @override
+  String get setShowItemsOnPaymentForm => 'Show items on payment form';
+
+  @override
+  String get setShowOrderTotalOnPole =>
+      'Show order total on a serial VFD / LCD pole display';
+
+  @override
+  String get setShowOrderTypeButtons => 'Show order type buttons on the POS';
+
+  @override
+  String get setShowProductImages => 'Show Product Images in POS Grid';
+
+  @override
+  String get setShowSearchOptions => 'Show search options';
+
+  @override
+  String get setShowServiceStatusBadge =>
+      'Show service status badge on table/booking cards';
+
+  @override
+  String get setShowSyncNotification => 'Show sync notification';
+
+  @override
+  String get setShowTablesButton => 'Show the Tables button in the POS';
+
+  @override
+  String get setSignOut => 'Sign Out';
+
+  @override
+  String get setSignOutDevice => 'Sign Out Device';
+
+  @override
+  String get setSingleItemDiscount => 'Single item discount allowed';
+
+  @override
+  String get setSingleUser => 'Single user';
+
+  @override
+  String get setSmtpHost => 'SMTP Host';
+
+  @override
+  String get setSmtpPort => 'SMTP Port';
+
+  @override
+  String get setSmtpServer => 'SMTP SERVER';
+
+  @override
+  String get setSorting => 'Sorting';
+
+  @override
+  String get setStaff => 'Staff';
+
+  @override
+  String get setStartOrderFreeTable =>
+      'Start an order on a free table without a booking';
+
+  @override
+  String get setStarted => 'Started';
+
+  @override
+  String get setStartup => 'STARTUP';
+
+  @override
+  String get setStopBits => 'Stop bits';
+
+  @override
+  String get setScaleStreamHint =>
+      'Streams the weight from a scale on a COM port into the quantity keypad';
+
+  @override
+  String get setStripLeadingZeros =>
+      'Strip leading zeros before looking up the product';
+
+  @override
+  String get setSubscription => 'Subscription';
+
+  @override
+  String get setSystemInfo => 'SYSTEM INFO';
+
+  @override
+  String get setTable => 'Table';
+
+  @override
+  String get setTablesFloorPlan => 'Tables / Floor Plan';
+
+  @override
+  String get setTablesFloorPlanButton => 'Tables / Floor Plan button';
+
+  @override
+  String get setTablesButtonLabel => 'Tables Button Label';
+
+  @override
+  String get setTaxHeader => 'TAX';
+
+  @override
+  String get setTaxButton => 'Tax button';
+
+  @override
+  String get setTaxIncludedByDefault => 'Tax Included in Price by Default';
+
+  @override
+  String get setTaxNo => 'Tax No';
+
+  @override
+  String get setTestDisplay => 'Test display';
+
+  @override
+  String get setThemeMode => 'Theme Mode';
+
+  @override
+  String get setTimezone => 'Timezone';
+
+  @override
+  String get setTopLine => 'Top line';
+
+  @override
+  String get setTrackUnconfirmedVoids => 'Track unconfirmed voided items';
+
+  @override
+  String get setTransferButton => 'Transfer button';
+
+  @override
+  String get setUpdateSalePriceFromMarkup =>
+      'Update sale price based on markup';
+
+  @override
+  String get setUsers => 'USERS';
+
+  @override
+  String get setVoidItems => 'VOID ITEMS';
+
+  @override
+  String get setWarehouseSwitcher => 'Warehouse Switcher';
+
+  @override
+  String get setWarehouseSwitcherButton => 'Warehouse Switcher button';
+
+  @override
+  String get setWeighingScale => 'Weighing Scale';
+
+  @override
+  String get setWelcomeMessage => 'WELCOME MESSAGE';
+
+  @override
+  String get setWelcomeBottomLine => 'Welcome message bottom line';
+
+  @override
+  String get setWelcomeTopLine => 'Welcome message top line';
+
+  @override
+  String get setWhenToSync => 'When to sync';
+
+  @override
+  String get setWritingDirection => 'Writing Direction';
+
+  @override
+  String get setHintCaisse => 'e.g. CAISSE1';
+
+  @override
+  String get setHintUber => 'e.g. UBER';
+
+  @override
+  String get setHintUberEats => 'e.g. Uber Eats';
+
+  @override
+  String get setHintWaiting => 'e.g. Waiting';
+
+  @override
+  String get selectExportType => 'Select export type';
+
+  @override
+  String get exportCsv => 'CSV (Excel)';
+
+  @override
+  String get exportXml => 'XML';
+
+  @override
+  String get deleteProducts => 'Delete Products';
+
+  @override
+  String get showHideColumns => 'Show / Hide Columns';
+
+  @override
+  String get alwaysShown => 'Always shown';
+
+  @override
+  String get actionReset => 'Reset';
+
+  @override
+  String get products => 'Products';
+
+  @override
+  String get columns => 'Columns';
+
+  @override
+  String get importLabel => 'Import';
+
+  @override
+  String get exportLabel => 'Export';
+
+  @override
+  String get addProduct => 'Add Product';
+
+  @override
+  String get categoriesHeader => 'CATEGORIES';
+
+  @override
+  String get errorLoadingGroups => 'Error loading groups';
+
+  @override
+  String get allProducts => 'All Products';
+
+  @override
+  String get noProductsFound => 'No products found.';
+
+  @override
+  String get productNameRequired => 'Product Name *';
+
+  @override
+  String get categoryGroup => 'Category / Group';
+
+  @override
+  String get noneUncategorized => 'None (Uncategorized)';
+
+  @override
+  String get productCodeSku => 'Product Code / SKU';
+
+  @override
+  String get plu => 'PLU';
+
+  @override
+  String get measurementUnit => 'Measurement Unit';
+
+  @override
+  String get measurementUnitHint => 'e.g. kg, pcs';
+
+  @override
+  String get ageRestrictionHint => 'e.g. 18';
+
+  @override
+  String get sellingPriceRequired => 'Selling Price *';
+
+  @override
+  String get purchaseCost => 'Purchase Cost';
+
+  @override
+  String get marginMarkup => 'Margin / Markup (%)';
+
+  @override
+  String get rankDisplayOrder => 'Rank (Display Order)';
+
+  @override
+  String get description => 'Description';
+
+  @override
+  String get priceIsTaxInclusive => 'Product Price is Tax Inclusive';
+
+  @override
+  String get isServiceNotPhysical => 'Is Service (Not physical)';
+
+  @override
+  String get changePriceAllowed => 'Change Price Allowed';
+
+  @override
+  String get isEnabledVisible => 'Is Enabled (Visible)';
+
+  @override
+  String get productColorMarker => 'Product Color Marker';
+
+  @override
+  String get productImage => 'Product Image';
+
+  @override
+  String get productImageHint =>
+      'Replaces the placeholder icon on the POS menu tile.';
+
+  @override
+  String get removeImage => 'Remove Image';
+
+  @override
+  String get applyTaxes => 'Apply Taxes';
+
+  @override
+  String get failedToLoadTaxes => 'Failed to load taxes';
+
+  @override
+  String get primaryTaxRate => 'Primary Tax Rate';
+
+  @override
+  String get noTax => 'No Tax';
+
+  @override
+  String get productModifiersComments => 'Product Modifiers & Comments';
+
+  @override
+  String get newModifierComment => 'New Modifier / Comment';
+
+  @override
+  String get newModifierHint => 'e.g. No Onions';
+
+  @override
+  String get noCommentsYet => 'No comments added yet.';
+
+  @override
+  String get deleteComment => 'Delete Comment';
+
+  @override
+  String get productBarcodes => 'Product Barcodes';
+
+  @override
+  String get barcode => 'Barcode';
+
+  @override
+  String get generateBarcode => 'Generate barcode';
+
+  @override
+  String get noBarcodesYet => 'No barcodes assigned yet.';
+
+  @override
+  String get pendingSync => 'Pending sync';
+
+  @override
+  String get deleteBarcode => 'Delete Barcode';
+
+  @override
+  String get transactionBlocked => 'Transaction Blocked';
+
+  @override
+  String get actionOk => 'OK';
+
+  @override
+  String get transactionSuccessful => 'Transaction Successful';
+
+  @override
+  String get printReceiptPrompt => 'Would you like to print a receipt?';
+
+  @override
+  String get saveAsPdf => 'Save as PDF';
+
+  @override
+  String get printReceipt => 'Print Receipt';
+
+  @override
+  String get splitPayments => 'Split Payments';
+
+  @override
+  String get totalLabel => 'Total';
+
+  @override
+  String get paidLabel => 'Paid';
+
+  @override
+  String get remainingLabel => 'Remaining';
+
+  @override
+  String get changeLabel => 'Change';
+
+  @override
+  String get removeCustomer => 'Remove customer';
+
+  @override
+  String get redeemPoints => 'Redeem Points';
+
+  @override
+  String get pointsToUse => 'Points to use';
+
+  @override
+  String get decrementOnePoint => '-1 pt';
+
+  @override
+  String get incrementOnePoint => '+1 pt';
+
+  @override
+  String useMaxPoints(String points) {
+    return 'Use Max ($points pts)';
+  }
+
+  @override
+  String get actionRedeem => 'Redeem';
+
+  @override
+  String get paymentTypes => 'Payment Types';
+
+  @override
+  String get showNavigation => 'Show navigation';
+
+  @override
+  String get visibleColumns => 'Visible Columns';
+
+  @override
+  String get columnsTooltip => 'Columns';
+
+  @override
+  String get refreshTooltip => 'Refresh';
+
+  @override
+  String get newPaymentType => 'New Payment Type';
+
+  @override
+  String errorLoadingPaymentTypes(String message) {
+    return 'Error loading payment types: $message';
+  }
+
+  @override
+  String get noCompanySelectedShort => 'No company selected.';
+
+  @override
+  String get noPaymentTypesFound => 'No payment types found.';
+
+  @override
+  String get addFirstPaymentType => 'Add First Payment Type';
+
+  @override
+  String deletePaymentTypeConfirm(String name) {
+    return 'Delete payment type \'$name\'?';
+  }
+
+  @override
+  String get fieldNameRequired => 'Name *';
+
+  @override
+  String get fieldCode => 'Code';
+
+  @override
+  String get fieldPosition => 'Position';
+
+  @override
+  String get fieldShortcut => 'Shortcut';
+
+  @override
+  String get actionUpdate => 'Update';
+
+  @override
+  String errorWithMessage(String message) {
+    return 'Error: $message';
+  }
+
+  @override
+  String get activePromotions => 'Active Promotions';
+
+  @override
+  String get noActivePromotions => 'No active promotions right now.';
+
+  @override
+  String ordersReady(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count orders ready',
+      one: '1 order ready',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get selectOrderType => 'Select Order Type';
+
+  @override
+  String get serviceStatus => 'Service Status';
+
+  @override
+  String get selectServiceStatus => 'Select Service Status';
+
+  @override
+  String get posDiscount => 'Discount';
+
+  @override
+  String get posQuantity => 'Quantity';
+
+  @override
+  String get posTax => 'Tax';
+
+  @override
+  String get posComment => 'Comment';
+
+  @override
+  String get posTransfer => 'Transfer';
+
+  @override
+  String get posRefund => 'Refund';
+
+  @override
+  String get posKitchen => 'Kitchen';
+
+  @override
+  String get posBookings => 'Bookings';
+
+  @override
+  String get posPromos => 'Promos';
+
+  @override
+  String get posVoid => 'VOID';
+
+  @override
+  String get posPay => 'PAY';
+
+  @override
+  String productRunningLow(String product) {
+    return '$product is running low';
+  }
+
+  @override
+  String productOutOfStock(String product) {
+    return '$product is out of stock';
+  }
+
+  @override
+  String get availableIn => 'Available in:';
+
+  @override
+  String quantityInStock(String qty) {
+    return '$qty in stock';
+  }
+
+  @override
+  String get noCompanySelected =>
+      'No company selected. Open the menu and pick a company.';
+
+  @override
+  String get errorLoadingData => 'Error loading data';
+
+  @override
+  String get searchProductsHint => 'Search products...';
+
+  @override
+  String get paginationFirst => 'First';
+
+  @override
+  String get paginationPrevious => 'Previous';
+
+  @override
+  String get paginationNext => 'Next';
+
+  @override
+  String get paginationLast => 'Last';
+
+  @override
+  String get voidOrder => 'Void order';
+
+  @override
+  String get voidOrderConfirm => 'Are you sure you want to void this order?';
+
+  @override
+  String get enterVoidReason => 'Enter void reason here';
+
+  @override
+  String get refreshOrderNumber => 'Refresh order number';
+
+  @override
+  String get enterQuantity => 'Enter Quantity';
+
+  @override
+  String get setSalePrice => 'Set Sale Price';
+
+  @override
+  String get fieldPrice => 'Price';
+
+  @override
+  String get ageRestriction => 'Age Restriction';
+
+  @override
+  String confirmMinimumAge(String minAge) {
+    return 'Confirm ($minAge+)';
+  }
+
+  @override
+  String commentsForProduct(String product) {
+    return 'Comments: $product';
+  }
+
+  @override
+  String get customComment => 'Custom comment';
+
+  @override
+  String get addANoteHint => 'Add a note...';
+
+  @override
+  String get noTaxesAvailable => 'No taxes available in system.';
+
+  @override
+  String get transferOrder => 'Transfer Order';
+
+  @override
+  String get assignStaff => 'Assign Staff';
+
+  @override
+  String get unassigned => 'Unassigned';
+
+  @override
+  String get assignRoomOrResource => 'Assign Room / Resource';
+
+  @override
+  String get noRoom => 'No room';
+
+  @override
+  String selectAvailableSpace(String space) {
+    return 'Select Available $space';
+  }
+}

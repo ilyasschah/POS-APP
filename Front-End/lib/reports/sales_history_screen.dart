@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:gap/gap.dart';
@@ -264,11 +265,11 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     tz_data.initializeTimeZones();
     _visibleMasterColIds = _loadCols(
       _prefsMasterColsKey,
-      _masterColumns.map((c) => c.id),
+      _masterColumnIds,
     );
     _visibleDetailColIds = _loadCols(
       _prefsDetailColsKey,
-      _detailColumns.map((c) => c.id),
+      _detailColumnIds,
     );
     WidgetsBinding.instance.addPostFrameCallback((_) => _fetchDocuments());
   }
@@ -495,7 +496,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Document', style: TextStyle(fontSize: 20)),
+        title: Text(AppLocalizations.of(context).deleteDocument, style: const TextStyle(fontSize: 20)),
         content: Text(
           "Delete '${doc.number}'? This cannot be undone.",
           style: const TextStyle(fontSize: 16),
@@ -503,7 +504,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel', style: TextStyle(fontSize: 16)),
+            child: Text(AppLocalizations.of(context).actionCancel, style: const TextStyle(fontSize: 16)),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
@@ -511,7 +512,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete', style: TextStyle(fontSize: 16)),
+            child: Text(AppLocalizations.of(context).actionDelete, style: const TextStyle(fontSize: 16)),
           ),
         ],
       ),
@@ -809,7 +810,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
                 Icons.arrow_back,
                 size: 28,
               ), // Larger icon for touch
-              tooltip: 'Back',
+              tooltip: AppLocalizations.of(context).back,
               onPressed: () => Navigator.pop(context),
             ),
             // Header content: Replaced generic Text title with a comprehensive Row
@@ -863,7 +864,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
                   child: TextField(
                     controller: _docNumCtrl,
                     decoration: InputDecoration(
-                      hintText: 'Search document...',
+                      hintText: AppLocalizations.of(context).searchDocument,
                       isDense: true,
                       prefixIcon: const Icon(Icons.search, size: 22),
                       filled: true,
@@ -1001,8 +1002,8 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
             Icons.view_column_outlined,
             'Columns',
             () => _pickColumns(
-              title: 'Documents columns',
-              columns: _masterColumns
+              title: AppLocalizations.of(context).documentsColumns,
+              columns: _masterColumns(context)
                   .map((c) => (id: c.id, label: c.label))
                   .toList(),
               visible: _visibleMasterColIds,
@@ -1118,7 +1119,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
             FilledButton.icon(
               onPressed: _fetchDocuments,
               icon: const Icon(Icons.refresh, size: 24),
-              label: const Text('Retry', style: TextStyle(fontSize: 16)),
+              label: Text(AppLocalizations.of(context).actionRetry, style: const TextStyle(fontSize: 16)),
             ),
           ],
         ),
@@ -1139,7 +1140,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
             _sectionHeader(theme, cs, 'Documents'),
             SizedBox(
               height: masterH - headerH,
-              child: _buildMasterTable(theme, cs, sym),
+              child: _buildMasterTable(context, theme, cs, sym),
             ),
 
             // Draggable divider
@@ -1173,8 +1174,8 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
               trailing: _columnsHeaderButton(
                 cs,
                 () => _pickColumns(
-                  title: 'Document items columns',
-                  columns: _detailColumns
+                  title: AppLocalizations.of(context).documentItemsColumns,
+                  columns: _detailColumns(context)
                       .map((c) => (id: c.id, label: c.label))
                       .toList(),
                   visible: _visibleDetailColIds,
@@ -1183,7 +1184,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
                 ),
               ),
             ),
-            SizedBox(height: detailH, child: _buildDetailTable(theme, cs, sym)),
+            SizedBox(height: detailH, child: _buildDetailTable(context, theme, cs, sym)),
           ],
         );
       },
@@ -1220,7 +1221,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
 
   Widget _columnsHeaderButton(ColorScheme cs, VoidCallback onTap) {
     return Tooltip(
-      message: 'Choose columns',
+      message: AppLocalizations.of(context).chooseColumns,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(6),
@@ -1252,31 +1253,41 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
 
   // ── master table ──────────────────────────────────────────────────────────
 
-  static const _masterColumns =
+  // Ids only — needed in initState, where AppLocalizations.of(context) is not
+  // yet usable. Must stay in sync with _masterColumns below.
+  static const _masterColumnIds = <String>[
+    'id','type','user','number','external','customer','date','created','pos',
+    'order','payment','discount','totalBefore','tax','total',
+  ];
+
+  // Built per-frame rather than const: the labels are localized, so they can
+  // only be resolved once a BuildContext exists.
+  static List<({String id, String label, double flex, bool numeric})>
+      _masterColumns(BuildContext context) =>
       <({String id, String label, double flex, bool numeric})>[
-        (id: 'id', label: 'ID', flex: 0.4, numeric: true),
-        (id: 'type', label: 'Document type', flex: 0.8, numeric: false),
-        (id: 'user', label: 'User', flex: 0.7, numeric: false),
-        (id: 'number', label: 'Number', flex: 1.2, numeric: false),
-        (id: 'external', label: 'External ref', flex: 0.7, numeric: false),
-        (id: 'customer', label: 'Customer', flex: 1.1, numeric: false),
-        (id: 'date', label: 'Date', flex: 1.0, numeric: false),
-        (id: 'created', label: 'Created', flex: 1.3, numeric: false),
-        (id: 'pos', label: 'POS', flex: 0.9, numeric: false),
-        (id: 'order', label: 'Order #', flex: 0.9, numeric: false),
-        (id: 'payment', label: 'Payment', flex: 0.9, numeric: false),
-        (id: 'discount', label: 'Discount', flex: 0.5, numeric: true),
+        (id: 'id', label: AppLocalizations.of(context).idLabel, flex: 0.4, numeric: true),
+        (id: 'type', label: AppLocalizations.of(context).documentType, flex: 0.8, numeric: false),
+        (id: 'user', label: AppLocalizations.of(context).userLabel, flex: 0.7, numeric: false),
+        (id: 'number', label: AppLocalizations.of(context).numberLabel, flex: 1.2, numeric: false),
+        (id: 'external', label: AppLocalizations.of(context).externalRef, flex: 0.7, numeric: false),
+        (id: 'customer', label: AppLocalizations.of(context).customerLabel, flex: 1.1, numeric: false),
+        (id: 'date', label: AppLocalizations.of(context).dateLabel, flex: 1.0, numeric: false),
+        (id: 'created', label: AppLocalizations.of(context).created, flex: 1.3, numeric: false),
+        (id: 'pos', label: AppLocalizations.of(context).posLabel, flex: 0.9, numeric: false),
+        (id: 'order', label: AppLocalizations.of(context).orderNoLabel, flex: 0.9, numeric: false),
+        (id: 'payment', label: AppLocalizations.of(context).paymentLabel, flex: 0.9, numeric: false),
+        (id: 'discount', label: AppLocalizations.of(context).posDiscount, flex: 0.5, numeric: true),
         (
           id: 'totalBefore',
-          label: 'Total before tax',
+          label: AppLocalizations.of(context).totalBeforeTax,
           flex: 0.7,
           numeric: true,
         ),
-        (id: 'tax', label: 'Tax', flex: 0.5, numeric: true),
-        (id: 'total', label: 'Total', flex: 0.7, numeric: true),
+        (id: 'tax', label: AppLocalizations.of(context).fieldTax, flex: 0.5, numeric: true),
+        (id: 'total', label: AppLocalizations.of(context).totalLabel, flex: 0.7, numeric: true),
       ];
 
-  Widget _buildMasterTable(ThemeData theme, ColorScheme cs, String sym) {
+  Widget _buildMasterTable(BuildContext context, ThemeData theme, ColorScheme cs, String sym) {
     const ts = TextStyle(fontSize: 15); // Scaled up table row font
     final dimTs = TextStyle(
       fontSize: 15,
@@ -1285,7 +1296,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
 
     final cellBuilders = <String, Widget Function(SalesHistoryDocument)>{
       'id': (doc) => Text('${doc.id}', style: dimTs),
-      'type': (doc) => const Text('Sales', style: ts),
+      'type': (doc) => Text(AppLocalizations.of(context).sales, style: ts),
       'user': (doc) => Text(doc.userName ?? '-', style: ts),
       'number': (doc) => Text(
         doc.number,
@@ -1332,7 +1343,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       ),
     };
 
-    final visibleCols = _masterColumns
+    final visibleCols = _masterColumns(context)
         .where((c) => _visibleMasterColIds.contains(c.id))
         .toList();
     final columns = visibleCols
@@ -1380,32 +1391,39 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
 
   // ── detail table ──────────────────────────────────────────────────────────
 
-  static const _detailColumns =
+  // Ids only — see the note on _masterColumnIds.
+  static const _detailColumnIds = <String>[
+    'id','code','name','unit','qty','priceBeforeTax','tax','price',
+    'totalBeforeDiscount','discount','total',
+  ];
+
+  static List<({String id, String label, double flex, bool numeric})>
+      _detailColumns(BuildContext context) =>
       <({String id, String label, double flex, bool numeric})>[
-        (id: 'id', label: 'ID', flex: 0.35, numeric: true),
-        (id: 'code', label: 'Code', flex: 0.7, numeric: false),
-        (id: 'name', label: 'Name', flex: 1.6, numeric: false),
-        (id: 'unit', label: 'Unit of measure', flex: 0.8, numeric: false),
-        (id: 'qty', label: 'Quantity', flex: 0.7, numeric: true),
+        (id: 'id', label: AppLocalizations.of(context).idLabel, flex: 0.35, numeric: true),
+        (id: 'code', label: AppLocalizations.of(context).fieldCode, flex: 0.7, numeric: false),
+        (id: 'name', label: AppLocalizations.of(context).fieldName, flex: 1.6, numeric: false),
+        (id: 'unit', label: AppLocalizations.of(context).unitOfMeasure, flex: 0.8, numeric: false),
+        (id: 'qty', label: AppLocalizations.of(context).fieldQuantity, flex: 0.7, numeric: true),
         (
           id: 'priceBeforeTax',
-          label: 'Price before tax',
+          label: AppLocalizations.of(context).priceBeforeTax,
           flex: 0.9,
           numeric: true,
         ),
-        (id: 'tax', label: 'Tax', flex: 0.45, numeric: true),
-        (id: 'price', label: 'Price', flex: 0.7, numeric: true),
+        (id: 'tax', label: AppLocalizations.of(context).fieldTax, flex: 0.45, numeric: true),
+        (id: 'price', label: AppLocalizations.of(context).priceLabel, flex: 0.7, numeric: true),
         (
           id: 'totalBeforeDiscount',
-          label: 'Total bef. discount',
+          label: AppLocalizations.of(context).totalBeforeDiscount,
           flex: 1.0,
           numeric: true,
         ),
-        (id: 'discount', label: 'Discount', flex: 0.55, numeric: true),
-        (id: 'total', label: 'Total', flex: 0.7, numeric: true),
+        (id: 'discount', label: AppLocalizations.of(context).posDiscount, flex: 0.55, numeric: true),
+        (id: 'total', label: AppLocalizations.of(context).totalLabel, flex: 0.7, numeric: true),
       ];
 
-  Widget _buildDetailTable(ThemeData theme, ColorScheme cs, String sym) {
+  Widget _buildDetailTable(BuildContext context, ThemeData theme, ColorScheme cs, String sym) {
     if (_selectedDocLocalId == null) {
       return Center(
         child: Text(
@@ -1462,7 +1480,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       ),
     };
 
-    final visibleCols = _detailColumns
+    final visibleCols = _detailColumns(context)
         .where((c) => _visibleDetailColIds.contains(c.id))
         .toList();
     final columns = visibleCols
@@ -1640,7 +1658,7 @@ class _ColumnSelectorDialogState extends State<_ColumnSelectorDialog> {
                         vertical: 12,
                       ),
                     ),
-                    child: const Text('Apply', style: TextStyle(fontSize: 16)),
+                    child: Text(AppLocalizations.of(context).actionApply, style: const TextStyle(fontSize: 16)),
                   ),
                 ],
               ),
@@ -1733,7 +1751,7 @@ class _CustomerPickerDialogState extends ConsumerState<_CustomerPickerDialog> {
                 controller: _searchCtrl,
                 autofocus: true,
                 decoration: InputDecoration(
-                  hintText: 'Search customer...',
+                  hintText: AppLocalizations.of(context).searchCustomer,
                   isDense: true,
                   prefixIcon: const Icon(Icons.search, size: 22),
                   filled: true,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/api/promotion_models.dart';
 import 'package:pos_app/api/api_client.dart';
@@ -133,11 +134,11 @@ class _PromotionEditDialogState extends ConsumerState<PromotionEditDialog> {
           children: [
             TextField(
               controller: _nameController,
-              decoration: const InputDecoration(labelText: 'Promotion Name'),
+              decoration: InputDecoration(labelText: AppLocalizations.of(context).promotionName),
             ),
             Row(
               children: [
-                const Text('Is Enabled'),
+                Text(AppLocalizations.of(context).isEnabled),
                 const Spacer(),
                 Switch(
                   value: _isEnabled,
@@ -156,7 +157,7 @@ class _PromotionEditDialogState extends ConsumerState<PromotionEditDialog> {
                 ElevatedButton.icon(
                   onPressed: _addItem,
                   icon: const Icon(Icons.add),
-                  label: const Text('Add Item'),
+                  label: Text(AppLocalizations.of(context).addItem),
                 ),
               ],
             ),
@@ -166,8 +167,8 @@ class _PromotionEditDialogState extends ConsumerState<PromotionEditDialog> {
                 itemBuilder: (ctx, i) {
                   final item = _items[i];
                   return ListTile(
-                    title: Text('UID: ${item.uid} | Value: ${item.value}'),
-                    subtitle: Text('Type: ${item.discountType}'),
+                    title: Text(AppLocalizations.of(context).uidValueLabel(item.uid.toString(), item.value.toString())),
+                    subtitle: Text(AppLocalizations.of(context).typeValueLabel(item.discountType)),
                     trailing: IconButton(
                       icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
                       onPressed: () {
@@ -186,9 +187,9 @@ class _PromotionEditDialogState extends ConsumerState<PromotionEditDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(AppLocalizations.of(context).actionCancel),
         ),
-        ElevatedButton(onPressed: _save, child: const Text('Save')),
+        ElevatedButton(onPressed: _save, child: Text(AppLocalizations.of(context).actionSave)),
       ],
     );
   }
@@ -211,29 +212,29 @@ class _PromotionItemEditDialogState extends State<_PromotionItemEditDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Add Promotion Item'),
+      title: Text(AppLocalizations.of(context).addPromotionItem),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: _uidController,
-              decoration: const InputDecoration(
-                labelText: 'Target UID (e.g. Product ID)',
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context).targetUid,
               ),
               keyboardType: TextInputType.number,
             ),
             TextField(
               controller: _valueController,
-              decoration: const InputDecoration(labelText: 'Discount Value'),
+              decoration: InputDecoration(labelText: AppLocalizations.of(context).discountValue),
               keyboardType: TextInputType.number,
             ),
             DropdownButtonFormField<int>(
               initialValue: _discountType,
-              decoration: const InputDecoration(labelText: 'Discount Type'),
-              items: const [
-                DropdownMenuItem(value: 0, child: Text('Percentage (%)')),
-                DropdownMenuItem(value: 1, child: Text('Fixed Amount (\$)')),
+              decoration: InputDecoration(labelText: AppLocalizations.of(context).discountType),
+              items: [
+                DropdownMenuItem(value: 0, child: Text(AppLocalizations.of(context).percentageSign)),
+                DropdownMenuItem(value: 1, child: Text(AppLocalizations.of(context).fixedAmountSymLabel('\$'))),
               ],
               onChanged: (v) => setState(() => _discountType = v!),
             ),
@@ -243,7 +244,7 @@ class _PromotionItemEditDialogState extends State<_PromotionItemEditDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(AppLocalizations.of(context).actionCancel),
         ),
         ElevatedButton(
           onPressed: () {
@@ -261,7 +262,7 @@ class _PromotionItemEditDialogState extends State<_PromotionItemEditDialog> {
               ),
             );
           },
-          child: const Text('Add'),
+          child: Text(AppLocalizations.of(context).actionAdd),
         ),
       ],
     );

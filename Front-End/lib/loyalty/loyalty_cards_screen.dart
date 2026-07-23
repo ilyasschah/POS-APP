@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
@@ -39,17 +40,17 @@ class _LoyaltyCardsScreenState extends ConsumerState<LoyaltyCardsScreen> {
                 onPressed: widget.onMenuPressed,
               )
             : null,
-        title: const Text('Loyalty Cards'),
+        title: Text(AppLocalizations.of(context).loyaltyCards),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings_outlined),
-            tooltip: 'Loyalty Settings',
+            tooltip: AppLocalizations.of(context).loyaltySettings,
             onPressed: () => _showSettingsDialog(context),
           ),
           const SizedBox(width: 4),
           ElevatedButton.icon(
             icon: const Icon(Icons.add),
-            label: const Text('Add Card'),
+            label: Text(AppLocalizations.of(context).addCard),
             style: ElevatedButton.styleFrom(
               backgroundColor: theme.colorScheme.primary,
               foregroundColor: theme.colorScheme.onPrimary,
@@ -66,7 +67,7 @@ class _LoyaltyCardsScreenState extends ConsumerState<LoyaltyCardsScreen> {
       body: cardsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) =>
-            Center(child: Text('Error loading loyalty cards: $e')),
+            Center(child: Text(AppLocalizations.of(context).errorLoadingLoyaltyCards(e.toString()))),
         data: (cards) {
           final cs = theme.colorScheme;
           if (cards.isEmpty) {
@@ -177,13 +178,13 @@ class _LoyaltyCardsScreenState extends ConsumerState<LoyaltyCardsScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: Theme.of(context).cardColor,
-        title: const Text('Delete Loyalty Card'),
+        title: Text(AppLocalizations.of(context).deleteLoyaltyCard),
         content: Text(
             'Delete the loyalty card for ${card.customerName}? This cannot be undone.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel',
+            child: Text(AppLocalizations.of(context).actionCancel,
                 style: TextStyle(color: cs.onSurface.withValues(alpha: 0.6))),
           ),
           FilledButton(
@@ -204,7 +205,7 @@ class _LoyaltyCardsScreenState extends ConsumerState<LoyaltyCardsScreen> {
                 }
               }
             },
-            child: const Text('Delete'),
+            child: Text(AppLocalizations.of(context).actionDelete),
           ),
         ],
       ),
@@ -246,7 +247,7 @@ class _LoyaltyCardsScreenState extends ConsumerState<LoyaltyCardsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Close'),
+            child: Text(AppLocalizations.of(context).actionClose),
           ),
         ],
       ),
@@ -323,7 +324,7 @@ class _CardTile extends StatelessWidget {
                             color: cs.tertiaryContainer,
                             borderRadius: BorderRadius.circular(4),
                           ),
-                          child: Text('pending',
+                          child: Text(AppLocalizations.of(context).pendingLower,
                               style: TextStyle(
                                   fontSize: 10,
                                   color: cs.onTertiaryContainer)),
@@ -351,19 +352,19 @@ class _CardTile extends StatelessWidget {
             IconButton(
               icon: Icon(Icons.qr_code,
                   color: cs.onSurface.withValues(alpha: 0.6)),
-              tooltip: 'Show QR',
+              tooltip: AppLocalizations.of(context).showQr,
               onPressed: onQr,
             ),
             IconButton(
               icon: Icon(Icons.edit_outlined,
                   color: cs.onSurface.withValues(alpha: 0.6)),
-              tooltip: 'Edit',
+              tooltip: AppLocalizations.of(context).actionEdit,
               onPressed: () =>
                   guard.guard(context, SecurityKeys.loyaltyCards, onEdit),
             ),
             IconButton(
               icon: Icon(Icons.delete_outline, color: cs.error),
-              tooltip: 'Delete',
+              tooltip: AppLocalizations.of(context).actionDelete,
               onPressed: () =>
                   guard.guard(context, SecurityKeys.loyaltyCards, onDelete),
             ),
@@ -430,7 +431,7 @@ class _AddCardDialogState extends ConsumerState<_AddCardDialog> {
 
     return AlertDialog(
       backgroundColor: Theme.of(context).cardColor,
-      title: const Text('Add Loyalty Card'),
+      title: Text(AppLocalizations.of(context).addLoyaltyCard),
       content: SizedBox(
         width: 360,
         child: Column(
@@ -439,7 +440,7 @@ class _AddCardDialogState extends ConsumerState<_AddCardDialog> {
             // Suppliers (isCustomer == false) are excluded from this list.
             customersAsync.when(
               loading: () => const LinearProgressIndicator(),
-              error: (e, _) => Text('Error: $e',
+              error: (e, _) => Text(AppLocalizations.of(context).errorWithMessage(e.toString()),
                   style: TextStyle(color: cs.error, fontSize: 13)),
               data: (all) {
                 final retailCustomers =
@@ -457,9 +458,9 @@ class _AddCardDialogState extends ConsumerState<_AddCardDialog> {
                 return DropdownButtonFormField<Customer>(
                   initialValue: selected,
                   isExpanded: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Customer *',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).customerRequired,
+                    border: const OutlineInputBorder(),
                   ),
                   items: retailCustomers
                       .map((c) => DropdownMenuItem(
@@ -475,18 +476,18 @@ class _AddCardDialogState extends ConsumerState<_AddCardDialog> {
             const SizedBox(height: 16),
             TextField(
               controller: _cardNumberCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Card Number',
-                hintText: 'Leave blank to auto-assign',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context).cardNumber,
+                hintText: AppLocalizations.of(context).leaveBlankAutoAssign,
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _pointsCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Starting Points',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context).startingPoints,
+                border: const OutlineInputBorder(),
               ),
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
@@ -501,7 +502,7 @@ class _AddCardDialogState extends ConsumerState<_AddCardDialog> {
       actions: [
         TextButton(
           onPressed: _saving ? null : () => Navigator.pop(context),
-          child: Text('Cancel',
+          child: Text(AppLocalizations.of(context).actionCancel,
               style: TextStyle(color: cs.onSurface.withValues(alpha: 0.6))),
         ),
         FilledButton(
@@ -511,7 +512,7 @@ class _AddCardDialogState extends ConsumerState<_AddCardDialog> {
                   width: 18,
                   height: 18,
                   child: CircularProgressIndicator(strokeWidth: 2))
-              : const Text('Add'),
+              : Text(AppLocalizations.of(context).actionAdd),
         ),
       ],
     );
@@ -577,7 +578,7 @@ class _EditCardDialogState extends State<_EditCardDialog> {
 
     return AlertDialog(
       backgroundColor: Theme.of(context).cardColor,
-      title: Text('Edit — ${widget.card.customerName}'),
+      title: Text(AppLocalizations.of(context).editDashTitle(widget.card.customerName)),
       content: SizedBox(
         width: 360,
         child: Column(
@@ -585,17 +586,17 @@ class _EditCardDialogState extends State<_EditCardDialog> {
           children: [
             TextField(
               controller: _cardNumberCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Card Number',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context).cardNumber,
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _pointsCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Points',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context).points,
+                border: const OutlineInputBorder(),
               ),
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
@@ -610,7 +611,7 @@ class _EditCardDialogState extends State<_EditCardDialog> {
       actions: [
         TextButton(
           onPressed: _saving ? null : () => Navigator.pop(context),
-          child: Text('Cancel',
+          child: Text(AppLocalizations.of(context).actionCancel,
               style: TextStyle(color: cs.onSurface.withValues(alpha: 0.6))),
         ),
         FilledButton(
@@ -620,7 +621,7 @@ class _EditCardDialogState extends State<_EditCardDialog> {
                   width: 18,
                   height: 18,
                   child: CircularProgressIndicator(strokeWidth: 2))
-              : const Text('Save'),
+              : Text(AppLocalizations.of(context).actionSave),
         ),
       ],
     );
@@ -690,7 +691,7 @@ class _LoyaltySettingsDialogState extends ConsumerState<_LoyaltySettingsDialog> 
     final cs = Theme.of(context).colorScheme;
     return AlertDialog(
       backgroundColor: Theme.of(context).cardColor,
-      title: const Text('Loyalty Settings'),
+      title: Text(AppLocalizations.of(context).loyaltySettings),
       content: SizedBox(
         width: 360,
         child: Column(
@@ -699,13 +700,13 @@ class _LoyaltySettingsDialogState extends ConsumerState<_LoyaltySettingsDialog> 
           children: [
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Enable Loyalty Points'),
+              title: Text(AppLocalizations.of(context).enableLoyaltyPoints),
               value: _enabled,
               onChanged: (v) => setState(() => _enabled = v),
             ),
             const Divider(height: 24),
             // Earning rule
-            Text('Earning Rule',
+            Text(AppLocalizations.of(context).earningRule,
                 style: TextStyle(
                     fontWeight: FontWeight.w600,
                     color: cs.onSurface.withValues(alpha: 0.7),
@@ -716,9 +717,9 @@ class _LoyaltySettingsDialogState extends ConsumerState<_LoyaltySettingsDialog> 
                 Expanded(
                   child: TextField(
                     controller: _minAmountCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Min. purchase amount',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context).minPurchaseAmount,
+                      border: const OutlineInputBorder(),
                       suffixText: 'DH',
                     ),
                     keyboardType:
@@ -733,9 +734,9 @@ class _LoyaltySettingsDialogState extends ConsumerState<_LoyaltySettingsDialog> 
                 Expanded(
                   child: TextField(
                     controller: _pointsPerThresholdCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Points earned',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context).pointsEarned,
+                      border: const OutlineInputBorder(),
                       suffixText: 'pts',
                     ),
                     keyboardType:
@@ -754,7 +755,7 @@ class _LoyaltySettingsDialogState extends ConsumerState<_LoyaltySettingsDialog> 
             ),
             const SizedBox(height: 16),
             // Redemption rule
-            Text('Redemption Rule',
+            Text(AppLocalizations.of(context).redemptionRule,
                 style: TextStyle(
                     fontWeight: FontWeight.w600,
                     color: cs.onSurface.withValues(alpha: 0.7),
@@ -784,7 +785,7 @@ class _LoyaltySettingsDialogState extends ConsumerState<_LoyaltySettingsDialog> 
       actions: [
         TextButton(
           onPressed: _saving ? null : () => Navigator.pop(context),
-          child: Text('Cancel',
+          child: Text(AppLocalizations.of(context).actionCancel,
               style: TextStyle(color: cs.onSurface.withValues(alpha: 0.6))),
         ),
         FilledButton(
@@ -794,7 +795,7 @@ class _LoyaltySettingsDialogState extends ConsumerState<_LoyaltySettingsDialog> 
                   width: 18,
                   height: 18,
                   child: CircularProgressIndicator(strokeWidth: 2))
-              : const Text('Save'),
+              : Text(AppLocalizations.of(context).actionSave),
         ),
       ],
     );

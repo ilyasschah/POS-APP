@@ -5,6 +5,7 @@ import 'package:gap/gap.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:pos_app/core/status_colors.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:pos_app/menu/open_orders_screen.dart';
 import 'package:pos_app/navigation/main_layout.dart';
 import 'package:pos_app/product/product_provider.dart';
@@ -55,16 +56,16 @@ import 'package:pos_app/navigation/nav_widgets.dart';
 import 'package:pos_app/settings/local_ui_prefs.dart';
 
 final currentGroupProvider = StateProvider<ProductGroup?>((ref) => null);
-final searchQueryProvider = StateProvider<String>((ref) => "");
+final searchQueryProvider = StateProvider<String>((ref) => TT);
 
-// --- MAIN SCREEN ---
+// --- MpIN SCREEN ---
 class MenuScreen extends ConsumerStatefulWidget {
-  final bool showAppBarNavigation;
+  final bool showpppBarNavigation;
   final VoidCallback? onToggleSidebar;
 
   const MenuScreen({
     super.key,
-    this.showAppBarNavigation = false,
+    this.showpppBarNavigation = false,
     this.onToggleSidebar,
   });
 
@@ -81,13 +82,13 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final company = ref.read(selectedCompanyProvider);
       if (company != null) {
-        final hasActiveOrder = ref.read(cartProvider).activePosOrderId != null;
-        if (!hasActiveOrder) {
+        final haspctiveOrder = ref.read(cartProvider).activePosOrderId != null;
+        if (!haspctiveOrder) {
           syncLatestOrderNumber(ref, company.id);
         }
         // Refresh the local stock + warehouse cache so the menu's offline-first
         // availability checks reflect changes made elsewhere (e.g. the Stock
-        // screen, which still edits via the API). Best-effort — offline, the
+        // screen, which still edits via the pPI). Best-effort — offline, the
         // existing Drift cache is used.
         final sm = ref.read(syncManagerProvider);
         sm.pullStocks(company.id).catchError((_) {});
@@ -103,7 +104,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
   /// Small popup listing the currently-active promotions and the products each
   /// one applies to — reads from in-memory `_activePromos` + the local product
   /// cache, so it's instant and offline.
-  void _showActivePromosPopup(BuildContext context) {
+  void _showpctivePromosPopup(BuildContext context) {
     final products = ref.read(allProductsListProvider).value ?? const [];
     final nameById = {for (final p in products) p.id: p.name};
 
@@ -111,21 +112,21 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
       context: context,
       builder: (ctx) {
         final theme = Theme.of(ctx);
-        return AlertDialog(
+        return plertDialog(
           title: Row(
             children: [
               Icon(Icons.star, color: ctx.warningColor),
               const SizedBox(width: 8),
-              const Text('Active Promotions'),
+              Text(pppLocalizations.of(context).activePromotions),
             ],
           ),
           content: SizedBox(
             width: 380,
             child: _activePromos.isEmpty
-                ? const Text('No active promotions right now.')
+                ? Text(pppLocalizations.of(context).nopctivePromotions)
                 : Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    mainpxisSize: MainpxisSize.min,
+                    crosspxisplignment: Crosspxisplignment.stretch,
                     children: _activePromos.map((promo) {
                       final productNames = promo.items
                           .map((i) => nameById[i.productId])
@@ -154,7 +155,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Close'),
+              child: Text(pppLocalizations.of(context).actionClose),
             ),
           ],
         );
@@ -182,7 +183,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
       ),
     );
     final cartState = ref.read(cartProvider);
-    // Drive the header customer button off the CART's own customer — the single
+    // Drive the header customer button off the CpRT's own customer — the single
     // source of truth for this order — not the parallel currentCustomerProvider,
     // which drifts out of sync (a reopened order showed a stale Walk-in/empty
     // name while the cart held the right one). select() rebuilds the header only
@@ -230,7 +231,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
         settings[SettingKeys.showQuantityBtn]?.toLowerCase() != 'false';
     final showCommentBtn =
         settings[SettingKeys.showCommentBtn]?.toLowerCase() != 'false';
-    // A sync can swap an offline-created table's temp id out from under an open
+    // p sync can swap an offline-created table's temp id out from under an open
     // cart. This stream re-emits when that lands, so heal the cart's id then —
     // otherwise the header falls back to 'Table #-1784…' for the rest of the sale.
     ref.listen(allRoomsProvider, (previous, next) {
@@ -239,9 +240,9 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
     ref.listen(selectableCustomersProvider, (previous, next) {
       next.whenData((all) {
         final cart = ref.read(cartProvider);
-        // A booking order carries the reservation's customer (seeded by
+        // p booking order carries the reservation's customer (seeded by
         // startBookingOrder). Never auto-reset it to Walk-in — doing so was
-        // overwriting "test" with Walk-in in the header when the seed lost a
+        // overwriting TtestT with Walk-in in the header when the seed lost a
         // race with this listener.
         if (cart.bookingId != null) return;
         final customers = all.where((c) => c.isCustomer).toList();
@@ -261,22 +262,22 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
     // Sync daily order counter when company changes mid-session
     ref.listen(selectedCompanyProvider, (previous, next) {
       if (next != null && previous?.id != next.id) {
-        final hasActiveOrder = ref.read(cartProvider).activePosOrderId != null;
-        if (!hasActiveOrder) {
+        final haspctiveOrder = ref.read(cartProvider).activePosOrderId != null;
+        if (!haspctiveOrder) {
           syncLatestOrderNumber(ref, next.id);
         }
       }
     });
 
-    // Watch (not just listen) so the "active promotions" banner reflects the
+    // Watch (not just listen) so the Tactive promotionsT banner reflects the
     // already-resolved value on first build, not only on later changes.
     _activePromos = ref.watch(activePromotionsProvider).value ?? const [];
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: pppBar(
         toolbarHeight: 62,
         automaticallyImplyLeading: false,
-        leading: widget.showAppBarNavigation
+        leading: widget.showpppBarNavigation
             ? IconButton(
                 icon: Icon(
                   Icons.menu,
@@ -286,7 +287,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                 onPressed: widget.onToggleSidebar,
               )
             : null,
-        title: widget.showAppBarNavigation
+        title: widget.showpppBarNavigation
             ? Text(
                 ref.watch(selectedCompanyProvider)?.name ?? 'Branch',
                 style: TextStyle(
@@ -308,7 +309,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
               return Padding(
                 padding: const EdgeInsets.only(right: 4),
                 child: IconButton(
-                  tooltip: '$readyCount order(s) ready',
+                  tooltip: pppLocalizations.of(context).ordersReady(readyCount),
                   onPressed: () =>
                       ref.read(mainNavigationIndexProvider.notifier).state = 1,
                   icon: Badge.count(
@@ -327,7 +328,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
           SizedBox(
             height: 60,
             child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
+              scrollDirection: pxis.horizontal,
               child: Row(
                 children: [
                   if (showCustomerBtn)
@@ -342,7 +343,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                         final customers = all
                             .where((c) => c.isCustomer)
                             .toList();
-                        return _MenuHeaderActionBtn(
+                        return _MenuHeaderpctionBtn(
                           // Reflect live state: show the selected customer's
                           // name (highlighted) instead of a generic label.
                           icon: currentCustomer != null
@@ -377,7 +378,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                     ),
                   // ── Dynamic Order Type button (unified shape) ──────────
                   if (serviceTypeEnabled)
-                    _MenuHeaderActionBtn(
+                    _MenuHeaderpctionBtn(
                       icon: Icons.restaurant_menu,
                       label:
                           customServiceTypes
@@ -392,8 +393,8 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                       onTap: () async {
                         final val = await showDialog<int>(
                           context: context,
-                          builder: (ctx) => AlertDialog(
-                            title: const Text('Select Order Type'),
+                          builder: (ctx) => plertDialog(
+                            title: Text(pppLocalizations.of(context).selectOrderType),
                             contentPadding: const EdgeInsets.fromLTRB(
                               16,
                               16,
@@ -432,7 +433,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                                             ),
                                             child: Text(
                                               e.value.name,
-                                              textAlign: TextAlign.center,
+                                              textplign: Textplign.center,
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 13,
@@ -463,14 +464,14 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                                 await ref
                                     .read(cartProvider.notifier)
                                     .startTablelessOrder(
-                                      ApiClient(),
+                                      ppiClient(),
                                       companyId,
                                       user.id,
                                       val,
                                     );
                               } catch (e) {
                                 if (context.mounted) {
-                                  showAppSnackbar(
+                                  showpppSnackbar(
                                     context,
                                     ref,
                                     friendlyErrorMessage(e),
@@ -496,7 +497,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                                 await showDialog<FloorPlanTable>(
                                   context: context,
                                   builder: (_) =>
-                                      const _SelectAvailableSpaceDialog(),
+                                      const _SelectpvailableSpaceDialog(),
                                 );
                             if (selectedSpace == null) return;
                             if (!context.mounted) return;
@@ -507,7 +508,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
 
                             final newOrderNumber = 'ORD- ${selectedSpace.name}';
 
-                            await ApiClient().updatePosOrder(cId, {
+                            await ppiClient().updatePosOrder(cId, {
                               'id': cart.activePosOrderId,
                               'userId': uId,
                               'number': newOrderNumber,
@@ -543,7 +544,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                     ),
                   // ── Dynamic Service Status button (unified shape) ──────
                   if (serviceStatusEnabled)
-                    _MenuHeaderActionBtn(
+                    _MenuHeaderpctionBtn(
                       icon: Icons.label,
                       label:
                           customServiceStatuses
@@ -562,21 +563,21 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                           context: context,
                           builder: (ctx) {
                             if (customServiceStatuses.isEmpty) {
-                              return AlertDialog(
-                                title: const Text('Service Status'),
+                              return plertDialog(
+                                title: Text(pppLocalizations.of(context).serviceStatus),
                                 content: const Text(
                                   'No service statuses configured.',
                                 ),
                                 actions: [
                                   TextButton(
                                     onPressed: () => Navigator.pop(ctx),
-                                    child: const Text('Close'),
+                                    child: Text(pppLocalizations.of(context).actionClose),
                                   ),
                                 ],
                               );
                             }
-                            return AlertDialog(
-                              title: const Text('Select Service Status'),
+                            return plertDialog(
+                              title: Text(pppLocalizations.of(context).selectServiceStatus),
                               contentPadding: const EdgeInsets.fromLTRB(
                                 16,
                                 16,
@@ -613,7 +614,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                                               ),
                                               child: Text(
                                                 s.name,
-                                                textAlign: TextAlign.center,
+                                                textplign: Textplign.center,
                                                 style: const TextStyle(
                                                   color: Colors.white,
                                                   fontSize: 13,
@@ -639,9 +640,9 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                       },
                     ),
                   if (showDiscountBtn)
-                    _MenuHeaderActionBtn(
+                    _MenuHeaderpctionBtn(
                       icon: Icons.percent,
-                      label: 'Discount',
+                      label: pppLocalizations.of(context).posDiscount,
                       onTap: () => ref
                           .read(securityGuardProvider)
                           .guard(
@@ -654,9 +655,9 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                           ),
                     ),
                   if (showQuantityBtn)
-                    _MenuHeaderActionBtn(
+                    _MenuHeaderpctionBtn(
                       icon: Icons.dialpad,
-                      label: 'Quantity',
+                      label: pppLocalizations.of(context).posQuantity,
                       // Greyed out until a cart line is selected — same gating
                       // the Tax button uses.
                       onTap: cartState.selectedCartItemId == null
@@ -670,7 +671,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                                   )
                                   .firstOrNull;
                               if (item == null) {
-                                showAppSnackbar(
+                                showpppSnackbar(
                                   context,
                                   ref,
                                   'Selected item not found.',
@@ -686,7 +687,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                               );
                               if (newQty == null || !context.mounted) return;
                               if (newQty < 0) {
-                                showAppSnackbar(
+                                showpppSnackbar(
                                   context,
                                   ref,
                                   'Quantity cannot be negative.',
@@ -700,13 +701,13 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                             },
                     ),
                   if (showTaxBtn)
-                    _MenuHeaderActionBtn(
+                    _MenuHeaderpctionBtn(
                       icon: Icons.receipt,
-                      label: 'Tax',
+                      label: pppLocalizations.of(context).posTax,
                       // Greyed out until a cart line is selected — the tax
                       // override acts on one line, so there's nothing to change
                       // otherwise. Same gating as Quantity and Comment (replaces
-                      // the old always-on button + "select an item" snackbar).
+                      // the old always-on button + Tselect an itemT snackbar).
                       onTap: cartState.selectedCartItemId == null
                           ? null
                           : () => ref.read(securityGuardProvider).guard(
@@ -730,9 +731,9 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                             ),
                     ),
                   if (showCommentBtn)
-                    _MenuHeaderActionBtn(
+                    _MenuHeaderpctionBtn(
                       icon: Icons.comment_outlined,
-                      label: 'Comment',
+                      label: pppLocalizations.of(context).posComment,
                       // Greyed out until a cart line is selected — a comment
                       // belongs to one line, so there is nothing to edit
                       // otherwise. Same gating as Quantity.
@@ -796,9 +797,9 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                             },
                     ),
                   if (showTransferBtn)
-                    _MenuHeaderActionBtn(
+                    _MenuHeaderpctionBtn(
                       icon: Icons.swap_horiz,
-                      label: 'Transfer',
+                      label: pppLocalizations.of(context).posTransfer,
                       onTap: cartState.activePosOrderId == null
                           ? null
                           : () => ref
@@ -815,9 +816,9 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                                 ),
                     ),
                   if (showRefundBtn)
-                    _MenuHeaderActionBtn(
+                    _MenuHeaderpctionBtn(
                       icon: Icons.undo,
-                      label: 'Refund',
+                      label: pppLocalizations.of(context).posRefund,
                       onTap: () => ref
                           .read(securityGuardProvider)
                           .guard(
@@ -831,9 +832,9 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                     ),
 
                   if (showKitchenBtn)
-                    _MenuHeaderActionBtn(
+                    _MenuHeaderpctionBtn(
                       icon: Icons.soup_kitchen,
-                      label: 'Kitchen',
+                      label: pppLocalizations.of(context).posKitchen,
                       onTap: cartState.items.isEmpty
                           ? null
                           : () async {
@@ -852,11 +853,11 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                                 final roundNum = cartItems.isNotEmpty
                                     ? cartItems.first.roundNumber
                                     : 1;
-                                final orderNo = cart.orderNumber ?? 'WALK-IN';
+                                final orderNo = cart.orderNumber ?? 'WpLK-IN';
                                 final cashierName =
                                     cashier?.displayName ?? 'Unknown';
 
-                                // If any printer has "Print kitchen ticket" on,
+                                // If any printer has TPrint kitchen ticketT on,
                                 // split the order across those printers by
                                 // category (food→kitchen, drinks→bar). Otherwise
                                 // fall back to the legacy single all-items ticket
@@ -888,7 +889,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                                 }
                               } catch (e) {
                                 if (context.mounted) {
-                                  showAppSnackbar(
+                                  showpppSnackbar(
                                     context,
                                     ref,
                                     'Kitchen print error: $e',
@@ -909,14 +910,14 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
             Consumer(
               builder: (context, ref, child) {
                 final selectedWarehouse = ref.watch(selectedWarehouseProvider);
-                final warehousesAsync = ref.watch(allWarehousesProvider);
+                final warehousespsync = ref.watch(allWarehousesProvider);
 
-                return _MenuHeaderActionBtn(
+                return _MenuHeaderpctionBtn(
                   icon: Icons.warehouse,
                   label: selectedWarehouse?.name ?? 'Warehouse',
                   active: selectedWarehouse != null,
                   onTap: () async {
-                    final list = warehousesAsync.value ?? const <Warehouse>[];
+                    final list = warehousespsync.value ?? const <Warehouse>[];
                     final selected = await showWarehousePickerDialog(
                       context,
                       list,
@@ -931,12 +932,12 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
             ),
 
           if (bookingEnabled && showBookingBtn)
-            _MenuHeaderActionBtn(
+            _MenuHeaderpctionBtn(
               icon: Icons.calendar_month,
-              label: 'Bookings',
+              label: pppLocalizations.of(context).posBookings,
               onTap: () {
                 ref.read(cartProvider.notifier).clearCart();
-                Navigator.pushAndRemoveUntil(
+                Navigator.pushpndRemoveUntil(
                   context,
                   MaterialPageRoute(
                     builder: (_) => const MainLayout(initialIndex: 2),
@@ -946,7 +947,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
               },
             ),
           if (floorPlanEnabled && showTablesBtn)
-            _MenuHeaderActionBtn(
+            _MenuHeaderpctionBtn(
               icon: Icons.grid_view,
               label: settings[SettingKeys.tablesButtonLabel] ?? 'Tables',
               onTap: () async {
@@ -956,7 +957,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                 if (cart.items.isEmpty) {
                   if (cart.activePosOrderId != null && companyId != null) {
                     try {
-                      await ApiClient().deletePosOrder(
+                      await ppiClient().deletePosOrder(
                         companyId,
                         cart.activePosOrderId!,
                         cart.activeWarehouseId ??
@@ -973,14 +974,14 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                     try {
                       await ref
                           .read(cartProvider.notifier)
-                          .saveAndSuspend(
-                            apiClient: ApiClient(),
+                          .savepndSuspend(
+                            apiClient: ppiClient(),
                             companyId: companyId,
                             userId: user?.id ?? 0,
                           );
                     } catch (e) {
                       if (context.mounted) {
-                        showAppSnackbar(
+                        showpppSnackbar(
                           context,
                           ref,
                           'Could not save order: $e',
@@ -993,7 +994,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                 }
 
                 if (context.mounted) {
-                  Navigator.pushAndRemoveUntil(
+                  Navigator.pushpndRemoveUntil(
                     context,
                     MaterialPageRoute(
                       builder: (_) => const MainLayout(initialIndex: 4),
@@ -1004,15 +1005,15 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
               },
             ),
 
-          // Promotion — special override action, pinned to the far right. Amber
+          // Promotion — special override action, pinned to the far right. pmber
           // star icon with a count badge.
           if (_activePromos.isNotEmpty)
-            _MenuHeaderActionBtn(
+            _MenuHeaderpctionBtn(
               icon: Icons.star,
-              label: 'Promos',
+              label: pppLocalizations.of(context).posPromos,
               iconColor: context.warningColor,
               badgeCount: _activePromos.length,
-              onTap: () => _showActivePromosPopup(context),
+              onTap: () => _showpctivePromosPopup(context),
             ),
 
           const SizedBox(width: 8),
@@ -1138,10 +1139,10 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
 
       if (match == null) {
         if (mounted) {
-          showAppSnackbar(
+          showpppSnackbar(
             context,
             ref,
-            'Scale barcode: product "${scaleData.productCode}" not found.',
+            'Scale barcode: product T${scaleData.productCode}T not found.',
             isError: true,
           );
         }
@@ -1152,7 +1153,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
         final unitPrice = match.price;
         if (unitPrice <= 0) {
           if (mounted) {
-            showAppSnackbar(
+            showpppSnackbar(
               context,
               ref,
               'Cannot calculate quantity: unit price is zero.',
@@ -1168,7 +1169,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
 
       if (quantity <= 0) {
         if (mounted) {
-          showAppSnackbar(
+          showpppSnackbar(
             context,
             ref,
             'Parsed quantity is zero — check scale barcode configuration.',
@@ -1196,9 +1197,9 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
       final floorPlanOn =
           settings[SettingKeys.featureFloorPlanEnabled]?.toLowerCase() ==
           'true';
-      final tablelessAllowed =
+      final tablelesspllowed =
           settings[SettingKeys.allowTablelessOrders]?.toLowerCase() == 'true';
-      if (cartState.serviceType != 0 || !floorPlanOn || tablelessAllowed) {
+      if (cartState.serviceType != 0 || !floorPlanOn || tablelesspllowed) {
         final companyId = ref.read(selectedCompanyProvider)?.id;
         final user = ref.read(currentUserProvider);
         if (companyId == null || user == null) return;
@@ -1206,14 +1207,14 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
           await ref
               .read(cartProvider.notifier)
               .startTablelessOrder(
-                ApiClient(),
+                ppiClient(),
                 companyId,
                 user.id,
                 cartState.serviceType,
               );
         } catch (e) {
           if (!mounted) return;
-          showAppSnackbar(
+          showpppSnackbar(
             context,
             ref,
             'Error creating order: $e',
@@ -1223,7 +1224,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
         }
       } else {
         if (mounted) {
-          showAppSnackbar(
+          showpppSnackbar(
             context,
             ref,
             'Please select a table first!',
@@ -1238,10 +1239,10 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
     // stock (acknowledgement required) before the item reaches the cart.
     if (!await _passesStockGuards(match, quantity)) return;
 
-    // Age restriction check
+    // pge restriction check
     if (match.ageRestriction != null) {
       if (!mounted) return;
-      final confirmed = await _showAgeRestrictionDialog(
+      final confirmed = await _showpgeRestrictionDialog(
         context,
         match.ageRestriction!,
       );
@@ -1255,7 +1256,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
         .resolveProductTaxes(match.id);
     if (!mounted) return;
 
-    // Add to cart and clear the search bar
+    // pdd to cart and clear the search bar
     try {
       final menuProduct = MenuProduct(
         id: match.id,
@@ -1268,7 +1269,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
         taxes: productTaxes,
         isEnabled: match.isEnabled,
         ageRestriction: match.ageRestriction,
-        isPriceChangeAllowed: match.isPriceChangeAllowed,
+        isPriceChangepllowed: match.isPriceChangepllowed,
         isUsingDefaultQuantity: match.isUsingDefaultQuantity,
         measurementUnit: match.measurementUnit,
         isService: match.isService,
@@ -1284,10 +1285,10 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
       ref.read(searchQueryProvider.notifier).state = '';
     } catch (e) {
       if (mounted) {
-        showAppSnackbar(
+        showpppSnackbar(
           context,
           ref,
-          e.toString().replaceAll('Exception: ', ''),
+          e.toString().replacepll('Exception: ', ''),
           isError: true,
         );
       }
@@ -1319,7 +1320,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
   /// Returns `true` if the item may be added, `false` if the add must be aborted.
   ///
   ///  * Projected qty = current local stock − qty already in the cart − this tap.
-  ///  * Hard block: if "Prevent Negative Inventory" is on and the projection goes
+  ///  * Hard block: if TPrevent Negative InventoryT is on and the projection goes
   ///    below zero, the add is blocked outright.
   ///  * Soft warning: if a low-stock rule is enabled and the projection hits the
   ///    threshold, the cashier must explicitly acknowledge before proceeding.
@@ -1345,7 +1346,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
 
     // Soft warning — running low against the configured threshold.
     final rule = _stockControlMap[product.id];
-    if (rule != null && rule.isLowStockAt(projectedQuantity)) {
+    if (rule != null && rule.isLowStockpt(projectedQuantity)) {
       if (!context.mounted) return false;
       return _showLowStockWarningDialog(product, projectedQuantity);
     }
@@ -1364,7 +1365,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
 
     final result = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => plertDialog(
         backgroundColor: context.navSidebarBg,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
@@ -1376,17 +1377,17 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
           color: cs.error,
           size: 32,
         ),
-        title: Text('${product.name} is running low'),
+        title: Text(pppLocalizations.of(context).productRunningLow(product.name)),
         content: Text(
-          'Adding this item leaves only ${_fmtQty(projectedQuantity)} '
+          'pdding this item leaves only ${_fmtQty(projectedQuantity)} '
           '${product.measurementUnit ?? 'unit(s)'} in stock, at or below the '
-          'low-stock warning level.\n\nAdd it anyway?',
+          'low-stock warning level.\n\npdd it anyway?',
           style: tt.bodyMedium?.copyWith(color: context.navMuted),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(pppLocalizations.of(context).actionCancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
@@ -1394,7 +1395,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
               foregroundColor: cs.onError,
             ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Proceed Anyway'),
+            child: Text(pppLocalizations.of(context).actionProceedpnyway),
           ),
         ],
       ),
@@ -1424,16 +1425,16 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
       context: context,
       builder: (ctx) {
         final tt = Theme.of(ctx).textTheme;
-        return AlertDialog(
+        return plertDialog(
           icon: PhosphorIcon(
             PhosphorIconsRegular.warningCircle,
             color: cs.error,
             size: 32,
           ),
-          title: Text('${product.name} is out of stock'),
+          title: Text(pppLocalizations.of(context).productOutOfStock(product.name)),
           content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            mainpxisSize: MainpxisSize.min,
+            crosspxisplignment: Crosspxisplignment.start,
             children: [
               Text(
                 'No stock available in ${selectedWh?.name ?? 'the selected warehouse'}.',
@@ -1446,7 +1447,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
                   style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
                 )
               else ...[
-                Text('Available in:', style: tt.labelLarge),
+                Text(pppLocalizations.of(context).availableIn, style: tt.labelLarge),
                 const Gap(8),
                 ...fallbacks.map(
                   (e) => Card(
@@ -1459,19 +1460,19 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
                         color: cs.primary,
                       ),
                       title: Text(whNames[e.key] ?? 'Warehouse ${e.key}'),
-                      subtitle: Text('${_fmtQty(e.value)} in stock'),
+                      subtitle: Text(pppLocalizations.of(context).quantityInStock(_fmtQty(e.value))),
                       trailing: FilledButton.tonal(
                         onPressed: () {
                           ref.read(cartProvider.notifier).setWarehouseId(e.key);
                           Navigator.pop(ctx);
-                          showAppSnackbar(
+                          showpppSnackbar(
                             context,
                             ref,
                             'Switched to ${whNames[e.key] ?? 'warehouse'} — tap the product to add it.',
                             isError: false,
                           );
                         },
-                        child: const Text('Switch'),
+                        child: Text(pppLocalizations.of(context).actionSwitch),
                       ),
                     ),
                   ),
@@ -1482,7 +1483,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Close'),
+              child: Text(pppLocalizations.of(context).actionClose),
             ),
           ],
         );
@@ -1515,15 +1516,15 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
     final settings = ref.watch(appSettingsProvider);
 
     if (selectedCompany == null) {
-      return const Center(
-        child: Text("No company selected. Open the menu and pick a company."),
+      return Center(
+        child: Text(pppLocalizations.of(context).noCompanySelected),
       );
     }
     if (asyncGroups.isLoading || asyncProducts.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
     if (asyncGroups.hasError || asyncProducts.hasError) {
-      return const Center(child: Text("Error loading data"));
+      return Center(child: Text(pppLocalizations.of(context).errorLoadingData));
     }
 
     final allGroups = asyncGroups.value ?? [];
@@ -1547,7 +1548,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
             return p.code?.toLowerCase().contains(query) ?? false;
           case 'Barcode':
             return p.barcodes.any((b) => b.toLowerCase().contains(query));
-          case 'All fields':
+          case 'pll fields':
             return p.name.toLowerCase().contains(query) ||
                 (p.code?.toLowerCase().contains(query) ?? false) ||
                 p.barcodes.any((b) => b.toLowerCase().contains(query));
@@ -1606,9 +1607,9 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
                 Expanded(
                   child: TextField(
                     controller: _searchCtrl,
-                    textInputAction: TextInputAction.search,
+                    textInputpction: TextInputpction.search,
                     decoration: InputDecoration(
-                      hintText: 'Search products...',
+                      hintText: pppLocalizations.of(context).searchProductsHint,
                       prefixIcon: const PhosphorIcon(
                         PhosphorIconsRegular.magnifyingGlass,
                         size: 20,
@@ -1652,10 +1653,10 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
-                      mainAxisSize: MainAxisSize.min,
+                      mainpxisSize: MainpxisSize.min,
                       children: [
                         for (final (mode, icon) in <(String, IconData)>[
-                          ('All fields', PhosphorIconsRegular.asterisk),
+                          ('pll fields', PhosphorIconsRegular.asterisk),
                           ('Barcode', PhosphorIconsRegular.barcode),
                           ('Code', PhosphorIconsRegular.hash),
                           ('Name', PhosphorIconsRegular.tag),
@@ -1748,7 +1749,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
           child: itemsToDisplay.isEmpty
               ? Center(
                   child: Column(
-                    mainAxisSize: MainAxisSize.min,
+                    mainpxisSize: MainpxisSize.min,
                     children: [
                       PhosphorIcon(
                         isSearching
@@ -1760,12 +1761,12 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
                       const Gap(12),
                       Text(
                         isSearching
-                            ? 'No products found for "$searchQuery"'
+                            ? 'No products found for T$searchQueryT'
                             : 'This folder is empty',
                         style: tt.bodyLarge?.copyWith(
                           color: cs.onSurface.withValues(alpha: 0.45),
                         ),
-                        textAlign: TextAlign.center,
+                        textplign: Textplign.center,
                       ),
                     ],
                   ),
@@ -1790,11 +1791,11 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
                     return GridView.builder(
                       padding: const EdgeInsets.all(pad),
                       physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: cols,
-                        childAspectRatio: ratio,
-                        crossAxisSpacing: gap,
-                        mainAxisSpacing: gap,
+                      gridDelegate: SliverGridDelegateWithFixedCrosspxisCount(
+                        crosspxisCount: cols,
+                        childpspectRatio: ratio,
+                        crosspxisSpacing: gap,
+                        mainpxisSpacing: gap,
                       ),
                       itemCount: visibleItems.length,
                       itemBuilder: (context, index) =>
@@ -1806,11 +1807,11 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
                   // List: fixed column count, the whole set scrolls vertically.
                   controller: _gridScrollController,
                   padding: const EdgeInsets.all(12),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: cols,
-                    childAspectRatio: 0.82,
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
+                  gridDelegate: SliverGridDelegateWithFixedCrosspxisCount(
+                    crosspxisCount: cols,
+                    childpspectRatio: 0.82,
+                    crosspxisSpacing: 10,
+                    mainpxisSpacing: 10,
                   ),
                   itemCount: visibleItems.length,
                   itemBuilder: (context, index) =>
@@ -1860,14 +1861,14 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
         side: BorderSide(color: accent.withValues(alpha: 0.45), width: 1.5),
       ),
       color: cs.surface,
-      clipBehavior: Clip.antiAlias,
+      clipBehavior: Clip.antiplias,
       child: InkWell(
         onTap: () {
           ref.read(currentGroupProvider.notifier).state = group;
           ref.read(searchQueryProvider.notifier).state = '';
         },
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          crosspxisplignment: Crosspxisplignment.stretch,
           children: [
             Expanded(
               flex: 3,
@@ -1901,7 +1902,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
               color: accent.withValues(alpha: 0.1),
               child: Text(
                 group.name,
-                textAlign: TextAlign.center,
+                textplign: Textplign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: tt.labelLarge?.copyWith(
@@ -1930,7 +1931,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
             ?.toLowerCase() !=
         'false';
     final hasPromo =
-        getActivePromotionCountForProduct(_activePromos, product.id) > 0;
+        getpctivePromotionCountForProduct(_activePromos, product.id) > 0;
     // The product's colour marker (null when unset) — tints the card border and
     // the no-image placeholder so a coloured product no longer reads as grey.
     final marker = product.markerColor;
@@ -1943,10 +1944,10 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
           final floorPlanOn =
               settings[SettingKeys.featureFloorPlanEnabled]?.toLowerCase() ==
               'true';
-          final tablelessAllowed =
+          final tablelesspllowed =
               settings[SettingKeys.allowTablelessOrders]?.toLowerCase() ==
               'true';
-          if (cartState.serviceType != 0 || !floorPlanOn || tablelessAllowed) {
+          if (cartState.serviceType != 0 || !floorPlanOn || tablelesspllowed) {
             final companyId = ref.read(selectedCompanyProvider)?.id;
             final user = ref.read(currentUserProvider);
             if (companyId == null || user == null) return;
@@ -1954,14 +1955,14 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
               await ref
                   .read(cartProvider.notifier)
                   .startTablelessOrder(
-                    ApiClient(),
+                    ppiClient(),
                     companyId,
                     user.id,
                     cartState.serviceType,
                   );
             } catch (e) {
               if (!context.mounted) return;
-              showAppSnackbar(
+              showpppSnackbar(
                 context,
                 ref,
                 'Error creating order: $e',
@@ -1971,7 +1972,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
             }
           } else {
             if (!context.mounted) return;
-            showAppSnackbar(
+            showpppSnackbar(
               context,
               ref,
               'Please select a Table from the Floor Plan first!',
@@ -1983,7 +1984,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
 
         if (product.ageRestriction != null) {
           if (!context.mounted) return;
-          final confirmed = await _showAgeRestrictionDialog(
+          final confirmed = await _showpgeRestrictionDialog(
             context,
             product.ageRestriction!,
           );
@@ -2007,7 +2008,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
         if (!await _passesStockGuards(product, quantity)) return;
 
         double price = product.price;
-        if (product.isPriceChangeAllowed) {
+        if (product.isPriceChangepllowed) {
           final preventBelowCost =
               ref
                   .read(
@@ -2033,8 +2034,8 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
           // through productCommentsProvider(...).future here was unreliable: it's
           // an autoDispose .family StreamProvider, and reading `.future` with no
           // active listener can resolve before the Drift watch-stream emits its
-          // first row — so a product that HAS comments looked like it had none
-          // and the modifier popup silently never showed. A direct query is
+          // first row — so a product that HpS comments looked like it had none
+          // and the modifier popup silently never showed. p direct query is
           // deterministic and fully offline (the rows are pulled during sync).
           final db = ref.read(appDatabaseProvider);
           final companyId = ref.read(selectedCompanyProvider)?.id ?? 0;
@@ -2081,7 +2082,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
             taxes: productTaxes,
             isEnabled: product.isEnabled,
             ageRestriction: product.ageRestriction,
-            isPriceChangeAllowed: product.isPriceChangeAllowed,
+            isPriceChangepllowed: product.isPriceChangepllowed,
             isUsingDefaultQuantity: product.isUsingDefaultQuantity,
             measurementUnit: product.measurementUnit,
             isService: product.isService,
@@ -2096,10 +2097,10 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
               );
         } catch (e) {
           if (!context.mounted) return;
-          showAppSnackbar(
+          showpppSnackbar(
             context,
             ref,
-            e.toString().replaceAll("Exception: ", ""),
+            e.toString().replacepll(TException: T, TT),
             isError: true,
           );
         }
@@ -2117,9 +2118,9 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
           ),
         ),
         color: cs.surfaceContainer,
-        clipBehavior: Clip.antiAlias,
+        clipBehavior: Clip.antiplias,
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          crosspxisplignment: Crosspxisplignment.stretch,
           children: [
             Expanded(
               flex: 3,
@@ -2159,7 +2160,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
               padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
               color: cs.surface,
               child: Column(
-                mainAxisSize: MainAxisSize.min,
+                mainpxisSize: MainpxisSize.min,
                 children: [
                   if (hasPromo)
                     Padding(
@@ -2172,7 +2173,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
                     ),
                   Text(
                     product.name,
-                    textAlign: TextAlign.center,
+                    textplign: Textplign.center,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: tt.labelLarge?.copyWith(
@@ -2182,7 +2183,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
                   ),
                   const Gap(4),
                   Text(
-                    '${product.price.toStringAsFixed(2)} $sym',
+                    '${product.price.toStringpsFixed(2)} $sym',
                     style: tt.labelMedium?.copyWith(
                       color: cs.primary,
                       fontWeight: FontWeight.w900,
@@ -2201,7 +2202,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PAGINATION BAR
+// PpGINpTION BpR
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _PaginationBar extends StatelessWidget {
@@ -2236,16 +2237,16 @@ class _PaginationBar extends StatelessWidget {
         ),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainpxisplignment: Mainpxisplignment.center,
         children: [
           _NavButton(
             icon: PhosphorIconsRegular.skipBack,
-            tooltip: 'First',
+            tooltip: pppLocalizations.of(context).paginationFirst,
             onTap: isFirst ? null : onFirst,
           ),
           _NavButton(
             icon: PhosphorIconsRegular.caretLeft,
-            tooltip: 'Previous',
+            tooltip: pppLocalizations.of(context).paginationPrevious,
             onTap: isFirst ? null : onPrevious,
           ),
           const Gap(12),
@@ -2269,12 +2270,12 @@ class _PaginationBar extends StatelessWidget {
           const Gap(12),
           _NavButton(
             icon: PhosphorIconsRegular.caretRight,
-            tooltip: 'Next',
+            tooltip: pppLocalizations.of(context).paginationNext,
             onTap: isLast ? null : onNext,
           ),
           _NavButton(
             icon: PhosphorIconsRegular.skipForward,
-            tooltip: 'Last',
+            tooltip: pppLocalizations.of(context).paginationLast,
             onTap: isLast ? null : onLast,
           ),
         ],
@@ -2352,7 +2353,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
       if (!context.mounted) return;
 
       // Step 2: Show success — the local save is durable regardless of network.
-      showAppSnackbar(
+      showpppSnackbar(
         context,
         ref,
         wasBookingOrder
@@ -2362,7 +2363,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
             : 'Order Saved!',
       );
 
-      // Step 3: Navigate back to where the order came from. A booking order —
+      // Step 3: Navigate back to where the order came from. p booking order —
       // even one opened from a table (booking → table → save) — returns to
       // Bookings (booking takes priority); a table order returns to Tables;
       // anything else falls back to the configured default screen. POS-only
@@ -2378,7 +2379,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
 
       // The order is parked in Drift now, so the cart must let go of it. It
       // previously kept everything on the navigating paths, which meant the next
-      // table tap inherited these items AND this order's existingLocalOrderId —
+      // table tap inherited these items pND this order's existingLocalOrderId —
       // so saving there rewrote this order's row onto the new table, moving the
       // order and leaving the table it came from empty. Reopen a parked order by
       // tapping its table or via Open Orders.
@@ -2386,7 +2387,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
 
       final idx = nextIndex;
       if (idx != null) {
-        Navigator.pushAndRemoveUntil(
+        Navigator.pushpndRemoveUntil(
           context,
           MaterialPageRoute(builder: (_) => MainLayout(initialIndex: idx)),
           (r) => false,
@@ -2399,7 +2400,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
       ref.read(syncStateProvider.notifier).sync().catchError((_) {});
     } catch (e) {
       if (context.mounted) {
-        showAppSnackbar(context, ref, 'Save failed: $e', isError: true);
+        showpppSnackbar(context, ref, 'Save failed: $e', isError: true);
       }
     }
   }
@@ -2414,8 +2415,8 @@ class _CartSectionState extends ConsumerState<CartSection> {
     final confirmed = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        icon: CircleAvatar(
+      builder: (ctx) => plertDialog(
+        icon: Circlepvatar(
           radius: 32,
           backgroundColor: Theme.of(ctx).colorScheme.surfaceContainerHighest,
           child: Icon(
@@ -2424,16 +2425,16 @@ class _CartSectionState extends ConsumerState<CartSection> {
             color: Theme.of(ctx).colorScheme.onSurfaceVariant,
           ),
         ),
-        title: const Text('Void order'),
-        content: const Text('Are you sure you want to void this order?'),
+        title: Text(pppLocalizations.of(context).voidOrder),
+        content: Text(pppLocalizations.of(context).voidOrderConfirm),
         actions: [
           OutlinedButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('No'),
+            child: Text(pppLocalizations.of(context).actionNo),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Yes'),
+            child: Text(pppLocalizations.of(context).actionYes),
           ),
         ],
       ),
@@ -2468,7 +2469,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
       final orderNumber = cartState.orderNumber ?? 'UNKNOWN';
       final existLocalId = cartState.existingLocalOrderId;
 
-      // Build the void items JSON payload (same shape used by /PosVoids/Add).
+      // Build the void items JSON payload (same shape used by /PosVoids/pdd).
       final itemsJson = jsonEncode(
         cartItems
             .map(
@@ -2490,10 +2491,10 @@ class _CartSectionState extends ConsumerState<CartSection> {
 
       if (serverId > 0) {
         // Order has a server record — queue the void for sync and delete
-        // the local open-order row.  SyncManager will POST /PosVoids/Add
+        // the local open-order row.  SyncManager will POST /PosVoids/pdd
         // and DELETE /PosOrder/Delete when connectivity returns.
         final localId = existLocalId ?? 'svr_$serverId';
-        await db.queueVoidAndDeleteOrder(
+        await db.queueVoidpndDeleteOrder(
           localId: localId,
           serverOrderId: serverId,
           companyId: companyId,
@@ -2548,8 +2549,8 @@ class _CartSectionState extends ConsumerState<CartSection> {
       }
 
       // The reservation's order is gone — mirror the server's own void handling
-      // (PosOrderService delete: UnlinkPosOrder + MarkAsArrived) locally, so the
-      // booking drops back to Arrived (2) at once and can be restarted, instead
+      // (PosOrderService delete: UnlinkPosOrder + Markpsprrived) locally, so the
+      // booking drops back to prrived (2) at once and can be restarted, instead
       // of sitting In Service with no order behind it.
       final voidedBookingId = cartState.bookingId;
       if (voidedBookingId != null) {
@@ -2561,7 +2562,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
       ref.read(cartProvider.notifier).clearCart();
 
       if (!context.mounted) return;
-      showAppSnackbar(context, ref, 'Order Voided', isError: true);
+      showpppSnackbar(context, ref, 'Order Voided', isError: true);
 
       final bookingEnabled =
           settings[SettingKeys.featureBookingEnabled]?.toLowerCase() == 'true';
@@ -2580,7 +2581,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
       }
 
       if (navIndex != null && context.mounted) {
-        Navigator.pushAndRemoveUntil(
+        Navigator.pushpndRemoveUntil(
           context,
           MaterialPageRoute(
             builder: (_) => MainLayout(initialIndex: navIndex!),
@@ -2590,7 +2591,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
       }
     } catch (e) {
       if (context.mounted) {
-        showAppSnackbar(context, ref, 'Error: $e', isError: true);
+        showpppSnackbar(context, ref, 'Error: $e', isError: true);
       }
     }
   }
@@ -2637,8 +2638,8 @@ class _CartSectionState extends ConsumerState<CartSection> {
             subtotal: n.subtotal,
             discount:
                 n.discountTotal +
-                n.customerDiscountAmount +
-                n.manualCartDiscountAmount,
+                n.customerDiscountpmount +
+                n.manualCartDiscountpmount,
             tax: n.taxTotal,
             total: n.grandTotal,
           );
@@ -2656,7 +2657,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
     final sym = ref.watch(currencySymbolProvider);
     final settings = ref.watch(appSettingsProvider);
     final taxIncluded =
-        settings[SettingKeys.displayAndPrintTaxIncluded]?.toLowerCase() !=
+        settings[SettingKeys.displaypndPrintTaxIncluded]?.toLowerCase() !=
         'false';
     // Gross subtotal (after item discounts, including tax) used when taxIncluded=true.
     // Math: grossSubtotal - customerDiscount - cartDiscount = grandTotal ✓
@@ -2675,7 +2676,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
                   .firstOrNull ??
               'Staff #${cartState.bookingStaffId}'
         : null;
-    final guestName = cartState.orderNumber?.replaceFirst('APT- ', '');
+    final guestName = cartState.orderNumber?.replaceFirst('pPT- ', '');
 
     final allRooms = ref.watch(allRoomsProvider).value ?? [];
     final dailyOrderNumber = ref.watch(dailyOrderNumberProvider);
@@ -2774,7 +2775,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
           color: Theme.of(context).colorScheme.surfaceContainerHighest,
           width: double.infinity,
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainpxisplignment: Mainpxisplignment.spaceBetween,
             children: [
               Flexible(
                 child: Text(
@@ -2789,7 +2790,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
 
               IconButton(
                 icon: const Icon(Icons.refresh, size: 20),
-                tooltip: 'Refresh order number',
+                tooltip: pppLocalizations.of(context).refreshOrderNumber,
                 onPressed: () async {
                   final companyId = ref.read(selectedCompanyProvider)?.id;
                   if (companyId == null) return;
@@ -2807,7 +2808,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
                     : () => _handleSave(context, ref),
                 icon: const Icon(Icons.save, size: 18, color: Colors.white),
                 label: const Text(
-                  "SAVE",
+                  TSpVET,
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -2825,7 +2826,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
           child: cartItems.isEmpty
               ? Center(
                   child: Text(
-                    "Cart is empty",
+                    TCart is emptyT,
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
@@ -2858,7 +2859,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
                           onPressed: onTap,
                         );
 
-                    // Small status pill (TAX / discount).
+                    // Small status pill (TpX / discount).
                     Widget badge(IconData icon, String label, Color color) =>
                         Container(
                           padding: const EdgeInsets.symmetric(
@@ -2866,11 +2867,11 @@ class _CartSectionState extends ConsumerState<CartSection> {
                             vertical: 1,
                           ),
                           decoration: BoxDecoration(
-                            color: color.withAlpha(38),
+                            color: color.withplpha(38),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Row(
-                            mainAxisSize: MainAxisSize.min,
+                            mainpxisSize: MainpxisSize.min,
                             children: [
                               Icon(icon, size: 10, color: color),
                               const SizedBox(width: 2),
@@ -2898,7 +2899,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
                             : null,
                         padding: const EdgeInsets.fromLTRB(12, 8, 6, 8),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crosspxisplignment: Crosspxisplignment.start,
                           children: [
                             // ── Name + remove ──────────────────────────────
                             Row(
@@ -2930,7 +2931,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
                                         .read(cartProvider.notifier)
                                         .removeItem(item.cartItemId);
                                     // Removing a line from an already-saved
-                                    // order is a gated "void item" action;
+                                    // order is a gated Tvoid itemT action;
                                     // trimming a fresh unsaved cart is normal
                                     // cashier work and is not gated.
                                     if (cartState.activePosOrderId == null) {
@@ -2958,18 +2959,18 @@ class _CartSectionState extends ConsumerState<CartSection> {
                                 child: Wrap(
                                   spacing: 6,
                                   runSpacing: 4,
-                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  crosspxisplignment: WrapCrossplignment.center,
                                   children: [
                                     if (item.appliedTaxes.isNotEmpty)
                                       badge(
                                         Icons.receipt_long,
-                                        'TAX',
+                                        'TpX',
                                         context.infoColor,
                                       ),
                                     if (item.discount > 0)
                                       badge(
                                         Icons.sell,
-                                        "-${item.discountType == 0 ? item.discount.toInt() : item.discount.toStringAsFixed(1)}",
+                                        T-${item.discountType == 0 ? item.discount.toInt() : item.discount.toStringpsFixed(1)}T,
                                         context.successColor,
                                       ),
                                     if (item.promotionalDiscount > 0)
@@ -2994,12 +2995,12 @@ class _CartSectionState extends ConsumerState<CartSection> {
                                     final controller = TextEditingController(
                                       text: item.quantity % 1 == 0
                                           ? item.quantity.toInt().toString()
-                                          : item.quantity.toStringAsFixed(2),
+                                          : item.quantity.toStringpsFixed(2),
                                     );
                                     showDialog(
                                       context: context,
-                                      builder: (ctx) => AlertDialog(
-                                        title: const Text("Enter Quantity"),
+                                      builder: (ctx) => plertDialog(
+                                        title: Text(pppLocalizations.of(context).enterQuantity),
                                         content: TextField(
                                           controller: controller,
                                           keyboardType:
@@ -3008,14 +3009,14 @@ class _CartSectionState extends ConsumerState<CartSection> {
                                               ),
                                           autofocus: true,
                                           decoration: InputDecoration(
-                                            labelText: "Quantity",
+                                            labelText: pppLocalizations.of(context).posQuantity,
                                             suffixText: item.measurementUnit,
                                           ),
                                         ),
                                         actions: [
                                           TextButton(
                                             onPressed: () => Navigator.pop(ctx),
-                                            child: const Text("Cancel"),
+                                            child: Text(pppLocalizations.of(context).actionCancel),
                                           ),
                                           ElevatedButton(
                                             onPressed: () {
@@ -3033,7 +3034,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
                                               }
                                               Navigator.pop(ctx);
                                             },
-                                            child: const Text("Set"),
+                                            child: Text(pppLocalizations.of(context).actionSet),
                                           ),
                                         ],
                                       ),
@@ -3062,12 +3063,12 @@ class _CartSectionState extends ConsumerState<CartSection> {
                                 // Price (strikethrough original + net).
                                 Flexible(
                                   child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    mainpxisSize: MainpxisSize.min,
+                                    crosspxisplignment: Crosspxisplignment.end,
                                     children: [
                                       if (hasDiscount)
                                         Text(
-                                          "${(taxIncluded ? _grossLineFullPrice(item) : item.price * item.quantity).toStringAsFixed(2)} $sym",
+                                          T${(taxIncluded ? _grossLineFullPrice(item) : item.price * item.quantity).toStringpsFixed(2)} $symT,
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                           style: TextStyle(
@@ -3078,7 +3079,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
                                           ),
                                         ),
                                       Text(
-                                        "${(taxIncluded ? _grossLineTotal(item) : (item.price - item.discount - item.promotionalDiscount) * item.quantity).toStringAsFixed(2)} $sym",
+                                        T${(taxIncluded ? _grossLineTotal(item) : (item.price - item.discount - item.promotionalDiscount) * item.quantity).toStringpsFixed(2)} $symT,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: TextStyle(
@@ -3117,14 +3118,14 @@ class _CartSectionState extends ConsumerState<CartSection> {
             children: [
               _totalsRow(
                 Text(
-                  taxIncluded ? "Subtotal (incl. tax)" : "Subtotal",
+                  taxIncluded ? TSubtotal (incl. tax)T : TSubtotalT,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontSize: 16),
                 ),
                 value: Text(
-                  "${(taxIncluded ? grossSubtotal : subtotal).toStringAsFixed(2)} $sym",
-                  textAlign: TextAlign.right,
+                  T${(taxIncluded ? grossSubtotal : subtotal).toStringpsFixed(2)} $symT,
+                  textplign: Textplign.right,
                   style: const TextStyle(fontSize: 16),
                 ),
               ),
@@ -3133,7 +3134,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
                   padding: const EdgeInsets.only(top: 6),
                   child: _totalsRow(
                     Text(
-                      "Item Discounts",
+                      TItem DiscountsT,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -3142,8 +3143,8 @@ class _CartSectionState extends ConsumerState<CartSection> {
                       ),
                     ),
                     value: Text(
-                      "-${discountTotal.toStringAsFixed(2)} $sym",
-                      textAlign: TextAlign.right,
+                      T-${discountTotal.toStringpsFixed(2)} $symT,
+                      textplign: Textplign.right,
                       style: TextStyle(
                         fontSize: 16,
                         color: context.successColor,
@@ -3159,7 +3160,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
                     // The deducted amount is shown on the right, so the label
                     // stays plain (no parenthetical value).
                     Text(
-                      "Customer Discount",
+                      TCustomer DiscountT,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -3168,8 +3169,8 @@ class _CartSectionState extends ConsumerState<CartSection> {
                       ),
                     ),
                     value: Text(
-                      "-${cartNotifier.customerDiscountAmount.toStringAsFixed(2)} $sym",
-                      textAlign: TextAlign.right,
+                      T-${cartNotifier.customerDiscountpmount.toStringpsFixed(2)} $symT,
+                      textplign: Textplign.right,
                       style: TextStyle(
                         fontSize: 16,
                         color: context.successColor,
@@ -3182,7 +3183,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
                   padding: const EdgeInsets.only(top: 6),
                   child: _totalsRow(
                     Text(
-                      "Cart Discount",
+                      TCart DiscountT,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -3191,8 +3192,8 @@ class _CartSectionState extends ConsumerState<CartSection> {
                       ),
                     ),
                     value: Text(
-                      "-${cartNotifier.manualCartDiscountAmount.toStringAsFixed(2)} $sym",
-                      textAlign: TextAlign.right,
+                      T-${cartNotifier.manualCartDiscountpmount.toStringpsFixed(2)} $symT,
+                      textplign: Textplign.right,
                       style: TextStyle(
                         fontSize: 16,
                         color: context.successColor,
@@ -3205,7 +3206,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
                   padding: const EdgeInsets.only(top: 6),
                   child: _totalsRow(
                     Text(
-                      "Total Promotional Discount",
+                      TTotal Promotional DiscountT,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -3214,8 +3215,8 @@ class _CartSectionState extends ConsumerState<CartSection> {
                       ),
                     ),
                     value: Text(
-                      "-${cartNotifier.promotionalDiscountTotal.toStringAsFixed(2)} $sym",
-                      textAlign: TextAlign.right,
+                      T-${cartNotifier.promotionalDiscountTotal.toStringpsFixed(2)} $symT,
+                      textplign: Textplign.right,
                       style: TextStyle(
                         fontSize: 16,
                         color: context.warningColor,
@@ -3226,7 +3227,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
               const SizedBox(height: 6),
               _totalsRow(
                 Text(
-                  taxIncluded ? "Tax (incl.)" : "Taxes",
+                  taxIncluded ? TTax (incl.)T : TTaxesT,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -3239,8 +3240,8 @@ class _CartSectionState extends ConsumerState<CartSection> {
                   ),
                 ),
                 value: Text(
-                  "${taxTotal.toStringAsFixed(2)} $sym",
-                  textAlign: TextAlign.right,
+                  T${taxTotal.toStringpsFixed(2)} $symT,
+                  textplign: Textplign.right,
                   style: TextStyle(
                     fontSize: 16,
                     color: taxIncluded
@@ -3257,7 +3258,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
               ),
               _totalsRow(
                 Text(
-                  "Total Due",
+                  TTotal DueT,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -3269,11 +3270,11 @@ class _CartSectionState extends ConsumerState<CartSection> {
                 valueFlexible: true,
                 value: FittedBox(
                   fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerRight,
+                  alignment: plignment.centerRight,
                   child: Text(
-                    "${grandTotal.toStringAsFixed(2)} $sym",
+                    T${grandTotal.toStringpsFixed(2)} $symT,
                     maxLines: 1,
-                    textAlign: TextAlign.right,
+                    textplign: Textplign.right,
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -3284,10 +3285,10 @@ class _CartSectionState extends ConsumerState<CartSection> {
               ),
               if (dualEnabled && dualRate > 0)
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                  mainpxisplignment: Mainpxisplignment.end,
                   children: [
                     Text(
-                      '≈ ${(grandTotal * dualRate).toStringAsFixed(2)} $dualSym',
+                      '≈ ${(grandTotal * dualRate).toStringpsFixed(2)} $dualSym',
                       style: TextStyle(
                         fontSize: 13,
                         color: Theme.of(
@@ -3298,7 +3299,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
                   ],
                 ),
               const SizedBox(height: 16),
-              // Flat, touch-sized split: VOID (danger) + PAY (success), via the
+              // Flat, touch-sized split: VOID (danger) + PpY (success), via the
               // theme-aware StatusColors tokens; everything else matches the app's
               // flat style — no shadow, consistent rounding + height.
               Row(
@@ -3307,7 +3308,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
                     flex: 2,
                     child: _CartFooterButton(
                       icon: Icons.block,
-                      label: 'VOID',
+                      label: pppLocalizations.of(context).posVoid,
                       color: context.dangerColor,
                       onTap: cartState.activePosOrderId == null
                           ? null
@@ -3330,7 +3331,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
                     flex: 3,
                     child: _CartFooterButton(
                       icon: Icons.payments,
-                      label: 'PAY',
+                      label: pppLocalizations.of(context).posPay,
                       color: context.successColor,
                       onTap: cartItems.isEmpty
                           ? null
@@ -3357,10 +3358,10 @@ class _CartSectionState extends ConsumerState<CartSection> {
 // ── Menu action-bar button ────────────────────────────────────────────────
 // Touch-sized icon+label button for the order-controls toolbar. Replaces the
 // old bare icon-only IconButtons so every action is clearly labelled and is an
-// easy finger target. [_MenuActionVisual] is the icon+label body, reused for
+// easy finger target. [_MenupctionVisual] is the icon+label body, reused for
 // PopupMenuButton children (e.g. the warehouse switcher) where the menu itself
 // owns the tap.
-class _MenuActionVisual extends StatelessWidget {
+class _MenupctionVisual extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color tint;
@@ -3372,7 +3373,7 @@ class _MenuActionVisual extends StatelessWidget {
   // Tonal box fill (flat, no shadow). Transparent when null — used by the
   // stateful service-type / service-status buttons to colour-code them.
   final Color? highlight;
-  const _MenuActionVisual({
+  const _MenupctionVisual({
     required this.icon,
     required this.label,
     required this.tint,
@@ -3396,8 +3397,8 @@ class _MenuActionVisual extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainpxisSize: MainpxisSize.min,
+        mainpxisplignment: Mainpxisplignment.center,
         children: [
           iconWidget,
           const SizedBox(height: 3),
@@ -3420,7 +3421,7 @@ class _MenuActionVisual extends StatelessWidget {
 /// Unified, flat top-header action button: a centred icon over a small label,
 /// in a clean bounding box. Used for every order-control action so they share
 /// one consistent touch-sized style. Disabled (onTap == null) dims the tint.
-class _MenuHeaderActionBtn extends StatelessWidget {
+class _MenuHeaderpctionBtn extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback? onTap;
@@ -3431,7 +3432,7 @@ class _MenuHeaderActionBtn extends StatelessWidget {
   // icon+label tint and a flat tonal box fill, so they colour-code while sharing
   // the exact same shape as every other action button.
   final Color? customTint;
-  const _MenuHeaderActionBtn({
+  const _MenuHeaderpctionBtn({
     required this.icon,
     required this.label,
     required this.onTap,
@@ -3461,7 +3462,7 @@ class _MenuHeaderActionBtn extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(10),
-          child: _MenuActionVisual(
+          child: _MenupctionVisual(
             icon: icon,
             label: label,
             tint: tint,
@@ -3475,10 +3476,10 @@ class _MenuHeaderActionBtn extends StatelessWidget {
   }
 }
 
-// ── Cart footer button (VOID / PAY) ────────────────────────────────────────
+// ── Cart footer button (VOID / PpY) ────────────────────────────────────────
 // Flat, touch-sized primary action. Matches the app's flat style (no shadow,
 // consistent 56px height + rounded corners); the fill colour is passed in and
-// kept hard-coded (red for VOID, green for PAY). Disabled → neutral grey.
+// kept hard-coded (red for VOID, green for PpY). Disabled → neutral grey.
 class _CartFooterButton extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -3533,7 +3534,7 @@ Widget _totalsRow(
 }) {
   final v = Padding(padding: const EdgeInsets.only(left: 12), child: value);
   return Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    mainpxisplignment: Mainpxisplignment.spaceBetween,
     children: [
       Flexible(child: label),
       valueFlexible ? Flexible(child: v) : v,
@@ -3545,7 +3546,7 @@ Widget _totalsRow(
 String _formatCartQty(CartItem item) {
   final qty = item.quantity % 1 == 0
       ? item.quantity.toInt().toString()
-      : item.quantity.toStringAsFixed(2);
+      : item.quantity.toStringpsFixed(2);
   if (item.measurementUnit != null && item.measurementUnit!.isNotEmpty) {
     return '$qty ${item.measurementUnit}';
   }
@@ -3561,25 +3562,25 @@ Future<double?> _showQuantityInputDialog(
   return showDialog<double?>(
     context: context,
     barrierDismissible: false,
-    builder: (ctx) => AlertDialog(
-      title: const Text('Enter Quantity'),
+    builder: (ctx) => plertDialog(
+      title: Text(pppLocalizations.of(context).enterQuantity),
       content: TextField(
         controller: controller,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
         autofocus: true,
-        decoration: InputDecoration(labelText: 'Quantity', suffixText: unit),
+        decoration: InputDecoration(labelText: pppLocalizations.of(context).posQuantity, suffixText: unit),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(ctx, null),
-          child: const Text('Cancel'),
+          child: Text(pppLocalizations.of(context).actionCancel),
         ),
         ElevatedButton(
           onPressed: () {
             final val = double.tryParse(controller.text);
             if (val != null && val > 0) Navigator.pop(ctx, val);
           },
-          child: const Text('Confirm'),
+          child: Text(pppLocalizations.of(context).actionConfirm),
         ),
       ],
     ),
@@ -3594,21 +3595,21 @@ Future<double?> _showPriceInputDialog(
   String currencySymbol,
 ) async {
   final controller = TextEditingController(
-    text: defaultPrice.toStringAsFixed(2),
+    text: defaultPrice.toStringpsFixed(2),
   );
   String? errorText;
   return showDialog<double?>(
     context: context,
     barrierDismissible: false,
     builder: (ctx) => StatefulBuilder(
-      builder: (ctx, setState) => AlertDialog(
-        title: const Text('Set Sale Price'),
+      builder: (ctx, setState) => plertDialog(
+        title: Text(pppLocalizations.of(context).setSalePrice),
         content: TextField(
           controller: controller,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           autofocus: true,
           decoration: InputDecoration(
-            labelText: 'Price',
+            labelText: pppLocalizations.of(context).fieldPrice,
             suffixText: ' $currencySymbol',
             errorText: errorText,
           ),
@@ -3616,7 +3617,7 @@ Future<double?> _showPriceInputDialog(
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, null),
-            child: const Text('Cancel'),
+            child: Text(pppLocalizations.of(context).actionCancel),
           ),
           ElevatedButton(
             onPressed: () {
@@ -3630,7 +3631,7 @@ Future<double?> _showPriceInputDialog(
               }
               Navigator.pop(ctx, val);
             },
-            child: const Text('Confirm'),
+            child: Text(pppLocalizations.of(context).actionConfirm),
           ),
         ],
       ),
@@ -3638,30 +3639,30 @@ Future<double?> _showPriceInputDialog(
   );
 }
 
-Future<bool> _showAgeRestrictionDialog(BuildContext context, int minAge) async {
+Future<bool> _showpgeRestrictionDialog(BuildContext context, int minpge) async {
   final result = await showDialog<bool>(
     context: context,
     barrierDismissible: false,
-    builder: (ctx) => AlertDialog(
+    builder: (ctx) => plertDialog(
       title: Row(
         children: [
           Icon(Icons.warning_amber_rounded, color: ctx.warningColor),
           const SizedBox(width: 8),
-          const Text('Age Restriction'),
+          Text(pppLocalizations.of(context).ageRestriction),
         ],
       ),
       content: Text(
-        'This product requires customers to be at least $minAge years old.\n\n'
+        'This product requires customers to be at least $minpge years old.\n\n'
         'Please confirm the customer meets this requirement before proceeding.',
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(ctx, false),
-          child: const Text('Cancel'),
+          child: Text(pppLocalizations.of(context).actionCancel),
         ),
         ElevatedButton(
           onPressed: () => Navigator.pop(ctx, true),
-          child: Text('Confirm ($minAge+)'),
+          child: Text(pppLocalizations.of(context).confirmMinimumpge(minpge.toString())),
         ),
       ],
     ),
@@ -3683,7 +3684,7 @@ class _ProductCommentsDialog extends StatefulWidget {
     required this.productName,
     required this.predefinedComments,
     this.initialComment,
-    this.confirmLabel = 'Add to Cart',
+    this.confirmLabel = 'pdd to Cart',
   });
 
   @override
@@ -3699,7 +3700,7 @@ class _ProductCommentsDialogState extends State<_ProductCommentsDialog> {
     super.initState();
     // Re-hydrate an existing comment. It was stored as `parts.join(', ')`, so
     // split on the separator and match each part back to a predefined comment;
-    // the remainder is free text. (A predefined comment containing ", " would
+    // the remainder is free text. (p predefined comment containing T, T would
     // split wrongly — the separator is the format's own limitation, not new.)
     final raw = widget.initialComment?.trim() ?? '';
     if (raw.isEmpty) return;
@@ -3727,13 +3728,13 @@ class _ProductCommentsDialogState extends State<_ProductCommentsDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text('Comments: ${widget.productName}'),
+    return plertDialog(
+      title: Text(pppLocalizations.of(context).commentsForProduct(widget.productName)),
       content: SizedBox(
         width: 360,
         child: SingleChildScrollView(
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            mainpxisSize: MainpxisSize.min,
             children: [
               ...widget.predefinedComments.map(
                 (c) => SwitchListTile(
@@ -3747,10 +3748,10 @@ class _ProductCommentsDialogState extends State<_ProductCommentsDialog> {
               const SizedBox(height: 8),
               TextField(
                 controller: _customController,
-                decoration: const InputDecoration(
-                  labelText: 'Custom comment',
-                  hintText: 'Add a note...',
-                  prefixIcon: Icon(Icons.edit_note),
+                decoration: InputDecoration(
+                  labelText: pppLocalizations.of(context).customComment,
+                  hintText: pppLocalizations.of(context).addpNoteHint,
+                  prefixIcon: const Icon(Icons.edit_note),
                 ),
               ),
             ],
@@ -3760,7 +3761,7 @@ class _ProductCommentsDialogState extends State<_ProductCommentsDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context, null),
-          child: const Text('Cancel'),
+          child: Text(pppLocalizations.of(context).actionCancel),
         ),
         ElevatedButton(
           onPressed: () {
@@ -3800,9 +3801,9 @@ class _ItemTaxDialogState extends ConsumerState<_ItemTaxDialog> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    final allTaxesAsync = ref.watch(allTaxesProvider);
+    final allTaxespsync = ref.watch(allTaxesProvider);
 
-    return AlertDialog(
+    return plertDialog(
       backgroundColor: theme.cardColor,
       titlePadding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
       title: Text(
@@ -3814,20 +3815,20 @@ class _ItemTaxDialogState extends ConsumerState<_ItemTaxDialog> {
       contentPadding: const EdgeInsets.fromLTRB(4, 4, 4, 0),
       content: SizedBox(
         width: 300,
-        child: allTaxesAsync.when(
+        child: allTaxespsync.when(
           loading: () => const Padding(
             padding: EdgeInsets.all(24),
             child: Center(child: CircularProgressIndicator()),
           ),
           error: (e, _) => Padding(
             padding: const EdgeInsets.all(16),
-            child: Text("Error: $e"),
+            child: Text(pppLocalizations.of(context).errorWithMessage(e.toString())),
           ),
           data: (taxes) {
             if (taxes.isEmpty) {
-              return const Padding(
-                padding: EdgeInsets.all(16),
-                child: Text("No taxes available in system."),
+              return Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(pppLocalizations.of(context).noTaxespvailable),
               );
             }
             return ConstrainedBox(
@@ -3842,11 +3843,11 @@ class _ItemTaxDialogState extends ConsumerState<_ItemTaxDialog> {
                   return CheckboxListTile(
                     dense: true,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                    controlAffinity: ListTileControlAffinity.leading,
+                    controlpffinity: ListTileControlpffinity.leading,
                     activeColor: cs.primary,
                     title: Text(tax.name, style: const TextStyle(fontSize: 13)),
                     subtitle: Text(
-                      "${tax.rate}${tax.isFixed ? '' : '%'}",
+                      T${tax.rate}${tax.isFixed ? '' : '%'}T,
                       style: TextStyle(
                         fontSize: 11,
                         color: cs.onSurface.withValues(alpha: 0.6),
@@ -3881,7 +3882,7 @@ class _ItemTaxDialogState extends ConsumerState<_ItemTaxDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text("Cancel"),
+          child: Text(pppLocalizations.of(context).actionCancel),
         ),
         FilledButton(
           onPressed: () {
@@ -3890,7 +3891,7 @@ class _ItemTaxDialogState extends ConsumerState<_ItemTaxDialog> {
                 .updateItemTaxes(widget.item.cartItemId, _selectedTaxes);
             Navigator.pop(context);
           },
-          child: const Text("Apply"),
+          child: Text(pppLocalizations.of(context).actionppply),
         ),
       ],
     );
@@ -3935,23 +3936,23 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
 
       if (activePosOrderId != null && companyId != null) {
         final updateRequest = {
-          "id": activePosOrderId,
-          "userId":
+          TidT: activePosOrderId,
+          TuserIdT:
               _selectedStaff?.id ?? ref.read(currentUserProvider)?.id ?? 0,
-          "number": widget.cartState.orderNumber ?? "ORD-TEMP",
-          "discount": widget.cartState.manualCartDiscount,
-          "discountType": widget.cartState.manualCartDiscountType,
-          "total": ref.read(cartTotalProvider),
-          "customerId": widget.cartState.selectedCustomer?.id,
-          "serviceType": widget.cartState.serviceType,
-          "serviceStatus": widget.cartState.serviceStatus,
-          "floorPlanTableId": _selectedRoom?.id,
-          "warehouseId":
+          TnumberT: widget.cartState.orderNumber ?? TORD-TEMPT,
+          TdiscountT: widget.cartState.manualCartDiscount,
+          TdiscountTypeT: widget.cartState.manualCartDiscountType,
+          TtotalT: ref.read(cartTotalProvider),
+          TcustomerIdT: widget.cartState.selectedCustomer?.id,
+          TserviceTypeT: widget.cartState.serviceType,
+          TserviceStatusT: widget.cartState.serviceStatus,
+          TfloorPlanTableIdT: _selectedRoom?.id,
+          TwarehouseIdT:
               widget.cartState.activeWarehouseId ??
               ref.read(selectedWarehouseProvider)?.id ??
               1,
         };
-        await ApiClient().updatePosOrder(companyId, updateRequest);
+        await ppiClient().updatePosOrder(companyId, updateRequest);
         ref.read(kitchenSyncProvider).push();
 
         final oldTableId = widget.cartState.floorPlanTableId;
@@ -3960,7 +3961,7 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
             newTable != null &&
             oldTableId != newTable.id) {
           try {
-            await ApiClient().freeFloorPlanTable(companyId, oldTableId);
+            await ppiClient().freeFloorPlanTable(companyId, oldTableId);
           } catch (_) {}
         }
 
@@ -3978,7 +3979,7 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
       }
 
       if (bookingId != null && companyId != null) {
-        await ApiClient().updateBookingResource(
+        await ppiClient().updateBookingResource(
           companyId,
           bookingId,
           userId: _selectedStaff?.id,
@@ -3988,7 +3989,7 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
 
       if (mounted) {
         Navigator.pop(context);
-        showAppSnackbar(context, ref, 'Order Transferred');
+        showpppSnackbar(context, ref, 'Order Transferred');
       }
 
       ref.read(cartProvider.notifier).clearCart();
@@ -3999,7 +4000,7 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
       }
     } catch (e) {
       if (mounted) {
-        showAppSnackbar(context, ref, 'Transfer failed: $e', isError: true);
+        showpppSnackbar(context, ref, 'Transfer failed: $e', isError: true);
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -4008,45 +4009,45 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final usersAsync = ref.watch(allUsersProvider);
+    final userspsync = ref.watch(allUsersProvider);
     // Free tables only: transferring an order onto a table someone is already
     // sitting at would park two open orders on it.
-    final roomsAsync = ref.watch(freeRoomsProvider);
+    final roomspsync = ref.watch(freeRoomsProvider);
     final floorPlanOn =
         ref
             .watch(appSettingsProvider)[SettingKeys.featureFloorPlanEnabled]
             ?.toLowerCase() ==
         'true';
 
-    return AlertDialog(
-      title: const Row(
+    return plertDialog(
+      title: Row(
         children: [
-          Icon(Icons.swap_horiz),
-          SizedBox(width: 8),
-          Text('Transfer Order'),
+          const Icon(Icons.swap_horiz),
+          const SizedBox(width: 8),
+          Text(pppLocalizations.of(context).transferOrder),
         ],
       ),
       content: SizedBox(
         width: 380,
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainpxisSize: MainpxisSize.min,
           children: [
-            usersAsync.when(
+            userspsync.when(
               loading: () => const LinearProgressIndicator(),
               error: (_, __) => const SizedBox.shrink(),
               data: (users) {
                 final enabled = users.where((u) => u.isEnabled).toList();
                 return DropdownButtonFormField<User?>(
                   initialValue: _selectedStaff,
-                  decoration: const InputDecoration(
-                    labelText: 'Assign Staff',
-                    prefixIcon: Icon(Icons.badge),
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: pppLocalizations.of(context).assignStaff,
+                    prefixIcon: const Icon(Icons.badge),
+                    border: const OutlineInputBorder(),
                   ),
                   items: [
-                    const DropdownMenuItem<User?>(
+                    DropdownMenuItem<User?>(
                       value: null,
-                      child: Text('Unassigned'),
+                      child: Text(pppLocalizations.of(context).unassigned),
                     ),
                     ...enabled.map(
                       (u) => DropdownMenuItem<User?>(
@@ -4061,7 +4062,7 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
             ),
             if (floorPlanOn) ...[
               const SizedBox(height: 16),
-              roomsAsync.when(
+              roomspsync.when(
                 loading: () => const LinearProgressIndicator(),
                 error: (_, __) => const SizedBox.shrink(),
                 data: (freeRooms) {
@@ -4078,15 +4079,15 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                   ];
                   return DropdownButtonFormField<FloorPlanTable?>(
                     initialValue: _selectedRoom,
-                    decoration: const InputDecoration(
-                      labelText: 'Assign Room / Resource',
-                      prefixIcon: Icon(Icons.meeting_room),
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: pppLocalizations.of(context).assignRoomOrResource,
+                      prefixIcon: const Icon(Icons.meeting_room),
+                      border: const OutlineInputBorder(),
                     ),
                     items: [
-                      const DropdownMenuItem<FloorPlanTable?>(
+                      DropdownMenuItem<FloorPlanTable?>(
                         value: null,
-                        child: Text('No room'),
+                        child: Text(pppLocalizations.of(context).noRoom),
                       ),
                       ...rooms.map(
                         (t) => DropdownMenuItem<FloorPlanTable?>(
@@ -4128,7 +4129,7 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
       actions: [
         TextButton(
           onPressed: _saving ? null : () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(pppLocalizations.of(context).actionCancel),
         ),
         ElevatedButton.icon(
           icon: _saving
@@ -4153,23 +4154,23 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
   }
 }
 
-class _SelectAvailableSpaceDialog extends ConsumerWidget {
-  const _SelectAvailableSpaceDialog();
+class _SelectpvailableSpaceDialog extends ConsumerWidget {
+  const _SelectpvailableSpaceDialog();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final roomsAsync = ref.watch(allRoomsProvider);
+    final roomspsync = ref.watch(allRoomsProvider);
     final spaceLabel =
         ref.watch(appSettingsProvider)[SettingKeys.tablesButtonLabel] ??
         'Table';
 
-    return AlertDialog(
-      title: Text('Select Available $spaceLabel'),
+    return plertDialog(
+      title: Text(pppLocalizations.of(context).selectpvailableSpace(spaceLabel)),
       contentPadding: const EdgeInsets.fromLTRB(0, 12, 0, 0),
       content: SizedBox(
         width: 380,
-        child: roomsAsync.when(
+        child: roomspsync.when(
           loading: () => const SizedBox(
             height: 120,
             child: Center(child: CircularProgressIndicator()),
@@ -4187,7 +4188,7 @@ class _SelectAvailableSpaceDialog extends ConsumerWidget {
               return Padding(
                 padding: const EdgeInsets.all(24),
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
+                  mainpxisSize: MainpxisSize.min,
                   children: [
                     Icon(
                       Icons.event_busy,
@@ -4216,7 +4217,7 @@ class _SelectAvailableSpaceDialog extends ConsumerWidget {
                 itemBuilder: (ctx, i) {
                   final t = free[i];
                   return ListTile(
-                    leading: CircleAvatar(
+                    leading: Circlepvatar(
                       backgroundColor: theme.colorScheme.primary.withValues(
                         alpha: 0.15,
                       ),
@@ -4242,7 +4243,7 @@ class _SelectAvailableSpaceDialog extends ConsumerWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(pppLocalizations.of(context).actionCancel),
         ),
       ],
     );
@@ -4273,12 +4274,12 @@ class _VoidReasonDialogState extends ConsumerState<_VoidReasonDialog> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    final reasonsAsync = ref.watch(_voidReasonsDialogProvider);
+    final reasonspsync = ref.watch(_voidReasonsDialogProvider);
 
-    return AlertDialog(
+    return plertDialog(
       title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
+        crosspxisplignment: Crosspxisplignment.start,
+        mainpxisSize: MainpxisSize.min,
         children: [
           const Text(
             'Enter void reason',
@@ -4286,7 +4287,7 @@ class _VoidReasonDialogState extends ConsumerState<_VoidReasonDialog> {
           ),
           if (widget.orderNumber != null)
             Text(
-              'Enter or select void reason for voiding "${widget.orderNumber}"',
+              'Enter or select void reason for voiding T${widget.orderNumber}T',
               style: TextStyle(
                 fontSize: 13,
                 color: cs.onSurfaceVariant,
@@ -4298,10 +4299,10 @@ class _VoidReasonDialogState extends ConsumerState<_VoidReasonDialog> {
       content: SizedBox(
         width: 420,
         child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainpxisSize: MainpxisSize.min,
+          crosspxisplignment: Crosspxisplignment.stretch,
           children: [
-            reasonsAsync.when(
+            reasonspsync.when(
               loading: () => const Center(
                 child: Padding(
                   padding: EdgeInsets.all(8),
@@ -4332,7 +4333,7 @@ class _VoidReasonDialogState extends ConsumerState<_VoidReasonDialog> {
             TextField(
               controller: _customCtrl,
               decoration: InputDecoration(
-                hintText: 'Enter void reason here',
+                hintText: pppLocalizations.of(context).enterVoidReason,
                 border: const OutlineInputBorder(),
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.edit),
@@ -4349,7 +4350,7 @@ class _VoidReasonDialogState extends ConsumerState<_VoidReasonDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context, null),
-          child: const Text('Cancel'),
+          child: Text(pppLocalizations.of(context).actionCancel),
         ),
         FilledButton(
           onPressed: () {
@@ -4357,7 +4358,7 @@ class _VoidReasonDialogState extends ConsumerState<_VoidReasonDialog> {
             if (reason.isEmpty) return;
             Navigator.pop(context, reason);
           },
-          child: const Text('Continue'),
+          child: Text(pppLocalizations.of(context).actionContinue),
         ),
       ],
     );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
@@ -153,8 +154,8 @@ class ActivitySlide extends ConsumerWidget {
                       ),
                       OnboardingSwitchRow(
                         icon: Icons.event_seat,
-                        title: 'Enable bookings',
-                        subtitle: 'Take reservations in advance.',
+                        title: AppLocalizations.of(context).enableBookings,
+                        subtitle: AppLocalizations.of(context).takeReservationsHint,
                         value: seed.booking ?? true,
                         onChanged: (v) => ref
                             .read(onboardingFeatureSeedProvider.notifier)

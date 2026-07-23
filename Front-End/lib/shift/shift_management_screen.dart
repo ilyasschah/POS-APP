@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -23,7 +24,7 @@ class ShiftManagementScreen extends ConsumerWidget {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Shift Management'),
+          title: Text(AppLocalizations.of(context).shiftManagement),
           bottom: const TabBar(
             tabs: [
               Tab(icon: Icon(Icons.timer_outlined), text: 'My Shift'),
@@ -53,7 +54,7 @@ class _ShiftTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return ref.watch(activeShiftProvider).when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('Error: $e')),
+      error: (e, _) => Center(child: Text(AppLocalizations.of(context).errorWithMessage(e.toString()))),
       data: (shift) =>
           shift == null ? _NoShiftView() : _ActiveShiftView(shift: shift),
     );
@@ -140,7 +141,7 @@ class _NoShiftViewState extends ConsumerState<_NoShiftView> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.play_arrow),
-                  label: const Text('Start Shift'),
+                  label: Text(AppLocalizations.of(context).startShift),
                   style: FilledButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
@@ -193,12 +194,12 @@ class _ActiveShiftViewState extends ConsumerState<_ActiveShiftView> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: Theme.of(ctx).cardColor,
-        title: const Text('End Shift'),
-        content: const Text('Are you sure you want to end your shift?'),
+        title: Text(AppLocalizations.of(context).endShift),
+        content: Text(AppLocalizations.of(context).endShiftConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -206,7 +207,7 @@ class _ActiveShiftViewState extends ConsumerState<_ActiveShiftView> {
               backgroundColor: Theme.of(ctx).colorScheme.error,
               foregroundColor: Theme.of(ctx).colorScheme.onError,
             ),
-            child: const Text('Confirm'),
+            child: Text(AppLocalizations.of(context).actionConfirm),
           ),
         ],
       ),
@@ -286,7 +287,7 @@ class _ActiveShiftViewState extends ConsumerState<_ActiveShiftView> {
                   ),
                   const SizedBox(height: 16),
                   _InfoRow(
-                    label: 'Opened at',
+                    label: AppLocalizations.of(context).openedAt,
                     value: fmt.format(shift.openedAt.toLocal()),
                     color: cs.onPrimaryContainer,
                   ),
@@ -301,7 +302,7 @@ class _ActiveShiftViewState extends ConsumerState<_ActiveShiftView> {
           FilledButton.icon(
             onPressed: _closing ? null : _endShift,
             icon: const Icon(Icons.lock),
-            label: const Text('End Shift'),
+            label: Text(AppLocalizations.of(context).endShift),
             style: FilledButton.styleFrom(
               backgroundColor: cs.error,
               foregroundColor: cs.onError,
@@ -479,7 +480,7 @@ class _HoursTabState extends ConsumerState<_HoursTab> {
                         items: [
                           DropdownMenuItem<int?>(
                             value: null,
-                            child: Text('All employees ...',
+                            child: Text(AppLocalizations.of(context).allEmployees,
                                 style: TextStyle(color: cs.onSurface)),
                           ),
                           ...users.map((u) {
@@ -515,7 +516,7 @@ class _HoursTabState extends ConsumerState<_HoursTab> {
               // ADD TIME CARD — framed admin action, mirrors EXPORT's frame.
               _FramedAction(
                 icon: Icons.add_circle_outline,
-                label: 'ADD TIME CARD',
+                label: AppLocalizations.of(context).addTimeCardUpper,
                 onPressed: _addTimeCard,
               ),
 
@@ -524,7 +525,7 @@ class _HoursTabState extends ConsumerState<_HoursTab> {
               // EXPORT — framed, touch-sized action pinned to the right
               _FramedAction(
                 icon: Icons.file_download_outlined,
-                label: 'EXPORT',
+                label: AppLocalizations.of(context).colExport,
                 onPressed: () => _doExport(context,
                     sessionsAsync.asData?.value ?? const [], storeName),
               ),
@@ -537,7 +538,7 @@ class _HoursTabState extends ConsumerState<_HoursTab> {
           child: sessionsAsync.when(
             loading: () =>
                 const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('Error: $e')),
+            error: (e, _) => Center(child: Text(AppLocalizations.of(context).errorWithMessage(e.toString()))),
             data: (rows) => _SessionsReportCard(
               rows: rows,
               page: _page,
@@ -654,9 +655,9 @@ class _SessionsReportCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
             child: Row(
               children: [
-                Expanded(flex: 5, child: Text('Clock in', style: labelStyle)),
-                Expanded(flex: 5, child: Text('Clock out', style: labelStyle)),
-                Expanded(flex: 4, child: Text('Employee', style: labelStyle)),
+                Expanded(flex: 5, child: Text(AppLocalizations.of(context).clockIn, style: labelStyle)),
+                Expanded(flex: 5, child: Text(AppLocalizations.of(context).clockOut, style: labelStyle)),
+                Expanded(flex: 4, child: Text(AppLocalizations.of(context).employee, style: labelStyle)),
                 Expanded(
                   flex: 2,
                   child: Text(
@@ -824,7 +825,7 @@ class _SessionsReportCard extends StatelessWidget {
                       : null,
                 ),
                 const SizedBox(width: 4),
-                Text('Page:',
+                Text(AppLocalizations.of(context).pageLabel,
                     style: labelStyle),
                 const SizedBox(width: 6),
                 Container(
@@ -842,9 +843,9 @@ class _SessionsReportCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 6),
-                Text('of $_totalPages', style: labelStyle),
+                Text(AppLocalizations.of(context).ofPagesLabel(_totalPages.toString()), style: labelStyle),
                 const Spacer(),
-                Text('Rows per page:', style: labelStyle),
+                Text(AppLocalizations.of(context).rowsPerPage, style: labelStyle),
                 const SizedBox(width: 8),
                 DropdownButtonHideUnderline(
                   child: DropdownButton<int>(
@@ -1000,7 +1001,7 @@ class _AddTimeCardDialogState extends ConsumerState<_AddTimeCardDialog> {
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(color: cs.outline.withValues(alpha: 0.4)),
       ),
-      title: const Text('Add Time Card'),
+      title: Text(AppLocalizations.of(context).addTimeCard),
       content: SizedBox(
         width: 420,
         child: Column(
@@ -1010,7 +1011,7 @@ class _AddTimeCardDialogState extends ConsumerState<_AddTimeCardDialog> {
             const _FieldLabel('Employee'),
             usersAsync.when(
               loading: () => const LinearProgressIndicator(),
-              error: (_, __) => Text('Could not load employees',
+              error: (_, __) => Text(AppLocalizations.of(context).couldNotLoadEmployees,
                   style: TextStyle(color: cs.error)),
               data: (users) => Container(
                 height: 48,
@@ -1024,7 +1025,7 @@ class _AddTimeCardDialogState extends ConsumerState<_AddTimeCardDialog> {
                   child: DropdownButton<int?>(
                     value: _userId,
                     isExpanded: true,
-                    hint: Text('Select employee',
+                    hint: Text(AppLocalizations.of(context).selectEmployee,
                         style: TextStyle(color: cs.onSurfaceVariant)),
                     dropdownColor: theme.cardColor,
                     items: users.map((u) {
@@ -1094,7 +1095,7 @@ class _AddTimeCardDialogState extends ConsumerState<_AddTimeCardDialog> {
       actions: [
         TextButton(
           onPressed: _saving ? null : () => Navigator.pop(context, false),
-          child: const Text('CANCEL'),
+          child: Text(AppLocalizations.of(context).actionCancel),
         ),
         FilledButton(
           onPressed: _saving ? null : _save,
@@ -1104,7 +1105,7 @@ class _AddTimeCardDialogState extends ConsumerState<_AddTimeCardDialog> {
                   height: 18,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text('SAVE'),
+              : Text(AppLocalizations.of(context).saveUpper),
         ),
       ],
     );

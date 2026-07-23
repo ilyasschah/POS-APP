@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:dio/dio.dart';
@@ -35,11 +36,11 @@ class UsersScreen extends ConsumerWidget {
           leading: onMenuPressed != null
               ? IconButton(
                   icon: const Icon(Icons.menu),
-                  tooltip: 'Show navigation',
+                  tooltip: AppLocalizations.of(context).showNavigation,
                   onPressed: onMenuPressed,
                 )
               : null,
-          title: const Text("Users & Security"),
+          title: Text(AppLocalizations.of(context).usersAndSecurity),
           bottom: const TabBar(
             tabs: [
               Tab(icon: Icon(Icons.people), text: "Users"),
@@ -49,7 +50,7 @@ class UsersScreen extends ConsumerWidget {
           actions: [
             IconButton(
               icon: const Icon(Icons.person_add),
-              tooltip: "Add User",
+              tooltip: AppLocalizations.of(context).addUser,
               onPressed: company == null
                   ? null
                   : () => showDialog(
@@ -150,13 +151,13 @@ class _SecurityKeysTab extends ConsumerWidget {
 
     return asyncKeys.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text("Error loading security rules: $e")),
+      error: (e, _) => Center(child: Text(AppLocalizations.of(context).errorLoadingSecurityRules(e.toString()))),
       data: (keys) {
         if (company == null) {
-          return const Center(child: Text("No company selected."));
+          return Center(child: Text(AppLocalizations.of(context).noCompanySelectedShort));
         }
         if (keys.isEmpty) {
-          return const Center(child: Text("No security rules found."));
+          return Center(child: Text(AppLocalizations.of(context).noSecurityRules));
         }
 
         final groupedKeys = {
@@ -360,9 +361,9 @@ class _SecurityLevelDropdownState
       value: widget.securityKey.level,
       underline: const SizedBox(),
       focusColor: Colors.transparent,
-      items: const [
-        DropdownMenuItem(value: 0, child: Text("Cashier")),
-        DropdownMenuItem(value: 1, child: Text("Admin")),
+      items: [
+        DropdownMenuItem(value: 0, child: Text(AppLocalizations.of(context).roleCashier)),
+        DropdownMenuItem(value: 1, child: Text(AppLocalizations.of(context).roleAdmin)),
       ],
       onChanged: (val) {
         if (val != null && val != widget.securityKey.level) _updateLevel(val);
@@ -386,10 +387,10 @@ class _UsersListTab extends ConsumerWidget {
 
     return asyncUsers.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text("Error loading users: $e")),
+      error: (e, _) => Center(child: Text(AppLocalizations.of(context).errorLoadingUsers(e.toString()))),
       data: (users) {
         if (company == null) {
-          return const Center(child: Text("No company selected."));
+          return Center(child: Text(AppLocalizations.of(context).noCompanySelectedShort));
         }
         final int companyId = company.id;
 
@@ -408,7 +409,7 @@ class _UsersListTab extends ConsumerWidget {
                 const SizedBox(height: 12),
                 ElevatedButton.icon(
                   icon: const Icon(Icons.person_add),
-                  label: const Text("Add First User"),
+                  label: Text(AppLocalizations.of(context).addFirstUser),
                   onPressed: () => showDialog(
                     context: context,
                     builder: (_) => _AddUserDialog(companyId: companyId),
@@ -461,7 +462,7 @@ class _UsersListTab extends ConsumerWidget {
                       Icons.security,
                       color: cs.error.withValues(alpha: 0.8),
                     ),
-                    tooltip: "Security Actions",
+                    tooltip: AppLocalizations.of(context).securityActions,
                     onSelected: (value) {
                       if (value == 'reset_password') {
                         _adminResetPassword(context, user, ref);
@@ -474,7 +475,7 @@ class _UsersListTab extends ConsumerWidget {
                         value: 'reset_password',
                         child: ListTile(
                           leading: Icon(Icons.password, color: cs.error),
-                          title: const Text("Admin: Reset Password"),
+                          title: Text(AppLocalizations.of(context).adminResetPassword),
                           contentPadding: EdgeInsets.zero,
                         ),
                       ),
@@ -482,7 +483,7 @@ class _UsersListTab extends ConsumerWidget {
                         value: 'reset_pin',
                         child: ListTile(
                           leading: Icon(Icons.pin, color: cs.error),
-                          title: const Text("Admin: Reset Device PIN"),
+                          title: Text(AppLocalizations.of(context).adminResetDevicePin),
                           contentPadding: EdgeInsets.zero,
                         ),
                       ),
@@ -490,7 +491,7 @@ class _UsersListTab extends ConsumerWidget {
                   ),
                   IconButton(
                     icon: Icon(Icons.edit, color: cs.primary),
-                    tooltip: "Edit User",
+                    tooltip: AppLocalizations.of(context).editUser,
                     onPressed: () => showDialog(
                       context: context,
                       builder: (_) =>
@@ -499,19 +500,19 @@ class _UsersListTab extends ConsumerWidget {
                   ),
                   IconButton(
                     icon: Icon(Icons.delete, color: cs.error),
-                    tooltip: "Delete User",
+                    tooltip: AppLocalizations.of(context).deleteUser,
                     onPressed: () async {
                       final confirm = await showDialog<bool>(
                         context: context,
                         builder: (ctx) => AlertDialog(
-                          title: const Text("Delete User"),
+                          title: Text(AppLocalizations.of(context).deleteUser),
                           content: Text(
                             "Are you sure you want to delete ${user.displayName}?",
                           ),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.of(ctx).pop(false),
-                              child: const Text("Cancel"),
+                              child: Text(AppLocalizations.of(context).actionCancel),
                             ),
                             ElevatedButton(
                               style: ElevatedButton.styleFrom(
@@ -523,7 +524,7 @@ class _UsersListTab extends ConsumerWidget {
                                 ).colorScheme.onError,
                               ),
                               onPressed: () => Navigator.of(ctx).pop(true),
-                              child: const Text("Delete"),
+                              child: Text(AppLocalizations.of(context).actionDelete),
                             ),
                           ],
                         ),
@@ -723,7 +724,7 @@ class _AddUserDialogState extends ConsumerState<_AddUserDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text("Add New User"),
+      title: Text(AppLocalizations.of(context).addNewUser),
       content: SizedBox(
         width: 360,
         child: Form(
@@ -736,8 +737,8 @@ class _AddUserDialogState extends ConsumerState<_AddUserDialog> {
                   Expanded(
                     child: TextFormField(
                       controller: _firstNameCtrl,
-                      decoration: const InputDecoration(
-                        labelText: "First Name *",
+                      decoration: InputDecoration(
+                        labelText: AppLocalizations.of(context).firstNameRequired,
                       ),
                       validator: (v) =>
                           v == null || v.trim().isEmpty ? "Required" : null,
@@ -747,8 +748,8 @@ class _AddUserDialogState extends ConsumerState<_AddUserDialog> {
                   Expanded(
                     child: TextFormField(
                       controller: _lastNameCtrl,
-                      decoration: const InputDecoration(
-                        labelText: "Last Name *",
+                      decoration: InputDecoration(
+                        labelText: AppLocalizations.of(context).lastNameRequired,
                       ),
                       validator: (v) =>
                           v == null || v.trim().isEmpty ? "Required" : null,
@@ -759,20 +760,20 @@ class _AddUserDialogState extends ConsumerState<_AddUserDialog> {
               const SizedBox(height: 12),
               TextFormField(
                 controller: _usernameCtrl,
-                decoration: const InputDecoration(labelText: "Username *"),
+                decoration: InputDecoration(labelText: AppLocalizations.of(context).usernameRequired),
                 validator: (v) =>
                     v == null || v.trim().isEmpty ? "Required" : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _emailCtrl,
-                decoration: const InputDecoration(labelText: "Email"),
+                decoration: InputDecoration(labelText: AppLocalizations.of(context).fieldEmail),
                 keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _passwordCtrl,
-                decoration: const InputDecoration(labelText: "Password *"),
+                decoration: InputDecoration(labelText: AppLocalizations.of(context).passwordRequired),
                 obscureText: true,
                 validator: (v) =>
                     v == null || v.trim().isEmpty ? "Required" : null,
@@ -780,10 +781,10 @@ class _AddUserDialogState extends ConsumerState<_AddUserDialog> {
               const SizedBox(height: 12),
               DropdownButtonFormField<int>(
                 initialValue: _accessLevel,
-                decoration: const InputDecoration(labelText: "Access Level"),
-                items: const [
-                  DropdownMenuItem(value: 0, child: Text("Admin")),
-                  DropdownMenuItem(value: 1, child: Text("Cashier")),
+                decoration: InputDecoration(labelText: AppLocalizations.of(context).accessLevel),
+                items: [
+                  DropdownMenuItem(value: 0, child: Text(AppLocalizations.of(context).roleAdmin)),
+                  DropdownMenuItem(value: 1, child: Text(AppLocalizations.of(context).roleCashier)),
                 ],
                 onChanged: (v) => setState(() => _accessLevel = v ?? 1),
               ),
@@ -804,7 +805,7 @@ class _AddUserDialogState extends ConsumerState<_AddUserDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text("Cancel"),
+          child: Text(AppLocalizations.of(context).actionCancel),
         ),
         if (_isLoading)
           const Padding(
@@ -814,7 +815,7 @@ class _AddUserDialogState extends ConsumerState<_AddUserDialog> {
         else
           ElevatedButton.icon(
             icon: const Icon(Icons.save),
-            label: const Text("Save"),
+            label: Text(AppLocalizations.of(context).actionSave),
             onPressed: _submit,
           ),
       ],
@@ -962,7 +963,7 @@ class _EditUserDialogState extends ConsumerState<_EditUserDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text("Edit ${widget.user.displayName}"),
+      title: Text(AppLocalizations.of(context).editNamedTitle(widget.user.displayName)),
       content: SizedBox(
         width: 360,
         child: Form(
@@ -975,8 +976,8 @@ class _EditUserDialogState extends ConsumerState<_EditUserDialog> {
                   Expanded(
                     child: TextFormField(
                       controller: _firstNameCtrl,
-                      decoration: const InputDecoration(
-                        labelText: "First Name",
+                      decoration: InputDecoration(
+                        labelText: AppLocalizations.of(context).firstName,
                       ),
                     ),
                   ),
@@ -984,7 +985,7 @@ class _EditUserDialogState extends ConsumerState<_EditUserDialog> {
                   Expanded(
                     child: TextFormField(
                       controller: _lastNameCtrl,
-                      decoration: const InputDecoration(labelText: "Last Name"),
+                      decoration: InputDecoration(labelText: AppLocalizations.of(context).lastName),
                     ),
                   ),
                 ],
@@ -992,23 +993,23 @@ class _EditUserDialogState extends ConsumerState<_EditUserDialog> {
               const SizedBox(height: 12),
               TextFormField(
                 controller: _usernameCtrl,
-                decoration: const InputDecoration(labelText: "Username"),
+                decoration: InputDecoration(labelText: AppLocalizations.of(context).username),
                 validator: (v) =>
                     v == null || v.trim().isEmpty ? "Required" : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _emailCtrl,
-                decoration: const InputDecoration(labelText: "Email"),
+                decoration: InputDecoration(labelText: AppLocalizations.of(context).fieldEmail),
                 keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<int>(
                 initialValue: _accessLevel,
-                decoration: const InputDecoration(labelText: "Access Level"),
-                items: const [
-                  DropdownMenuItem(value: 0, child: Text("Admin")),
-                  DropdownMenuItem(value: 1, child: Text("Cashier")),
+                decoration: InputDecoration(labelText: AppLocalizations.of(context).accessLevel),
+                items: [
+                  DropdownMenuItem(value: 0, child: Text(AppLocalizations.of(context).roleAdmin)),
+                  DropdownMenuItem(value: 1, child: Text(AppLocalizations.of(context).roleCashier)),
                 ],
                 onChanged: (v) => setState(() => _accessLevel = v ?? 1),
               ),
@@ -1029,7 +1030,7 @@ class _EditUserDialogState extends ConsumerState<_EditUserDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text("Cancel"),
+          child: Text(AppLocalizations.of(context).actionCancel),
         ),
         if (_isLoading)
           const Padding(
@@ -1039,7 +1040,7 @@ class _EditUserDialogState extends ConsumerState<_EditUserDialog> {
         else
           ElevatedButton.icon(
             icon: const Icon(Icons.save),
-            label: const Text("Update"),
+            label: Text(AppLocalizations.of(context).actionUpdate),
             onPressed: _submit,
           ),
       ],
@@ -1059,18 +1060,18 @@ Future<void> _adminResetPassword(
     context: context,
     builder: (ctx) => StatefulBuilder(
       builder: (context, setStateDialog) => AlertDialog(
-        title: Text("Force Reset Password: ${user.displayName}"),
+        title: Text(AppLocalizations.of(context).forceResetPasswordTitle(user.displayName)),
         content: TextField(
           controller: passwordCtrl,
-          decoration: const InputDecoration(
-            labelText: "New Password",
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: AppLocalizations.of(context).newPassword,
+            border: const OutlineInputBorder(),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text("Cancel"),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: context.dangerColor),
@@ -1131,21 +1132,21 @@ Future<void> _adminResetPin(
     context: context,
     builder: (ctx) => StatefulBuilder(
       builder: (context, setStateDialog) => AlertDialog(
-        title: Text("Force Reset PIN: ${user.displayName}"),
+        title: Text(AppLocalizations.of(context).forceResetPinTitle(user.displayName)),
         content: TextField(
           controller: pinCtrl,
           keyboardType: TextInputType.number,
           maxLength: 4,
-          decoration: const InputDecoration(
-            labelText: "New 4-Digit PIN",
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: AppLocalizations.of(context).newFourDigitPin,
+            border: const OutlineInputBorder(),
             counterText: "",
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text("Cancel"),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: context.dangerColor),

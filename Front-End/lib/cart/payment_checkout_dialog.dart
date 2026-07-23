@@ -10,6 +10,7 @@ import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/auth/login_screen.dart';
 import 'package:pos_app/cart/cart_provider.dart';
 import 'package:pos_app/core/status_colors.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:pos_app/cart/checkout_models.dart';
 import 'package:pos_app/cart/payment_type_model.dart';
 import 'package:pos_app/cart/payment_type_provider.dart';
@@ -261,7 +262,7 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
             context: ctx,
             builder: (c) => AlertDialog(
               icon: Icon(Icons.block, color: context.dangerColor, size: 36),
-              title: const Text('Transaction Blocked'),
+              title: Text(AppLocalizations.of(context).transactionBlocked),
               content: const Text(
                 'Credit payment requires a selected customer.\n\n'
                 'Please choose a customer before completing this transaction.',
@@ -269,7 +270,7 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
               actions: [
                 FilledButton(
                   onPressed: () => Navigator.pop(c),
-                  child: const Text('OK'),
+                  child: Text(AppLocalizations.of(context).actionOk),
                 ),
               ],
             ),
@@ -709,20 +710,20 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
               color: context.successColor,
               size: 36,
             ),
-            title: const Text('Transaction Successful'),
-            content: const Text('Would you like to print a receipt?'),
+            title: Text(AppLocalizations.of(context).transactionSuccessful),
+            content: Text(AppLocalizations.of(context).printReceiptPrompt),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(c, 'no'),
-                child: const Text('No'),
+                child: Text(AppLocalizations.of(context).actionNo),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(c, 'save'),
-                child: const Text('Save as PDF'),
+                child: Text(AppLocalizations.of(context).saveAsPdf),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(c, 'print'),
-                child: const Text('Print Receipt'),
+                child: Text(AppLocalizations.of(context).printReceipt),
               ),
             ],
           ),
@@ -1029,7 +1030,7 @@ class _OrderSummaryColumn extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             color: theme.colorScheme.surfaceContainer,
             child: Text(
-              'Order Summary',
+              AppLocalizations.of(context).orderSummary,
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -1101,15 +1102,15 @@ class _OrderSummaryColumn extends ConsumerWidget {
                         // ── Per-item discounts ──
                         if (item.discount > 0)
                           detail(
-                            'Item discount',
+                            AppLocalizations.of(context).itemDiscountLabel,
                             '- $sym ${(item.discount * item.quantity).toStringAsFixed(2)}',
                             color: context.successColor,
                           ),
                         if (item.promotionalDiscount > 0)
                           detail(
                             item.promotionId != null
-                                ? (promoNames[item.promotionId] ?? 'Promotion')
-                                : 'Promotion',
+                                ? (promoNames[item.promotionId] ?? AppLocalizations.of(context).promotionLabel)
+                                : AppLocalizations.of(context).promotionLabel,
                             '- $sym ${(item.promotionalDiscount * item.quantity).toStringAsFixed(2)}',
                             color: context.successColor,
                           ),
@@ -1121,7 +1122,7 @@ class _OrderSummaryColumn extends ConsumerWidget {
                           final name = t.isFixed
                               ? t.name
                               : '${t.name} (${fmtRate(t.rate)}%)';
-                          final label = taxIncluded ? 'incl. $name' : name;
+                          final label = taxIncluded ? AppLocalizations.of(context).inclPrefix(name) : name;
                           return detail(
                               label, '$sym ${amt.toStringAsFixed(2)}');
                         }),
@@ -1147,35 +1148,35 @@ class _OrderSummaryColumn extends ConsumerWidget {
                 // AND is net of item-level discounts, so only order-level
                 // discounts are listed and tax is shown as an informational line.
                 if (taxIncluded) ...[
-                  _SummaryRow('Subtotal (incl. tax)', grossSubtotal, sym, theme),
+                  _SummaryRow(AppLocalizations.of(context).subtotalInclTax, grossSubtotal, sym, theme),
                   if (customerDiscount > 0)
                     _SummaryRow(
-                        'Customer discount', -customerDiscount, sym, theme,
+                        AppLocalizations.of(context).customerDiscountLabel, -customerDiscount, sym, theme,
                         color: context.successColor),
                   if (cartDiscount > 0)
-                    _SummaryRow('Cart discount', -cartDiscount, sym, theme,
+                    _SummaryRow(AppLocalizations.of(context).cartDiscountLabel, -cartDiscount, sym, theme,
                         color: context.successColor),
                   if (taxTotal > 0)
-                    _SummaryRow('Tax (incl.)', taxTotal, sym, theme,
+                    _SummaryRow(AppLocalizations.of(context).taxInclLabel, taxTotal, sym, theme,
                         color: muted),
                 ] else ...[
                   // Tax-exclusive: gross subtotal, then every discount, then tax.
-                  _SummaryRow('Subtotal', subtotal, sym, theme),
+                  _SummaryRow(AppLocalizations.of(context).subtotalLabel, subtotal, sym, theme),
                   if (itemDiscount > 0)
-                    _SummaryRow('Item discounts', -itemDiscount, sym, theme,
+                    _SummaryRow(AppLocalizations.of(context).itemDiscountsPlural, -itemDiscount, sym, theme,
                         color: context.successColor),
                   if (customerDiscount > 0)
                     _SummaryRow(
-                        'Customer discount', -customerDiscount, sym, theme,
+                        AppLocalizations.of(context).customerDiscountLabel, -customerDiscount, sym, theme,
                         color: context.successColor),
                   if (cartDiscount > 0)
-                    _SummaryRow('Cart discount', -cartDiscount, sym, theme,
+                    _SummaryRow(AppLocalizations.of(context).cartDiscountLabel, -cartDiscount, sym, theme,
                         color: context.successColor),
-                  if (taxTotal > 0) _SummaryRow('Taxes', taxTotal, sym, theme),
+                  if (taxTotal > 0) _SummaryRow(AppLocalizations.of(context).taxesLabel, taxTotal, sym, theme),
                 ],
                 if (pointsDiscount > 0)
                   _SummaryRow(
-                    'Points Redeemed',
+                    AppLocalizations.of(context).pointsRedeemed,
                     -pointsDiscount,
                     sym,
                     theme,
@@ -1302,7 +1303,7 @@ class _PaymentMethodsColumn extends ConsumerWidget {
                     onPressed: () =>
                         debugPrint('Split payments: to be implemented'),
                     icon: const Icon(Icons.call_split, size: 18),
-                    label: const Text('Split Payments'),
+                    label: Text(AppLocalizations.of(context).splitPayments),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
@@ -1359,7 +1360,7 @@ class _PaymentMethodsColumn extends ConsumerWidget {
                         onPressed: () =>
                             debugPrint('Split payments: to be implemented'),
                         icon: const Icon(Icons.call_split, size: 18),
-                        label: const Text('Split Payments'),
+                        label: Text(AppLocalizations.of(context).splitPayments),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),
                         ),
@@ -1501,7 +1502,7 @@ class _CustomerBar extends StatelessWidget {
           TextButton.icon(
             onPressed: onCancel,
             icon: const Icon(Icons.close, size: 18),
-            label: const Text('Cancel'),
+            label: Text(AppLocalizations.of(context).actionCancel),
             style: TextButton.styleFrom(
               foregroundColor: theme.colorScheme.error,
             ),
@@ -1538,7 +1539,7 @@ class _TotalsDisplay extends StatelessWidget {
         children: [
           // Total — static, never rebuilds
           _TotalRow(
-            label: 'Total',
+            label: AppLocalizations.of(context).totalLabel,
             value: '$sym ${grandTotal.toStringAsFixed(2)}',
             style: theme.textTheme.headlineSmall?.copyWith(
               color: theme.colorScheme.primary,
@@ -1556,7 +1557,7 @@ class _TotalsDisplay extends StatelessWidget {
               return Column(
                 children: [
                   _TotalRow(
-                    label: 'Paid',
+                    label: AppLocalizations.of(context).paidLabel,
                     value: '$sym ${paid.toStringAsFixed(2)}',
                     style: theme.textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
@@ -1571,7 +1572,7 @@ class _TotalsDisplay extends StatelessWidget {
                   // Show "Remaining" for credit/tab types; show "Change" for cash
                   if (!markAsPaid && remaining > 0) ...[
                     _TotalRow(
-                      label: 'Remaining',
+                      label: AppLocalizations.of(context).remainingLabel,
                       value: '$sym ${remaining.toStringAsFixed(2)}',
                       style: theme.textTheme.headlineSmall?.copyWith(
                         color: context.warningColor,
@@ -1580,7 +1581,7 @@ class _TotalsDisplay extends StatelessWidget {
                     ),
                   ] else ...[
                     _TotalRow(
-                      label: 'Change',
+                      label: AppLocalizations.of(context).changeLabel,
                       value: '$sym ${change.toStringAsFixed(2)}',
                       style: theme.textTheme.headlineSmall?.copyWith(
                         color: change > 0
@@ -1925,7 +1926,7 @@ class _CustomerDetailCard extends StatelessWidget {
           IconButton(
             icon: Icon(Icons.delete_outline, size: 18, color: cs.error),
             onPressed: onRemove,
-            tooltip: 'Remove customer',
+            tooltip: AppLocalizations.of(context).removeCustomer,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
           ),
@@ -2067,7 +2068,7 @@ class _LoyaltyPointsDialogState extends State<_LoyaltyPointsDialog> {
         children: [
           Icon(Icons.loyalty, color: cs.primary),
           const SizedBox(width: 8),
-          const Text('Redeem Points'),
+          Text(AppLocalizations.of(context).redeemPoints),
         ],
       ),
       content: SizedBox(
@@ -2113,7 +2114,7 @@ class _LoyaltyPointsDialogState extends State<_LoyaltyPointsDialog> {
                   const TextInputType.numberWithOptions(decimal: false),
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               decoration: InputDecoration(
-                labelText: 'Points to use',
+                labelText: AppLocalizations.of(context).pointsToUse,
                 helperText: _discount > 0
                     ? 'Discount: ${_discount.toStringAsFixed(2)} DH'
                     : null,
@@ -2137,7 +2138,7 @@ class _LoyaltyPointsDialogState extends State<_LoyaltyPointsDialog> {
                         }
                       : null,
                   icon: const Icon(Icons.remove),
-                  tooltip: '−1 pt',
+                  tooltip: AppLocalizations.of(context).decrementOnePoint,
                 ),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -2156,7 +2157,7 @@ class _LoyaltyPointsDialogState extends State<_LoyaltyPointsDialog> {
                         }
                       : null,
                   icon: const Icon(Icons.add),
-                  tooltip: '+1 pt',
+                  tooltip: AppLocalizations.of(context).incrementOnePoint,
                 ),
               ],
             ),
@@ -2167,7 +2168,7 @@ class _LoyaltyPointsDialogState extends State<_LoyaltyPointsDialog> {
                 setState(() {});
               },
               icon: const Icon(Icons.flash_on, size: 16),
-              label: Text('Use Max (${max.toStringAsFixed(0)} pts)'),
+              label: Text(AppLocalizations.of(context).useMaxPoints(max.toStringAsFixed(0))),
             ),
           ],
         ),
@@ -2175,11 +2176,11 @@ class _LoyaltyPointsDialogState extends State<_LoyaltyPointsDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context, 0.0),
-          child: const Text('Skip'),
+          child: Text(AppLocalizations.of(context).actionSkip),
         ),
         FilledButton(
           onPressed: valid ? () => Navigator.pop(context, entered) : null,
-          child: const Text('Redeem'),
+          child: Text(AppLocalizations.of(context).actionRedeem),
         ),
       ],
     );

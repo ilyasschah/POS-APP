@@ -9,6 +9,11 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # Localization — supplies GlobalMaterialLocalizations/WidgetsLocalizations
+  # (Material widgets + the shared date picker render non-English through these)
+  # and the Directionality defaults the RTL layout relies on.
+  flutter_localizations:
+    sdk: flutter
   pdf: ^3.11.0
   printing: ^5.12.0
   # State Management & Network
@@ -78,7 +83,11 @@ dev_dependencies:
     sdk: flutter
   integration_test:
     sdk: flutter
-  
+  # App-icon generator. Config lives in the top-level `flutter_icons:` block
+  # below — both must be OUTSIDE `dependencies:`, or pub rejects the file with
+  # "A dependency may only have one source".
+  flutter_launcher_icons: ^0.13.1
+
   # Code Generators (The "Build" tools)
   build_runner: ^2.4.13
   riverpod_generator: ^4.0.0+1
@@ -94,10 +103,27 @@ dev_dependencies:
   # Lints (OPT-4: re-enable the recommended Flutter lint set)
   flutter_lints: ^4.0.0
 
+# App-icon generation (flutter_launcher_icons). Top-level on purpose.
+flutter_launcher_icons:
+  android: true
+  ios: true
+  remove_alpha_ios: true
+  image_path: "assets/icon.png"
+  windows:
+    generate: true
+    image_path: "assets/icon.png"
+
 flutter:
   uses-material-design: true
+  # Runs gen-l10n on build: lib/l10n/*.arb -> AppLocalizations (see l10n.yaml).
+  generate: true
   assets:
     - assets/animations/success_animation.json
+    # Bundled (NOT fetched at runtime) so Arabic receipts still print on an
+    # offline terminal. The PDF standard-14 faces and PdfGoogleFonts.notoSans*
+    # carry no Arabic glyphs at all — without this, Arabic text lays out
+    # correctly and renders as empty boxes.
+    - assets/fonts/
 
 # Pillar 3 — tell the sqlite3 native-assets build hook to provide SQLCipher
 # (encryption-at-rest) instead of the default plaintext SQLite. The hook

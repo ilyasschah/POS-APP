@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/app_settings/app_settings_provider.dart';
@@ -144,7 +145,7 @@ class _DiscountDialogState extends ConsumerState<DiscountDialog>
     final cartState = ref.read(cartProvider);
     final selectedCartItemId = cartState.selectedCartItemId;
     if (selectedCartItemId == null) {
-      showAppSnackbar(context, ref, 'No item selected!', isError: true);
+      showAppSnackbar(context, ref, AppLocalizations.of(context).noItemSelected, isError: true);
       return;
     }
 
@@ -152,7 +153,7 @@ class _DiscountDialogState extends ConsumerState<DiscountDialog>
         .where((i) => i.cartItemId == selectedCartItemId)
         .firstOrNull;
     if (item == null) {
-      showAppSnackbar(context, ref, 'Selected item not found.', isError: true);
+      showAppSnackbar(context, ref, AppLocalizations.of(context).selectedItemNotFound, isError: true);
       return;
     }
 
@@ -170,7 +171,7 @@ class _DiscountDialogState extends ConsumerState<DiscountDialog>
         showAppSnackbar(
           context,
           ref,
-          'Discount would price item below cost.',
+          AppLocalizations.of(context).discountBelowCost,
           isError: true,
         );
         return;
@@ -183,7 +184,7 @@ class _DiscountDialogState extends ConsumerState<DiscountDialog>
       showAppSnackbar(
         context,
         ref,
-        'Discount would result in a negative price.',
+        AppLocalizations.of(context).discountNegativePrice,
         isError: true,
       );
       return;
@@ -337,7 +338,7 @@ class _DiscountDialogState extends ConsumerState<DiscountDialog>
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Apply Discount',
+                AppLocalizations.of(context).applyDiscount,
                 style: tt.titleLarge?.copyWith(
                   color: cs.onSurface,
                   fontWeight: FontWeight.w600,
@@ -350,9 +351,9 @@ class _DiscountDialogState extends ConsumerState<DiscountDialog>
                   controller: _tabController,
                   labelColor: cs.primary,
                   unselectedLabelColor: cs.onSurfaceVariant,
-                  tabs: const [
-                    Tab(text: 'Cart'),
-                    Tab(text: 'Item'),
+                  tabs: [
+                    Tab(text: AppLocalizations.of(context).cartTab),
+                    Tab(text: AppLocalizations.of(context).itemTab),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -362,7 +363,7 @@ class _DiscountDialogState extends ConsumerState<DiscountDialog>
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Text(
-                    'Please select an item in the cart first.',
+                    AppLocalizations.of(context).selectItemFirst,
                     style: TextStyle(color: cs.error),
                   ),
                 ),

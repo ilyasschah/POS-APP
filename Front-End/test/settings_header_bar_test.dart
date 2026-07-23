@@ -20,6 +20,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:pos_app/settings/settings_screen.dart';
 
 Future<void> _pump(WidgetTester tester, Size screen) async {
@@ -30,6 +31,12 @@ Future<void> _pump(WidgetTester tester, Size screen) async {
   await tester.pumpWidget(
     const ProviderScope(
       child: MaterialApp(
+        // Required now that the header reads its copy through
+        // AppLocalizations.of(context) — without the delegates the lookup
+        // returns null and the non-nullable getter throws while building.
+        locale: Locale('en'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           appBar: SettingsHeaderBar(),
           body: Center(child: Text('tab content')),

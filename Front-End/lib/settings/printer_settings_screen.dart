@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:printing/printing.dart';
@@ -60,14 +61,14 @@ class PrinterSettingsBody extends StatelessWidget {
                 indicatorWeight: 3,
                 dividerColor: theme.dividerColor.withValues(alpha: 0.3),
                 labelPadding: const EdgeInsets.symmetric(horizontal: 20),
-                tabs: const [
-                  _PTab(icon: Icons.print_outlined, label: 'Printers'),
+                tabs: [
+                  _PTab(icon: Icons.print_outlined, label: AppLocalizations.of(context).printers),
                   _PTab(
                     icon: Icons.receipt_long_outlined,
-                    label: 'Customize Receipt',
+                    label: AppLocalizations.of(context).customizeReceipt,
                   ),
-                  _PTab(icon: Icons.translate_rounded, label: 'Localize Text'),
-                  _PTab(icon: Icons.article_outlined, label: 'Print Templates'),
+                  _PTab(icon: Icons.translate_rounded, label: AppLocalizations.of(context).localizeText),
+                  _PTab(icon: Icons.article_outlined, label: AppLocalizations.of(context).printTemplates),
                 ],
               ),
             ),
@@ -129,7 +130,7 @@ class _PrintersTabState extends ConsumerState<_PrintersTab> {
       .set(SettingKeys.printersList, PrinterConfig.listToJson(list));
 
   Future<void> _addPrinter() async {
-    final name = await _promptName(context, title: 'Add printer');
+    final name = await _promptName(context, title: AppLocalizations.of(context).addPrinter);
     if (name == null || name.trim().isEmpty) return;
     final list = [..._configs()];
     list.add(PrinterConfig(
@@ -140,7 +141,7 @@ class _PrintersTabState extends ConsumerState<_PrintersTab> {
   }
 
   Future<void> _rename(PrinterConfig p) async {
-    final name = await _promptName(context, title: 'Rename printer', initial: p.name);
+    final name = await _promptName(context, title: AppLocalizations.of(context).renamePrinter, initial: p.name);
     if (name == null || name.trim().isEmpty) return;
     await _saveConfigs(
       _configs().map((c) => c.prefix == p.prefix ? c.copyWith(name: name.trim()) : c).toList(),
@@ -151,16 +152,16 @@ class _PrintersTabState extends ConsumerState<_PrintersTab> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
-        title: const Text('Delete printer'),
-        content: Text('Remove "${p.name}"? Its settings will be discarded.'),
+        title: Text(AppLocalizations.of(context).deletePrinter),
+        content: Text(AppLocalizations.of(context).removeDiscardConfirm(p.name)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(c, false), child: Text(AppLocalizations.of(context).actionCancel)),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(c).colorScheme.error,
             ),
             onPressed: () => Navigator.pop(c, true),
-            child: const Text('Delete'),
+            child: Text(AppLocalizations.of(context).actionDelete),
           ),
         ],
       ),
@@ -185,8 +186,7 @@ class _PrintersTabState extends ConsumerState<_PrintersTab> {
         Padding(
           padding: const EdgeInsets.fromLTRB(4, 0, 4, 12),
           child: Text(
-            'Add a printer for each station, then open its settings to configure '
-            'paper size, margins, header/footer and the cash drawer.',
+            AppLocalizations.of(context).addPrinterHint,
             style: TextStyle(fontSize: 12, color: theme.hintColor, height: 1.5),
           ),
         ),
@@ -213,7 +213,7 @@ class _PrintersTabState extends ConsumerState<_PrintersTab> {
           child: OutlinedButton.icon(
             onPressed: _addPrinter,
             icon: const Icon(Icons.add),
-            label: const Text('Add printer'),
+            label: Text(AppLocalizations.of(context).addPrinter),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(
@@ -241,17 +241,17 @@ Future<String?> _promptName(
       content: TextField(
         controller: ctrl,
         autofocus: true,
-        decoration: const InputDecoration(
-          labelText: 'Printer name',
-          hintText: 'e.g. Bar printer',
+        decoration: InputDecoration(
+          labelText: AppLocalizations.of(context).printerName,
+          hintText: AppLocalizations.of(context).hintBarPrinter,
         ),
         onSubmitted: (v) => Navigator.pop(c, v),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(c), child: const Text('Cancel')),
+        TextButton(onPressed: () => Navigator.pop(c), child: Text(AppLocalizations.of(context).actionCancel)),
         FilledButton(
           onPressed: () => Navigator.pop(c, ctrl.text),
-          child: const Text('Save'),
+          child: Text(AppLocalizations.of(context).actionSave),
         ),
       ],
     ),
@@ -310,7 +310,7 @@ Future<void> showPrinterHardwareDrawer(
                         ),
                         IconButton(
                           iconSize: 26,
-                          tooltip: 'Close',
+                          tooltip: AppLocalizations.of(context).actionClose,
                           onPressed: () => Navigator.of(ctx).pop(),
                           icon: const Icon(Icons.close),
                         ),
@@ -435,7 +435,7 @@ class _PrinterRowCard extends ConsumerWidget {
                                 borderRadius: BorderRadius.circular(5),
                               ),
                               child: Text(
-                                'BUILT-IN',
+                                AppLocalizations.of(context).builtInBadge,
                                 style: TextStyle(
                                   fontSize: 9,
                                   fontWeight: FontWeight.w800,
@@ -457,14 +457,14 @@ class _PrinterRowCard extends ConsumerWidget {
                 ),
                 IconButton(
                   icon: const Icon(Icons.edit_outlined, size: 18),
-                  tooltip: 'Rename',
+                  tooltip: AppLocalizations.of(context).rename,
                   onPressed: onRename,
                 ),
                 if (onDelete != null)
                   IconButton(
                     icon: Icon(Icons.delete_outline,
                         size: 18, color: theme.colorScheme.error),
-                    tooltip: 'Delete',
+                    tooltip: AppLocalizations.of(context).actionDelete,
                     onPressed: onDelete,
                   ),
               ],
@@ -489,7 +489,7 @@ class _PrinterRowCard extends ConsumerWidget {
                         ? Row(
                             children: [
                               Expanded(
-                                child: Text('No printers found',
+                                child: Text(AppLocalizations.of(context).noPrintersFound,
                                     style: TextStyle(
                                         fontSize: 14, color: theme.hintColor)),
                               ),
@@ -497,7 +497,7 @@ class _PrinterRowCard extends ConsumerWidget {
                                 onPressed: onRefresh,
                                 iconSize: 22,
                                 icon: const Icon(Icons.refresh),
-                                tooltip: 'Refresh printers',
+                                tooltip: AppLocalizations.of(context).refreshPrinters,
                                 color: theme.colorScheme.primary,
                               ),
                             ],
@@ -520,8 +520,8 @@ class _PrinterRowCard extends ConsumerWidget {
                 final settingsBtn = OutlinedButton.icon(
                   onPressed: onOpenSettings,
                   icon: const Icon(Icons.settings_outlined, size: 18),
-                  label: const Text('Printer settings',
-                      style: TextStyle(fontSize: 14)),
+                  label: Text(AppLocalizations.of(context).printerSettings,
+                      style: const TextStyle(fontSize: 14)),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 14),
@@ -746,10 +746,10 @@ class _RolePrinterTabState extends ConsumerState<_RolePrinterTab>
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
               ),
-              tabs: const [
-                Tab(text: 'General'),
-                Tab(text: 'Cash Drawer'),
-                Tab(text: 'Category'),
+              tabs: [
+                Tab(text: AppLocalizations.of(context).generalLabel),
+                Tab(text: AppLocalizations.of(context).setCashDrawer),
+                Tab(text: AppLocalizations.of(context).categoryLabel),
               ],
             ),
           ),
@@ -893,7 +893,7 @@ class _HardwareCard extends ConsumerWidget {
                     children: [
                       // Printer type
                       Text(
-                        'Printer type',
+                        AppLocalizations.of(context).printerType,
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
@@ -918,7 +918,7 @@ class _HardwareCard extends ConsumerWidget {
                           children: [
                             Expanded(
                               child: Text(
-                                'No printers found',
+                                AppLocalizations.of(context).noPrintersFound,
                                 style: TextStyle(
                                   fontSize: 13,
                                   color: theme.hintColor,
@@ -928,7 +928,7 @@ class _HardwareCard extends ConsumerWidget {
                             IconButton(
                               onPressed: onRefresh,
                               icon: const Icon(Icons.refresh, size: 18),
-                              tooltip: 'Refresh printers',
+                              tooltip: AppLocalizations.of(context).refreshPrinters,
                               color: theme.colorScheme.primary,
                             ),
                           ],
@@ -962,7 +962,7 @@ class _HardwareCard extends ConsumerWidget {
 
                       // Paper size
                       Text(
-                        'Paper size',
+                        AppLocalizations.of(context).paperSize,
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
@@ -1030,12 +1030,12 @@ class _HardwareCard extends ConsumerWidget {
                                     ? theme.colorScheme.primary
                                     : theme.disabledColor,
                               ),
-                        tooltip: 'Print demo receipt',
+                        tooltip: AppLocalizations.of(context).printDemoReceipt,
                       ),
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'Print demo\nreceipt',
+                      AppLocalizations.of(context).printDemoReceipt,
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 10, color: theme.hintColor),
                     ),
@@ -1067,7 +1067,7 @@ class _GeneralSubTab extends StatelessWidget {
       children: [
         // Number of copies
         _PCard(
-          title: 'Number of Copies',
+          title: AppLocalizations.of(context).numberOfCopies,
           icon: Icons.copy_outlined,
           children: [
             Padding(
@@ -1076,7 +1076,7 @@ class _GeneralSubTab extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      'Copies per transaction',
+                      AppLocalizations.of(context).copiesPerTransaction,
                       style: TextStyle(
                         fontSize: 14,
                         color: Theme.of(context).colorScheme.onSurface,
@@ -1096,20 +1096,20 @@ class _GeneralSubTab extends StatelessWidget {
 
         // Margins
         _PCard(
-          title: 'Margins (in millimeters)',
+          title: AppLocalizations.of(context).marginsMm,
           icon: Icons.border_all_outlined,
           children: [_MarginsCross(role: role)],
         ),
 
         // Header
         _PCard(
-          title: 'Header',
+          title: AppLocalizations.of(context).header,
           icon: Icons.title_outlined,
           children: [
             _PSTextField(
               settingKey: _k('Header'),
-              label: 'Header text',
-              hint: 'Printed at the top of every receipt',
+              label: AppLocalizations.of(context).headerText,
+              hint: AppLocalizations.of(context).headerPrintedTopHint,
               maxLines: 3,
             ),
           ],
@@ -1117,13 +1117,13 @@ class _GeneralSubTab extends StatelessWidget {
 
         // Footer
         _PCard(
-          title: 'Footer',
+          title: AppLocalizations.of(context).footer,
           icon: Icons.subtitles_outlined,
           children: [
             _PSTextField(
               settingKey: _k('Footer'),
-              label: 'Footer text',
-              hint: 'e.g. Thank you for shopping with us!',
+              label: AppLocalizations.of(context).footerText,
+              hint: AppLocalizations.of(context).footerThankYouHint,
               maxLines: 3,
             ),
           ],
@@ -1131,33 +1131,33 @@ class _GeneralSubTab extends StatelessWidget {
 
         // Options
         _PCard(
-          title: 'Options',
+          title: AppLocalizations.of(context).options,
           icon: Icons.tune_outlined,
           children: [
             _PSSwitch(
               settingKey: _k('PrintBarcode'),
-              label: 'Print barcode',
+              label: AppLocalizations.of(context).printBarcode,
             ),
             _PSSwitch(
               settingKey: _k('LogoFullWidth'),
-              label: 'Print logo full width',
+              label: AppLocalizations.of(context).printLogoFullWidth,
             ),
             _PSSwitch(
               settingKey: _k('RightToLeft'),
-              label: 'Right to left',
-              subtitle: 'For RTL languages (Arabic, Hebrew)',
+              label: AppLocalizations.of(context).rightToLeft,
+              subtitle: AppLocalizations.of(context).forRtlLanguages,
             ),
           ],
         ),
 
         // Font settings
         _PCard(
-          title: 'Font Settings',
+          title: AppLocalizations.of(context).fontSettings,
           icon: Icons.font_download_outlined,
           children: [
             _PSDropdown(
               settingKey: _k('FontFamily'),
-              label: 'Font family',
+              label: AppLocalizations.of(context).fontFamily,
               options: _kFontFamilies,
             ),
             _FontSizeSlider(settingKey: _k('FontSize')),
@@ -1192,7 +1192,7 @@ class _MarginsCross extends StatelessWidget {
             children: [
               SizedBox(
                 width: 110,
-                child: _MarginField(settingKey: _k('MarginTop'), label: 'Top'),
+                child: _MarginField(settingKey: _k('MarginTop'), label: AppLocalizations.of(context).top),
               ),
             ],
           ),
@@ -1205,7 +1205,7 @@ class _MarginsCross extends StatelessWidget {
                 width: 110,
                 child: _MarginField(
                   settingKey: _k('MarginLeft'),
-                  label: 'Left',
+                  label: AppLocalizations.of(context).leftSide,
                 ),
               ),
               Container(
@@ -1229,7 +1229,7 @@ class _MarginsCross extends StatelessWidget {
                 width: 110,
                 child: _MarginField(
                   settingKey: _k('MarginRight'),
-                  label: 'Right',
+                  label: AppLocalizations.of(context).rightSide,
                 ),
               ),
             ],
@@ -1243,7 +1243,7 @@ class _MarginsCross extends StatelessWidget {
                 width: 110,
                 child: _MarginField(
                   settingKey: _k('MarginBottom'),
-                  label: 'Bottom',
+                  label: AppLocalizations.of(context).bottom,
                 ),
               ),
             ],
@@ -1278,7 +1278,7 @@ class _FontSizeSlider extends ConsumerWidget {
           Row(
             children: [
               Text(
-                'Font size',
+                AppLocalizations.of(context).setFontSize,
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
@@ -1359,18 +1359,18 @@ class _CashDrawerSubTab extends ConsumerWidget {
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 32),
       children: [
         _PCard(
-          title: 'Cash Drawer',
+          title: AppLocalizations.of(context).setCashDrawer,
           icon: Icons.point_of_sale_outlined,
           children: [
             _PSSwitch(
               settingKey: _k('CashDrawer.Enabled'),
-              label: 'Open cash drawer',
-              subtitle: 'Sends a signal to the cash drawer after checkout',
+              label: AppLocalizations.of(context).openCashDrawerLower,
+              subtitle: AppLocalizations.of(context).cashDrawerSignalHint,
             ),
             if (drawerEnabled) ...[
               _PSTextField(
                 settingKey: _k('CashDrawer.Command'),
-                label: 'Cash drawer command',
+                label: AppLocalizations.of(context).cashDrawerCommand,
                 hint: r'\x1B\x70\x00\x19\xFA',
               ),
               const Padding(
@@ -1413,36 +1413,33 @@ class _CategorySubTab extends ConsumerWidget {
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 32),
       children: [
         _PCard(
-          title: 'Kitchen Printing',
+          title: AppLocalizations.of(context).kitchenPrinting,
           icon: Icons.soup_kitchen_outlined,
           children: [
             _PSSwitch(
               settingKey: SettingKeys.rolePrintKitchenTicket(role),
-              label: 'Print kitchen ticket',
+              label: AppLocalizations.of(context).printKitchenTicket,
               subtitle:
-                  'Fire this printer when the Kitchen button is pressed. With '
-                  'several enabled, the category below decides what each prints.',
+                  AppLocalizations.of(context).kitchenFireFullHint,
             ),
           ],
         ),
         if (kitchenOn)
           _PCard(
-            title: 'Print Category',
+            title: AppLocalizations.of(context).printCategory,
             icon: Icons.category_outlined,
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
                 child: Text(
-                  'This printer only prints products whose category belongs to '
-                  'the selected group (e.g. Barman → drinks). Pick “All '
-                  'products” to print the whole ticket here.',
+                  AppLocalizations.of(context).categoryFilterHint,
                   style: TextStyle(
                       fontSize: 12.5, color: theme.hintColor, height: 1.5),
                 ),
               ),
               _GroupRadioTile(
-                title: 'All products',
-                subtitle: 'No category filter — prints every item',
+                title: AppLocalizations.of(context).allProducts2,
+                subtitle: AppLocalizations.of(context).noCategoryFilter,
                 selected: selected.isEmpty,
                 onTap: () => select(''),
               ),
@@ -1450,8 +1447,7 @@ class _CategorySubTab extends ConsumerWidget {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
                   child: Text(
-                    'No printer groups defined yet. Create them in '
-                    'Settings → Customer Display → Printer Groups.',
+                    AppLocalizations.of(context).noPrinterGroupsDefined,
                     style: TextStyle(fontSize: 12.5, color: theme.hintColor),
                   ),
                 )
@@ -2129,48 +2125,48 @@ class _CustomizeReceiptTab extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 32),
       children: [
         _PCard(
-          title: 'Receipt Content',
+          title: AppLocalizations.of(context).receiptContent,
           icon: Icons.tune_outlined,
           children: [
-            const _PSSwitch(
+            _PSSwitch(
                 settingKey: SettingKeys.receiptPrintTaxTotals,
-                label: 'Print tax totals'),
-            const _PSSwitch(
+                label: AppLocalizations.of(context).printTaxTotals),
+            _PSSwitch(
                 settingKey: SettingKeys.receiptPrintTaxName,
-                label: 'Print tax name'),
-            const _PSSwitch(
+                label: AppLocalizations.of(context).printTaxName),
+            _PSSwitch(
                 settingKey: SettingKeys.receiptPrintItemsCount,
-                label: 'Print items count'),
-            const _PSSwitch(
+                label: AppLocalizations.of(context).printItemsCount),
+            _PSSwitch(
                 settingKey: SettingKeys.receiptPrintTotalQuantity,
-                label: 'Print total quantity'),
-            const _PSSwitch(
+                label: AppLocalizations.of(context).printTotalQuantity),
+            _PSSwitch(
                 settingKey: SettingKeys.receiptPrintMeasurementUnit,
-                label: 'Print measurement unit'),
-            const _PSSwitch(
+                label: AppLocalizations.of(context).printMeasurementUnit),
+            _PSSwitch(
                 settingKey: SettingKeys.receiptPrintOrderNumber,
-                label: 'Print order number'),
-            const _PSSwitch(
+                label: AppLocalizations.of(context).printOrderNumber),
+            _PSSwitch(
                 settingKey: SettingKeys.receiptShortNumber,
-                label: 'Short receipt number',
-                subtitle: 'Print only the trailing counter (e.g. 000008)'),
-            const _PSSwitch(
+                label: AppLocalizations.of(context).shortReceiptNumber,
+                subtitle: AppLocalizations.of(context).printTrailingCounter),
+            _PSSwitch(
                 settingKey: SettingKeys.printLargeOrderNumberInReceipt,
-                label: 'Print large order number'),
-            const _PSSwitch(
+                label: AppLocalizations.of(context).printLargeOrderNumber),
+            _PSSwitch(
                 settingKey: SettingKeys.receiptPrintOutstandingBalance,
-                label: 'Print outstanding balance',
+                label: AppLocalizations.of(context).printOutstandingBalance,
                 subtitle:
-                    'Always shown on credit sales; this forces it even when paid'),
-            const _PSSwitch(
+                    AppLocalizations.of(context).forceOnCreditSales),
+            _PSSwitch(
                 settingKey: SettingKeys.mergeItemsOnReceipt,
-                label: 'Merge identical items'),
+                label: AppLocalizations.of(context).mergeIdenticalItems),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 10, 20, 14),
               child: Row(
                 children: [
                   Expanded(
-                    child: Text('Decimal places',
+                    child: Text(AppLocalizations.of(context).decimalPlaces,
                         style: TextStyle(
                             fontSize: 14, color: theme.colorScheme.onSurface)),
                   ),
@@ -2185,43 +2181,42 @@ class _CustomizeReceiptTab extends StatelessWidget {
           ],
         ),
 
-        const _PCard(
-          title: 'Company Header',
+        _PCard(
+          title: AppLocalizations.of(context).companyHeader,
           icon: Icons.storefront_outlined,
           children: [
             Padding(
-              padding: EdgeInsets.fromLTRB(16, 6, 16, 6),
+              padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
               child: Text(
-                'Details printed under the logo / business name at the top of the receipt. '
-                'The header and footer text themselves are set per printer (⚙ → General).',
-                style: TextStyle(fontSize: 12),
+                AppLocalizations.of(context).headerDetailsFullHint,
+                style: const TextStyle(fontSize: 12),
               ),
             ),
             _PSSwitch(
                 settingKey: SettingKeys.receiptShowCompanyTaxNumber,
-                label: 'Print tax number'),
+                label: AppLocalizations.of(context).printTaxNumber),
             _PSSwitch(
                 settingKey: SettingKeys.receiptShowCompanyAddress,
-                label: 'Print address'),
+                label: AppLocalizations.of(context).printAddress),
             _PSSwitch(
                 settingKey: SettingKeys.receiptShowCompanyPhone,
-                label: 'Print phone (Tel)'),
+                label: AppLocalizations.of(context).printPhoneTel),
           ],
         ),
 
-        const _PCard(
-          title: 'Customer Details',
+        _PCard(
+          title: AppLocalizations.of(context).customerDetails,
           icon: Icons.badge_outlined,
           children: [
             Padding(
-              padding: EdgeInsets.fromLTRB(16, 6, 16, 6),
+              padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
               child: Text(
-                'Choose what customer details are printed on the receipt.',
-                style: TextStyle(fontSize: 12),
+                AppLocalizations.of(context).chooseCustomerDetailsHint,
+                style: const TextStyle(fontSize: 12),
               ),
             ),
             Padding(
-              padding: EdgeInsets.fromLTRB(16, 0, 16, 14),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
               child: Wrap(
                 spacing: 8,
                 runSpacing: 2,
@@ -2230,42 +2225,42 @@ class _CustomizeReceiptTab extends StatelessWidget {
                       width: 150,
                       child: _PSCheck(
                           settingKey: SettingKeys.receiptCustomerName,
-                          label: 'Name')),
+                          label: AppLocalizations.of(context).fieldName)),
                   SizedBox(
                       width: 150,
                       child: _PSCheck(
                           settingKey: SettingKeys.receiptCustomerCode,
-                          label: 'Code')),
+                          label: AppLocalizations.of(context).fieldCode)),
                   SizedBox(
                       width: 150,
                       child: _PSCheck(
                           settingKey: SettingKeys.receiptCustomerTaxNumber,
-                          label: 'Tax number')),
+                          label: AppLocalizations.of(context).taxNumber)),
                   SizedBox(
                       width: 150,
                       child: _PSCheck(
                           settingKey: SettingKeys.receiptCustomerAddress,
-                          label: 'Address')),
+                          label: AppLocalizations.of(context).setAddress)),
                   SizedBox(
                       width: 150,
                       child: _PSCheck(
                           settingKey: SettingKeys.receiptCustomerPhone,
-                          label: 'Phone number')),
+                          label: AppLocalizations.of(context).phoneNumber)),
                   SizedBox(
                       width: 150,
                       child: _PSCheck(
                           settingKey: SettingKeys.receiptCustomerEmail,
-                          label: 'Email')),
+                          label: AppLocalizations.of(context).fieldEmail)),
                 ],
               ),
             ),
           ],
         ),
 
-        const _PCard(
-          title: 'Address Format',
+        _PCard(
+          title: AppLocalizations.of(context).addressFormat,
           icon: Icons.location_on_outlined,
-          children: [_AddressFormatEditor()],
+          children: const [_AddressFormatEditor()],
         ),
       ],
     );
@@ -2379,7 +2374,7 @@ class _AddressFormatEditorState extends ConsumerState<_AddressFormatEditor> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Specify how address lines are printed on receipts and invoices.',
+            AppLocalizations.of(context).addressFormatFullHint,
             style: TextStyle(fontSize: 12, color: theme.hintColor),
           ),
           const SizedBox(height: 8),
@@ -2413,7 +2408,7 @@ class _AddressFormatEditorState extends ConsumerState<_AddressFormatEditor> {
           ),
           const SizedBox(height: 10),
           Text(
-            'Tap a placeholder to insert it:',
+            AppLocalizations.of(context).tapPlaceholderHint,
             style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
@@ -2455,67 +2450,67 @@ class _LocalizeTextTab extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 32),
       children: [
-        const _PCard(
-          title: 'Custom Labels',
+        _PCard(
+          title: AppLocalizations.of(context).customLabels,
           icon: Icons.translate_rounded,
           children: [
             _PSSwitch(
               settingKey: SettingKeys.receiptUseCustomLabels,
-              label: 'Use custom labels in reports and invoices',
-              subtitle: 'Turn off to fall back to the built-in wording',
+              label: AppLocalizations.of(context).useCustomLabels,
+              subtitle: AppLocalizations.of(context).fallbackWordingHint,
             ),
           ],
         ),
         if (useCustom) ...[
-          const _PCard(
-            title: 'Receipt Labels',
+          _PCard(
+            title: AppLocalizations.of(context).receiptLabels,
             icon: Icons.label_outline,
             children: [
               _PSTextField(
                   settingKey: SettingKeys.labelCompanyTaxNumber,
-                  label: 'Company tax number'),
+                  label: AppLocalizations.of(context).companyTaxNumber),
               _PSTextField(
                   settingKey: SettingKeys.labelCompanyPhone,
-                  label: 'Company phone (Tel)'),
+                  label: AppLocalizations.of(context).companyPhoneTel),
               _PSTextField(
                   settingKey: SettingKeys.labelReceiptNumber,
-                  label: 'Receipt number'),
+                  label: AppLocalizations.of(context).receiptNumber),
               _PSTextField(
-                  settingKey: SettingKeys.labelOrderNumber, label: 'Order number'),
-              _PSTextField(settingKey: SettingKeys.labelUser, label: 'User'),
+                  settingKey: SettingKeys.labelOrderNumber, label: AppLocalizations.of(context).orderNumberLower),
+              _PSTextField(settingKey: SettingKeys.labelUser, label: AppLocalizations.of(context).userLabel),
               _PSTextField(
-                  settingKey: SettingKeys.labelItemsCount, label: 'Items count'),
+                  settingKey: SettingKeys.labelItemsCount, label: AppLocalizations.of(context).itemsCount),
               _PSTextField(
-                  settingKey: SettingKeys.labelDiscount, label: 'Discount'),
+                  settingKey: SettingKeys.labelDiscount, label: AppLocalizations.of(context).posDiscount),
               _PSTextField(
-                  settingKey: SettingKeys.labelSubtotal, label: 'Subtotal'),
-              _PSTextField(settingKey: SettingKeys.labelTaxRate, label: 'Tax'),
-              _PSTextField(settingKey: SettingKeys.labelTotal, label: 'Total'),
+                  settingKey: SettingKeys.labelSubtotal, label: AppLocalizations.of(context).subtotal),
+              _PSTextField(settingKey: SettingKeys.labelTaxRate, label: AppLocalizations.of(context).fieldTax),
+              _PSTextField(settingKey: SettingKeys.labelTotal, label: AppLocalizations.of(context).totalLabel),
               _PSTextField(
-                  settingKey: SettingKeys.labelPaidAmount, label: 'Paid amount'),
+                  settingKey: SettingKeys.labelPaidAmount, label: AppLocalizations.of(context).paidAmount),
               _PSTextField(
-                  settingKey: SettingKeys.labelAmountDue, label: 'Amount due'),
-              _PSTextField(settingKey: SettingKeys.labelChange, label: 'Change'),
+                  settingKey: SettingKeys.labelAmountDue, label: AppLocalizations.of(context).amountDue),
+              _PSTextField(settingKey: SettingKeys.labelChange, label: AppLocalizations.of(context).change),
               _PSTextField(
                   settingKey: SettingKeys.labelOutstandingBalance,
-                  label: 'Outstanding balance'),
+                  label: AppLocalizations.of(context).outstandingBalance),
             ],
           ),
-          const _PCard(
-            title: 'Customer Detail Labels',
+          _PCard(
+            title: AppLocalizations.of(context).customerDetailLabels,
             icon: Icons.badge_outlined,
             children: [
               _PSTextField(
-                  settingKey: SettingKeys.labelCustomer, label: 'Customer'),
+                  settingKey: SettingKeys.labelCustomer, label: AppLocalizations.of(context).customerLabel),
               _PSTextField(
-                  settingKey: SettingKeys.labelCustomerAddress, label: 'Address'),
+                  settingKey: SettingKeys.labelCustomerAddress, label: AppLocalizations.of(context).setAddress),
               _PSTextField(
-                  settingKey: SettingKeys.labelCustomerCode, label: 'Code'),
+                  settingKey: SettingKeys.labelCustomerCode, label: AppLocalizations.of(context).fieldCode),
               _PSTextField(
                   settingKey: SettingKeys.labelCustomerPhone,
-                  label: 'Phone number'),
+                  label: AppLocalizations.of(context).phoneNumber),
               _PSTextField(
-                  settingKey: SettingKeys.labelCustomerEmail, label: 'Email'),
+                  settingKey: SettingKeys.labelCustomerEmail, label: AppLocalizations.of(context).fieldEmail),
             ],
           ),
         ],
@@ -2535,65 +2530,65 @@ class _PrintTemplatesTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 32),
-      children: const [
+      children: [
         _PCard(
-          title: 'Font',
+          title: AppLocalizations.of(context).font,
           icon: Icons.font_download_outlined,
           children: [
             _PSDropdown(
               settingKey: SettingKeys.invoiceFontFamily,
-              label: 'Invoice font',
+              label: AppLocalizations.of(context).invoiceFont,
               options: _kFontFamilies,
             ),
           ],
         ),
         _PCard(
-          title: 'Invoice Settings',
+          title: AppLocalizations.of(context).invoiceSettings,
           icon: Icons.article_outlined,
           children: [
             _PSTextField(
                 settingKey: SettingKeys.invoiceTitle,
-                label: 'Title',
-                hint: 'e.g. TAX INVOICE'),
+                label: AppLocalizations.of(context).titleLabel,
+                hint: AppLocalizations.of(context).invoiceTitleHint),
             _PSSwitch(
-                settingKey: SettingKeys.invoicePrintA5, label: 'Print in A5 size'),
+                settingKey: SettingKeys.invoicePrintA5, label: AppLocalizations.of(context).printInA5),
           ],
         ),
         _PCard(
-          title: 'Columns',
+          title: AppLocalizations.of(context).columns,
           icon: Icons.view_column_outlined,
           children: [
-            _PSSwitch(settingKey: SettingKeys.invoiceColumnTax, label: 'Tax column'),
+            _PSSwitch(settingKey: SettingKeys.invoiceColumnTax, label: AppLocalizations.of(context).taxColumn),
             _PSSwitch(
                 settingKey: SettingKeys.invoiceColumnDiscount,
-                label: 'Discount column'),
+                label: AppLocalizations.of(context).discountColumn),
           ],
         ),
         _PCard(
-          title: 'Other Settings',
+          title: AppLocalizations.of(context).otherSettings,
           icon: Icons.tune_outlined,
           children: [
             _PSSwitch(
                 settingKey: SettingKeys.invoiceShowPaymentMethods,
-                label: 'Payment methods'),
+                label: AppLocalizations.of(context).paymentMethods),
             _PSSwitch(
                 settingKey: SettingKeys.invoiceShowOutstandingBalance,
-                label: 'Outstanding balance'),
+                label: AppLocalizations.of(context).outstandingBalance),
           ],
         ),
         _PCard(
-          title: 'Header & Footer',
+          title: AppLocalizations.of(context).headerAndFooter,
           icon: Icons.notes_outlined,
           children: [
             _PSTextField(
                 settingKey: SettingKeys.invoiceGlobalHeader,
-                label: 'Global header',
-                hint: 'Printed above the invoice',
+                label: AppLocalizations.of(context).globalHeader,
+                hint: AppLocalizations.of(context).invoiceHeaderHint,
                 maxLines: 3),
             _PSTextField(
                 settingKey: SettingKeys.invoiceGlobalFooter,
-                label: 'Global footer',
-                hint: 'e.g. bank details, terms',
+                label: AppLocalizations.of(context).globalFooter,
+                hint: AppLocalizations.of(context).invoiceFooterHint,
                 maxLines: 3),
           ],
         ),

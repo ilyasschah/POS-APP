@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/api/api_client.dart';
 import 'package:pos_app/auth/auth_provider.dart';
@@ -183,7 +184,7 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
             children: [
               Icon(Icons.notifications_active, color: ctx.warningColor),
               const SizedBox(width: 8),
-              const Text('Booking Alerts'),
+              Text(AppLocalizations.of(context).bookingAlerts),
             ],
           ),
           content: Column(
@@ -213,7 +214,7 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
           actions: [
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Got it'),
+              child: Text(AppLocalizations.of(context).gotIt),
             ),
           ],
         ),
@@ -253,7 +254,7 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
             actions: [
               IconButton(
                 icon: const Icon(Icons.table_restaurant),
-                tooltip: 'Floor Plan',
+                tooltip: AppLocalizations.of(context).floorPlan,
                 // Switch MainLayout's tab rather than pushing FloorPlanScreen as
                 // a route: a pushed copy renders OUTSIDE the layout, so it lost
                 // the sidebar and its own nav-back button had nothing to return
@@ -265,7 +266,7 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
               const SizedBox(width: 4),
               IconButton(
                 icon: const Icon(Icons.chevron_left),
-                tooltip: 'Previous day',
+                tooltip: AppLocalizations.of(context).previousDay,
                 onPressed: () =>
                     ref.read(selectedBookingDateProvider.notifier).state =
                         selectedDate.subtract(const Duration(days: 1)),
@@ -293,7 +294,7 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
               ),
               IconButton(
                 icon: const Icon(Icons.chevron_right),
-                tooltip: 'Next day',
+                tooltip: AppLocalizations.of(context).nextDay,
                 onPressed: () =>
                     ref.read(selectedBookingDateProvider.notifier).state =
                         selectedDate.add(const Duration(days: 1)),
@@ -303,7 +304,7 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
                 padding: const EdgeInsets.only(right: 12),
                 child: ElevatedButton.icon(
                   icon: const Icon(Icons.add),
-                  label: const Text('Add Booking'),
+                  label: Text(AppLocalizations.of(context).addBooking),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: context.successColor,
                     foregroundColor: context.onStatusColor,
@@ -1196,7 +1197,7 @@ class _AddBookingDialogState extends ConsumerState<_AddBookingDialog> {
           context: context,
           barrierDismissible: false,
           builder: (ctx) => AlertDialog(
-            title: const Text('Booking Saved!'),
+            title: Text(AppLocalizations.of(context).bookingSaved),
             content: Text(
               '${created.reservationName} has been scheduled for '
               '${_fmtDateTime(created.startTime)}.',
@@ -1204,7 +1205,7 @@ class _AddBookingDialogState extends ConsumerState<_AddBookingDialog> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, _PostSaveAction.stay),
-                child: const Text('Stay on Calendar'),
+                child: Text(AppLocalizations.of(context).stayOnCalendar),
               ),
               ElevatedButton.icon(
                 icon: const Icon(Icons.play_arrow, color: Colors.white),
@@ -1292,9 +1293,9 @@ class _AddBookingDialogState extends ConsumerState<_AddBookingDialog> {
                 DropdownButtonFormField<int?>(
                   key: ValueKey(_selectedCustomerId),
                   initialValue: _selectedCustomerId,
-                  decoration: const InputDecoration(
-                    labelText: 'Customer',
-                    prefixIcon: Icon(Icons.account_circle),
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).customerLabel,
+                    prefixIcon: const Icon(Icons.account_circle),
                   ),
                   items: customers
                       .where((c) => c.isCustomer)
@@ -1316,9 +1317,9 @@ class _AddBookingDialogState extends ConsumerState<_AddBookingDialog> {
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Guest Name *',
-                    prefixIcon: Icon(Icons.person),
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).guestNameRequired,
+                    prefixIcon: const Icon(Icons.person),
                   ),
                   validator: (v) =>
                       v == null || v.trim().isEmpty ? 'Name is required' : null,
@@ -1329,7 +1330,7 @@ class _AddBookingDialogState extends ConsumerState<_AddBookingDialog> {
                   children: [
                     Expanded(
                       child: _TimePicker(
-                        label: 'Start Time',
+                        label: AppLocalizations.of(context).startTime,
                         time: _startTime,
                         onChanged: _onStartTimeChanged,
                       ),
@@ -1337,7 +1338,7 @@ class _AddBookingDialogState extends ConsumerState<_AddBookingDialog> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: _TimePicker(
-                        label: 'End Time',
+                        label: AppLocalizations.of(context).endTime,
                         time: _endTime,
                         onChanged: (t) => setState(() => _endTime = t),
                       ),
@@ -1350,9 +1351,9 @@ class _AddBookingDialogState extends ConsumerState<_AddBookingDialog> {
                     Expanded(
                       child: TextFormField(
                         controller: _guestController,
-                        decoration: const InputDecoration(
-                          labelText: 'Guests',
-                          prefixIcon: Icon(Icons.people),
+                        decoration: InputDecoration(
+                          labelText: AppLocalizations.of(context).guests,
+                          prefixIcon: const Icon(Icons.people),
                         ),
                         keyboardType: TextInputType.number,
                       ),
@@ -1361,14 +1362,14 @@ class _AddBookingDialogState extends ConsumerState<_AddBookingDialog> {
                     Expanded(
                       child: DropdownButtonFormField<User?>(
                         initialValue: _selectedStaff,
-                        decoration: const InputDecoration(
-                          labelText: 'Staff',
-                          prefixIcon: Icon(Icons.badge),
+                        decoration: InputDecoration(
+                          labelText: AppLocalizations.of(context).setStaff,
+                          prefixIcon: const Icon(Icons.badge),
                         ),
                         items: [
-                          const DropdownMenuItem<User?>(
+                          DropdownMenuItem<User?>(
                             value: null,
-                            child: Text('Unassigned'),
+                            child: Text(AppLocalizations.of(context).unassigned),
                           ),
                           ...widget.users.map(
                             (u) => DropdownMenuItem<User?>(
@@ -1404,9 +1405,9 @@ class _AddBookingDialogState extends ConsumerState<_AddBookingDialog> {
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _noteController,
-                  decoration: const InputDecoration(
-                    labelText: 'Notes (optional)',
-                    prefixIcon: Icon(Icons.notes),
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).notesOptional,
+                    prefixIcon: const Icon(Icons.notes),
                   ),
                   maxLines: 2,
                 ),
@@ -1418,7 +1419,7 @@ class _AddBookingDialogState extends ConsumerState<_AddBookingDialog> {
       actions: [
         TextButton(
           onPressed: _saving ? null : () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(AppLocalizations.of(context).actionCancel),
         ),
         ElevatedButton(
           onPressed: _saving ? null : _save,
@@ -1435,7 +1436,7 @@ class _AddBookingDialogState extends ConsumerState<_AddBookingDialog> {
                     color: context.onStatusColor,
                   ),
                 )
-              : const Text('Save'),
+              : Text(AppLocalizations.of(context).actionSave),
         ),
       ],
     );
@@ -1494,7 +1495,7 @@ class _TableAvailabilityPicker extends StatelessWidget {
               color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
             ),
             const SizedBox(width: 6),
-            Text('Select Tables *', style: theme.textTheme.labelLarge),
+            Text(AppLocalizations.of(context).selectTablesRequired, style: theme.textTheme.labelLarge),
             const Spacer(),
             if (selectedIds.isNotEmpty)
               Text(
@@ -1668,7 +1669,7 @@ class _BookingDetailDialogState extends ConsumerState<_BookingDetailDialog> {
       chosenTableId = await showDialog<int>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('Which table should this order be placed on?'),
+          title: Text(AppLocalizations.of(context).whichTableForOrder),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: widget.booking.tableIds.map((id) {
@@ -1683,7 +1684,7 @@ class _BookingDetailDialogState extends ConsumerState<_BookingDetailDialog> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, null),
-              child: const Text('Cancel'),
+              child: Text(AppLocalizations.of(context).actionCancel),
             ),
           ],
         ),
@@ -1847,14 +1848,14 @@ class _BookingDetailDialogState extends ConsumerState<_BookingDetailDialog> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Booking'),
+        title: Text(AppLocalizations.of(context).deleteBooking),
         content: Text(
           'Delete booking for "${widget.booking.reservationName}"?',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -1862,7 +1863,7 @@ class _BookingDetailDialogState extends ConsumerState<_BookingDetailDialog> {
               foregroundColor: ctx.onStatusColor,
             ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete'),
+            child: Text(AppLocalizations.of(context).actionDelete),
           ),
         ],
       ),
@@ -1974,7 +1975,7 @@ class _BookingDetailDialogState extends ConsumerState<_BookingDetailDialog> {
       if (b.documentId == null) return null;
       return _bigButton(
         icon: Icons.receipt,
-        label: 'Open Document',
+        label: AppLocalizations.of(context).openDocument,
         color: Colors.teal,
         onTap: _openDocument,
       );
@@ -1987,7 +1988,7 @@ class _BookingDetailDialogState extends ConsumerState<_BookingDetailDialog> {
     if (localOrderId != null) {
       return _bigButton(
         icon: Icons.receipt_long,
-        label: 'Open Service',
+        label: AppLocalizations.of(context).openService,
         color: Colors.indigo,
         onTap: () => _openLocalOrder(localOrderId),
       );
@@ -1995,14 +1996,14 @@ class _BookingDetailDialogState extends ConsumerState<_BookingDetailDialog> {
     if (b.posOrderId != null) {
       return _bigButton(
         icon: Icons.receipt_long,
-        label: 'Open Order',
+        label: AppLocalizations.of(context).openOrder,
         color: Colors.indigo,
         onTap: _openOrder,
       );
     }
     return _bigButton(
       icon: Icons.play_arrow,
-      label: 'Start Service',
+      label: AppLocalizations.of(context).startService,
       color: Colors.teal,
       onTap: _startService,
     );
@@ -2230,7 +2231,7 @@ class _BookingDetailDialogState extends ConsumerState<_BookingDetailDialog> {
                     Expanded(
                       child: _secondaryButton(
                         icon: Icons.delete_outline,
-                        label: 'Delete',
+                        label: AppLocalizations.of(context).actionDelete,
                         color: context.dangerColor,
                         onTap: _saving ? null : _delete,
                       ),
@@ -2239,7 +2240,7 @@ class _BookingDetailDialogState extends ConsumerState<_BookingDetailDialog> {
                     Expanded(
                       child: _secondaryButton(
                         icon: Icons.edit_outlined,
-                        label: 'Edit',
+                        label: AppLocalizations.of(context).actionEdit,
                         onTap: _saving ? null : _onEdit,
                       ),
                     ),
@@ -2248,7 +2249,7 @@ class _BookingDetailDialogState extends ConsumerState<_BookingDetailDialog> {
                   Expanded(
                     child: _secondaryButton(
                       icon: Icons.close,
-                      label: 'Close',
+                      label: AppLocalizations.of(context).actionClose,
                       onTap: () => Navigator.pop(context),
                     ),
                   ),

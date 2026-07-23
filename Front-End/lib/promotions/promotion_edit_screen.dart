@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/api/promotion_models.dart';
 import 'package:pos_app/api/api_client.dart';
@@ -478,7 +479,7 @@ class _PromotionEditScreenState extends ConsumerState<PromotionEditScreen> {
         actions: [
           ElevatedButton.icon(
             icon: const Icon(Icons.save),
-            label: const Text('Save'),
+            label: Text(AppLocalizations.of(context).actionSave),
             onPressed: _save,
           ),
           const SizedBox(width: 16),
@@ -501,9 +502,9 @@ class _PromotionEditScreenState extends ConsumerState<PromotionEditScreen> {
                       flex: 2,
                       child: TextField(
                         controller: _nameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Promotion Name',
-                          border: OutlineInputBorder(),
+                        decoration: InputDecoration(
+                          labelText: AppLocalizations.of(context).promotionName,
+                          border: const OutlineInputBorder(),
                         ),
                       ),
                     ),
@@ -512,7 +513,7 @@ class _PromotionEditScreenState extends ConsumerState<PromotionEditScreen> {
                       flex: 1,
                       child: Row(
                         children: [
-                          const Text('Is Active'),
+                          Text(AppLocalizations.of(context).isActive),
                           const Spacer(),
                           Switch(
                             value: _isEnabled,
@@ -678,13 +679,13 @@ class _PromotionEditScreenState extends ConsumerState<PromotionEditScreen> {
                             onChanged: (v) => setState(() => _search = v),
                             decoration: InputDecoration(
                               isDense: true,
-                              hintText: 'Search products...',
+                              hintText: AppLocalizations.of(context).searchProductsHint,
                               prefixIcon: const Icon(Icons.search),
                               suffixIcon: _search.isEmpty
                                   ? null
                                   : IconButton(
                                       icon: const Icon(Icons.clear),
-                                      tooltip: 'Clear',
+                                      tooltip: AppLocalizations.of(context).actionClear,
                                       onPressed: () {
                                         _searchController.clear();
                                         setState(() => _search = '');
@@ -701,12 +702,12 @@ class _PromotionEditScreenState extends ConsumerState<PromotionEditScreen> {
                             loading: () => const Center(
                                 child: CircularProgressIndicator()),
                             error: (err, stack) =>
-                                Center(child: Text('Error: $err')),
+                                Center(child: Text(AppLocalizations.of(context).errorWithMessage(err.toString()))),
                             data: (groups) => productsAsync.when(
                               loading: () => const Center(
                                   child: CircularProgressIndicator()),
                               error: (err, stack) =>
-                                  Center(child: Text('Error: $err')),
+                                  Center(child: Text(AppLocalizations.of(context).errorWithMessage(err.toString()))),
                               data: (products) {
                                 // Update product names in items list for display
                                 for (var item in _items) {
@@ -774,7 +775,7 @@ class _PromotionEditScreenState extends ConsumerState<PromotionEditScreen> {
                             if (_items.isNotEmpty)
                               TextButton.icon(
                                 icon: const Icon(Icons.clear_all, size: 18),
-                                label: const Text('Clear all'),
+                                label: Text(AppLocalizations.of(context).clearAll),
                                 onPressed: () =>
                                     setState(() => _items.clear()),
                               ),
@@ -854,7 +855,7 @@ class _PromotionEditScreenState extends ConsumerState<PromotionEditScreen> {
                                         IconButton(
                                           visualDensity:
                                               VisualDensity.compact,
-                                          tooltip: 'Remove',
+                                          tooltip: AppLocalizations.of(context).actionRemove,
                                           icon: Icon(Icons.delete_outline,
                                               color: cs.error),
                                           onPressed: () => setState(
@@ -872,7 +873,7 @@ class _PromotionEditScreenState extends ConsumerState<PromotionEditScreen> {
                                           child: TextFormField(
                                             initialValue: _fmtNum(item.value),
                                             decoration: InputDecoration(
-                                              labelText: 'Discount',
+                                              labelText: AppLocalizations.of(context).posDiscount,
                                               isDense: true,
                                               border:
                                                   const OutlineInputBorder(),
@@ -892,19 +893,19 @@ class _PromotionEditScreenState extends ConsumerState<PromotionEditScreen> {
                                               DropdownButtonFormField<int>(
                                             initialValue: item.discountType,
                                             isDense: true,
-                                            decoration: const InputDecoration(
-                                              labelText: 'Type',
+                                            decoration: InputDecoration(
+                                              labelText: AppLocalizations.of(context).typeLabel,
                                               isDense: true,
-                                              border: OutlineInputBorder(),
+                                              border: const OutlineInputBorder(),
                                             ),
-                                            items: const [
+                                            items: [
                                               DropdownMenuItem(
                                                 value: 0,
-                                                child: Text('Percentage'),
+                                                child: Text(AppLocalizations.of(context).percentage),
                                               ),
                                               DropdownMenuItem(
                                                 value: 1,
-                                                child: Text('Fixed Amount'),
+                                                child: Text(AppLocalizations.of(context).fixedAmount),
                                               ),
                                             ],
                                             onChanged: (v) => setState(
@@ -937,10 +938,10 @@ class _PromotionEditScreenState extends ConsumerState<PromotionEditScreen> {
                                               initialValue:
                                                   _fmtNum(item.quantity),
                                               decoration:
-                                                  const InputDecoration(
-                                                labelText: 'Required Qty',
+                                                  InputDecoration(
+                                                labelText: AppLocalizations.of(context).requiredQty,
                                                 isDense: true,
-                                                border: OutlineInputBorder(),
+                                                border: const OutlineInputBorder(),
                                               ),
                                               keyboardType:
                                                   TextInputType.number,
@@ -957,15 +958,15 @@ class _PromotionEditScreenState extends ConsumerState<PromotionEditScreen> {
                                                   item.conditionType,
                                               isDense: true,
                                               decoration:
-                                                  const InputDecoration(
-                                                labelText: 'Applies To',
+                                                  InputDecoration(
+                                                labelText: AppLocalizations.of(context).appliesTo,
                                                 isDense: true,
-                                                border: OutlineInputBorder(),
+                                                border: const OutlineInputBorder(),
                                               ),
-                                              items: const [
+                                              items: [
                                                 DropdownMenuItem(
                                                   value: 0,
-                                                  child: Text('Same Product'),
+                                                  child: Text(AppLocalizations.of(context).sameProduct),
                                                 ),
                                               ],
                                               onChanged: (v) => setState(

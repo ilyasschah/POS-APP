@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/auth/auth_provider.dart';
@@ -91,8 +92,8 @@ class _CashMovementDialogState extends ConsumerState<_CashMovementDialog> {
 
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      title: const Text('Cash Movement',
-          style: TextStyle(fontWeight: FontWeight.bold)),
+      title: Text(AppLocalizations.of(context).cashMovement,
+          style: const TextStyle(fontWeight: FontWeight.bold)),
       content: SizedBox(
         width: 380,
         child: Column(
@@ -101,16 +102,16 @@ class _CashMovementDialogState extends ConsumerState<_CashMovementDialog> {
           children: [
             // Type toggle
             SegmentedButton<int>(
-              segments: const [
+              segments: [
                 ButtonSegment(
                   value: 0,
-                  label: Text('Cash In'),
-                  icon: Icon(Icons.add_circle_outline),
+                  label: Text(AppLocalizations.of(context).cashIn),
+                  icon: const Icon(Icons.add_circle_outline),
                 ),
                 ButtonSegment(
                   value: 1,
-                  label: Text('Cash Out'),
-                  icon: Icon(Icons.remove_circle_outline),
+                  label: Text(AppLocalizations.of(context).cashOut),
+                  icon: const Icon(Icons.remove_circle_outline),
                 ),
               ],
               selected: {_type},
@@ -141,7 +142,7 @@ class _CashMovementDialogState extends ConsumerState<_CashMovementDialog> {
                 FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
               ],
               decoration: InputDecoration(
-                labelText: 'Amount',
+                labelText: AppLocalizations.of(context).amount,
                 prefixIcon: Icon(
                   isCashIn ? Icons.arrow_upward : Icons.arrow_downward,
                   color: isCashIn ? context.successColor : theme.colorScheme.error,
@@ -154,11 +155,11 @@ class _CashMovementDialogState extends ConsumerState<_CashMovementDialog> {
             // Description
             TextField(
               controller: _descCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Description (optional)',
-                hintText: 'e.g. wifi bill, pre started',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.notes_outlined),
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context).descriptionOptional,
+                hintText: AppLocalizations.of(context).hintWifiBill,
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.notes_outlined),
               ),
               maxLines: 2,
             ),
@@ -175,7 +176,7 @@ class _CashMovementDialogState extends ConsumerState<_CashMovementDialog> {
       actions: [
         TextButton(
           onPressed: _saving ? null : () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(AppLocalizations.of(context).actionCancel),
         ),
         FilledButton(
           onPressed: _saving ? null : _save,

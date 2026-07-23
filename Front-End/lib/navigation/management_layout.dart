@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/security/security_guard.dart';
 import 'package:pos_app/auth/users_screen.dart';
@@ -128,7 +129,7 @@ class _ManagementLayoutState extends ConsumerState<ManagementLayout> {
                     child: Center(
                       child: IconButton(
                         icon: Icon(Icons.menu, color: context.navMuted),
-                        tooltip: "Expand Sidebar",
+                        tooltip: AppLocalizations.of(context).expandSidebar,
                         onPressed: () =>
                             setState(() => _isSidebarExpanded = true),
                       ),
@@ -152,7 +153,7 @@ class _ManagementLayoutState extends ConsumerState<ManagementLayout> {
                         if (isDesktop)
                           IconButton(
                             icon: Icon(Icons.menu_open, color: context.navMuted),
-                            tooltip: "Collapse Sidebar",
+                            tooltip: AppLocalizations.of(context).collapseSidebar,
                             onPressed: () =>
                                 setState(() => _isSidebarExpanded = false),
                           ),
@@ -168,98 +169,98 @@ class _ManagementLayoutState extends ConsumerState<ManagementLayout> {
                     NavItem(
                       isMini: isMini,
                       icon: Icons.dashboard,
-                      label: "Dashboard",
+                      label: AppLocalizations.of(context).dashboard,
                       isActive: _selectedIndex == 0,
                       onTap: () => handleNavTap(0),
                     ),
                     NavItem(
                       isMini: isMini,
                       icon: Icons.description,
-                      label: "Documents",
+                      label: AppLocalizations.of(context).documents,
                       isActive: _selectedIndex == 1,
                       onTap: () => handleNavTap(1),
                     ),
                     NavItem(
                       isMini: isMini,
                       icon: Icons.local_offer,
-                      label: "Products",
+                      label: AppLocalizations.of(context).products,
                       isActive: _selectedIndex == 2,
                       onTap: () => handleNavTap(2),
                     ),
                     NavItem(
                       isMini: isMini,
                       icon: Icons.folder,
-                      label: "Product Groups",
+                      label: AppLocalizations.of(context).productGroups,
                       isActive: _selectedIndex == 3,
                       onTap: () => handleNavTap(3),
                     ),
                     NavItem(
                       isMini: isMini,
                       icon: Icons.inventory_2,
-                      label: "Stock",
+                      label: AppLocalizations.of(context).stock,
                       isActive: _selectedIndex == 4,
                       onTap: () => handleNavTap(4),
                     ),
                     NavItem(
                       isMini: isMini,
                       icon: Icons.bar_chart,
-                      label: "Reporting",
+                      label: AppLocalizations.of(context).reporting,
                       isActive: _selectedIndex == 5,
                       onTap: () => handleNavTap(5),
                     ),
                     NavItem(
                       isMini: isMini,
                       icon: Icons.people,
-                      label: "Customers & suppliers",
+                      label: AppLocalizations.of(context).customersSuppliersLower,
                       isActive: _selectedIndex == 6,
                       onTap: () => handleNavTap(6),
                     ),
                     NavItem(
                       isMini: isMini,
                       icon: Icons.favorite,
-                      label: "Promotions",
+                      label: AppLocalizations.of(context).promotions,
                       isActive: _selectedIndex == 7,
                       onTap: () => handleNavTap(7),
                     ),
                     NavItem(
                       isMini: isMini,
                       icon: Icons.vpn_key,
-                      label: "Users & security",
+                      label: AppLocalizations.of(context).usersSecurityLower,
                       isActive: _selectedIndex == 8,
                       onTap: () => handleNavTap(8),
                     ),
                     NavItem(
                       isMini: isMini,
                       icon: Icons.credit_card,
-                      label: "Payment types",
+                      label: AppLocalizations.of(context).paymentTypesLower,
                       isActive: _selectedIndex == 9,
                       onTap: () => handleNavTap(9),
                     ),
                     NavItem(
                       isMini: isMini,
                       icon: Icons.percent,
-                      label: "Tax rates",
+                      label: AppLocalizations.of(context).taxRatesLower,
                       isActive: _selectedIndex == 10,
                       onTap: () => handleNavTap(10),
                     ),
                     NavItem(
                       isMini: isMini,
                       icon: Icons.business,
-                      label: "My company",
+                      label: AppLocalizations.of(context).myCompanyLower,
                       isActive: _selectedIndex == 11,
                       onTap: () => handleNavTap(11),
                     ),
                     NavItem(
                       isMini: isMini,
                       icon: Icons.block,
-                      label: "Void reasons",
+                      label: AppLocalizations.of(context).voidReasonsLower,
                       isActive: _selectedIndex == 12,
                       onTap: () => handleNavTap(12),
                     ),
                     NavItem(
                       isMini: isMini,
                       icon: Icons.card_giftcard,
-                      label: "Loyalty Cards",
+                      label: AppLocalizations.of(context).loyaltyCards,
                       isActive: _selectedIndex == 13,
                       onTap: () => handleNavTap(13),
                     ),
@@ -275,7 +276,7 @@ class _ManagementLayoutState extends ConsumerState<ManagementLayout> {
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
               child: Tooltip(
-                message: "Exit Management",
+                message: AppLocalizations.of(context).exitManagement,
                 child: SizedBox(
                   width: double.infinity,
                   child: Material(
@@ -380,7 +381,7 @@ class _AccessDeniedPanel extends StatelessWidget {
                 onPressed: onMenuPressed,
               )
             : null,
-        title: const Text('Restricted'),
+        title: Text(AppLocalizations.of(context).restricted),
       ),
       body: Center(
         child: Padding(

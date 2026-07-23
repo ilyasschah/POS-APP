@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/api/api_client.dart';
 import 'package:pos_app/auth/auth_provider.dart';
@@ -91,7 +92,7 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (context, setStateDialog) {
           return AlertDialog(
-            title: const Text("Change Password"),
+            title: Text(AppLocalizations.of(context).changePassword),
             content: SizedBox(
               width: 400,
               child: Column(
@@ -100,27 +101,27 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
                   TextField(
                     controller: oldPasswordCtrl,
                     obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: "Old Password",
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context).oldPassword,
+                      border: const OutlineInputBorder(),
                     ),
                   ),
                   const SizedBox(height: 16),
                   TextField(
                     controller: newPasswordCtrl,
                     obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: "New Password",
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context).newPassword,
+                      border: const OutlineInputBorder(),
                     ),
                   ),
                   const SizedBox(height: 16),
                   TextField(
                     controller: confirmPasswordCtrl,
                     obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: "Confirm New Password",
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context).confirmNewPassword,
+                      border: const OutlineInputBorder(),
                     ),
                   ),
                 ],
@@ -129,7 +130,7 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
             actions: [
               TextButton(
                 onPressed: isSaving ? null : () => Navigator.pop(ctx),
-                child: const Text("Cancel"),
+                child: Text(AppLocalizations.of(context).actionCancel),
               ),
               ElevatedButton(
                 onPressed: isSaving
@@ -172,7 +173,7 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
                         height: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text("Save"),
+                    : Text(AppLocalizations.of(context).actionSave),
               ),
             ],
           );
@@ -191,7 +192,7 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (context, setStateDialog) {
           return AlertDialog(
-            title: const Text("Update PIN for this Device"),
+            title: Text(AppLocalizations.of(context).updatePinForDevice),
             content: SizedBox(
               width: 300,
               child: TextField(
@@ -199,9 +200,9 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
                 obscureText: true,
                 keyboardType: TextInputType.number,
                 maxLength: 4,
-                decoration: const InputDecoration(
-                  labelText: "New 4-Digit PIN",
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context).newFourDigitPin,
+                  border: const OutlineInputBorder(),
                   counterText: "",
                 ),
               ),
@@ -209,7 +210,7 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
             actions: [
               TextButton(
                 onPressed: isSaving ? null : () => Navigator.pop(ctx),
-                child: const Text("Cancel"),
+                child: Text(AppLocalizations.of(context).actionCancel),
               ),
               ElevatedButton(
                 onPressed: isSaving
@@ -252,7 +253,7 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
                         height: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text("Save PIN"),
+                    : Text(AppLocalizations.of(context).savePin),
               ),
             ],
           );
@@ -273,7 +274,7 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
     if (currentUser == null) {
       return Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
-        body: const Center(child: Text("No user is currently logged in.")),
+        body: Center(child: Text(AppLocalizations.of(context).noUserLoggedIn)),
       );
     }
 
@@ -284,11 +285,11 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
         leading: widget.onMenuPressed != null
             ? IconButton(
                 icon: const Icon(Icons.menu),
-                tooltip: "Menu",
+                tooltip: AppLocalizations.of(context).menuLabel,
                 onPressed: widget.onMenuPressed,
               )
             : null,
-        title: const Text("User Info & Security"),
+        title: Text(AppLocalizations.of(context).userInfoSecurity),
         backgroundColor: theme.colorScheme.surface,
         elevation: 1,
       ),
@@ -381,7 +382,7 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 20),
                         ),
                         icon: const Icon(Icons.password),
-                        label: const Text("Change Password"),
+                        label: Text(AppLocalizations.of(context).changePassword),
                         onPressed: _showChangePasswordDialog,
                       ),
                     ),
@@ -392,7 +393,7 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 20),
                         ),
                         icon: const Icon(Icons.pin),
-                        label: const Text("Update Device PIN"),
+                        label: Text(AppLocalizations.of(context).updateDevicePin),
                         onPressed: _showChangePinDialog,
                       ),
                     ),

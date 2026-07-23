@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/core/status_colors.dart';
@@ -25,7 +26,7 @@ class TaxRatesScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text("Tax Rates"),
+        title: Text(AppLocalizations.of(context).taxRates),
         centerTitle: false,
         elevation: 0,
         // Suppress the auto back-arrow — ManagementLayout controls navigation.
@@ -33,7 +34,7 @@ class TaxRatesScreen extends ConsumerWidget {
         leading: onMenuPressed != null
             ? IconButton(
                 icon: const Icon(Icons.menu),
-                tooltip: 'Show navigation',
+                tooltip: AppLocalizations.of(context).showNavigation,
                 onPressed: onMenuPressed,
               )
             : null,
@@ -41,13 +42,13 @@ class TaxRatesScreen extends ConsumerWidget {
           // Refresh
           IconButton(
             icon: const Icon(Icons.refresh),
-            tooltip: "Refresh",
+            tooltip: AppLocalizations.of(context).refresh,
             onPressed: () => ref.invalidate(allTaxesProvider),
           ),
           // Switch Taxes
           IconButton(
             icon: const Icon(Icons.swap_horiz),
-            tooltip: "Switch Taxes",
+            tooltip: AppLocalizations.of(context).switchTaxes,
             onPressed: company == null || asyncTaxes.value == null
                 ? null
                 : () async {
@@ -66,7 +67,7 @@ class TaxRatesScreen extends ConsumerWidget {
             padding: const EdgeInsets.only(right: 8.0),
             child: IconButton(
               icon: const Icon(Icons.add_circle_outline),
-              tooltip: "New Tax Rate",
+              tooltip: AppLocalizations.of(context).newTaxRate,
               color: theme.colorScheme.primary,
               onPressed: company == null
                   ? null
@@ -87,7 +88,7 @@ class TaxRatesScreen extends ConsumerWidget {
         ),
         error: (e, _) => Center(
           child: Text(
-            "Error loading taxes: $e",
+            AppLocalizations.of(context).errorLoadingTaxesMsg(e.toString()),
             style: TextStyle(color: theme.colorScheme.error),
           ),
         ),
@@ -95,7 +96,7 @@ class TaxRatesScreen extends ConsumerWidget {
           if (company == null) {
             return Center(
               child: Text(
-                "No company selected.",
+                AppLocalizations.of(context).noCompanySelectedShort,
                 style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
               ),
             );
@@ -117,7 +118,7 @@ class TaxRatesScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    "No tax rates found.",
+                    AppLocalizations.of(context).noTaxRatesFound,
                     style: TextStyle(
                       color: theme.colorScheme.onSurfaceVariant,
                       fontSize: 18,
@@ -126,7 +127,7 @@ class TaxRatesScreen extends ConsumerWidget {
                   const SizedBox(height: 24),
                   ElevatedButton.icon(
                     icon: const Icon(Icons.add),
-                    label: const Text("Add First Tax Rate"),
+                    label: Text(AppLocalizations.of(context).addFirstTaxRate),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: theme.colorScheme.primary,
                       foregroundColor: theme.colorScheme.onPrimary,
@@ -186,7 +187,7 @@ class TaxRatesScreen extends ConsumerWidget {
                           columns: [
                             DataColumn(
                               label: Text(
-                                "Name",
+                                AppLocalizations.of(context).fieldName,
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: theme.colorScheme.onSurfaceVariant,
@@ -195,7 +196,7 @@ class TaxRatesScreen extends ConsumerWidget {
                             ),
                             DataColumn(
                               label: Text(
-                                "Rate",
+                                AppLocalizations.of(context).rateLabel,
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: theme.colorScheme.onSurfaceVariant,
@@ -205,7 +206,7 @@ class TaxRatesScreen extends ConsumerWidget {
                             ),
                             DataColumn(
                               label: Text(
-                                "Code",
+                                AppLocalizations.of(context).fieldCode,
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: theme.colorScheme.onSurfaceVariant,
@@ -214,7 +215,7 @@ class TaxRatesScreen extends ConsumerWidget {
                             ),
                             DataColumn(
                               label: Text(
-                                "Fixed",
+                                AppLocalizations.of(context).fixed,
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: theme.colorScheme.onSurfaceVariant,
@@ -223,7 +224,7 @@ class TaxRatesScreen extends ConsumerWidget {
                             ),
                             DataColumn(
                               label: Text(
-                                "Tax on Total",
+                                AppLocalizations.of(context).taxOnTotal,
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: theme.colorScheme.onSurfaceVariant,
@@ -232,7 +233,7 @@ class TaxRatesScreen extends ConsumerWidget {
                             ),
                             DataColumn(
                               label: Text(
-                                "Enabled",
+                                AppLocalizations.of(context).fieldEnabled,
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: theme.colorScheme.onSurfaceVariant,
@@ -241,7 +242,7 @@ class TaxRatesScreen extends ConsumerWidget {
                             ),
                             DataColumn(
                               label: Text(
-                                "Actions",
+                                AppLocalizations.of(context).actions,
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: theme.colorScheme.onSurfaceVariant,
@@ -292,7 +293,7 @@ class TaxRatesScreen extends ConsumerWidget {
                                           color: theme.colorScheme.primary,
                                           size: 20,
                                         ),
-                                        tooltip: "Edit",
+                                        tooltip: AppLocalizations.of(context).actionEdit,
                                         splashRadius: 24,
                                         onPressed: () async {
                                           await showDialog(
@@ -311,7 +312,7 @@ class TaxRatesScreen extends ConsumerWidget {
                                           color: theme.colorScheme.error,
                                           size: 20,
                                         ),
-                                        tooltip: "Delete",
+                                        tooltip: AppLocalizations.of(context).actionDelete,
                                         splashRadius: 24,
                                         onPressed: () async {
                                           final confirm = await showDialog<bool>(
@@ -331,7 +332,7 @@ class TaxRatesScreen extends ConsumerWidget {
                                                         theme.colorScheme.error,
                                                   ),
                                                   const SizedBox(width: 8),
-                                                  const Text("Delete Tax"),
+                                                  Text(AppLocalizations.of(context).deleteTax),
                                                 ],
                                               ),
                                               content: Text(
@@ -342,7 +343,7 @@ class TaxRatesScreen extends ConsumerWidget {
                                                   onPressed: () => Navigator.of(
                                                     ctx,
                                                   ).pop(false),
-                                                  child: const Text("Cancel"),
+                                                  child: Text(AppLocalizations.of(context).actionCancel),
                                                 ),
                                                 ElevatedButton(
                                                   style:
@@ -357,7 +358,7 @@ class TaxRatesScreen extends ConsumerWidget {
                                                   onPressed: () => Navigator.of(
                                                     ctx,
                                                   ).pop(true),
-                                                  child: const Text("Delete"),
+                                                  child: Text(AppLocalizations.of(context).actionDelete),
                                                 ),
                                               ],
                                             ),
@@ -539,7 +540,7 @@ class _TaxFormDialogState extends ConsumerState<_TaxFormDialog> {
                     child: TextFormField(
                       controller: _nameCtrl,
                       decoration: InputDecoration(
-                        labelText: "Name *",
+                        labelText: AppLocalizations.of(context).nameRequired,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -553,7 +554,7 @@ class _TaxFormDialogState extends ConsumerState<_TaxFormDialog> {
                     child: TextFormField(
                       controller: _codeCtrl,
                       decoration: InputDecoration(
-                        labelText: "Code",
+                        labelText: AppLocalizations.of(context).fieldCode,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -566,8 +567,8 @@ class _TaxFormDialogState extends ConsumerState<_TaxFormDialog> {
               TextFormField(
                 controller: _rateCtrl,
                 decoration: InputDecoration(
-                  labelText: "Rate *",
-                  hintText: "e.g. 20 for 20%",
+                  labelText: AppLocalizations.of(context).rateRequired,
+                  hintText: AppLocalizations.of(context).hintTwentyPercent,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -585,19 +586,19 @@ class _TaxFormDialogState extends ConsumerState<_TaxFormDialog> {
               ),
               const SizedBox(height: 24),
               _switchRow(
-                "Fixed Amount",
+                AppLocalizations.of(context).fixedAmount,
                 _isFixed,
                 (v) => setState(() => _isFixed = v),
                 theme,
               ),
               _switchRow(
-                "Tax on Total",
+                AppLocalizations.of(context).taxOnTotal,
                 _isTaxOnTotal,
                 (v) => setState(() => _isTaxOnTotal = v),
                 theme,
               ),
               _switchRow(
-                "Enabled",
+                AppLocalizations.of(context).fieldEnabled,
                 _isEnabled,
                 (v) => setState(() => _isEnabled = v),
                 theme,
@@ -639,7 +640,7 @@ class _TaxFormDialogState extends ConsumerState<_TaxFormDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text("Cancel"),
+          child: Text(AppLocalizations.of(context).actionCancel),
         ),
         if (_isLoading)
           Padding(
@@ -759,7 +760,7 @@ class _SwitchTaxesDialogState extends ConsumerState<_SwitchTaxesDialog> {
       backgroundColor: theme.colorScheme.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: const Text(
-        "Switch Taxes",
+        AppLocalizations.of(context).switchTaxes,
         style: TextStyle(fontWeight: FontWeight.bold),
       ),
       content: SizedBox(
@@ -801,7 +802,7 @@ class _SwitchTaxesDialogState extends ConsumerState<_SwitchTaxesDialog> {
             DropdownButtonFormField<int>(
               initialValue: _oldTaxId,
               decoration: InputDecoration(
-                labelText: "Old Tax",
+                labelText: AppLocalizations.of(context).oldTax,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -824,7 +825,7 @@ class _SwitchTaxesDialogState extends ConsumerState<_SwitchTaxesDialog> {
             DropdownButtonFormField<int>(
               initialValue: _newTaxId,
               decoration: InputDecoration(
-                labelText: "New Tax",
+                labelText: AppLocalizations.of(context).newTax,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -910,7 +911,7 @@ class _SwitchTaxesDialogState extends ConsumerState<_SwitchTaxesDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text("Close"),
+          child: Text(AppLocalizations.of(context).actionClose),
         ),
         if (_isLoading)
           Padding(
@@ -920,7 +921,7 @@ class _SwitchTaxesDialogState extends ConsumerState<_SwitchTaxesDialog> {
         else
           ElevatedButton.icon(
             icon: const Icon(Icons.swap_horiz),
-            label: const Text("Replace"),
+            label: Text(AppLocalizations.of(context).replace),
             style: ElevatedButton.styleFrom(
               backgroundColor: theme.colorScheme.primary,
               foregroundColor: theme.colorScheme.onPrimary,

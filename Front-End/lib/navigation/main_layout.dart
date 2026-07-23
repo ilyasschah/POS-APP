@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:pos_app/app_settings/app_settings_model.dart';
@@ -294,7 +295,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
                   children: [
                     NavItem(
                       icon: Icons.build_circle,
-                      label: "Management",
+                      label: AppLocalizations.of(context).management,
                       onTap: () => ref.read(securityGuardProvider).guard(
                         context,
                         SecurityKeys.management,
@@ -316,13 +317,13 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
 
                     NavItem(
                       icon: Icons.point_of_sale,
-                      label: "POS",
+                      label: AppLocalizations.of(context).posLabel,
                       isActive: selectedIndex == 0,
                       onTap: () => handleNavTap(0),
                     ),
                     NavItem(
                       icon: Icons.receipt_long,
-                      label: "View sales history",
+                      label: AppLocalizations.of(context).viewSalesHistory,
                       isActive: selectedIndex == 99,
                       onTap: () => ref.read(securityGuardProvider).guard(
                         context,
@@ -340,7 +341,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
                     ),
                     NavItem(
                       icon: Icons.layers,
-                      label: "View open sales",
+                      label: AppLocalizations.of(context).viewOpenSales,
                       isActive: selectedIndex == 1,
                       trailing: readyCount > 0
                           ? _ReadyCountBadge(readyCount)
@@ -356,7 +357,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
                     if (bookingEnabled)
                       NavItem(
                         icon: Icons.calendar_month,
-                        label: "Bookings",
+                        label: AppLocalizations.of(context).posBookings,
                         isActive: selectedIndex == 2,
                         onTap: () => ref
                             .read(securityGuardProvider)
@@ -369,7 +370,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
                     if (bookingEnabled)
                       NavItem(
                         icon: Icons.history,
-                        label: "Booking History",
+                        label: AppLocalizations.of(context).bookingHistory,
                         isActive: selectedIndex == 3,
                         onTap: () => ref
                             .read(securityGuardProvider)
@@ -396,7 +397,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
 
                     NavItem(
                       icon: Icons.schedule,
-                      label: "Shift Management",
+                      label: AppLocalizations.of(context).shiftManagement,
                       onTap: () => ref.read(securityGuardProvider).guard(
                         context,
                         SecurityKeys.shiftManagement,
@@ -413,7 +414,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
                     ),
                     NavItem(
                       icon: Icons.download,
-                      label: "Cash In / Out",
+                      label: AppLocalizations.of(context).cashInOut,
                       onTap: () => ref.read(securityGuardProvider).guard(
                         context,
                         SecurityKeys.cashMovement,
@@ -430,7 +431,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
                     ),
                     NavItem(
                       icon: Icons.credit_card,
-                      label: "Credit payments",
+                      label: AppLocalizations.of(context).creditPayments,
                       onTap: () => ref.read(securityGuardProvider).guard(
                         context,
                         SecurityKeys.creditPayments,
@@ -442,7 +443,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
                     ),
                     NavItem(
                       icon: Icons.directions_run,
-                      label: "End of day",
+                      label: AppLocalizations.of(context).endOfDayLower,
                       isActive: selectedIndex == 5,
                       onTap: () => ref
                           .read(securityGuardProvider)
@@ -461,7 +462,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
                     const TotalHoursBadge(),
                     NavItem(
                       icon: Icons.person_outline,
-                      label: "User info",
+                      label: AppLocalizations.of(context).userInfo,
                       isActive: selectedIndex == 6,
                       onTap: () => ref
                           .read(securityGuardProvider)
@@ -473,7 +474,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
                     ),
                     NavItem(
                       icon: Icons.logout,
-                      label: "Sign out",
+                      label: AppLocalizations.of(context).signOut,
                       onTap: () {
                         ref.read(currentUserProvider.notifier).logout();
                         ref.invalidate(allUsersProvider);
@@ -490,7 +491,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
                     ),
                     NavItem(
                       icon: Icons.campaign,
-                      label: "Feedback",
+                      label: AppLocalizations.of(context).feedback,
                       onTap: () {},
                     ),
                     const SizedBox(height: 16),
@@ -510,7 +511,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
                 children: [
                   NavIconButton(
                     icon: Icons.tune,
-                    tooltip: "Quick Settings",
+                    tooltip: AppLocalizations.of(context).quickSettings,
                     onTap: () => ref.read(securityGuardProvider).guard(
                       context,
                       SecurityKeys.settings,
@@ -532,7 +533,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
                           defaultTargetPlatform == TargetPlatform.linux))
                     NavIconButton(
                       icon: Icons.fullscreen,
-                      tooltip: "Full Screen",
+                      tooltip: AppLocalizations.of(context).fullScreen,
                       onTap: () async {
                         _closeSidebar();
                         final full = await windowManager.isFullScreen();
@@ -541,7 +542,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
                     ),
                   NavIconButton(
                     icon: Icons.power_settings_new,
-                    tooltip: "Power",
+                    tooltip: AppLocalizations.of(context).power,
                     onTap: () {
                       _closeSidebar();
                       showDialog(
