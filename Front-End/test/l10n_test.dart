@@ -63,9 +63,7 @@ void main() {
   });
 
   testWidgets('TRAP: an unsupported locale resolves to Arabic, not English — '
-      'which is why resolveAppLocale must map es/de/it itself', (
-    tester,
-  ) async {
+      'which is why resolveAppLocale must map es/de/it itself', (tester) async {
     // The Settings dropdown now offers only en/fr/ar, but companies seeded
     // before that trim can still hold es/de/it/pt in Application.Language —
     // the stored value is untouched, only the picker shrank.

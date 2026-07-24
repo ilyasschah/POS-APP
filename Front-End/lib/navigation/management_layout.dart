@@ -142,7 +142,7 @@ class _ManagementLayoutState extends ConsumerState<ManagementLayout> {
                       children: [
                         Expanded(
                           child: Text(
-                            "Management Portal",
+                            AppLocalizations.of(context).managementPortal,
                             style: TextStyle(
                               color: context.navText,
                               fontSize: 18,
@@ -392,14 +392,12 @@ class _AccessDeniedPanel extends StatelessWidget {
               Icon(Icons.lock_outline, size: 64, color: cs.onSurfaceVariant),
               const SizedBox(height: 16),
               Text(
-                'Access Denied',
+                AppLocalizations.of(context).accessDenied,
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 8),
               Text(
-                'You do not have permission to view this section.\n'
-                'Choose another section from the menu, or ask an administrator '
-                'for access.',
+                AppLocalizations.of(context).accessDeniedBody,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: cs.onSurfaceVariant,

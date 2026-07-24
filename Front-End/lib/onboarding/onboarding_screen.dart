@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:pos_app/onboarding/onboarding_prefs.dart';
@@ -103,7 +104,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           padding: const EdgeInsets.only(right: 8),
                           child: TextButton(
                             onPressed: _finish,
-                            child: const Text('Skip'),
+                            child: Text(
+                                AppLocalizations.of(context).actionSkip),
                           ),
                         ),
                 ),

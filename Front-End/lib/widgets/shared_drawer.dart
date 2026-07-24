@@ -46,7 +46,7 @@ class SharedDrawer extends ConsumerWidget {
                 const Icon(Icons.point_of_sale, color: Colors.white, size: 36),
                 const SizedBox(height: 8),
                 Text(
-                  selectedCompany?.name ?? 'POS System',
+                  selectedCompany?.name ?? AppLocalizations.of(context).posSystem,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,

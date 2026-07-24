@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -32,7 +33,8 @@ class SyncButton extends ConsumerWidget {
         showAppSnackbar(
           context,
           ref,
-          friendlyErrorMessage(next.error ?? 'Sync failed'),
+          friendlyErrorMessage(
+              next.error ?? AppLocalizations.of(context).syncFailed),
           isError: true,
         );
       } else {
@@ -47,8 +49,8 @@ class SyncButton extends ConsumerWidget {
             ref,
             rejections.length == 1
                 ? rejections.first
-                : '${rejections.length} changes were rejected: '
-                    '${rejections.join(' · ')}',
+                : AppLocalizations.of(context).changesRejected(
+                    rejections.length, rejections.join(' · ')),
             isError: true,
           );
         }
@@ -61,7 +63,8 @@ class SyncButton extends ConsumerWidget {
           showAppSnackbar(
             context,
             ref,
-            "Sync finished, but these didn't sync: ${failed.join(', ')}",
+            AppLocalizations.of(context)
+                .syncFinishedWithFailures(failed.join(', ')),
             isError: true,
           );
           return;
@@ -72,7 +75,10 @@ class SyncButton extends ConsumerWidget {
                 .read(appSettingsProvider)[SettingKeys.autoSyncShowNotification]
                 ?.toLowerCase() ==
             'true';
-        if (showToast) showAppSnackbar(context, ref, 'Sync complete');
+        if (showToast) {
+          showAppSnackbar(
+              context, ref, AppLocalizations.of(context).syncComplete);
+        }
       }
     });
 
@@ -82,10 +88,10 @@ class SyncButton extends ConsumerWidget {
     final muted = context.navMuted;
 
     final tooltip = isLoading
-        ? 'Syncing…'
+        ? AppLocalizations.of(context).syncingEllipsis
         : pendingCount > 0
-            ? '$pendingCount pending — tap for sync status'
-            : 'Sync status';
+            ? AppLocalizations.of(context).pendingTapForStatus(pendingCount)
+            : AppLocalizations.of(context).syncStatusTooltip;
 
     // The badge only sits on the idle icon. While syncing we swap the icon
     // for a spinner — wrapping that in a badge would look noisy (spinner +

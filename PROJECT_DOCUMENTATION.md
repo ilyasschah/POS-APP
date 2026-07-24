@@ -211,7 +211,7 @@ Industry adaptation now lives in two orthogonal places:
 
 ### Localization (added 2026-07-23)
 
-**Stack:** `flutter_localizations` + `gen-l10n`. Config in `l10n.yaml` (`arb-dir: lib/l10n`, `output-class: AppLocalizations`, `nullable-getter: false`), `generate: true` in `pubspec.yaml`. Sources: `lib/l10n/app_en.arb` (template), `app_fr.arb`, `app_ar.arb` — **1,620 keys each** (parity is enforced; `test/l10n_test.dart` pins it). Generated `lib/l10n/app_localizations*.dart` is committed.
+**Stack:** `flutter_localizations` + `gen-l10n`. Config in `l10n.yaml` (`arb-dir: lib/l10n`, `output-class: AppLocalizations`, `nullable-getter: false`), `generate: true` in `pubspec.yaml`. Sources: `lib/l10n/app_en.arb` (template), `app_fr.arb`, `app_ar.arb` — **1,693 keys each** (parity is enforced; `test/l10n_test.dart` pins it). Generated `lib/l10n/app_localizations*.dart` is committed.
 
 **Wiring:** `MyApp` supplies `locale`, `supportedLocales`, `localizationsDelegates`. The locale comes from the `Application.Language` setting through **`resolveAppLocale()`** in `lib/l10n/app_locale.dart`.
 
@@ -228,6 +228,12 @@ Industry adaptation now lives in two orthogonal places:
 ⚠️ **`product_import_screen`'s `_fields[].label` must stay English** — it doubles as the CSV header alias for column auto-matching. Localizing it breaks importing an English spreadsheet.
 
 ⚠️ **Searching for un-localized strings must match BOTH quote styles.** Roughly half the app writes UI text with double quotes (`Text("Save Changes")`, `labelText: "Required"`). Eight management screens survived two localization passes because every sweep was anchored on `'…'`. Extract *every* string literal per line, then filter out identifiers/paths/format strings — and do not drop single-word literals, since `'Code'`, `'General'`, `'Service'` and `'Details'` are all real UI text.
+
+**Two scanner shapes are needed, and they are complementary.** A widget-position scan cannot see a string handed to a helper **positionally** — `showAppSnackbar(context, ref, 'msg')` is neither a `Text(...)` nor a rendering named param. That family (37 strings, including the whole subscription-blocked screen) survived the "complete" sweep until it was scanned for separately. Run both.
+
+**Then filter by widget position, not by exclusion list.** A raw literal scan of `reports_screen` + `settings_screen` returns ~720 hits; keeping only literals that sit in a **widget position** — inside `Text(...)`, or a rendering named param (`label:`, `labelText:`, `hintText:`, `tooltip:`, `message:`, `emptyMessage:`, `subtitle:`…), looking back one line to catch multi-line `Text(` — cuts it to 67 real ones. Guessing what to *exclude* never converges; asking what is actually *rendered* does.
+
+**Deliberately English, and expected to keep showing up in scans:** column **ids** passed to a `_columnLabel` mapper, `product_import_screen._fields[].label` (CSV header aliases), values written to the DB (`discount_lines.label`), report/receipt PDF and CSV export bodies, `FilePicker` `dialogTitle:`, config-default placeholders (`WELCOME!`, example emails), the ESC/POS drawer command, setting-key builders, and `'-${x} $sym'` format strings.
 
 **Comma-separated list keys.** `monthAbbreviations` (12), `weekdayAbbreviations` (7, **Monday first**) and `weekdayInitials` (7, Monday first — the `app_date_picker` calendar header) are single `.arb` keys split on `,` rather than `intl`'s `DateFormat`, which would need `initializeDateFormatting` at boot — the app never calls it. The weekday order is load-bearing in both: index `i` maps to bit `1 << i` of the promotion `daysOfWeek` bitmask, and the calendar grid is built from a Monday-based week start. A locale must not re-sort its week.
 

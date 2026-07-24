@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:pos_app/app_settings/app_settings_model.dart';
@@ -55,7 +56,7 @@ class SecurityGuard {
     }
     showAppSnackbarRaw(
       context,
-      'Access Denied: You do not have permission for this action.',
+      AppLocalizations.of(context).accessDeniedNoPermission,
       isError: true,
       duration: _duration,
       position: _position,

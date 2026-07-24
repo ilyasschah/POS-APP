@@ -110,14 +110,14 @@ class ActivitySlide extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                "What's your business?",
+                AppLocalizations.of(context).whatsYourBusiness,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.headlineSmall
                     ?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 6),
               Text(
-                'We will switch on the right features for you.',
+                AppLocalizations.of(context).weWillSwitchOnFeatures,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium
                     ?.copyWith(color: cs.onSurfaceVariant),
@@ -144,9 +144,11 @@ class ActivitySlide extends ConsumerWidget {
                     children: [
                       OnboardingSwitchRow(
                         icon: Icons.table_restaurant,
-                        title: 'Enable ${selectedInfo.resource}',
-                        subtitle:
-                            'Open an order for each ${_singular(selectedInfo.resource)}.',
+                        title: AppLocalizations.of(context)
+                            .enableResource(selectedInfo.resource),
+                        subtitle: AppLocalizations.of(context)
+                            .openOrderForEachResource(
+                                _singular(selectedInfo.resource)),
                         value: seed.tables ?? true,
                         onChanged: (v) => ref
                             .read(onboardingFeatureSeedProvider.notifier)

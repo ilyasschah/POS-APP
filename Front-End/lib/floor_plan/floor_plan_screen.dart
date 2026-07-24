@@ -91,13 +91,13 @@ class _FloorPlanScreenState extends ConsumerState<FloorPlanScreen> {
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
               error: (_, __) => Text(
-                'Error loading rooms',
+                AppLocalizations.of(context).errorLoadingRooms,
                 style: TextStyle(color: cs.error),
               ),
               data: (plans) {
                 if (plans.isEmpty) {
                   return Text(
-                    'No Floor Plans',
+                    AppLocalizations.of(context).noFloorPlans,
                     style: TextStyle(color: cs.onSurfaceVariant),
                   );
                 }

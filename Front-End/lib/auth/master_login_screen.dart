@@ -276,7 +276,7 @@ class _MasterLoginScreenState extends ConsumerState<MasterLoginScreen> {
                           ),
                         )
                       : Text(
-                          "LINK DEVICE",
+                          AppLocalizations.of(context).linkDeviceUpper,
                           style: GoogleFonts.inter(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,

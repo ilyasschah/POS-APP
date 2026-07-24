@@ -289,7 +289,8 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
             : null,
         title: widget.showAppBarNavigation
             ? Text(
-                ref.watch(selectedCompanyProvider)?.name ?? 'Branch',
+                ref.watch(selectedCompanyProvider)?.name ??
+                    AppLocalizations.of(context).branch,
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -349,7 +350,8 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                           icon: currentCustomer != null
                               ? Icons.person
                               : Icons.person_outline,
-                          label: currentCustomer?.name ?? 'Customer',
+                          label: currentCustomer?.name ??
+                              AppLocalizations.of(context).customerLabel,
                           active: currentCustomer != null,
                           onTap: () async {
                             final selected = await showCustomerPickerDialog(
@@ -703,7 +705,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                   if (showTaxBtn)
                     _MenuHeaderActionBtn(
                       icon: Icons.receipt,
-                      label: 'Tax',
+                      label: AppLocalizations.of(context).posTax,
                       // Greyed out until a cart line is selected — the tax
                       // override acts on one line, so there's nothing to change
                       // otherwise. Same gating as Quantity and Comment (replaces
@@ -782,7 +784,8 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                                       .map(ProductComment.fromDrift)
                                       .toList(),
                                   initialComment: item.comment,
-                                  confirmLabel: 'Save',
+                                  confirmLabel:
+                                      AppLocalizations.of(context).actionSave,
                                 ),
                               );
                               if (result == null) return;
@@ -916,7 +919,8 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
 
                 return _MenuHeaderActionBtn(
                   icon: Icons.warehouse,
-                  label: selectedWarehouse?.name ?? 'Warehouse',
+                  label: selectedWarehouse?.name ??
+                      AppLocalizations.of(context).warehouse,
                   active: selectedWarehouse != null,
                   onTap: () async {
                     final list = warehousesAsync.value ?? const <Warehouse>[];
@@ -951,7 +955,8 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
           if (floorPlanEnabled && showTablesBtn)
             _MenuHeaderActionBtn(
               icon: Icons.grid_view,
-              label: settings[SettingKeys.tablesButtonLabel] ?? 'Tables',
+              label: settings[SettingKeys.tablesButtonLabel] ??
+                  AppLocalizations.of(context).tablesLabel,
               onTap: () async {
                 final cart = ref.read(cartProvider);
                 final companyId = ref.read(selectedCompanyProvider)?.id;
@@ -2761,9 +2766,9 @@ class _CartSectionState extends ConsumerState<CartSection> {
                   child: Text.rich(
                     TextSpan(
                       children: [
-                        const TextSpan(
-                          text: 'Booking: ',
-                          style: TextStyle(
+                        TextSpan(
+                          text: AppLocalizations.of(context).bookingPrefix,
+                          style: const TextStyle(
                             color: Colors.teal,
                             fontWeight: FontWeight.bold,
                             fontSize: 12,
@@ -2777,9 +2782,10 @@ class _CartSectionState extends ConsumerState<CartSection> {
                           ),
                         ),
                         if (staffName != null) ...[
-                          const TextSpan(
-                            text: '  ·  Staff: ',
-                            style: TextStyle(
+                          TextSpan(
+                            text:
+                                AppLocalizations.of(context).staffPrefix,
+                            style: const TextStyle(
                               color: Colors.teal,
                               fontWeight: FontWeight.bold,
                               fontSize: 12,
@@ -3687,8 +3693,7 @@ Future<bool> _showAgeRestrictionDialog(BuildContext context, int minAge) async {
         ],
       ),
       content: Text(
-        'This product requires customers to be at least $minAge years old.\n\n'
-        'Please confirm the customer meets this requirement before proceeding.',
+        AppLocalizations.of(context).ageRestrictionBody(minAge),
       ),
       actions: [
         TextButton(
@@ -3842,7 +3847,7 @@ class _ItemTaxDialogState extends ConsumerState<_ItemTaxDialog> {
       backgroundColor: theme.cardColor,
       titlePadding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
       title: Text(
-        'Taxes · ${widget.item.productName}',
+        AppLocalizations.of(context).taxesForProduct(widget.item.productName),
         style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
@@ -4222,7 +4227,7 @@ class _SelectAvailableSpaceDialog extends ConsumerWidget {
           error: (e, _) => Padding(
             padding: const EdgeInsets.all(20),
             child: Text(
-              'Error loading spaces: $e',
+              AppLocalizations.of(context).errorLoadingSpaces(e.toString()),
               style: TextStyle(color: theme.colorScheme.error),
             ),
           ),
@@ -4241,7 +4246,8 @@ class _SelectAvailableSpaceDialog extends ConsumerWidget {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'No free ${spaceLabel.toLowerCase()}s available',
+                      AppLocalizations.of(context)
+                          .noFreeSpacesAvailable(spaceLabel.toLowerCase()),
                       style: TextStyle(
                         color: theme.colorScheme.onSurface.withValues(
                           alpha: 0.6,
@@ -4331,7 +4337,8 @@ class _VoidReasonDialogState extends ConsumerState<_VoidReasonDialog> {
           ),
           if (widget.orderNumber != null)
             Text(
-              'Enter or select void reason for voiding "${widget.orderNumber}"',
+              AppLocalizations.of(context)
+                  .voidReasonPrompt(widget.orderNumber!),
               style: TextStyle(
                 fontSize: 13,
                 color: cs.onSurfaceVariant,

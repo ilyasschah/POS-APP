@@ -366,7 +366,9 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
       }
     } catch (e) {
       if (mounted) {
-        showAppSnackbar(context, ref, 'Import failed: $e', isError: true);
+        showAppSnackbar(context, ref,
+            AppLocalizations.of(context).importFailed(e.toString()),
+            isError: true);
       }
     } finally {
       if (mounted) setState(() => _isImportingCsv = false);
@@ -406,7 +408,9 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
       }
     } catch (e) {
       if (mounted) {
-        showAppSnackbar(context, ref, 'Import failed: $e', isError: true);
+        showAppSnackbar(context, ref,
+            AppLocalizations.of(context).importFailed(e.toString()),
+            isError: true);
       }
     } finally {
       if (mounted) setState(() => _isImportingXml = false);
@@ -599,7 +603,7 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
                   items: options.map((h) {
                     return DropdownMenuItem<String?>(
                       value: h,
-                      child: Text(h ?? '(Skip)',
+                      child: Text(h ?? AppLocalizations.of(context).skipColumn,
                           style: TextStyle(
                               fontSize: 13,
                               color: h == null
@@ -709,7 +713,8 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
             child: Text(
-              'Number of products to import: ${_dataRows.length}',
+              AppLocalizations.of(context)
+                  .numberOfProductsToImport(_dataRows.length),
               style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,

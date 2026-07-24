@@ -5428,4 +5428,386 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get exchangeRateHint => 'مثال: 1.08  (1 عملة أساسية = X عملة ثانوية)';
+
+  @override
+  String get addServiceStatus => 'إضافة حالة خدمة';
+
+  @override
+  String get clearFavorites => 'مسح المفضلة';
+
+  @override
+  String get editServiceStatus => 'تعديل حالة الخدمة';
+
+  @override
+  String get hintTablesRooms => 'مثال: طاولات، غرف';
+
+  @override
+  String get hintUnitsExample => 'مثال: قطعة، كجم، لتر';
+
+  @override
+  String get includeSubgroups => 'تضمين المجموعات الفرعية';
+
+  @override
+  String get noReportsFound => 'لم يتم العثور على تقارير.';
+
+  @override
+  String noSettingsMatching(String query) {
+    return 'لا توجد إعدادات تطابق \"$query\"';
+  }
+
+  @override
+  String get notSet => 'غير محدّد';
+
+  @override
+  String get reportComingSoon => 'هذا التقرير قادم قريبًا.';
+
+  @override
+  String scaleErrorWithMessage(String message) {
+    return 'خطأ في الميزان: $message';
+  }
+
+  @override
+  String get selectBusinessPartnerInFilter =>
+      'يرجى اختيار شريك تجاري من لوحة التصفية.';
+
+  @override
+  String get selectReportToViewOrPrint => 'اختر تقريرًا لعرضه أو طباعته';
+
+  @override
+  String versionLabel(String version) {
+    return 'الإصدار $version';
+  }
+
+  @override
+  String ageRestrictionBody(num age) {
+    return 'يتطلب هذا المنتج أن يكون عمر العميل $age سنة على الأقل.\n\nيرجى التأكد من استيفاء العميل لهذا الشرط قبل المتابعة.';
+  }
+
+  @override
+  String get bookingCompletedLocked => 'هذا الحجز مكتمل ولا يمكن تعديله.';
+
+  @override
+  String get bookingPrefix => 'الحجز: ';
+
+  @override
+  String get branch => 'الفرع';
+
+  @override
+  String clockedInWithValue(String value) {
+    return 'تم تسجيل الحضور · $value';
+  }
+
+  @override
+  String deleteBookingConfirm(String name) {
+    return 'حذف حجز \"$name\"؟';
+  }
+
+  @override
+  String get editBooking => 'تعديل الحجز';
+
+  @override
+  String errorLoadingDataWithMessage(String message) {
+    return 'خطأ في تحميل البيانات: $message';
+  }
+
+  @override
+  String errorLoadingSpaces(String message) {
+    return 'خطأ في تحميل المساحات: $message';
+  }
+
+  @override
+  String get exitEditMode => 'الخروج من وضع التحرير';
+
+  @override
+  String get newBooking => 'حجز جديد';
+
+  @override
+  String noFreeSpacesAvailable(String space) {
+    return 'لا توجد $space متاحة';
+  }
+
+  @override
+  String get openOrderNow => 'فتح الطلب الآن';
+
+  @override
+  String get removeFloorPlanConfirm =>
+      'سيؤدي هذا إلى حذف مخطط الصالة وجميع طاولاته نهائيًا. هل تريد المتابعة؟';
+
+  @override
+  String get sendingSignal => 'جارٍ إرسال الإشارة...';
+
+  @override
+  String get shapeLabel => 'الشكل';
+
+  @override
+  String get sizeLabel => 'الحجم';
+
+  @override
+  String get staffPrefix => '  ·  الموظف: ';
+
+  @override
+  String tableNumbered(String number) {
+    return 'الطاولة رقم $number';
+  }
+
+  @override
+  String taxesForProduct(String product) {
+    return 'الضرائب · $product';
+  }
+
+  @override
+  String get testDrawerOpen => 'اختبار فتح الدرج';
+
+  @override
+  String todayWithValue(String value) {
+    return 'اليوم: $value';
+  }
+
+  @override
+  String get updateStatusUpper => 'تحديث الحالة';
+
+  @override
+  String voidReasonPrompt(String number) {
+    return 'أدخل أو اختر سبب إلغاء \"$number\"';
+  }
+
+  @override
+  String get accessDenied => 'تم رفض الوصول';
+
+  @override
+  String get accessDeniedBody =>
+      'ليس لديك إذن لعرض هذا القسم.\nاختر قسمًا آخر من القائمة، أو اطلب الإذن من المسؤول.';
+
+  @override
+  String get checkingUpper => 'جارٍ التحقق…';
+
+  @override
+  String get chooseYourMenuLayout => 'اختر تخطيط القائمة';
+
+  @override
+  String get connectingEllipsis => 'جارٍ الاتصال…';
+
+  @override
+  String createFirstAdminFor(String company) {
+    return 'أنشئ أول مستخدم مسؤول لـ $company';
+  }
+
+  @override
+  String discountAmountLine(String currency, String amount) {
+    return 'الخصم  −$currency $amount';
+  }
+
+  @override
+  String get editCurrency => 'تعديل العملة';
+
+  @override
+  String enableResource(String resource) {
+    return 'تفعيل $resource';
+  }
+
+  @override
+  String get errorLoadingRooms => 'خطأ في تحميل الغرف';
+
+  @override
+  String expiredOnDate(String date) {
+    return 'انتهت الصلاحية في $date';
+  }
+
+  @override
+  String get getGoingInThreeSteps => 'ابدأ في 3 خطوات';
+
+  @override
+  String get managementPortal => 'بوابة الإدارة';
+
+  @override
+  String get menuLayoutHint =>
+      'كيفية ظهور المنتجات في شاشة البيع — يمكنك تغييرها في أي وقت من الإعدادات.';
+
+  @override
+  String get noFloorPlans => 'لا توجد مخططات صالة';
+
+  @override
+  String openOrderForEachResource(String resource) {
+    return 'افتح طلبًا لكل $resource.';
+  }
+
+  @override
+  String get poweredByPos => 'مدعوم بواسطة POS';
+
+  @override
+  String get reconnectingEllipsis => 'جارٍ إعادة الاتصال…';
+
+  @override
+  String get retryConnectionUpper => 'إعادة محاولة الاتصال';
+
+  @override
+  String scaleUnitMismatch(String scaleUnit, String productUnit) {
+    return 'يقرأ الميزان $scaleUnit لكن سعر هذا الصنف محدّد لكل $productUnit — لا يتم تطبيق أي تحويل.';
+  }
+
+  @override
+  String get selectServiceTypeForOrder => 'اختر نوع الخدمة لهذا الطلب';
+
+  @override
+  String tableHeldByReservation(String name) {
+    return 'هذه الطاولة محجوزة باسم \"$name\".';
+  }
+
+  @override
+  String get thankYou => 'شكرًا لك!';
+
+  @override
+  String get weWillSwitchOnFeatures => 'سنقوم بتفعيل الميزات المناسبة لك.';
+
+  @override
+  String get whatsYourBusiness => 'ما هو نشاطك التجاري؟';
+
+  @override
+  String get changeThisLaterInSettings =>
+      'يمكنك تغيير كل هذا لاحقًا من الإعدادات.';
+
+  @override
+  String get everythingBuiltIn => 'كل هذا مضمّن — لا حاجة لشراء إضافات.';
+
+  @override
+  String get everythingYouGet => 'كل ما تحصل عليه';
+
+  @override
+  String get getStarted => 'ابدأ الآن';
+
+  @override
+  String get linkDeviceUpper => 'ربط الجهاز';
+
+  @override
+  String numberOfProductsToImport(num count) {
+    return 'عدد المنتجات المراد استيرادها: $count';
+  }
+
+  @override
+  String get setUpYourTerminal => 'قم بإعداد جهازك';
+
+  @override
+  String get statusExpiresToday => 'تنتهي اليوم';
+
+  @override
+  String get accessDeniedNoPermission =>
+      'تم رفض الوصول: ليس لديك إذن لتنفيذ هذا الإجراء.';
+
+  @override
+  String alreadyBookedDuringTime(String what, String name, String range) {
+    return 'هذا $what محجوز بالفعل خلال هذا الوقت — $name ($range).';
+  }
+
+  @override
+  String get cannotBookInPast => 'لا يمكن إنشاء حجز في الماضي.';
+
+  @override
+  String changesRejected(num count, String details) {
+    return 'تم رفض $count تغييرات: $details';
+  }
+
+  @override
+  String get couldNotFindActiveOrder => 'تعذّر العثور على طلب نشط.';
+
+  @override
+  String get couldNotOpenReservationOrder =>
+      'تعذّر فتح طلب الحجز. ربما تم إكماله أو إلغاؤه.';
+
+  @override
+  String get couldNotReachServer =>
+      'تعذّر الوصول إلى الخادم. تحقق من اتصالك بالإنترنت.';
+
+  @override
+  String get currencyDeleted => 'تم حذف العملة';
+
+  @override
+  String get endTimeAfterStartTime => 'يجب أن يكون وقت الانتهاء بعد وقت البدء.';
+
+  @override
+  String failedToSaveField(String field) {
+    return 'فشل حفظ $field';
+  }
+
+  @override
+  String importFailed(String message) {
+    return 'فشل الاستيراد: $message';
+  }
+
+  @override
+  String get licenseInvalidBody =>
+      'تعذّر التحقق من ترخيص هذا الجهاز. يرجى التواصل مع الدعم لاستعادة الخدمة.';
+
+  @override
+  String get licenseInvalidContactSupport =>
+      'الترخيص غير صالح. يرجى التواصل مع الدعم.';
+
+  @override
+  String get licenseInvalidTitle => 'ترخيص غير صالح';
+
+  @override
+  String get orderNotFoundCompletedOrVoided =>
+      'لم يتم العثور على الطلب. ربما تم إكماله أو إلغاؤه.';
+
+  @override
+  String pendingTapForStatus(num count) {
+    return '$count معلّق — اضغط لعرض حالة المزامنة';
+  }
+
+  @override
+  String printFailed(String message) {
+    return 'فشلت الطباعة: $message';
+  }
+
+  @override
+  String get reservationNoLongerActive => 'لم يعد هذا الحجز نشطًا.';
+
+  @override
+  String get selectAtLeastOneTable => 'يرجى اختيار طاولة واحدة على الأقل.';
+
+  @override
+  String get selectCompanyFirst => 'اختر شركة أولاً';
+
+  @override
+  String get staffMemberLower => 'موظف';
+
+  @override
+  String get subscriptionInactiveBody =>
+      'اشتراكك غير نشط. يرجى التواصل مع مزوّد الخدمة للتجديد، ثم أعد محاولة الاتصال لمتابعة البيع.';
+
+  @override
+  String get subscriptionInactiveTitle => 'الاشتراك غير نشط';
+
+  @override
+  String get subscriptionStillInactive =>
+      'الاشتراك ما زال غير نشط. يرجى التواصل مع مزوّد الخدمة.';
+
+  @override
+  String get syncComplete => 'اكتملت المزامنة';
+
+  @override
+  String get syncFailed => 'فشلت المزامنة';
+
+  @override
+  String syncFinishedWithFailures(String entities) {
+    return 'انتهت المزامنة، لكن هذه العناصر لم تتم مزامنتها: $entities';
+  }
+
+  @override
+  String get syncStatusTooltip => 'حالة المزامنة';
+
+  @override
+  String get tableNeedsBooking =>
+      'تحتاج هذه الطاولة إلى حجز. أنشئ حجزًا، ثم ابدأ الخدمة منه.';
+
+  @override
+  String get terminalNotLinked => 'هذا الجهاز غير مرتبط. أعد ربط الجهاز.';
+
+  @override
+  String get testMessageSent => 'تم إرسال رسالة الاختبار.';
+
+  @override
+  String get testSignalSentToDrawer => 'تم إرسال إشارة اختبار إلى درج النقد';
+
+  @override
+  String get urlCopied => 'تم نسخ الرابط';
 }

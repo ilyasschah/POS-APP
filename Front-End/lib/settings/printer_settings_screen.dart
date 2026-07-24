@@ -613,7 +613,9 @@ class _RolePrinterTabState extends ConsumerState<_RolePrinterTab>
     if (_testPrinting) return;
     final company = ref.read(selectedCompanyProvider);
     if (company == null) {
-      showAppSnackbar(context, ref, 'Select a company first', isError: true);
+      showAppSnackbar(
+          context, ref, AppLocalizations.of(context).selectCompanyFirst,
+          isError: true);
       return;
     }
     setState(() => _testPrinting = true);
@@ -691,7 +693,9 @@ class _RolePrinterTabState extends ConsumerState<_RolePrinterTab>
       );
     } catch (e) {
       if (mounted) {
-        showAppSnackbar(context, ref, 'Print failed: $e', isError: true);
+        showAppSnackbar(context, ref,
+            AppLocalizations.of(context).printFailed(e.toString()),
+            isError: true);
       }
     } finally {
       if (mounted) setState(() => _testPrinting = false);
@@ -1542,7 +1546,8 @@ class _TestDrawerButtonState extends ConsumerState<_TestDrawerButton> {
     await Future.delayed(const Duration(milliseconds: 700));
     if (!mounted) return;
     setState(() => _testing = false);
-    showAppSnackbar(context, ref, 'Test signal sent to cash drawer');
+    showAppSnackbar(
+        context, ref, AppLocalizations.of(context).testSignalSentToDrawer);
   }
 
   @override
@@ -1562,7 +1567,9 @@ class _TestDrawerButtonState extends ConsumerState<_TestDrawerButton> {
                 ),
               )
             : const Icon(Icons.open_in_browser_outlined, size: 16),
-        label: Text(_testing ? 'Sending signal...' : 'Test Drawer Open'),
+        label: Text(_testing
+            ? AppLocalizations.of(context).sendingSignal
+            : AppLocalizations.of(context).testDrawerOpen),
         style: ElevatedButton.styleFrom(
           backgroundColor: theme.colorScheme.primary,
           foregroundColor: theme.colorScheme.onPrimary,
@@ -1760,7 +1767,8 @@ class _PSTextFieldState extends ConsumerState<_PSTextField> {
       await notifier.set(widget.settingKey, _ctrl.text);
     } catch (_) {
       if (mounted) {
-        showAppSnackbar(context, ref, 'Failed to save ${widget.label}',
+        showAppSnackbar(context, ref,
+            AppLocalizations.of(context).failedToSaveField(widget.label),
             isError: true);
       }
     } finally {

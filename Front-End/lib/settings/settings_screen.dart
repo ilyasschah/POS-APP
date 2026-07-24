@@ -2,6 +2,7 @@
 
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
@@ -63,6 +64,123 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 final settingsSearchQueryProvider = StateProvider<String>((ref) => '');
 
 // ─────────────────────────────────────────────────────────────────────────────
+// SIDEBAR SIZING
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Memoised [settingsSidebarWidth] results, keyed by everything the
+/// measurement depends on. Without it every rebuild — each keystroke in the
+/// settings search — re-lays out ~20 `TextPainter`s.
+final _sidebarWidthCache = <String, double>{};
+
+/// Settings sidebar width, sized to the **current locale's** longest label
+/// instead of a hardcoded 211.
+///
+/// 🚨 French runs ~15–20% longer than English, and this panel was a fixed
+/// width: "Enregistrer et redémarrer" overflowed the pinned action by 29px and
+/// every nav label ellipsised. Measuring beats per-locale magic numbers — it
+/// stays right for whatever the `.arb` files actually contain, including any
+/// language added later.
+///
+/// The chrome constants below mirror the two widgets being measured, so they
+/// have to move together: [NavItem] = 8+8 outer padding, 8+8 container padding,
+/// 3+8 active bar, 18 icon, 10 gap → 71; [SettingsSaveAction] = 12+12 padding,
+/// 20 icon, 10 gap → 54.
+double settingsSidebarWidth(BuildContext context) {
+  final scaler = MediaQuery.textScalerOf(context);
+  final key = '${Localizations.localeOf(context)}|${scaler.scale(15)}';
+  final cached = _sidebarWidthCache[key];
+  if (cached != null) return cached;
+
+  double measure(String text, double size, FontWeight weight) {
+    return (TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(fontSize: size, fontWeight: weight),
+      ),
+      textDirection: TextDirection.ltr,
+      textScaler: scaler,
+    )..layout()).width;
+  }
+
+  // Nav labels are measured at w600 — the *active* weight, i.e. the widest a
+  // row ever renders.
+  var widest = 0.0;
+  for (final tab in _SettingsScreenState._tabsFor(context)) {
+    widest = math.max(widest, measure(tab.label, 13, FontWeight.w600) + 71);
+  }
+  widest = math.max(
+    widest,
+    measure(AppLocalizations.of(context).saveAndRestart, 15, FontWeight.bold) +
+        54,
+  );
+
+  // +1 for the right divider. The floor keeps short locales at the familiar
+  // layout; the ceiling stops a runaway translation from eating the content
+  // pane on a 10" tablet — SettingsSaveAction ellipsises if it ever bites.
+  final width = (widest + 1).clamp(211.0, 340.0);
+  _sidebarWidthCache[key] = width;
+  return width;
+}
+
+/// The pinned "Save & Restart" action at the foot of the settings sidebar.
+///
+/// Extracted so `test/settings_sidebar_test.dart` exercises the real widget
+/// rather than a copy of its layout — a cloned Row would drift from this one
+/// and stop catching the overflow it exists to pin.
+class SettingsSaveAction extends StatelessWidget {
+  const SettingsSaveAction({super.key, required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
+      child: SizedBox(
+        width: double.infinity,
+        child: Material(
+          color: context.navAccent,
+          borderRadius: BorderRadius.circular(8),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.save_outlined, color: cs.onPrimary, size: 20),
+                  const SizedBox(width: 10),
+                  // Flexible + ellipsis is the hard guarantee. The sidebar is
+                  // sized to fit this label, but at the clamp ceiling a long
+                  // translation must shrink rather than overflow — same pattern
+                  // as management_layout's exit button. Without it, French
+                  // overflowed by 29px.
+                  Flexible(
+                    child: Text(
+                      AppLocalizations.of(context).saveAndRestart,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: cs.onPrimary,
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // ENTRY POINT
 // ─────────────────────────────────────────────────────────────────────────────
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -81,21 +199,38 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   // Built per-frame rather than static const: the labels are localized, so
   // they can only be resolved once a BuildContext exists.
-  static List<({IconData icon, String label})> _tabsFor(BuildContext context) => [
+  static List<({IconData icon, String label})> _tabsFor(
+    BuildContext context,
+  ) => [
     (icon: Icons.tune, label: AppLocalizations.of(context).generalLower),
-    (icon: Icons.receipt_long, label: AppLocalizations.of(context).setOrderAndPayment),
+    (
+      icon: Icons.receipt_long,
+      label: AppLocalizations.of(context).setOrderAndPayment,
+    ),
     (icon: Icons.inventory_2, label: AppLocalizations.of(context).products),
-    (icon: Icons.monitor_weight, label: AppLocalizations.of(context).setWeighingScale),
+    (
+      icon: Icons.monitor_weight,
+      label: AppLocalizations.of(context).setWeighingScale,
+    ),
     (
       icon: Icons.display_settings,
       label: AppLocalizations.of(context).setCustomerDisplay,
     ),
-    (icon: Icons.kitchen, label: AppLocalizations.of(context).setKitchenDisplay),
+    (
+      icon: Icons.kitchen,
+      label: AppLocalizations.of(context).setKitchenDisplay,
+    ),
     (icon: Icons.email, label: AppLocalizations.of(context).fieldEmail),
     (icon: Icons.print, label: AppLocalizations.of(context).setPrint),
-    (icon: Icons.currency_exchange, label: AppLocalizations.of(context).dualCurrencyLower),
+    (
+      icon: Icons.currency_exchange,
+      label: AppLocalizations.of(context).dualCurrencyLower,
+    ),
     (icon: Icons.storage, label: AppLocalizations.of(context).databaseLower),
-    (icon: Icons.workspace_premium, label: AppLocalizations.of(context).setSubscription),
+    (
+      icon: Icons.workspace_premium,
+      label: AppLocalizations.of(context).setSubscription,
+    ),
     (icon: Icons.info_outline, label: AppLocalizations.of(context).setAbout),
   ];
 
@@ -167,7 +302,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             Material(
               color: cs.surfaceContainerLow,
               child: Container(
-                width: 211, // 210 panel + 1px right divider
+                // Sized to the current locale's longest label — see
+                // settingsSidebarWidth. Floors at the historical 211 (210 panel
+                // + 1px right divider), so English and Arabic look unchanged.
+                width: settingsSidebarWidth(context),
                 decoration: BoxDecoration(
                   border: Border(
                     right: BorderSide(width: 1, color: cs.outlineVariant),
@@ -192,44 +330,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     // Divider separating the nav list from the pinned action.
                     Divider(height: 1, color: context.navDivider),
 
-                    // Pinned "Save & Restart" action at the bottom of the sidebar —
-                    // mirrors the "Exit Management" button in management_layout.dart.
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: Material(
-                          color: context.navAccent,
-                          borderRadius: BorderRadius.circular(8),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(8),
-                            onTap: _saveAndRestart,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.save_outlined,
-                                    color: cs.onPrimary,
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Text(
-                                    AppLocalizations.of(context).saveAndRestart,
-                                    style: TextStyle(
-                                      color: cs.onPrimary,
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+                    SettingsSaveAction(onTap: _saveAndRestart),
                   ],
                 ),
               ),
@@ -581,7 +682,12 @@ class _SettingDropdown extends ConsumerWidget {
               ),
               dropdownColor: theme.colorScheme.surfaceContainerHighest,
               items: options
-                  .map((o) => DropdownMenuItem(value: o, child: Text(_settingOptionLabel(context, o))))
+                  .map(
+                    (o) => DropdownMenuItem(
+                      value: o,
+                      child: Text(_settingOptionLabel(context, o)),
+                    ),
+                  )
                   .toList(),
               onChanged: (v) {
                 if (v != null) {
@@ -663,7 +769,8 @@ class _CustomServiceTypesEditorState
       builder: (ctx) => AlertDialog(
         title: Text(AppLocalizations.of(context).setDeleteServiceType),
         content: Text(
-            AppLocalizations.of(context).removeNamedConfirm(target.name)),
+          AppLocalizations.of(context).removeNamedConfirm(target.name),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -697,7 +804,10 @@ class _CustomServiceTypesEditorState
         children: [
           Row(
             children: [
-              Text(AppLocalizations.of(context).setServiceTypes, style: theme.textTheme.labelLarge),
+              Text(
+                AppLocalizations.of(context).setServiceTypes,
+                style: theme.textTheme.labelLarge,
+              ),
               const Spacer(),
               TextButton.icon(
                 onPressed: () => _showTypeDialog(),
@@ -778,9 +888,11 @@ class _TypeFormDialogState extends State<_TypeFormDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.isEdit
-          ? AppLocalizations.of(context).editServiceType
-          : AppLocalizations.of(context).addServiceType),
+      title: Text(
+        widget.isEdit
+            ? AppLocalizations.of(context).editServiceType
+            : AppLocalizations.of(context).addServiceType,
+      ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -893,7 +1005,8 @@ class _CustomServiceStatusesEditorState
       builder: (ctx) => AlertDialog(
         title: Text(AppLocalizations.of(context).setDeleteServiceStatus),
         content: Text(
-            AppLocalizations.of(context).removeNamedConfirm(target.name)),
+          AppLocalizations.of(context).removeNamedConfirm(target.name),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -926,7 +1039,10 @@ class _CustomServiceStatusesEditorState
         children: [
           Row(
             children: [
-              Text(AppLocalizations.of(context).setServiceStatuses, style: theme.textTheme.labelLarge),
+              Text(
+                AppLocalizations.of(context).setServiceStatuses,
+                style: theme.textTheme.labelLarge,
+              ),
               const Spacer(),
               TextButton.icon(
                 onPressed: () => _showStatusDialog(),
@@ -1024,7 +1140,11 @@ class _StatusFormDialogState extends State<_StatusFormDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.isEdit ? 'Edit Service Status' : 'Add Service Status'),
+      title: Text(
+        widget.isEdit
+            ? AppLocalizations.of(context).editServiceStatus
+            : AppLocalizations.of(context).addServiceStatus,
+      ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1038,7 +1158,10 @@ class _StatusFormDialogState extends State<_StatusFormDialog> {
             textCapitalization: TextCapitalization.words,
           ),
           const SizedBox(height: 16),
-          Text(AppLocalizations.of(context).setColor, style: const TextStyle(fontSize: 12)),
+          Text(
+            AppLocalizations.of(context).setColor,
+            style: const TextStyle(fontSize: 12),
+          ),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
@@ -1315,15 +1438,15 @@ class _CurrencyDropdown extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: currenciesAsync.when(
-        loading: () => const Row(
+        loading: () => Row(
           children: [
-            SizedBox(
+            const SizedBox(
               width: 18,
               height: 18,
               child: CircularProgressIndicator(strokeWidth: 2),
             ),
-            SizedBox(width: 12),
-            Text('Loading currencies…'),
+            const SizedBox(width: 12),
+            Text(AppLocalizations.of(context).loadingCurrencies),
           ],
         ),
         error: (_, __) => Text(
@@ -1645,9 +1768,9 @@ class _SearchResultsView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final matches = _kSearchableSettings(context)
-        .where((s) => s.matches(query))
-        .toList();
+    final matches = _kSearchableSettings(
+      context,
+    ).where((s) => s.matches(query)).toList();
 
     if (matches.isEmpty) {
       return Center(
@@ -1659,7 +1782,7 @@ class _SearchResultsView extends ConsumerWidget {
               Icon(Icons.search_off, size: 44, color: context.navMuted),
               const SizedBox(height: 12),
               Text(
-                "No settings found matching '$query'",
+                AppLocalizations.of(context).noSettingsMatching(query),
                 textAlign: TextAlign.center,
                 style: TextStyle(color: context.navMuted, fontSize: 15),
               ),
@@ -1749,7 +1872,12 @@ class _DropdownControl extends ConsumerWidget {
         borderRadius: BorderRadius.circular(8),
         dropdownColor: Theme.of(context).colorScheme.surfaceContainerHighest,
         items: options
-            .map((o) => DropdownMenuItem(value: o, child: Text(_settingOptionLabel(context, o))))
+            .map(
+              (o) => DropdownMenuItem(
+                value: o,
+                child: Text(_settingOptionLabel(context, o)),
+              ),
+            )
             .toList(),
         onChanged: (v) {
           if (v != null) {
@@ -1890,8 +2018,9 @@ class _OpenTabButton extends StatelessWidget {
 /// so editing from search and editing in a tab are the same operation.
 ///
 /// Tab indices mirror `_SettingsScreenState._tabs`.
-List<SearchableSetting> _kSearchableSettings(BuildContext context) =>
-    <SearchableSetting>[
+List<SearchableSetting> _kSearchableSettings(
+  BuildContext context,
+) => <SearchableSetting>[
   // ── General ────────────────────────────────────────────────────────────────
   SearchableSetting(
     title: AppLocalizations.of(context).setDefaultScreen,
@@ -1915,11 +2044,8 @@ List<SearchableSetting> _kSearchableSettings(BuildContext context) =>
     tabIndex: 0,
     // Only the languages that actually have an .arb file — offering a code we
     // cannot render is what made this dropdown a no-op for years.
-    trailingBuilder: (_) => const _DropdownControl(SettingKeys.language, [
-      'en',
-      'fr',
-      'ar',
-    ]),
+    trailingBuilder: (_) =>
+        const _DropdownControl(SettingKeys.language, ['en', 'fr', 'ar']),
   ),
   SearchableSetting(
     title: AppLocalizations.of(context).dateFormatLabel,
@@ -2131,9 +2257,9 @@ List<SearchableSetting> _kSearchableSettings(BuildContext context) =>
     title: AppLocalizations.of(context).setTablesButtonLabel,
     tabName: 'Order & Payment · Features',
     tabIndex: 1,
-    trailingBuilder: (_) => const _TextFieldControl(
+    trailingBuilder: (_) => _TextFieldControl(
       SettingKeys.tablesButtonLabel,
-      hint: 'e.g. Tables, Rooms',
+      hint: AppLocalizations.of(context).hintTablesRooms,
     ),
   ),
   SearchableSetting(
@@ -2379,9 +2505,9 @@ List<SearchableSetting> _kSearchableSettings(BuildContext context) =>
     title: AppLocalizations.of(context).setDefaultMeasurementUnit,
     tabName: 'Products · Product Defaults',
     tabIndex: 2,
-    trailingBuilder: (_) => const _TextFieldControl(
+    trailingBuilder: (_) => _TextFieldControl(
       SettingKeys.defaultMeasurementUnit,
-      hint: 'e.g. pcs, kg, L',
+      hint: AppLocalizations.of(context).hintUnitsExample,
     ),
   ),
   SearchableSetting(
@@ -2638,8 +2764,10 @@ List<SearchableSetting> _kSearchableSettings(BuildContext context) =>
     title: AppLocalizations.of(context).setFromName,
     tabName: 'Email · Sender',
     tabIndex: 6,
-    trailingBuilder: (_) =>
-        _TextFieldControl(SettingKeys.emailFromName, hint: AppLocalizations.of(context).posSystem),
+    trailingBuilder: (_) => _TextFieldControl(
+      SettingKeys.emailFromName,
+      hint: AppLocalizations.of(context).posSystem,
+    ),
   ),
   SearchableSetting(
     title: AppLocalizations.of(context).accountUserEmail,
@@ -2738,50 +2866,88 @@ class _TabScrollView extends StatelessWidget {
 String _accentColorLabel(BuildContext context, String name) {
   final l = AppLocalizations.of(context);
   switch (name) {
-    case 'Blue': return l.colorBlue;
-    case 'Green': return l.colorGreen;
-    case 'Pink': return l.colorPink;
-    case 'Purple': return l.colorPurple;
-    case 'Orange': return l.colorOrange;
-    case 'Red': return l.colorRed;
-    default: return name;
+    case 'Blue':
+      return l.colorBlue;
+    case 'Green':
+      return l.colorGreen;
+    case 'Pink':
+      return l.colorPink;
+    case 'Purple':
+      return l.colorPurple;
+    case 'Orange':
+      return l.colorOrange;
+    case 'Red':
+      return l.colorRed;
+    default:
+      return name;
   }
 }
 
 String _themeModeLabel(BuildContext context, String key) {
   final l = AppLocalizations.of(context);
   switch (key) {
-    case 'light': return l.themeLight;
-    case 'dark': return l.themeDark;
-    case 'dimmed': return l.themeDimmed;
-    case 'night': return l.themeNight;
-    case 'gray': return l.themeGray;
-    case 'high_contrast': return l.themeHighContrast;
-    default: return key;
+    case 'light':
+      return l.themeLight;
+    case 'dark':
+      return l.themeDark;
+    case 'dimmed':
+      return l.themeDimmed;
+    case 'night':
+      return l.themeNight;
+    case 'gray':
+      return l.themeGray;
+    case 'high_contrast':
+      return l.themeHighContrast;
+    default:
+      return key;
   }
 }
 
 String _settingOptionLabel(BuildContext context, String value) {
   final l = AppLocalizations.of(context);
   switch (value) {
-    case 'POS': return l.posLabel;
-    case 'Tables': return l.tablesLabel;
-    case 'Booking': return l.bookingLabel;
-    case 'Name': return l.fieldName;
-    case 'Code': return l.fieldCode;
-    case 'Barcode': return l.barcode;
-    case 'All fields': return l.allFields;
-    case 'Fixed': return l.fixed;
-    case 'Percentage': return l.percentage;
-    case 'Top': return l.top;
-    case 'Bottom': return l.bottom;
-    case 'After every save': return l.syncAfterEverySave;
-    case 'Every 1 hour': return l.syncEveryHour;
-    case 'Before tax': return l.beforeTax;
-    case 'After tax': return l.afterTax;
-    case 'List': return l.listLabel;
-    case 'Grid': return l.gridLabel;
-    default: return value; // technical values stay verbatim
+    case 'en':
+      return 'ENGLISH';
+    case 'fr':
+      return 'FRANÇAIS';
+    case 'ar':
+      return 'العربية';
+    case 'POS':
+      return l.posLabel;
+    case 'Tables':
+      return l.tablesLabel;
+    case 'Booking':
+      return l.bookingLabel;
+    case 'Name':
+      return l.fieldName;
+    case 'Code':
+      return l.fieldCode;
+    case 'Barcode':
+      return l.barcode;
+    case 'All fields':
+      return l.allFields;
+    case 'Fixed':
+      return l.fixed;
+    case 'Percentage':
+      return l.percentage;
+    case 'Top':
+      return l.top;
+    case 'Bottom':
+      return l.bottom;
+    case 'After every save':
+      return l.syncAfterEverySave;
+    case 'Every 1 hour':
+      return l.syncEveryHour;
+    case 'Before tax':
+      return l.beforeTax;
+    case 'After tax':
+      return l.afterTax;
+    case 'List':
+      return l.listLabel;
+    case 'Grid':
+      return l.gridLabel;
+    default:
+      return value; // technical values stay verbatim
   }
 }
 
@@ -3445,7 +3611,9 @@ class _DeviceCardState extends ConsumerState<_DeviceCard> {
             ),
           ),
           title: Text(
-            deviceName.isEmpty ? 'Not set' : deviceName,
+            deviceName.isEmpty
+                ? AppLocalizations.of(context).notSet
+                : deviceName,
             style: const TextStyle(fontWeight: FontWeight.w600),
           ),
           subtitle: Text(AppLocalizations.of(context).setPosNameHint),
@@ -3466,13 +3634,16 @@ class _DeviceCardState extends ConsumerState<_DeviceCard> {
             ),
           ),
           title: Text(
-            _email ?? 'Unknown',
+            _email ?? AppLocalizations.of(context).unknownLabel,
             style: const TextStyle(fontWeight: FontWeight.w600),
           ),
           subtitle: Text(AppLocalizations.of(context).setRegisteredAccount),
           trailing: TextButton.icon(
             icon: Icon(Icons.logout, size: 16, color: cs.error),
-            label: Text(AppLocalizations.of(context).setSignOut, style: TextStyle(color: cs.error)),
+            label: Text(
+              AppLocalizations.of(context).setSignOut,
+              style: TextStyle(color: cs.error),
+            ),
             onPressed: _signOut,
           ),
         ),
@@ -3568,8 +3739,7 @@ class _GeneralTab extends ConsumerWidget {
             _SettingSwitch(
               settingKey: SettingKeys.taxIncludedByDefault,
               label: AppLocalizations.of(context).setTaxIncludedByDefault,
-              subtitle:
-                  AppLocalizations.of(context).setTaxInclusiveDefaultHint,
+              subtitle: AppLocalizations.of(context).setTaxInclusiveDefaultHint,
             ),
           ],
         ),
@@ -3608,7 +3778,9 @@ class _GeneralTab extends ConsumerWidget {
                       width: itemWidth,
                       child: _SettingSwitch(
                         settingKey: SettingKeys.enableVirtualKeyboard,
-                        label: AppLocalizations.of(context).setEnableVirtualKeyboard,
+                        label: AppLocalizations.of(
+                          context,
+                        ).setEnableVirtualKeyboard,
                         icon: Icons
                             .keyboard_outlined, // Added an icon for consistency
                       ),
@@ -3678,7 +3850,9 @@ class _GeneralTab extends ConsumerWidget {
                       width: itemWidth,
                       child: _SettingSwitch(
                         settingKey: SettingKeys.showCashInOnStart,
-                        label: AppLocalizations.of(context).setShowCashInOnStart,
+                        label: AppLocalizations.of(
+                          context,
+                        ).setShowCashInOnStart,
                         icon: Icons.payments_outlined, // <-- Added icon here
                       ),
                     ),
@@ -3686,7 +3860,9 @@ class _GeneralTab extends ConsumerWidget {
                       width: itemWidth,
                       child: _SettingSwitch(
                         settingKey: SettingKeys.selectBusinessDayOnStart,
-                        label: AppLocalizations.of(context).setSelectBusinessDayOnStart,
+                        label: AppLocalizations.of(
+                          context,
+                        ).setSelectBusinessDayOnStart,
                         icon: Icons
                             .calendar_today_outlined, // <-- Added icon here
                       ),
@@ -3888,7 +4064,7 @@ class _OrderPaymentTab extends ConsumerWidget {
               _SettingTextField(
                 settingKey: SettingKeys.tablesButtonLabel,
                 label: AppLocalizations.of(context).setTablesButtonLabel,
-                hint: 'e.g. Tables, Rooms',
+                hint: AppLocalizations.of(context).hintTablesRooms,
               ),
               _SettingSwitch(
                 settingKey: SettingKeys.allowTablelessOrders,
@@ -4044,7 +4220,9 @@ class _OrderPaymentTab extends ConsumerWidget {
               _SettingSwitch(
                 settingKey: SettingKeys.featureServiceStatusEnabled,
                 label: AppLocalizations.of(context).setServiceStatusSelector,
-                subtitle: AppLocalizations.of(context).setShowServiceStatusBadge,
+                subtitle: AppLocalizations.of(
+                  context,
+                ).setShowServiceStatusBadge,
                 icon: Icons.toggle_on_outlined,
               ),
             ]),
@@ -4283,7 +4461,9 @@ class _DefaultWarehouseDropdown extends ConsumerWidget {
                           vertical: 10,
                         ),
                       ),
-                      hint: const Text('Select…'),
+                      hint: Text(
+                        AppLocalizations.of(context).selectEllipsisShort,
+                      ),
                       items: list
                           .map(
                             (w) => DropdownMenuItem<int>(
@@ -4377,7 +4557,7 @@ class _ProductsTab extends ConsumerWidget {
             _SettingTextField(
               settingKey: SettingKeys.defaultMeasurementUnit,
               label: AppLocalizations.of(context).setDefaultMeasurementUnit,
-              hint: 'e.g. pcs, kg, L',
+              hint: AppLocalizations.of(context).hintUnitsExample,
             ),
             _SettingDropdown(
               settingKey: SettingKeys.barcodeFormat,
@@ -4400,7 +4580,9 @@ class _ProductsTab extends ConsumerWidget {
                   ignoring: !autoUpdateCost,
                   child: _SettingSwitch(
                     settingKey: SettingKeys.updateSalePriceOnMarkup,
-                    label: AppLocalizations.of(context).setUpdateSalePriceFromMarkup,
+                    label: AppLocalizations.of(
+                      context,
+                    ).setUpdateSalePriceFromMarkup,
                   ),
                 ),
               ),
@@ -4463,8 +4645,7 @@ class _WeighingScaleTab extends ConsumerWidget {
             _SettingSwitch(
               settingKey: SettingKeys.scaleBarcodeEnabled,
               label: AppLocalizations.of(context).setEnableScaleBarcode,
-              subtitle:
-                  AppLocalizations.of(context).setScaleBarcodeHint,
+              subtitle: AppLocalizations.of(context).setScaleBarcodeHint,
             ),
             Opacity(
               opacity: barcodeOn ? 1.0 : 0.4,
@@ -4492,14 +4673,16 @@ class _WeighingScaleTab extends ConsumerWidget {
                     _SettingSwitch(
                       settingKey: SettingKeys.scaleBarcodeTrimZeros,
                       label: AppLocalizations.of(context).trimZerosFromCode,
-                      subtitle:
-                          AppLocalizations.of(context).setStripLeadingZeros,
+                      subtitle: AppLocalizations.of(
+                        context,
+                      ).setStripLeadingZeros,
                     ),
                     _SettingSwitch(
                       settingKey: SettingKeys.scaleBarcodePrintsPrice,
                       label: AppLocalizations.of(context).setScalePrintsPrice,
-                      subtitle:
-                          AppLocalizations.of(context).scaleBarcodePriceHint,
+                      subtitle: AppLocalizations.of(
+                        context,
+                      ).scaleBarcodePriceHint,
                     ),
                   ],
                 ),
@@ -4516,8 +4699,7 @@ class _WeighingScaleTab extends ConsumerWidget {
               _SettingSwitch(
                 settingKey: SettingKeys.scaleEnabled,
                 label: AppLocalizations.of(context).setReadLiveWeight,
-                subtitle:
-                    AppLocalizations.of(context).setScaleStreamHint,
+                subtitle: AppLocalizations.of(context).setScaleStreamHint,
               ),
               Opacity(
                 opacity: serialOn ? 1.0 : 0.4,
@@ -4641,7 +4823,11 @@ class _ScaleLiveTest extends ConsumerWidget {
       AsyncError(:final error) => (
         context.dangerColor,
         Icons.error_outline,
-        error is ScaleException ? error.message : 'Scale error: $error',
+        error is ScaleException
+            ? error.message
+            : AppLocalizations.of(
+                context,
+              ).scaleErrorWithMessage(error.toString()),
       ),
       AsyncData(:final value) => (
         value.stable ? context.successColor : context.warningColor,
@@ -4716,7 +4902,13 @@ class _CustomerDisplayTabState extends ConsumerState<_CustomerDisplayTab> {
   Future<void> _testDisplay() async {
     final settings = ref.read(appSettingsProvider);
     await CustomerDisplayService.showWelcome(settings: settings);
-    if (mounted) showAppSnackbar(context, ref, 'Test message sent.');
+    if (mounted) {
+      showAppSnackbar(
+        context,
+        ref,
+        AppLocalizations.of(context).testMessageSent,
+      );
+    }
   }
 
   // ── Web server helpers ──────────────────────────────────────────────────────
@@ -4846,7 +5038,9 @@ class _CustomerDisplayTabState extends ConsumerState<_CustomerDisplayTab> {
                           children: [
                             _SettingDropdown(
                               settingKey: SettingKeys.customerDisplayBaudRate,
-                              label: AppLocalizations.of(context).setBitsPerSecond,
+                              label: AppLocalizations.of(
+                                context,
+                              ).setBitsPerSecond,
                               options: const [
                                 '1200',
                                 '2400',
@@ -4866,7 +5060,13 @@ class _CustomerDisplayTabState extends ConsumerState<_CustomerDisplayTab> {
                             _SettingDropdown(
                               settingKey: SettingKeys.customerDisplayParity,
                               label: AppLocalizations.of(context).setParity,
-                              options: const ['None', 'Even', 'Odd', 'Mark', 'Space'],
+                              options: const [
+                                'None',
+                                'Even',
+                                'Odd',
+                                'Mark',
+                                'Space',
+                              ],
                             ),
                             _SettingDropdown(
                               settingKey: SettingKeys.customerDisplayStopBits,
@@ -4876,7 +5076,9 @@ class _CustomerDisplayTabState extends ConsumerState<_CustomerDisplayTab> {
                             _SettingDropdown(
                               settingKey:
                                   SettingKeys.customerDisplayFlowControl,
-                              label: AppLocalizations.of(context).setFlowControl,
+                              label: AppLocalizations.of(
+                                context,
+                              ).setFlowControl,
                               options: const ['None', 'RTS/CTS', 'XON/XOFF'],
                             ),
                             Padding(
@@ -4886,7 +5088,9 @@ class _CustomerDisplayTabState extends ConsumerState<_CustomerDisplayTab> {
                                 child: TextButton(
                                   onPressed: _restorePortDefaults,
                                   child: Text(
-                                    AppLocalizations.of(context).restoreDefaults,
+                                    AppLocalizations.of(
+                                      context,
+                                    ).restoreDefaults,
                                     style: TextStyle(
                                       color: theme.colorScheme.primary,
                                       fontSize: 12,
@@ -4954,7 +5158,9 @@ class _CustomerDisplayTabState extends ConsumerState<_CustomerDisplayTab> {
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
               child: FilledButton.icon(
                 icon: const Icon(Icons.open_in_new, size: 18),
-                label: Text(AppLocalizations.of(context).setOpenCustomerDisplay),
+                label: Text(
+                  AppLocalizations.of(context).setOpenCustomerDisplay,
+                ),
                 onPressed: () async {
                   // Auto-start the WS server if it isn't running yet —
                   // the native screen connects to ws://localhost:8181/ws
@@ -4997,8 +5203,7 @@ class _CustomerDisplayTabState extends ConsumerState<_CustomerDisplayTab> {
             _SettingSwitch(
               settingKey: SettingKeys.customerDisplayWebEnabled,
               label: AppLocalizations.of(context).setEnableLiveWebDisplay,
-              subtitle:
-                  AppLocalizations.of(context).webDisplayHint,
+              subtitle: AppLocalizations.of(context).webDisplayHint,
               onChanged: (_, on) => on ? _startWeb() : _stopWeb(),
             ),
             if (serverRunning) ...[
@@ -5018,7 +5223,9 @@ class _CustomerDisplayTabState extends ConsumerState<_CustomerDisplayTab> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            AppLocalizations.of(context).sameMachineSecondMonitor,
+                            AppLocalizations.of(
+                              context,
+                            ).sameMachineSecondMonitor,
                             style: theme.textTheme.labelMedium,
                           ),
                           SelectableText(
@@ -5080,7 +5287,11 @@ class _CustomerDisplayTabState extends ConsumerState<_CustomerDisplayTab> {
                       tooltip: AppLocalizations.of(context).setCopyLanUrl,
                       onPressed: () {
                         Clipboard.setData(ClipboardData(text: displayUrl));
-                        showAppSnackbar(context, ref, 'URL copied');
+                        showAppSnackbar(
+                          context,
+                          ref,
+                          AppLocalizations.of(context).urlCopied,
+                        );
                       },
                     ),
                   ],
@@ -5165,7 +5376,12 @@ class _PrinterGroupDialogState extends ConsumerState<_PrinterGroupDialog> {
   void _save() {
     final name = _name.text.trim();
     if (name.isEmpty) {
-      showAppSnackbar(context, ref, AppLocalizations.of(context).enterAGroupName, isError: true);
+      showAppSnackbar(
+        context,
+        ref,
+        AppLocalizations.of(context).enterAGroupName,
+        isError: true,
+      );
       return;
     }
     Navigator.pop(
@@ -5200,7 +5416,10 @@ class _PrinterGroupDialogState extends ConsumerState<_PrinterGroupDialog> {
               ),
             ),
             const SizedBox(height: 18),
-            Text(AppLocalizations.of(context).categoriesLabel, style: theme.textTheme.titleMedium),
+            Text(
+              AppLocalizations.of(context).categoriesLabel,
+              style: theme.textTheme.titleMedium,
+            ),
             Text(
               AppLocalizations.of(context).categoriesPrintedOnGroup,
               style: theme.textTheme.bodySmall?.copyWith(
@@ -5213,7 +5432,10 @@ class _PrinterGroupDialogState extends ConsumerState<_PrinterGroupDialog> {
                 shrinkWrap: true,
                 children: [
                   // "No category" sentinel + every product group.
-                  _row(PrinterGroup.noCategoryId, AppLocalizations.of(context).noCategory),
+                  _row(
+                    PrinterGroup.noCategoryId,
+                    AppLocalizations.of(context).noCategory,
+                  ),
                   ...widget.productGroups.map((g) => _row(g.id, g.name)),
                 ],
               ),
@@ -5226,7 +5448,10 @@ class _PrinterGroupDialogState extends ConsumerState<_PrinterGroupDialog> {
           onPressed: () => Navigator.pop(context),
           child: Text(AppLocalizations.of(context).cancelUpper),
         ),
-        TextButton(onPressed: _save, child: Text(AppLocalizations.of(context).saveUpper)),
+        TextButton(
+          onPressed: _save,
+          child: Text(AppLocalizations.of(context).saveUpper),
+        ),
       ],
     );
   }
@@ -5501,7 +5726,9 @@ class _KitchenDisplayTabState extends ConsumerState<_KitchenDisplayTab> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Text(
-                AppLocalizations.of(context).kdsTabletsHelp(kKdsPort.toString()),
+                AppLocalizations.of(
+                  context,
+                ).kdsTabletsHelp(kKdsPort.toString()),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: cs.onSurfaceVariant,
                 ),
@@ -5576,7 +5803,9 @@ class _KitchenDisplayTabState extends ConsumerState<_KitchenDisplayTab> {
                                 Padding(
                                   padding: const EdgeInsets.only(top: 6),
                                   child: Text(
-                                    AppLocalizations.of(context).noGroupSelectedReceivesAll,
+                                    AppLocalizations.of(
+                                      context,
+                                    ).noGroupSelectedReceivesAll,
                                     style: theme.textTheme.bodySmall?.copyWith(
                                       color: cs.onSurfaceVariant,
                                     ),
@@ -5611,11 +5840,15 @@ class _KitchenDisplayTabState extends ConsumerState<_KitchenDisplayTab> {
                         ),
                         validator: (v) {
                           if (v == null || v.trim().isEmpty) {
-                            return AppLocalizations.of(context).enterAnIpAddress;
+                            return AppLocalizations.of(
+                              context,
+                            ).enterAnIpAddress;
                           }
                           final parts = v.trim().split('.');
                           if (parts.length != 4) {
-                            return AppLocalizations.of(context).invalidIpWithExample;
+                            return AppLocalizations.of(
+                              context,
+                            ).invalidIpWithExample;
                           }
                           if (parts.any((p) => int.tryParse(p) == null)) {
                             return AppLocalizations.of(context).invalidIp;
@@ -5718,8 +5951,7 @@ class _DualCurrencyTab extends ConsumerWidget {
             _SettingSwitch(
               settingKey: SettingKeys.dualCurrencyEnabled,
               label: AppLocalizations.of(context).setDualCurrencyEnabled,
-              subtitle:
-                  AppLocalizations.of(context).setDualCurrencyHint,
+              subtitle: AppLocalizations.of(context).setDualCurrencyHint,
             ),
             _SettingTextField(
               settingKey: SettingKeys.dualCurrencySymbol,
@@ -5730,7 +5962,9 @@ class _DualCurrencyTab extends ConsumerWidget {
               settingKey: SettingKeys.dualCurrencyRate,
               label: AppLocalizations.of(context).setExchangeRate,
               hint: AppLocalizations.of(context).exchangeRateHint,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
             ),
           ],
         ),
@@ -5973,7 +6207,9 @@ class _DatabaseTabState extends ConsumerState<_DatabaseTab> {
                       child: IgnorePointer(
                         ignoring: !autoDelete,
                         child: _StepperRow(
-                          label: AppLocalizations.of(context).setDeleteBackupsOlderThan,
+                          label: AppLocalizations.of(
+                            context,
+                          ).setDeleteBackupsOlderThan,
                           settingKey: SettingKeys.dbBackupRetentionDays,
                           min: 1,
                           max: 365,
@@ -6105,7 +6341,12 @@ class _SubscriptionTab extends ConsumerWidget {
         cards: [
           _SettingsCard(
             title: AppLocalizations.of(context).subscriptionUpper,
-            children: [_InfoRow(label: AppLocalizations.of(context).errorLabel, value: e.toString())],
+            children: [
+              _InfoRow(
+                label: AppLocalizations.of(context).errorLabel,
+                value: e.toString(),
+              ),
+            ],
           ),
         ],
       ),
@@ -6128,8 +6369,7 @@ class _SubscriptionTab extends ConsumerWidget {
                     IconButton(
                       icon: const Icon(Icons.refresh),
                       tooltip: AppLocalizations.of(context).refresh,
-                      onPressed: () =>
-                          ref.invalidate(subscriptionInfoProvider),
+                      onPressed: () => ref.invalidate(subscriptionInfoProvider),
                     ),
                   ],
                 ),
@@ -6147,7 +6387,9 @@ class _SubscriptionTab extends ConsumerWidget {
               _InfoRow(
                 label: AppLocalizations.of(context).setDevices,
                 value: info.seatAllowance > 0
-                    ? AppLocalizations.of(context).deviceCount(info.seatAllowance)
+                    ? AppLocalizations.of(
+                        context,
+                      ).deviceCount(info.seatAllowance)
                     : '–',
               ),
             ],
@@ -6168,11 +6410,19 @@ class _SubscriptionStatusPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final (label, icon, color) = switch (info.state) {
       // daysLeft counts to the period end shown in the rows below, so it goes
-      // <= 0 while the terminal is still running on the grace window. "Expires
-      // in 0 days" would be nonsense there, and a green tick on an amber pill
-      // reads as broken — both branches get their own icon.
+      // <= 0 both on the final day (hours left, still paid) and while running
+      // on the grace window (period already over). "Expires in 0 days" would be
+      // nonsense for either, and a green tick on an amber pill reads as broken.
+      //
+      // The two cases need DIFFERENT words, and which one can occur depends on
+      // Lease:GraceDays — at 0 (the current setting) the grace window is empty,
+      // so an `active` lease past its period end is impossible and this branch
+      // only ever means "expires today". `periodEnd` is the discriminator.
       LicenseState.active when info.daysLeft <= 0 => (
-        AppLocalizations.of(context).statusGracePeriod,
+        (info.periodEnd != null &&
+                info.periodEnd!.isBefore(DateTime.now().toUtc()))
+            ? AppLocalizations.of(context).statusGracePeriod
+            : AppLocalizations.of(context).statusExpiresToday,
         Icons.warning_amber_rounded,
         context.warningColor,
       ),
@@ -6344,7 +6594,7 @@ class _AboutTab extends ConsumerWidget {
                 const Icon(Icons.point_of_sale, size: 64, color: Colors.white),
                 const SizedBox(height: 16),
                 Text(
-                  company?.name ?? 'POS System',
+                  company?.name ?? AppLocalizations.of(context).posSystem,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 28,
@@ -6354,7 +6604,7 @@ class _AboutTab extends ConsumerWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Version 1.0.0',
+                  AppLocalizations.of(context).versionLabel('1.0.0'),
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.8),
                     fontSize: 14,
@@ -6385,10 +6635,22 @@ class _AboutTab extends ConsumerWidget {
           _SettingsCard(
             title: AppLocalizations.of(context).setCompany,
             children: [
-              _InfoRow(label: AppLocalizations.of(context).fieldName, value: company?.name ?? '–'),
-              _InfoRow(label: AppLocalizations.of(context).setTaxNo, value: company?.taxNumber ?? '–'),
-              _InfoRow(label: AppLocalizations.of(context).setPhone, value: company?.phoneNumber ?? '–'),
-              _InfoRow(label: AppLocalizations.of(context).setAddress, value: company?.address ?? '–'),
+              _InfoRow(
+                label: AppLocalizations.of(context).fieldName,
+                value: company?.name ?? '–',
+              ),
+              _InfoRow(
+                label: AppLocalizations.of(context).setTaxNo,
+                value: company?.taxNumber ?? '–',
+              ),
+              _InfoRow(
+                label: AppLocalizations.of(context).setPhone,
+                value: company?.phoneNumber ?? '–',
+              ),
+              _InfoRow(
+                label: AppLocalizations.of(context).setAddress,
+                value: company?.address ?? '–',
+              ),
             ],
           ),
 
@@ -6405,15 +6667,32 @@ class _AboutTab extends ConsumerWidget {
             ),
             error: (e, _) => _SettingsCard(
               title: AppLocalizations.of(context).setDatabase,
-              children: [_InfoRow(label: AppLocalizations.of(context).errorLabel, value: e.toString())],
+              children: [
+                _InfoRow(
+                  label: AppLocalizations.of(context).errorLabel,
+                  value: e.toString(),
+                ),
+              ],
             ),
             data: (s) => _SettingsCard(
               title: AppLocalizations.of(context).setDatabase,
               children: [
-                _InfoRow(label: AppLocalizations.of(context).products, value: '${s.productCount}'),
-                _InfoRow(label: AppLocalizations.of(context).customersLabel, value: '${s.customerCount}'),
-                _InfoRow(label: AppLocalizations.of(context).users, value: '${s.userCount}'),
-                _InfoRow(label: AppLocalizations.of(context).setDbSize, value: s.dbSizeFormatted),
+                _InfoRow(
+                  label: AppLocalizations.of(context).products,
+                  value: '${s.productCount}',
+                ),
+                _InfoRow(
+                  label: AppLocalizations.of(context).customersLabel,
+                  value: '${s.customerCount}',
+                ),
+                _InfoRow(
+                  label: AppLocalizations.of(context).users,
+                  value: '${s.userCount}',
+                ),
+                _InfoRow(
+                  label: AppLocalizations.of(context).setDbSize,
+                  value: s.dbSizeFormatted,
+                ),
                 _InfoRow(
                   label: AppLocalizations.of(context).setLastSync,
                   value: s.lastSync != null
@@ -6662,7 +6941,7 @@ class _TimezoneCardState extends ConsumerState<_TimezoneCard> {
                 ),
               const SizedBox(width: 4),
               Text(
-                'Auto',
+                AppLocalizations.of(context).autoLabel,
                 style: TextStyle(
                   fontSize: 13,
                   color: theme.colorScheme.onSurface,

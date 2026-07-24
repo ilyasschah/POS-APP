@@ -126,7 +126,7 @@ class _CustomerPickerDialogState extends ConsumerState<CustomerPickerDialog> {
               child: filtered.isEmpty
                   ? Center(
                       child: Text(
-                        'No customers found',
+                        AppLocalizations.of(context).noCustomersFound,
                         style: TextStyle(
                             color: cs.onSurface.withValues(alpha: 0.5)),
                       ),
@@ -195,7 +195,7 @@ class _CustomerPickerDialogState extends ConsumerState<CustomerPickerDialog> {
         TextButton(
           onPressed: () => Navigator.pop(context),
           child: Text(
-            'Cancel',
+            AppLocalizations.of(context).actionCancel,
             style: TextStyle(color: cs.onSurface.withValues(alpha: 0.6)),
           ),
         ),

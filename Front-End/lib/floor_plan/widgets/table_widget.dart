@@ -111,8 +111,8 @@ class _TableWidgetState extends ConsumerState<TableWidget> {
         backgroundColor: theme.colorScheme.surface,
         title: Text(AppLocalizations.of(context).reservedTable),
         content: Text(
-          'This table is held by a reservation for '
-          '"${booking.reservationName}".',
+          AppLocalizations.of(context)
+              .tableHeldByReservation(booking.reservationName),
         ),
         actions: [
           TextButton(
@@ -150,8 +150,7 @@ class _TableWidgetState extends ConsumerState<TableWidget> {
         showAppSnackbar(
           context,
           ref,
-          'Could not open the reservation order. It may have been completed '
-          'or voided.',
+          AppLocalizations.of(context).couldNotOpenReservationOrder,
           isError: true,
         );
         return;
@@ -244,7 +243,7 @@ class _TableWidgetState extends ConsumerState<TableWidget> {
                   showAppSnackbar(
                     context,
                     ref,
-                    'This reservation is no longer active.',
+                    AppLocalizations.of(context).reservationNoLongerActive,
                     isError: true,
                   );
                 }
@@ -263,7 +262,7 @@ class _TableWidgetState extends ConsumerState<TableWidget> {
                   showAppSnackbar(
                     context,
                     ref,
-                    'Could not find active order.',
+                    AppLocalizations.of(context).couldNotFindActiveOrder,
                     isError: true,
                   );
                 }
@@ -297,8 +296,7 @@ class _TableWidgetState extends ConsumerState<TableWidget> {
                     showAppSnackbar(
                       context,
                       ref,
-                      'This table needs a booking. Create one, then start '
-                      'service from it.',
+                      AppLocalizations.of(context).tableNeedsBooking,
                       isError: true,
                     );
                   }
@@ -323,7 +321,7 @@ class _TableWidgetState extends ConsumerState<TableWidget> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            "Service type",
+                            AppLocalizations.of(context).setServiceTypeHeader,
                             style: TextStyle(
                               fontSize: 28,
                               color: theme.colorScheme.onSurface,
@@ -332,7 +330,7 @@ class _TableWidgetState extends ConsumerState<TableWidget> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            "Select service type for this order",
+                            AppLocalizations.of(context).selectServiceTypeForOrder,
                             style: TextStyle(
                               fontSize: 16,
                               color: theme.colorScheme.onSurfaceVariant,
@@ -434,7 +432,9 @@ class _TableWidgetState extends ConsumerState<TableWidget> {
               }
             } catch (e) {
               if (context.mounted) {
-                showAppSnackbar(context, ref, 'Error: $e', isError: true);
+                showAppSnackbar(context, ref,
+                    AppLocalizations.of(context).errorWithMessage(e.toString()),
+                    isError: true);
               }
             } finally {
               if (mounted) setState(() => isCreatingOrder = false);

@@ -246,9 +246,10 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
           // left-middle, the day navigation + "Add Booking" actions pinned right.
           PosTopBar(
             onMenuPressed: widget.onMenuPressed,
-            title: const Text(
-              'Bookings',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            title: Text(
+              AppLocalizations.of(context).posBookings,
+              style: const TextStyle(
+                  fontSize: 18, fontWeight: FontWeight.bold),
               overflow: TextOverflow.ellipsis,
             ),
             actions: [
@@ -333,8 +334,8 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
                 : hasError
                 ? Center(
                     child: Text(
-                      'Error loading data: '
-                      '${bookingsAsync.error ?? usersAsync.error ?? roomsAsync.error}',
+                      AppLocalizations.of(context).errorLoadingDataWithMessage(
+                          '${bookingsAsync.error ?? usersAsync.error ?? roomsAsync.error}'),
                     ),
                   )
                 : Builder(
@@ -1074,13 +1075,16 @@ class _AddBookingDialogState extends ConsumerState<_AddBookingDialog> {
     if (!mounted) return false;
 
     final clash = clashes.first;
-    final what = isStaffMode ? 'staff member' : widget.resourceMode;
+    final what = isStaffMode
+        ? AppLocalizations.of(context).staffMemberLower
+        : widget.resourceMode;
     showAppSnackbar(
       context,
       ref,
-      'This $what is already booked during this time — '
-      '${clash.reservationName} '
-      '(${_fmtDateTime(clash.startTime)}–${_fmtDateTime(clash.endTime)}).',
+      AppLocalizations.of(context).alreadyBookedDuringTime(
+          what,
+          clash.reservationName,
+          '${_fmtDateTime(clash.startTime)}–${_fmtDateTime(clash.endTime)}'),
       isError: true,
     );
     return false;
@@ -1092,7 +1096,7 @@ class _AddBookingDialogState extends ConsumerState<_AddBookingDialog> {
       showAppSnackbar(
         context,
         ref,
-        'Please select at least one table.',
+        AppLocalizations.of(context).selectAtLeastOneTable,
         isError: true,
       );
       return;
@@ -1105,7 +1109,7 @@ class _AddBookingDialogState extends ConsumerState<_AddBookingDialog> {
       showAppSnackbar(
         context,
         ref,
-        'Cannot create a booking in the past.',
+        AppLocalizations.of(context).cannotBookInPast,
         isError: true,
       );
       return;
@@ -1114,7 +1118,7 @@ class _AddBookingDialogState extends ConsumerState<_AddBookingDialog> {
       showAppSnackbar(
         context,
         ref,
-        'End time must be after start time.',
+        AppLocalizations.of(context).endTimeAfterStartTime,
         isError: true,
       );
       return;
@@ -1209,9 +1213,9 @@ class _AddBookingDialogState extends ConsumerState<_AddBookingDialog> {
               ),
               ElevatedButton.icon(
                 icon: const Icon(Icons.play_arrow, color: Colors.white),
-                label: const Text(
-                  'Open Order Now',
-                  style: TextStyle(color: Colors.white),
+                label: Text(
+                  AppLocalizations.of(context).openOrderNow,
+                  style: const TextStyle(color: Colors.white),
                 ),
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
                 onPressed: () => Navigator.pop(ctx, _PostSaveAction.open),
@@ -1245,7 +1249,9 @@ class _AddBookingDialogState extends ConsumerState<_AddBookingDialog> {
       }
     } catch (e) {
       if (mounted) {
-        showAppSnackbar(context, ref, 'Error: $e', isError: true);
+        showAppSnackbar(context, ref,
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            isError: true);
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -1280,7 +1286,9 @@ class _AddBookingDialogState extends ConsumerState<_AddBookingDialog> {
 
     return AlertDialog(
       title: Text(
-        widget.existingBooking != null ? 'Edit Booking' : 'New Booking',
+        widget.existingBooking != null
+            ? AppLocalizations.of(context).editBooking
+            : AppLocalizations.of(context).newBooking,
       ),
       content: SizedBox(
         width: 440,
@@ -1651,7 +1659,9 @@ class _BookingDetailDialogState extends ConsumerState<_BookingDetailDialog> {
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) {
-        showAppSnackbar(context, ref, 'Error: $e', isError: true);
+        showAppSnackbar(context, ref,
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            isError: true);
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -1676,7 +1686,8 @@ class _BookingDetailDialogState extends ConsumerState<_BookingDetailDialog> {
               final t = widget.tables.where((x) => x.id == id).firstOrNull;
               return ListTile(
                 leading: const Icon(Icons.table_restaurant),
-                title: Text(t?.name ?? 'Table #$id'),
+                title: Text(
+                    t?.name ?? AppLocalizations.of(context).tableNumbered('$id')),
                 onTap: () => Navigator.pop(ctx, id),
               );
             }).toList(),
@@ -1737,7 +1748,9 @@ class _BookingDetailDialogState extends ConsumerState<_BookingDetailDialog> {
       _openPosMenu(context, ref);
     } catch (e) {
       if (mounted) {
-        showAppSnackbar(context, ref, 'Error: $e', isError: true);
+        showAppSnackbar(context, ref,
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            isError: true);
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -1760,7 +1773,7 @@ class _BookingDetailDialogState extends ConsumerState<_BookingDetailDialog> {
         showAppSnackbar(
           context,
           ref,
-          'Order not found. It may have been completed or voided.',
+          AppLocalizations.of(context).orderNotFoundCompletedOrVoided,
           isError: true,
         );
         return;
@@ -1777,7 +1790,9 @@ class _BookingDetailDialogState extends ConsumerState<_BookingDetailDialog> {
       _openPosMenu(context, ref);
     } catch (e) {
       if (mounted) {
-        showAppSnackbar(context, ref, 'Error: $e', isError: true);
+        showAppSnackbar(context, ref,
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            isError: true);
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -1804,7 +1819,7 @@ class _BookingDetailDialogState extends ConsumerState<_BookingDetailDialog> {
         showAppSnackbar(
           context,
           ref,
-          'Order not found. It may have been completed or voided.',
+          AppLocalizations.of(context).orderNotFoundCompletedOrVoided,
           isError: true,
         );
         return;
@@ -1812,7 +1827,9 @@ class _BookingDetailDialogState extends ConsumerState<_BookingDetailDialog> {
       _openPosMenu(context, ref);
     } catch (e) {
       if (mounted) {
-        showAppSnackbar(context, ref, 'Error: $e', isError: true);
+        showAppSnackbar(context, ref,
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            isError: true);
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -1837,7 +1854,9 @@ class _BookingDetailDialogState extends ConsumerState<_BookingDetailDialog> {
       await showDocumentEditor(context, ref, existingDocument: doc);
     } catch (e) {
       if (mounted) {
-        showAppSnackbar(context, ref, 'Error: $e', isError: true);
+        showAppSnackbar(context, ref,
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            isError: true);
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -1850,7 +1869,8 @@ class _BookingDetailDialogState extends ConsumerState<_BookingDetailDialog> {
       builder: (ctx) => AlertDialog(
         title: Text(AppLocalizations.of(context).deleteBooking),
         content: Text(
-          'Delete booking for "${widget.booking.reservationName}"?',
+          AppLocalizations.of(context)
+              .deleteBookingConfirm(widget.booking.reservationName),
         ),
         actions: [
           TextButton(
@@ -1888,7 +1908,9 @@ class _BookingDetailDialogState extends ConsumerState<_BookingDetailDialog> {
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) {
-        showAppSnackbar(context, ref, 'Error: $e', isError: true);
+        showAppSnackbar(context, ref,
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            isError: true);
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -2172,7 +2194,7 @@ class _BookingDetailDialogState extends ConsumerState<_BookingDetailDialog> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          'This booking is completed and cannot be modified.',
+                          AppLocalizations.of(context).bookingCompletedLocked,
                           style: TextStyle(
                               color: context.successColor, fontSize: 13),
                         ),
@@ -2183,7 +2205,7 @@ class _BookingDetailDialogState extends ConsumerState<_BookingDetailDialog> {
               ] else ...[
                 const SizedBox(height: 18),
                 Text(
-                  'UPDATE STATUS',
+                  AppLocalizations.of(context).updateStatusUpper,
                   style: theme.textTheme.labelMedium?.copyWith(
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     fontWeight: FontWeight.w700,

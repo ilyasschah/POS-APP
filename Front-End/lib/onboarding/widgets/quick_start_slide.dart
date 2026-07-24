@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 /// The "what do I do first" slide: the three steps to a first sale. Kept short so
@@ -51,7 +52,7 @@ class QuickStartSlide extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Get going in 3 steps',
+                AppLocalizations.of(context).getGoingInThreeSteps,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.headlineSmall
                     ?.copyWith(fontWeight: FontWeight.bold),

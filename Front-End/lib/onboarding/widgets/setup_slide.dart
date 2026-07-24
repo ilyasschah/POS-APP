@@ -45,14 +45,14 @@ class SetupSlide extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Set up your terminal',
+                AppLocalizations.of(context).setUpYourTerminal,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.headlineSmall
                     ?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 6),
               Text(
-                'You can change all of this later in Settings.',
+                AppLocalizations.of(context).changeThisLaterInSettings,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium
                     ?.copyWith(color: cs.onSurfaceVariant),

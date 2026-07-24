@@ -166,7 +166,8 @@ class _CreateFirstUserDialogState
           Text(AppLocalizations.of(context).noUsersFound,
               style: const TextStyle(fontWeight: FontWeight.bold)),
           Text(
-            "Create the first admin user for ${widget.companyName}",
+            AppLocalizations.of(context)
+                .createFirstAdminFor(widget.companyName),
             style: const TextStyle(fontSize: 13, color: Colors.grey),
           ),
         ],

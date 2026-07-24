@@ -2114,7 +2114,7 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get saveAndRestart => 'Enregistrer et redémarrer';
+  String get saveAndRestart => 'Enregistrer';
 
   @override
   String get resourceMode => 'Mode de ressource';
@@ -2679,7 +2679,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get setCustomerButton => 'Bouton Client';
 
   @override
-  String get setCustomerDisplay => 'AFFICHEUR CLIENT';
+  String get setCustomerDisplay => 'Afficheur client';
 
   @override
   String get setCustomerDisplayEnabled => 'Afficheur client activé';
@@ -5444,4 +5444,396 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get exchangeRateHint => 'ex. 1.08  (1 principale = X secondaire)';
+
+  @override
+  String get addServiceStatus => 'Ajouter un statut de service';
+
+  @override
+  String get clearFavorites => 'Effacer les favoris';
+
+  @override
+  String get editServiceStatus => 'Modifier le statut de service';
+
+  @override
+  String get hintTablesRooms => 'ex. : Tables, Salles';
+
+  @override
+  String get hintUnitsExample => 'ex. : pcs, kg, L';
+
+  @override
+  String get includeSubgroups => 'Inclure les sous-groupes';
+
+  @override
+  String get noReportsFound => 'Aucun rapport trouvé.';
+
+  @override
+  String noSettingsMatching(String query) {
+    return 'Aucun paramètre ne correspond à « $query »';
+  }
+
+  @override
+  String get notSet => 'Non défini';
+
+  @override
+  String get reportComingSoon => 'Ce rapport sera bientôt disponible.';
+
+  @override
+  String scaleErrorWithMessage(String message) {
+    return 'Erreur de balance : $message';
+  }
+
+  @override
+  String get selectBusinessPartnerInFilter =>
+      'Veuillez sélectionner un partenaire commercial dans le panneau de filtres.';
+
+  @override
+  String get selectReportToViewOrPrint =>
+      'Sélectionnez un rapport à consulter ou imprimer';
+
+  @override
+  String versionLabel(String version) {
+    return 'Version $version';
+  }
+
+  @override
+  String ageRestrictionBody(num age) {
+    return 'Ce produit exige que le client ait au moins $age ans.\n\nVeuillez confirmer que le client remplit cette condition avant de continuer.';
+  }
+
+  @override
+  String get bookingCompletedLocked =>
+      'Cette réservation est terminée et ne peut pas être modifiée.';
+
+  @override
+  String get bookingPrefix => 'Réservation : ';
+
+  @override
+  String get branch => 'Succursale';
+
+  @override
+  String clockedInWithValue(String value) {
+    return 'Pointé · $value';
+  }
+
+  @override
+  String deleteBookingConfirm(String name) {
+    return 'Supprimer la réservation de « $name » ?';
+  }
+
+  @override
+  String get editBooking => 'Modifier la réservation';
+
+  @override
+  String errorLoadingDataWithMessage(String message) {
+    return 'Erreur lors du chargement des données : $message';
+  }
+
+  @override
+  String errorLoadingSpaces(String message) {
+    return 'Erreur lors du chargement des espaces : $message';
+  }
+
+  @override
+  String get exitEditMode => 'Quitter le mode édition';
+
+  @override
+  String get newBooking => 'Nouvelle réservation';
+
+  @override
+  String noFreeSpacesAvailable(String space) {
+    return 'Aucun(e) $space disponible';
+  }
+
+  @override
+  String get openOrderNow => 'Ouvrir la commande maintenant';
+
+  @override
+  String get removeFloorPlanConfirm =>
+      'Cela supprimera définitivement le plan de salle et toutes ses tables. Continuer ?';
+
+  @override
+  String get sendingSignal => 'Envoi du signal...';
+
+  @override
+  String get shapeLabel => 'Forme';
+
+  @override
+  String get sizeLabel => 'Taille';
+
+  @override
+  String get staffPrefix => '  ·  Personnel : ';
+
+  @override
+  String tableNumbered(String number) {
+    return 'Table n° $number';
+  }
+
+  @override
+  String taxesForProduct(String product) {
+    return 'Taxes · $product';
+  }
+
+  @override
+  String get testDrawerOpen => 'Tester l\'ouverture du tiroir';
+
+  @override
+  String todayWithValue(String value) {
+    return 'Aujourd\'hui : $value';
+  }
+
+  @override
+  String get updateStatusUpper => 'METTRE À JOUR LE STATUT';
+
+  @override
+  String voidReasonPrompt(String number) {
+    return 'Saisissez ou sélectionnez un motif d\'annulation pour « $number »';
+  }
+
+  @override
+  String get accessDenied => 'Accès refusé';
+
+  @override
+  String get accessDeniedBody =>
+      'Vous n\'avez pas l\'autorisation de consulter cette section.\nChoisissez une autre section dans le menu ou demandez l\'accès à un administrateur.';
+
+  @override
+  String get checkingUpper => 'VÉRIFICATION…';
+
+  @override
+  String get chooseYourMenuLayout => 'Choisissez la disposition de votre menu';
+
+  @override
+  String get connectingEllipsis => 'Connexion…';
+
+  @override
+  String createFirstAdminFor(String company) {
+    return 'Créez le premier utilisateur administrateur pour $company';
+  }
+
+  @override
+  String discountAmountLine(String currency, String amount) {
+    return 'Remise  −$currency $amount';
+  }
+
+  @override
+  String get editCurrency => 'Modifier la devise';
+
+  @override
+  String enableResource(String resource) {
+    return 'Activer $resource';
+  }
+
+  @override
+  String get errorLoadingRooms => 'Erreur lors du chargement des salles';
+
+  @override
+  String expiredOnDate(String date) {
+    return 'Expiré le $date';
+  }
+
+  @override
+  String get getGoingInThreeSteps => 'Démarrez en 3 étapes';
+
+  @override
+  String get managementPortal => 'Portail de gestion';
+
+  @override
+  String get menuLayoutHint =>
+      'L\'affichage des produits sur l\'écran de vente — modifiable à tout moment dans les Paramètres.';
+
+  @override
+  String get noFloorPlans => 'Aucun plan de salle';
+
+  @override
+  String openOrderForEachResource(String resource) {
+    return 'Ouvrez une commande pour chaque $resource.';
+  }
+
+  @override
+  String get poweredByPos => 'Propulsé par POS';
+
+  @override
+  String get reconnectingEllipsis => 'Reconnexion…';
+
+  @override
+  String get retryConnectionUpper => 'RÉESSAYER LA CONNEXION';
+
+  @override
+  String scaleUnitMismatch(String scaleUnit, String productUnit) {
+    return 'La balance affiche $scaleUnit mais cet article est tarifé au $productUnit — aucune conversion n\'est appliquée.';
+  }
+
+  @override
+  String get selectServiceTypeForOrder =>
+      'Sélectionnez le type de service pour cette commande';
+
+  @override
+  String tableHeldByReservation(String name) {
+    return 'Cette table est réservée pour « $name ».';
+  }
+
+  @override
+  String get thankYou => 'Merci !';
+
+  @override
+  String get weWillSwitchOnFeatures =>
+      'Nous activerons les bonnes fonctionnalités pour vous.';
+
+  @override
+  String get whatsYourBusiness => 'Quelle est votre activité ?';
+
+  @override
+  String get changeThisLaterInSettings =>
+      'Vous pourrez modifier tout cela plus tard dans les Paramètres.';
+
+  @override
+  String get everythingBuiltIn => 'Tout est inclus — aucun module à acheter.';
+
+  @override
+  String get everythingYouGet => 'Tout ce que vous obtenez';
+
+  @override
+  String get getStarted => 'Commencer';
+
+  @override
+  String get linkDeviceUpper => 'ASSOCIER L\'APPAREIL';
+
+  @override
+  String numberOfProductsToImport(num count) {
+    return 'Nombre de produits à importer : $count';
+  }
+
+  @override
+  String get setUpYourTerminal => 'Configurez votre terminal';
+
+  @override
+  String get statusExpiresToday => 'Expire aujourd\'hui';
+
+  @override
+  String get accessDeniedNoPermission =>
+      'Accès refusé : vous n\'avez pas l\'autorisation d\'effectuer cette action.';
+
+  @override
+  String alreadyBookedDuringTime(String what, String name, String range) {
+    return 'Ce/cette $what est déjà réservé(e) sur ce créneau — $name ($range).';
+  }
+
+  @override
+  String get cannotBookInPast =>
+      'Impossible de créer une réservation dans le passé.';
+
+  @override
+  String changesRejected(num count, String details) {
+    return '$count modifications ont été rejetées : $details';
+  }
+
+  @override
+  String get couldNotFindActiveOrder =>
+      'Impossible de trouver une commande active.';
+
+  @override
+  String get couldNotOpenReservationOrder =>
+      'Impossible d\'ouvrir la commande de réservation. Elle a peut-être été terminée ou annulée.';
+
+  @override
+  String get couldNotReachServer =>
+      'Impossible de joindre le serveur. Vérifiez votre connexion Internet.';
+
+  @override
+  String get currencyDeleted => 'Devise supprimée';
+
+  @override
+  String get endTimeAfterStartTime =>
+      'L\'heure de fin doit être postérieure à l\'heure de début.';
+
+  @override
+  String failedToSaveField(String field) {
+    return 'Échec de l\'enregistrement de $field';
+  }
+
+  @override
+  String importFailed(String message) {
+    return 'Échec de l\'importation : $message';
+  }
+
+  @override
+  String get licenseInvalidBody =>
+      'La licence de ce terminal n\'a pas pu être vérifiée. Contactez le support pour rétablir le service.';
+
+  @override
+  String get licenseInvalidContactSupport =>
+      'La licence est invalide. Veuillez contacter le support.';
+
+  @override
+  String get licenseInvalidTitle => 'Licence invalide';
+
+  @override
+  String get orderNotFoundCompletedOrVoided =>
+      'Commande introuvable. Elle a peut-être été terminée ou annulée.';
+
+  @override
+  String pendingTapForStatus(num count) {
+    return '$count en attente — appuyez pour l’état de synchronisation';
+  }
+
+  @override
+  String printFailed(String message) {
+    return 'Échec de l\'impression : $message';
+  }
+
+  @override
+  String get reservationNoLongerActive =>
+      'Cette réservation n\'est plus active.';
+
+  @override
+  String get selectAtLeastOneTable =>
+      'Veuillez sélectionner au moins une table.';
+
+  @override
+  String get selectCompanyFirst => 'Sélectionnez d\'abord une société';
+
+  @override
+  String get staffMemberLower => 'membre du personnel';
+
+  @override
+  String get subscriptionInactiveBody =>
+      'Votre abonnement n\'est pas actif. Contactez votre prestataire pour le renouveler, puis réessayez la connexion pour continuer à vendre.';
+
+  @override
+  String get subscriptionInactiveTitle => 'Abonnement inactif';
+
+  @override
+  String get subscriptionStillInactive =>
+      'L\'abonnement est toujours inactif. Veuillez contacter votre prestataire.';
+
+  @override
+  String get syncComplete => 'Synchronisation terminée';
+
+  @override
+  String get syncFailed => 'Échec de la synchronisation';
+
+  @override
+  String syncFinishedWithFailures(String entities) {
+    return 'Synchronisation terminée, mais ces éléments ont échoué : $entities';
+  }
+
+  @override
+  String get syncStatusTooltip => 'État de synchronisation';
+
+  @override
+  String get tableNeedsBooking =>
+      'Cette table nécessite une réservation. Créez-en une, puis démarrez le service depuis celle-ci.';
+
+  @override
+  String get terminalNotLinked =>
+      'Ce terminal n\'est pas associé. Réassociez l\'appareil.';
+
+  @override
+  String get testMessageSent => 'Message de test envoyé.';
+
+  @override
+  String get testSignalSentToDrawer => 'Signal de test envoyé au tiroir-caisse';
+
+  @override
+  String get urlCopied => 'URL copiée';
 }

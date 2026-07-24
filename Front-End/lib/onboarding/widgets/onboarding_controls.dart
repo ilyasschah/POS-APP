@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 
 /// Persistent bottom bar: Back · page dots · Next/Get Started. Kept
 /// dependency-free (custom dots) rather than pulling in a page-indicator package.
@@ -37,7 +38,7 @@ class OnboardingControls extends StatelessWidget {
                       child: TextButton.icon(
                         onPressed: onBack,
                         icon: const Icon(Icons.chevron_left, size: 20),
-                        label: const Text('Back'),
+                        label: Text(AppLocalizations.of(context).back),
                       ),
                     ),
             ),
@@ -60,7 +61,9 @@ class OnboardingControls extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                   ),
                   onPressed: onNext,
-                  child: Text(isLastPage ? 'Get Started' : 'Next'),
+                  child: Text(isLastPage
+                      ? AppLocalizations.of(context).getStarted
+                      : AppLocalizations.of(context).paginationNext),
                 ),
               ),
             ),

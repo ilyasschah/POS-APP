@@ -384,7 +384,8 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
                       NavItem(
                         icon: Icons.grid_view,
                         label:
-                            settings[SettingKeys.tablesButtonLabel] ?? "Tables",
+                            settings[SettingKeys.tablesButtonLabel] ??
+                      AppLocalizations.of(context).tablesLabel,
                         isActive: selectedIndex == 4,
                         onTap: () => ref
                             .read(securityGuardProvider)

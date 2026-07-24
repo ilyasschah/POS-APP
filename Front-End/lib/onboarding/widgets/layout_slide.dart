@@ -49,7 +49,7 @@ class LayoutSlide extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Choose your menu layout',
+                AppLocalizations.of(context).chooseYourMenuLayout,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
@@ -57,8 +57,7 @@ class LayoutSlide extends ConsumerWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                'How products appear on the sales screen — change it anytime in '
-                'Settings.',
+                AppLocalizations.of(context).menuLayoutHint,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: cs.onSurfaceVariant,

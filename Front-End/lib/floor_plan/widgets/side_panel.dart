@@ -90,7 +90,9 @@ class _PanelHeader extends StatelessWidget {
           const Gap(10),
           Expanded(
             child: Text(
-              isEditMode ? 'Edit Floor Plan' : 'Options',
+              isEditMode
+                  ? AppLocalizations.of(context).editFloorPlan
+                  : AppLocalizations.of(context).options,
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
@@ -106,7 +108,9 @@ class _PanelHeader extends StatelessWidget {
               size: 18,
               color: cs.onSurfaceVariant,
             ),
-            tooltip: isEditMode ? 'Exit Edit Mode' : 'Close',
+            tooltip: isEditMode
+                ? AppLocalizations.of(context).exitEditMode
+                : AppLocalizations.of(context).actionClose,
             onPressed: onClose,
           ),
         ],
@@ -310,8 +314,8 @@ class _EditPanelState extends ConsumerState<_EditPanel> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(AppLocalizations.of(context).removeFloorPlan),
-        content: const Text(
-          'This will permanently remove the floor plan and all its tables. Continue?',
+        content: Text(
+          AppLocalizations.of(context).removeFloorPlanConfirm,
         ),
         actions: [
           TextButton(
@@ -416,7 +420,7 @@ class _TablePropertiesEditorState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Name',
+                AppLocalizations.of(context).fieldName,
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
@@ -466,7 +470,7 @@ class _TablePropertiesEditorState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Shape',
+                AppLocalizations.of(context).shapeLabel,
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
@@ -508,7 +512,7 @@ class _TablePropertiesEditorState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Size',
+                AppLocalizations.of(context).sizeLabel,
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
@@ -546,7 +550,7 @@ class _TablePropertiesEditorState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Position',
+                AppLocalizations.of(context).fieldPosition,
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,

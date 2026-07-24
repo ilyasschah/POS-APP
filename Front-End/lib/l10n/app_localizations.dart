@@ -9841,6 +9841,630 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'e.g. 1.08  (1 primary = X secondary)'**
   String get exchangeRateHint;
+
+  /// No description provided for @addServiceStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Service Status'**
+  String get addServiceStatus;
+
+  /// No description provided for @clearFavorites.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear favorites'**
+  String get clearFavorites;
+
+  /// No description provided for @editServiceStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Service Status'**
+  String get editServiceStatus;
+
+  /// No description provided for @hintTablesRooms.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Tables, Rooms'**
+  String get hintTablesRooms;
+
+  /// No description provided for @hintUnitsExample.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. pcs, kg, L'**
+  String get hintUnitsExample;
+
+  /// No description provided for @includeSubgroups.
+  ///
+  /// In en, this message translates to:
+  /// **'Include subgroups'**
+  String get includeSubgroups;
+
+  /// No description provided for @noReportsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No reports found.'**
+  String get noReportsFound;
+
+  /// No description provided for @noSettingsMatching.
+  ///
+  /// In en, this message translates to:
+  /// **'No settings found matching \'{query}\''**
+  String noSettingsMatching(String query);
+
+  /// No description provided for @notSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not set'**
+  String get notSet;
+
+  /// No description provided for @reportComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'This report is coming soon.'**
+  String get reportComingSoon;
+
+  /// No description provided for @scaleErrorWithMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Scale error: {message}'**
+  String scaleErrorWithMessage(String message);
+
+  /// No description provided for @selectBusinessPartnerInFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a business partner in the filter panel.'**
+  String get selectBusinessPartnerInFilter;
+
+  /// No description provided for @selectReportToViewOrPrint.
+  ///
+  /// In en, this message translates to:
+  /// **'Select report to view or print'**
+  String get selectReportToViewOrPrint;
+
+  /// No description provided for @versionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Version {version}'**
+  String versionLabel(String version);
+
+  /// No description provided for @ageRestrictionBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This product requires customers to be at least {age} years old.\n\nPlease confirm the customer meets this requirement before proceeding.'**
+  String ageRestrictionBody(num age);
+
+  /// No description provided for @bookingCompletedLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'This booking is completed and cannot be modified.'**
+  String get bookingCompletedLocked;
+
+  /// No description provided for @bookingPrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'Booking: '**
+  String get bookingPrefix;
+
+  /// No description provided for @branch.
+  ///
+  /// In en, this message translates to:
+  /// **'Branch'**
+  String get branch;
+
+  /// No description provided for @clockedInWithValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Clocked in · {value}'**
+  String clockedInWithValue(String value);
+
+  /// No description provided for @deleteBookingConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete booking for \"{name}\"?'**
+  String deleteBookingConfirm(String name);
+
+  /// No description provided for @editBooking.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Booking'**
+  String get editBooking;
+
+  /// No description provided for @errorLoadingDataWithMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading data: {message}'**
+  String errorLoadingDataWithMessage(String message);
+
+  /// No description provided for @errorLoadingSpaces.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading spaces: {message}'**
+  String errorLoadingSpaces(String message);
+
+  /// No description provided for @exitEditMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit Edit Mode'**
+  String get exitEditMode;
+
+  /// No description provided for @newBooking.
+  ///
+  /// In en, this message translates to:
+  /// **'New Booking'**
+  String get newBooking;
+
+  /// {space} is the venue's own word for its bookable unit (table / room / …), already lowercased by the caller.
+  ///
+  /// In en, this message translates to:
+  /// **'No free {space}s available'**
+  String noFreeSpacesAvailable(String space);
+
+  /// No description provided for @openOrderNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Order Now'**
+  String get openOrderNow;
+
+  /// No description provided for @removeFloorPlanConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'This will permanently remove the floor plan and all its tables. Continue?'**
+  String get removeFloorPlanConfirm;
+
+  /// No description provided for @sendingSignal.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending signal...'**
+  String get sendingSignal;
+
+  /// No description provided for @shapeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Shape'**
+  String get shapeLabel;
+
+  /// No description provided for @sizeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Size'**
+  String get sizeLabel;
+
+  /// No description provided for @staffPrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'  ·  Staff: '**
+  String get staffPrefix;
+
+  /// No description provided for @tableNumbered.
+  ///
+  /// In en, this message translates to:
+  /// **'Table #{number}'**
+  String tableNumbered(String number);
+
+  /// No description provided for @taxesForProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Taxes · {product}'**
+  String taxesForProduct(String product);
+
+  /// No description provided for @testDrawerOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Test Drawer Open'**
+  String get testDrawerOpen;
+
+  /// No description provided for @todayWithValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Today: {value}'**
+  String todayWithValue(String value);
+
+  /// No description provided for @updateStatusUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'UPDATE STATUS'**
+  String get updateStatusUpper;
+
+  /// No description provided for @voidReasonPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter or select void reason for voiding \"{number}\"'**
+  String voidReasonPrompt(String number);
+
+  /// No description provided for @accessDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Access Denied'**
+  String get accessDenied;
+
+  /// No description provided for @accessDeniedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You do not have permission to view this section.\nChoose another section from the menu, or ask an administrator for access.'**
+  String get accessDeniedBody;
+
+  /// No description provided for @checkingUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'CHECKING…'**
+  String get checkingUpper;
+
+  /// No description provided for @chooseYourMenuLayout.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose your menu layout'**
+  String get chooseYourMenuLayout;
+
+  /// No description provided for @connectingEllipsis.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting…'**
+  String get connectingEllipsis;
+
+  /// No description provided for @createFirstAdminFor.
+  ///
+  /// In en, this message translates to:
+  /// **'Create the first admin user for {company}'**
+  String createFirstAdminFor(String company);
+
+  /// No description provided for @discountAmountLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Discount  −{currency} {amount}'**
+  String discountAmountLine(String currency, String amount);
+
+  /// No description provided for @editCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Currency'**
+  String get editCurrency;
+
+  /// {resource} is the venue's own word for its bookable unit (Tables / Rooms / …), chosen during onboarding.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable {resource}'**
+  String enableResource(String resource);
+
+  /// No description provided for @errorLoadingRooms.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading rooms'**
+  String get errorLoadingRooms;
+
+  /// No description provided for @expiredOnDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Expired on {date}'**
+  String expiredOnDate(String date);
+
+  /// No description provided for @getGoingInThreeSteps.
+  ///
+  /// In en, this message translates to:
+  /// **'Get going in 3 steps'**
+  String get getGoingInThreeSteps;
+
+  /// No description provided for @managementPortal.
+  ///
+  /// In en, this message translates to:
+  /// **'Management Portal'**
+  String get managementPortal;
+
+  /// No description provided for @menuLayoutHint.
+  ///
+  /// In en, this message translates to:
+  /// **'How products appear on the sales screen — change it anytime in Settings.'**
+  String get menuLayoutHint;
+
+  /// No description provided for @noFloorPlans.
+  ///
+  /// In en, this message translates to:
+  /// **'No Floor Plans'**
+  String get noFloorPlans;
+
+  /// {resource} is the singular of the venue's bookable unit (table / room / …).
+  ///
+  /// In en, this message translates to:
+  /// **'Open an order for each {resource}.'**
+  String openOrderForEachResource(String resource);
+
+  /// No description provided for @poweredByPos.
+  ///
+  /// In en, this message translates to:
+  /// **'Powered by POS'**
+  String get poweredByPos;
+
+  /// No description provided for @reconnectingEllipsis.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnecting…'**
+  String get reconnectingEllipsis;
+
+  /// No description provided for @retryConnectionUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'RETRY CONNECTION'**
+  String get retryConnectionUpper;
+
+  /// Deliberately does NOT convert — silently converting g to kg would be a 1000x pricing bug. See PROJECT_DOCUMENTATION §4.6.
+  ///
+  /// In en, this message translates to:
+  /// **'Scale reads {scaleUnit} but this item is priced per {productUnit} — no conversion is applied.'**
+  String scaleUnitMismatch(String scaleUnit, String productUnit);
+
+  /// No description provided for @selectServiceTypeForOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Select service type for this order'**
+  String get selectServiceTypeForOrder;
+
+  /// No description provided for @tableHeldByReservation.
+  ///
+  /// In en, this message translates to:
+  /// **'This table is held by a reservation for \"{name}\".'**
+  String tableHeldByReservation(String name);
+
+  /// No description provided for @thankYou.
+  ///
+  /// In en, this message translates to:
+  /// **'Thank You!'**
+  String get thankYou;
+
+  /// No description provided for @weWillSwitchOnFeatures.
+  ///
+  /// In en, this message translates to:
+  /// **'We will switch on the right features for you.'**
+  String get weWillSwitchOnFeatures;
+
+  /// No description provided for @whatsYourBusiness.
+  ///
+  /// In en, this message translates to:
+  /// **'What\'s your business?'**
+  String get whatsYourBusiness;
+
+  /// No description provided for @changeThisLaterInSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'You can change all of this later in Settings.'**
+  String get changeThisLaterInSettings;
+
+  /// No description provided for @everythingBuiltIn.
+  ///
+  /// In en, this message translates to:
+  /// **'All of this is built in — no add-ons to buy.'**
+  String get everythingBuiltIn;
+
+  /// No description provided for @everythingYouGet.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything you get'**
+  String get everythingYouGet;
+
+  /// No description provided for @getStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Get Started'**
+  String get getStarted;
+
+  /// No description provided for @linkDeviceUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'LINK DEVICE'**
+  String get linkDeviceUpper;
+
+  /// No description provided for @numberOfProductsToImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Number of products to import: {count}'**
+  String numberOfProductsToImport(num count);
+
+  /// No description provided for @setUpYourTerminal.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up your terminal'**
+  String get setUpYourTerminal;
+
+  /// Subscription pill on the final day of the paid period — hours left, not yet expired. Distinct from statusGracePeriod, which means the period end has ALREADY passed and the terminal is running on Lease:GraceDays. With GraceDays=0 only this one can occur.
+  ///
+  /// In en, this message translates to:
+  /// **'Expires today'**
+  String get statusExpiresToday;
+
+  /// No description provided for @accessDeniedNoPermission.
+  ///
+  /// In en, this message translates to:
+  /// **'Access Denied: You do not have permission for this action.'**
+  String get accessDeniedNoPermission;
+
+  /// No description provided for @alreadyBookedDuringTime.
+  ///
+  /// In en, this message translates to:
+  /// **'This {what} is already booked during this time — {name} ({range}).'**
+  String alreadyBookedDuringTime(String what, String name, String range);
+
+  /// No description provided for @cannotBookInPast.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot create a booking in the past.'**
+  String get cannotBookInPast;
+
+  /// No description provided for @changesRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} changes were rejected: {details}'**
+  String changesRejected(num count, String details);
+
+  /// No description provided for @couldNotFindActiveOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not find active order.'**
+  String get couldNotFindActiveOrder;
+
+  /// No description provided for @couldNotOpenReservationOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open the reservation order. It may have been completed or voided.'**
+  String get couldNotOpenReservationOrder;
+
+  /// No description provided for @couldNotReachServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not reach the server. Check your internet connection.'**
+  String get couldNotReachServer;
+
+  /// No description provided for @currencyDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Currency deleted'**
+  String get currencyDeleted;
+
+  /// No description provided for @endTimeAfterStartTime.
+  ///
+  /// In en, this message translates to:
+  /// **'End time must be after start time.'**
+  String get endTimeAfterStartTime;
+
+  /// No description provided for @failedToSaveField.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save {field}'**
+  String failedToSaveField(String field);
+
+  /// No description provided for @importFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Import failed: {message}'**
+  String importFailed(String message);
+
+  /// No description provided for @licenseInvalidBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This terminal’s license could not be verified. Please contact support to restore service.'**
+  String get licenseInvalidBody;
+
+  /// No description provided for @licenseInvalidContactSupport.
+  ///
+  /// In en, this message translates to:
+  /// **'License is invalid. Please contact support.'**
+  String get licenseInvalidContactSupport;
+
+  /// No description provided for @licenseInvalidTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'License invalid'**
+  String get licenseInvalidTitle;
+
+  /// No description provided for @orderNotFoundCompletedOrVoided.
+  ///
+  /// In en, this message translates to:
+  /// **'Order not found. It may have been completed or voided.'**
+  String get orderNotFoundCompletedOrVoided;
+
+  /// No description provided for @pendingTapForStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} pending — tap for sync status'**
+  String pendingTapForStatus(num count);
+
+  /// No description provided for @printFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Print failed: {message}'**
+  String printFailed(String message);
+
+  /// No description provided for @reservationNoLongerActive.
+  ///
+  /// In en, this message translates to:
+  /// **'This reservation is no longer active.'**
+  String get reservationNoLongerActive;
+
+  /// No description provided for @selectAtLeastOneTable.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select at least one table.'**
+  String get selectAtLeastOneTable;
+
+  /// No description provided for @selectCompanyFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a company first'**
+  String get selectCompanyFirst;
+
+  /// Interpolated mid-sentence into alreadyBookedDuringTime, so it stays lowercase in languages that case-mark mid-sentence.
+  ///
+  /// In en, this message translates to:
+  /// **'staff member'**
+  String get staffMemberLower;
+
+  /// No description provided for @subscriptionInactiveBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your subscription is not active. Please contact your service provider to renew, then retry the connection to continue selling.'**
+  String get subscriptionInactiveBody;
+
+  /// No description provided for @subscriptionInactiveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription inactive'**
+  String get subscriptionInactiveTitle;
+
+  /// No description provided for @subscriptionStillInactive.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription is still inactive. Please contact your service provider.'**
+  String get subscriptionStillInactive;
+
+  /// No description provided for @syncComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync complete'**
+  String get syncComplete;
+
+  /// No description provided for @syncFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync failed'**
+  String get syncFailed;
+
+  /// No description provided for @syncFinishedWithFailures.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync finished, but these didn\'t sync: {entities}'**
+  String syncFinishedWithFailures(String entities);
+
+  /// No description provided for @syncStatusTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync status'**
+  String get syncStatusTooltip;
+
+  /// No description provided for @tableNeedsBooking.
+  ///
+  /// In en, this message translates to:
+  /// **'This table needs a booking. Create one, then start service from it.'**
+  String get tableNeedsBooking;
+
+  /// No description provided for @terminalNotLinked.
+  ///
+  /// In en, this message translates to:
+  /// **'This terminal is not linked. Re-link the device.'**
+  String get terminalNotLinked;
+
+  /// No description provided for @testMessageSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Test message sent.'**
+  String get testMessageSent;
+
+  /// No description provided for @testSignalSentToDrawer.
+  ///
+  /// In en, this message translates to:
+  /// **'Test signal sent to cash drawer'**
+  String get testSignalSentToDrawer;
+
+  /// No description provided for @urlCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'URL copied'**
+  String get urlCopied;
 }
 
 class _AppLocalizationsDelegate

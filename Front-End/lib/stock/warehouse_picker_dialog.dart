@@ -84,7 +84,7 @@ class _WarehousePickerDialogState extends State<_WarehousePickerDialog> {
               child: filtered.isEmpty
                   ? Center(
                       child: Text(
-                        'No warehouses found',
+                        AppLocalizations.of(context).noWarehousesFound,
                         style: TextStyle(
                           color: cs.onSurface.withValues(alpha: 0.5),
                         ),
@@ -139,7 +139,7 @@ class _WarehousePickerDialogState extends State<_WarehousePickerDialog> {
         TextButton(
           onPressed: () => Navigator.pop(context),
           child: Text(
-            'Cancel',
+            AppLocalizations.of(context).actionCancel,
             style: TextStyle(color: cs.onSurface.withValues(alpha: 0.6)),
           ),
         ),

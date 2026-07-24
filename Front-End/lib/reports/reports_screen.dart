@@ -938,11 +938,14 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       await Process.start('explorer.exe', [file.path]);
 
       if (mounted) {
-        showAppSnackbar(context, ref, 'Saved: ${file.path}');
+        showAppSnackbar(
+            context, ref, AppLocalizations.of(context).savedToPath(file.path));
       }
     } catch (e) {
       if (mounted) {
-        showAppSnackbar(context, ref, 'Export failed: $e', isError: true);
+        showAppSnackbar(context, ref,
+            AppLocalizations.of(context).exportFailed(e.toString()),
+            isError: true);
       }
     }
   }
@@ -1237,7 +1240,7 @@ class _HomeView extends StatelessWidget {
                 child: Row(
                   children: [
                     Text(
-                      'Select report to view or print',
+                      AppLocalizations.of(context).selectReportToViewOrPrint,
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
@@ -1299,7 +1302,7 @@ class _HomeView extends StatelessWidget {
                             Padding(
                               padding: const EdgeInsets.all(24),
                               child: Text(
-                                'No reports found.',
+                                AppLocalizations.of(context).noReportsFound,
                                 style: TextStyle(
                                   color: cs.onSurfaceVariant,
                                   fontSize: 13,
@@ -1336,9 +1339,9 @@ class _HomeView extends StatelessWidget {
                                   tapTargetSize:
                                       MaterialTapTargetSize.shrinkWrap,
                                 ),
-                                child: const Text(
-                                  'Clear favorites',
-                                  style: TextStyle(fontSize: 12),
+                                child: Text(
+                                  AppLocalizations.of(context).clearFavorites,
+                                  style: const TextStyle(fontSize: 12),
                                 ),
                               ),
                             ),
@@ -1416,13 +1419,18 @@ class _TabPdfView extends ConsumerWidget {
         icon: const Icon(Icons.save_alt),
         onPressed: (ctx, build, pageFormat) async {
           final messenger = ScaffoldMessenger.of(ctx);
+          // Resolved up front, for the same reason `messenger` is: the save
+          // dialog is an async gap and `ctx` may be gone by the time it returns.
+          final l10n = AppLocalizations.of(ctx);
           try {
             final bytes = await build(pageFormat);
             final path = await savePdfAs(bytes: bytes, suggestedName: baseName);
             if (path == null) return; // cancelled
-            messenger.showSnackBar(SnackBar(content: Text('Saved to $path')));
+            messenger
+                .showSnackBar(SnackBar(content: Text(l10n.savedToPath(path))));
           } catch (e) {
-            messenger.showSnackBar(SnackBar(content: Text('Save failed: $e')));
+            messenger.showSnackBar(
+                SnackBar(content: Text(l10n.saveFailed(e.toString()))));
           }
         },
       ),
@@ -1460,7 +1468,9 @@ class _TabPdfView extends ConsumerWidget {
       return async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text('Error: $e', style: TextStyle(color: cs.error)),
+          child: Text(
+              AppLocalizations.of(context).errorWithMessage(e.toString()),
+              style: TextStyle(color: cs.error)),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -1487,7 +1497,9 @@ class _TabPdfView extends ConsumerWidget {
       return async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text('Error: $e', style: TextStyle(color: cs.error)),
+          child: Text(
+              AppLocalizations.of(context).errorWithMessage(e.toString()),
+              style: TextStyle(color: cs.error)),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -1514,7 +1526,9 @@ class _TabPdfView extends ConsumerWidget {
       return async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text('Error: $e', style: TextStyle(color: cs.error)),
+          child: Text(
+              AppLocalizations.of(context).errorWithMessage(e.toString()),
+              style: TextStyle(color: cs.error)),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -1541,7 +1555,9 @@ class _TabPdfView extends ConsumerWidget {
       return async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text('Error: $e', style: TextStyle(color: cs.error)),
+          child: Text(
+              AppLocalizations.of(context).errorWithMessage(e.toString()),
+              style: TextStyle(color: cs.error)),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -1568,7 +1584,9 @@ class _TabPdfView extends ConsumerWidget {
       return async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text('Error: $e', style: TextStyle(color: cs.error)),
+          child: Text(
+              AppLocalizations.of(context).errorWithMessage(e.toString()),
+              style: TextStyle(color: cs.error)),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -1595,7 +1613,9 @@ class _TabPdfView extends ConsumerWidget {
       return async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text('Error: $e', style: TextStyle(color: cs.error)),
+          child: Text(
+              AppLocalizations.of(context).errorWithMessage(e.toString()),
+              style: TextStyle(color: cs.error)),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -1622,7 +1642,9 @@ class _TabPdfView extends ConsumerWidget {
       return async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text('Error: $e', style: TextStyle(color: cs.error)),
+          child: Text(
+              AppLocalizations.of(context).errorWithMessage(e.toString()),
+              style: TextStyle(color: cs.error)),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -1649,7 +1671,9 @@ class _TabPdfView extends ConsumerWidget {
       return async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text('Error: $e', style: TextStyle(color: cs.error)),
+          child: Text(
+              AppLocalizations.of(context).errorWithMessage(e.toString()),
+              style: TextStyle(color: cs.error)),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -1676,7 +1700,9 @@ class _TabPdfView extends ConsumerWidget {
       return async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text('Error: $e', style: TextStyle(color: cs.error)),
+          child: Text(
+              AppLocalizations.of(context).errorWithMessage(e.toString()),
+              style: TextStyle(color: cs.error)),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -1702,7 +1728,9 @@ class _TabPdfView extends ConsumerWidget {
       return async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text('Error: $e', style: TextStyle(color: cs.error)),
+          child: Text(
+              AppLocalizations.of(context).errorWithMessage(e.toString()),
+              style: TextStyle(color: cs.error)),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -1728,7 +1756,9 @@ class _TabPdfView extends ConsumerWidget {
       return async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text('Error: $e', style: TextStyle(color: cs.error)),
+          child: Text(
+              AppLocalizations.of(context).errorWithMessage(e.toString()),
+              style: TextStyle(color: cs.error)),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -1753,7 +1783,9 @@ class _TabPdfView extends ConsumerWidget {
       return async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text('Error: $e', style: TextStyle(color: cs.error)),
+          child: Text(
+              AppLocalizations.of(context).errorWithMessage(e.toString()),
+              style: TextStyle(color: cs.error)),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -1779,7 +1811,9 @@ class _TabPdfView extends ConsumerWidget {
       return async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text('Error: $e', style: TextStyle(color: cs.error)),
+          child: Text(
+              AppLocalizations.of(context).errorWithMessage(e.toString()),
+              style: TextStyle(color: cs.error)),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -1805,7 +1839,9 @@ class _TabPdfView extends ConsumerWidget {
       return async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text('Error: $e', style: TextStyle(color: cs.error)),
+          child: Text(
+              AppLocalizations.of(context).errorWithMessage(e.toString()),
+              style: TextStyle(color: cs.error)),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -1832,7 +1868,9 @@ class _TabPdfView extends ConsumerWidget {
       return async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text('Error: $e', style: TextStyle(color: cs.error)),
+          child: Text(
+              AppLocalizations.of(context).errorWithMessage(e.toString()),
+              style: TextStyle(color: cs.error)),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -1858,7 +1896,9 @@ class _TabPdfView extends ConsumerWidget {
       return async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text('Error: $e', style: TextStyle(color: cs.error)),
+          child: Text(
+              AppLocalizations.of(context).errorWithMessage(e.toString()),
+              style: TextStyle(color: cs.error)),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -1883,7 +1923,9 @@ class _TabPdfView extends ConsumerWidget {
       return async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text('Error: $e', style: TextStyle(color: cs.error)),
+          child: Text(
+              AppLocalizations.of(context).errorWithMessage(e.toString()),
+              style: TextStyle(color: cs.error)),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -1909,7 +1951,9 @@ class _TabPdfView extends ConsumerWidget {
       return async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text('Error: $e', style: TextStyle(color: cs.error)),
+          child: Text(
+              AppLocalizations.of(context).errorWithMessage(e.toString()),
+              style: TextStyle(color: cs.error)),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -1936,7 +1980,9 @@ class _TabPdfView extends ConsumerWidget {
       return async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text('Error: $e', style: TextStyle(color: cs.error)),
+          child: Text(
+              AppLocalizations.of(context).errorWithMessage(e.toString()),
+              style: TextStyle(color: cs.error)),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -1962,7 +2008,9 @@ class _TabPdfView extends ConsumerWidget {
       return async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text('Error: $e', style: TextStyle(color: cs.error)),
+          child: Text(
+              AppLocalizations.of(context).errorWithMessage(e.toString()),
+              style: TextStyle(color: cs.error)),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -1986,7 +2034,9 @@ class _TabPdfView extends ConsumerWidget {
       return async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text('Error: $e', style: TextStyle(color: cs.error)),
+          child: Text(
+              AppLocalizations.of(context).errorWithMessage(e.toString()),
+              style: TextStyle(color: cs.error)),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2012,7 +2062,9 @@ class _TabPdfView extends ConsumerWidget {
       return async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text('Error: $e', style: TextStyle(color: cs.error)),
+          child: Text(
+              AppLocalizations.of(context).errorWithMessage(e.toString()),
+              style: TextStyle(color: cs.error)),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2039,7 +2091,9 @@ class _TabPdfView extends ConsumerWidget {
       return async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text('Error: $e', style: TextStyle(color: cs.error)),
+          child: Text(
+              AppLocalizations.of(context).errorWithMessage(e.toString()),
+              style: TextStyle(color: cs.error)),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2066,7 +2120,9 @@ class _TabPdfView extends ConsumerWidget {
       return async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text('Error: $e', style: TextStyle(color: cs.error)),
+          child: Text(
+              AppLocalizations.of(context).errorWithMessage(e.toString()),
+              style: TextStyle(color: cs.error)),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2092,7 +2148,9 @@ class _TabPdfView extends ConsumerWidget {
       return async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text('Error: $e', style: TextStyle(color: cs.error)),
+          child: Text(
+              AppLocalizations.of(context).errorWithMessage(e.toString()),
+              style: TextStyle(color: cs.error)),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2119,7 +2177,9 @@ class _TabPdfView extends ConsumerWidget {
       return async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text('Error: $e', style: TextStyle(color: cs.error)),
+          child: Text(
+              AppLocalizations.of(context).errorWithMessage(e.toString()),
+              style: TextStyle(color: cs.error)),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2146,7 +2206,9 @@ class _TabPdfView extends ConsumerWidget {
       return async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text('Error: $e', style: TextStyle(color: cs.error)),
+          child: Text(
+              AppLocalizations.of(context).errorWithMessage(e.toString()),
+              style: TextStyle(color: cs.error)),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2173,7 +2235,9 @@ class _TabPdfView extends ConsumerWidget {
       return async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text('Error: $e', style: TextStyle(color: cs.error)),
+          child: Text(
+              AppLocalizations.of(context).errorWithMessage(e.toString()),
+              style: TextStyle(color: cs.error)),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2200,7 +2264,9 @@ class _TabPdfView extends ConsumerWidget {
       return async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text('Error: $e', style: TextStyle(color: cs.error)),
+          child: Text(
+              AppLocalizations.of(context).errorWithMessage(e.toString()),
+              style: TextStyle(color: cs.error)),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2227,7 +2293,9 @@ class _TabPdfView extends ConsumerWidget {
       return async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text('Error: $e', style: TextStyle(color: cs.error)),
+          child: Text(
+              AppLocalizations.of(context).errorWithMessage(e.toString()),
+              style: TextStyle(color: cs.error)),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2254,7 +2322,9 @@ class _TabPdfView extends ConsumerWidget {
       return async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text('Error: $e', style: TextStyle(color: cs.error)),
+          child: Text(
+              AppLocalizations.of(context).errorWithMessage(e.toString()),
+              style: TextStyle(color: cs.error)),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2280,7 +2350,9 @@ class _TabPdfView extends ConsumerWidget {
       return async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text('Error: $e', style: TextStyle(color: cs.error)),
+          child: Text(
+              AppLocalizations.of(context).errorWithMessage(e.toString()),
+              style: TextStyle(color: cs.error)),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2306,7 +2378,9 @@ class _TabPdfView extends ConsumerWidget {
       return async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text('Error: $e', style: TextStyle(color: cs.error)),
+          child: Text(
+              AppLocalizations.of(context).errorWithMessage(e.toString()),
+              style: TextStyle(color: cs.error)),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2332,7 +2406,9 @@ class _TabPdfView extends ConsumerWidget {
       return async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text('Error: $e', style: TextStyle(color: cs.error)),
+          child: Text(
+              AppLocalizations.of(context).errorWithMessage(e.toString()),
+              style: TextStyle(color: cs.error)),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2358,7 +2434,9 @@ class _TabPdfView extends ConsumerWidget {
       return async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text('Error: $e', style: TextStyle(color: cs.error)),
+          child: Text(
+              AppLocalizations.of(context).errorWithMessage(e.toString()),
+              style: TextStyle(color: cs.error)),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2383,7 +2461,7 @@ class _TabPdfView extends ConsumerWidget {
       if (tab.filter.customerId == null) {
         return Center(
           child: Text(
-            'Please select a business partner in the filter panel.',
+            AppLocalizations.of(context).selectBusinessPartnerInFilter,
             style: TextStyle(color: cs.onSurfaceVariant),
           ),
         );
@@ -2392,7 +2470,9 @@ class _TabPdfView extends ConsumerWidget {
       return async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text('Error: $e', style: TextStyle(color: cs.error)),
+          child: Text(
+              AppLocalizations.of(context).errorWithMessage(e.toString()),
+              style: TextStyle(color: cs.error)),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2414,7 +2494,7 @@ class _TabPdfView extends ConsumerWidget {
 
     return Center(
       child: Text(
-        'This report is coming soon.',
+        AppLocalizations.of(context).reportComingSoon,
         style: TextStyle(color: cs.onSurfaceVariant),
       ),
     );
@@ -7485,7 +7565,11 @@ class _FilterPanel extends ConsumerWidget {
                     return DropdownMenuItem(
                       value: u.id,
                       child: Text(
-                        name.isEmpty ? u.username ?? 'User ${u.id}' : name,
+                        name.isEmpty
+                            ? u.username ??
+                                AppLocalizations.of(context)
+                                    .userNumbered('${u.id}')
+                            : name,
                         overflow: TextOverflow.ellipsis,
                       ),
                     );
@@ -7555,7 +7639,7 @@ class _FilterPanel extends ConsumerWidget {
                 dense: true,
                 contentPadding: EdgeInsets.zero,
                 title: Text(
-                  'Include subgroups',
+                  AppLocalizations.of(context).includeSubgroups,
                   style: TextStyle(fontSize: 13, color: cs.onSurface),
                 ),
                 value: filter.includeSubgroups,

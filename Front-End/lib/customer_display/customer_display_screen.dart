@@ -174,7 +174,9 @@ class _CustomerDisplayScreenState extends State<CustomerDisplayScreen> {
           // brief reconnect — avoids flashing a hard "disconnect" screen.
           if (_ws == null)
             _ReconnectBadge(
-              label: _everConnected ? 'Reconnecting…' : 'Connecting…',
+              label: _everConnected
+                ? AppLocalizations.of(context).reconnectingEllipsis
+                : AppLocalizations.of(context).connectingEllipsis,
               onTap: _connect,
             ),
         ],
@@ -413,8 +415,8 @@ class _ItemRow extends StatelessWidget {
                 ),
                 if (hasDisc)
                   Text(
-                    'Discount  −$currency '
-                    '${item.discount.toStringAsFixed(2)}',
+                    AppLocalizations.of(context).discountAmountLine(
+                        currency, item.discount.toStringAsFixed(2)),
                     style: const TextStyle(color: _kGreen, fontSize: 11),
                   ),
               ],
@@ -542,11 +544,11 @@ class _TotalsBlock extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 6),
-          const Align(
-            alignment: Alignment.centerRight,
+          Align(
+            alignment: AlignmentDirectional.centerEnd,
             child: Text(
-              'Powered by POS',
-              style: TextStyle(color: Color(0xFF334155), fontSize: 10),
+              AppLocalizations.of(context).poweredByPos,
+              style: const TextStyle(color: Color(0xFF334155), fontSize: 10),
             ),
           ),
         ],
@@ -607,9 +609,9 @@ class _SuccessView extends StatelessWidget {
             children: [
               const _FallbackCheck(),
               const SizedBox(height: 8),
-              const Text(
-                'Thank You!',
-                style: TextStyle(
+              Text(
+                AppLocalizations.of(context).thankYou,
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 52,
                   fontWeight: FontWeight.w900,

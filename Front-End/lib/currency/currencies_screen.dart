@@ -62,7 +62,8 @@ class CurrenciesScreen extends ConsumerWidget {
           .delete('/Currencies/Delete', queryParameters: {'id': currency.id});
       ref.invalidate(allCurrenciesProvider);
       if (context.mounted) {
-        showAppSnackbar(context, ref, "Currency deleted");
+        showAppSnackbar(
+            context, ref, AppLocalizations.of(context).currencyDeleted);
       }
     } catch (e) {
       if (context.mounted) {
@@ -222,7 +223,10 @@ class _CurrencyEditorDialogState extends State<_CurrencyEditorDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      title: Text(_isEditing ? "Edit Currency" : "New Currency",
+      title: Text(
+          _isEditing
+              ? AppLocalizations.of(context).editCurrency
+              : AppLocalizations.of(context).newCurrency,
           style: const TextStyle(fontWeight: FontWeight.bold)),
       content: SizedBox(
         width: 350,
@@ -291,7 +295,9 @@ class _CurrencyEditorDialogState extends State<_CurrencyEditorDialog> {
             style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.indigo, foregroundColor: Colors.white),
             onPressed: _submit,
-            child: Text(_isEditing ? "Update" : "Create"),
+            child: Text(_isEditing
+              ? AppLocalizations.of(context).actionUpdate
+              : AppLocalizations.of(context).actionCreate),
           ),
       ],
     );

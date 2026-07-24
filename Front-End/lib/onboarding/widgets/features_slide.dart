@@ -58,14 +58,14 @@ class FeaturesSlide extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            'Everything you get',
+            AppLocalizations.of(context).everythingYouGet,
             textAlign: TextAlign.center,
             style: theme.textTheme.headlineSmall
                 ?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           Text(
-            'All of this is built in — no add-ons to buy.',
+            AppLocalizations.of(context).everythingBuiltIn,
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium
                 ?.copyWith(color: theme.colorScheme.onSurfaceVariant),

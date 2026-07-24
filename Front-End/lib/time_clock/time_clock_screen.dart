@@ -466,7 +466,7 @@ class TotalHoursBadge extends ConsumerWidget {
               const SizedBox(width: 6),
               Flexible(
                 child: Text(
-                  'Today: $label',
+                  AppLocalizations.of(context).todayWithValue(label),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -551,7 +551,7 @@ class _TimeClockStatusChipState extends ConsumerState<TimeClockStatusChip> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Clocked in · $label',
+                  AppLocalizations.of(context).clockedInWithValue(label),
                   style: TextStyle(
                     fontSize: 12,
                     color: color,

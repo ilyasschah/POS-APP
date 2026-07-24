@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -36,7 +37,7 @@ class _SubscriptionBlockedScreenState
       if (companyId == null) {
         if (mounted) {
           showAppSnackbar(context, ref,
-              'This terminal is not linked. Re-link the device.',
+              AppLocalizations.of(context).terminalNotLinked,
               isError: true);
         }
         return;
@@ -49,7 +50,7 @@ class _SubscriptionBlockedScreenState
 
       if (result == null) {
         showAppSnackbar(context, ref,
-            'Could not reach the server. Check your internet connection.',
+            AppLocalizations.of(context).couldNotReachServer,
             isError: true);
         return;
       }
@@ -67,8 +68,8 @@ class _SubscriptionBlockedScreenState
         context,
         ref,
         result.state == LicenseState.tampered
-            ? 'License is invalid. Please contact support.'
-            : 'Subscription is still inactive. Please contact your service provider.',
+            ? AppLocalizations.of(context).licenseInvalidContactSupport
+            : AppLocalizations.of(context).subscriptionStillInactive,
         isError: true,
       );
     } finally {
@@ -81,10 +82,11 @@ class _SubscriptionBlockedScreenState
     final cs = Theme.of(context).colorScheme;
     final validUntil = widget.evaluation.validUntil;
 
-    final title = _tampered ? 'License invalid' : 'Subscription inactive';
-    final message = _tampered
-        ? 'This terminal’s license could not be verified. Please contact support to restore service.'
-        : 'Your subscription is not active. Please contact your service provider to renew, then retry the connection to continue selling.';
+    final l10n = AppLocalizations.of(context);
+    final title =
+        _tampered ? l10n.licenseInvalidTitle : l10n.subscriptionInactiveTitle;
+    final message =
+        _tampered ? l10n.licenseInvalidBody : l10n.subscriptionInactiveBody;
 
     return Scaffold(
       body: Center(
@@ -151,7 +153,8 @@ class _SubscriptionBlockedScreenState
                             size: 18, color: cs.onSurfaceVariant),
                         const Gap(8),
                         Text(
-                          'Expired on ${DateFormat('d MMM yyyy').format(validUntil.toLocal())}',
+                          AppLocalizations.of(context).expiredOnDate(
+                    DateFormat('d MMM yyyy').format(validUntil.toLocal())),
                           style: TextStyle(
                             color: cs.onSurface,
                             fontWeight: FontWeight.w600,
@@ -181,7 +184,9 @@ class _SubscriptionBlockedScreenState
                         )
                       : Icon(PhosphorIcons.arrowsClockwise()),
                   label: Text(
-                    _checking ? 'CHECKING…' : 'RETRY CONNECTION',
+                    _checking
+                  ? AppLocalizations.of(context).checkingUpper
+                  : AppLocalizations.of(context).retryConnectionUpper,
                     style: GoogleFonts.inter(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,

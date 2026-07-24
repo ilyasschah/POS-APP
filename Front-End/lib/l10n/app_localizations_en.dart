@@ -5382,4 +5382,391 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get exchangeRateHint => 'e.g. 1.08  (1 primary = X secondary)';
+
+  @override
+  String get addServiceStatus => 'Add Service Status';
+
+  @override
+  String get clearFavorites => 'Clear favorites';
+
+  @override
+  String get editServiceStatus => 'Edit Service Status';
+
+  @override
+  String get hintTablesRooms => 'e.g. Tables, Rooms';
+
+  @override
+  String get hintUnitsExample => 'e.g. pcs, kg, L';
+
+  @override
+  String get includeSubgroups => 'Include subgroups';
+
+  @override
+  String get noReportsFound => 'No reports found.';
+
+  @override
+  String noSettingsMatching(String query) {
+    return 'No settings found matching \'$query\'';
+  }
+
+  @override
+  String get notSet => 'Not set';
+
+  @override
+  String get reportComingSoon => 'This report is coming soon.';
+
+  @override
+  String scaleErrorWithMessage(String message) {
+    return 'Scale error: $message';
+  }
+
+  @override
+  String get selectBusinessPartnerInFilter =>
+      'Please select a business partner in the filter panel.';
+
+  @override
+  String get selectReportToViewOrPrint => 'Select report to view or print';
+
+  @override
+  String versionLabel(String version) {
+    return 'Version $version';
+  }
+
+  @override
+  String ageRestrictionBody(num age) {
+    return 'This product requires customers to be at least $age years old.\n\nPlease confirm the customer meets this requirement before proceeding.';
+  }
+
+  @override
+  String get bookingCompletedLocked =>
+      'This booking is completed and cannot be modified.';
+
+  @override
+  String get bookingPrefix => 'Booking: ';
+
+  @override
+  String get branch => 'Branch';
+
+  @override
+  String clockedInWithValue(String value) {
+    return 'Clocked in · $value';
+  }
+
+  @override
+  String deleteBookingConfirm(String name) {
+    return 'Delete booking for \"$name\"?';
+  }
+
+  @override
+  String get editBooking => 'Edit Booking';
+
+  @override
+  String errorLoadingDataWithMessage(String message) {
+    return 'Error loading data: $message';
+  }
+
+  @override
+  String errorLoadingSpaces(String message) {
+    return 'Error loading spaces: $message';
+  }
+
+  @override
+  String get exitEditMode => 'Exit Edit Mode';
+
+  @override
+  String get newBooking => 'New Booking';
+
+  @override
+  String noFreeSpacesAvailable(String space) {
+    return 'No free ${space}s available';
+  }
+
+  @override
+  String get openOrderNow => 'Open Order Now';
+
+  @override
+  String get removeFloorPlanConfirm =>
+      'This will permanently remove the floor plan and all its tables. Continue?';
+
+  @override
+  String get sendingSignal => 'Sending signal...';
+
+  @override
+  String get shapeLabel => 'Shape';
+
+  @override
+  String get sizeLabel => 'Size';
+
+  @override
+  String get staffPrefix => '  ·  Staff: ';
+
+  @override
+  String tableNumbered(String number) {
+    return 'Table #$number';
+  }
+
+  @override
+  String taxesForProduct(String product) {
+    return 'Taxes · $product';
+  }
+
+  @override
+  String get testDrawerOpen => 'Test Drawer Open';
+
+  @override
+  String todayWithValue(String value) {
+    return 'Today: $value';
+  }
+
+  @override
+  String get updateStatusUpper => 'UPDATE STATUS';
+
+  @override
+  String voidReasonPrompt(String number) {
+    return 'Enter or select void reason for voiding \"$number\"';
+  }
+
+  @override
+  String get accessDenied => 'Access Denied';
+
+  @override
+  String get accessDeniedBody =>
+      'You do not have permission to view this section.\nChoose another section from the menu, or ask an administrator for access.';
+
+  @override
+  String get checkingUpper => 'CHECKING…';
+
+  @override
+  String get chooseYourMenuLayout => 'Choose your menu layout';
+
+  @override
+  String get connectingEllipsis => 'Connecting…';
+
+  @override
+  String createFirstAdminFor(String company) {
+    return 'Create the first admin user for $company';
+  }
+
+  @override
+  String discountAmountLine(String currency, String amount) {
+    return 'Discount  −$currency $amount';
+  }
+
+  @override
+  String get editCurrency => 'Edit Currency';
+
+  @override
+  String enableResource(String resource) {
+    return 'Enable $resource';
+  }
+
+  @override
+  String get errorLoadingRooms => 'Error loading rooms';
+
+  @override
+  String expiredOnDate(String date) {
+    return 'Expired on $date';
+  }
+
+  @override
+  String get getGoingInThreeSteps => 'Get going in 3 steps';
+
+  @override
+  String get managementPortal => 'Management Portal';
+
+  @override
+  String get menuLayoutHint =>
+      'How products appear on the sales screen — change it anytime in Settings.';
+
+  @override
+  String get noFloorPlans => 'No Floor Plans';
+
+  @override
+  String openOrderForEachResource(String resource) {
+    return 'Open an order for each $resource.';
+  }
+
+  @override
+  String get poweredByPos => 'Powered by POS';
+
+  @override
+  String get reconnectingEllipsis => 'Reconnecting…';
+
+  @override
+  String get retryConnectionUpper => 'RETRY CONNECTION';
+
+  @override
+  String scaleUnitMismatch(String scaleUnit, String productUnit) {
+    return 'Scale reads $scaleUnit but this item is priced per $productUnit — no conversion is applied.';
+  }
+
+  @override
+  String get selectServiceTypeForOrder => 'Select service type for this order';
+
+  @override
+  String tableHeldByReservation(String name) {
+    return 'This table is held by a reservation for \"$name\".';
+  }
+
+  @override
+  String get thankYou => 'Thank You!';
+
+  @override
+  String get weWillSwitchOnFeatures =>
+      'We will switch on the right features for you.';
+
+  @override
+  String get whatsYourBusiness => 'What\'s your business?';
+
+  @override
+  String get changeThisLaterInSettings =>
+      'You can change all of this later in Settings.';
+
+  @override
+  String get everythingBuiltIn =>
+      'All of this is built in — no add-ons to buy.';
+
+  @override
+  String get everythingYouGet => 'Everything you get';
+
+  @override
+  String get getStarted => 'Get Started';
+
+  @override
+  String get linkDeviceUpper => 'LINK DEVICE';
+
+  @override
+  String numberOfProductsToImport(num count) {
+    return 'Number of products to import: $count';
+  }
+
+  @override
+  String get setUpYourTerminal => 'Set up your terminal';
+
+  @override
+  String get statusExpiresToday => 'Expires today';
+
+  @override
+  String get accessDeniedNoPermission =>
+      'Access Denied: You do not have permission for this action.';
+
+  @override
+  String alreadyBookedDuringTime(String what, String name, String range) {
+    return 'This $what is already booked during this time — $name ($range).';
+  }
+
+  @override
+  String get cannotBookInPast => 'Cannot create a booking in the past.';
+
+  @override
+  String changesRejected(num count, String details) {
+    return '$count changes were rejected: $details';
+  }
+
+  @override
+  String get couldNotFindActiveOrder => 'Could not find active order.';
+
+  @override
+  String get couldNotOpenReservationOrder =>
+      'Could not open the reservation order. It may have been completed or voided.';
+
+  @override
+  String get couldNotReachServer =>
+      'Could not reach the server. Check your internet connection.';
+
+  @override
+  String get currencyDeleted => 'Currency deleted';
+
+  @override
+  String get endTimeAfterStartTime => 'End time must be after start time.';
+
+  @override
+  String failedToSaveField(String field) {
+    return 'Failed to save $field';
+  }
+
+  @override
+  String importFailed(String message) {
+    return 'Import failed: $message';
+  }
+
+  @override
+  String get licenseInvalidBody =>
+      'This terminal’s license could not be verified. Please contact support to restore service.';
+
+  @override
+  String get licenseInvalidContactSupport =>
+      'License is invalid. Please contact support.';
+
+  @override
+  String get licenseInvalidTitle => 'License invalid';
+
+  @override
+  String get orderNotFoundCompletedOrVoided =>
+      'Order not found. It may have been completed or voided.';
+
+  @override
+  String pendingTapForStatus(num count) {
+    return '$count pending — tap for sync status';
+  }
+
+  @override
+  String printFailed(String message) {
+    return 'Print failed: $message';
+  }
+
+  @override
+  String get reservationNoLongerActive =>
+      'This reservation is no longer active.';
+
+  @override
+  String get selectAtLeastOneTable => 'Please select at least one table.';
+
+  @override
+  String get selectCompanyFirst => 'Select a company first';
+
+  @override
+  String get staffMemberLower => 'staff member';
+
+  @override
+  String get subscriptionInactiveBody =>
+      'Your subscription is not active. Please contact your service provider to renew, then retry the connection to continue selling.';
+
+  @override
+  String get subscriptionInactiveTitle => 'Subscription inactive';
+
+  @override
+  String get subscriptionStillInactive =>
+      'Subscription is still inactive. Please contact your service provider.';
+
+  @override
+  String get syncComplete => 'Sync complete';
+
+  @override
+  String get syncFailed => 'Sync failed';
+
+  @override
+  String syncFinishedWithFailures(String entities) {
+    return 'Sync finished, but these didn\'t sync: $entities';
+  }
+
+  @override
+  String get syncStatusTooltip => 'Sync status';
+
+  @override
+  String get tableNeedsBooking =>
+      'This table needs a booking. Create one, then start service from it.';
+
+  @override
+  String get terminalNotLinked =>
+      'This terminal is not linked. Re-link the device.';
+
+  @override
+  String get testMessageSent => 'Test message sent.';
+
+  @override
+  String get testSignalSentToDrawer => 'Test signal sent to cash drawer';
+
+  @override
+  String get urlCopied => 'URL copied';
 }

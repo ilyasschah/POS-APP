@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/scale/scale_service.dart';
@@ -134,7 +135,7 @@ class _QuantityKeypadDialogState extends ConsumerState<_QuantityKeypadDialog> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Change quantity',
+                AppLocalizations.of(context).setChangeQuantity,
                 style: tt.titleLarge?.copyWith(
                   color: cs.onSurface,
                   fontWeight: FontWeight.w600,
@@ -318,7 +319,10 @@ class _ScaleWeightBar extends ConsumerWidget {
           color: context.dangerColor,
           icon: Icons.error_outline,
           child: Text(
-            error is ScaleException ? error.message : 'Scale error: $error',
+            error is ScaleException
+                ? error.message
+                : AppLocalizations.of(context)
+                    .scaleErrorWithMessage(error.toString()),
             style: TextStyle(color: context.dangerColor, fontSize: 12),
           ),
         ),
@@ -335,7 +339,7 @@ class _ScaleWeightBar extends ConsumerWidget {
           color: Theme.of(context).colorScheme.onSurfaceVariant,
           icon: Icons.hourglass_empty,
           child: Text(
-            'Waiting for the scale…',
+            AppLocalizations.of(context).waitingForScale,
             style: TextStyle(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontSize: 12,
@@ -384,7 +388,7 @@ class _ScaleWeightBar extends ConsumerWidget {
                 minimumSize: const Size(0, 44),
                 padding: const EdgeInsets.symmetric(horizontal: 16),
               ),
-              child: const Text('Use weight'),
+              child: Text(AppLocalizations.of(context).useWeight),
             ),
           ],
         ),
@@ -392,8 +396,10 @@ class _ScaleWeightBar extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.only(top: 4),
             child: Text(
-              'Scale reads $scaleUnit but this item is priced per '
-              '$productUnit — no conversion is applied.',
+              AppLocalizations.of(context)
+                  // `mismatch` already proved both are non-null; the field is
+                  // public so the analyzer can't promote it.
+                  .scaleUnitMismatch(scaleUnit, productUnit!),
               style: TextStyle(color: context.warningColor, fontSize: 11),
             ),
           ),
