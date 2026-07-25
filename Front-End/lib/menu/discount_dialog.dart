@@ -329,14 +329,18 @@ class _DiscountDialogState extends ConsumerState<DiscountDialog>
 
     return Dialog(
       backgroundColor: Theme.of(context).cardColor,
+      // Tighter insets + a scrollable body so the keypad fits (and, at worst,
+      // scrolls instead of overflowing) on a short 7" screen.
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 360),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
               Text(
                 AppLocalizations.of(context).applyDiscount,
                 style: tt.titleLarge?.copyWith(
@@ -422,6 +426,7 @@ class _DiscountDialogState extends ConsumerState<DiscountDialog>
                 ),
               ),
             ],
+          ),
           ),
         ),
       ),

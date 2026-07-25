@@ -18,6 +18,7 @@ import 'package:pos_app/settings/local_ui_prefs.dart';
 import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/app_settings/app_settings_provider.dart';
 import 'package:pos_app/core/pos_virtual_keyboard.dart';
+import 'package:pos_app/core/app_theme.dart';
 import 'package:pos_app/core/device_theme_mode_provider.dart';
 import 'package:pos_app/onboarding/onboarding_prefs.dart';
 import 'package:pos_app/onboarding/onboarding_screen.dart';
@@ -51,103 +52,6 @@ void main() async {
       child: const MyApp(),
     ),
   );
-}
-
-ThemeData _buildTheme(String mode, Color seed) {
-  switch (mode) {
-    case 'light':
-      return ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: seed,
-          brightness: Brightness.light,
-        ),
-      );
-
-    case 'dimmed':
-      final cs = ColorScheme.fromSeed(
-        seedColor: seed,
-        brightness: Brightness.dark,
-      );
-      return ThemeData(
-        useMaterial3: true,
-        colorScheme: cs.copyWith(
-          surface: const Color(0xFF1C2333),
-          surfaceContainerLowest: const Color(0xFF111927),
-          surfaceContainerLow: const Color(0xFF1A2030),
-          surfaceContainer: const Color(0xFF202736),
-          surfaceContainerHigh: const Color(0xFF263040),
-          surfaceContainerHighest: const Color(0xFF283045),
-        ),
-        scaffoldBackgroundColor: const Color(0xFF15202B),
-        cardColor: const Color(0xFF1C2333),
-      );
-
-    case 'night':
-      final cs = ColorScheme.fromSeed(
-        seedColor: seed,
-        brightness: Brightness.dark,
-      );
-      return ThemeData(
-        useMaterial3: true,
-        colorScheme: cs.copyWith(
-          surface: const Color(0xFF080808),
-          surfaceContainerLowest: Colors.black,
-          surfaceContainerLow: const Color(0xFF0D0D0D),
-          surfaceContainer: const Color(0xFF111111),
-          surfaceContainerHigh: const Color(0xFF161616),
-          surfaceContainerHighest: const Color(0xFF1C1C1C),
-          onSurface: Colors.white,
-          onSurfaceVariant: const Color(0xFFCCCCCC),
-        ),
-        scaffoldBackgroundColor: Colors.black,
-        cardColor: const Color(0xFF0D0D0D),
-      );
-
-    case 'gray':
-      final cs = ColorScheme.fromSeed(
-        seedColor: const Color(0xFF808080),
-        brightness: Brightness.dark,
-      ).copyWith(primary: seed, secondary: seed, tertiary: seed);
-      return ThemeData(
-        useMaterial3: true,
-        colorScheme: cs,
-        scaffoldBackgroundColor: const Color(0xFF1A1A1A),
-        cardColor: const Color(0xFF262626),
-      );
-
-    case 'high_contrast':
-      final cs = ColorScheme.fromSeed(
-        seedColor: seed,
-        brightness: Brightness.dark,
-      );
-      return ThemeData(
-        useMaterial3: true,
-        colorScheme: cs.copyWith(
-          surface: Colors.black,
-          surfaceContainerLowest: Colors.black,
-          surfaceContainerLow: const Color(0xFF0A0A0A),
-          surfaceContainer: const Color(0xFF0F0F0F),
-          surfaceContainerHigh: const Color(0xFF1A1A1A),
-          surfaceContainerHighest: const Color(0xFF222222),
-          onSurface: Colors.white,
-          onSurfaceVariant: const Color(0xFFE0E0E0),
-          outline: const Color(0xFF777777),
-          outlineVariant: const Color(0xFF444444),
-        ),
-        scaffoldBackgroundColor: Colors.black,
-        cardColor: const Color(0xFF111111),
-      );
-
-    default: // 'dark'
-      return ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: seed,
-          brightness: Brightness.dark,
-        ),
-      );
-  }
 }
 
 class MyApp extends ConsumerStatefulWidget {
@@ -205,16 +109,6 @@ class _MyAppState extends ConsumerState<MyApp> {
     return _BootDecision(true, license);
   }
 
-  Color _parseAccentColor(String? hex) {
-    if (hex == null) return Colors.blue;
-    try {
-      final clean = hex.replaceAll('#', '');
-      return Color(int.parse('FF$clean', radix: 16));
-    } catch (_) {
-      return Colors.blue;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final settings = ref.watch(appSettingsProvider);
@@ -244,8 +138,8 @@ class _MyAppState extends ConsumerState<MyApp> {
         settings[SettingKeys.themeMode] ??
         'dark';
 
-    final seed = _parseAccentColor(savedHex);
-    final themeData = _buildTheme(themeString, seed);
+    final seed = parseAccentColor(savedHex);
+    final themeData = buildAppTheme(themeString, seed);
 
     // Global font scale — a per-terminal preference stored locally (NOT cloud
     // synced), so adjusting it on one POS never changes another. The notifier

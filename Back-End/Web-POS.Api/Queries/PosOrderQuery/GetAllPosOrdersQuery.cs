@@ -33,7 +33,23 @@ namespace Api.Queries.PosOrderQuery
             public async Task<List<PosOrderDto>> Handle(GetAllPosOrdersQuery request, CancellationToken cancellationToken)
             {
                 var entities = await _repository.GetAllAsync(request.CompanyId);
-                return entities.Select(MapperPosOrder.MapToPosOrderDto).ToList();
+                var dtos = entities.Select(MapperPosOrder.MapToPosOrderDto).ToList();
+
+                // One grouped query for every order's line stats — deliberately NOT
+                // per-order (that would be N+1 on a list the POS polls every 20s).
+                // These let a terminal detect that another terminal edited an
+                // order's CONTENTS; see the note on PosOrderDto.ItemCount.
+                var stats = await _repository.GetItemStatsAsync(
+                    dtos.Select(d => d.Id).ToList(), cancellationToken);
+
+                foreach (var dto in dtos)
+                {
+                    if (!stats.TryGetValue(dto.Id, out var s)) continue;
+                    dto.ItemCount = s.Count;
+                    dto.ItemsLastChanged = s.LastChanged;
+                }
+
+                return dtos;
             }
         }
     }

@@ -2736,6 +2736,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get setSyncToast => 'Display a toast each time a sync completes';
 
   @override
+  String get setDisplayMessages => 'DISPLAY MESSAGES';
+
+  @override
   String get setDisplayPrintTaxIncluded =>
       'Display and print items with tax included';
 
@@ -3139,6 +3142,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get setTestDisplay => 'Test display';
 
   @override
+  String get setThankYouMessage => 'Thank-you message (after payment)';
+
+  @override
   String get setThemeMode => 'Theme Mode';
 
   @override
@@ -3174,6 +3180,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get setWelcomeMessage => 'WELCOME MESSAGE';
+
+  @override
+  String get setWelcomeMessageLabel => 'Welcome message (idle screen)';
 
   @override
   String get setWelcomeBottomLine => 'Welcome message bottom line';
@@ -5769,4 +5778,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get urlCopied => 'URL copied';
+
+  @override
+  String get accessRulesNotSynced =>
+      'Access rules haven\'t reached this device yet. Connect to the network and sync, then try again.';
 }

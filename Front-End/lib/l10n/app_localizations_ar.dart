@@ -2730,6 +2730,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get setSyncToast => 'إظهار إشعار عند اكتمال كل مزامنة';
 
   @override
+  String get setDisplayMessages => 'رسائل الشاشة';
+
+  @override
   String get setDisplayPrintTaxIncluded => 'عرض وطباعة الأصناف شاملة الضريبة';
 
   @override
@@ -3126,6 +3129,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get setTestDisplay => 'اختبار العرض';
 
   @override
+  String get setThankYouMessage => 'رسالة الشكر (بعد الدفع)';
+
+  @override
   String get setThemeMode => 'وضع الثيم';
 
   @override
@@ -3160,6 +3166,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get setWelcomeMessage => 'رسالة الترحيب';
+
+  @override
+  String get setWelcomeMessageLabel => 'رسالة الترحيب (شاشة الانتظار)';
 
   @override
   String get setWelcomeBottomLine => 'السطر السفلي لرسالة الترحيب';
@@ -5810,4 +5819,8 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get urlCopied => 'تم نسخ الرابط';
+
+  @override
+  String get accessRulesNotSynced =>
+      'لم تصل قواعد الوصول إلى هذا الجهاز بعد. اتصل بالشبكة وقم بالمزامنة ثم أعد المحاولة.';
 }

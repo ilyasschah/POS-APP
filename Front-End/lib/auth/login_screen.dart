@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -524,14 +525,23 @@ class _PinPadModalState extends ConsumerState<_PinPadModal> {
         : AppLocalizations.of(context).enterPin;
 
     final screen = MediaQuery.sizeOf(context);
-    final scale = (screen.shortestSide / 600).clamp(0.7, 1.0).toDouble();
-    double s(double v) => v * scale;
 
-    return Align(
-      alignment: Alignment.bottomCenter,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: s(360)),
-        child: Container(
+    return LayoutBuilder(builder: (context, constraints) {
+      // Scale on BOTH axes so the panel fits a short screen (a 7" tablet, or
+      // portrait): width keeps the design proportions, height guarantees the
+      // numpad never runs off the bottom. ~640 is the panel's natural height at
+      // scale 1.0, so height/640 shrinks it just enough to fit with a margin.
+      final maxH = constraints.maxHeight;
+      final widthScale = screen.shortestSide / 600;
+      final heightScale = maxH.isFinite ? maxH / 640.0 : 1.0;
+      final scale = math.min(widthScale, heightScale).clamp(0.55, 1.0).toDouble();
+      double s(double v) => v * scale;
+
+      return Align(
+        alignment: Alignment.bottomCenter,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: s(360)),
+          child: Container(
           width: double.infinity,
           decoration: BoxDecoration(
             color: cs.surface,
@@ -674,6 +684,7 @@ class _PinPadModalState extends ConsumerState<_PinPadModal> {
           ),
         ),
       ),
-    );
+      );
+    });
   }
 }

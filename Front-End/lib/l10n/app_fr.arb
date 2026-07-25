@@ -858,6 +858,7 @@
   "setDiscountApplyRule": "Règle d'application de la remise",
   "setDiscountButton": "Bouton Remise",
   "setSyncToast": "Afficher une notification à chaque synchronisation",
+  "setDisplayMessages": "MESSAGES DE L'AFFICHEUR",
   "setDisplayPrintTaxIncluded": "Afficher et imprimer les articles taxes comprises",
   "setDualCurrencyHint": "Afficher les prix et totaux dans une seconde devise",
   "setShowPrintDialog": "Afficher la boîte de dialogue d'impression",
@@ -989,6 +990,7 @@
   "setTaxIncludedByDefault": "Taxe incluse dans le prix par défaut",
   "setTaxNo": "N° de taxe",
   "setTestDisplay": "Tester l'affichage",
+  "setThankYouMessage": "Message de remerciement (après paiement)",
   "setThemeMode": "Mode du thème",
   "setTimezone": "Fuseau horaire",
   "setTopLine": "Ligne du haut",
@@ -1001,6 +1003,7 @@
   "setWarehouseSwitcherButton": "Bouton Sélecteur d'entrepôt",
   "setWeighingScale": "Balance",
   "setWelcomeMessage": "MESSAGE DE BIENVENUE",
+  "setWelcomeMessageLabel": "Message de bienvenue (écran d'attente)",
   "setWelcomeBottomLine": "Ligne du bas du message de bienvenue",
   "setWelcomeTopLine": "Ligne du haut du message de bienvenue",
   "setWhenToSync": "Quand synchroniser",
@@ -1623,7 +1626,6 @@
   "backupPathHintWindows": "ex. D:\\database\\Backup",
   "backupPathHintUnix": "ex. /home/user/backups",
   "exchangeRateHint": "ex. 1.08  (1 principale = X secondaire)",
-
   "addServiceStatus": "Ajouter un statut de service",
   "clearFavorites": "Effacer les favoris",
   "editServiceStatus": "Modifier le statut de service",
@@ -1638,7 +1640,6 @@
   "selectBusinessPartnerInFilter": "Veuillez sélectionner un partenaire commercial dans le panneau de filtres.",
   "selectReportToViewOrPrint": "Sélectionnez un rapport à consulter ou imprimer",
   "versionLabel": "Version {version}",
-
   "ageRestrictionBody": "Ce produit exige que le client ait au moins {age} ans.\n\nVeuillez confirmer que le client remplit cette condition avant de continuer.",
   "bookingCompletedLocked": "Cette réservation est terminée et ne peut pas être modifiée.",
   "bookingPrefix": "Réservation : ",
@@ -1663,7 +1664,6 @@
   "todayWithValue": "Aujourd'hui : {value}",
   "updateStatusUpper": "METTRE À JOUR LE STATUT",
   "voidReasonPrompt": "Saisissez ou sélectionnez un motif d'annulation pour « {number} »",
-
   "accessDenied": "Accès refusé",
   "accessDeniedBody": "Vous n'avez pas l'autorisation de consulter cette section.\nChoisissez une autre section dans le menu ou demandez l'accès à un administrateur.",
   "checkingUpper": "VÉRIFICATION…",
@@ -1689,7 +1689,6 @@
   "thankYou": "Merci !",
   "weWillSwitchOnFeatures": "Nous activerons les bonnes fonctionnalités pour vous.",
   "whatsYourBusiness": "Quelle est votre activité ?",
-
   "changeThisLaterInSettings": "Vous pourrez modifier tout cela plus tard dans les Paramètres.",
   "everythingBuiltIn": "Tout est inclus — aucun module à acheter.",
   "everythingYouGet": "Tout ce que vous obtenez",
@@ -1697,9 +1696,7 @@
   "linkDeviceUpper": "ASSOCIER L'APPAREIL",
   "numberOfProductsToImport": "Nombre de produits à importer : {count}",
   "setUpYourTerminal": "Configurez votre terminal",
-
   "statusExpiresToday": "Expire aujourd'hui",
-
   "accessDeniedNoPermission": "Accès refusé : vous n'avez pas l'autorisation d'effectuer cette action.",
   "alreadyBookedDuringTime": "Ce/cette {what} est déjà réservé(e) sur ce créneau — {name} ({range}).",
   "cannotBookInPast": "Impossible de créer une réservation dans le passé.",
@@ -1732,5 +1729,6 @@
   "terminalNotLinked": "Ce terminal n'est pas associé. Réassociez l'appareil.",
   "testMessageSent": "Message de test envoyé.",
   "testSignalSentToDrawer": "Signal de test envoyé au tiroir-caisse",
-  "urlCopied": "URL copiée"
+  "urlCopied": "URL copiée",
+  "accessRulesNotSynced": "Les règles d'accès ne sont pas encore arrivées sur cet appareil. Connectez-vous au réseau et synchronisez, puis réessayez."
 }

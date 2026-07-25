@@ -26,6 +26,19 @@ class SecurityGuard {
   final int _duration;
   final String _position;
 
+  /// True when this terminal has no RBAC rules at all for a non-admin user.
+  ///
+  /// A provisioned company always carries the full seeded key set, so an empty
+  /// list never means "everything is admin-only" — it means the rules have not
+  /// reached this device yet (first sync incomplete, or still loading). Access
+  /// is still refused, but the operator is told *why*: a cashier on a freshly
+  /// enrolled terminal was otherwise locked out of every guarded screen with a
+  /// plain "access denied", which reads as a permissions bug rather than a sync
+  /// one. Toggling a rule in Settings then "fixed" it only because that writes
+  /// the row straight into local Drift.
+  bool get rulesUnavailable =>
+      _user != null && _user.accessLevel != 0 && _keys.isEmpty;
+
   /// Returns true if the current user may access [keyName].
   ///
   /// Fail-secure defaults:
@@ -56,7 +69,9 @@ class SecurityGuard {
     }
     showAppSnackbarRaw(
       context,
-      AppLocalizations.of(context).accessDeniedNoPermission,
+      rulesUnavailable
+          ? AppLocalizations.of(context).accessRulesNotSynced
+          : AppLocalizations.of(context).accessDeniedNoPermission,
       isError: true,
       duration: _duration,
       position: _position,

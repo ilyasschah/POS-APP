@@ -484,6 +484,14 @@ class PosOrdersTable extends Table {
   // these stay a local concern.
   IntColumn get bookingId => integer().nullable()();
   IntColumn get bookingStaffId => integer().nullable()();
+
+  /// Newest line's server-side DateCreated, mirrored from
+  /// `PosOrderDto.ItemsLastChanged`. Written only by [syncOpenOrdersToDrift] so
+  /// it can tell that another terminal edited this order's CONTENTS in a way
+  /// that moves neither `total` nor the item count (e.g. swapping a product for
+  /// one at the same price). Null on locally-created orders and on any row
+  /// pulled from an API build that predates the field.
+  DateTimeColumn get itemsLastChanged => dateTime().nullable()();
 }
 
 @TableIndex(name: 'idx_pos_order_items_order_id', columns: {#orderId})
@@ -1522,12 +1530,22 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor) : super();
 
   @override
-  int get schemaVersion => 54;
+  int get schemaVersion => 55;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) async => m.createAll(),
         onUpgrade: (m, from, to) async {
+          // v55: the newest line's server timestamp, mirrored from
+          // PosOrderDto.ItemsLastChanged. Lets syncOpenOrdersToDrift notice that
+          // ANOTHER terminal swapped a line for one at the same price — an edit
+          // that moves neither the order total nor its item count. Existing rows
+          // get NULL and simply re-pull their lines once.
+          if (from < 55) {
+            await customStatement(
+                'ALTER TABLE pos_orders ADD COLUMN items_last_changed INTEGER');
+          }
+
           // v54: remember which booking (and its assigned staff) an order was
           // opened from, so the link survives a save/reopen offline. Existing
           // rows correctly get NULL — they are ordinary non-booking orders.

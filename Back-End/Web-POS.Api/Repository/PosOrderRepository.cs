@@ -81,6 +81,33 @@ public class PosOrderRepository
     }
 
 
+    /// <summary>
+    /// Line-item count + newest line timestamp per order, in ONE grouped query.
+    /// Lets a terminal notice that another terminal changed an order's contents
+    /// without pulling every line on every 20s poll — see PosOrderDto.ItemCount.
+    /// Orders with no items are simply absent from the result.
+    /// </summary>
+    public async Task<Dictionary<int, (int Count, DateTime? LastChanged)>> GetItemStatsAsync(
+        List<int> orderIds, CancellationToken cancellationToken = default)
+    {
+        if (orderIds.Count == 0)
+            return new Dictionary<int, (int, DateTime?)>();
+
+        var rows = await _db.PosOrderItems
+            .AsNoTracking()
+            .Where(i => orderIds.Contains(i.PosOrderId))
+            .GroupBy(i => i.PosOrderId)
+            .Select(g => new
+            {
+                PosOrderId = g.Key,
+                Count = g.Count(),
+                LastChanged = (DateTime?)g.Max(i => i.DateCreated)
+            })
+            .ToListAsync(cancellationToken);
+
+        return rows.ToDictionary(r => r.PosOrderId, r => (r.Count, r.LastChanged));
+    }
+
     public async Task<PosOrder?> GetByNumberAsync(string number, int companyId)
     {
         return await _db.PosOrders

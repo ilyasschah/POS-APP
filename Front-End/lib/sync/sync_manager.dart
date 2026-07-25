@@ -116,6 +116,19 @@ class SyncManager {
       }
     });
 
+    // ── RBAC first, BEFORE anything that can abort ─────────────────────────
+    // 🚨 Security keys used to be step 12 of pullMasterData, i.e. after the
+    // whole push phase. `_step` deliberately RETHROWS SeatLimitException, so a
+    // single seat_limit_exceeded/device_blocked 403 out of BatchSync aborted
+    // sync() and the pull phase never ran — leaving `security_keys` EMPTY on a
+    // newly enrolled terminal. SecurityGuard is fail-secure, so an empty table
+    // denies every cashier every guarded screen, indistinguishable from a real
+    // denial. That is the "new tablet can't open Tables" bug.
+    //
+    // Pulling it first costs one request and makes RBAC independent of whether
+    // the rest of the sync succeeds. Keep it here.
+    await _step('securityKeys', () => pullSecurityKeys(companyId));
+
     // ── PUSH phase (local → cloud) ─────────────────────────────────────────
     // Wrapped so a push failure (e.g. one stuck order whose BatchSync rethrows)
     // can never prevent the PULL phase below from running.
@@ -296,6 +309,10 @@ class SyncManager {
     await _step('customers', () => pullCustomers(companyId));
     await _step('promotions', () => pullPromotions(companyId));
     await _step('productComments', () => pullProductComments(companyId));
+    // NB securityKeys is pulled by sync() BEFORE the push phase — see the note
+    // there. It stays here too so a caller invoking pullMasterData directly
+    // still gets RBAC; pullSecurityKeys is a cheap full replace, so running it
+    // twice in one sync is idempotent.
     await _step('securityKeys', () => pullSecurityKeys(companyId));
     await _step('company', () => pullCompany(companyId));
     await _step('stocks', () => pullStocks(companyId));

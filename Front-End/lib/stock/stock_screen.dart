@@ -720,7 +720,9 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                           ),
                           clipBehavior: Clip.antiAlias,
                           child: SingleChildScrollView(
-                            child: DataTable(
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: DataTable(
                               showCheckboxColumn: false,
                               headingRowColor: WidgetStateProperty.all(
                                 theme.colorScheme
@@ -740,6 +742,7 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                                   .map((item) => _buildRow(
                                       context, item, sym))
                                   .toList(),
+                            ),
                             ),
                           ),
                         ),
@@ -1782,14 +1785,22 @@ class _ProductDetailPanelState
   Widget _infoRow(String label, String value) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 3),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label,
-                style: const TextStyle(
-                    fontSize: 13, color: Colors.grey)),
-            Text(value,
-                style: const TextStyle(
-                    fontSize: 13, fontWeight: FontWeight.w500)),
+            // Both sides flex so a long French value (e.g. "Activé — en dessous
+            // de 10") wraps/shrinks instead of overflowing the narrow panel.
+            Flexible(
+              child: Text(label,
+                  style: const TextStyle(fontSize: 13, color: Colors.grey)),
+            ),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(value,
+                  textAlign: TextAlign.end,
+                  style: const TextStyle(
+                      fontSize: 13, fontWeight: FontWeight.w500)),
+            ),
           ],
         ),
       );

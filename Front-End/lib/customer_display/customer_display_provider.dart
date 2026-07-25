@@ -5,9 +5,11 @@ import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/app_settings/app_settings_provider.dart';
 import 'package:pos_app/cart/cart_provider.dart';
 import 'package:pos_app/company/company_provider.dart';
+import 'package:pos_app/core/app_theme.dart';
 import 'package:pos_app/currency/currencies_provider.dart';
 import 'package:pos_app/customer_display/customer_display_state.dart';
 import 'package:pos_app/customer_display/customer_display_web_server.dart';
+import 'package:pos_app/l10n/app_locale.dart';
 import 'package:pos_app/product/product_provider.dart';
 
 class CustomerDisplayNotifier extends Notifier<CustomerDisplayState> {
@@ -152,6 +154,20 @@ class CustomerDisplayNotifier extends Notifier<CustomerDisplayState> {
       ref.read(appSettingsProvider)[SettingKeys.customerDisplayWelcomeMessage] ??
       'WELCOME!';
 
+  /// Configurable checkout-success message. Empty falls back to the localized
+  /// "Thank you" string (resolved without a BuildContext via [l10nOf]).
+  String get _thankYouText {
+    final custom =
+        ref.read(appSettingsProvider)[SettingKeys.customerDisplayThankYouMessage]
+            ?.trim();
+    if (custom != null && custom.isNotEmpty) return custom;
+    return l10nOf(ref).thankYou;
+  }
+
+  /// Theme colours for the web display (browsers can't read `Theme.of`), so the
+  /// page renders in the operator's exact app theme.
+  Map<String, String> get _themeMap => customerDisplayThemeMap(currentAppTheme(ref));
+
   bool get _webEnabled =>
       ref.read(appSettingsProvider)[SettingKeys.customerDisplayWebEnabled]
               ?.toLowerCase() ==
@@ -162,6 +178,7 @@ class CustomerDisplayNotifier extends Notifier<CustomerDisplayState> {
     if (!_webEnabled) return;
     final s  = state;
     final co = {'name': s.companyName, 'logo': s.companyLogo};
+    final theme = _themeMap;
 
     switch (s.status) {
       case CustomerDisplayStatus.idle:
@@ -169,6 +186,7 @@ class CustomerDisplayNotifier extends Notifier<CustomerDisplayState> {
           'type':        'idle',
           'company':     co,
           'welcomeText': s.welcomeText,
+          'theme':       theme,
         });
 
       // Both cartActive and paymentPending broadcast the live cart.
@@ -181,6 +199,7 @@ class CustomerDisplayNotifier extends Notifier<CustomerDisplayState> {
           'type':     'cart',
           'company':  co,
           'currency': s.currency,
+          'theme':    theme,
           'items':    s.items.map((i) => {
             'name':     i.productName,
             'qty':      i.quantity,
@@ -198,12 +217,14 @@ class CustomerDisplayNotifier extends Notifier<CustomerDisplayState> {
 
       case CustomerDisplayStatus.checkoutSuccess:
         CustomerDisplayWebServer.instance.broadcast({
-          'type':     'success',
-          'company':  co,
-          'currency': s.currency,
-          'total':    s.total,
-          'cash':     s.amountPaid,
-          'change':   s.changeDue,
+          'type':        'success',
+          'company':     co,
+          'currency':    s.currency,
+          'total':       s.total,
+          'cash':        s.amountPaid,
+          'change':      s.changeDue,
+          'thankYouText': _thankYouText,
+          'theme':       theme,
         });
     }
   }

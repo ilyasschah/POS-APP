@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
@@ -31,10 +32,14 @@ const int kServiceStatusReady = 3;
 /// orders from a completed checkout live with `status=1` and don't show.
 ///
 /// Shape preserves the legacy API map contract so the screen body below
-/// doesn't need touching. `id` falls back to `0` for pending rows; tapping
-/// one will fail in `_reopen` (still calls `loadOrderById` on the server)
-/// — acceptable V1: pending orders are visible in the list, reopen needs
-/// a sync to land first.
+/// doesn't need touching. `id` falls back to `0` for pending rows, which routes
+/// `_reopen` down the local branch.
+///
+/// NB both reopen paths are LOCAL-FIRST — `loadOrderById` and
+/// `loadExistingOrder` each return `loadOrderFromLocal` as soon as a row exists,
+/// so their API fallbacks only run for an order this device has never seen.
+/// That is why [syncOpenOrdersToDrift] has to bring the line items down with the
+/// header: whatever it writes IS what the cart shows.
 final openOrdersProvider =
     StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
   final db = ref.watch(appDatabaseProvider);
@@ -99,16 +104,92 @@ final kitchenStatusWatcherProvider = Provider<void>((ref) {
   ref.onDispose(timer.cancel);
 });
 
+/// Replaces an order's local LINES with the server's.
+///
+/// 🚨 Without this the sync below writes a header and nothing else, and an order
+/// rung up on another terminal opens with an EMPTY CART while its total reads
+/// correctly. Both reopen paths — `loadExistingOrder` (floor-plan tap) and
+/// `loadOrderById` (Open Orders list) — short-circuit to `loadOrderFromLocal`
+/// the moment a local row exists, so their API fallbacks never run and the
+/// missing lines are never noticed.
+///
+/// Caller MUST have established the row is server-authoritative
+/// (`syncStatus == 'synced'`): this deletes the local lines outright, so running
+/// it against an order with unpushed local edits would destroy them.
+Future<void> _pullOrderItems(
+  AppDatabase db,
+  int companyId,
+  String orderLocalId,
+  int serverId,
+  int warehouseId,
+  ApiClient api,
+) async {
+  final rows = await api.getOrderItems(companyId, serverId);
+
+  await db.transaction(() async {
+    await (db.delete(db.posOrderItemsTable)
+          ..where((t) => t.orderId.equals(orderLocalId)))
+        .go();
+
+    for (var i = 0; i < rows.length; i++) {
+      final it = rows[i] as Map<String, dynamic>;
+      final itemServerId = (it['id'] ?? it['Id']) as int?;
+
+      // taxesJson is read back by loadOrderFromLocal for the tax IDS only — it
+      // re-derives rate/isFixed from the local taxes cache, so a stale rate
+      // banked here could never contradict the cart. `amount` is what the push
+      // path writes; server-authoritative rows are never pushed, so it is 0.
+      final taxes = (it['taxes'] ?? it['Taxes']) as List?;
+      final taxesJson = (taxes == null || taxes.isEmpty)
+          ? null
+          : jsonEncode([
+              for (final t in taxes)
+                {'id': (t['id'] ?? t['Id']) as int? ?? 0, 'amount': 0.0},
+            ]);
+
+      await db.into(db.posOrderItemsTable).insert(
+            PosOrderItemsTableCompanion(
+              localId: Value(
+                itemServerId != null ? 'svri_$itemServerId' : '${orderLocalId}_$i',
+              ),
+              orderId: Value(orderLocalId),
+              productId: Value((it['productId'] ?? it['ProductId']) as int? ?? 0),
+              quantity:
+                  Value(((it['quantity'] ?? it['Quantity']) as num?)?.toDouble() ?? 0),
+              unitPrice:
+                  Value(((it['price'] ?? it['Price']) as num?)?.toDouble() ?? 0),
+              discount:
+                  Value(((it['discount'] ?? it['Discount']) as num?)?.toDouble() ?? 0),
+              discountType:
+                  Value((it['discountType'] ?? it['DiscountType']) as int? ?? 0),
+              taxesJson: Value(taxesJson),
+              comment: Value((it['comment'] ?? it['Comment']) as String?),
+              warehouseId: Value(warehouseId),
+              // Pulled FROM the server — nothing to push back.
+              syncStatus: const Value('synced'),
+            ),
+          );
+    }
+  });
+}
+
 /// Fetches open orders from the API and reconciles them into the local Drift
-/// `pos_orders` table. Shared by the Open Orders screen's manual refresh and
-/// the background [kitchenStatusWatcherProvider]. Three cases:
+/// `pos_orders` table **and their line items**. Shared by the Open Orders
+/// screen's manual refresh and the background [kitchenStatusWatcherProvider].
+/// Three cases:
 ///   1. Row already exists by serverId → patch its serviceStatus/total/table
 ///      so KDS "ready" updates (and edits from other devices) land locally.
 ///   2. A local-UUID row matches by order name → stamp its serverId.
 ///   3. Brand-new server order → insert with a `svr_<id>` sentinel localId.
 /// Finally, sentinel rows for orders no longer open on the server are removed.
-Future<void> syncOpenOrdersToDrift(AppDatabase db, int companyId) async {
-  final orders = await ApiClient().getAllPosOrders(companyId);
+/// [api] exists purely as a test seam — production callers use the default.
+Future<void> syncOpenOrdersToDrift(
+  AppDatabase db,
+  int companyId, {
+  ApiClient? api,
+}) async {
+  final client = api ?? ApiClient();
+  final orders = await client.getAllPosOrders(companyId);
   final now = DateTime.now().toUtc();
 
   final openServerIds = <int>{};
@@ -127,6 +208,14 @@ Future<void> syncOpenOrdersToDrift(AppDatabase db, int companyId) async {
     final serverName =
         (o['number'] ?? o['Number'] ?? o['orderNumber']) as String?;
 
+    // Line-content change detectors (PosOrderDto). Both are absent on an API
+    // build that predates them — left null, the checks below simply skip and the
+    // total-only behaviour applies.
+    final serverItemCount = (o['itemCount'] ?? o['ItemCount']) as int?;
+    final rawStamp = (o['itemsLastChanged'] ?? o['ItemsLastChanged']) as String?;
+    final itemsLastChanged =
+        rawStamp == null ? null : DateTime.tryParse(rawStamp)?.toUtc();
+
     // Case 1: Already in Drift matched by serverId — patch the volatile fields
     // (serviceStatus is the whole point: that's how a KDS "ready" reaches POS).
     final existingByServerId = await (db.select(db.posOrdersTable)
@@ -142,8 +231,9 @@ Future<void> syncOpenOrdersToDrift(AppDatabase db, int companyId) async {
               serviceStatus < kServiceStatusReady;
       final effectiveStatus =
           keepReady ? kServiceStatusReady : serviceStatus;
+      final totalChanged = existingByServerId.total != total;
       if (existingByServerId.serviceStatus != effectiveStatus ||
-          existingByServerId.total != total ||
+          totalChanged ||
           existingByServerId.tableId != tableId) {
         await (db.update(db.posOrdersTable)
               ..where((t) => t.localId.equals(existingByServerId.localId)))
@@ -153,6 +243,61 @@ Future<void> syncOpenOrdersToDrift(AppDatabase db, int companyId) async {
           tableId: Value(tableId),
           lastModified: Value(now),
         ));
+      }
+      // Re-pull the lines when this row is server-authoritative AND something
+      // says its CONTENTS moved. Gated rather than unconditional: this poll runs
+      // every 20s and getOrderItems is one request per open order.
+      //
+      // Three signals, because none alone is sufficient:
+      //   • no local lines  → the empty-cart bug (order came from another device)
+      //   • total changed   → a quantity or price edit
+      //   • itemCount /     → an add, a remove, or a swap for a product at the
+      //     itemsLastChanged   SAME price, which moves neither total nor count.
+      // The last two come from PosOrderDto aggregates; an API that predates them
+      // sends itemCount 0 / null, which falls back to the first two checks.
+      //
+      // 'synced' is load-bearing — a row with unpushed local edits must keep its
+      // own lines, per the pull/insertOrReplace rule in handoff §3.
+      if (existingByServerId.syncStatus == 'synced') {
+        final localItemCount = await (db.select(db.posOrderItemsTable)
+              ..where((t) => t.orderId.equals(existingByServerId.localId)))
+            .get()
+            .then((r) => r.length);
+        final countChanged =
+            serverItemCount != null && serverItemCount != localItemCount;
+        // Compare INSTANTS, not DateTime objects. Dart's `==` also requires the
+        // same isUtc flag, and Drift reads a dateTime() column back as LOCAL
+        // while this value is parsed as UTC — so `!=` was true forever and every
+        // poll refetched every open order's lines. Caught by the "settles" leg of
+        // the swap test.
+        final stampChanged = itemsLastChanged != null &&
+            existingByServerId.itemsLastChanged?.millisecondsSinceEpoch !=
+                itemsLastChanged.millisecondsSinceEpoch;
+        // Persist the stamp only AFTER the comparison above has consumed the old
+        // value, and only for a synced row. Writing it earlier would be correct
+        // today (existingByServerId is an immutable snapshot) but silently breaks
+        // the moment anyone re-reads the row in between.
+        if (itemsLastChanged != null && stampChanged) {
+          await (db.update(db.posOrdersTable)
+                ..where((t) => t.localId.equals(existingByServerId.localId)))
+              .write(PosOrdersTableCompanion(
+            itemsLastChanged: Value(itemsLastChanged),
+          ));
+        }
+
+        if (localItemCount == 0 ||
+            totalChanged ||
+            countChanged ||
+            stampChanged) {
+          await _pullOrderItems(
+            db,
+            companyId,
+            existingByServerId.localId,
+            id,
+            existingByServerId.warehouseId,
+            client,
+          );
+        }
       }
       continue;
     }
@@ -180,6 +325,7 @@ Future<void> syncOpenOrdersToDrift(AppDatabase db, int companyId) async {
 
     // Case 3: Genuine server-originated order not yet in local Drift —
     // insert with a deterministic sentinel localId.
+    final warehouseId = (o['warehouseId'] ?? o['WarehouseId']) as int? ?? 1;
     await db.into(db.posOrdersTable).insertOnConflictUpdate(
       PosOrdersTableCompanion(
         localId: Value('svr_$id'),
@@ -194,11 +340,15 @@ Future<void> syncOpenOrdersToDrift(AppDatabase db, int companyId) async {
         status: const Value(0),
         total: Value(total),
         discount: const Value(0),
-        warehouseId: Value((o['warehouseId'] ?? o['WarehouseId']) as int? ?? 1),
+        warehouseId: Value(warehouseId),
         syncStatus: const Value('synced'),
         lastModified: Value(now),
+        itemsLastChanged: Value(itemsLastChanged),
       ),
     );
+    // The header alone opens as an empty cart — this order came from another
+    // terminal, so its lines only exist server-side.
+    await _pullOrderItems(db, companyId, 'svr_$id', id, warehouseId, client);
   }
 
   // Remove sentinel rows for orders that are no longer open on the server.

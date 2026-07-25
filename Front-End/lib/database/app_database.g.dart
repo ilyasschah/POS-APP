@@ -17457,6 +17457,18 @@ class $PosOrdersTableTable extends PosOrdersTable
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _itemsLastChangedMeta = const VerificationMeta(
+    'itemsLastChanged',
+  );
+  @override
+  late final GeneratedColumn<DateTime> itemsLastChanged =
+      GeneratedColumn<DateTime>(
+        'items_last_changed',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     localId,
@@ -17486,6 +17498,7 @@ class $PosOrdersTableTable extends PosOrdersTable
     dateCreated,
     bookingId,
     bookingStaffId,
+    itemsLastChanged,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -17702,6 +17715,15 @@ class $PosOrdersTableTable extends PosOrdersTable
         ),
       );
     }
+    if (data.containsKey('items_last_changed')) {
+      context.handle(
+        _itemsLastChangedMeta,
+        itemsLastChanged.isAcceptableOrUnknown(
+          data['items_last_changed']!,
+          _itemsLastChangedMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -17819,6 +17841,10 @@ class $PosOrdersTableTable extends PosOrdersTable
         DriftSqlType.int,
         data['${effectivePrefix}booking_staff_id'],
       ),
+      itemsLastChanged: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}items_last_changed'],
+      ),
     );
   }
 
@@ -17857,6 +17883,14 @@ class PosOrdersTableData extends DataClass
   final DateTime? dateCreated;
   final int? bookingId;
   final int? bookingStaffId;
+
+  /// Newest line's server-side DateCreated, mirrored from
+  /// `PosOrderDto.ItemsLastChanged`. Written only by [syncOpenOrdersToDrift] so
+  /// it can tell that another terminal edited this order's CONTENTS in a way
+  /// that moves neither `total` nor the item count (e.g. swapping a product for
+  /// one at the same price). Null on locally-created orders and on any row
+  /// pulled from an API build that predates the field.
+  final DateTime? itemsLastChanged;
   const PosOrdersTableData({
     required this.localId,
     this.serverId,
@@ -17885,6 +17919,7 @@ class PosOrdersTableData extends DataClass
     this.dateCreated,
     this.bookingId,
     this.bookingStaffId,
+    this.itemsLastChanged,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -17945,6 +17980,9 @@ class PosOrdersTableData extends DataClass
     }
     if (!nullToAbsent || bookingStaffId != null) {
       map['booking_staff_id'] = Variable<int>(bookingStaffId);
+    }
+    if (!nullToAbsent || itemsLastChanged != null) {
+      map['items_last_changed'] = Variable<DateTime>(itemsLastChanged);
     }
     return map;
   }
@@ -18008,6 +18046,9 @@ class PosOrdersTableData extends DataClass
       bookingStaffId: bookingStaffId == null && nullToAbsent
           ? const Value.absent()
           : Value(bookingStaffId),
+      itemsLastChanged: itemsLastChanged == null && nullToAbsent
+          ? const Value.absent()
+          : Value(itemsLastChanged),
     );
   }
 
@@ -18044,6 +18085,9 @@ class PosOrdersTableData extends DataClass
       dateCreated: serializer.fromJson<DateTime?>(json['dateCreated']),
       bookingId: serializer.fromJson<int?>(json['bookingId']),
       bookingStaffId: serializer.fromJson<int?>(json['bookingStaffId']),
+      itemsLastChanged: serializer.fromJson<DateTime?>(
+        json['itemsLastChanged'],
+      ),
     );
   }
   @override
@@ -18077,6 +18121,7 @@ class PosOrdersTableData extends DataClass
       'dateCreated': serializer.toJson<DateTime?>(dateCreated),
       'bookingId': serializer.toJson<int?>(bookingId),
       'bookingStaffId': serializer.toJson<int?>(bookingStaffId),
+      'itemsLastChanged': serializer.toJson<DateTime?>(itemsLastChanged),
     };
   }
 
@@ -18108,6 +18153,7 @@ class PosOrdersTableData extends DataClass
     Value<DateTime?> dateCreated = const Value.absent(),
     Value<int?> bookingId = const Value.absent(),
     Value<int?> bookingStaffId = const Value.absent(),
+    Value<DateTime?> itemsLastChanged = const Value.absent(),
   }) => PosOrdersTableData(
     localId: localId ?? this.localId,
     serverId: serverId.present ? serverId.value : this.serverId,
@@ -18142,6 +18188,9 @@ class PosOrdersTableData extends DataClass
     bookingStaffId: bookingStaffId.present
         ? bookingStaffId.value
         : this.bookingStaffId,
+    itemsLastChanged: itemsLastChanged.present
+        ? itemsLastChanged.value
+        : this.itemsLastChanged,
   );
   PosOrdersTableData copyWithCompanion(PosOrdersTableCompanion data) {
     return PosOrdersTableData(
@@ -18196,6 +18245,9 @@ class PosOrdersTableData extends DataClass
       bookingStaffId: data.bookingStaffId.present
           ? data.bookingStaffId.value
           : this.bookingStaffId,
+      itemsLastChanged: data.itemsLastChanged.present
+          ? data.itemsLastChanged.value
+          : this.itemsLastChanged,
     );
   }
 
@@ -18228,7 +18280,8 @@ class PosOrdersTableData extends DataClass
           ..write('dueDate: $dueDate, ')
           ..write('dateCreated: $dateCreated, ')
           ..write('bookingId: $bookingId, ')
-          ..write('bookingStaffId: $bookingStaffId')
+          ..write('bookingStaffId: $bookingStaffId, ')
+          ..write('itemsLastChanged: $itemsLastChanged')
           ..write(')'))
         .toString();
   }
@@ -18262,6 +18315,7 @@ class PosOrdersTableData extends DataClass
     dateCreated,
     bookingId,
     bookingStaffId,
+    itemsLastChanged,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -18293,7 +18347,8 @@ class PosOrdersTableData extends DataClass
           other.dueDate == this.dueDate &&
           other.dateCreated == this.dateCreated &&
           other.bookingId == this.bookingId &&
-          other.bookingStaffId == this.bookingStaffId);
+          other.bookingStaffId == this.bookingStaffId &&
+          other.itemsLastChanged == this.itemsLastChanged);
 }
 
 class PosOrdersTableCompanion extends UpdateCompanion<PosOrdersTableData> {
@@ -18324,6 +18379,7 @@ class PosOrdersTableCompanion extends UpdateCompanion<PosOrdersTableData> {
   final Value<DateTime?> dateCreated;
   final Value<int?> bookingId;
   final Value<int?> bookingStaffId;
+  final Value<DateTime?> itemsLastChanged;
   final Value<int> rowid;
   const PosOrdersTableCompanion({
     this.localId = const Value.absent(),
@@ -18353,6 +18409,7 @@ class PosOrdersTableCompanion extends UpdateCompanion<PosOrdersTableData> {
     this.dateCreated = const Value.absent(),
     this.bookingId = const Value.absent(),
     this.bookingStaffId = const Value.absent(),
+    this.itemsLastChanged = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   PosOrdersTableCompanion.insert({
@@ -18383,6 +18440,7 @@ class PosOrdersTableCompanion extends UpdateCompanion<PosOrdersTableData> {
     this.dateCreated = const Value.absent(),
     this.bookingId = const Value.absent(),
     this.bookingStaffId = const Value.absent(),
+    this.itemsLastChanged = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : localId = Value(localId),
        companyId = Value(companyId),
@@ -18419,6 +18477,7 @@ class PosOrdersTableCompanion extends UpdateCompanion<PosOrdersTableData> {
     Expression<DateTime>? dateCreated,
     Expression<int>? bookingId,
     Expression<int>? bookingStaffId,
+    Expression<DateTime>? itemsLastChanged,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -18449,6 +18508,7 @@ class PosOrdersTableCompanion extends UpdateCompanion<PosOrdersTableData> {
       if (dateCreated != null) 'date_created': dateCreated,
       if (bookingId != null) 'booking_id': bookingId,
       if (bookingStaffId != null) 'booking_staff_id': bookingStaffId,
+      if (itemsLastChanged != null) 'items_last_changed': itemsLastChanged,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -18481,6 +18541,7 @@ class PosOrdersTableCompanion extends UpdateCompanion<PosOrdersTableData> {
     Value<DateTime?>? dateCreated,
     Value<int?>? bookingId,
     Value<int?>? bookingStaffId,
+    Value<DateTime?>? itemsLastChanged,
     Value<int>? rowid,
   }) {
     return PosOrdersTableCompanion(
@@ -18511,6 +18572,7 @@ class PosOrdersTableCompanion extends UpdateCompanion<PosOrdersTableData> {
       dateCreated: dateCreated ?? this.dateCreated,
       bookingId: bookingId ?? this.bookingId,
       bookingStaffId: bookingStaffId ?? this.bookingStaffId,
+      itemsLastChanged: itemsLastChanged ?? this.itemsLastChanged,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -18599,6 +18661,9 @@ class PosOrdersTableCompanion extends UpdateCompanion<PosOrdersTableData> {
     if (bookingStaffId.present) {
       map['booking_staff_id'] = Variable<int>(bookingStaffId.value);
     }
+    if (itemsLastChanged.present) {
+      map['items_last_changed'] = Variable<DateTime>(itemsLastChanged.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -18635,6 +18700,7 @@ class PosOrdersTableCompanion extends UpdateCompanion<PosOrdersTableData> {
           ..write('dateCreated: $dateCreated, ')
           ..write('bookingId: $bookingId, ')
           ..write('bookingStaffId: $bookingStaffId, ')
+          ..write('itemsLastChanged: $itemsLastChanged, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -44409,6 +44475,7 @@ typedef $$PosOrdersTableTableCreateCompanionBuilder =
       Value<DateTime?> dateCreated,
       Value<int?> bookingId,
       Value<int?> bookingStaffId,
+      Value<DateTime?> itemsLastChanged,
       Value<int> rowid,
     });
 typedef $$PosOrdersTableTableUpdateCompanionBuilder =
@@ -44440,6 +44507,7 @@ typedef $$PosOrdersTableTableUpdateCompanionBuilder =
       Value<DateTime?> dateCreated,
       Value<int?> bookingId,
       Value<int?> bookingStaffId,
+      Value<DateTime?> itemsLastChanged,
       Value<int> rowid,
     });
 
@@ -44656,6 +44724,11 @@ class $$PosOrdersTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<DateTime> get itemsLastChanged => $composableBuilder(
+    column: $table.itemsLastChanged,
+    builder: (column) => ColumnFilters(column),
+  );
+
   Expression<bool> posOrderItemsTableRefs(
     Expression<bool> Function($$PosOrderItemsTableTableFilterComposer f) f,
   ) {
@@ -44851,6 +44924,11 @@ class $$PosOrdersTableTableOrderingComposer
     column: $table.bookingStaffId,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<DateTime> get itemsLastChanged => $composableBuilder(
+    column: $table.itemsLastChanged,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$PosOrdersTableTableAnnotationComposer
@@ -44967,6 +45045,11 @@ class $$PosOrdersTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<DateTime> get itemsLastChanged => $composableBuilder(
+    column: $table.itemsLastChanged,
+    builder: (column) => column,
+  );
+
   Expression<T> posOrderItemsTableRefs<T extends Object>(
     Expression<T> Function($$PosOrderItemsTableTableAnnotationComposer a) f,
   ) {
@@ -45080,6 +45163,7 @@ class $$PosOrdersTableTableTableManager
                 Value<DateTime?> dateCreated = const Value.absent(),
                 Value<int?> bookingId = const Value.absent(),
                 Value<int?> bookingStaffId = const Value.absent(),
+                Value<DateTime?> itemsLastChanged = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PosOrdersTableCompanion(
                 localId: localId,
@@ -45109,6 +45193,7 @@ class $$PosOrdersTableTableTableManager
                 dateCreated: dateCreated,
                 bookingId: bookingId,
                 bookingStaffId: bookingStaffId,
+                itemsLastChanged: itemsLastChanged,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -45140,6 +45225,7 @@ class $$PosOrdersTableTableTableManager
                 Value<DateTime?> dateCreated = const Value.absent(),
                 Value<int?> bookingId = const Value.absent(),
                 Value<int?> bookingStaffId = const Value.absent(),
+                Value<DateTime?> itemsLastChanged = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PosOrdersTableCompanion.insert(
                 localId: localId,
@@ -45169,6 +45255,7 @@ class $$PosOrdersTableTableTableManager
                 dateCreated: dateCreated,
                 bookingId: bookingId,
                 bookingStaffId: bookingStaffId,
+                itemsLastChanged: itemsLastChanged,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

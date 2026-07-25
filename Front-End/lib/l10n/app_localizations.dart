@@ -5248,6 +5248,12 @@ abstract class AppLocalizations {
   /// **'Display a toast each time a sync completes'**
   String get setSyncToast;
 
+  /// No description provided for @setDisplayMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'DISPLAY MESSAGES'**
+  String get setDisplayMessages;
+
   /// No description provided for @setDisplayPrintTaxIncluded.
   ///
   /// In en, this message translates to:
@@ -6034,6 +6040,12 @@ abstract class AppLocalizations {
   /// **'Test display'**
   String get setTestDisplay;
 
+  /// No description provided for @setThankYouMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Thank-you message (after payment)'**
+  String get setThankYouMessage;
+
   /// No description provided for @setThemeMode.
   ///
   /// In en, this message translates to:
@@ -6105,6 +6117,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'WELCOME MESSAGE'**
   String get setWelcomeMessage;
+
+  /// No description provided for @setWelcomeMessageLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome message (idle screen)'**
+  String get setWelcomeMessageLabel;
 
   /// No description provided for @setWelcomeBottomLine.
   ///
@@ -10465,6 +10483,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'URL copied'**
   String get urlCopied;
+
+  /// No description provided for @accessRulesNotSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'Access rules haven\'t reached this device yet. Connect to the network and sync, then try again.'**
+  String get accessRulesNotSynced;
 }
 
 class _AppLocalizationsDelegate

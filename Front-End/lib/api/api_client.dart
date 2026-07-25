@@ -11,7 +11,7 @@ import 'package:pos_app/company/company_model.dart';
 import 'package:pos_app/document/document_type_constants.dart';
 
 /// Compiled-in default API endpoint, used until a device-local override is set.
-const String kDefaultApiBaseUrl = 'http://192.168.11.103:5002/api';
+const String kDefaultApiBaseUrl = 'http://100.114.12.38:5002/api';
 
 /// The active API base URL. Held in memory (seeded from SharedPreferences at
 /// boot via [initApiBaseUrl]) so the sync/synchronous [createDio] never awaits.
@@ -46,30 +46,36 @@ Dio createDio() {
   // Global auth: attach the active JWT to every request unless a caller has
   // already set an explicit Authorization header. Reads from an in-memory cache
   // (loaded from secure storage once) — never per-request file I/O.
-  dio.interceptors.add(InterceptorsWrapper(
-    onRequest: (options, handler) async {
-      if (!options.headers.containsKey('Authorization')) {
-        final jwt = await AuthTokenCache.get();
-        if (jwt != null && jwt.isNotEmpty) {
-          options.headers['Authorization'] = 'Bearer $jwt';
+  dio.interceptors.add(
+    InterceptorsWrapper(
+      onRequest: (options, handler) async {
+        if (!options.headers.containsKey('Authorization')) {
+          final jwt = await AuthTokenCache.get();
+          if (jwt != null && jwt.isNotEmpty) {
+            options.headers['Authorization'] = 'Bearer $jwt';
+          }
         }
-      }
-      handler.next(options);
-    },
-    onError: (e, handler) {
-      // A 401 on a request that CARRIED our token means the token is dead
-      // (expired / revoked / signing-secret rotated) — clear it and route to
-      // login once (see SessionExpiry). A 401 with no token is an ordinary auth
-      // failure (e.g. bad credentials on /Auth/Login) and is left to the caller;
-      // being offline surfaces as a connection error, not a 401.
-      final carriedToken = e.requestOptions.headers.containsKey('Authorization');
-      final isLoginCall = e.requestOptions.path.contains('Auth/Login');
-      if (e.response?.statusCode == 401 && carriedToken && !isLoginCall) {
-        SessionExpiry.onUnauthorized();
-      }
-      handler.next(e); // still surface the error — offline-first keeps local data
-    },
-  ));
+        handler.next(options);
+      },
+      onError: (e, handler) {
+        // A 401 on a request that CARRIED our token means the token is dead
+        // (expired / revoked / signing-secret rotated) — clear it and route to
+        // login once (see SessionExpiry). A 401 with no token is an ordinary auth
+        // failure (e.g. bad credentials on /Auth/Login) and is left to the caller;
+        // being offline surfaces as a connection error, not a 401.
+        final carriedToken = e.requestOptions.headers.containsKey(
+          'Authorization',
+        );
+        final isLoginCall = e.requestOptions.path.contains('Auth/Login');
+        if (e.response?.statusCode == 401 && carriedToken && !isLoginCall) {
+          SessionExpiry.onUnauthorized();
+        }
+        handler.next(
+          e,
+        ); // still surface the error — offline-first keeps local data
+      },
+    ),
+  );
 
   if (!kIsWeb) {
     (dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
@@ -144,7 +150,11 @@ class ApiClient {
 
       final response = await _dio.post(
         '/PosOrderItem/BulkAdd',
-        queryParameters: {'companyId': companyId, 'warehouseId': warehouseId, 'orderTotal': orderTotal},
+        queryParameters: {
+          'companyId': companyId,
+          'warehouseId': warehouseId,
+          'orderTotal': orderTotal,
+        },
         data: jsonList,
       );
 
@@ -505,10 +515,7 @@ class ApiClient {
     }
   }
 
-  Future<bool> updateBooking(
-    int companyId,
-    Map<String, dynamic> data,
-  ) async {
+  Future<bool> updateBooking(int companyId, Map<String, dynamic> data) async {
     try {
       final response = await _dio.patch(
         '/Bookings/Update',

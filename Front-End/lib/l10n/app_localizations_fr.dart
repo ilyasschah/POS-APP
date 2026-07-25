@@ -2757,6 +2757,9 @@ class AppLocalizationsFr extends AppLocalizations {
       'Afficher une notification à chaque synchronisation';
 
   @override
+  String get setDisplayMessages => 'MESSAGES DE L\'AFFICHEUR';
+
+  @override
   String get setDisplayPrintTaxIncluded =>
       'Afficher et imprimer les articles taxes comprises';
 
@@ -3168,6 +3171,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get setTestDisplay => 'Tester l\'affichage';
 
   @override
+  String get setThankYouMessage => 'Message de remerciement (après paiement)';
+
+  @override
   String get setThemeMode => 'Mode du thème';
 
   @override
@@ -3204,6 +3210,10 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get setWelcomeMessage => 'MESSAGE DE BIENVENUE';
+
+  @override
+  String get setWelcomeMessageLabel =>
+      'Message de bienvenue (écran d\'attente)';
 
   @override
   String get setWelcomeBottomLine => 'Ligne du bas du message de bienvenue';
@@ -5836,4 +5846,8 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get urlCopied => 'URL copiée';
+
+  @override
+  String get accessRulesNotSynced =>
+      'Les règles d\'accès ne sont pas encore arrivées sur cet appareil. Connectez-vous au réseau et synchronisez, puis réessayez.';
 }

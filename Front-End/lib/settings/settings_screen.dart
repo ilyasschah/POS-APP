@@ -1,6 +1,5 @@
 // lib/settings_screen.dart
 
-import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -15,6 +14,7 @@ import 'package:pos_app/database/backup_service.dart';
 import 'package:pos_app/utils/customer_display_service.dart';
 import 'package:pos_app/customer_display/customer_display_web_server.dart';
 import 'package:pos_app/customer_display/customer_display_screen.dart';
+import 'package:pos_app/core/app_theme.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
@@ -4915,15 +4915,6 @@ class _CustomerDisplayTabState extends ConsumerState<_CustomerDisplayTab> {
 
   Future<void> _startWeb() async {
     await CustomerDisplayWebServer.instance.start();
-    // Pre-load the Lottie animation so /lottie.json can be served to browsers.
-    try {
-      final data = await rootBundle.load(
-        'assets/animations/success_animation.json',
-      );
-      CustomerDisplayWebServer.instance.setLottieJson(
-        utf8.decode(data.buffer.asUint8List()),
-      );
-    } catch (_) {}
     if (!mounted) return;
     setState(() {
       _webRunning = true;
@@ -5110,6 +5101,13 @@ class _CustomerDisplayTabState extends ConsumerState<_CustomerDisplayTab> {
                       min: 1,
                       max: 40,
                     ),
+
+                    // Optional second welcome line for a 2-line pole display.
+                    _SettingTextField(
+                      settingKey: SettingKeys.customerDisplayWelcomeBottom,
+                      label: AppLocalizations.of(context).setBottomLine,
+                      hint: '',
+                    ),
                   ],
                 ),
               ),
@@ -5117,19 +5115,24 @@ class _CustomerDisplayTabState extends ConsumerState<_CustomerDisplayTab> {
           ],
         ),
 
-        // Welcome message card
+        // ── Display messages: the two texts the on-screen (native / web)
+        // customer display shows. Both save to the AppProperties table via
+        // appSettingsProvider.set(). Leave a box blank to use the built-in
+        // localized default. ────────────────────────────────────────────────
         _SettingsCard(
-          title: AppLocalizations.of(context).setWelcomeMessage,
+          title: AppLocalizations.of(context).setDisplayMessages,
           children: [
+            // Idle screen greeting.
             _SettingTextField(
               settingKey: SettingKeys.customerDisplayWelcomeMessage,
-              label: AppLocalizations.of(context).setTopLine,
+              label: AppLocalizations.of(context).setWelcomeMessageLabel,
               hint: 'WELCOME!',
             ),
+            // Message shown after a payment completes (replaces "THANK YOU").
             _SettingTextField(
-              settingKey: SettingKeys.customerDisplayWelcomeBottom,
-              label: AppLocalizations.of(context).setBottomLine,
-              hint: '',
+              settingKey: SettingKeys.customerDisplayThankYouMessage,
+              label: AppLocalizations.of(context).setThankYouMessage,
+              hint: 'THANK YOU',
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
@@ -5162,6 +5165,10 @@ class _CustomerDisplayTabState extends ConsumerState<_CustomerDisplayTab> {
                   AppLocalizations.of(context).setOpenCustomerDisplay,
                 ),
                 onPressed: () async {
+                  // Capture the theme map before any await so the browser
+                  // renders in the current app theme (context is unsafe after).
+                  final themeMap =
+                      customerDisplayThemeMap(Theme.of(context));
                   // Auto-start the WS server if it isn't running yet —
                   // the native screen connects to ws://localhost:8181/ws
                   // regardless of whether the web-display toggle is on.
@@ -5181,6 +5188,7 @@ class _CustomerDisplayTabState extends ConsumerState<_CustomerDisplayTab> {
                     'welcomeText':
                         settings[SettingKeys.customerDisplayWelcomeMessage] ??
                         'WELCOME!',
+                    'theme': themeMap,
                   });
                   if (!context.mounted) return;
                   Navigator.push(

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:pos_app/customer_display/customer_display_web_server.dart';
 
@@ -26,17 +27,10 @@ class _Item {
       image = j['image'] as String?;
 }
 
-// Design tokens — hardcoded so the display looks correct on any monitor
-// independent of the host app's ThemeMode setting.
-const Color _kBgDeep = Color(0xFF0F172A); // slate-900  — base / idle bg
-const Color _kBgLeft = Color(0xFF1E293B); // slate-800  — branding panel
-const Color _kBgRight = Color(0xFF111827); // gray-900   — transaction panel
-const Color _kBgTotals = Color(0xFF1E293B); // slate-800  — pinned totals bar
-const Color _kBgSuccess = Color(0xFF052E16); // green-950  — success screen
-const Color _kSep = Color(0xFF334155); // slate-700  — dividers
-const Color _kTextPri = Color(0xFFF1F5F9); // slate-100
-const Color _kTextSub = Color(0xFF64748B); // slate-500
-const Color _kGreen = Color(0xFF4ADE80); // green-400
+// This screen is pushed inside the app's MaterialApp, so every colour is read
+// from `Theme.of(context)` — the customer display follows the operator's chosen
+// theme (light / dark / dimmed / night / …) and accent exactly, never a
+// hardcoded palette.
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Root widget
@@ -152,7 +146,7 @@ class _CustomerDisplayScreenState extends State<CustomerDisplayScreen> {
     final type = (_d['type'] ?? 'idle') as String;
 
     return Scaffold(
-      backgroundColor: _kBgDeep,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
           AnimatedSwitcher(
@@ -168,10 +162,9 @@ class _CustomerDisplayScreenState extends State<CustomerDisplayScreen> {
               _ => _IdleView(d: _d, key: const ValueKey('idle')),
             },
           ),
-          // Subtle amber badge (bottom-right), identical in position and style
-          // to the web version's reconnecting indicator.  Overlaid on whatever
-          // screen is showing so idle/cart content remains visible during a
-          // brief reconnect — avoids flashing a hard "disconnect" screen.
+          // Subtle badge (bottom-right), overlaid on whatever screen is showing
+          // so idle/cart content remains visible during a brief reconnect —
+          // avoids flashing a hard "disconnect" screen.
           if (_ws == null)
             _ReconnectBadge(
               label: _everConnected
@@ -195,6 +188,7 @@ class _ReconnectBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final warn = context.warningColor;
     return Positioned(
       bottom: 12,
       right: 12,
@@ -203,25 +197,25 @@ class _ReconnectBadge extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
           decoration: BoxDecoration(
-            color: const Color(0xFFFEF3C7),
-            border: Border.all(color: const Color(0xFFFCD34D)),
+            color: warn.withValues(alpha: .15),
+            border: Border.all(color: warn.withValues(alpha: .5)),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const SizedBox(
+              SizedBox(
                 width: 10,
                 height: 10,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  color: Color(0xFF92400E),
+                  color: warn,
                 ),
               ),
               const SizedBox(width: 8),
               Text(
                 label,
-                style: const TextStyle(color: Color(0xFF92400E), fontSize: 11),
+                style: TextStyle(color: warn, fontSize: 11),
               ),
             ],
           ),
@@ -240,6 +234,7 @@ class _IdleView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final co = (d['company'] ?? {}) as Map;
     final logo = co['logo'] as String?;
     final name = (co['name'] ?? '') as String;
@@ -247,7 +242,7 @@ class _IdleView extends StatelessWidget {
 
     return SizedBox.expand(
       child: ColoredBox(
-        color: _kBgDeep, // slate-900 — matches web version
+        color: Theme.of(context).scaffoldBackgroundColor,
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -259,8 +254,8 @@ class _IdleView extends StatelessWidget {
               Text(
                 name,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: cs.onSurface,
                   fontSize: 40,
                   fontWeight: FontWeight.w800,
                   letterSpacing: .5,
@@ -270,7 +265,7 @@ class _IdleView extends StatelessWidget {
               Text(
                 welcome,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 20),
+                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 20),
               ),
             ],
           ),
@@ -289,6 +284,7 @@ class _SplitView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final co = (d['company'] ?? {}) as Map;
     final logo = co['logo'] as String?;
     final name = (co['name'] ?? '') as String;
@@ -308,7 +304,7 @@ class _SplitView extends StatelessWidget {
           Expanded(
             flex: 45,
             child: ColoredBox(
-              color: _kBgLeft,
+              color: cs.surfaceContainerHigh,
               child: Padding(
                 padding: const EdgeInsets.all(36),
                 child: Center(
@@ -322,8 +318,8 @@ class _SplitView extends StatelessWidget {
                       Text(
                         name,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: cs.onSurface,
                           fontSize: 26,
                           fontWeight: FontWeight.w700,
                           letterSpacing: .3,
@@ -335,12 +331,12 @@ class _SplitView extends StatelessWidget {
               ),
             ),
           ),
-          Container(width: 1, color: _kSep),
+          Container(width: 1, color: cs.outlineVariant),
           // ── Right: live transaction stream ────────────────────────────────
           Expanded(
             flex: 55,
             child: ColoredBox(
-              color: _kBgRight,
+              color: cs.surface,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -350,7 +346,7 @@ class _SplitView extends StatelessWidget {
                       itemCount: items.length,
                       separatorBuilder: (_, __) => Container(
                         height: 1,
-                        color: Colors.white.withValues(alpha: .06),
+                        color: cs.outlineVariant.withValues(alpha: .5),
                       ),
                       itemBuilder: (_, i) =>
                           _ItemRow(item: items[i], currency: cur),
@@ -383,6 +379,7 @@ class _ItemRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final hasDisc = item.discount > 0.001;
 
     return Padding(
@@ -401,8 +398,8 @@ class _ItemRow extends StatelessWidget {
                   item.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: _kTextPri,
+                  style: TextStyle(
+                    color: cs.onSurface,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
@@ -411,13 +408,13 @@ class _ItemRow extends StatelessWidget {
                 Text(
                   '${_qty(item.qty)} × $currency '
                   '${item.price.toStringAsFixed(2)} / Units',
-                  style: const TextStyle(color: _kTextSub, fontSize: 12),
+                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
                 ),
                 if (hasDisc)
                   Text(
                     AppLocalizations.of(context).discountAmountLine(
                         currency, item.discount.toStringAsFixed(2)),
-                    style: const TextStyle(color: _kGreen, fontSize: 11),
+                    style: TextStyle(color: context.successColor, fontSize: 11),
                   ),
               ],
             ),
@@ -425,8 +422,8 @@ class _ItemRow extends StatelessWidget {
           const SizedBox(width: 12),
           Text(
             '$currency ${item.lineTotal.toStringAsFixed(2)}',
-            style: const TextStyle(
-              color: _kTextPri,
+            style: TextStyle(
+              color: cs.onSurface,
               fontSize: 14,
               fontWeight: FontWeight.w800,
             ),
@@ -445,6 +442,7 @@ class _Thumb extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     Widget inner;
     if (image != null && image!.isNotEmpty) {
       try {
@@ -452,13 +450,13 @@ class _Thumb extends StatelessWidget {
           base64Decode(image!),
           fit: BoxFit.cover,
           cacheWidth: 50,
-          errorBuilder: (_, __, ___) => _initials(),
+          errorBuilder: (_, __, ___) => _initials(context),
         );
       } catch (_) {
-        inner = _initials();
+        inner = _initials(context);
       }
     } else {
-      inner = _initials();
+      inner = _initials(context);
     }
 
     return ClipRRect(
@@ -467,18 +465,18 @@ class _Thumb extends StatelessWidget {
         width: 50,
         height: 50,
         child: ColoredBox(
-          color: Colors.white.withValues(alpha: .08),
+          color: cs.onSurface.withValues(alpha: .08),
           child: inner,
         ),
       ),
     );
   }
 
-  Widget _initials() => Center(
+  Widget _initials(BuildContext context) => Center(
     child: Text(
       (name.isNotEmpty ? name[0] : '?').toUpperCase(),
-      style: const TextStyle(
-        color: Color(0xFF94A3B8),
+      style: TextStyle(
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
         fontSize: 18,
         fontWeight: FontWeight.w700,
       ),
@@ -499,34 +497,37 @@ class _TotalsBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 14, 24, 20),
       decoration: BoxDecoration(
-        color: _kBgTotals,
+        color: cs.surfaceContainerHigh,
         border: Border(
-          top: BorderSide(color: Colors.white.withValues(alpha: .08)),
+          top: BorderSide(color: cs.outlineVariant),
         ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (tax > 0) _TotRow(AppLocalizations.of(context).taxesLabel, '$currency ${tax.toStringAsFixed(2)}'),
+          if (tax > 0)
+            _TotRow(AppLocalizations.of(context).taxesLabel,
+                '$currency ${tax.toStringAsFixed(2)}'),
           if (discount > 0)
             _TotRow(
               AppLocalizations.of(context).posDiscount,
               '−$currency ${discount.toStringAsFixed(2)}',
-              valueColor: _kGreen,
+              valueColor: context.successColor,
             ),
           const SizedBox(height: 6),
-          Divider(color: Colors.white.withValues(alpha: .1), height: 1),
+          Divider(color: cs.outlineVariant, height: 1),
           const SizedBox(height: 10),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 AppLocalizations.of(context).totalLabel,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: cs.onSurface,
                   fontSize: 26,
                   fontWeight: FontWeight.w900,
                   letterSpacing: -.5,
@@ -534,8 +535,8 @@ class _TotalsBlock extends StatelessWidget {
               ),
               Text(
                 '$currency ${total.toStringAsFixed(2)}',
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: cs.primary,
                   fontSize: 26,
                   fontWeight: FontWeight.w900,
                   letterSpacing: -.5,
@@ -548,7 +549,10 @@ class _TotalsBlock extends StatelessWidget {
             alignment: AlignmentDirectional.centerEnd,
             child: Text(
               AppLocalizations.of(context).poweredByPos,
-              style: const TextStyle(color: Color(0xFF334155), fontSize: 10),
+              style: TextStyle(
+                color: cs.onSurfaceVariant.withValues(alpha: .6),
+                fontSize: 10,
+              ),
             ),
           ),
         ],
@@ -564,16 +568,18 @@ class _TotRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: _kTextSub, fontSize: 14)),
+          Text(label,
+              style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14)),
           Text(
             value,
             style: TextStyle(
-              color: valueColor ?? _kTextPri,
+              color: valueColor ?? cs.onSurface,
               fontSize: 14,
               fontWeight: FontWeight.w500,
             ),
@@ -587,7 +593,9 @@ class _TotRow extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 // 3. CHECKOUT SUCCESS
 //
-// Static success screen (no animation) — a flat green check above the message.
+// No animation, no checkmark — just the configurable message and the amounts.
+// The message comes from `CustomerDisplay.ThankYouMessage`; when it is blank the
+// broadcast carries the localized "Thank you" fallback.
 // ─────────────────────────────────────────────────────────────────────────────
 class _SuccessView extends StatelessWidget {
   final Map<String, dynamic> d;
@@ -595,24 +603,27 @@ class _SuccessView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final cur = (d['currency'] ?? '') as String;
     final total = ((d['total'] ?? 0) as num).toDouble();
     final cash = ((d['cash'] ?? 0) as num).toDouble();
     final change = ((d['change'] ?? 0) as num).toDouble();
+    final message = ((d['thankYouText'] as String?)?.trim().isNotEmpty ?? false)
+        ? (d['thankYouText'] as String)
+        : AppLocalizations.of(context).thankYou;
 
     return SizedBox.expand(
       child: ColoredBox(
-        color: _kBgSuccess,
+        color: Theme.of(context).scaffoldBackgroundColor,
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const _FallbackCheck(),
-              const SizedBox(height: 8),
               Text(
-                AppLocalizations.of(context).thankYou,
-                style: const TextStyle(
-                  color: Colors.white,
+                message,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: cs.primary,
                   fontSize: 52,
                   fontWeight: FontWeight.w900,
                   letterSpacing: -1,
@@ -622,7 +633,7 @@ class _SuccessView extends StatelessWidget {
               Text(
                 '$cur ${total.toStringAsFixed(2)}',
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: .6),
+                  color: cs.onSurface.withValues(alpha: .7),
                   fontSize: 26,
                   fontWeight: FontWeight.w500,
                 ),
@@ -657,13 +668,14 @@ class _PayCol extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           label,
           style: TextStyle(
-            color: Colors.white.withValues(alpha: .45),
+            color: cs.onSurfaceVariant,
             fontSize: 12,
             letterSpacing: 1.5,
           ),
@@ -672,29 +684,12 @@ class _PayCol extends StatelessWidget {
         Text(
           value,
           style: TextStyle(
-            color: green ? _kGreen : Colors.white,
+            color: green ? context.successColor : cs.onSurface,
             fontSize: 26,
             fontWeight: FontWeight.w700,
           ),
         ),
       ],
-    );
-  }
-}
-
-class _FallbackCheck extends StatelessWidget {
-  const _FallbackCheck();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 110,
-      height: 110,
-      decoration: const BoxDecoration(
-        color: Color(0xFF16A34A),
-        shape: BoxShape.circle,
-      ),
-      child: const Icon(Icons.check_rounded, color: Colors.white, size: 64),
     );
   }
 }

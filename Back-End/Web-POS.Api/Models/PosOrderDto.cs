@@ -15,6 +15,24 @@ namespace Api.Models
         public int ServiceStatus { get; set; }
         public int? FloorPlanTableId { get; set; }
         public DateTime? DueDate { get; set; }
+
+        /// <summary>
+        /// Number of line items on this order, and the newest line's DateCreated.
+        /// Display-only aggregates so a terminal can tell whether ANOTHER terminal
+        /// changed the order's contents without fetching every line on every poll
+        /// (the POS polls open orders every 20s).
+        ///
+        /// Total alone is not enough: swapping a product for one at the same price
+        /// leaves it unchanged. A swap deletes and re-inserts a row, so
+        /// ItemsLastChanged moves; an add/remove moves ItemCount; an in-place
+        /// quantity edit moves Total. Together they cover every edit.
+        ///
+        /// Computed per request — NOT stored, so there is no schema change and no
+        /// migration. Null-safe on the client: an older API that omits them simply
+        /// falls back to the Total-only check.
+        /// </summary>
+        public int ItemCount { get; set; }
+        public DateTime? ItemsLastChanged { get; set; }
     }
 
     public class CreatePosOrderRequest

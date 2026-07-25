@@ -6,6 +6,7 @@ import 'package:gap/gap.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:pos_app/core/status_colors.dart';
+import 'package:pos_app/core/overflow_actions_bar.dart';
 import 'package:pos_app/menu/open_orders_screen.dart';
 import 'package:pos_app/navigation/main_layout.dart';
 import 'package:pos_app/product/product_provider.dart';
@@ -287,51 +288,14 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                 onPressed: widget.onToggleSidebar,
               )
             : null,
-        title: widget.showAppBarNavigation
-            ? Text(
-                ref.watch(selectedCompanyProvider)?.name ??
-                    AppLocalizations.of(context).branch,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-                overflow: TextOverflow.ellipsis,
-              )
-            : null,
-        actions: [
-          // --- Kitchen-ready notification ---
-          // Persistent badge: appears when the KDS marks one or more orders
-          // ready. Tapping it jumps to the Open Orders tab.
-          Builder(
-            builder: (context) {
-              final readyCount = ref.watch(readyOrdersCountProvider).value ?? 0;
-              if (readyCount == 0) return const SizedBox.shrink();
-              return Padding(
-                padding: const EdgeInsets.only(right: 4),
-                child: IconButton(
-                  tooltip: AppLocalizations.of(context).ordersReady(readyCount),
-                  onPressed: () =>
-                      ref.read(mainNavigationIndexProvider.notifier).state = 1,
-                  icon: Badge.count(
-                    count: readyCount,
-                    child: Icon(
-                      Icons.notifications_active,
-                      size: 26,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-          // --- Order Controls ---
-          SizedBox(
-            height: 60,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
+        titleSpacing: 0,
+        centerTitle: false,
+        // Order-control buttons that fit are shown inline; the rest collapse
+        // into an overflow menu (the Windows "show hidden icons" pattern) so
+        // they never run off a small (7") screen. The AppBar title slot gives
+        // the bar a bounded width to lay out against.
+        title: OverflowActionsBar(
+          actions: [
                   if (showCustomerBtn)
                     asyncCustomers.when(
                       loading: () => const SizedBox(
@@ -904,12 +868,6 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                               }
                             },
                     ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-
           // --- Warehouse Switcher (centered picker, like the customer one) ---
           if (showWarehouseBtn)
             Consumer(
@@ -1022,8 +980,34 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
               badgeCount: _activePromos.length,
               onTap: () => _showActivePromosPopup(context),
             ),
-
-          const SizedBox(width: 8),
+          ],
+        ),
+        // Kitchen-ready notification stays pinned to the right, outside the
+        // overflow bar, so it's always visible when the KDS marks orders ready.
+        actions: [
+          Builder(
+            builder: (context) {
+              final readyCount = ref.watch(readyOrdersCountProvider).value ?? 0;
+              if (readyCount == 0) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: IconButton(
+                  tooltip: AppLocalizations.of(context).ordersReady(readyCount),
+                  onPressed: () =>
+                      ref.read(mainNavigationIndexProvider.notifier).state = 1,
+                  icon: Badge.count(
+                    count: readyCount,
+                    child: Icon(
+                      Icons.notifications_active,
+                      size: 26,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+          const SizedBox(width: 4),
         ],
       ),
       body: Row(
@@ -3443,14 +3427,21 @@ class _MenuActionVisual extends StatelessWidget {
         children: [
           iconWidget,
           const SizedBox(height: 3),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: tint,
+          // Cap the label so a long French label (or a selected customer's full
+          // name) can't stretch the button — it ellipsizes and the full text
+          // stays reachable through the button's Tooltip.
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 84),
+            child: Text(
+              label,
+              maxLines: 1,
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: tint,
+              ),
             ),
           ),
         ],
@@ -3541,13 +3532,20 @@ class _CartFooterButton extends StatelessWidget {
       child: ElevatedButton.icon(
         onPressed: onTap,
         icon: Icon(icon, color: Colors.white, size: 22),
-        label: Text(
-          label,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 17,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 0.5,
+        // Scale the label to one line so a longer word (e.g. French "ANNULER")
+        // shrinks to fit a narrow cart panel instead of wrapping.
+        label: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            label,
+            maxLines: 1,
+            softWrap: false,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 17,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
+            ),
           ),
         ),
         style: ElevatedButton.styleFrom(

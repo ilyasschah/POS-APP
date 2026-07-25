@@ -7,7 +7,11 @@ import 'dart:io';
 /// Hosts a small HTTP server on [port] (default 8181).
 /// GET  /         → self-contained HTML page
 /// GET  /ws       → WebSocket for real-time state pushes
-/// GET  /lottie.json → serves the success_animation.json asset
+///
+/// The page has no external dependencies and no animation. Its colours are
+/// driven entirely by the `theme` object carried in every broadcast, so a
+/// browser on a second monitor / other device renders in the operator's exact
+/// app theme (light / dark / dimmed / night / …).
 class CustomerDisplayWebServer {
   CustomerDisplayWebServer._();
   static final CustomerDisplayWebServer instance =
@@ -19,15 +23,9 @@ class CustomerDisplayWebServer {
   final List<WebSocket> _clients = [];
   Map<String, dynamic> _lastState = {'type': 'idle'};
   String _localIp = '127.0.0.1';
-  String? _lottieJson; // set by setLottieJson() after asset is loaded
 
   bool get isRunning => _server != null;
   String get url => 'http://$_localIp:$port';
-
-  /// Call this after the Flutter asset bundle is available:
-  ///   final d = await rootBundle.load('assets/animations/success_animation.json');
-  ///   CustomerDisplayWebServer.instance.setLottieJson(utf8.decode(d.buffer.asUint8List()));
-  void setLottieJson(String json) => _lottieJson = json;
 
   // ── Lifecycle ───────────────────────────────────────────────────────────────
 
@@ -81,18 +79,6 @@ class CustomerDisplayWebServer {
             ..headers.contentType = ContentType.html
             ..write(_htmlPage)
             ..close();
-        } else if (req.method == 'GET' && path == '/lottie.json') {
-          final json = _lottieJson;
-          if (json != null) {
-            req.response
-              ..statusCode = 200
-              ..headers.set('Content-Type', 'application/json')
-              ..headers.set('Access-Control-Allow-Origin', '*')
-              ..write(json)
-              ..close();
-          } else {
-            req.response..statusCode = 404..close();
-          }
         } else {
           req.response..statusCode = 404..close();
         }
@@ -123,44 +109,57 @@ class CustomerDisplayWebServer {
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Customer Display</title>
 <style>
+/* ── Theme variables (overwritten live from the broadcast `theme` object). The
+      defaults below are only shown for the split-second before the first
+      message arrives. ─────────────────────────────────────────────────────── */
+:root{
+  --bg:#0f172a;
+  --surface:#111827;
+  --surface-alt:#1e293b;
+  --on-surface:#f1f5f9;
+  --on-surface-variant:#94a3b8;
+  --primary:#a8c7fa;
+  --on-primary:#0f172a;
+  --outline:#334155;
+  --success:#4ade80;
+}
+
 /* ── Reset ────────────────────────────────────────────────────────────── */
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-html,body{height:100%;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;overflow:hidden;background:#0f172a}
+html,body{height:100%;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;overflow:hidden;background:var(--bg)}
 
 /* ── Screen switching ─────────────────────────────────────────────────── */
 .screen{position:fixed;inset:0;display:flex;opacity:0;pointer-events:none;transition:opacity .38s ease}
 .screen.active{opacity:1;pointer-events:auto}
 
 /* ═══════════════════════════════════════════════════════════════════════
-   IDLE — dark centred branding
+   IDLE — centred branding
 ═══════════════════════════════════════════════════════════════════════ */
-#idle{background:#0f172a;flex-direction:column;align-items:center;justify-content:center;gap:24px}
+#idle{background:var(--bg);flex-direction:column;align-items:center;justify-content:center;gap:24px}
 #idle-logo{max-width:200px;max-height:140px;object-fit:contain;display:none}
-#idle-company{color:#fff;font-size:2.8rem;font-weight:800;text-align:center;letter-spacing:.01em}
-#idle-welcome{color:#94a3b8;font-size:1.15rem;text-align:center;max-width:420px;line-height:1.6}
-.pulse{animation:pulse 2.4s ease-in-out infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+#idle-company{color:var(--on-surface);font-size:2.8rem;font-weight:800;text-align:center;letter-spacing:.01em}
+#idle-welcome{color:var(--on-surface-variant);font-size:1.15rem;text-align:center;max-width:420px;line-height:1.6}
 
 /* ═══════════════════════════════════════════════════════════════════════
-   SPLIT PANE  left 45% dark branding / right 55% dark transaction
+   SPLIT PANE  left 45% branding / right 55% transaction
 ═══════════════════════════════════════════════════════════════════════ */
 #cart-screen{flex-direction:row}
 
 /* Left */
 .sp-left{
   width:45%;flex-shrink:0;
-  background:#1e293b;
+  background:var(--surface-alt);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:22px;padding:36px;
-  border-right:1px solid #334155
+  border-right:1px solid var(--outline)
 }
 .sp-logo{max-width:160px;max-height:160px;object-fit:contain;display:none}
-.sp-name{color:#fff;font-size:1.9rem;font-weight:700;text-align:center;line-height:1.3}
+.sp-name{color:var(--on-surface);font-size:1.9rem;font-weight:700;text-align:center;line-height:1.3}
 
 /* Right */
 .sp-right{
   flex:1;min-width:0;
-  background:#111827;
+  background:var(--surface);
   display:flex;flex-direction:column
 }
 
@@ -168,78 +167,63 @@ html,body{height:100%;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
 .items-scroll{flex:1;overflow-y:auto;padding:14px 20px 6px}
 
 /* Item row */
-.item{display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.07)}
+.item{display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--outline)}
 .item:last-child{border-bottom:none}
 
 /* Thumbnail */
 .thumb{
   width:50px;height:50px;border-radius:10px;
-  background:rgba(255,255,255,.08);flex-shrink:0;
+  background:var(--surface-alt);flex-shrink:0;
   display:flex;align-items:center;justify-content:center;
-  overflow:hidden;font-size:.85rem;font-weight:700;color:#64748b;
+  overflow:hidden;font-size:.85rem;font-weight:700;color:var(--on-surface-variant);
   letter-spacing:0
 }
 .thumb img{width:100%;height:100%;object-fit:cover;border-radius:10px}
 
 /* Item text */
 .item-body{flex:1;min-width:0}
-.item-name{color:#f1f5f9;font-size:.95rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.item-meta{color:#64748b;font-size:.75rem;margin-top:2px}
-.item-disc{color:#4ade80;font-size:.7rem;margin-top:1px}
-.item-cmt{color:#fbbf24;font-size:.7rem;font-style:italic;margin-top:1px}
-.item-total{color:#f1f5f9;font-size:.95rem;font-weight:800;white-space:nowrap;flex-shrink:0}
+.item-name{color:var(--on-surface);font-size:.95rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item-meta{color:var(--on-surface-variant);font-size:.75rem;margin-top:2px}
+.item-disc{color:var(--success);font-size:.7rem;margin-top:1px}
+.item-total{color:var(--on-surface);font-size:.95rem;font-weight:800;white-space:nowrap;flex-shrink:0}
 
 /* Pinned totals */
 .totals-pin{
-  background:#1e293b;flex-shrink:0;
-  border-top:1px solid #334155;
+  background:var(--surface-alt);flex-shrink:0;
+  border-top:1px solid var(--outline);
   padding:14px 24px 20px
 }
-.tot-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:.875rem;color:#94a3b8}
-.tot-val{color:#e2e8f0;font-weight:500}
-.tot-row.disc .tot-val{color:#4ade80}
-.tot-row.cash .tot-val{color:#4ade80;font-weight:700}
-.tot-hr{border:none;border-top:1px solid #334155;margin:8px 0}
+.tot-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:.875rem;color:var(--on-surface-variant)}
+.tot-val{color:var(--on-surface);font-weight:500}
+.tot-row.disc .tot-val{color:var(--success)}
+.tot-row.cash .tot-val{color:var(--success);font-weight:700}
+.tot-hr{border:none;border-top:1px solid var(--outline);margin:8px 0}
 .grand-row{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
-.grand-lbl,.grand-amt{color:#fff;font-size:1.9rem;font-weight:900;letter-spacing:-.03em}
-.powered{font-size:.6rem;color:#334155;text-align:right;margin-top:8px}
+.grand-lbl{color:var(--on-surface);font-size:1.9rem;font-weight:900;letter-spacing:-.03em}
+.grand-amt{color:var(--primary);font-size:1.9rem;font-weight:900;letter-spacing:-.03em}
+.powered{font-size:.6rem;color:var(--on-surface-variant);opacity:.6;text-align:right;margin-top:8px}
 
 /* ═══════════════════════════════════════════════════════════════════════
-   SUCCESS SCREEN
+   SUCCESS SCREEN — configurable message + amounts, no animation
 ═══════════════════════════════════════════════════════════════════════ */
 #payment-screen{
-  background:#0f172a;
+  background:var(--bg);
   flex-direction:column;align-items:center;justify-content:center;gap:0
 }
-
-/* Lottie container — shown when LottieJS loads successfully */
-#lottie-wrap{width:260px;height:260px;display:none}
-
-/* CSS fallback checkmark — shown if LottieJS unavailable */
-#css-icon{display:none;align-items:center;justify-content:center;width:110px;height:110px}
-.check-circle{
-  width:110px;height:110px;border-radius:50%;
-  background:#16a34a;
-  display:flex;align-items:center;justify-content:center;
-  animation:popIn .5s cubic-bezier(.175,.885,.32,1.275) both
-}
-@keyframes popIn{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
-.check-circle svg{width:58px;height:58px}
-
-.suc-heading{color:#fff;font-size:3.6rem;font-weight:900;letter-spacing:-.04em;margin-top:16px}
+.suc-heading{color:var(--primary);font-size:3.6rem;font-weight:900;letter-spacing:-.04em;text-align:center;padding:0 24px}
 .suc-card{
-  background:#1e293b;border-radius:20px;
-  border:1px solid #334155;
+  background:var(--surface-alt);border-radius:20px;
+  border:1px solid var(--outline);
   padding:22px 52px 26px;margin-top:20px;
   display:flex;flex-direction:column;align-items:center;gap:2px
 }
-.suc-label{color:#64748b;font-size:.875rem}
-.suc-total{color:#fff;font-size:3.4rem;font-weight:900;letter-spacing:-.04em;line-height:1.1}
-.suc-cash-row{display:flex;gap:44px;margin-top:16px;padding-top:16px;border-top:1px solid #334155}
+.suc-label{color:var(--on-surface-variant);font-size:.875rem}
+.suc-total{color:var(--on-surface);font-size:3.4rem;font-weight:900;letter-spacing:-.04em;line-height:1.1}
+.suc-cash-row{display:flex;gap:44px;margin-top:16px;padding-top:16px;border-top:1px solid var(--outline)}
 .suc-stat{text-align:center}
-.suc-stat-lbl{color:#64748b;font-size:.72rem;text-transform:uppercase;letter-spacing:.07em}
-.suc-stat-val{color:#f1f5f9;font-size:1.5rem;font-weight:700;margin-top:3px}
-.suc-stat-val.grn{color:#4ade80}
+.suc-stat-lbl{color:var(--on-surface-variant);font-size:.72rem;text-transform:uppercase;letter-spacing:.07em}
+.suc-stat-val{color:var(--on-surface);font-size:1.5rem;font-weight:700;margin-top:3px}
+.suc-stat-val.grn{color:var(--success)}
 
 /* Reconnect badge */
 #status{position:fixed;bottom:12px;right:12px;background:#fef3c7;color:#92400e;padding:6px 14px;border-radius:20px;font-size:.7rem;display:none;border:1px solid #fcd34d}
@@ -249,7 +233,7 @@ html,body{height:100%;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
 
 <!-- IDLE -->
 <div id="idle" class="screen active">
-  <img id="idle-logo" class="pulse" alt="logo"/>
+  <img id="idle-logo" alt="logo"/>
   <div id="idle-company"></div>
   <div id="idle-welcome"></div>
 </div>
@@ -268,52 +252,13 @@ html,body{height:100%;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
 
 <!-- SUCCESS -->
 <div id="payment-screen" class="screen">
-  <div id="lottie-wrap"></div>
-  <div id="css-icon">
-    <div class="check-circle">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="20 6 9 17 4 12"/>
-      </svg>
-    </div>
-  </div>
-  <div class="suc-heading">Thank You!</div>
+  <div class="suc-heading" id="suc-heading"></div>
   <div class="suc-card" id="suc-card"></div>
 </div>
 
 <div id="status">Reconnecting…</div>
 
 <script>
-/* ── Lottie setup (LottieJS loaded from CDN; CSS fallback if unavailable) ── */
-var lottieReady = false;
-var lottieInst  = null;
-
-(function(){
-  var s = document.createElement('script');
-  s.src = 'https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js';
-  s.onload = function(){ lottieReady = true; };
-  document.head.appendChild(s);
-})();
-
-function playLottie(){
-  var wrap = document.getElementById('lottie-wrap');
-  var css  = document.getElementById('css-icon');
-  if(lottieReady && typeof lottie !== 'undefined'){
-    wrap.style.display = 'block';
-    css.style.display  = 'none';
-    if(lottieInst){ lottieInst.destroy(); lottieInst = null; }
-    lottieInst = lottie.loadAnimation({
-      container: wrap,
-      renderer:  'svg',
-      loop:      false,
-      autoplay:  true,
-      path:      '/lottie.json'
-    });
-  } else {
-    wrap.style.display = 'none';
-    css.style.display  = 'flex';
-  }
-}
-
 /* ── WebSocket ────────────────────────────────────────────────────────── */
 var ws, retryMs = 1000;
 
@@ -323,6 +268,19 @@ function connect(){
   ws.onmessage = function(e){ render(JSON.parse(e.data)); };
   ws.onclose   = function(){ document.getElementById('status').style.display='block'; setTimeout(connect, retryMs=Math.min(retryMs*2,30000)); };
   ws.onerror   = function(){ ws.close(); };
+}
+
+/* Apply the operator's app theme (colours pushed in every broadcast). */
+function applyTheme(t){
+  if(!t) return;
+  var root = document.documentElement;
+  var map = {
+    bg:'--bg', surface:'--surface', surfaceAlt:'--surface-alt',
+    onSurface:'--on-surface', onSurfaceVariant:'--on-surface-variant',
+    primary:'--primary', onPrimary:'--on-primary', outline:'--outline',
+    success:'--success'
+  };
+  for(var k in map){ if(t[k]) root.style.setProperty(map[k], t[k]); }
 }
 
 function showScreen(id){
@@ -348,6 +306,7 @@ function fmtQty(q){
 }
 
 function render(d){
+  applyTheme(d.theme);
   if     (d.type==='idle')    renderIdle(d);
   else if(d.type==='cart')    renderCart(d);
   else if(d.type==='success') renderSuccess(d);
@@ -415,6 +374,8 @@ function renderCart(d){
 function renderSuccess(d){
   var cur = d.currency||'';
 
+  document.getElementById('suc-heading').textContent = d.thankYouText || 'Thank you!';
+
   /* Build the amounts card */
   var card = '<div class="suc-label">Total Paid</div>'
     + '<div class="suc-total">'+cur+' '+(d.total).toFixed(2)+'</div>';
@@ -428,7 +389,6 @@ function renderSuccess(d){
   document.getElementById('suc-card').innerHTML = card;
 
   showScreen('payment-screen');
-  playLottie();
 }
 
 connect();

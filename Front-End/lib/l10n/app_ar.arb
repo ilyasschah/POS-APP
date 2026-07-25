@@ -858,6 +858,7 @@
   "setDiscountApplyRule": "قاعدة تطبيق الخصم",
   "setDiscountButton": "زر الخصم",
   "setSyncToast": "إظهار إشعار عند اكتمال كل مزامنة",
+  "setDisplayMessages": "رسائل الشاشة",
   "setDisplayPrintTaxIncluded": "عرض وطباعة الأصناف شاملة الضريبة",
   "setDualCurrencyHint": "عرض الأسعار والمجاميع بعملة ثانية في الوقت نفسه",
   "setShowPrintDialog": "إظهار مربع حوار طباعة الإيصال",
@@ -989,6 +990,7 @@
   "setTaxIncludedByDefault": "الضريبة مشمولة في السعر افتراضياً",
   "setTaxNo": "الرقم الضريبي",
   "setTestDisplay": "اختبار العرض",
+  "setThankYouMessage": "رسالة الشكر (بعد الدفع)",
   "setThemeMode": "وضع الثيم",
   "setTimezone": "المنطقة الزمنية",
   "setTopLine": "السطر العلوي",
@@ -1001,6 +1003,7 @@
   "setWarehouseSwitcherButton": "زر مبدّل المستودعات",
   "setWeighingScale": "ميزان",
   "setWelcomeMessage": "رسالة الترحيب",
+  "setWelcomeMessageLabel": "رسالة الترحيب (شاشة الانتظار)",
   "setWelcomeBottomLine": "السطر السفلي لرسالة الترحيب",
   "setWelcomeTopLine": "السطر العلوي لرسالة الترحيب",
   "setWhenToSync": "متى تتم المزامنة",
@@ -1623,7 +1626,6 @@
   "backupPathHintWindows": "مثال: D:\\database\\Backup",
   "backupPathHintUnix": "مثال: /home/user/backups",
   "exchangeRateHint": "مثال: 1.08  (1 عملة أساسية = X عملة ثانوية)",
-
   "addServiceStatus": "إضافة حالة خدمة",
   "clearFavorites": "مسح المفضلة",
   "editServiceStatus": "تعديل حالة الخدمة",
@@ -1638,7 +1640,6 @@
   "selectBusinessPartnerInFilter": "يرجى اختيار شريك تجاري من لوحة التصفية.",
   "selectReportToViewOrPrint": "اختر تقريرًا لعرضه أو طباعته",
   "versionLabel": "الإصدار {version}",
-
   "ageRestrictionBody": "يتطلب هذا المنتج أن يكون عمر العميل {age} سنة على الأقل.\n\nيرجى التأكد من استيفاء العميل لهذا الشرط قبل المتابعة.",
   "bookingCompletedLocked": "هذا الحجز مكتمل ولا يمكن تعديله.",
   "bookingPrefix": "الحجز: ",
@@ -1663,7 +1664,6 @@
   "todayWithValue": "اليوم: {value}",
   "updateStatusUpper": "تحديث الحالة",
   "voidReasonPrompt": "أدخل أو اختر سبب إلغاء \"{number}\"",
-
   "accessDenied": "تم رفض الوصول",
   "accessDeniedBody": "ليس لديك إذن لعرض هذا القسم.\nاختر قسمًا آخر من القائمة، أو اطلب الإذن من المسؤول.",
   "checkingUpper": "جارٍ التحقق…",
@@ -1689,7 +1689,6 @@
   "thankYou": "شكرًا لك!",
   "weWillSwitchOnFeatures": "سنقوم بتفعيل الميزات المناسبة لك.",
   "whatsYourBusiness": "ما هو نشاطك التجاري؟",
-
   "changeThisLaterInSettings": "يمكنك تغيير كل هذا لاحقًا من الإعدادات.",
   "everythingBuiltIn": "كل هذا مضمّن — لا حاجة لشراء إضافات.",
   "everythingYouGet": "كل ما تحصل عليه",
@@ -1697,9 +1696,7 @@
   "linkDeviceUpper": "ربط الجهاز",
   "numberOfProductsToImport": "عدد المنتجات المراد استيرادها: {count}",
   "setUpYourTerminal": "قم بإعداد جهازك",
-
   "statusExpiresToday": "تنتهي اليوم",
-
   "accessDeniedNoPermission": "تم رفض الوصول: ليس لديك إذن لتنفيذ هذا الإجراء.",
   "alreadyBookedDuringTime": "هذا {what} محجوز بالفعل خلال هذا الوقت — {name} ({range}).",
   "cannotBookInPast": "لا يمكن إنشاء حجز في الماضي.",
@@ -1732,5 +1729,6 @@
   "terminalNotLinked": "هذا الجهاز غير مرتبط. أعد ربط الجهاز.",
   "testMessageSent": "تم إرسال رسالة الاختبار.",
   "testSignalSentToDrawer": "تم إرسال إشارة اختبار إلى درج النقد",
-  "urlCopied": "تم نسخ الرابط"
+  "urlCopied": "تم نسخ الرابط",
+  "accessRulesNotSynced": "لم تصل قواعد الوصول إلى هذا الجهاز بعد. اتصل بالشبكة وقم بالمزامنة ثم أعد المحاولة."
 }
