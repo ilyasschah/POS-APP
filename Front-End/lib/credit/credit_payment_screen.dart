@@ -503,11 +503,14 @@ class _LeftPanel extends StatelessWidget {
     final theme = Theme.of(context);
     return SizedBox(
       width: 340, // Increased width for better touch inputs
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+      // Scrollable so the form fits a short 7" screen instead of overflowing
+      // the bottom.
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
             // Customer
             Text(AppLocalizations.of(context).customerLabel, style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
@@ -627,9 +630,8 @@ class _LeftPanel extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 18),
               ),
             ),
-
-            const Spacer(),
           ],
+        ),
         ),
       ),
     );

@@ -89,10 +89,11 @@ Worth doing for checkout + the main tables once we know which ones break.
 - **Discount dialog** — tighter insets + scrollable body (`discount_dialog.dart`).
 - **Stock table** — horizontal scroll for wide FR columns (`stock_screen.dart`).
 - **Stock detail `_infoRow`** — label+value flex so long values wrap (`stock_screen.dart`).
+- **Reports list header** — title flexes/ellipsizes, search tightened to 200 (`reports_screen.dart`).
+- **Promotions table** — Actions cell wrapped in `FittedBox` scale-down (`promotions_list_screen.dart`).
+- **Tax-rate edit dialog** — `scrollable: true` + tighter insets (`tax_rates_screen.dart`).
+- **Sales history toolbar** — action group scrolls horizontally inside `Expanded`; Columns/Refresh pinned right (`sales_history_screen.dart`).
+- **Credit payments form** — left form panel wrapped in `SingleChildScrollView` (`credit_payment_screen.dart`).
 
-### ⏳ Pending — captured 2026-07-25 (NOT yet fixed; resume here)
-1. **Reports list header** (`reports/reports_screen.dart`) — "Sélectionnez un rapport…" title + search field overflow right (~14–26px). Flex the title / cap the search width; the report list rows below also scroll.
-2. **Promotions table** (`promotions/…` list screen) — the Nom/Statut/Jours/dates/Actions table overflows right (~2px, the Actions/delete column). → horizontal scroll the table (same fix as stock).
-3. **Tax-rate edit dialog** (`tax/tax_rates_screen.dart`, "Modifier le taux de taxe") — ~4px bottom overflow. → scrollable dialog body / tighter insets (same fix as discount dialog).
-4. **Sales history toolbar** (`reports/sales_history_screen.dart`, "Historique des ventes") — the action toolbar (Tous les utilisateurs … Colonnes) overflows right by ~82px. → route it through `OverflowActionsBar` (or horizontal scroll).
-5. **Credit payments form** (`credit/credit_payment_screen.dart`, "Paiements à crédit") — left form panel overflows bottom by ~64px and the right "Résumé" panel is cut off. → make the form column scrollable; make the two-panel Row responsive (stack/scroll on compact).
+### ⏳ Pending
+_None outstanding from the captured screenshots. Test the above on the device and send any new overflow spots._

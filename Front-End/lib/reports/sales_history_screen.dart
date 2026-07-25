@@ -935,6 +935,13 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Row(
         children: [
+          // The action buttons scroll horizontally so they never run off a
+          // narrow (7") screen; Columns/Refresh stay pinned on the right.
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
           _toolBtn(
             _showAllUsers ? Icons.group : Icons.person_outline,
             _showAllUsers
@@ -1027,7 +1034,13 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
             color: context.dangerColor,
           ),
 
-          const Spacer(),
+                ],
+              ),
+            ),
+          ),
+          const Gap(12),
+          const VerticalDivider(width: 1, indent: 16, endIndent: 16),
+          const Gap(12),
           _toolBtn(
             Icons.view_column_outlined,
             AppLocalizations.of(context).columns,

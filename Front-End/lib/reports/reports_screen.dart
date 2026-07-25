@@ -1239,17 +1239,21 @@ class _HomeView extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(24, 16, 16, 8),
                 child: Row(
                   children: [
-                    Text(
-                      AppLocalizations.of(context).selectReportToViewOrPrint,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: cs.onSurface,
+                    Expanded(
+                      child: Text(
+                        AppLocalizations.of(context).selectReportToViewOrPrint,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: cs.onSurface,
+                        ),
                       ),
                     ),
-                    const Spacer(),
+                    const SizedBox(width: 12),
                     SizedBox(
-                      width: 220,
+                      width: 200,
                       height: 36,
                       child: TextField(
                         onChanged: onSearchChanged,

@@ -238,9 +238,16 @@ class PromotionsListScreen extends ConsumerWidget {
                                         Expanded(flex: 2, child: Text(promotion.endTime ?? "-")),
                                         Expanded(
                                           flex: 2,
-                                          child: Row(
-                                            mainAxisAlignment: MainAxisAlignment.end,
-                                            children: [
+                                          // FittedBox so the two action buttons
+                                          // scale down to fit their column on a
+                                          // narrow screen instead of overflowing.
+                                          child: Align(
+                                            alignment: AlignmentDirectional.centerEnd,
+                                            child: FittedBox(
+                                              fit: BoxFit.scaleDown,
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
                                               IconButton(
                                                 icon: Icon(Icons.edit, color: context.infoColor),
                                                 tooltip: AppLocalizations.of(context).actionEdit,
@@ -313,7 +320,9 @@ class PromotionsListScreen extends ConsumerWidget {
                                                   }
                                                 },
                                               ),
-                                            ],
+                                                ],
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ],

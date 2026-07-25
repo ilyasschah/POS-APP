@@ -522,6 +522,10 @@ class _TaxFormDialogState extends ConsumerState<_TaxFormDialog> {
     final theme = Theme.of(context);
 
     return AlertDialog(
+      // Scroll + tighter insets so the form fits (and scrolls if needed) on a
+      // short 7" screen instead of overflowing the bottom.
+      scrollable: true,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       backgroundColor: theme.colorScheme.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Text(
