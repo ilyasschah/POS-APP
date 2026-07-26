@@ -1,2 +1,5 @@
 POS NOTES 
 =======================================================
+we need to make the app fully responsive to windows box and andriod box 
+
+because untill now the app on andriod still think its on windows PC and its shows some hardcoded variable poor variable or a windows 

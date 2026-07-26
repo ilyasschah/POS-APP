@@ -79,7 +79,7 @@ class OverflowActionsBar extends StatelessWidget {
   }
 }
 
-class _OverflowMenuButton extends StatefulWidget {
+class _OverflowMenuButton extends StatelessWidget {
   final List<Widget> hidden;
   final double slotWidth;
   final double itemHeight;
@@ -90,57 +90,37 @@ class _OverflowMenuButton extends StatefulWidget {
   });
 
   @override
-  State<_OverflowMenuButton> createState() => _OverflowMenuButtonState();
-}
-
-class _OverflowMenuButtonState extends State<_OverflowMenuButton> {
-  final _controller = MenuController();
-
-  @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return MenuAnchor(
-      controller: _controller,
-      alignmentOffset: const Offset(0, 4),
-      style: MenuStyle(
-        backgroundColor: WidgetStatePropertyAll(cs.surfaceContainerHigh),
-        padding: const WidgetStatePropertyAll(EdgeInsets.all(8)),
-      ),
-      menuChildren: [
-        // The real action buttons, kept in their exact form so they look and
-        // behave identically to the inline ones. A Listener (which sees pointer
-        // events regardless of the gesture arena) closes the menu after any tap
-        // inside — the tapped button's own onTap still fires first. Deferred to
-        // a microtask so closing never pre-empts that tap.
-        Listener(
-          onPointerUp: (_) => Future.microtask(() {
-            if (_controller.isOpen) _controller.close();
-          }),
+    // PopupMenuButton (not MenuAnchor): MenuAnchor keeps an inherited scope in
+    // the tree and throws `_dependents.isEmpty` when the header rebuilds (e.g.
+    // renaming the POS). PopupMenuButton builds its menu imperatively as a
+    // route, so nothing persistent is torn down. The hidden buttons render in
+    // their exact form inside one non-selectable item; the menu dismisses on an
+    // outside tap. Each button keeps its own tap handler.
+    return PopupMenuButton<int>(
+      icon: Icon(Icons.more_horiz, color: cs.onSurface),
+      tooltip: MaterialLocalizations.of(context).showMenuTooltip,
+      color: cs.surfaceContainerHigh,
+      padding: EdgeInsets.zero,
+      position: PopupMenuPosition.under,
+      itemBuilder: (context) => [
+        PopupMenuItem<int>(
+          enabled: false,
+          padding: const EdgeInsets.all(8),
           child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: widget.slotWidth * 4),
+            constraints: BoxConstraints(maxWidth: slotWidth * 4),
             child: Wrap(
               spacing: 4,
               runSpacing: 4,
               children: [
-                for (final a in widget.hidden)
-                  SizedBox(
-                    width: widget.slotWidth,
-                    height: widget.itemHeight,
-                    child: a,
-                  ),
+                for (final a in hidden)
+                  SizedBox(width: slotWidth, height: itemHeight, child: a),
               ],
             ),
           ),
         ),
       ],
-      builder: (context, controller, child) {
-        return IconButton(
-          icon: Icon(Icons.more_horiz, color: cs.onSurface),
-          tooltip: MaterialLocalizations.of(context).showMenuTooltip,
-          onPressed: () =>
-              controller.isOpen ? controller.close() : controller.open(),
-        );
-      },
     );
   }
 }
