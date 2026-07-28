@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +7,9 @@ import 'package:pos_app/floor_plan/floor_plan_table_provider.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
 import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/company/company_provider.dart';
+import 'package:pos_app/database/database_provider.dart';
+import 'package:pos_app/menu/open_orders_screen.dart' show syncOpenOrdersToDrift;
+import 'package:pos_app/sync/sync_notifier.dart';
 import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/app_settings/app_settings_provider.dart';
 import 'widgets/table_widget.dart';
@@ -29,32 +31,53 @@ class FloorPlanScreen extends ConsumerStatefulWidget {
 }
 
 class _FloorPlanScreenState extends ConsumerState<FloorPlanScreen> {
-  Timer? _refreshTimer;
+  bool _syncing = false;
 
   @override
   void initState() {
     super.initState();
-    _refreshTimer = Timer.periodic(const Duration(seconds: 15), (_) {
-      if (!mounted) return;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        try {
-          ref.invalidate(allFloorPlansProvider);
-        } catch (_) {}
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
-          try {
-            ref.invalidate(tablesByFloorPlanProvider);
-          } catch (_) {}
-        });
-      });
+    // Pull open orders once on entry so table occupancy is fresh immediately.
+    // The app-wide kitchenStatusWatcher (10s) keeps it updated after that, and
+    // the refresh button forces an instant pull on demand. (The old 15s timer
+    // only re-read local Drift — a no-op for freshness — so it's gone.)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _pullOrders();
     });
   }
 
-  @override
-  void dispose() {
-    _refreshTimer?.cancel();
-    super.dispose();
+  /// On-entry pull: just open orders, so table occupancy is fresh immediately
+  /// without the cost of a full sync on every tab switch. Occupancy is derived
+  /// from local open pos_orders via a Drift stream, so once this writes the
+  /// floor plan re-renders automatically — no provider invalidation needed.
+  Future<void> _pullOrders() async {
+    final companyId = ref.read(selectedCompanyProvider)?.id;
+    if (companyId == null) return;
+    if (mounted) setState(() => _syncing = true);
+    try {
+      await syncOpenOrdersToDrift(ref.read(appDatabaseProvider), companyId);
+    } catch (_) {
+      // Offline or API error — the Drift stream keeps showing local state.
+    } finally {
+      if (mounted) setState(() => _syncing = false);
+    }
+  }
+
+  /// Refresh button: a FULL push+pull (products, floor-plan tables,
+  /// documents/voids, …) AND the open-orders pull (occupancy/status, which the
+  /// full sync doesn't cover) — so tapping refresh brings down every change made
+  /// on other devices, not just orders.
+  Future<void> _syncNow() async {
+    final companyId = ref.read(selectedCompanyProvider)?.id;
+    if (companyId == null) return;
+    if (mounted) setState(() => _syncing = true);
+    try {
+      await ref.read(syncStateProvider.notifier).sync();
+      await syncOpenOrdersToDrift(ref.read(appDatabaseProvider), companyId);
+    } catch (_) {
+      // Offline or API error — the Drift stream keeps showing local state.
+    } finally {
+      if (mounted) setState(() => _syncing = false);
+    }
   }
 
   @override
@@ -164,24 +187,27 @@ class _FloorPlanScreenState extends ConsumerState<FloorPlanScreen> {
                     ref.read(mainNavigationIndexProvider.notifier).state = 2;
                   },
                 ),
-              IconButton(
-                icon: PhosphorIcon(
-                  PhosphorIconsRegular.arrowClockwise,
-                  color: cs.onSurfaceVariant,
+              if (_syncing)
+                const Padding(
+                  padding: EdgeInsets.all(12),
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                )
+              else
+                IconButton(
+                  icon: PhosphorIcon(
+                    PhosphorIconsRegular.arrowClockwise,
+                    color: cs.onSurfaceVariant,
+                  ),
+                  tooltip: AppLocalizations.of(context).refresh,
+                  // Full sync so tapping refresh pulls EVERY change from other
+                  // devices (products, voids, tables, orders), not just local
+                  // re-reads. Occupancy then re-renders from the Drift stream.
+                  onPressed: _syncNow,
                 ),
-                tooltip: AppLocalizations.of(context).refresh,
-                onPressed: () {
-                  try {
-                    ref.invalidate(allFloorPlansProvider);
-                  } catch (_) {}
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (!mounted) return;
-                    try {
-                      ref.invalidate(tablesByFloorPlanProvider);
-                    } catch (_) {}
-                  });
-                },
-              ),
               Builder(
                 builder: (ctx) => IconButton(
                   icon: PhosphorIcon(

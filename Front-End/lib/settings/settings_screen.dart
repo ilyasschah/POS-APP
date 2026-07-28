@@ -3550,45 +3550,17 @@ class _DeviceCardState extends ConsumerState<_DeviceCard> {
   }
 
   Future<void> _editDeviceName() async {
-    final ctrl = TextEditingController(text: ref.read(deviceNameProvider));
+    // The dialog owns its TextEditingController via a StatefulWidget so it's
+    // disposed only when the route is fully removed (after the close
+    // animation). Disposing it inline right after showDialog() returns raced
+    // the exit animation — a rebuild during it touched the disposed controller
+    // ("used after being disposed").
     final result = await showDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(AppLocalizations.of(context).setDeviceName),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              AppLocalizations.of(context).posNameFullHint,
-              style: const TextStyle(fontSize: 12),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: ctrl,
-              autofocus: true,
-              textCapitalization: TextCapitalization.characters,
-              decoration: InputDecoration(
-                labelText: AppLocalizations.of(context).deviceNameLower,
-                hintText: AppLocalizations.of(context).setHintCaisse,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(AppLocalizations.of(context).actionCancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, ctrl.text),
-            child: Text(AppLocalizations.of(context).actionSave),
-          ),
-        ],
-      ),
+      builder: (ctx) =>
+          _DeviceNameDialog(initial: ref.read(deviceNameProvider)),
     );
-    ctrl.dispose();
-    if (result == null) return;
+    if (result == null || !mounted) return;
     await ref.read(deviceNameProvider.notifier).setName(result);
   }
 
@@ -7005,6 +6977,65 @@ class _TimezoneCardState extends ConsumerState<_TimezoneCard> {
             ),
           ),
         ],
+      ],
+    );
+  }
+}
+
+/// Device-name editor dialog. Owns its [TextEditingController] so the controller
+/// is disposed with the dialog's State (after the close animation), never inline
+/// after showDialog() where a rebuild during the exit could touch it disposed.
+class _DeviceNameDialog extends StatefulWidget {
+  final String initial;
+  const _DeviceNameDialog({required this.initial});
+
+  @override
+  State<_DeviceNameDialog> createState() => _DeviceNameDialogState();
+}
+
+class _DeviceNameDialogState extends State<_DeviceNameDialog> {
+  late final TextEditingController _ctrl =
+      TextEditingController(text: widget.initial);
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(AppLocalizations.of(context).setDeviceName),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            AppLocalizations.of(context).posNameFullHint,
+            style: const TextStyle(fontSize: 12),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _ctrl,
+            autofocus: true,
+            textCapitalization: TextCapitalization.characters,
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context).deviceNameLower,
+              hintText: AppLocalizations.of(context).setHintCaisse,
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(AppLocalizations.of(context).actionCancel),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, _ctrl.text),
+          child: Text(AppLocalizations.of(context).actionSave),
+        ),
       ],
     );
   }

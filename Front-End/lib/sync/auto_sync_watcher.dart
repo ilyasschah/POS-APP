@@ -14,8 +14,11 @@ import 'package:pos_app/sync/sync_notifier.dart';
 ///   • Mode               (App.AutoSync.Mode = 'After every save' | 'Every 1 hour')
 ///   • Show notification  (App.AutoSync.ShowNotification) — gated in SyncButton.
 ///
-/// "After every save": a short debounce after any local write, then push+pull.
-/// "Every 1 hour": a periodic timer; individual writes don't trigger a sync.
+/// "After every save": a short debounce after any local write, then push+pull,
+///   PLUS a steady 30s background full-sync so an idle terminal still pulls
+///   another device's products/voids/documents without waiting on its own write.
+/// "Every 1 hour": a periodic timer; individual writes don't trigger a sync, and
+///   the 30s background pull is disabled (deliberate low-bandwidth mode).
 ///
 /// Loop safety (critical): a sync's own pull writes to many tables, and Drift
 /// delivers those table-change notifications asynchronously — sometimes AFTER
@@ -34,6 +37,7 @@ class AutoSyncWatcher extends Notifier<void> {
   StreamSubscription<void>? _sub;
   Timer? _debounce;
   Timer? _hourly;
+  Timer? _periodic;
   Timer? _suppressTimer;
 
   /// True while a sync is running and for [_grace] after it finishes — every
@@ -43,6 +47,12 @@ class AutoSyncWatcher extends Notifier<void> {
   static const _debounceDelay = Duration(seconds: 3);
   static const _grace = Duration(seconds: 3);
   static const _interval = Duration(hours: 1);
+  // A steady background full-sync so an IDLE receiving terminal still pulls
+  // another device's changes (a new product, a void, a document) without
+  // waiting for its own next local write. Pulls are watermark deltas, so a tick
+  // with nothing new is cheap. Only runs in the responsive "after every save"
+  // mode; "Every 1 hour" keeps its own low-bandwidth cadence.
+  static const _pollInterval = Duration(seconds: 30);
 
   @override
   void build() {
@@ -51,10 +61,12 @@ class AutoSyncWatcher extends Notifier<void> {
     // trigger time from the live settings.
     _sub = db.tableUpdates().listen((_) => _onTablesChanged());
     _hourly = Timer.periodic(_interval, (_) => _onHourly());
+    _periodic = Timer.periodic(_pollInterval, (_) => _onPeriodic());
     ref.onDispose(() {
       _sub?.cancel();
       _debounce?.cancel();
       _hourly?.cancel();
+      _periodic?.cancel();
       _suppressTimer?.cancel();
     });
   }
@@ -78,6 +90,14 @@ class AutoSyncWatcher extends Notifier<void> {
   void _onHourly() {
     if (_suppress || ref.read(syncStateProvider).isLoading) return;
     if (!_enabled || !_hourlyMode) return;
+    _runSync();
+  }
+
+  void _onPeriodic() {
+    if (_suppress || ref.read(syncStateProvider).isLoading) return;
+    // Only the responsive mode gets the steady background pull; hourly mode is
+    // a deliberate low-bandwidth choice and keeps its own cadence.
+    if (!_enabled || _hourlyMode) return;
     _runSync();
   }
 

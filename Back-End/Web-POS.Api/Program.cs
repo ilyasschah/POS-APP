@@ -267,6 +267,89 @@ logger.LogInformation("Environment: {env}", app.Environment.EnvironmentName);
 logger.LogInformation("Content root: {root}", app.Environment.ContentRootPath);
 logger.LogInformation("========================================");
 
+// ================== CONFIG DIAGNOSTICS ==================
+// Answers "is the server actually reading my environment variables?" from the
+// first lines of the log. Secrets are masked to first/last 4 chars — never log
+// a whole secret. Each value also reports WHICH provider won, so an env var
+// that silently lost to appsettings.json (or was never seen) is obvious.
+static string MaskSecret(string? value)
+{
+    if (string.IsNullOrEmpty(value)) return "<EMPTY / NOT SET>";
+    if (value.Length <= 8) return $"**** (len={value.Length} — suspiciously short)";
+    return $"{value[..4]}...{value[^4..]} (len={value.Length})";
+}
+
+static string MaskConnectionString(string? cs) =>
+    string.IsNullOrEmpty(cs)
+        ? "<EMPTY / NOT SET>"
+        : System.Text.RegularExpressions.Regex.Replace(
+            cs, @"(Password\s*=\s*)[^;]*", "$1****",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+// Providers are applied in order and the LAST one holding a key wins, so walk
+// them backwards and report the first hit — that is the effective source.
+static string SourceOf(IConfiguration config, string key)
+{
+    if (config is not IConfigurationRoot root) return "unknown";
+    foreach (var provider in root.Providers.Reverse())
+    {
+        if (provider.TryGet(key, out _))
+            return provider.ToString() ?? provider.GetType().Name;
+    }
+    return "<no provider supplied this key>";
+}
+
+logger.LogInformation("--- Configuration providers (later overrides earlier) ---");
+if (app.Configuration is IConfigurationRoot configRoot)
+{
+    foreach (var provider in configRoot.Providers)
+        logger.LogInformation("    {provider}", provider.ToString());
+}
+
+logger.LogInformation("--- Resolved configuration ---");
+logger.LogInformation("ASPNETCORE_ENVIRONMENT  : {value}",
+    Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
+        ?? "<not set> -> defaults to Production");
+logger.LogInformation("Jwt:Secret              : {value}  [source: {source}]",
+    MaskSecret(app.Configuration["Jwt:Secret"]), SourceOf(app.Configuration, "Jwt:Secret"));
+logger.LogInformation("Jwt:Issuer              : {value}  [source: {source}]",
+    app.Configuration["Jwt:Issuer"] ?? "<not set>", SourceOf(app.Configuration, "Jwt:Issuer"));
+logger.LogInformation("Jwt:Audience            : {value}  [source: {source}]",
+    app.Configuration["Jwt:Audience"] ?? "<not set>", SourceOf(app.Configuration, "Jwt:Audience"));
+logger.LogInformation("AdminPortal:AccessKey   : {value}  [source: {source}]",
+    MaskSecret(app.Configuration["AdminPortal:AccessKey"]),
+    SourceOf(app.Configuration, "AdminPortal:AccessKey"));
+logger.LogInformation("Lease:PrivateKeyPem     : {value}  [source: {source}]",
+    string.IsNullOrWhiteSpace(app.Configuration["Lease:PrivateKeyPem"])
+        ? "<not set> -> falling back to lease_signing_key.pem on disk"
+        : $"<supplied, {app.Configuration["Lease:PrivateKeyPem"]!.Length} chars>",
+    SourceOf(app.Configuration, "Lease:PrivateKeyPem"));
+logger.LogInformation("ConnectionStrings:Default: {value}  [source: {source}]",
+    MaskConnectionString(app.Configuration.GetConnectionString("DefaultConnection")),
+    SourceOf(app.Configuration, "ConnectionStrings:DefaultConnection"));
+logger.LogInformation("ConnectionStrings:Master : {value}  [source: {source}]",
+    MaskConnectionString(app.Configuration.GetConnectionString("MasterConnection")),
+    SourceOf(app.Configuration, "ConnectionStrings:MasterConnection"));
+
+// Loud, actionable warnings for the two failures that actually bite on a new box.
+if (string.IsNullOrWhiteSpace(app.Configuration["AdminPortal:AccessKey"]))
+{
+    logger.LogWarning(
+        "AdminPortal:AccessKey is EMPTY — /admin will return 503 " +
+        "\"Admin portal disabled\". Set the AdminPortal__AccessKey environment " +
+        "variable (note the DOUBLE underscore) and restart.");
+}
+var leaseKeyOnDisk = Path.Combine(app.Environment.ContentRootPath, "lease_signing_key.pem");
+if (string.IsNullOrWhiteSpace(app.Configuration["Lease:PrivateKeyPem"]) &&
+    !File.Exists(leaseKeyOnDisk))
+{
+    logger.LogWarning(
+        "No lease signing key configured and none on disk at {path} — a NEW keypair " +
+        "will be generated. Leases/public keys issued by any other server instance " +
+        "will not validate against it.", leaseKeyOnDisk);
+}
+logger.LogInformation("========================================");
+
 // Safe DB health check (no SQL spam)
 using (var scope = app.Services.CreateScope())
 {

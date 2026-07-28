@@ -3,3 +3,17 @@ POS NOTES
 we need to make the app fully responsive to windows box and andriod box 
 
 because untill now the app on andriod still think its on windows PC and its shows some hardcoded variable poor variable or a windows 
+
+when i click save to an old order its create a new one with the same table id
+
+i have voided an order but didnt deapear from the tablet 
+
+i hvae created an order with a customer id  but when i open it from another devise the customer didnt show in the pos menu
+
+i ahve made a payment of orders but still dont sync the order still in the tablet even in the windows are done and paied
+
+i dont understand if this is the job of sync why its not syncing 
+
+and also documents they are not synced
+
+we have to work on andriod sandbox because the system of backup and printers are not working at all
