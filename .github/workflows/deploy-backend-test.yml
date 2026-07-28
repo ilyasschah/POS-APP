@@ -47,8 +47,16 @@ jobs:
       - name: Replace site files
         shell: powershell
         run: |
-          robocopy "$env:PUBLISH_DIR" "C:\inetpub\wwwroot\pos-api" /MIR /XD logs /XF app_offline.htm /NFL /NDL /NJH /NJS
-          if ($LASTEXITCODE -ge 8) { throw "robocopy failed with exit code $LASTEXITCODE" }
+          # lease_signing_key.pem is a server-only secret (gitignored, never in the
+          # publish output) - excluded here so /MIR doesn't delete it. app_offline.htm
+          # is excluded so it survives until the "bring back online" step removes it.
+          robocopy "$env:PUBLISH_DIR" "C:\inetpub\wwwroot\pos-api" /MIR /XD logs /XF app_offline.htm lease_signing_key.pem /NFL /NDL /NJH /NJS
+          $rc = $LASTEXITCODE
+          if ($rc -ge 8) { throw "robocopy failed with exit code $rc" }
+          # Robocopy's own "success" codes (0-7) are non-zero (e.g. 1 = files copied),
+          # and the runner auto-propagates $LASTEXITCODE as the step's exit code - so
+          # without this, a successful copy still fails the step.
+          exit 0
 
       - name: Inject Test environment secrets into web.config
         shell: powershell
@@ -81,12 +89,16 @@ jobs:
           $xml.Save($path)
 
       - name: Bring app back online
+        # Runs even if an earlier step failed - app_offline.htm must never be left
+        # behind, or the site stays down until someone notices and fixes it by hand.
+        if: always()
         shell: powershell
         run: |
           Remove-Item "C:\inetpub\wwwroot\pos-api\app_offline.htm" -Force -ErrorAction SilentlyContinue
           Start-Sleep -Seconds 3
 
       - name: Health check
+        if: always()
         shell: powershell
         run: |
           $ok = $false
