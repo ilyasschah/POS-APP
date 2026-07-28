@@ -6,13 +6,10 @@ struct ProductsView: View {
     @State private var searchText = ""
     @State private var editingProduct: ProductDto? = nil
 
-    @AppStorage("currencySymbol", store: UserDefaults(suiteName: "group.com.futur3.ownerapp"))
-    private var currencySymbol = "DH"
-
     private var filteredProducts: [ProductDto] {
         guard !searchText.isEmpty else { return vm.products }
         return vm.products.filter {
-            ($0.name ?? "").localizedCaseInsensitiveContains(searchText) ||
+            $0.name.localizedCaseInsensitiveContains(searchText) ||
             ($0.code ?? "").localizedCaseInsensitiveContains(searchText)
         }
     }
@@ -42,12 +39,12 @@ struct ProductsView: View {
             .searchable(text: $searchText, prompt: "Search name or code")
             .background(.ultraThinMaterial)
             .refreshable { await reload() }
-            .task { await reload() }
+            .onAppear { Task { await reload() } }
             .sheet(item: $editingProduct) { product in
-                EditPriceView(product: product, currencySymbol: currencySymbol) { newSale, newCost in
+                EditPriceView(product: product) { newPrice, newCost in
                     await vm.updateProduct(product,
-                                           salePrice: newSale,
-                                           costPrice: newCost,
+                                           price: newPrice,
+                                           cost: newCost,
                                            apiBaseUrl: auth.apiBaseUrl,
                                            token: auth.jwtToken ?? "")
                 }
@@ -59,7 +56,7 @@ struct ProductsView: View {
     private func productRow(_ product: ProductDto) -> some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text(product.name ?? "Unnamed")
+                Text(product.name)
                     .font(.headline)
                 if let code = product.code, !code.isEmpty {
                     Text(code)
@@ -69,11 +66,11 @@ struct ProductsView: View {
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 4) {
-                Text(formatCurrency(product.salePrice ?? 0))
+                Text(formatCurrency(product.price))
                     .font(.subheadline)
                     .fontWeight(.semibold)
                     .foregroundColor(.teal)
-                Text("Cost \(formatCurrency(product.costPrice ?? 0))")
+                Text("Cost \(formatCurrency(product.cost))")
                     .font(.caption2)
                     .foregroundColor(.secondary)
             }
@@ -93,7 +90,7 @@ struct ProductsView: View {
         formatter.minimumFractionDigits = 2
         formatter.maximumFractionDigits = 2
         let formatted = formatter.string(from: NSNumber(value: value)) ?? "\(value)"
-        return "\(formatted) \(currencySymbol)"
+        return "\(formatted) DH"
     }
 }
 
@@ -101,7 +98,6 @@ struct ProductsView: View {
 
 struct EditPriceView: View {
     let product: ProductDto
-    let currencySymbol: String
     let onSave: (Double, Double) async -> Bool
 
     @State private var salePrice: Double
@@ -110,24 +106,22 @@ struct EditPriceView: View {
     @Environment(\.dismiss) private var dismiss
 
     init(product: ProductDto,
-         currencySymbol: String,
          onSave: @escaping (Double, Double) async -> Bool) {
         self.product = product
-        self.currencySymbol = currencySymbol
         self.onSave = onSave
-        _salePrice = State(initialValue: product.salePrice ?? 0)
-        _costPrice = State(initialValue: product.costPrice ?? 0)
+        _salePrice = State(initialValue: product.price)
+        _costPrice = State(initialValue: product.cost)
     }
 
     var body: some View {
         NavigationStack {
             Form {
                 Section("Product") {
-                    LabeledContent("Name", value: product.name ?? "—")
+                    LabeledContent("Name", value: product.name)
                     LabeledContent("Code", value: product.code ?? "—")
                 }
 
-                Section("Pricing (\(currencySymbol))") {
+                Section("Pricing (DH)") {
                     HStack {
                         Text("Sale Price")
                         Spacer()

@@ -8,11 +8,29 @@ struct LoginResponse: Codable {
     let message: String?
 }
 
+// Quick-switch presets for the login screen's environment picker. The API
+// Base URL field stays freely editable for anything outside these two.
+enum ApiEnvironment: String, CaseIterable, Identifiable {
+    case dev = "Dev"
+    case test = "Test"
+
+    var id: String { rawValue }
+
+    var baseUrl: String {
+        switch self {
+        // Local dev backend over Tailscale.
+        case .dev: return "http://100.114.12.38:5002/api"
+        // OVH-hosted test backend (see HANDOFF.md) — real HTTPS via sslip.io.
+        case .test: return "https://51-91-6-6.sslip.io/api"
+        }
+    }
+}
+
 @Observable
 class AuthManager {
     var email = "ilyasschah18@gmail.com"
     var password = "Admin@123"
-    var apiBaseUrl = "http://100.114.12.38:5002/api"
+    var apiBaseUrl = "https://51-91-6-6.sslip.io/api"
     
     var isLoading = false
     var errorMessage: String? = nil

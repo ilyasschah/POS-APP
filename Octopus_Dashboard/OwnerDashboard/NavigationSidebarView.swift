@@ -4,6 +4,7 @@ import SwiftUI
 enum SidebarItem: String, CaseIterable, Identifiable {
     case dashboard
     case products
+    case stock
     case documents
     case users
     case settings
@@ -14,6 +15,7 @@ enum SidebarItem: String, CaseIterable, Identifiable {
         switch self {
         case .dashboard: return "Dashboard"
         case .products:  return "Products & Prices"
+        case .stock:     return "Stock"
         case .documents: return "Documents"
         case .users:     return "User Management"
         case .settings:  return "Settings"
@@ -24,6 +26,7 @@ enum SidebarItem: String, CaseIterable, Identifiable {
         switch self {
         case .dashboard: return "chart.line.uptrend.xyaxis"
         case .products:  return "tag.fill"
+        case .stock:     return "shippingbox.fill"
         case .documents: return "doc.text.fill"
         case .users:     return "person.2.fill"
         case .settings:  return "gearshape.fill"
@@ -59,6 +62,7 @@ struct NavigationSidebarView: View {
         switch selection ?? .dashboard {
         case .dashboard: DashboardView(auth: auth)
         case .products:  ProductsView(auth: auth)
+        case .stock:     StockView(auth: auth)
         case .documents: DocumentsView(auth: auth)
         case .users:     UsersView(auth: auth)
         case .settings:  SettingsView(auth: auth)

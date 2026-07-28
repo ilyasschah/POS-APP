@@ -4,7 +4,9 @@ import SwiftUI
 @Observable
 class ProductsViewModel {
     var products: [ProductDto] = []
-    var isLoading = false
+    // Starts true so the first render (before .task's closure actually starts
+    // running) shows a spinner instead of a flash of "no products".
+    var isLoading = true
     var errorMessage: String? = nil
 
     // Company scope matches the rest of the app.
@@ -44,35 +46,56 @@ class ProductsViewModel {
                 errorMessage = "Server returned error \(http.statusCode)"
             }
         } catch {
-            errorMessage = "Failed to load products: \(error.localizedDescription)"
+            // Switching sidebar tabs cancels the in-flight request for the tab
+            // being left; that's not a real failure, so don't surface it as one.
+            if (error as? URLError)?.code != .cancelled {
+                errorMessage = "Failed to load products: \(error.localizedDescription)"
+            }
         }
 
         isLoading = false
     }
 
-    // PUT /api/Products/Update — updates pricing then reloads the list.
+    // PATCH /api/Products/Update?companyId=25 — updates pricing then reloads the
+    // list. companyId is a query param on this endpoint (not part of the body),
+    // and every other required field on the product must be echoed back unchanged
+    // since Back-End's UpdateProductRequest marks them non-nullable.
     @discardableResult
     func updateProduct(_ product: ProductDto,
-                       salePrice: Double,
-                       costPrice: Double,
+                       price: Double,
+                       cost: Double,
                        apiBaseUrl: String,
                        token: String) async -> Bool {
-        guard let url = URL(string: "\(apiBaseUrl)/Products/Update") else {
+        guard let url = URL(string: "\(apiBaseUrl)/Products/Update?companyId=\(companyId)") else {
             errorMessage = "Invalid Update URL"
             return false
         }
 
         let payload = UpdateProductRequest(
             id: product.id,
-            name: product.name ?? "",
-            code: product.code ?? "",
-            salePrice: salePrice,
-            costPrice: costPrice,
-            companyId: companyId
+            productGroupId: product.productGroupId,
+            name: product.name,
+            code: product.code,
+            plu: product.plu,
+            measurementUnit: product.measurementUnit,
+            price: price,
+            isTaxInclusivePrice: product.isTaxInclusivePrice,
+            currencyId: product.currencyId,
+            isPriceChangeAllowed: product.isPriceChangeAllowed,
+            isService: product.isService,
+            isUsingDefaultQuantity: product.isUsingDefaultQuantity,
+            isEnabled: product.isEnabled,
+            description: product.description,
+            cost: cost,
+            markup: product.markup,
+            color: product.color,
+            ageRestriction: product.ageRestriction,
+            lastPurchasePrice: product.lastPurchasePrice,
+            rank: product.rank
         )
 
         var request = URLRequest(url: url)
-        request.httpMethod = "PUT"
+        request.httpMethod = "PATCH"
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 

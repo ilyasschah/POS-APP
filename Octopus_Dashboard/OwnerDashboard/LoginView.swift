@@ -10,8 +10,16 @@ import SwiftUI
 struct LoginView: View {
     @Bindable var auth: AuthManager // Add this line instead
     @State private var showPassword = false
+    @State private var selectedEnvironment: ApiEnvironment
     @AppStorage("isDarkMode") private var isDarkMode = true
-    
+
+    init(auth: AuthManager) {
+        self.auth = auth
+        _selectedEnvironment = State(
+            initialValue: ApiEnvironment.allCases.first { $0.baseUrl == auth.apiBaseUrl } ?? .test
+        )
+    }
+
     var body: some View {
         ZStack {
             // 1. Plain black or white background based on the mode preference
@@ -28,6 +36,22 @@ struct LoginView: View {
                     .foregroundColor(.primary.opacity(0.7))
                     .padding(.bottom, 10)
                 
+                // Environment quick-switch
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Environment")
+                        .font(.caption)
+                        .foregroundColor(.primary.opacity(0.8))
+                    Picker("Environment", selection: $selectedEnvironment) {
+                        ForEach(ApiEnvironment.allCases) { env in
+                            Text(env.rawValue).tag(env)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .onChange(of: selectedEnvironment) { _, newValue in
+                        auth.apiBaseUrl = newValue.baseUrl
+                    }
+                }
+
                 // API URL Field[cite: 14]
                 VStack(alignment: .leading, spacing: 8) {
                     Text("API Base URL")
