@@ -24,6 +24,7 @@ jobs:
     defaults:
       run:
         working-directory: Front-End
+        shell: powershell
     steps:
       - uses: actions/checkout@v4
 
@@ -34,7 +35,6 @@ jobs:
         run: flutter build windows --release
 
       - name: Zip build output
-        shell: pwsh
         run: |
           $dest = "pos-app-windows.zip"
           if (Test-Path $dest) { Remove-Item $dest -Force }
@@ -47,7 +47,7 @@ jobs:
           retention-days: 14
 
       - name: Copy to local builds folder
-        shell: pwsh
+        shell: powershell
         run: |
           $outDir = "C:\Builds\pos-app-windows\test"
           New-Item -ItemType Directory -Path $outDir -Force | Out-Null

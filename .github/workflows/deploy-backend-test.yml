@@ -26,7 +26,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Publish Web-POS.Api (Release)
-        shell: pwsh
+        shell: powershell
         run: |
           $publishDir = Join-Path $env:RUNNER_TEMP "pos-api-publish"
           if (Test-Path $publishDir) { Remove-Item $publishDir -Recurse -Force }
@@ -35,7 +35,7 @@ jobs:
           echo "PUBLISH_DIR=$publishDir" >> $env:GITHUB_ENV
 
       - name: Take app offline
-        shell: pwsh
+        shell: powershell
         # ANCM (both hosting models) watches for app_offline.htm in the site root and
         # gracefully unloads the app, releasing the lock on Web-POS.Api.dll. This needs
         # only filesystem write access to the site folder - no IIS management API
@@ -45,13 +45,13 @@ jobs:
           Start-Sleep -Seconds 5
 
       - name: Replace site files
-        shell: pwsh
+        shell: powershell
         run: |
           robocopy "$env:PUBLISH_DIR" "C:\inetpub\wwwroot\pos-api" /MIR /XD logs /XF app_offline.htm /NFL /NDL /NJH /NJS
           if ($LASTEXITCODE -ge 8) { throw "robocopy failed with exit code $LASTEXITCODE" }
 
       - name: Inject Test environment secrets into web.config
-        shell: pwsh
+        shell: powershell
         env:
           TEST_DB_CONN: ${{ secrets.TEST_DB_CONNECTION_STRING }}
           TEST_MASTER_DB_CONN: ${{ secrets.TEST_MASTER_DB_CONNECTION_STRING }}
@@ -81,13 +81,13 @@ jobs:
           $xml.Save($path)
 
       - name: Bring app back online
-        shell: pwsh
+        shell: powershell
         run: |
           Remove-Item "C:\inetpub\wwwroot\pos-api\app_offline.htm" -Force -ErrorAction SilentlyContinue
           Start-Sleep -Seconds 3
 
       - name: Health check
-        shell: pwsh
+        shell: powershell
         run: |
           $ok = $false
           for ($i = 0; $i -lt 10; $i++) {
