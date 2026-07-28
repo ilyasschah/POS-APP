@@ -26,12 +26,31 @@ builder.Logging.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogL
 builder.Logging.AddFilter("Microsoft.EntityFrameworkCore.Infrastructure", LogLevel.Warning);
 
 // ================== CONFIG ==================
-// Machine-local overrides. Git-ignored, loaded after appsettings.json and before
-// environment variables, so a developer keeps their own connection strings out of
-// source control without needing env vars. Excluded from publish output via the
+// Machine-local overrides. Git-ignored, and excluded from publish output via the
 // csproj, so it can never ship to a server.
-builder.Configuration.AddJsonFile(
-    "appsettings.Local.json", optional: true, reloadOnChange: true);
+//
+// It must sit AFTER the appsettings*.json files but BEFORE the environment
+// variables, so that a server's env vars still win. Note that the obvious
+// `builder.Configuration.AddJsonFile(...)` APPENDS to the end of the chain, which
+// would let this file silently override an env var — the exact opposite of what
+// is wanted. So insert it at the right position instead.
+var localSettings = new Microsoft.Extensions.Configuration.Json.JsonConfigurationSource
+{
+    Path = "appsettings.Local.json",
+    Optional = true,
+    ReloadOnChange = true,
+};
+
+var envVarSourceIndex = builder.Configuration.Sources
+    .ToList()
+    .FindIndex(s =>
+        s is Microsoft.Extensions.Configuration.EnvironmentVariables
+             .EnvironmentVariablesConfigurationSource { Prefix: null or "" });
+
+if (envVarSourceIndex >= 0)
+    builder.Configuration.Sources.Insert(envVarSourceIndex, localSettings);
+else
+    builder.Configuration.Sources.Add(localSettings);
 
 var cs = builder.Configuration.GetConnectionString("DefaultConnection");
 

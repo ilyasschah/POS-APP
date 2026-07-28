@@ -86,6 +86,20 @@ namespace Api.Middleware
 
         private static (int status, string message) Map(Exception ex) => ex switch
         {
+            // InvalidOperationException does double duty: it is this codebase's
+            // business-rule signal (~130 throw sites) AND what the data stack throws
+            // for genuine infrastructure faults — SqlClient raises it for "The
+            // ConnectionString property has not been initialized", LINQ for "Sequence
+            // contains no elements". Without this guard a database outage is reported
+            // to the POS as `400: The ConnectionString property has not been
+            // initialized`, which both misleads the client into treating the request
+            // as permanently rejected and leaks server internals.
+            //
+            // 503 (not 500) is deliberate: it tells the offline sync this is transient
+            // and worth retrying, rather than a permanent rejection to discard.
+            InvalidOperationException when IsInfrastructureFault(ex) =>
+                ((int)HttpStatusCode.ServiceUnavailable,
+                 "The server is temporarily unable to reach the database. Please try again."),
             // Business-rule rejections (duplicate name, "in use", out of stock…).
             InvalidOperationException => ((int)HttpStatusCode.BadRequest, ex.Message),
             // Validation failures from FluentValidation pipeline behaviours.
@@ -113,5 +127,28 @@ namespace Api.Middleware
         // SQL Server error 547 == foreign-key / constraint conflict.
         private static bool IsForeignKeyConflict(DbUpdateException ex)
             => ex.GetBaseException() is SqlException { Number: 547 };
+
+        /// <summary>
+        /// Namespaces that only ever appear for framework/data-layer faults, never
+        /// for this application's own business rules.
+        /// </summary>
+        private static readonly string[] InfrastructureNamespaces =
+        {
+            "Microsoft.Data.",
+            "Microsoft.EntityFrameworkCore.",
+            "System.Data.",
+        };
+
+        /// <summary>
+        /// True when the exception was thrown from inside the data stack rather than
+        /// from application code. Uses the throwing method's declaring namespace,
+        /// which is reliable here because no application type lives under those roots.
+        /// </summary>
+        private static bool IsInfrastructureFault(Exception ex)
+        {
+            var ns = ex.TargetSite?.DeclaringType?.Namespace;
+            return ns is not null
+                && InfrastructureNamespaces.Any(p => ns.StartsWith(p, StringComparison.Ordinal));
+        }
     }
 }
