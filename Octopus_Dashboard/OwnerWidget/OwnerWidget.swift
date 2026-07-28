@@ -32,8 +32,6 @@ struct SimpleEntry: TimelineEntry {
 
 struct OwnerWidgetEntryView : View {
     var entry: Provider.Entry
-    @AppStorage("currencySymbol", store: UserDefaults(suiteName: "group.com.futur3.ownerapp"))
-    private var currencySymbol = "DH"
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -65,7 +63,7 @@ struct OwnerWidgetEntryView : View {
             
             let formattedNumber = formatter.string(from: NSNumber(value: value)) ?? "\(value)"
             
-            return "\(formattedNumber) \(currencySymbol)"
+            return "\(formattedNumber) DH"
         }
 }
 

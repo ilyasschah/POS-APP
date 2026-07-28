@@ -4,17 +4,20 @@ import SwiftUI
 @Observable
 class UsersViewModel {
     var users: [UserDto] = []
-    var isLoading = false
+    // Starts true so the first render (before .task's closure actually starts
+    // running) shows a spinner instead of a flash of "no users".
+    var isLoading = true
     var errorMessage: String? = nil
 
     var companyId: Int = 25
 
-    // GET /api/Users/GetAll?companyId=25
+    // GET /api/Users/GetAllUsers?companyId=25
+    // Note: the controller action is named GetAllUsers, not GetAll.
     func load(apiBaseUrl: String, token: String) async {
         isLoading = true
         errorMessage = nil
 
-        guard let url = URL(string: "\(apiBaseUrl)/Users/GetAll?companyId=\(companyId)") else {
+        guard let url = URL(string: "\(apiBaseUrl)/Users/GetAllUsers?companyId=\(companyId)") else {
             errorMessage = "Invalid Users URL"
             isLoading = false
             return
@@ -43,32 +46,35 @@ class UsersViewModel {
                 errorMessage = "Server returned error \(http.statusCode)"
             }
         } catch {
-            errorMessage = "Failed to load users: \(error.localizedDescription)"
+            // Switching sidebar tabs cancels the in-flight request for the tab
+            // being left; that's not a real failure, so don't surface it as one.
+            if (error as? URLError)?.code != .cancelled {
+                errorMessage = "Failed to load users: \(error.localizedDescription)"
+            }
         }
 
         isLoading = false
     }
 
-    // POST /api/Users/AdminResetPassword
-    func resetPassword(for user: UserDto, apiBaseUrl: String, token: String) async -> Bool {
-        guard let url = URL(string: "\(apiBaseUrl)/Users/AdminResetPassword") else {
+    // PATCH /api/Users/AdminResetPassword?companyId=25 — companyId is a query
+    // param, and the backend requires a real new password (there is no
+    // server-generated "blind reset"). Requires a Bearer token with the
+    // "Admin" role claim (ManagerOnly policy).
+    func resetPassword(for user: UserDto, newPassword: String, apiBaseUrl: String, token: String) async -> Bool {
+        guard let url = URL(string: "\(apiBaseUrl)/Users/AdminResetPassword?companyId=\(companyId)") else {
             errorMessage = "Invalid reset URL"
             return false
         }
 
-        let payload: [String: Any?] = [
-            "userId": user.id,
-            "email": user.email,
-            "companyId": companyId
-        ]
+        let payload = AdminResetPasswordRequest(userId: user.id, newPassword: newPassword)
 
         var request = URLRequest(url: url)
-        request.httpMethod = "POST"
+        request.httpMethod = "PATCH"
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
         do {
-            request.httpBody = try JSONSerialization.data(withJSONObject: payload.compactMapValues { $0 })
+            request.httpBody = try JSONEncoder().encode(payload)
             let (_, response) = try await URLSession.shared.data(for: request)
             guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
                 errorMessage = "Reset failed"

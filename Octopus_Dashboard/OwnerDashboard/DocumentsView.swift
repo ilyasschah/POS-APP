@@ -4,9 +4,6 @@ struct DocumentsView: View {
     @Bindable var auth: AuthManager
     @State private var vm = DocumentsViewModel()
 
-    @AppStorage("currencySymbol", store: UserDefaults(suiteName: "group.com.futur3.ownerapp"))
-    private var currencySymbol = "DH"
-
     var body: some View {
         NavigationStack {
             Group {
@@ -19,7 +16,7 @@ struct DocumentsView: View {
                 } else {
                     List(vm.documents) { document in
                         NavigationLink {
-                            DocumentDetailView(document: document, currencySymbol: currencySymbol)
+                            DocumentDetailView(auth: auth, document: document)
                         } label: {
                             documentRow(document)
                         }
@@ -30,7 +27,7 @@ struct DocumentsView: View {
             .navigationTitle("Documents")
             .background(.ultraThinMaterial)
             .refreshable { await reload() }
-            .task { await reload() }
+            .onAppear { Task { await reload() } }
         }
     }
 
@@ -48,7 +45,7 @@ struct DocumentsView: View {
                     .foregroundColor(.secondary)
             }
             Spacer()
-            Text(formatCurrency(document.totalAmount ?? 0))
+            Text(formatCurrency(document.total ?? 0))
                 .font(.subheadline)
                 .fontWeight(.semibold)
                 .foregroundColor(.teal)
@@ -67,7 +64,7 @@ struct DocumentsView: View {
         formatter.minimumFractionDigits = 2
         formatter.maximumFractionDigits = 2
         let formatted = formatter.string(from: NSNumber(value: value)) ?? "\(value)"
-        return "\(formatted) \(currencySymbol)"
+        return "\(formatted) DH"
     }
 
     private func formatDate(_ raw: String?) -> String {
@@ -85,46 +82,84 @@ struct DocumentsView: View {
 // MARK: - Document detail
 
 struct DocumentDetailView: View {
+    @Bindable var auth: AuthManager
     let document: DocumentDto
-    let currencySymbol: String
+
+    @State private var itemsVm = DocumentItemsViewModel()
 
     var body: some View {
         List {
             Section("Document") {
                 LabeledContent("Number", value: document.number ?? "—")
-                LabeledContent("Type", value: documentTypeName(document.documentTypeId))
+                LabeledContent("Type", value: document.documentTypeName ?? typeFallback(document.documentTypeId))
                 LabeledContent("Date", value: formatDate(document.dateCreated))
                 LabeledContent("Customer", value: document.customerName ?? "—")
             }
 
             Section("Totals") {
                 LabeledContent("Total") {
-                    Text(formatCurrency(document.totalAmount ?? 0))
+                    Text(formatCurrency(document.total ?? 0))
                         .fontWeight(.semibold)
                         .foregroundColor(.teal)
                 }
             }
 
             Section("Line Items") {
-                // The GetAll payload (DocumentDto) does not include line items.
-                // Wire this up once a document-detail endpoint / line-item model exists.
-                Text("Itemized line details are not included in the list response yet.")
-                    .font(.footnote)
-                    .foregroundColor(.secondary)
+                if itemsVm.isLoading && itemsVm.items.isEmpty {
+                    ProgressView()
+                } else if let error = itemsVm.errorMessage, itemsVm.items.isEmpty {
+                    Text(error)
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+                } else if itemsVm.items.isEmpty {
+                    Text("No line items for this document.")
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+                } else {
+                    ForEach(itemsVm.items) { item in
+                        lineItemRow(item)
+                    }
+                }
             }
         }
         .scrollContentBackground(.hidden)
         .background(.ultraThinMaterial)
         .navigationTitle(document.number ?? "Document")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            Task {
+                guard let token = auth.jwtToken else { return }
+                await itemsVm.load(documentId: document.id, apiBaseUrl: auth.apiBaseUrl, token: token)
+            }
+        }
     }
 
-    private func documentTypeName(_ id: Int?) -> String {
-        switch id {
-        case 1: return "Invoice"
-        case 2: return "Receipt"
-        default: return id.map { "Type \($0)" } ?? "—"
+    @ViewBuilder
+    private func lineItemRow(_ item: DocumentItemDto) -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.productName ?? "Unknown product")
+                    .font(.subheadline)
+                Text("\(formatQuantity(item.quantity)) × \(formatCurrency(item.price))")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            Spacer()
+            Text(formatCurrency(item.total))
+                .font(.subheadline)
+                .fontWeight(.medium)
         }
+        .padding(.vertical, 2)
+    }
+
+    private func typeFallback(_ id: Int?) -> String {
+        id.map { "Type \($0)" } ?? "—"
+    }
+
+    private func formatQuantity(_ value: Double) -> String {
+        value.truncatingRemainder(dividingBy: 1) == 0
+            ? String(format: "%.0f", value)
+            : String(value)
     }
 
     private func formatCurrency(_ value: Double) -> String {
@@ -133,7 +168,7 @@ struct DocumentDetailView: View {
         formatter.minimumFractionDigits = 2
         formatter.maximumFractionDigits = 2
         let formatted = formatter.string(from: NSNumber(value: value)) ?? "\(value)"
-        return "\(formatted) \(currencySymbol)"
+        return "\(formatted) DH"
     }
 
     private func formatDate(_ raw: String?) -> String {
