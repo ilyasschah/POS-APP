@@ -5,6 +5,11 @@ name: Build Flutter Windows (Test)
 # windows` (the same toolchain used to build releases manually today). Produces
 # a zipped Release build as a downloadable Actions artifact, and also drops a
 # copy on disk for anyone with access to the box.
+#
+# Note: the Flutter SDK checkout on this box is owned by a different Windows
+# account than the runner service (NETWORK SERVICE), so git's "dubious
+# ownership" protection would otherwise block every Flutter command - fixed
+# via a system-wide `git config --system --add safe.directory` for the SDK path.
 
 on:
   push:
