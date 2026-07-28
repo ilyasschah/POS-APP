@@ -1,0 +1,55 @@
+name: Build Flutter Windows (Test)
+
+# Runs on the self-hosted runner on the OVH box, which already has the Flutter
+# SDK and the Visual Studio C++ desktop workload needed for `flutter build
+# windows` (the same toolchain used to build releases manually today). Produces
+# a zipped Release build as a downloadable Actions artifact, and also drops a
+# copy on disk for anyone with access to the box.
+
+on:
+  push:
+    branches: [test]
+    paths:
+      - "Front-End/**"
+      - ".github/workflows/build-windows-test.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: build-windows-test
+  cancel-in-progress: true
+
+jobs:
+  build-windows:
+    runs-on: [self-hosted, Windows, ovh-test]
+    defaults:
+      run:
+        working-directory: Front-End
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: flutter pub get
+        run: flutter pub get
+
+      - name: flutter build windows (release)
+        run: flutter build windows --release
+
+      - name: Zip build output
+        shell: pwsh
+        run: |
+          $dest = "pos-app-windows.zip"
+          if (Test-Path $dest) { Remove-Item $dest -Force }
+          Compress-Archive -Path "build\windows\x64\runner\Release\*" -DestinationPath $dest
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pos-app-windows-${{ github.run_number }}
+          path: Front-End/pos-app-windows.zip
+          retention-days: 14
+
+      - name: Copy to local builds folder
+        shell: pwsh
+        run: |
+          $outDir = "C:\Builds\pos-app-windows\test"
+          New-Item -ItemType Directory -Path $outDir -Force | Out-Null
+          Copy-Item "pos-app-windows.zip" (Join-Path $outDir "pos-app-windows-latest.zip") -Force
+          Copy-Item "pos-app-windows.zip" (Join-Path $outDir "pos-app-windows-run$($env:GITHUB_RUN_NUMBER).zip") -Force
