@@ -14,6 +14,7 @@ import 'package:pos_app/bookings/bookings_provider.dart';
 import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/navigation/main_layout.dart';
+import 'package:pos_app/sync/sync_notifier.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
 import 'package:pos_app/cart/cart_provider.dart';
 import 'package:pos_app/company/company_provider.dart';
@@ -100,7 +101,11 @@ final kitchenStatusWatcherProvider = Provider<void>((ref) {
   }
 
   tick(); // immediate first pull so the badge is fresh on login
-  final timer = Timer.periodic(const Duration(seconds: 20), (_) => tick());
+  // 10s (was 20s): the app-wide background pull of open orders — it drives the
+  // "ready" badge, the Open Orders list AND floor-plan table occupancy (all Drift
+  // streams that re-emit the moment this writes), so a faster tick means changes
+  // made on another device (e.g. a tablet occupying a table) surface sooner.
+  final timer = Timer.periodic(const Duration(seconds: 10), (_) => tick());
   ref.onDispose(timer.cancel);
 });
 
@@ -404,6 +409,9 @@ class _OpenOrdersScreenState extends ConsumerState<OpenOrdersScreen> {
     if (mounted) setState(() => _syncing = true);
 
     try {
+      // Full push+pull first (documents/voids, products, …) so a void or edit
+      // made on another device lands, then the open-orders pull for live status.
+      await ref.read(syncStateProvider.notifier).sync();
       await syncOpenOrdersToDrift(ref.read(appDatabaseProvider), company.id);
     } catch (_) {
       // Offline or API error — Drift stream already shows local orders.

@@ -1636,16 +1636,34 @@ class SyncManager {
         }
 
         // Step 2: delete the server PosOrder (void = remove the open order).
-        await dio.delete<dynamic>(
-          '/PosOrder/Delete',
-          queryParameters: {
-            'id': v.serverOrderId,
-            'companyId': companyId,
-            'warehouseId': v.warehouseId,
-          },
-        );
+        // A 404 here means the order is ALREADY gone on the server — which is
+        // exactly the void's goal — so treat it as success, not a failure.
+        try {
+          await dio.delete<dynamic>(
+            '/PosOrder/Delete',
+            queryParameters: {
+              'id': v.serverOrderId,
+              'companyId': companyId,
+              'warehouseId': v.warehouseId,
+            },
+          );
+        } on DioException catch (de) {
+          if (de.response?.statusCode != 404) rethrow;
+        }
 
         await db.markVoidSynced(v.localId);
+      } on DioException catch (de) {
+        // 🚨 A 404 is NOT retryable — the target order/void no longer exists (or
+        // its server id was never valid). Retrying it every sync forever floods
+        // the log and burns work (the "poison pill" you saw). Mark it done so it
+        // stops; any other error is transient and stays pending for next cycle.
+        if (de.response?.statusCode == 404) {
+          debugPrint(
+              'pushPendingVoids: ${v.localId} → 404 (order already gone), marking done.');
+          await db.markVoidSynced(v.localId);
+        } else {
+          debugPrint('pushPendingVoids: ${v.localId} failed — $de');
+        }
       } catch (e) {
         debugPrint('pushPendingVoids: ${v.localId} failed — $e');
         // Leave as pending; next sync retries.

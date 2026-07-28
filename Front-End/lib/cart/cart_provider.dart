@@ -1147,7 +1147,28 @@ class CartNotifier extends Notifier<CartState> {
       final db = ref.read(appDatabaseProvider);
       final now = DateTime.now().toUtc();
 
-      final localId = state.existingLocalOrderId ?? const Uuid().v4();
+      final serverId =
+          (state.activePosOrderId != null && state.activePosOrderId! > 0)
+          ? state.activePosOrderId
+          : null;
+
+      // Reuse the existing local row for this order so an edit never leaves a
+      // DUPLICATE behind. Prefer the tracked existingLocalOrderId; otherwise —
+      // a reopen path that didn't set it (e.g. a server-only order loaded via
+      // loadOrderById's API fallback, or a row the sync materialised as
+      // svr_<id>) — find the row by its serverId. Only mint a fresh UUID when
+      // there genuinely is no local row for this order yet.
+      String? resolvedLocalId = state.existingLocalOrderId;
+      if (resolvedLocalId == null && serverId != null) {
+        final int sid = serverId;
+        final existing = await (db.select(db.posOrdersTable)
+              ..where((t) => t.serverId.equals(sid))
+              ..where((t) => t.companyId.equals(companyId))
+              ..limit(1))
+            .getSingleOrNull();
+        resolvedLocalId = existing?.localId;
+      }
+      final String localId = resolvedLocalId ?? const Uuid().v4();
 
       final orderNum =
           state.orderNumber ??
@@ -1155,11 +1176,6 @@ class CartNotifier extends Notifier<CartState> {
             final n = ref.read(dailyOrderNumberProvider);
             return '${_getPrefix(state.serviceType)} #${n.toString().padLeft(3, '0')}';
           }();
-
-      final serverId =
-          (state.activePosOrderId != null && state.activePosOrderId! > 0)
-          ? state.activePosOrderId
-          : null;
 
       final settings = ref.read(appSettingsProvider);
       final discountBeforeTax =

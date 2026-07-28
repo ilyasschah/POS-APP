@@ -84,7 +84,7 @@ Worth doing for checkout + the main tables once we know which ones break.
 
 ### ✅ Fixed (verified from device screenshots, French)
 - **PIN pad** — height-aware scale so the numpad fits a short screen (`login_screen.dart`).
-- **POS header** — order-control buttons collapse into an overflow "⋯" menu (`OverflowActionsBar`); company name dropped from the header (`menu_screen.dart`, `core/overflow_actions_bar.dart`). ⚠️ The overflow menu uses **`PopupMenuButton`, not `MenuAnchor`** — MenuAnchor threw `_dependents.isEmpty` and crashed (red screen) whenever the header rebuilt, e.g. renaming the POS/branch. Never reintroduce MenuAnchor here.
+- **POS header** — order-control buttons now sit in the width-bounded AppBar `title` slot as a **horizontal scroll** (`SingleChildScrollView`), so they scroll instead of running off-screen; company name dropped from the header (`menu_screen.dart`). ⚠️ **Do NOT put an overflow menu (`MenuAnchor` *or* a `LayoutBuilder`-based `OverflowActionsBar`) in the AppBar title** — both crashed with `_dependents.isEmpty` (red screen) whenever the header rebuilt (e.g. renaming the POS while Settings is open above the still-mounted MenuScreen). The plain horizontal scroll is the stable replacement. A true "show hidden buttons" drawer would need a different, device-tested approach.
 - **Cart footer** — "ANNULER"/"PAYER" labels scale to one line (`menu_screen.dart`).
 - **Discount dialog** — tighter insets + scrollable body (`discount_dialog.dart`).
 - **Stock table** — horizontal scroll for wide FR columns (`stock_screen.dart`).

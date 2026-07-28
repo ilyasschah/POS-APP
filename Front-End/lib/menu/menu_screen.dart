@@ -6,7 +6,6 @@ import 'package:gap/gap.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:pos_app/core/status_colors.dart';
-import 'package:pos_app/core/overflow_actions_bar.dart';
 import 'package:pos_app/menu/open_orders_screen.dart';
 import 'package:pos_app/navigation/main_layout.dart';
 import 'package:pos_app/product/product_provider.dart';
@@ -290,12 +289,13 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
             : null,
         titleSpacing: 0,
         centerTitle: false,
-        // Order-control buttons that fit are shown inline; the rest collapse
-        // into an overflow menu (the Windows "show hidden icons" pattern) so
-        // they never run off a small (7") screen. The AppBar title slot gives
-        // the bar a bounded width to lay out against.
-        title: OverflowActionsBar(
-          actions: [
+        // Order-control buttons live in the AppBar title slot (which, unlike
+        // actions:, is width-bounded) so they scroll horizontally instead of
+        // running off a small (7") screen.
+        title: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
                   if (showCustomerBtn)
                     asyncCustomers.when(
                       loading: () => const SizedBox(
@@ -981,6 +981,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
               onTap: () => _showActivePromosPopup(context),
             ),
           ],
+          ),
         ),
         // Kitchen-ready notification stays pinned to the right, outside the
         // overflow bar, so it's always visible when the KDS marks orders ready.
