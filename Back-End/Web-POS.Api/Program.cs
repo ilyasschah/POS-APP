@@ -233,7 +233,9 @@ if (!builder.Environment.IsDevelopment())
             "Development.");
     }
 }
-var jwtSecret = configuredSecret ?? "dev-only-very-long-secret-change-me-please";
+var jwtSecret = string.IsNullOrWhiteSpace(configuredSecret)
+    ? "dev-only-very-long-secret-change-me-please"
+    : configuredSecret;
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "Products.Api";
 var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "Products.Clients";
 
