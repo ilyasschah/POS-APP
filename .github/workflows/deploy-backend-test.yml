@@ -34,19 +34,20 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed" }
           echo "PUBLISH_DIR=$publishDir" >> $env:GITHUB_ENV
 
-      - name: Stop app pool
+      - name: Take app offline
         shell: pwsh
+        # ANCM (both hosting models) watches for app_offline.htm in the site root and
+        # gracefully unloads the app, releasing the lock on Web-POS.Api.dll. This needs
+        # only filesystem write access to the site folder - no IIS management API
+        # rights, so it works from a low-privilege runner service account.
         run: |
-          Import-Module WebAdministration
-          if ((Get-WebAppPoolState -Name "pos-api").Value -eq "Started") {
-            Stop-WebAppPool -Name "pos-api"
-          }
-          Start-Sleep -Seconds 3
+          Set-Content -Path "C:\inetpub\wwwroot\pos-api\app_offline.htm" -Value "Deploying..." -Encoding utf8
+          Start-Sleep -Seconds 5
 
       - name: Replace site files
         shell: pwsh
         run: |
-          robocopy "$env:PUBLISH_DIR" "C:\inetpub\wwwroot\pos-api" /MIR /XD logs /NFL /NDL /NJH /NJS
+          robocopy "$env:PUBLISH_DIR" "C:\inetpub\wwwroot\pos-api" /MIR /XD logs /XF app_offline.htm /NFL /NDL /NJH /NJS
           if ($LASTEXITCODE -ge 8) { throw "robocopy failed with exit code $LASTEXITCODE" }
 
       - name: Inject Test environment secrets into web.config
@@ -79,11 +80,10 @@ jobs:
           $aspNetCore.AppendChild($envVarsNode) | Out-Null
           $xml.Save($path)
 
-      - name: Start app pool
+      - name: Bring app back online
         shell: pwsh
         run: |
-          Import-Module WebAdministration
-          Start-WebAppPool -Name "pos-api"
+          Remove-Item "C:\inetpub\wwwroot\pos-api\app_offline.htm" -Force -ErrorAction SilentlyContinue
           Start-Sleep -Seconds 3
 
       - name: Health check
