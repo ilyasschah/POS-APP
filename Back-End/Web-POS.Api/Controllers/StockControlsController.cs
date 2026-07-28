@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Api.Commands.StockControlCommands.Add;
 using Api.Commands.StockControlCommands.Update;
@@ -14,40 +14,40 @@ namespace Api.Controllers
     {
     
         [HttpGet("[action]")]
-        public async Task<ActionResult<StockControlDto?>> GetById([FromQuery] int id, [FromQuery] int companyId)
+        public async Task<ActionResult<StockControlDto?>> GetById([FromQuery] int id, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
             if (id <= 0) return BadRequest(new { message = "Stock Control ID is required" });
 
-            var result = await mediator.Send(new GetStockControlByIdQuery { Id = id, CompanyId = companyId });
+            var result = await mediator.Send(new GetStockControlByIdQuery { Id = id, CompanyId = companyId }, ct);
             return result is null ? NotFound(new { message = "Stock control not found" }) : Ok(result);
         }
 
         [HttpGet("[action]")]
-        public async Task<ActionResult<List<StockControlDto>>> GetAll([FromQuery] int companyId)
+        public async Task<ActionResult<List<StockControlDto>>> GetAll([FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
-            return Ok(await mediator.Send(new GetAllStockControlsQuery { CompanyId = companyId }));
+            return Ok(await mediator.Send(new GetAllStockControlsQuery { CompanyId = companyId }, ct));
         }
 
         [HttpGet("[action]")]
-        public async Task<ActionResult<StockControlDto?>> GetByProductId([FromQuery] int productId, [FromQuery] int companyId)
+        public async Task<ActionResult<StockControlDto?>> GetByProductId([FromQuery] int productId, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
             if (productId <= 0) return BadRequest(new { message = "Product ID is required" });
 
-            var result = await mediator.Send(new GetStockControlByProductIdQuery { ProductId = productId, CompanyId = companyId });
+            var result = await mediator.Send(new GetStockControlByProductIdQuery { ProductId = productId, CompanyId = companyId }, ct);
 
             return Ok(result);
         }
 
         [HttpPost("[action]")]
-        public async Task<IActionResult> Add([FromBody] CreateStockControlRequest req, [FromQuery] int companyId)
+        public async Task<IActionResult> Add([FromBody] CreateStockControlRequest req, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
             try
             {
-                await mediator.Send(new AddStockControlCommand(req, companyId));
+                await mediator.Send(new AddStockControlCommand(req, companyId), ct);
                 return Ok(new { message = "Stock control added successfully" });
             }
             catch (InvalidOperationException ex)
@@ -57,12 +57,12 @@ namespace Api.Controllers
         }
 
         [HttpPatch("[action]")] // PERFECTED FOR PATCH
-        public async Task<IActionResult> Update([FromBody] UpdateStockControlRequest req, [FromQuery] int companyId)
+        public async Task<IActionResult> Update([FromBody] UpdateStockControlRequest req, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
             try
             {
-                var ok = await mediator.Send(new UpdateStockControlCommand(req, companyId));
+                var ok = await mediator.Send(new UpdateStockControlCommand(req, companyId), ct);
                 return ok
                     ? Ok(new { message = "Stock control updated successfully" })
                     : NotFound(new { message = "Stock control not found" });
@@ -74,13 +74,13 @@ namespace Api.Controllers
         }
 
         [HttpDelete("[action]")]
-        public async Task<IActionResult> Delete([FromQuery] int id, [FromQuery] int companyId)
+        public async Task<IActionResult> Delete([FromQuery] int id, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
             if (id <= 0) return BadRequest(new { message = "Stock Control ID is required" });
             try
             {
-                var ok = await mediator.Send(new DeleteStockControlCommand(id, companyId));
+                var ok = await mediator.Send(new DeleteStockControlCommand(id, companyId), ct);
                 return ok
                     ? Ok(new { message = "Stock control deleted successfully" })
                     : NotFound(new { message = "Stock control not found" });

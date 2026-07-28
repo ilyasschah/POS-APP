@@ -141,20 +141,42 @@ namespace Api.Services
             var companyIds = await db.Companies.Select(c => c.Id).ToListAsync();
             if (companyIds.Count == 0) return;
 
+            // ONE query for every company's existing key names, instead of one query
+            // per company. This runs on every startup, so the previous N+1 made boot
+            // time scale linearly with tenant count — noticeable on a SaaS control
+            // plane with many companies. Projected to (CompanyId, Name) so the
+            // payload stays small regardless of how many keys exist.
+            var existingByCompany = (await db.SecurityKeys
+                    .AsNoTracking()
+                    .Select(s => new { s.CompanyId, s.Name })
+                    .ToListAsync())
+                .GroupBy(s => s.CompanyId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => new HashSet<string>(
+                        g.Select(x => x.Name).Where(n => n != null)!,
+                        StringComparer.OrdinalIgnoreCase));
+
+            var added = false;
             foreach (var companyId in companyIds)
             {
-                var existing = await db.SecurityKeys
-                    .Where(s => s.CompanyId == companyId)
-                    .Select(s => s.Name)
-                    .ToListAsync();
-                var have = new HashSet<string>(existing.Where(n => n != null)!, StringComparer.OrdinalIgnoreCase);
+                if (!existingByCompany.TryGetValue(companyId, out var have))
+                    have = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
                 foreach (var keyName in DefaultSecurityKeys)
+                {
                     if (!have.Contains(keyName))
+                    {
                         db.SecurityKeys.Add(SecurityKey.Create(companyId, keyName, 0));
+                        added = true;
+                    }
+                }
             }
 
-            await db.SaveChangesAsync();
+            // Skip the round-trip entirely on the common startup where nothing is
+            // missing (every boot after the first following an app update).
+            if (added)
+                await db.SaveChangesAsync();
         }
 
         /// <summary>

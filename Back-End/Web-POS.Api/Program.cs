@@ -10,7 +10,10 @@ using System.Text;
 using Api.Repository;
 using Api.Services;
 using Api.Attributes;
+using Api.Configuration;
 using Api.DataBase;
+using FluentValidation;
+using MediatR;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,15 +26,41 @@ builder.Logging.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogL
 builder.Logging.AddFilter("Microsoft.EntityFrameworkCore.Infrastructure", LogLevel.Warning);
 
 // ================== CONFIG ==================
+// Machine-local overrides. Git-ignored, loaded after appsettings.json and before
+// environment variables, so a developer keeps their own connection strings out of
+// source control without needing env vars. Excluded from publish output via the
+// csproj, so it can never ship to a server.
+builder.Configuration.AddJsonFile(
+    "appsettings.Local.json", optional: true, reloadOnChange: true);
+
 var cs = builder.Configuration.GetConnectionString("DefaultConnection");
 
 // ================== CORS ==================
+// Configurable rather than hardcoded. Note the POS clients are native Windows /
+// Android apps, which are not subject to CORS at all, and the admin portal is
+// same-origin — so the permissive default is far less exposed than it looks. Set
+// Cors:AllowedOrigins to lock it down for browser callers.
+var allowedOrigins = builder.Configuration
+    .GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
-        policy.AllowAnyOrigin() // TODO: restrict in prod
-              .AllowAnyHeader()
-              .AllowAnyMethod());
+    {
+        if (allowedOrigins.Length > 0)
+        {
+            policy.WithOrigins(allowedOrigins)
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        }
+        else
+        {
+            // Unchanged historical behaviour when no origins are configured.
+            policy.AllowAnyOrigin()
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        }
+    });
 });
 
 // ================== DB CONTEXT ==================
@@ -163,6 +192,15 @@ builder.Services.AddScoped<BookingService>();
 builder.Services.AddMediatR(cfg =>
     cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
 
+// The ~150 AbstractValidator classes in this assembly were previously never
+// registered or invoked, so nothing validated. Register them and run them through
+// a pipeline behaviour. NOTE it starts in OBSERVE mode (logs violations, does not
+// reject) — see ValidationBehavior for the rollout plan and the Validation:Enforce
+// switch that turns on real 400s.
+builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly);
+builder.Services.AddTransient(
+    typeof(IPipelineBehavior<,>), typeof(Api.Behaviors.ValidationBehavior<,>));
+
 // ================== MVC / SWAGGER ==================
 builder.Services.AddControllers();
 // Admin SaaS portal (server-rendered Razor Pages under /admin). The portal has
@@ -209,35 +247,29 @@ builder.Services.AddAuthorization(options =>
         .Build();
 });
 
-// Fail-closed on the signing secret: outside Development a missing, too-short, or
-// still-a-placeholder Jwt:Secret must abort startup rather than sign tokens with a
-// value an attacker could guess (or read straight from the committed
-// appsettings.json) and use to forge "Admin" tokens. Supply the real secret
-// out-of-band via the Jwt__Secret environment variable or user-secrets.
-var configuredSecret = builder.Configuration["Jwt:Secret"];
-if (!builder.Environment.IsDevelopment())
+// ================== CONFIGURATION VALIDATION ==================
+// Fail-closed on every required setting BEFORE anything is wired up. Outside
+// Development a missing/short/placeholder Jwt:Secret, an unparseable lease key or
+// an absent connection string aborts startup rather than surfacing later as a
+// forged "Admin" token or a 500 on the first login. In Development the same
+// findings are downgraded to warnings so a fresh clone runs with no setup.
+var configReport = StartupConfigurationValidator.Validate(
+    builder.Configuration, builder.Environment);
+
+if (configReport.HasErrors)
 {
-    string[] knownPlaceholders =
-    {
-        "change-this-to-a-long-random-secret-32plus-characters",
-        "dev-only-very-long-secret-change-me-please",
-    };
-    if (string.IsNullOrWhiteSpace(configuredSecret) ||
-        configuredSecret.Length < 32 ||
-        knownPlaceholders.Contains(configuredSecret))
-    {
-        throw new InvalidOperationException(
-            "Jwt:Secret is missing, shorter than 32 characters, or still a " +
-            "placeholder. Set a strong random secret via the Jwt__Secret " +
-            "environment variable (or user-secrets) before running outside " +
-            "Development.");
-    }
+    // Written to stderr as well as thrown: the host logger does not exist yet, and
+    // a bare stack trace in the Windows Event Log is far less useful than this list.
+    var fatal = StartupConfigurationValidator.FormatFatalMessage(configReport, builder.Environment);
+    Console.Error.WriteLine(fatal);
+    throw new InvalidOperationException(fatal);
 }
-var jwtSecret = string.IsNullOrWhiteSpace(configuredSecret)
-    ? "dev-only-very-long-secret-change-me-please"
-    : configuredSecret;
-var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "Products.Api";
-var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "Products.Clients";
+
+// Resolved through JwtSettings so issuance (TokenService) and validation (below)
+// can never disagree — see the note in that class about the empty-string trap.
+var jwtSecret = JwtSettings.ResolveSecret(builder.Configuration);
+var jwtIssuer = JwtSettings.ResolveIssuer(builder.Configuration);
+var jwtAudience = JwtSettings.ResolveAudience(builder.Configuration);
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -300,6 +332,12 @@ static string SourceOf(IConfiguration config, string key)
     }
     return "<no provider supplied this key>";
 }
+
+// Warnings collected before the logger existed — surface them now, loudly. In
+// Development this also carries the findings that WOULD have been fatal in
+// Production, so problems are visible on the dev box before they reach a server.
+foreach (var warning in configReport.Warnings)
+    logger.LogWarning("CONFIG: {warning}", warning);
 
 logger.LogInformation("--- Configuration providers (later overrides earlier) ---");
 if (app.Configuration is IConfigurationRoot configRoot)

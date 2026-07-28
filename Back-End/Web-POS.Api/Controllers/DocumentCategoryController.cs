@@ -1,4 +1,4 @@
-using Api.Models;
+﻿using Api.Models;
 using Api.Queries.DocumentCategoryQuery;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -11,15 +11,15 @@ namespace Api.Controllers
     public class DocumentCategoryController(IMediator mediator) : ControllerBase
     {
         [HttpGet("[action]")]
-        public async Task<ActionResult<List<DocumentCategoryDto>>> GetAll()
+        public async Task<ActionResult<List<DocumentCategoryDto>>> GetAll(CancellationToken ct = default)
         {
-            return Ok(await mediator.Send(new GetAllDocumentCategoryQuery()));
+            return Ok(await mediator.Send(new GetAllDocumentCategoryQuery(), ct));
         }
 
         [HttpGet("[action]")]
-        public async Task<ActionResult<DocumentCategoryDto>> GetById([FromQuery] int id)
+        public async Task<ActionResult<DocumentCategoryDto>> GetById([FromQuery] int id, CancellationToken ct = default)
         {
-            return Ok(await mediator.Send(new GetDCByIdQuery(id)));
+            return Ok(await mediator.Send(new GetDCByIdQuery(id), ct));
         }
     }
 }

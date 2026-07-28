@@ -13,44 +13,44 @@ namespace Api.Controllers
     public class MigrationsController(IMediator mediator) : ControllerBase
     {
         [HttpGet("[action]")]
-        public async Task<ActionResult<List<MigrationDto>>> GetAll()
+        public async Task<ActionResult<List<MigrationDto>>> GetAll(CancellationToken ct = default)
         {
-            var result = await mediator.Send(new GetAllMigrationsQuery());
+            var result = await mediator.Send(new GetAllMigrationsQuery(), ct);
             return Ok(result);
         }
 
         [HttpGet("[action]/{id:int}")]
-        public async Task<ActionResult<MigrationDto>> GetById(int id)
+        public async Task<ActionResult<MigrationDto>> GetById(int id, CancellationToken ct = default)
         {
-            var result = await mediator.Send(new GetMigrationByIdQuery { Id = id });
+            var result = await mediator.Send(new GetMigrationByIdQuery { Id = id }, ct);
             return result is null ? NotFound() : Ok(result);
         }
 
         [HttpGet("[action]/{version}")]
-        public async Task<ActionResult<MigrationDto>> GetByVersion(string version)
+        public async Task<ActionResult<MigrationDto>> GetByVersion(string version, CancellationToken ct = default)
         {
-            var result = await mediator.Send(new GetMigrationByVersionQuery { Version = version });
+            var result = await mediator.Send(new GetMigrationByVersionQuery { Version = version }, ct);
             return result is null ? NotFound() : Ok(result);
         }
 
         [HttpPost("[action]")]
-        public async Task<ActionResult<MigrationDto>> Add([FromQuery] CreateMigrationRequest req)
+        public async Task<ActionResult<MigrationDto>> Add([FromQuery] CreateMigrationRequest req, CancellationToken ct = default)
         {
-            var result = await mediator.Send(new AddMigrationCommand(req));
+            var result = await mediator.Send(new AddMigrationCommand(req), ct);
             return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
         }
 
         [HttpPut("[action]/{id:int}")]
-        public async Task<IActionResult> Update(int id, [FromQuery] UpdateMigrationRequest req)
+        public async Task<IActionResult> Update(int id, [FromQuery] UpdateMigrationRequest req, CancellationToken ct = default)
         {
-            var ok = await mediator.Send(new UpdateMigrationCommand(id, req));
+            var ok = await mediator.Send(new UpdateMigrationCommand(id, req), ct);
             return ok ? NoContent() : NotFound();
         }
 
         [HttpDelete("[action]/{id:int}")]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> Delete(int id, CancellationToken ct = default)
         {
-            var ok = await mediator.Send(new DeleteMigrationCommand(id));
+            var ok = await mediator.Send(new DeleteMigrationCommand(id), ct);
             return ok ? NoContent() : NotFound();
         }
     }

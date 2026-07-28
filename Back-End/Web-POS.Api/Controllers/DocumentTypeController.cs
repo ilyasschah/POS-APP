@@ -15,33 +15,33 @@ namespace Api.Controllers
     public class DocumentTypeController(IMediator mediator) : ControllerBase
     {
         [HttpGet("[action]")]
-        public async Task<ActionResult<List<DocumentTypeDto>>> GetAll()
+        public async Task<ActionResult<List<DocumentTypeDto>>> GetAll(CancellationToken ct = default)
         {
-            return Ok(await mediator.Send(new GetAllDocumentTypesQuery { }));
+            return Ok(await mediator.Send(new GetAllDocumentTypesQuery { }, ct));
         }
 
         [HttpGet("[action]")]
-        public async Task<ActionResult<DocumentTypeDto>> GetById([FromQuery] int id)
+        public async Task<ActionResult<DocumentTypeDto>> GetById([FromQuery] int id, CancellationToken ct = default)
         {
             if (id == 0) return BadRequest("Document Type ID is required");
-            return Ok(await mediator.Send(new GetDocumentTypeByIdQuery(id)));
+            return Ok(await mediator.Send(new GetDocumentTypeByIdQuery(id), ct));
         }
 
         [HttpPost("[action]")]
-        public async Task<ActionResult<bool>> Create([FromBody] CreateDocumentTypeRequest request)
+        public async Task<ActionResult<bool>> Create([FromBody] CreateDocumentTypeRequest request, CancellationToken ct = default)
         {
-            return Ok(await mediator.Send(new AddDocumentTypeCommand(request)));
+            return Ok(await mediator.Send(new AddDocumentTypeCommand(request), ct));
         }
         //[HttpPut("[action]")]
-        //public async Task<ActionResult<bool>> Update([FromQuery] int id, [FromQuery] UpdateDocumentTypeRequest request)
+        //public async Task<ActionResult<bool>> Update([FromQuery] int id, [FromQuery] UpdateDocumentTypeRequest request, CancellationToken ct = default)
         //{
-        //    return Ok(await mediator.Send(new UpdateDocumentTypeCommand(id, request)));
+        //    return Ok(await mediator.Send(new UpdateDocumentTypeCommand(id, request), ct));
         //}
 
         //[HttpDelete("[action]/{id}")]
-        //public async Task<IActionResult> Delete(int id)
+        //public async Task<IActionResult> Delete(int id, CancellationToken ct = default)
         //{
-        //    return Ok(await mediator.Send(new DeleteDocumentTypeCommand(id)));
+        //    return Ok(await mediator.Send(new DeleteDocumentTypeCommand(id), ct));
         //}
     }
 }

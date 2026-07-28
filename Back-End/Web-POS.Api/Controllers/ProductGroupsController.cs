@@ -23,56 +23,56 @@ namespace Api.Controllers
         }
 
         [HttpGet("[action]")]
-        public async Task<ActionResult<List<ProductGroupDto>>> GetAll([FromQuery] int companyId)
+        public async Task<ActionResult<List<ProductGroupDto>>> GetAll([FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId <= 0) return BadRequest("Company ID is required");
-            return Ok(await _mediator.Send(new GetAllProductGroupsQuery { CompanyId = companyId }));
+            return Ok(await _mediator.Send(new GetAllProductGroupsQuery { CompanyId = companyId }, ct));
         }
 
         [HttpGet("[action]")]
-        public async Task<ActionResult<ProductGroupDto>> GetById([FromQuery] int id, [FromQuery] int companyId)
+        public async Task<ActionResult<ProductGroupDto>> GetById([FromQuery] int id, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId <= 0) return BadRequest("Company ID is required");
-            return Ok(await _mediator.Send(new GetProductGroupByIdQuery { Id = id, CompanyId = companyId }));
+            return Ok(await _mediator.Send(new GetProductGroupByIdQuery { Id = id, CompanyId = companyId }, ct));
         }
         [HttpGet("[action]")]
-        public async Task<ActionResult<List<ProductGroupDto>>> GetChildren([FromQuery] int parentId, [FromQuery] int companyId)
+        public async Task<ActionResult<List<ProductGroupDto>>> GetChildren([FromQuery] int parentId, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId <= 0) return BadRequest("Company ID is required");
             if (parentId <= 0) return BadRequest("Parent ID is required");
 
-            return Ok(await _mediator.Send(new GetProductGroupChildrenQuery { ParentId = parentId, CompanyId = companyId }));
+            return Ok(await _mediator.Send(new GetProductGroupChildrenQuery { ParentId = parentId, CompanyId = companyId }, ct));
         }
         [HttpPost("[action]")]
-        public async Task<ActionResult<ProductGroupDto>> Add([FromBody] CreateProductGroupRequest request, [FromQuery] int companyId)
+        public async Task<ActionResult<ProductGroupDto>> Add([FromBody] CreateProductGroupRequest request, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId <= 0) return BadRequest("Company ID is required");
-            var result = await _mediator.Send(new AddProductGroupCommand(request, companyId));
+            var result = await _mediator.Send(new AddProductGroupCommand(request, companyId), ct);
             return Ok(result);
         }
 
         [HttpPatch("[action]")]
-        public async Task<IActionResult> Update([FromBody] UpdateProductGroupRequest request, [FromQuery] int companyId)
+        public async Task<IActionResult> Update([FromBody] UpdateProductGroupRequest request, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId <= 0) return BadRequest("Company ID is required");
-            var result = await _mediator.Send(new UpdateProductGroupCommand(request,companyId ));
+            var result = await _mediator.Send(new UpdateProductGroupCommand(request,companyId ), ct);
             return Ok(new { Success = result });
         }
 
         [HttpDelete("[action]")]
-        public async Task<IActionResult> Delete([FromQuery] int id, [FromQuery] int companyId)
+        public async Task<IActionResult> Delete([FromQuery] int id, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId <= 0) return BadRequest("Company ID is required");
-            var result = await _mediator.Send(new DeleteProductGroupCommand(id, companyId));
+            var result = await _mediator.Send(new DeleteProductGroupCommand(id, companyId), ct);
             return Ok(new { Message = result ? "Product Group deleted successfully" : "Failed to delete group" });
         }
 
         [HttpPost("[action]")]
-        public async Task<IActionResult> AssignProducts([FromBody] AssignProductsToGroupRequest request)
+        public async Task<IActionResult> AssignProducts([FromBody] AssignProductsToGroupRequest request, CancellationToken ct = default)
         {
             if (request.CompanyId <= 0) return BadRequest("Company ID is required");
             if (request.GroupId <= 0) return BadRequest("Group ID is required");
-            var updated = await _mediator.Send(new AssignProductsToGroupCommand(request));
+            var updated = await _mediator.Send(new AssignProductsToGroupCommand(request), ct);
             return Ok(new { Updated = updated });
         }
     }

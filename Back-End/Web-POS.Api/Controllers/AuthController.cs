@@ -17,9 +17,9 @@ public class AuthController(IMediator mediator) : ControllerBase
     // else is covered by the global FallbackPolicy (see Program.cs).
     [AllowAnonymous]
     [HttpPost("[action]")]
-    public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest body)
+    public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest body, CancellationToken ct = default)
     {
-        var response = await mediator.Send(new LoginQuery(body));
+        var response = await mediator.Send(new LoginQuery(body), ct);
 
         if (!response.Success)
             return Unauthorized(new { message = response.Message });
@@ -35,12 +35,12 @@ public class AuthController(IMediator mediator) : ControllerBase
     /// </summary>
     [Authorize]
     [HttpPost("[action]")]
-    public async Task<ActionResult<LoginResponse>> Refresh()
+    public async Task<ActionResult<LoginResponse>> Refresh(CancellationToken ct = default)
     {
         if (!TryGetClaimInt("userId", out var userId) || !TryGetClaimInt("companyId", out var companyId))
             return Unauthorized();
 
-        var response = await mediator.Send(new IssueUserTokenQuery(userId, companyId));
+        var response = await mediator.Send(new IssueUserTokenQuery(userId, companyId), ct);
         if (!response.Success)
             return Unauthorized(new { message = response.Message });
 
@@ -57,14 +57,14 @@ public class AuthController(IMediator mediator) : ControllerBase
     /// </summary>
     [Authorize]
     [HttpPost("[action]")]
-    public async Task<ActionResult<LoginResponse>> UserToken([FromQuery] int userId)
+    public async Task<ActionResult<LoginResponse>> UserToken([FromQuery] int userId, CancellationToken ct = default)
     {
         if (!TryGetClaimInt("companyId", out var companyId))
             return Unauthorized();
         if (userId <= 0)
             return BadRequest(new { message = "userId is required." });
 
-        var response = await mediator.Send(new IssueUserTokenQuery(userId, companyId));
+        var response = await mediator.Send(new IssueUserTokenQuery(userId, companyId), ct);
         if (!response.Success)
             return Unauthorized(new { message = response.Message });
 

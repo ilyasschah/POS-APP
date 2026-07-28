@@ -17,34 +17,34 @@ namespace Api.Controllers
         }
 
         [HttpGet("GetById")]
-        public async Task<IActionResult> GetById([FromQuery] int id, [FromQuery] int companyId)
+        public async Task<IActionResult> GetById([FromQuery] int id, [FromQuery] int companyId, CancellationToken ct = default)
         {
-            var result = await _mediator.Send(new GetZReportByIdQuery(id, companyId));
+            var result = await _mediator.Send(new GetZReportByIdQuery(id, companyId), ct);
             if (result == null) return NotFound("Z-Report not found.");
             return Ok(result);
         }
 
         [HttpGet("GetAll")]
-        public async Task<IActionResult> GetAll([FromQuery] int companyId)
+        public async Task<IActionResult> GetAll([FromQuery] int companyId, CancellationToken ct = default)
         {
-            var result = await _mediator.Send(new GetAllZReportsQuery(companyId));
+            var result = await _mediator.Send(new GetAllZReportsQuery(companyId), ct);
             return Ok(result);
         }
 
         [HttpGet("GetLast")]
-        public async Task<IActionResult> GetLast([FromQuery] int companyId)
+        public async Task<IActionResult> GetLast([FromQuery] int companyId, CancellationToken ct = default)
         {
-            var result = await _mediator.Send(new GetLastZReportQuery(companyId));
+            var result = await _mediator.Send(new GetLastZReportQuery(companyId), ct);
             if (result == null) return NotFound("No Z-Reports found for this company.");
             return Ok(result);
         }
 
         [HttpPost("Generate")]
-        public async Task<IActionResult> Generate([FromQuery] int companyId, [FromQuery] int userId)
+        public async Task<IActionResult> Generate([FromQuery] int companyId, [FromQuery] int userId, CancellationToken ct = default)
         {
             try
             {
-                var result = await _mediator.Send(new GenerateZReportCommand(companyId, userId));
+                var result = await _mediator.Send(new GenerateZReportCommand(companyId, userId), ct);
                 return Ok(result);
             }
             catch (InvalidOperationException ex)

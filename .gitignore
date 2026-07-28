@@ -3,7 +3,28 @@
 # Backend local secrets (never commit)
 SECRETS.local.txt
 **/SECRETS.local.txt
+
+# Visual Studio / Rider IDE state (machine-specific)
 **/.vs/
+**/.idea/
+*.suo
+*.user
+*.lscache
+*.dtbcache.v2
+*.futdcache.v2
+*.vsidx
+
+# Local developer overrides — each machine keeps its own copy, never committed
+**/appsettings.Local.json
+**/appsettings.*.Local.json
+
+# Publish profiles carry deployment paths and connection strings
+**/PublishProfiles/*.user
+**/serviceDependencies.local.json.user
+
+# Pillar 2 — lease signing key (supply via secret store / copy out-of-band)
+**/lease_signing_key.pem
+
 # Ignore build output and intermediate files
 **/obj/
 **/bin/

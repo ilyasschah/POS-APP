@@ -20,51 +20,51 @@ namespace Api.Controllers
         }
 
         [HttpGet("[action]")]
-        public async Task<ActionResult<List<FloorPlanDto>>> GetAll([FromQuery] int companyId, [FromQuery] DateTime? modifiedAfter = null)
+        public async Task<ActionResult<List<FloorPlanDto>>> GetAll([FromQuery] int companyId, [FromQuery] DateTime? modifiedAfter = null, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest();
 
-            var result = await _mediator.Send(new GetAllFloorPlansQuery { CompanyId = companyId, ModifiedAfter = modifiedAfter });
+            var result = await _mediator.Send(new GetAllFloorPlansQuery { CompanyId = companyId, ModifiedAfter = modifiedAfter }, ct);
             return Ok(result);
         }
 
         [HttpGet("[action]")]
-        public async Task<ActionResult<FloorPlanDto>> GetById([FromQuery] int id, [FromQuery] int companyId)
+        public async Task<ActionResult<FloorPlanDto>> GetById([FromQuery] int id, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest();
 
-            var result = await _mediator.Send(new GetFloorPlanByIdQuery { Id = id, CompanyId = companyId });
+            var result = await _mediator.Send(new GetFloorPlanByIdQuery { Id = id, CompanyId = companyId }, ct);
             if (result == null) return NotFound();
 
             return Ok(result);
         }
 
         [HttpPost("[action]")]
-        public async Task<ActionResult<FloorPlanDto>> Add([FromBody] CreateFloorPlanRequest request, [FromQuery] int companyId)
+        public async Task<ActionResult<FloorPlanDto>> Add([FromBody] CreateFloorPlanRequest request, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest();
 
-            var result = await _mediator.Send(new AddFloorPlanCommand { Request = request, CompanyId = companyId });
+            var result = await _mediator.Send(new AddFloorPlanCommand { Request = request, CompanyId = companyId }, ct);
             return Ok(result);
         }
 
         [HttpPatch("[action]")]
-        public async Task<ActionResult> Update([FromBody] UpdateFloorPlanRequest request, [FromQuery] int companyId)
+        public async Task<ActionResult> Update([FromBody] UpdateFloorPlanRequest request, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest();
 
-            var success = await _mediator.Send(new UpdateFloorPlanCommand { Request = request, CompanyId = companyId });
+            var success = await _mediator.Send(new UpdateFloorPlanCommand { Request = request, CompanyId = companyId }, ct);
             if (!success) return NotFound();
 
             return Ok();
         }
 
         [HttpDelete("[action]")]
-        public async Task<ActionResult> Delete([FromQuery] int id, [FromQuery] int companyId)
+        public async Task<ActionResult> Delete([FromQuery] int id, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest();
 
-            var success = await _mediator.Send(new DeleteFloorPlanCommand { Id = id, CompanyId = companyId });
+            var success = await _mediator.Send(new DeleteFloorPlanCommand { Id = id, CompanyId = companyId }, ct);
             if (!success) return NotFound();
 
             return Ok();

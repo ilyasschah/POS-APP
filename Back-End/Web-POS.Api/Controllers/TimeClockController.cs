@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Api.Commands.TimeClockCommands.BatchSync;
 using Api.Master.Services;
@@ -18,7 +18,7 @@ public class TimeClockController(
     [HttpPost("[action]")]
     public async Task<ActionResult<BatchSyncTimeClockResponse>> BatchSync(
         [FromBody] BatchSyncTimeClockRequest request,
-        [FromQuery] int companyId)
+        [FromQuery] int companyId, CancellationToken ct = default)
     {
         if (companyId <= 0) return BadRequest("Company ID is required.");
 
@@ -42,7 +42,7 @@ public class TimeClockController(
             logger.LogWarning(ex, "Pillar 5 clone audit (time-clock) skipped for company {CompanyId}", companyId);
         }
 
-        var result = await mediator.Send(new BatchSyncTimeClockCommand(request, companyId));
+        var result = await mediator.Send(new BatchSyncTimeClockCommand(request, companyId), ct);
         return Ok(result);
     }
 }

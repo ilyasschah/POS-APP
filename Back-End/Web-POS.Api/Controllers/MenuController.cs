@@ -16,13 +16,13 @@ namespace Api.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetFullMenu([FromQuery] int companyId, [FromQuery] int warehouseId)
+        public async Task<IActionResult> GetFullMenu([FromQuery] int companyId, [FromQuery] int warehouseId, CancellationToken ct = default)
         {
             if (companyId <= 0 || warehouseId <= 0)
                 return BadRequest(new { message = "Company ID and Warehouse ID are required." });
 
             var query = new GetFullMenuQuery { CompanyId = companyId, WarehouseId = warehouseId };
-            var result = await _mediator.Send(query);
+            var result = await _mediator.Send(query, ct);
 
             return Ok(result);
         }

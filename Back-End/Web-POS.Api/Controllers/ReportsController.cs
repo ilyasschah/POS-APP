@@ -1,4 +1,4 @@
-using Api.Models;
+﻿using Api.Models;
 using Api.Queries.ReportQueries;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -18,7 +18,7 @@ namespace Api.Controllers
             [FromQuery] int? userId = null,
             [FromQuery] int? warehouseId = null,
             [FromQuery] int? productId = null,
-            [FromQuery] int? productGroupId = null)
+            [FromQuery] int? productGroupId = null, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
             if (endDate.Date < startDate.Date) return BadRequest("End date must be on or after start date");
@@ -33,7 +33,7 @@ namespace Api.Controllers
                 WarehouseId    = warehouseId,
                 ProductId      = productId,
                 ProductGroupId = productGroupId,
-            });
+            }, ct);
 
             return Ok(result);
         }
@@ -48,7 +48,7 @@ namespace Api.Controllers
             [FromQuery] int? warehouseId = null,
             [FromQuery] int? productId = null,
             [FromQuery] int? productGroupId = null,
-            [FromQuery] bool includeSubgroups = false)
+            [FromQuery] bool includeSubgroups = false, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
             if (endDate.Date < startDate.Date) return BadRequest("End date must be on or after start date");
@@ -64,7 +64,7 @@ namespace Api.Controllers
                 ProductId       = productId,
                 ProductGroupId  = productGroupId,
                 IncludeSubgroups = includeSubgroups,
-            });
+            }, ct);
 
             return Ok(result);
         }
@@ -78,7 +78,7 @@ namespace Api.Controllers
             [FromQuery] int? userId = null,
             [FromQuery] int? warehouseId = null,
             [FromQuery] int? productId = null,
-            [FromQuery] int? productGroupId = null)
+            [FromQuery] int? productGroupId = null, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
             if (endDate.Date < startDate.Date) return BadRequest("End date must be on or after start date");
@@ -93,7 +93,7 @@ namespace Api.Controllers
                 WarehouseId    = warehouseId,
                 ProductId      = productId,
                 ProductGroupId = productGroupId,
-            });
+            }, ct);
 
             return Ok(result);
         }
@@ -105,7 +105,7 @@ namespace Api.Controllers
             [FromQuery] DateTime endDate,
             [FromQuery] int? customerId = null,
             [FromQuery] int? userId = null,
-            [FromQuery] int? warehouseId = null)
+            [FromQuery] int? warehouseId = null, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
             if (endDate.Date < startDate.Date) return BadRequest("End date must be on or after start date");
@@ -118,7 +118,7 @@ namespace Api.Controllers
                 CustomerId  = customerId,
                 UserId      = userId,
                 WarehouseId = warehouseId,
-            });
+            }, ct);
 
             return Ok(result);
         }
@@ -130,7 +130,7 @@ namespace Api.Controllers
             [FromQuery] DateTime endDate,
             [FromQuery] int? customerId = null,
             [FromQuery] int? userId = null,
-            [FromQuery] int? warehouseId = null)
+            [FromQuery] int? warehouseId = null, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
             if (endDate.Date < startDate.Date) return BadRequest("End date must be on or after start date");
@@ -143,7 +143,7 @@ namespace Api.Controllers
                 CustomerId  = customerId,
                 UserId      = userId,
                 WarehouseId = warehouseId,
-            });
+            }, ct);
 
             return Ok(result);
         }
@@ -155,7 +155,7 @@ namespace Api.Controllers
             [FromQuery] DateTime endDate,
             [FromQuery] int? customerId = null,
             [FromQuery] int? userId = null,
-            [FromQuery] int? warehouseId = null)
+            [FromQuery] int? warehouseId = null, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
             if (endDate.Date < startDate.Date) return BadRequest("End date must be on or after start date");
@@ -168,7 +168,7 @@ namespace Api.Controllers
                 CustomerId = customerId,
                 UserId     = userId,
                 WarehouseId = warehouseId,
-            });
+            }, ct);
 
             return Ok(result);
         }
@@ -182,7 +182,7 @@ namespace Api.Controllers
             [FromQuery] int? userId = null,
             [FromQuery] int? warehouseId = null,
             [FromQuery] int? productId = null,
-            [FromQuery] int? productGroupId = null)
+            [FromQuery] int? productGroupId = null, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
             if (endDate.Date < startDate.Date) return BadRequest("End date must be on or after start date");
@@ -197,7 +197,7 @@ namespace Api.Controllers
                 WarehouseId    = warehouseId,
                 ProductId      = productId,
                 ProductGroupId = productGroupId,
-            });
+            }, ct);
 
             return Ok(result);
         }
@@ -211,7 +211,7 @@ namespace Api.Controllers
             [FromQuery] int? userId = null,
             [FromQuery] int? warehouseId = null,
             [FromQuery] int? productId = null,
-            [FromQuery] int? productGroupId = null)
+            [FromQuery] int? productGroupId = null, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
             if (endDate.Date < startDate.Date) return BadRequest("End date must be on or after start date");
@@ -226,7 +226,7 @@ namespace Api.Controllers
                 WarehouseId    = warehouseId,
                 ProductId      = productId,
                 ProductGroupId = productGroupId,
-            });
+            }, ct);
 
             return Ok(result);
         }
@@ -240,7 +240,7 @@ namespace Api.Controllers
             [FromQuery] int? userId = null,
             [FromQuery] int? warehouseId = null,
             [FromQuery] int? productId = null,
-            [FromQuery] int? productGroupId = null)
+            [FromQuery] int? productGroupId = null, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
             if (endDate.Date < startDate.Date) return BadRequest("End date must be on or after start date");
@@ -255,7 +255,7 @@ namespace Api.Controllers
                 WarehouseId    = warehouseId,
                 ProductId      = productId,
                 ProductGroupId = productGroupId,
-            });
+            }, ct);
 
             return Ok(result);
         }
@@ -269,7 +269,7 @@ namespace Api.Controllers
             [FromQuery] int? userId = null,
             [FromQuery] int? warehouseId = null,
             [FromQuery] int? productId = null,
-            [FromQuery] int? productGroupId = null)
+            [FromQuery] int? productGroupId = null, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
             if (endDate.Date < startDate.Date) return BadRequest("End date must be on or after start date");
@@ -284,7 +284,7 @@ namespace Api.Controllers
                 WarehouseId    = warehouseId,
                 ProductId      = productId,
                 ProductGroupId = productGroupId,
-            });
+            }, ct);
 
             return Ok(result);
         }
@@ -296,7 +296,7 @@ namespace Api.Controllers
             [FromQuery] DateTime endDate,
             [FromQuery] int? customerId = null,
             [FromQuery] int? userId = null,
-            [FromQuery] int? warehouseId = null)
+            [FromQuery] int? warehouseId = null, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
             if (endDate.Date < startDate.Date) return BadRequest("End date must be on or after start date");
@@ -309,7 +309,7 @@ namespace Api.Controllers
                 CustomerId  = customerId,
                 UserId      = userId,
                 WarehouseId = warehouseId,
-            });
+            }, ct);
 
             return Ok(result);
         }
@@ -321,7 +321,7 @@ namespace Api.Controllers
             [FromQuery] DateTime endDate,
             [FromQuery] int? customerId = null,
             [FromQuery] int? productGroupId = null,
-            [FromQuery] int? warehouseId = null)
+            [FromQuery] int? warehouseId = null, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
             if (endDate.Date < startDate.Date) return BadRequest("End date must be on or after start date");
@@ -334,7 +334,7 @@ namespace Api.Controllers
                 CustomerId     = customerId,
                 ProductGroupId = productGroupId,
                 WarehouseId    = warehouseId,
-            });
+            }, ct);
 
             return Ok(result);
         }
@@ -346,7 +346,7 @@ namespace Api.Controllers
             [FromQuery] DateTime endDate,
             [FromQuery] int? customerId = null,
             [FromQuery] int? userId = null,
-            [FromQuery] int? warehouseId = null)
+            [FromQuery] int? warehouseId = null, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
             if (endDate.Date < startDate.Date) return BadRequest("End date must be on or after start date");
@@ -359,7 +359,7 @@ namespace Api.Controllers
                 CustomerId  = customerId,
                 UserId      = userId,
                 WarehouseId = warehouseId,
-            });
+            }, ct);
 
             return Ok(result);
         }
@@ -370,7 +370,7 @@ namespace Api.Controllers
             [FromQuery] DateTime startDate,
             [FromQuery] DateTime endDate,
             [FromQuery] int? customerId = null,
-            [FromQuery] int? warehouseId = null)
+            [FromQuery] int? warehouseId = null, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
             if (endDate.Date < startDate.Date) return BadRequest("End date must be on or after start date");
@@ -382,7 +382,7 @@ namespace Api.Controllers
                 EndDate     = endDate,
                 CustomerId  = customerId,
                 WarehouseId = warehouseId,
-            });
+            }, ct);
 
             return Ok(result);
         }
@@ -394,7 +394,7 @@ namespace Api.Controllers
             [FromQuery] DateTime endDate,
             [FromQuery] int? customerId = null,
             [FromQuery] int? userId = null,
-            [FromQuery] int? warehouseId = null)
+            [FromQuery] int? warehouseId = null, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
             if (endDate.Date < startDate.Date) return BadRequest("End date must be on or after start date");
@@ -407,7 +407,7 @@ namespace Api.Controllers
                 CustomerId  = customerId,
                 UserId      = userId,
                 WarehouseId = warehouseId,
-            });
+            }, ct);
 
             return Ok(result);
         }
@@ -419,7 +419,7 @@ namespace Api.Controllers
             [FromQuery] DateTime endDate,
             [FromQuery] int? customerId = null,
             [FromQuery] int? userId = null,
-            [FromQuery] int? warehouseId = null)
+            [FromQuery] int? warehouseId = null, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
             if (endDate.Date < startDate.Date) return BadRequest("End date must be on or after start date");
@@ -432,7 +432,7 @@ namespace Api.Controllers
                 CustomerId  = customerId,
                 UserId      = userId,
                 WarehouseId = warehouseId,
-            });
+            }, ct);
 
             return Ok(result);
         }
@@ -443,7 +443,7 @@ namespace Api.Controllers
             [FromQuery] DateTime startDate,
             [FromQuery] DateTime endDate,
             [FromQuery] int? userId = null,
-            [FromQuery] int? productId = null)
+            [FromQuery] int? productId = null, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
             if (endDate.Date < startDate.Date) return BadRequest("End date must be on or after start date");
@@ -455,7 +455,7 @@ namespace Api.Controllers
                 EndDate   = endDate,
                 UserId    = userId,
                 ProductId = productId,
-            });
+            }, ct);
 
             return Ok(result);
         }
@@ -467,7 +467,7 @@ namespace Api.Controllers
             [FromQuery] DateTime endDate,
             [FromQuery] int? customerId = null,
             [FromQuery] int? userId = null,
-            [FromQuery] int? productId = null)
+            [FromQuery] int? productId = null, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
             if (endDate.Date < startDate.Date) return BadRequest("End date must be on or after start date");
@@ -480,7 +480,7 @@ namespace Api.Controllers
                 CustomerId = customerId,
                 UserId     = userId,
                 ProductId  = productId,
-            });
+            }, ct);
 
             return Ok(result);
         }
@@ -491,7 +491,7 @@ namespace Api.Controllers
             [FromQuery] DateTime startDate,
             [FromQuery] DateTime endDate,
             [FromQuery] int? customerId = null,
-            [FromQuery] int? userId = null)
+            [FromQuery] int? userId = null, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
             if (endDate.Date < startDate.Date) return BadRequest("End date must be on or after start date");
@@ -503,7 +503,7 @@ namespace Api.Controllers
                 EndDate    = endDate,
                 CustomerId = customerId,
                 UserId     = userId,
-            });
+            }, ct);
 
             return Ok(result);
         }
@@ -517,7 +517,7 @@ namespace Api.Controllers
             [FromQuery] int? userId = null,
             [FromQuery] int? warehouseId = null,
             [FromQuery] int? productId = null,
-            [FromQuery] int? productGroupId = null)
+            [FromQuery] int? productGroupId = null, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
             if (endDate.Date < startDate.Date) return BadRequest("End date must be on or after start date");
@@ -532,7 +532,7 @@ namespace Api.Controllers
                 WarehouseId    = warehouseId,
                 ProductId      = productId,
                 ProductGroupId = productGroupId,
-            });
+            }, ct);
 
             return Ok(result);
         }
@@ -544,7 +544,7 @@ namespace Api.Controllers
             [FromQuery] DateTime endDate,
             [FromQuery] int? supplierId = null,
             [FromQuery] int? userId = null,
-            [FromQuery] int? warehouseId = null)
+            [FromQuery] int? warehouseId = null, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
             if (endDate.Date < startDate.Date) return BadRequest("End date must be on or after start date");
@@ -557,7 +557,7 @@ namespace Api.Controllers
                 SupplierId  = supplierId,
                 UserId      = userId,
                 WarehouseId = warehouseId,
-            });
+            }, ct);
 
             return Ok(result);
         }
@@ -571,7 +571,7 @@ namespace Api.Controllers
             [FromQuery] int? userId = null,
             [FromQuery] int? warehouseId = null,
             [FromQuery] int? productId = null,
-            [FromQuery] int? productGroupId = null)
+            [FromQuery] int? productGroupId = null, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
             if (endDate.Date < startDate.Date) return BadRequest("End date must be on or after start date");
@@ -586,7 +586,7 @@ namespace Api.Controllers
                 WarehouseId    = warehouseId,
                 ProductId      = productId,
                 ProductGroupId = productGroupId,
-            });
+            }, ct);
 
             return Ok(result);
         }
@@ -597,7 +597,7 @@ namespace Api.Controllers
             [FromQuery] DateTime startDate,
             [FromQuery] DateTime endDate,
             [FromQuery] int? supplierId = null,
-            [FromQuery] int? userId = null)
+            [FromQuery] int? userId = null, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
             if (endDate.Date < startDate.Date) return BadRequest("End date must be on or after start date");
@@ -609,7 +609,7 @@ namespace Api.Controllers
                 EndDate    = endDate,
                 SupplierId = supplierId,
                 UserId     = userId,
-            });
+            }, ct);
 
             return Ok(result);
         }
@@ -623,7 +623,7 @@ namespace Api.Controllers
             [FromQuery] int? userId = null,
             [FromQuery] int? warehouseId = null,
             [FromQuery] int? productId = null,
-            [FromQuery] int? productGroupId = null)
+            [FromQuery] int? productGroupId = null, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
             if (endDate.Date < startDate.Date) return BadRequest("End date must be on or after start date");
@@ -638,7 +638,7 @@ namespace Api.Controllers
                 WarehouseId    = warehouseId,
                 ProductId      = productId,
                 ProductGroupId = productGroupId,
-            });
+            }, ct);
 
             return Ok(result);
         }
@@ -650,7 +650,7 @@ namespace Api.Controllers
             [FromQuery] DateTime endDate,
             [FromQuery] int? supplierId = null,
             [FromQuery] int? userId = null,
-            [FromQuery] int? warehouseId = null)
+            [FromQuery] int? warehouseId = null, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
             if (endDate.Date < startDate.Date) return BadRequest("End date must be on or after start date");
@@ -663,7 +663,7 @@ namespace Api.Controllers
                 SupplierId = supplierId,
                 UserId     = userId,
                 WarehouseId = warehouseId,
-            });
+            }, ct);
 
             return Ok(result);
         }
@@ -675,7 +675,7 @@ namespace Api.Controllers
             [FromQuery] DateTime endDate,
             [FromQuery] int? supplierId = null,
             [FromQuery] int? userId = null,
-            [FromQuery] int? productId = null)
+            [FromQuery] int? productId = null, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
             if (endDate.Date < startDate.Date) return BadRequest("End date must be on or after start date");
@@ -688,7 +688,7 @@ namespace Api.Controllers
                 SupplierId = supplierId,
                 UserId     = userId,
                 ProductId  = productId,
-            });
+            }, ct);
 
             return Ok(result);
         }
@@ -702,7 +702,7 @@ namespace Api.Controllers
             [FromQuery] int? userId = null,
             [FromQuery] int? warehouseId = null,
             [FromQuery] int? productId = null,
-            [FromQuery] int? productGroupId = null)
+            [FromQuery] int? productGroupId = null, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
             if (endDate.Date < startDate.Date) return BadRequest("End date must be on or after start date");
@@ -717,7 +717,7 @@ namespace Api.Controllers
                 WarehouseId    = warehouseId,
                 ProductId      = productId,
                 ProductGroupId = productGroupId,
-            });
+            }, ct);
 
             return Ok(result);
         }
@@ -731,7 +731,7 @@ namespace Api.Controllers
             [FromQuery] int? userId = null,
             [FromQuery] int? warehouseId = null,
             [FromQuery] int? productId = null,
-            [FromQuery] int? productGroupId = null)
+            [FromQuery] int? productGroupId = null, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
             if (endDate.Date < startDate.Date) return BadRequest("End date must be on or after start date");
@@ -746,7 +746,7 @@ namespace Api.Controllers
                 WarehouseId    = warehouseId,
                 ProductId      = productId,
                 ProductGroupId = productGroupId,
-            });
+            }, ct);
 
             return Ok(result);
         }
@@ -759,7 +759,7 @@ namespace Api.Controllers
             [FromQuery] int? userId = null,
             [FromQuery] int? warehouseId = null,
             [FromQuery] int? productId = null,
-            [FromQuery] int? productGroupId = null)
+            [FromQuery] int? productGroupId = null, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
             if (endDate.Date < startDate.Date) return BadRequest("End date must be on or after start date");
@@ -773,7 +773,7 @@ namespace Api.Controllers
                 WarehouseId    = warehouseId,
                 ProductId      = productId,
                 ProductGroupId = productGroupId,
-            });
+            }, ct);
 
             return Ok(result);
         }
@@ -786,7 +786,7 @@ namespace Api.Controllers
             [FromQuery] int? userId = null,
             [FromQuery] int? warehouseId = null,
             [FromQuery] int? productId = null,
-            [FromQuery] int? productGroupId = null)
+            [FromQuery] int? productGroupId = null, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
             if (endDate.Date < startDate.Date) return BadRequest("End date must be on or after start date");
@@ -800,7 +800,7 @@ namespace Api.Controllers
                 WarehouseId    = warehouseId,
                 ProductId      = productId,
                 ProductGroupId = productGroupId,
-            });
+            }, ct);
 
             return Ok(result);
         }
@@ -809,7 +809,7 @@ namespace Api.Controllers
         public async Task<ActionResult<List<ReorderProductListDto>>> GetReorderProductList(
             [FromQuery] int companyId,
             [FromQuery] int? supplierId = null,
-            [FromQuery] int? productId  = null)
+            [FromQuery] int? productId  = null, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
 
@@ -818,7 +818,7 @@ namespace Api.Controllers
                 CompanyId  = companyId,
                 SupplierId = supplierId,
                 ProductId  = productId,
-            });
+            }, ct);
 
             return Ok(result);
         }
@@ -827,7 +827,7 @@ namespace Api.Controllers
         public async Task<ActionResult<List<LowStockWarningDto>>> GetLowStockWarning(
             [FromQuery] int companyId,
             [FromQuery] int? supplierId = null,
-            [FromQuery] int? productId  = null)
+            [FromQuery] int? productId  = null, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
 
@@ -836,7 +836,7 @@ namespace Api.Controllers
                 CompanyId  = companyId,
                 SupplierId = supplierId,
                 ProductId  = productId,
-            });
+            }, ct);
 
             return Ok(result);
         }
@@ -846,7 +846,7 @@ namespace Api.Controllers
             [FromQuery] int companyId,
             [FromQuery] int partnerId,
             [FromQuery] DateTime startDate,
-            [FromQuery] DateTime endDate)
+            [FromQuery] DateTime endDate, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
             if (partnerId == 0) return BadRequest("Partner ID is required");
@@ -858,7 +858,7 @@ namespace Api.Controllers
                 PartnerId = partnerId,
                 StartDate = startDate,
                 EndDate   = endDate,
-            });
+            }, ct);
 
             return Ok(result);
         }

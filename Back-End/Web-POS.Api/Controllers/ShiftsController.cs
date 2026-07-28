@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Api.Commands.ShiftCommands.BatchSync;
 using Api.Master.Services;
@@ -40,7 +40,7 @@ public class ShiftsController(
     [HttpPost("[action]")]
     public async Task<ActionResult<BatchSyncShiftsResponse>> BatchSync(
         [FromBody] BatchSyncShiftsRequest request,
-        [FromQuery] int companyId)
+        [FromQuery] int companyId, CancellationToken ct = default)
     {
         if (companyId <= 0) return BadRequest("Company ID is required.");
 
@@ -64,7 +64,7 @@ public class ShiftsController(
             logger.LogWarning(ex, "Pillar 5 clone audit (shifts) skipped for company {CompanyId}", companyId);
         }
 
-        var result = await mediator.Send(new BatchSyncShiftsCommand(request, companyId));
+        var result = await mediator.Send(new BatchSyncShiftsCommand(request, companyId), ct);
         return Ok(result);
     }
 }

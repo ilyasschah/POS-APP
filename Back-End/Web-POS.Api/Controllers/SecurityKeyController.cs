@@ -12,19 +12,19 @@ namespace Api.Controllers
     public class SecurityKeysController(IMediator mediator) : ControllerBase
     {
         [HttpGet("[action]")]
-        public async Task<ActionResult<List<SecurityKeyDto>>> GetAll([FromQuery] int companyId)
+        public async Task<ActionResult<List<SecurityKeyDto>>> GetAll([FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
-            return Ok(await mediator.Send(new GetAllSecurityKeysQuery { CompanyId = companyId }));
+            return Ok(await mediator.Send(new GetAllSecurityKeysQuery { CompanyId = companyId }, ct));
         }
 
         [HttpGet("[action]")]
-        public async Task<ActionResult<SecurityKeyDto>> GetByName([FromQuery] string name, [FromQuery] int companyId)
+        public async Task<ActionResult<SecurityKeyDto>> GetByName([FromQuery] string name, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
             if (string.IsNullOrWhiteSpace(name)) return BadRequest("Name is required");
 
-            var result = await mediator.Send(new GetSecurityKeyByNameQuery { Name = name, CompanyId = companyId });
+            var result = await mediator.Send(new GetSecurityKeyByNameQuery { Name = name, CompanyId = companyId }, ct);
             if (result == null) return NotFound();
 
             return Ok(result);
@@ -34,12 +34,12 @@ namespace Api.Controllers
         // cashier must never be able to lower a key to Cashier-accessible.
         [Authorize(Policy = "ManagerOnly")]
         [HttpPatch("[action]")]
-        public async Task<ActionResult> Update([FromBody] UpdateSecurityKeyRequest request, [FromQuery] int companyId)
+        public async Task<ActionResult> Update([FromBody] UpdateSecurityKeyRequest request, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest("Company ID is required");
 
             var command = new UpdateSecurityKeyCommand { Request = request, CompanyId = companyId };
-            var success = await mediator.Send(command);
+            var success = await mediator.Send(command, ct);
 
             if (!success) return NotFound();
 

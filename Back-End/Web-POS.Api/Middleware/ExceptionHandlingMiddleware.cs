@@ -34,14 +34,31 @@ namespace Api.Middleware
             {
                 await _next(context);
             }
+            catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
+            {
+                // The client went away mid-request — a POS terminal losing wifi does
+                // this constantly. It is not a server fault, and there is no longer
+                // anyone to send a response to. Log at Debug and let the connection
+                // die, instead of the generic handler recording a 500 "Unhandled
+                // server error" and burying real faults in the noise.
+                _logger.LogDebug(
+                    "Request aborted by client: {Method} {Path}",
+                    context.Request.Method, context.Request.Path);
+            }
             catch (Exception ex)
             {
                 var (status, message) = Map(ex);
 
                 if (status >= 500)
-                    _logger.LogError(ex, "Unhandled server error");
+                {
+                    _logger.LogError(ex,
+                        "Unhandled server error on {Method} {Path} (traceId {TraceId})",
+                        context.Request.Method, context.Request.Path, context.TraceIdentifier);
+                }
                 else
+                {
                     _logger.LogWarning("Request rejected ({Status}): {Message}", status, message);
+                }
 
                 // A response already on the wire can't be rewritten — let it surface.
                 if (context.Response.HasStarted) throw;
@@ -49,7 +66,21 @@ namespace Api.Middleware
                 context.Response.Clear();
                 context.Response.StatusCode = status;
                 context.Response.ContentType = "application/json";
-                await context.Response.WriteAsJsonAsync(new { success = false, message });
+
+                // 500s deliberately carry no detail (the message is generic so internal
+                // state never leaks), which leaves the caller nothing to quote in a bug
+                // report. traceId bridges that: it appears in the log line above and is
+                // safe to show. Additive field — the { success, message } contract that
+                // clients parse is unchanged.
+                if (status >= 500)
+                {
+                    await context.Response.WriteAsJsonAsync(
+                        new { success = false, message, traceId = context.TraceIdentifier });
+                }
+                else
+                {
+                    await context.Response.WriteAsJsonAsync(new { success = false, message });
+                }
             }
         }
 
@@ -65,6 +96,12 @@ namespace Api.Middleware
             KeyNotFoundException => ((int)HttpStatusCode.NotFound, ex.Message),
             // Authorisation / invalid reference guards.
             UnauthorizedAccessException => ((int)HttpStatusCode.Forbidden, ex.Message),
+            // Optimistic-concurrency clash: another device changed the row first.
+            // 409 tells the offline sync to re-read and retry rather than treating
+            // it as a permanent rejection the way a 400 would.
+            DbUpdateConcurrencyException =>
+                ((int)HttpStatusCode.Conflict,
+                 "This record was changed by another device while you were editing it. Reload and try again."),
             // FK constraint (e.g. deleting a product still referenced by a sale).
             DbUpdateException db when IsForeignKeyConflict(db) =>
                 ((int)HttpStatusCode.BadRequest,

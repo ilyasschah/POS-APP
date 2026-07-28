@@ -1,4 +1,4 @@
-using Api.Attributes;
+﻿using Api.Attributes;
 using Api.Commands.PosOrderCommands;
 using Api.Commands.PosOrderCommands.Add;
 using Api.Commands.PosOrderCommands.BatchSync;
@@ -38,25 +38,25 @@ namespace Api.Controllers
         }
 
         [HttpGet("[action]")]
-        public async Task<IActionResult> GetAll([FromQuery] int companyId)
+        public async Task<IActionResult> GetAll([FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId <= 0)
                 return BadRequest("Company ID must be provided.");
 
             var query = new GetAllPosOrdersQuery { CompanyId = companyId };
-            var result = await _mediator.Send(query);
+            var result = await _mediator.Send(query, ct);
 
             return Ok(result);
         }
 
         [HttpGet("[action]")]
-        public async Task<IActionResult> GetById([FromQuery] int id, [FromQuery] int companyId)
+        public async Task<IActionResult> GetById([FromQuery] int id, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId <= 0)
                 return BadRequest("Company ID must be provided.");
 
             var query = new GetPosOrderByIdQuery { Id = id, CompanyId = companyId };
-            var result = await _mediator.Send(query);
+            var result = await _mediator.Send(query, ct);
 
             if (result == null)
                 return NotFound($"PosOrder with ID {id} not found.");
@@ -65,10 +65,10 @@ namespace Api.Controllers
         }
 
         [HttpGet("[action]")]
-        public async Task<IActionResult> GetByNumber([FromQuery]  string number, [FromQuery] int companyId)
+        public async Task<IActionResult> GetByNumber([FromQuery]  string number, [FromQuery] int companyId, CancellationToken ct = default)
         {
             var query = new GetPosOrderByNumberQuery { Number = number, CompanyId = companyId };
-            var result = await _mediator.Send(query);
+            var result = await _mediator.Send(query, ct);
 
             if (result == null)
                 return NotFound($"PosOrder with Number {number} not found.");
@@ -78,7 +78,7 @@ namespace Api.Controllers
 
         [Authorize]
         [HttpPost("[action]")]
-        public async Task<IActionResult> Create( [FromBody] CreatePosOrderRequest request,[FromQuery] int companyId)
+        public async Task<IActionResult> Create( [FromBody] CreatePosOrderRequest request,[FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId <= 0)
                 return BadRequest("Company ID must be provided.");
@@ -89,7 +89,7 @@ namespace Api.Controllers
             try
             {
                 var command = new CreatePosOrderCommand( request, companyId);
-                var result = await _mediator.Send(command);
+                var result = await _mediator.Send(command, ct);
 
                 return CreatedAtAction(nameof(GetById), new { id = result.Id, companyId = companyId }, result);
             }
@@ -100,7 +100,7 @@ namespace Api.Controllers
         }
         [Authorize]
         [HttpPost("Checkout")]
-        public async Task<IActionResult> Checkout([FromQuery] int companyId, [FromQuery] int userId, [FromBody] CheckoutPosOrderRequest request)
+        public async Task<IActionResult> Checkout([FromQuery] int companyId, [FromQuery] int userId, [FromBody] CheckoutPosOrderRequest request, CancellationToken ct = default)
         {
             if (companyId <= 0 || userId <= 0)
                 return BadRequest(new { message = "Company ID and User ID are required." });
@@ -108,7 +108,7 @@ namespace Api.Controllers
             try
             {
                 var command = new CheckoutPosOrderCommand(companyId, userId, request);
-                var result = await _mediator.Send(command);
+                var result = await _mediator.Send(command, ct);
 
                 return Ok(new { message = "Payment successful! Order converted to Document.", documentId = result.DocumentId });
             }
@@ -124,7 +124,7 @@ namespace Api.Controllers
 
         [Authorize]
         [HttpPatch("[action]")]
-        public async Task<IActionResult> Update([FromBody] UpdatePosOrderRequest request, [FromQuery] int companyId)
+        public async Task<IActionResult> Update([FromBody] UpdatePosOrderRequest request, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId <= 0)
                 return BadRequest("Company ID must be provided.");
@@ -135,7 +135,7 @@ namespace Api.Controllers
             try
             {
                 var command = new UpdatePosOrderCommand(request,companyId);
-                var success = await _mediator.Send(command);
+                var success = await _mediator.Send(command, ct);
 
                 if (!success)
                     return NotFound($"PosOrder with ID {request.Id} not found.");
@@ -148,12 +148,12 @@ namespace Api.Controllers
         }
         [Authorize]
         [HttpPatch("UpdateStatus")]
-        public async Task<IActionResult> UpdateStatus([FromQuery] int companyId, [FromBody] UpdatePosOrderStatusRequest req)
+        public async Task<IActionResult> UpdateStatus([FromQuery] int companyId, [FromBody] UpdatePosOrderStatusRequest req, CancellationToken ct = default)
         {
             try
             {
                 var command = new UpdatePosOrderStatusCommand(companyId, req);
-                var success = await _mediator.Send(command);
+                var success = await _mediator.Send(command, ct);
                 if (!success)
                     return NotFound($"PosOrder with ID {req.Id} not found.");
                 return NoContent();
@@ -169,7 +169,7 @@ namespace Api.Controllers
             [FromQuery] int posOrderId,
             [FromQuery] int companyId,
             [FromQuery] int warehouseId,
-            [FromQuery] int documentTypeId = DocumentTypeConstants.Sales)
+            [FromQuery] int documentTypeId = DocumentTypeConstants.Sales, CancellationToken ct = default)
         {
             if (companyId <= 0 || posOrderId <= 0 || warehouseId <= 0)
                 return BadRequest(new { message = "Company ID, Order ID, and Warehouse ID are required." });
@@ -177,7 +177,7 @@ namespace Api.Controllers
             try
             {
                 var command = new VoidPosOrderCommand(posOrderId, companyId, warehouseId, documentTypeId);
-                var success = await _mediator.Send(command);
+                var success = await _mediator.Send(command, ct);
 
                 if (!success)
                     return NotFound(new { message = $"PosOrder with ID {posOrderId} not found." });
@@ -192,10 +192,10 @@ namespace Api.Controllers
 
         [Authorize]
         [HttpDelete("[action]")]
-        public async Task<IActionResult> Delete([FromQuery] int id, [FromQuery] int companyId, [FromQuery] int warehouseId)
+        public async Task<IActionResult> Delete([FromQuery] int id, [FromQuery] int companyId, [FromQuery] int warehouseId, CancellationToken ct = default)
         {
             var command = new DeletePosOrderCommand(id, companyId, warehouseId);
-            var success = await _mediator.Send(command);
+            var success = await _mediator.Send(command, ct);
 
             if (!success)
                 return NotFound(new
@@ -211,7 +211,8 @@ namespace Api.Controllers
         [HttpPost("BatchSync")]
         public async Task<ActionResult<BatchSyncPosOrdersResponse>> BatchSync(
             [FromQuery] int companyId,
-            [FromBody] BatchSyncPosOrdersRequest request)
+            [FromBody] BatchSyncPosOrdersRequest request,
+            CancellationToken ct = default)
         {
             if (companyId <= 0)
                 return BadRequest(new { message = "Company ID is required." });
@@ -243,18 +244,18 @@ namespace Api.Controllers
 
             // Always returns 200 — partial failures are encoded inside the results array.
             // The client inspects each result.Success individually.
-            var result = await _mediator.Send(new BatchSyncPosOrdersCommand(request, companyId));
+            var result = await _mediator.Send(new BatchSyncPosOrdersCommand(request, companyId), ct);
             return Ok(result);
         }
 
         [HttpGet("GetKitchenOrders")]
-        public async Task<IActionResult> GetKitchenOrders([FromQuery] int companyId)
+        public async Task<IActionResult> GetKitchenOrders([FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId <= 0)
                 return BadRequest("Company ID must be provided.");
 
             var query = new GetKitchenOrdersQuery { CompanyId = companyId };
-            var result = await _mediator.Send(query);
+            var result = await _mediator.Send(query, ct);
 
             return Ok(result);
         }

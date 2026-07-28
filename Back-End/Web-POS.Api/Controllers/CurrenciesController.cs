@@ -22,41 +22,41 @@ namespace Api.Controllers
         }
 
         [HttpGet("[action]")]
-        public async Task<ActionResult<List<CurrencyDto>>> GetAll()
+        public async Task<ActionResult<List<CurrencyDto>>> GetAll(CancellationToken ct = default)
         {
-            return Ok(await _mediator.Send(new GetAllCurrencyQuery()));
+            return Ok(await _mediator.Send(new GetAllCurrencyQuery(), ct));
         }
 
         [HttpGet("[action]")]
-        public async Task<ActionResult<CurrencyDto>> GetById([FromQuery] int id)
+        public async Task<ActionResult<CurrencyDto>> GetById([FromQuery] int id, CancellationToken ct = default)
         {
-            return Ok(await _mediator.Send(new GetCurrencyByIdQuery { Id = id }));
+            return Ok(await _mediator.Send(new GetCurrencyByIdQuery { Id = id }, ct));
         }
 
         [HttpGet("[action]")]
-        public async Task<ActionResult<CurrencyDto>> GetByName([FromQuery] string name)
+        public async Task<ActionResult<CurrencyDto>> GetByName([FromQuery] string name, CancellationToken ct = default)
         {
-            return Ok(await _mediator.Send(new GetCurrencyByNameQuery { Name = name }));
+            return Ok(await _mediator.Send(new GetCurrencyByNameQuery { Name = name }, ct));
         }
 
         [HttpPost("[action]")]
-        public async Task<ActionResult<CurrencyDto>> Add([FromBody] CreateCurrencyRequest request)
+        public async Task<ActionResult<CurrencyDto>> Add([FromBody] CreateCurrencyRequest request, CancellationToken ct = default)
         {
-            var result = await _mediator.Send(new AddCurrencyCommand(request));
+            var result = await _mediator.Send(new AddCurrencyCommand(request), ct);
             return Ok(result);
         }
 
         [HttpPatch("[action]")]
-        public async Task<IActionResult> Update([FromQuery] int id, [FromBody] UpdateCurrencyRequest request)
+        public async Task<IActionResult> Update([FromQuery] int id, [FromBody] UpdateCurrencyRequest request, CancellationToken ct = default)
         {
-            var result = await _mediator.Send(new UpdateCurrencyCommand(id, request));
+            var result = await _mediator.Send(new UpdateCurrencyCommand(id, request), ct);
             return Ok(new { Success = result });
         }
 
         [HttpDelete("[action]")]
-        public async Task<IActionResult> Delete([FromQuery] int id)
+        public async Task<IActionResult> Delete([FromQuery] int id, CancellationToken ct = default)
         {
-            var result = await _mediator.Send(new DeleteCurrencyCommand(id));
+            var result = await _mediator.Send(new DeleteCurrencyCommand(id), ct);
             return Ok(new { Message = result ? "Currency deleted successfully" : "Failed to delete currency" });
         }
     }

@@ -13,38 +13,38 @@ namespace Api.Controllers
     public class BarcodesController(IMediator mediator) : ControllerBase
     {
         [HttpGet("[action]")]
-        public async Task<ActionResult<List<BarcodeDto>>> GetAllBarCodeProductName([FromQuery] int companyId)
+        public async Task<ActionResult<List<BarcodeDto>>> GetAllBarCodeProductName([FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
-            return Ok(await mediator.Send(new GetAllBarCodeProductNameQuery { CompanyId = companyId }));
+            return Ok(await mediator.Send(new GetAllBarCodeProductNameQuery { CompanyId = companyId }, ct));
         }
 
         [HttpGet("[action]")]
-        public async Task<ActionResult<BarcodeDto>> GetById([FromQuery] int id, [FromQuery] int companyId)
+        public async Task<ActionResult<BarcodeDto>> GetById([FromQuery] int id, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
 
-            var result = await mediator.Send(new GetBarcodeByIdQuery(id, companyId));
+            var result = await mediator.Send(new GetBarcodeByIdQuery(id, companyId), ct);
             return result == null ? NotFound(new { message = "Barcode not found" }) : Ok(result);
         }
 
         [HttpGet("[action]")]
-        public async Task<ActionResult<List<BarcodeDto>>> GetByProductId([FromQuery] int productId, [FromQuery] int companyId)
+        public async Task<ActionResult<List<BarcodeDto>>> GetByProductId([FromQuery] int productId, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
             if (productId <= 0) return BadRequest(new { message = "Product ID is required" });
 
-            var result = await mediator.Send(new GetBarcodesByProductIdQuery { ProductId = productId, CompanyId = companyId });
+            var result = await mediator.Send(new GetBarcodesByProductIdQuery { ProductId = productId, CompanyId = companyId }, ct);
             return Ok(result);
         }
 
         [HttpPost("[action]")]
-        public async Task<IActionResult> Add([FromBody] CreateBarcodeRequest createRequest, [FromQuery] int companyId)
+        public async Task<IActionResult> Add([FromBody] CreateBarcodeRequest createRequest, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
             try
             {
-                var result = await mediator.Send(new AddBarcodecommand(createRequest, companyId));
+                var result = await mediator.Send(new AddBarcodecommand(createRequest, companyId), ct);
                 return Ok(new
                 {
                     message = $"The barcode '{result.Value}' has been assigned to product '{result.ProductName}'",
@@ -58,12 +58,12 @@ namespace Api.Controllers
         }
 
         [HttpPatch("[action]")]
-        public async Task<IActionResult> Update([FromBody] UpdateBarcodeRequest updateRequest, [FromQuery] int companyId)
+        public async Task<IActionResult> Update([FromBody] UpdateBarcodeRequest updateRequest, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
             try
             {
-                var result = await mediator.Send(new UpdateBarcodecommand(updateRequest, companyId));
+                var result = await mediator.Send(new UpdateBarcodecommand(updateRequest, companyId), ct);
                 return Ok(new { message = $"The barcode '{result.Value}' has been updated for product '{result.ProductName}'" });
             }
             catch (InvalidOperationException ex)
@@ -73,14 +73,14 @@ namespace Api.Controllers
         }
 
         [HttpDelete("[action]")]
-        public async Task<IActionResult> Delete([FromQuery] int id, [FromQuery] int companyId)
+        public async Task<IActionResult> Delete([FromQuery] int id, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
             if (id <= 0) return BadRequest(new { message = "Barcode ID is required" });
 
             try
             {
-                var result = await mediator.Send(new DeleteBarcodeByIdCommand(id, companyId));
+                var result = await mediator.Send(new DeleteBarcodeByIdCommand(id, companyId), ct);
                 return result
                     ? Ok(new { message = "Barcode deleted successfully" })
                     : NotFound(new { message = "Barcode not found" });

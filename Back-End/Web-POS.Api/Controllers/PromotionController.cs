@@ -23,36 +23,36 @@ namespace Api.Controllers
             _mediator = mediator;
         }
         [HttpGet("GetAll")]
-        public async Task<IActionResult> GetAll([FromQuery] int companyId)
+        public async Task<IActionResult> GetAll([FromQuery] int companyId, CancellationToken ct = default)
         {
-            return Ok(await _mediator.Send(new GetAllPromotionsQuery { CompanyId = companyId }));
+            return Ok(await _mediator.Send(new GetAllPromotionsQuery { CompanyId = companyId }, ct));
         }
         [HttpGet("GetActive")]
-        public async Task<IActionResult> GetActive([FromQuery] int companyId)
+        public async Task<IActionResult> GetActive([FromQuery] int companyId, CancellationToken ct = default)
         {
-            return Ok(await _mediator.Send(new GetActivePromotionsQuery { CompanyId = companyId }));
+            return Ok(await _mediator.Send(new GetActivePromotionsQuery { CompanyId = companyId }, ct));
         }
 
         [Authorize]
         [HttpPost("Add")]
-        public async Task<IActionResult> Add([FromQuery] int companyId, [FromBody] CreatePromotionRequest req)
+        public async Task<IActionResult> Add([FromQuery] int companyId, [FromBody] CreatePromotionRequest req, CancellationToken ct = default)
         {
-            return Ok(await _mediator.Send(new CreatePromotionCommand(companyId, req)));
+            return Ok(await _mediator.Send(new CreatePromotionCommand(companyId, req), ct));
         }
 
         [Authorize]
         [HttpPut("[action]")]
-        public async Task<IActionResult> Update([FromQuery] int companyId, [FromBody] UpdatePromotionRequest req)
+        public async Task<IActionResult> Update([FromQuery] int companyId, [FromBody] UpdatePromotionRequest req, CancellationToken ct = default)
         {
-            var result = await _mediator.Send(new UpdatePromotionCommand(companyId, req));
+            var result = await _mediator.Send(new UpdatePromotionCommand(companyId, req), ct);
             return result ? NoContent() : NotFound();
         }
 
         [Authorize]
         [HttpDelete("[action]")]
-        public async Task<IActionResult> Delete(int id, [FromQuery] int companyId)
+        public async Task<IActionResult> Delete(int id, [FromQuery] int companyId, CancellationToken ct = default)
         {
-            var result = await _mediator.Send(new DeletePromotionCommand(id, companyId));
+            var result = await _mediator.Send(new DeletePromotionCommand(id, companyId), ct);
             return result ? NoContent() : NotFound();
         }
     }

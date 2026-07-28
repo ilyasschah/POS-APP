@@ -22,30 +22,30 @@ namespace Api.Controllers
         }
 
         [HttpGet("GetByPromotionId")]
-        public async Task<IActionResult> GetByPromotionId([FromQuery] int promotionId, [FromQuery] int companyId)
+        public async Task<IActionResult> GetByPromotionId([FromQuery] int promotionId, [FromQuery] int companyId, CancellationToken ct = default)
         {
-            var result = await _mediator.Send(new GetPromotionItemsByPromotionIdQuery { PromotionId = promotionId, CompanyId = companyId });
+            var result = await _mediator.Send(new GetPromotionItemsByPromotionIdQuery { PromotionId = promotionId, CompanyId = companyId }, ct);
             return Ok(result);
         }
 
         [HttpPost("Add")]
-        public async Task<IActionResult> Add([FromQuery] int companyId, [FromBody] CreateSinglePromotionItemRequest req)
+        public async Task<IActionResult> Add([FromQuery] int companyId, [FromBody] CreateSinglePromotionItemRequest req, CancellationToken ct = default)
         {
-            var result = await _mediator.Send(new CreatePromotionItemCommand(companyId, req));
+            var result = await _mediator.Send(new CreatePromotionItemCommand(companyId, req), ct);
             return Ok(result);
         }
 
         [HttpPatch("Update")]
-        public async Task<IActionResult> Update([FromQuery] int companyId, [FromBody] UpdatePromotionItemRequest req)
+        public async Task<IActionResult> Update([FromQuery] int companyId, [FromBody] UpdatePromotionItemRequest req, CancellationToken ct = default)
         {
-            var result = await _mediator.Send(new UpdatePromotionItemCommand(companyId, req));
+            var result = await _mediator.Send(new UpdatePromotionItemCommand(companyId, req), ct);
             return Ok(result);
         }
 
         [HttpDelete("Delete")]
-        public async Task<IActionResult> Delete([FromQuery] int id, [FromQuery] int companyId)
+        public async Task<IActionResult> Delete([FromQuery] int id, [FromQuery] int companyId, CancellationToken ct = default)
         {
-            var result = await _mediator.Send(new DeletePromotionItemCommand(id, companyId));
+            var result = await _mediator.Send(new DeletePromotionItemCommand(id, companyId), ct);
             return Ok(result);
         }
     }

@@ -23,44 +23,44 @@ namespace Api.Controllers
         }
 
         [HttpGet("[action]")]
-        public async Task<ActionResult<List<FloorPlanTableDto>>> GetAll([FromQuery] int companyId, [FromQuery] DateTime? modifiedAfter = null)
+        public async Task<ActionResult<List<FloorPlanTableDto>>> GetAll([FromQuery] int companyId, [FromQuery] DateTime? modifiedAfter = null, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest();
-            return Ok(await _mediator.Send(new GetAllFloorPlanTablesQuery { CompanyId = companyId, ModifiedAfter = modifiedAfter }));
+            return Ok(await _mediator.Send(new GetAllFloorPlanTablesQuery { CompanyId = companyId, ModifiedAfter = modifiedAfter }, ct));
         }
 
         [HttpGet("[action]")]
-        public async Task<ActionResult<FloorPlanTableDto>> GetById([FromQuery] int id, [FromQuery] int companyId)
+        public async Task<ActionResult<FloorPlanTableDto>> GetById([FromQuery] int id, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest();
-            var result = await _mediator.Send(new GetFloorPlanTableByIdQuery { Id = id, CompanyId = companyId });
+            var result = await _mediator.Send(new GetFloorPlanTableByIdQuery { Id = id, CompanyId = companyId }, ct);
             if (result == null) return NotFound();
             return Ok(result);
         }
 
         [HttpGet("[action]")]
-        public async Task<ActionResult<FloorPlanTableDto>> GetByName([FromQuery] string name, [FromQuery] int companyId)
+        public async Task<ActionResult<FloorPlanTableDto>> GetByName([FromQuery] string name, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest();
-            var result = await _mediator.Send(new GetFloorPlanTableByNameQuery { Name = name, CompanyId = companyId });
+            var result = await _mediator.Send(new GetFloorPlanTableByNameQuery { Name = name, CompanyId = companyId }, ct);
             if (result == null) return NotFound();
             return Ok(result);
         }
 
         [HttpGet("[action]")]
-        public async Task<ActionResult<List<FloorPlanTableDto>>> GetByFloorPlanId([FromQuery] int floorPlanId, [FromQuery] int companyId)
+        public async Task<ActionResult<List<FloorPlanTableDto>>> GetByFloorPlanId([FromQuery] int floorPlanId, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest();
-            return Ok(await _mediator.Send(new GetFloorPlanTablesByFloorPlanIdQuery { FloorPlanId = floorPlanId, CompanyId = companyId }));
+            return Ok(await _mediator.Send(new GetFloorPlanTablesByFloorPlanIdQuery { FloorPlanId = floorPlanId, CompanyId = companyId }, ct));
         }
 
         [HttpPost("[action]")]
-        public async Task<ActionResult<FloorPlanTableDto>> Add([FromBody] CreateFloorPlanTableRequest request, [FromQuery] int companyId)
+        public async Task<ActionResult<FloorPlanTableDto>> Add([FromBody] CreateFloorPlanTableRequest request, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest();
             try
             {
-                var result = await _mediator.Send(new AddFloorPlanTableCommand { Request = request, CompanyId = companyId });
+                var result = await _mediator.Send(new AddFloorPlanTableCommand { Request = request, CompanyId = companyId }, ct);
                 return Ok(result);
             }
             catch (InvalidOperationException ex)
@@ -70,10 +70,10 @@ namespace Api.Controllers
         }
 
         [HttpPatch("[action]")]
-        public async Task<ActionResult> UpdateGeometry([FromBody] UpdateTableGeometryRequest request, [FromQuery] int companyId)
+        public async Task<ActionResult> UpdateGeometry([FromBody] UpdateTableGeometryRequest request, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest();
-            var success = await _mediator.Send(new UpdateFloorPlanTableCommand { Request = request, CompanyId = companyId });
+            var success = await _mediator.Send(new UpdateFloorPlanTableCommand { Request = request, CompanyId = companyId }, ct);
             if (!success) return NotFound();
             return Ok();
         }
@@ -113,10 +113,10 @@ namespace Api.Controllers
         }
 
         [HttpDelete("[action]")]
-        public async Task<ActionResult> Delete([FromQuery] int id, [FromQuery] int companyId)
+        public async Task<ActionResult> Delete([FromQuery] int id, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId == 0) return BadRequest();
-            var success = await _mediator.Send(new DeleteFloorPlanTableCommand { Id = id, CompanyId = companyId });
+            var success = await _mediator.Send(new DeleteFloorPlanTableCommand { Id = id, CompanyId = companyId }, ct);
             if (!success) return NotFound();
             return Ok();
         }

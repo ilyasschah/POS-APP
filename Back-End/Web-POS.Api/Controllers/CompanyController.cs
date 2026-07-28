@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Api.Attributes;
 using Api.Commands.CompanyCommands.Add;
@@ -15,50 +15,50 @@ namespace Api.Controllers
     public class CompanyController(IMediator mediator) : ControllerBase
     {
         [HttpGet("[action]")]
-        public async Task<ActionResult<List<CompanyDto>>> GetAll()
+        public async Task<ActionResult<List<CompanyDto>>> GetAll(CancellationToken ct = default)
         {
-            var companies = await mediator.Send(new GetAllCompaniesQuery());
+            var companies = await mediator.Send(new GetAllCompaniesQuery(), ct);
             return Ok(companies);
         }
         [HttpGet("[action]")]
-        public async Task<ActionResult<CompanyDto>> GetById(int id)
+        public async Task<ActionResult<CompanyDto>> GetById(int id, CancellationToken ct = default)
         {
             if (id <= 0) return BadRequest("Company ID is required");
-            return Ok(await mediator.Send(new GetCompanyByIdQuery(id)));
+            return Ok(await mediator.Send(new GetCompanyByIdQuery(id), ct));
         }
         [HttpPost("[action]")]
-        public async Task<ActionResult<CompanyDto>> Create([FromBody] CreateCompanyRequest request)
+        public async Task<ActionResult<CompanyDto>> Create([FromBody] CreateCompanyRequest request, CancellationToken ct = default)
         {
             var command = new AddCompanyCommand(request);
-            var createdCompany = await mediator.Send(command);
+            var createdCompany = await mediator.Send(command, ct);
             return Ok(new
             {
                 message = $"Company '{createdCompany.Name}' created successfully.",
             });
         }
         [HttpPatch("[action]")]
-        public async Task<ActionResult<CompanyDto>> Update([FromBody] UpdateCompanyRequest req)
+        public async Task<ActionResult<CompanyDto>> Update([FromBody] UpdateCompanyRequest req, CancellationToken ct = default)
         {
             var command = new UpdateCompanyCommand(req);
-            var result = await mediator.Send(command);
+            var result = await mediator.Send(command, ct);
 
             return Ok(result);
         }
         [HttpPut("[action]")]
-        public async Task<ActionResult> UpdateLogo([FromBody] UpdateCompanyLogoRequest request)
+        public async Task<ActionResult> UpdateLogo([FromBody] UpdateCompanyLogoRequest request, CancellationToken ct = default)
         {
             var command = new UpdateCompanyLogoCommand(request);
-            await mediator.Send(command);
+            await mediator.Send(command, ct);
             return Ok(new
             {
                 message = "Company logo updated successfully.",
             });
         }
         [HttpDelete("[action]")]
-        public async Task<ActionResult> Delete(int id)
+        public async Task<ActionResult> Delete(int id, CancellationToken ct = default)
         {
             var command = new DeleteCompanyCommand(id);
-            await mediator.Send(command);
+            await mediator.Send(command, ct);
             return Ok(new
             {
                 message = "Company deleted successfully.",

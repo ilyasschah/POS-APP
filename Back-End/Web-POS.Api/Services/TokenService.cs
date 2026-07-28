@@ -2,6 +2,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Api.Configuration;
 
 namespace Api.Services;
 
@@ -22,12 +23,16 @@ public class TokenService
     /// cashier when a per-user token is minted via /Auth/UserToken.</param>
     public (string token, int expiresIn) CreateJwt(string username, int userId, int accessLevel, int companyId)
     {
-        var issuer = _config["Jwt:Issuer"] ?? "Products.Api";
-        var audience = _config["Jwt:Audience"] ?? "Products.Clients";
+        // All four resolved via JwtSettings so this (issuance) and the JwtBearer
+        // setup in Program.cs (validation) can never disagree. Previously both used
+        // `?? fallback`, which never fires for the empty string appsettings.json
+        // ships — yielding a zero-length key and IDX10703 rather than the fallback.
+        var issuer = JwtSettings.ResolveIssuer(_config);
+        var audience = JwtSettings.ResolveAudience(_config);
         // Default 7 days. The token only gates online admin-write endpoints, so a
         // wide window is safe; a refresh-on-sync slides it forward for live devices.
-        var minutes = int.TryParse(_config["Jwt:ExpireMinutes"], out var m) ? m : 10080;
-        var secret = _config["Jwt:Secret"] ?? "dev-only-very-long-secret-change-me-please";
+        var minutes = JwtSettings.ResolveExpireMinutes(_config);
+        var secret = JwtSettings.ResolveSecret(_config);
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

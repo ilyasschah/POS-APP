@@ -13,41 +13,41 @@ namespace Api.Controllers
     public class DocumentItemTaxesController(IMediator mediator) : ControllerBase
     {
         [HttpGet("[action]")]
-        public async Task<ActionResult<List<DocumentItemTaxDto>>> GetAll([FromQuery] int companyId)
+        public async Task<ActionResult<List<DocumentItemTaxDto>>> GetAll([FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
-            return Ok(await mediator.Send(new Api.Queries.DocumentItemTaxQuery.GetAllDocumentItemTaxesQuery(companyId)));
+            return Ok(await mediator.Send(new Api.Queries.DocumentItemTaxQuery.GetAllDocumentItemTaxesQuery(companyId), ct));
         }
 
         [HttpGet("[action]")]
-        public async Task<ActionResult<List<DocumentItemTaxDto>>> GetByDocumentItemId([FromQuery] int documentItemId, [FromQuery] int companyId)
+        public async Task<ActionResult<List<DocumentItemTaxDto>>> GetByDocumentItemId([FromQuery] int documentItemId, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
             if (documentItemId <= 0) return BadRequest(new { message = "Document Item ID is required" });
 
-            var result = await mediator.Send(new GetDocumentItemTaxesByDocumentItemIdQuery(documentItemId, companyId));
+            var result = await mediator.Send(new GetDocumentItemTaxesByDocumentItemIdQuery(documentItemId, companyId), ct);
             return Ok(result);
         }
 
         [HttpGet("[action]")]
-        public async Task<ActionResult<DocumentItemTaxDto?>> GetByIds([FromQuery] int documentItemId, [FromQuery] int taxId, [FromQuery] int companyId)
+        public async Task<ActionResult<DocumentItemTaxDto?>> GetByIds([FromQuery] int documentItemId, [FromQuery] int taxId, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
             if (documentItemId <= 0) return BadRequest(new { message = "Document Item ID is required" });
             if (taxId <= 0) return BadRequest(new { message = "Tax ID is required" });
 
-            var result = await mediator.Send(new GetDocumentItemTaxByIdsQuery(documentItemId, taxId, companyId));
+            var result = await mediator.Send(new GetDocumentItemTaxByIdsQuery(documentItemId, taxId, companyId), ct);
             return result is null ? NotFound(new { message = "Document item tax not found" }) : Ok(result);
         }
 
         [HttpPost("[action]")]
-        public async Task<IActionResult> Add([FromBody] CreateDocumentItemTaxRequest req, [FromQuery] int companyId)
+        public async Task<IActionResult> Add([FromBody] CreateDocumentItemTaxRequest req, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
 
             try
             {
-                var result = await mediator.Send(new AddDocumentItemTaxCommand(req, companyId));
+                var result = await mediator.Send(new AddDocumentItemTaxCommand(req, companyId), ct);
                 return Ok(new { message = "Tax applied to document item successfully", data = result });
             }
             catch (InvalidOperationException ex)
@@ -57,13 +57,13 @@ namespace Api.Controllers
         }
 
         [HttpPatch("[action]")]
-        public async Task<IActionResult> Update([FromBody] UpdateDocumentItemTaxRequest req, [FromQuery] int companyId)
+        public async Task<IActionResult> Update([FromBody] UpdateDocumentItemTaxRequest req, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
 
             try
             {
-                var result = await mediator.Send(new UpdateDocumentItemTaxCommand(req, companyId));
+                var result = await mediator.Send(new UpdateDocumentItemTaxCommand(req, companyId), ct);
                 return Ok(new { message = "Document item tax updated successfully", data = result });
             }
             catch (InvalidOperationException ex)
@@ -73,7 +73,7 @@ namespace Api.Controllers
         }
 
         [HttpDelete("[action]")]
-        public async Task<IActionResult> Delete([FromQuery] int documentItemId, [FromQuery] int taxId, [FromQuery] int companyId)
+        public async Task<IActionResult> Delete([FromQuery] int documentItemId, [FromQuery] int taxId, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
             if (documentItemId <= 0) return BadRequest(new { message = "Document Item ID is required" });
@@ -81,7 +81,7 @@ namespace Api.Controllers
 
             try
             {
-                var ok = await mediator.Send(new DeleteDocumentItemTaxCommand(documentItemId, taxId, companyId));
+                var ok = await mediator.Send(new DeleteDocumentItemTaxCommand(documentItemId, taxId, companyId), ct);
                 return ok
                     ? Ok(new { message = "Tax removed from document item successfully" })
                     : NotFound(new { message = "Document item tax not found" });

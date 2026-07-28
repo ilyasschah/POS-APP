@@ -1,4 +1,4 @@
-using Api.Attributes;
+﻿using Api.Attributes;
 using Api.Commands.PosOrderItemCommands.Add;
 using Api.Commands.PosOrderItemCommands.Delete;
 using Api.Commands.PosOrderItemCommands.Update;
@@ -23,25 +23,25 @@ namespace Api.Controllers
         }
 
         [HttpGet("[action]")]
-        public async Task<IActionResult> GetByOrderId([FromQuery] int posOrderId, [FromQuery] int companyId)
+        public async Task<IActionResult> GetByOrderId([FromQuery] int posOrderId, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (posOrderId <= 0)
                 return BadRequest(new { message = "Order ID must be provided." });
 
             var query = new GetPosOrderItemsByOrderIdQuery { PosOrderId = posOrderId, CompanyId = companyId };
-            var result = await _mediator.Send(query);
+            var result = await _mediator.Send(query, ct);
 
             return Ok(result);
         }
 
         [HttpGet("[action]")]
-        public async Task<IActionResult> GetById([FromQuery] int id, [FromQuery] int companyId)
+        public async Task<IActionResult> GetById([FromQuery] int id, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (id <= 0 || companyId <= 0)
                 return BadRequest(new { message = "Both Item ID and Company ID must be provided." });
 
             var query = new GetPosOrderItemByIdQuery { Id = id, CompanyId = companyId };
-            var result = await _mediator.Send(query);
+            var result = await _mediator.Send(query, ct);
 
             if (result == null)
                 return NotFound(new { message = $"Order Item with ID {id} not found." });
@@ -51,7 +51,7 @@ namespace Api.Controllers
 
         [Authorize]
         [HttpPost("[action]")]
-        public async Task<IActionResult> Create([FromQuery] int companyId, [FromBody] CreatePosOrderItemRequest request)
+        public async Task<IActionResult> Create([FromQuery] int companyId, [FromBody] CreatePosOrderItemRequest request, CancellationToken ct = default)
         {
             if (companyId <= 0)
                 return BadRequest(new { message = "Company ID must be provided." });
@@ -59,7 +59,7 @@ namespace Api.Controllers
             try
             {
                 var command = new CreatePosOrderItemCommand(companyId, request);
-                var result = await _mediator.Send(command);
+                var result = await _mediator.Send(command, ct);
 
                 return Ok(result);
             }
@@ -74,7 +74,7 @@ namespace Api.Controllers
         }
         [Authorize]
         [HttpPost("[action]")]
-        public async Task<IActionResult> BulkAdd([FromQuery] int companyId, [FromQuery] int warehouseId, [FromQuery] decimal orderTotal, [FromBody] List<BulkAddPosOrderItemRequest> requests, [FromQuery] bool allowNegativeStock = false)
+        public async Task<IActionResult> BulkAdd([FromQuery] int companyId, [FromQuery] int warehouseId, [FromQuery] decimal orderTotal, [FromBody] List<BulkAddPosOrderItemRequest> requests, [FromQuery] bool allowNegativeStock = false, CancellationToken ct = default)
         {
             if (companyId <= 0)
                 return BadRequest(new { message = "Company ID is required." });
@@ -91,7 +91,7 @@ namespace Api.Controllers
                 // order whose cart-time stock guard already ran) so the post isn't
                 // re-blocked here. The live cashier path leaves it false/default.
                 var command = new BulkAddPosOrderItemsCommand(companyId, warehouseId, orderTotal, requests, allowNegativeStock);
-                var result = await _mediator.Send(command);
+                var result = await _mediator.Send(command, ct);
 
                 if (result.Success)
                     return Ok(result);
@@ -106,7 +106,7 @@ namespace Api.Controllers
 
         [Authorize]
         [HttpPatch("[action]")]
-        public async Task<IActionResult> Update([FromQuery] int companyId, [FromBody] UpdatePosOrderItemRequest request)
+        public async Task<IActionResult> Update([FromQuery] int companyId, [FromBody] UpdatePosOrderItemRequest request, CancellationToken ct = default)
         {
             if (companyId <= 0)
                 return BadRequest(new { message = "Company ID must be provided." });
@@ -114,7 +114,7 @@ namespace Api.Controllers
             try
             {
                 var command = new UpdatePosOrderItemCommand( companyId, request);
-                var success = await _mediator.Send(command);
+                var success = await _mediator.Send(command, ct);
 
                 if (!success)
                     return NotFound(new { message = $"Order Item with ID {request.Id} not found." });
@@ -133,7 +133,7 @@ namespace Api.Controllers
 
         [Authorize]
         [HttpDelete("[action]")]
-        public async Task<IActionResult> Delete([FromQuery] int id, [FromQuery] int companyId)
+        public async Task<IActionResult> Delete([FromQuery] int id, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (id <= 0 || companyId <= 0)
                 return BadRequest(new { message = "Both Item ID and Company ID must be provided." });
@@ -141,7 +141,7 @@ namespace Api.Controllers
             try
             {
                 var command = new DeletePosOrderItemCommand(id, companyId);
-                var success = await _mediator.Send(command);
+                var success = await _mediator.Send(command, ct);
 
                 if (!success)
                     return NotFound(new { message = $"Order Item with ID {id} not found." });

@@ -57,11 +57,11 @@ namespace Api.Controllers
 
 
         [HttpGet("[action]")]
-        public async Task<ActionResult<List<DocumentDto>>> GetAll([FromQuery] int companyId)
+        public async Task<ActionResult<List<DocumentDto>>> GetAll([FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId <= 0) return BadRequest("Company ID is required");
 
-            return Ok(await mediator.Send(new GetAllDocumentsQuery { CompanyId = companyId }));
+            return Ok(await mediator.Send(new GetAllDocumentsQuery { CompanyId = companyId }, ct));
         }
 
         [HttpGet("[action]")]
@@ -72,7 +72,7 @@ namespace Api.Controllers
             [FromQuery] int? userId = null,
             [FromQuery] int? customerId = null,
             [FromQuery] bool includeItems = false,
-            [FromQuery] DateTime? modifiedAfter = null)
+            [FromQuery] DateTime? modifiedAfter = null, CancellationToken ct = default)
         {
             if (companyId <= 0) return BadRequest("Company ID is required");
 
@@ -85,33 +85,33 @@ namespace Api.Controllers
                 CustomerId    = customerId,
                 IncludeItems  = includeItems,
                 ModifiedAfter = modifiedAfter,
-            }));
+            }, ct));
         }
 
         [HttpGet("[action]")]
-        public async Task<ActionResult<DocumentDto?>> GetById([FromQuery] int id, [FromQuery] int companyId)
+        public async Task<ActionResult<DocumentDto?>> GetById([FromQuery] int id, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId <= 0) return BadRequest("Company ID is required");
 
-            return Ok(await mediator.Send(new GetDocumentByIdQuery { Id = id, CompanyId = companyId }));
+            return Ok(await mediator.Send(new GetDocumentByIdQuery { Id = id, CompanyId = companyId }, ct));
         }
 
         [HttpGet("[action]")]
-        public async Task<ActionResult<DocumentDto?>> GetByNumber([FromQuery] string number, [FromQuery] int companyId)
+        public async Task<ActionResult<DocumentDto?>> GetByNumber([FromQuery] string number, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId <= 0) return BadRequest("Company ID is required");
 
-            return Ok(await mediator.Send(new GetDocumentByNumberQuery { Number = number, CompanyId = companyId }));
+            return Ok(await mediator.Send(new GetDocumentByNumberQuery { Number = number, CompanyId = companyId }, ct));
         }
 
         [HttpPost("[action]")]
-        public async Task<IActionResult> Add([FromBody] CreateDocumentRequest req, [FromQuery] int companyId)
+        public async Task<IActionResult> Add([FromBody] CreateDocumentRequest req, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
 
             try
             {
-                var result = await mediator.Send(new AddDocumentCommand(req, companyId));
+                var result = await mediator.Send(new AddDocumentCommand(req, companyId), ct);
                 return Ok(new { message = "Document created", data = result });
             }
             catch (InvalidOperationException ex)
@@ -121,11 +121,11 @@ namespace Api.Controllers
         }
 
         [HttpPatch("[action]")]
-        public async Task<IActionResult> Update([FromBody] UpdateDocumentRequest req, [FromQuery] int companyId)
+        public async Task<IActionResult> Update([FromBody] UpdateDocumentRequest req, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId <= 0) return BadRequest("Company ID is required");
 
-            var result = await mediator.Send(new UpdateDocumentCommand(req, companyId));
+            var result = await mediator.Send(new UpdateDocumentCommand(req, companyId), ct);
 
             return result
                 ? Ok(new { Message = "Document updated" })
@@ -136,7 +136,7 @@ namespace Api.Controllers
         public async Task<IActionResult> Refund(
             [FromBody] ProcessRefundRequest req,
             [FromQuery] int companyId,
-            [FromQuery] int userId)
+            [FromQuery] int userId, CancellationToken ct = default)
         {
             if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
             if (userId <= 0)    return BadRequest(new { message = "User ID is required" });
@@ -148,7 +148,7 @@ namespace Api.Controllers
                     CompanyId = companyId,
                     UserId    = userId,
                     Request   = req,
-                });
+                }, ct);
                 return Ok(result);
             }
             catch (InvalidOperationException ex)
@@ -158,13 +158,13 @@ namespace Api.Controllers
         }
 
         [HttpDelete("[action]")]
-        public async Task<IActionResult> Delete([FromQuery] int id, [FromQuery] int companyId)
+        public async Task<IActionResult> Delete([FromQuery] int id, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId <= 0) return BadRequest("Company ID is required");
 
             try
             {
-                var result = await mediator.Send(new DeleteDocumentCommand(id, companyId));
+                var result = await mediator.Send(new DeleteDocumentCommand(id, companyId), ct);
                 return result
                     ? Ok(new { success = true, message = "Document deleted" })
                     : BadRequest(new { success = false, message = "Failed to delete document" });
@@ -182,7 +182,7 @@ namespace Api.Controllers
         [HttpGet("[action]")]
         public async Task<ActionResult<List<UnpaidDocumentDto>>> GetUnpaidByCustomer(
             [FromQuery] int companyId,
-            [FromQuery] int customerId)
+            [FromQuery] int customerId, CancellationToken ct = default)
         {
             if (companyId  <= 0) return BadRequest("Company ID is required");
             if (customerId <= 0) return BadRequest("Customer ID is required");
@@ -191,7 +191,7 @@ namespace Api.Controllers
             {
                 CompanyId  = companyId,
                 CustomerId = customerId,
-            }));
+            }, ct));
         }
     }
 }

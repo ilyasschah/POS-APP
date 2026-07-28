@@ -23,45 +23,45 @@ namespace Api.Controllers
         }
 
         [HttpGet("[action]")]
-        public async Task<ActionResult<List<StockDto>>> GetAllStocks([FromQuery] int companyId)
+        public async Task<ActionResult<List<StockDto>>> GetAllStocks([FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId <= 0) return BadRequest("Company ID is required");
-            return Ok(await _mediator.Send(new GetAllStockQuery { CompanyId = companyId }));
+            return Ok(await _mediator.Send(new GetAllStockQuery { CompanyId = companyId }, ct));
         }
 
         [HttpGet("[action]")]
-        public async Task<ActionResult<StockDto>> GetById([FromQuery] int id, [FromQuery] int companyId)
+        public async Task<ActionResult<StockDto>> GetById([FromQuery] int id, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId <= 0) return BadRequest("Company ID is required");
-            return Ok(await _mediator.Send(new GetStockByIdQuery { Id = id, CompanyId = companyId }));
+            return Ok(await _mediator.Send(new GetStockByIdQuery { Id = id, CompanyId = companyId }, ct));
         }
 
         [Authorize]
         [HttpPost("[action]")]
-        public async Task<ActionResult<StockDto>> Add([FromBody] CreateStockRequest stockrequest, [FromQuery] int companyId)
+        public async Task<ActionResult<StockDto>> Add([FromBody] CreateStockRequest stockrequest, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId <= 0) return BadRequest("Company ID is required");
-            var result = await _mediator.Send(new AddStockCommand(stockrequest, companyId));
+            var result = await _mediator.Send(new AddStockCommand(stockrequest, companyId), ct);
             return CreatedAtAction(nameof(GetById), new { id = result.Id, companyId }, result);
         }
 
         [Authorize]
         [HttpPatch("[action]")]
-        public async Task<IActionResult> Update([FromBody] UpdateStockRequest stockrequest, [FromQuery] int companyId)
+        public async Task<IActionResult> Update([FromBody] UpdateStockRequest stockrequest, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId <= 0) return BadRequest("Company ID is required");
 
-            var result = await _mediator.Send(new UpdateStockCommand(stockrequest, companyId));
+            var result = await _mediator.Send(new UpdateStockCommand(stockrequest, companyId), ct);
             return Ok(new { Success = result });
         }
 
         [Authorize]
         [HttpDelete("[action]")]
-        public async Task<IActionResult> Delete([FromQuery] int id, [FromQuery] int companyId)
+        public async Task<IActionResult> Delete([FromQuery] int id, [FromQuery] int companyId, CancellationToken ct = default)
         {
             if (companyId <= 0) return BadRequest("Company ID is required");
 
-            var result = await _mediator.Send(new DeleteStockCommand(id, companyId));
+            var result = await _mediator.Send(new DeleteStockCommand(id, companyId), ct);
             return Ok(new { Message = result ? "Stock deleted successfully" : "Failed to delete stock" });
         }
     }
