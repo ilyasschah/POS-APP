@@ -11,7 +11,7 @@ import 'package:pos_app/company/company_model.dart';
 import 'package:pos_app/document/document_type_constants.dart';
 
 /// Compiled-in default API endpoint, used until a device-local override is set.
-const String kDefaultApiBaseUrl = 'http://100.114.12.38:5002/api';
+const String kDefaultApiBaseUrl = 'https://51-91-6-6.sslip.io/api';
 
 /// The active API base URL. Held in memory (seeded from SharedPreferences at
 /// boot via [initApiBaseUrl]) so the sync/synchronous [createDio] never awaits.

@@ -434,7 +434,7 @@ const Map<String, String> kSettingDefaults = {
   SettingKeys.dbBackupIntervalHours: '0',
   SettingKeys.dbBackupAutoDelete: 'false',
   SettingKeys.dbBackupRetentionDays: '10',
-  SettingKeys.apiBaseUrl: 'http://100.114.12.38:5002/api',
+  SettingKeys.apiBaseUrl: 'https://51-91-6-6.sslip.io/api',
   SettingKeys.scaleEnabled: 'false',
   SettingKeys.scalePort: 'COM2',
   SettingKeys.scaleBaudRate: '9600',

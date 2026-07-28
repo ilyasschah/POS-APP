@@ -5,7 +5,7 @@ struct ContentView: View {
     
     var body: some View {
         if auth.isAuthenticated {
-            DashboardView(auth: auth)
+            NavigationSidebarView(auth: auth)
         } else {
             // Pass the shared instance down to the login screen!
             LoginView(auth: auth)

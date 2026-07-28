@@ -1,28 +1,6 @@
 # Handoff — OwnerDashboard (Octopus Dashboard)
 
-_Last updated: 2026-07-28_
-
-## 0. Environment — TEST ONLY (read this first)
-
-This app talks **only to the OVH test backend**, never production. There is no
-production backend for it to point at yet — every build, on every device,
-should be configured against the test API.
-
-- **Test API base URL:** `https://51-91-6-6.sslip.io/api`
-  - Real, publicly-trusted HTTPS (Let's Encrypt via a free `sslip.io` hostname
-    that resolves straight to the OVH box's IP `51.91.6.6`) — no self-signed
-    cert to trust on-device, no VPN needed.
-  - Backed by the `web-pos` / `web-pos-master` databases on the OVH SQL Server.
-- **`apiBaseUrl` is user-editable** at runtime (`AuthManager.swift` → `LoginView.swift`
-  has a plain text field for it), but the **compiled-in default in
-  `AuthManager.swift:15` is still the old stale Tailscale IP**
-  (`http://100.114.12.38:5002/api`) — it was never updated when the backend
-  moved to IIS on the OVH box. Update that default to the test URL above (or
-  at minimum, manually type the test URL into the login screen's API field on
-  every fresh install/simulator run until the default is fixed).
-- Do **not** point this app at any other host/IP — there's nothing else to
-  point it at right now, and typing a wrong/unreachable URL into that field is
-  the most likely cause of "why is nothing loading" during a session.
+_Last updated: 2026-07-26_
 
 ## 1. Current State
 
