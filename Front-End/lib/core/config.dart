@@ -1,6 +1,6 @@
 class AppConfig {
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://100.114.12.38:5002/api',
+    defaultValue: 'https://51-91-6-6.sslip.io/api',
   );
 }

@@ -1,0 +1,113 @@
+name: Deploy Backend to OVH Test
+
+# Runs on the self-hosted runner installed directly on the OVH test box.
+# Publishes Web-POS.Api and replaces the files under C:\inetpub\wwwroot\pos-api,
+# then re-injects the Test-environment secrets (DB connection strings, JWT
+# secret, Admin Portal key) into the freshly-generated web.config, since those
+# secrets are never committed to the repo and dotnet publish regenerates
+# web.config from the checked-in template on every run.
+
+on:
+  push:
+    branches: [test]
+    paths:
+      - "Back-End/**"
+      - ".github/workflows/deploy-backend-test.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-backend-test
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, Windows, ovh-test]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Publish Web-POS.Api (Release)
+        shell: powershell
+        run: |
+          $publishDir = Join-Path $env:RUNNER_TEMP "pos-api-publish"
+          if (Test-Path $publishDir) { Remove-Item $publishDir -Recurse -Force }
+          dotnet publish "Back-End/Web-POS.Api/Web-POS.Api.csproj" -c Release -o $publishDir
+          if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed" }
+          echo "PUBLISH_DIR=$publishDir" >> $env:GITHUB_ENV
+
+      - name: Take app offline
+        shell: powershell
+        # ANCM (both hosting models) watches for app_offline.htm in the site root and
+        # gracefully unloads the app, releasing the lock on Web-POS.Api.dll. This needs
+        # only filesystem write access to the site folder - no IIS management API
+        # rights, so it works from a low-privilege runner service account.
+        run: |
+          Set-Content -Path "C:\inetpub\wwwroot\pos-api\app_offline.htm" -Value "Deploying..." -Encoding utf8
+          Start-Sleep -Seconds 5
+
+      - name: Replace site files
+        shell: powershell
+        run: |
+          # lease_signing_key.pem is a server-only secret (gitignored, never in the
+          # publish output) - excluded here so /MIR doesn't delete it. app_offline.htm
+          # is excluded so it survives until the "bring back online" step removes it.
+          robocopy "$env:PUBLISH_DIR" "C:\inetpub\wwwroot\pos-api" /MIR /XD logs /XF app_offline.htm lease_signing_key.pem /NFL /NDL /NJH /NJS
+          $rc = $LASTEXITCODE
+          if ($rc -ge 8) { throw "robocopy failed with exit code $rc" }
+          # Robocopy's own "success" codes (0-7) are non-zero (e.g. 1 = files copied),
+          # and the runner auto-propagates $LASTEXITCODE as the step's exit code - so
+          # without this, a successful copy still fails the step.
+          exit 0
+
+      - name: Inject Test environment secrets into web.config
+        shell: powershell
+        env:
+          TEST_DB_CONN: ${{ secrets.TEST_DB_CONNECTION_STRING }}
+          TEST_MASTER_DB_CONN: ${{ secrets.TEST_MASTER_DB_CONNECTION_STRING }}
+          TEST_JWT_SECRET: ${{ secrets.TEST_JWT_SECRET }}
+          TEST_ADMIN_KEY: ${{ secrets.TEST_ADMIN_PORTAL_ACCESS_KEY }}
+        run: |
+          $path = "C:\inetpub\wwwroot\pos-api\web.config"
+          [xml]$xml = Get-Content $path -Raw
+          $aspNetCore = $xml.SelectSingleNode("//aspNetCore")
+
+          $envVarsNode = $xml.CreateElement("environmentVariables")
+
+          function Add-EnvVar([string]$name, [string]$value) {
+            $node = $xml.CreateElement("environmentVariable")
+            $node.SetAttribute("name", $name)
+            $node.SetAttribute("value", $value)
+            $envVarsNode.AppendChild($node) | Out-Null
+          }
+
+          Add-EnvVar "ASPNETCORE_ENVIRONMENT" "Test"
+          Add-EnvVar "ConnectionStrings__DefaultConnection" $env:TEST_DB_CONN
+          Add-EnvVar "ConnectionStrings__MasterConnection" $env:TEST_MASTER_DB_CONN
+          Add-EnvVar "Jwt__Secret" $env:TEST_JWT_SECRET
+          Add-EnvVar "AdminPortal__AccessKey" $env:TEST_ADMIN_KEY
+
+          $aspNetCore.AppendChild($envVarsNode) | Out-Null
+          $xml.Save($path)
+
+      - name: Bring app back online
+        # Runs even if an earlier step failed - app_offline.htm must never be left
+        # behind, or the site stays down until someone notices and fixes it by hand.
+        if: always()
+        shell: powershell
+        run: |
+          Remove-Item "C:\inetpub\wwwroot\pos-api\app_offline.htm" -Force -ErrorAction SilentlyContinue
+          Start-Sleep -Seconds 3
+
+      - name: Health check
+        if: always()
+        shell: powershell
+        run: |
+          $ok = $false
+          for ($i = 0; $i -lt 10; $i++) {
+            try {
+              $r = Invoke-WebRequest -Uri "https://51-91-6-6.sslip.io/swagger/v1/swagger.json" -UseBasicParsing -TimeoutSec 10
+              if ($r.StatusCode -eq 200) { $ok = $true; break }
+            } catch {}
+            Start-Sleep -Seconds 3
+          }
+          if (-not $ok) { throw "Health check failed: site did not return 200 after deploy" }
+          Write-Host "Deploy healthy: https://51-91-6-6.sslip.io"
