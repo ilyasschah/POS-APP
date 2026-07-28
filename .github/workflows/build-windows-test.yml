@@ -34,7 +34,13 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: flutter pub get
-        run: flutter pub get
+        run: |
+          "WHOAMI: $(whoami)" | Out-File C:\Windows\Temp\flutter-pub-get-diag.log
+          "PWD: $(Get-Location)" | Out-File C:\Windows\Temp\flutter-pub-get-diag.log -Append
+          "PATH: $env:PATH" | Out-File C:\Windows\Temp\flutter-pub-get-diag.log -Append
+          flutter pub get *>> C:\Windows\Temp\flutter-pub-get-diag.log
+          "EXITCODE: $LASTEXITCODE" | Out-File C:\Windows\Temp\flutter-pub-get-diag.log -Append
+          Get-Content C:\Windows\Temp\flutter-pub-get-diag.log
 
       - name: flutter build windows (release)
         run: flutter build windows --release
