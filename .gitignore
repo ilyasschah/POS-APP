@@ -28,3 +28,10 @@ SECRETS.local.txt
 # Ignore build output and intermediate files
 **/obj/
 **/bin/
+
+# macOS / Xcode
+**/.DS_Store
+**/__MACOSX/
+**/xcuserdata/
+**/*.xcuserstate
+**/DerivedData/
