@@ -14,10 +14,44 @@ class BackupService {
     return p.join(dir.path, 'pos_app.sqlite');
   }
 
+  /// True when this platform has no operator-browsable filesystem for the
+  /// operator to point a backup at. On Android every "folder" the system picker
+  /// returns is a Storage Access Framework tree URI (`content://…`), which is
+  /// NOT a path: `Directory(uri)` and `File.copy(uri)` both fail. That is why
+  /// backups "did not work at all" on the tablets — the picker handed back a
+  /// URI and every subsequent file operation threw.
+  static bool get usesManagedBackupDir => Platform.isAndroid || Platform.isIOS;
+
   /// Resolves the backup directory.
-  /// Falls back to <Documents>/POS_Backups when [backupDir] is empty.
+  ///
+  /// On Android/iOS a configured [backupDir] is deliberately IGNORED unless it
+  /// is a real path: the app's own external files directory is the only place
+  /// it can write without SAF plumbing, and it is still reachable over USB /
+  /// a file manager at `Android/data/<package>/files/POS_Backups`.
+  /// Elsewhere it falls back to `<Documents>/POS_Backups`.
   static Future<String> resolveBackupDir(String backupDir) async {
     final dir = backupDir.trim();
+
+    if (usesManagedBackupDir) {
+      // A `content://` URI (or any non-path) can never be written to — drop it
+      // and use the managed location instead of failing the backup.
+      if (dir.isNotEmpty && !dir.contains('://')) {
+        return dir;
+      }
+      // getExternalStorageDirectory is Android-only and may be null; app
+      // documents always exists and needs no permission on either platform.
+      Directory? base;
+      if (Platform.isAndroid) {
+        try {
+          base = await getExternalStorageDirectory();
+        } catch (_) {
+          base = null;
+        }
+      }
+      base ??= await getApplicationDocumentsDirectory();
+      return p.join(base.path, 'POS_Backups');
+    }
+
     if (dir.isNotEmpty) return dir;
     final docs = await getApplicationDocumentsDirectory();
     return p.join(docs.path, 'POS_Backups');

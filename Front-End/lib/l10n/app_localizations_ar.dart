@@ -5436,6 +5436,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get backupPathHintUnix => 'مثال: /home/user/backups';
 
   @override
+  String get backupPathHintManaged => 'يديره التطبيق — اضغط فتح الموقع لعرضه';
+
+  @override
   String get exchangeRateHint => 'مثال: 1.08  (1 عملة أساسية = X عملة ثانوية)';
 
   @override

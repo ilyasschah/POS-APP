@@ -9854,6 +9854,12 @@ abstract class AppLocalizations {
   /// **'e.g. /home/user/backups'**
   String get backupPathHintUnix;
 
+  /// No description provided for @backupPathHintManaged.
+  ///
+  /// In en, this message translates to:
+  /// **'Managed by the app — tap Open location to see it'**
+  String get backupPathHintManaged;
+
   /// No description provided for @exchangeRateHint.
   ///
   /// In en, this message translates to:

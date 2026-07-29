@@ -5969,7 +5969,11 @@ class _DatabaseTabState extends ConsumerState<_DatabaseTab> {
     // If no backup location is configured yet, ask the user to pick one first.
     var backupDir =
         ref.read(appSettingsProvider)[SettingKeys.dbBackupPath] ?? '';
-    if (backupDir.trim().isEmpty) {
+    // On Android/iOS there is no folder to pick — the picker returns a SAF
+    // `content://` URI that no file API here can write to, so asking for one
+    // just guaranteed a failed backup. BackupService resolves the managed
+    // app-storage location itself.
+    if (backupDir.trim().isEmpty && !BackupService.usesManagedBackupDir) {
       final picked = await FilePicker.platform.getDirectoryPath(
         dialogTitle: AppLocalizations.of(context).selectBackupFolder,
       );
@@ -6017,6 +6021,18 @@ class _DatabaseTabState extends ConsumerState<_DatabaseTab> {
   /// Picks a folder if none is configured, saves it, then opens it in Explorer.
   Future<void> _openLocation() async {
     var dir = ref.read(appSettingsProvider)[SettingKeys.dbBackupPath] ?? '';
+
+    // Android/iOS: there is no file manager to hand a path to and no folder
+    // worth picking. Surface the resolved managed location instead, so the
+    // operator can actually find the file over USB rather than tapping a
+    // button that silently did nothing.
+    if (BackupService.usesManagedBackupDir) {
+      final resolved = await BackupService.resolveBackupDir(dir);
+      if (!mounted) return;
+      showAppSnackbar(context, ref, resolved);
+      return;
+    }
+
     if (dir.trim().isEmpty) {
       final picked = await FilePicker.platform.getDirectoryPath(
         dialogTitle: AppLocalizations.of(context).selectBackupFolder,
@@ -6258,6 +6274,11 @@ class _BackupLocationFieldState extends ConsumerState<_BackupLocationField> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // Android/iOS write to a managed app-storage folder — there is nothing to
+    // type and nothing to browse. Showing an editable path box with a "…"
+    // button there offered a choice the platform cannot honour, and any value
+    // entered broke the backup outright.
+    final managed = BackupService.usesManagedBackupDir;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: Row(
@@ -6265,11 +6286,15 @@ class _BackupLocationFieldState extends ConsumerState<_BackupLocationField> {
           Expanded(
             child: TextField(
               controller: _ctrl,
+              readOnly: managed,
+              enabled: !managed,
               decoration: InputDecoration(
                 labelText: AppLocalizations.of(context).setBackupLocation,
-                hintText: Platform.isWindows
-                    ? AppLocalizations.of(context).backupPathHintWindows
-                    : AppLocalizations.of(context).backupPathHintUnix,
+                hintText: managed
+                    ? AppLocalizations.of(context).backupPathHintManaged
+                    : Platform.isWindows
+                        ? AppLocalizations.of(context).backupPathHintWindows
+                        : AppLocalizations.of(context).backupPathHintUnix,
                 filled: true,
                 fillColor: theme.colorScheme.surface,
                 border: const OutlineInputBorder(),
@@ -6283,15 +6308,17 @@ class _BackupLocationFieldState extends ConsumerState<_BackupLocationField> {
               onSubmitted: (_) => _save(),
             ),
           ),
-          const SizedBox(width: 8),
-          OutlinedButton(
-            onPressed: _browse,
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size(44, 44),
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+          if (!managed) ...[
+            const SizedBox(width: 8),
+            OutlinedButton(
+              onPressed: _browse,
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(44, 44),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+              ),
+              child: const Text('…'),
             ),
-            child: const Text('…'),
-          ),
+          ],
         ],
       ),
     );

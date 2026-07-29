@@ -212,6 +212,12 @@ Future<void> syncOpenOrdersToDrift(
     final tableId = (o['floorPlanTableId'] ?? o['FloorPlanTableId']) as int?;
     final serverName =
         (o['number'] ?? o['Number'] ?? o['orderNumber']) as String?;
+    // PosOrderDto carries the customer (Id + Name). Without banking the id here
+    // an order rung up against a customer on one terminal reopened as Walk-in on
+    // every other one: loadOrderFromLocal restores the customer from
+    // `pos_orders.customerId`, and this pull is the only thing that ever writes
+    // that column for an order this device did not create.
+    final customerId = (o['customerId'] ?? o['CustomerId']) as int?;
 
     // Line-content change detectors (PosOrderDto). Both are absent on an API
     // build that predates them — left null, the checks below simply skip and the
@@ -237,8 +243,14 @@ Future<void> syncOpenOrdersToDrift(
       final effectiveStatus =
           keepReady ? kServiceStatusReady : serviceStatus;
       final totalChanged = existingByServerId.total != total;
+      // Only adopt the server's customer on a row with nothing unpushed. On a
+      // 'pending' row the cashier may have just picked a customer that this
+      // pull has not seen yet — taking the server's (older) value would wipe it.
+      final adoptCustomer = existingByServerId.syncStatus == 'synced' &&
+          existingByServerId.customerId != customerId;
       if (existingByServerId.serviceStatus != effectiveStatus ||
           totalChanged ||
+          adoptCustomer ||
           existingByServerId.tableId != tableId) {
         await (db.update(db.posOrdersTable)
               ..where((t) => t.localId.equals(existingByServerId.localId)))
@@ -246,6 +258,8 @@ Future<void> syncOpenOrdersToDrift(
           serviceStatus: Value(effectiveStatus),
           total: Value(total),
           tableId: Value(tableId),
+          customerId:
+              adoptCustomer ? Value(customerId) : const Value.absent(),
           lastModified: Value(now),
         ));
       }
@@ -338,6 +352,7 @@ Future<void> syncOpenOrdersToDrift(
         companyId: Value(companyId),
         userId: Value((o['userId'] ?? o['UserId']) as int? ?? 0),
         tableId: Value(tableId),
+        customerId: Value(customerId),
         serviceType: Value((o['serviceType'] ?? o['ServiceType']) as int? ?? 0),
         serviceStatus: Value(serviceStatus),
         orderName: Value(serverName),
@@ -356,18 +371,46 @@ Future<void> syncOpenOrdersToDrift(
     await _pullOrderItems(db, companyId, 'svr_$id', id, warehouseId, client);
   }
 
-  // Remove sentinel rows for orders that are no longer open on the server.
-  final svrRows = await (db.select(db.posOrdersTable)
+  // Retire local rows for orders the server no longer reports as open — the
+  // order was paid, voided or deleted on ANOTHER terminal.
+  //
+  // 🚨 This used to be gated on `localId.startsWith('svr_')`, i.e. only orders
+  // this device had never created itself. That is precisely the wrong half: an
+  // order rung up HERE gets a UUID localId, then a serverId once it pushes, and
+  // when another terminal paid or voided it the server stopped returning it —
+  // but the `svr_` test skipped it, so it sat in this device's Open Orders list
+  // (and kept its table painted occupied) forever. The `svr_` prefix says where
+  // the row came from; it says nothing about whether the order is still open.
+  //
+  // The real safety condition is `syncStatus == 'synced'`: a row with unpushed
+  // local work must never be retired on the say-so of a server that has not
+  // seen that work yet. Rows with no serverId are likewise untouchable — they
+  // were created offline and the server cannot be expected to know them.
+  final localOpenRows = await (db.select(db.posOrdersTable)
         ..where((t) => t.companyId.equals(companyId))
         ..where((t) => t.status.equals(0)))
       .get();
-  for (final row in svrRows) {
-    if (row.localId.startsWith('svr_') &&
-        row.serverId != null &&
-        !openServerIds.contains(row.serverId!)) {
+  for (final row in localOpenRows) {
+    if (row.serverId == null) continue; // never pushed — server can't judge it
+    if (openServerIds.contains(row.serverId!)) continue; // still open
+    if (row.syncStatus != 'synced') continue; // unpushed local edits win
+
+    if (row.localId.startsWith('svr_')) {
+      // Materialised purely by this pull — nothing local to preserve.
       await (db.delete(db.posOrdersTable)
             ..where((t) => t.localId.equals(row.localId)))
           .go();
+    } else {
+      // Locally-originated: keep the row (reports, refunds and the sales
+      // history all reach back into it) but close it, so it leaves the open
+      // list and releases its table. Deleting it here would orphan its items.
+      await (db.update(db.posOrdersTable)
+            ..where((t) => t.localId.equals(row.localId)))
+          .write(PosOrdersTableCompanion(
+        status: const Value(1),
+        closedAt: Value(now),
+        lastModified: Value(now),
+      ));
     }
   }
 }

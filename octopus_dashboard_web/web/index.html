@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!--
+    Replaced by the `--base-href` argument at build time. Set it when hosting
+    under a sub-path, e.g.:
+      flutter build web --release --base-href /dashboard/
+  -->
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description"
+        content="Sales analytics, products, stock, documents and staff management for the Octopus POS system.">
+
+  <!--
+    viewport-fit=cover lets the app paint under the iOS status bar, which is
+    required for `black-translucent` below to look right. Flutter's SafeArea
+    keeps content clear of the notch.
+  -->
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+
+  <!--
+    PWA install metadata.
+
+    Safari does NOT read manifest.json the way Chrome does, so the Apple meta
+    tags below are what make "Add to Home Screen" on iOS produce a real
+    standalone app (own icon, no browser chrome) instead of a plain bookmark.
+    Both paths must be configured for this to work on both platforms.
+  -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Octopus">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon-180.png">
+  <link rel="apple-touch-icon" sizes="167x167" href="icons/apple-touch-icon-167.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="icons/apple-touch-icon-152.png">
+
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
+
+  <title>Octopus Owner Dashboard</title>
+  <link rel="manifest" href="manifest.json">
+
+  <!--
+    Critical inline styles. Painting the correct background immediately avoids
+    the white flash that would otherwise show between page load and Flutter's
+    first frame.
+  -->
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background-color: #000000;
+      overscroll-behavior: none;
+    }
+
+    body.app-light, body.app-light #app-loading {
+      background-color: #FFFFFF;
+    }
+
+    #app-loading {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 22px;
+      background-color: #000000;
+      transition: opacity 260ms ease;
+      z-index: 9999;
+    }
+
+    #app-loading.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #app-loading img {
+      width: 96px;
+      height: 96px;
+    }
+
+    #app-loading .spinner {
+      width: 26px;
+      height: 26px;
+      border: 2.5px solid rgba(64, 200, 224, 0.25);
+      border-top-color: #40C8E0;
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+
+    body.app-light #app-loading .spinner {
+      border-color: rgba(48, 176, 199, 0.25);
+      border-top-color: #30B0C7;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #app-loading .spinner { animation-duration: 2.4s; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app-loading">
+    <img src="icons/Icon-192.png" alt="Octopus">
+    <div class="spinner"></div>
+  </div>
+
+  <script>
+    (function () {
+      // Match the splash to the user's saved theme so the very first paint is
+      // already the right color. shared_preferences namespaces its web keys
+      // with "flutter."; if the stored format ever changes we simply fall
+      // through to dark, which is this app's default anyway.
+      try {
+        var stored = window.localStorage.getItem('flutter.isDarkMode');
+        if (stored !== null && stored.indexOf('false') !== -1) {
+          document.body.classList.add('app-light');
+        }
+      } catch (e) {
+        /* localStorage can be unavailable in private mode - ignore. */
+      }
+
+      // Flutter fires this once it has painted, so the splash is only removed
+      // when there is real UI behind it.
+      window.addEventListener('flutter-first-frame', function () {
+        var splash = document.getElementById('app-loading');
+        if (!splash) return;
+        splash.classList.add('hidden');
+        window.setTimeout(function () { splash.remove(); }, 300);
+      });
+
+      // App-shell service worker. Registered here rather than by Flutter's
+      // bootstrap, whose own service worker is deprecated and non-caching
+      // (see web/sw.js and web/flutter_bootstrap.js).
+      //
+      // Deferred until after load so it never competes with the first paint.
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('sw.js').catch(function (error) {
+            console.warn('Service worker registration failed:', error);
+          });
+        });
+      }
+    })();
+  </script>
+
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

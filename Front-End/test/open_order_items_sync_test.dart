@@ -224,4 +224,179 @@ void main() {
     expect(lines, hasLength(1));
     expect(lines.single.productId, 99);
   });
+
+  // ── Retiring orders closed on ANOTHER terminal ──────────────────────────────
+  //
+  // The reconcile used to retire only rows whose localId began with `svr_`,
+  // i.e. orders this device had never created. That is the wrong half. An order
+  // rung up HERE keeps its UUID localId for life, so when another terminal paid
+  // or voided it the server stopped listing it as open — and the `svr_` test
+  // skipped it. It sat in this device's Open Orders list, and kept its table
+  // painted occupied, forever. Both reports ("voided order didn't disappear",
+  // "paid orders still on the tablet") are this one line.
+
+  /// Inserts an open order that originated on THIS device and has been pushed.
+  Future<void> insertLocalSyncedOrder({
+    required String localId,
+    required int serverId,
+    int? tableId,
+    String syncStatus = 'synced',
+  }) =>
+      db.into(db.posOrdersTable).insert(
+            PosOrdersTableCompanion.insert(
+              localId: localId,
+              companyId: 1,
+              userId: 3,
+              serviceType: 0,
+              openedAt: DateTime.now().toUtc(),
+              status: const Value(0),
+              warehouseId: 2,
+              lastModified: DateTime.now().toUtc(),
+              serverId: Value(serverId),
+              tableId: Value(tableId),
+              total: const Value(45.0),
+              syncStatus: Value(syncStatus),
+            ),
+          );
+
+  test('an order paid or voided elsewhere stops being open here', () async {
+    await insertLocalSyncedOrder(
+      localId: 'local-uuid-9',
+      serverId: 77,
+      tableId: 12,
+    );
+
+    // The server no longer lists 77 — it was checked out (or voided) elsewhere.
+    await syncOpenOrdersToDrift(db, 1, api: _FakeApi(orders: const [], items: const []));
+
+    final row = await (db.select(db.posOrdersTable)
+          ..where((t) => t.localId.equals('local-uuid-9')))
+        .getSingleOrNull();
+    expect(row, isNotNull, reason: 'the row backs reports/refunds — keep it');
+    // The assertion that fails against the pre-fix code: it stayed 0 forever.
+    expect(row!.status, 1, reason: 'must leave the open list and free its table');
+    expect(row.closedAt, isNotNull);
+  });
+
+  test('a server-materialised row for a closed order is deleted outright',
+      () async {
+    await syncOpenOrdersToDrift(db, 1, api: _FakeApi(orders: [_order], items: _items));
+    expect(
+      await (db.select(db.posOrdersTable)..where((t) => t.serverId.equals(77)))
+          .getSingleOrNull(),
+      isNotNull,
+    );
+
+    await syncOpenOrdersToDrift(db, 1, api: _FakeApi(orders: const [], items: const []));
+
+    // Nothing local to preserve — it only ever mirrored the server.
+    expect(
+      await (db.select(db.posOrdersTable)..where((t) => t.localId.equals('svr_77')))
+          .getSingleOrNull(),
+      isNull,
+    );
+  });
+
+  test('an order with unpushed work is never retired by the server', () async {
+    // The cashier is mid-edit and the push has not landed. The server cannot
+    // know about this order's current state, so its silence proves nothing.
+    await insertLocalSyncedOrder(
+      localId: 'local-uuid-3',
+      serverId: 78,
+      syncStatus: 'pending',
+    );
+    // Created offline, never pushed — likewise untouchable.
+    await db.into(db.posOrdersTable).insert(
+          PosOrdersTableCompanion.insert(
+            localId: 'local-uuid-4',
+            companyId: 1,
+            userId: 3,
+            serviceType: 0,
+            openedAt: DateTime.now().toUtc(),
+            status: const Value(0),
+            warehouseId: 2,
+            lastModified: DateTime.now().toUtc(),
+            syncStatus: const Value('pending'),
+          ),
+        );
+
+    await syncOpenOrdersToDrift(db, 1, api: _FakeApi(orders: const [], items: const []));
+
+    for (final id in ['local-uuid-3', 'local-uuid-4']) {
+      final row = await (db.select(db.posOrdersTable)
+            ..where((t) => t.localId.equals(id)))
+          .getSingleOrNull();
+      expect(row?.status, 0, reason: '$id has unpushed work — leave it open');
+    }
+  });
+
+  // ── The order's customer ───────────────────────────────────────────────────
+  //
+  // PosOrderDto has carried CustomerId all along; this pull just never read it.
+  // loadOrderFromLocal restores the customer from `pos_orders.customerId`, and
+  // for an order this device did not create, this pull is the ONLY writer of
+  // that column — so the order reopened as Walk-in on every other terminal.
+
+  test('an order pulled from another terminal keeps its customer', () async {
+    final api = _FakeApi(
+      orders: [
+        {..._order, 'customerId': 42},
+      ],
+      items: _items,
+    );
+
+    await syncOpenOrdersToDrift(db, 1, api: api);
+
+    final row = await (db.select(db.posOrdersTable)
+          ..where((t) => t.serverId.equals(77)))
+        .getSingleOrNull();
+    expect(row!.customerId, 42);
+  });
+
+  test('a customer assigned elsewhere reaches an already-known order', () async {
+    await syncOpenOrdersToDrift(db, 1, api: _FakeApi(orders: [_order], items: _items));
+    expect(
+      (await (db.select(db.posOrdersTable)..where((t) => t.serverId.equals(77)))
+              .getSingle())
+          .customerId,
+      isNull,
+    );
+
+    await syncOpenOrdersToDrift(
+      db,
+      1,
+      api: _FakeApi(orders: [
+        {..._order, 'customerId': 42},
+      ], items: _items),
+    );
+
+    expect(
+      (await (db.select(db.posOrdersTable)..where((t) => t.serverId.equals(77)))
+              .getSingle())
+          .customerId,
+      42,
+    );
+  });
+
+  test('a locally-chosen customer is not clobbered by a stale server value',
+      () async {
+    // The cashier picked a customer here and the push has not landed yet. The
+    // server still reports the old value; adopting it would wipe their choice.
+    await insertLocalSyncedOrder(
+      localId: 'local-uuid-7',
+      serverId: 77,
+      tableId: 12,
+      syncStatus: 'pending',
+    );
+    await (db.update(db.posOrdersTable)
+          ..where((t) => t.localId.equals('local-uuid-7')))
+        .write(const PosOrdersTableCompanion(customerId: Value(99)));
+
+    await syncOpenOrdersToDrift(db, 1, api: _FakeApi(orders: [_order], items: _items));
+
+    final row = await (db.select(db.posOrdersTable)
+          ..where((t) => t.localId.equals('local-uuid-7')))
+        .getSingle();
+    expect(row.customerId, 99, reason: 'unpushed local choice wins');
+  });
 }

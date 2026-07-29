@@ -1,0 +1,34 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "🌐 Dashboard: Run Web (Tailscale)",
+      "type": "shell",
+      "command": "flutter",
+      "args": [
+        "run",
+        "-d",
+        "chrome",
+        "--web-hostname",
+        "100.114.12.38",
+        "--web-port",
+        "8081"
+      ],
+      "isBackground": true,
+      "problemMatcher": [],
+      "detail": "Runs the Dashboard on Web via Tailscale IP"
+    },
+    {
+      "label": "📦 Dashboard: Build Web (Release for IIS)",
+      "type": "shell",
+      "command": "flutter",
+      "args": [
+        "build",
+        "web"
+      ],
+      "group": "build",
+      "problemMatcher": [],
+      "detail": "Builds production Web PWA for IIS Hosting"
+    }
+  ]
+}

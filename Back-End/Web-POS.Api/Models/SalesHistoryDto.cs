@@ -28,11 +28,23 @@ namespace Api.Models
 
     public class SalesHistoryItemDto
     {
+        /// <summary>
+        /// The DocumentItem's own server id. The offline pull stores this as
+        /// `document_items.serverId`; without it every pulled line landed with a
+        /// null server id, so the offline editor could not update or delete a
+        /// line that came from another terminal — its push had no id to target.
+        /// </summary>
+        public int Id { get; set; }
         public int ProductId { get; set; }
         public decimal Quantity { get; set; }
         public decimal UnitPrice { get; set; }
         public decimal Discount { get; set; }
         public int DiscountType { get; set; }
         public decimal Total { get; set; }
+
+        /// Net unit price. Already projected by the query for the tax rollup —
+        /// surfaced here because the offline pull reads it to reconstruct
+        /// per-line tax locally.
+        public decimal PriceBeforeTax { get; set; }
     }
 }

@@ -1625,6 +1625,7 @@
   "syncingEllipsis": "Synchronisation…",
   "backupPathHintWindows": "ex. D:\\database\\Backup",
   "backupPathHintUnix": "ex. /home/user/backups",
+  "backupPathHintManaged": "Géré par l'application — touchez Ouvrir l'emplacement",
   "exchangeRateHint": "ex. 1.08  (1 principale = X secondaire)",
   "addServiceStatus": "Ajouter un statut de service",
   "clearFavorites": "Effacer les favoris",

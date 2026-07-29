@@ -2,21 +2,6 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "⚙️ Backend: API",
-      "type": "shell",
-      "command": "dotnet",
-      "args": [
-        "run"
-      ],
-      "options": {
-        "cwd": "${workspaceFolder}/Back-End/Web-POS.Api"
-      },
-      "isBackground": true,
-      "problemMatcher": [],
-      "inAgents": true,
-      "detail": "Runs the C# .NET API on localhost:5000+"
-    },
-    {
       "label": "📱 Frontend: Windows",
       "type": "shell",
       "command": "flutter",
@@ -34,6 +19,27 @@
       "detail": "Runs POS app on Windows desktop"
     },
     {
+      "label": "🌐 Dashboard: Run Web (Tailscale)",
+      "type": "shell",
+      "command": "flutter",
+      "args": [
+        "run",
+        "-d",
+        "chrome", 
+        "--web-hostname",
+        "100.114.12.38",
+        "--web-port",
+        "8081"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/Front-End"
+      },
+      "isBackground": true,
+      "problemMatcher": [],
+      "inAgents": true,
+      "detail": "Runs POS app on Web via Tailscale IP"
+    },
+    {
       "label": "📱 Frontend:Android",
       "type": "shell",
       "command": "flutter",
@@ -49,57 +55,6 @@
       "problemMatcher": [],
       "inAgents": true,
       "detail": "Runs POS app on Android device/emulator"
-    },
-    {
-      "label": "📱 POS App: Android Emulator (Debug)",
-      "type": "shell",
-      "command": "flutter",
-      "args": [
-        "run",
-        "-d",
-        "emulator-5554"
-      ],
-      "options": {
-        "cwd": "${workspaceFolder}/Front-End"
-      },
-      "isBackground": true,
-      "problemMatcher": [],
-      "inAgents": true,
-      "detail": "Runs POS on Android Emulator"
-    },
-    {
-      "label": "🍳 Kitchen Display: Flutter Windows (Debug)",
-      "type": "shell",
-      "command": "flutter",
-      "args": [
-        "run",
-        "-d",
-        "windows"
-      ],
-      "options": {
-        "cwd": "${workspaceFolder}/kitchen_display"
-      },
-      "isBackground": true,
-      "problemMatcher": [],
-      "inAgents": true,
-      "detail": "Runs KDS on Windows desktop"
-    },
-    {
-      "label": "🍳 Kitchen Display: Flutter Android (Debug)",
-      "type": "shell",
-      "command": "flutter",
-      "args": [
-        "run",
-        "-d",
-        "emulator-5554"
-      ],
-      "options": {
-        "cwd": "${workspaceFolder}/kitchen_display"
-      },
-      "isBackground": true,
-      "problemMatcher": [],
-      "inAgents": true,
-      "detail": "Runs KDS on Android device/emulator"
     },
     {
       "label": "📦 Frontend: Build Windows .exe (Release)",
@@ -132,7 +87,7 @@
       "inAgents": true
     },
     {
-      "label": "🍳 KDS: Build Windows .exe (Release)",
+      "label": "📦 KDS: Build Windows .exe (Release)",
       "type": "shell",
       "command": "flutter",
       "args": [
@@ -145,6 +100,22 @@
       "group": "build",
       "problemMatcher": [],
       "inAgents": true
+    },
+    {
+      "label": "🌐 Dashboard: Build Web (Release for IIS)",
+      "type": "shell",
+      "command": "flutter",
+      "args": [
+        "build",
+        "web"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/Front-End"
+      },
+      "group": "build",
+      "problemMatcher": [],
+      "inAgents": true,
+      "detail": "Builds production Web PWA for IIS Hosting"
     }
   ]
 }

@@ -1625,6 +1625,7 @@
   "syncingEllipsis": "جارٍ المزامنة…",
   "backupPathHintWindows": "مثال: D:\\database\\Backup",
   "backupPathHintUnix": "مثال: /home/user/backups",
+  "backupPathHintManaged": "يديره التطبيق — اضغط فتح الموقع لعرضه",
   "exchangeRateHint": "مثال: 1.08  (1 عملة أساسية = X عملة ثانوية)",
   "addServiceStatus": "إضافة حالة خدمة",
   "clearFavorites": "مسح المفضلة",
