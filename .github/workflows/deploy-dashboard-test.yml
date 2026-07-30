@@ -19,19 +19,15 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build Flutter Web (Release)
+        working-directory: ./OCTOPUS_DASHBOARD_WEB
         shell: powershell
         env:
           CI: true
         run: |
-          Set-Location "OCTOPUS_DASHBOARD_WEB"
-          
-          # 1. Force delete the stuck lock file from previous cancelled runs
+          # 1. Force delete the stuck lock file
           Remove-Item -Path "C:\flutter\bin\cache\lock_file" -Force -ErrorAction SilentlyContinue
           
-          # 2. Disable analytics
-          & "C:\flutter\bin\flutter.bat" config --no-analytics
-          
-          # 3. Run with verbose (-v) logging so it never hangs silently
+          # 2. Run Flutter commands (Analytics is now permanently disabled on the server!)
           & "C:\flutter\bin\flutter.bat" pub get -v
           & "C:\flutter\bin\flutter.bat" build web --release -v
           
