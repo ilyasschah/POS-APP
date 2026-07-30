@@ -24,8 +24,9 @@ jobs:
         shell: powershell
         run: |
           Set-Location "OCTOPUS_DASHBOARD_WEB"
-          flutter pub get
-          flutter build web --release
+          C:\Users\Administrator\Documents\ilyass\flutter\bin\flutter.bat pub get
+          C:\Users\Administrator\Documents\ilyass\flutter\bin\flutter.bat build web --release
+          
           if ($LASTEXITCODE -ne 0) { throw "flutter build web failed" }
           
           $publishDir = Join-Path $env:GITHUB_WORKSPACE "OCTOPUS_DASHBOARD_WEB\build\web"
