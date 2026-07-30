@@ -18,14 +18,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Setup Flutter step REMOVED completely!
-
       - name: Build Flutter Web (Release)
         shell: powershell
         run: |
           Set-Location "OCTOPUS_DASHBOARD_WEB"
-          C:\Users\Administrator\Documents\ilyass\flutter\bin\flutter.bat pub get
-          C:\Users\Administrator\Documents\ilyass\flutter\bin\flutter.bat build web --release
+          
+          # Call Flutter directly using your server's exact path
+          & "C:\Users\Administrator\Documents\ilyass\flutter\bin\flutter.bat" pub get
+          & "C:\Users\Administrator\Documents\ilyass\flutter\bin\flutter.bat" build web --release
           
           if ($LASTEXITCODE -ne 0) { throw "flutter build web failed" }
           
