@@ -20,10 +20,15 @@ jobs:
 
       - name: Build Flutter Web (Release)
         shell: powershell
+        env:
+          CI: true # Tells Flutter it's running in an automated environment
         run: |
           Set-Location "OCTOPUS_DASHBOARD_WEB"
           
-          # Call Flutter from the new public root directory
+          # Disable the analytics prompt so the runner doesn't freeze waiting for input
+          & "C:\flutter\bin\flutter.bat" config --no-analytics
+          
+          # Call Flutter directly using your server's exact path
           & "C:\flutter\bin\flutter.bat" pub get
           & "C:\flutter\bin\flutter.bat" build web --release
           
