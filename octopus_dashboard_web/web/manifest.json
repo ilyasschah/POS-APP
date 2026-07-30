@@ -1,0 +1,40 @@
+{
+    "id": "octopus-owner-dashboard",
+    "name": "Octopus Owner Dashboard",
+    "short_name": "Octopus",
+    "start_url": ".",
+    "scope": ".",
+    "display": "standalone",
+    "background_color": "#000000",
+    "theme_color": "#40C8E0",
+    "description": "Sales analytics, products, stock, documents and staff management for the Octopus POS system.",
+    "orientation": "any",
+    "prefer_related_applications": false,
+    "categories": ["business", "productivity", "finance"],
+    "icons": [
+        {
+            "src": "icons/Icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "icons/Icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "icons/Icon-maskable-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "icons/Icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
+}

@@ -38,7 +38,9 @@ class SyncManager {
     required this.dio,
     required this.authStorage,
     ImageSyncHelper? imageHelper,
-  }) : imageHelper = imageHelper ?? ImageSyncHelper(dio);
+  }) : imageHelper = imageHelper ?? ImageSyncHelper(dio) {
+    _installServerClockProbe();
+  }
 
   final AppDatabase db;
   final Dio dio;
@@ -2068,8 +2070,85 @@ class SyncManager {
     final row = await (db.select(
       db.syncMetaTable,
     )..where((t) => t.entity.equals(entity))).getSingleOrNull();
-    return row?.lastSyncedAt;
+    final stored = row?.lastSyncedAt;
+    if (stored == null) return null;
+
+    // Self-heal a watermark banked from a skewed device clock (every build
+    // before _watermarkFor existed banked one). If it sits in the server's
+    // FUTURE, `DateUpdated > watermark` can never match and this entity is
+    // permanently frozen. Discarding it costs one full-window re-pull, after
+    // which _setLastSync banks a server-anchored value and it stays healthy.
+    final serverNow =
+        DateTime.now().toUtc().add(_serverClockOffset ?? Duration.zero);
+    if (stored.isAfter(serverNow)) {
+      debugPrint(
+        'sync watermark for "$entity" was ahead of server time '
+        '($stored > $serverNow) — discarding and re-pulling in full.',
+      );
+      return null;
+    }
+    return stored;
   }
+
+  // ── Server-clock anchoring for delta watermarks ───────────────────────────
+  //
+  // 🚨 A watermark is sent back as `modifiedAfter` and compared SERVER-side
+  // against `DateUpdated`, which the server stamps from ITS OWN clock. Banking
+  // the DEVICE's clock is therefore only correct while the two agree — and on
+  // Android tablets they routinely don't. A tablet running a few minutes fast
+  // banks a future timestamp; from then on every row the server writes is
+  // `<= watermark` and is filtered out. Because the watermark only ever moves
+  // forward, the entity NEVER syncs again — no error, no retry, just silence.
+  // This is the "documents are not synced" report, and it applies to every
+  // delta pull here (products, customers, prices, …), not just documents.
+  //
+  // The HTTP `Date` response header is the server's own clock, so the offset
+  // below converts any device instant into server time and makes the watermark
+  // skew-proof. Refreshed on every response, so a device clock corrected
+  // mid-session is picked up immediately.
+  Duration? _serverClockOffset;
+
+  /// Overlap subtracted from every banked watermark.
+  ///
+  /// Separate concern from skew: rows written *while* a pull's query was
+  /// running sit between the query and the response stamp, and a watermark set
+  /// to the response instant would step straight over them. Re-pulling a
+  /// minute of overlap is free — every pull upserts by server id.
+  static const _kWatermarkOverlap = Duration(seconds: 60);
+
+  void _installServerClockProbe() {
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onResponse: (res, handler) {
+          _noteServerDate(res.headers.value('date'));
+          handler.next(res);
+        },
+        onError: (err, handler) {
+          _noteServerDate(err.response?.headers.value('date'));
+          handler.next(err);
+        },
+      ),
+    );
+  }
+
+  void _noteServerDate(String? raw) {
+    if (raw == null || raw.isEmpty) return;
+    try {
+      _serverClockOffset = HttpDate.parse(raw).toUtc().difference(
+            DateTime.now().toUtc(),
+          );
+    } catch (_) {
+      // Unparseable header — keep the previous offset rather than guessing.
+    }
+  }
+
+  /// Converts a device instant to the server's clock and backs it off by
+  /// [_kWatermarkOverlap]. Falls back to the raw instant when no response has
+  /// carried a usable `Date` header yet (offset stays null).
+  DateTime _watermarkFor(DateTime deviceInstant) => deviceInstant
+      .toUtc()
+      .add(_serverClockOffset ?? Duration.zero)
+      .subtract(_kWatermarkOverlap);
 
   Future<void> _setLastSync(String entity, DateTime time) async {
     await db
@@ -2077,7 +2156,7 @@ class SyncManager {
         .insertOnConflictUpdate(
           SyncMetaTableCompanion(
             entity: Value(entity),
-            lastSyncedAt: Value(time.toUtc()),
+            lastSyncedAt: Value(_watermarkFor(time)),
           ),
         );
   }

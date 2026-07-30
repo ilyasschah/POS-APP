@@ -93,6 +93,16 @@ class CartState {
     // must drop any booking left on the cart from a previous one, or the menu
     // header keeps captioning it with the old guest's booking banner.
     bool clearBooking = false,
+    // And the same escape hatch for the local-row link. `existingLocalOrderId:
+    // null` reads like "forget which row this cart came from", but the
+    // `?? this.x` pattern below made it a NO-OP, so the id of the PREVIOUSLY
+    // open order survived into the next one. saveOrderLocally then wrote this
+    // order's contents over that older row — the older order silently moved
+    // onto this table, and the order actually being edited had no local row, so
+    // the next open-orders pull re-materialised it as a second `svr_` row on
+    // the same table. That is the "saving an old order creates a duplicate"
+    // report. Callers that mean "no local row yet" must set this.
+    bool clearExistingLocalOrderId = false,
   }) {
     return CartState(
       activePosOrderId: activePosOrderId ?? this.activePosOrderId,
@@ -120,7 +130,9 @@ class CartState {
       bookingId: clearBooking ? null : (bookingId ?? this.bookingId),
       bookingStaffId:
           clearBooking ? null : (bookingStaffId ?? this.bookingStaffId),
-      existingLocalOrderId: existingLocalOrderId ?? this.existingLocalOrderId,
+      existingLocalOrderId: clearExistingLocalOrderId
+          ? null
+          : (existingLocalOrderId ?? this.existingLocalOrderId),
     );
   }
 }
@@ -1056,7 +1068,16 @@ class CartNotifier extends Notifier<CartState> {
 
       final customerId = order['customerId'] ?? order['CustomerId'];
       if (customerId != null) {
-        final customers = ref.read(allCustomersProvider).value ?? const [];
+        // AWAIT the list rather than reading a cold `.value`. Nothing keeps
+        // allCustomersProvider warm on a reopen path, so the snapshot read was
+        // usually null and the order silently came back as Walk-in — the same
+        // cold-read trap already fixed in _seedDefaultCustomer.
+        List<Customer> customers;
+        try {
+          customers = await ref.read(allCustomersProvider.future);
+        } catch (_) {
+          customers = const [];
+        }
         final customer = customers.where((c) => c.id == customerId).firstOrNull;
         if (customer != null) {
           await setCustomer(companyId, customer);
@@ -1120,6 +1141,10 @@ class CartNotifier extends Notifier<CartState> {
         bookingId: loadedBookingId,
         clearBooking: loadedBookingId == null,
         isLoading: false,
+        // This is the API fallback — the local lookup above found nothing, so
+        // this cart has no local row. Without clearing, the previous order's
+        // localId stayed on the cart and the next save overwrote THAT order.
+        clearExistingLocalOrderId: true,
       );
 
       final warehouses = ref.read(allWarehousesProvider).value ?? const [];
@@ -1306,7 +1331,10 @@ class CartNotifier extends Notifier<CartState> {
   /// no serverId yet (created offline, not yet synced). Bypasses the API so
   /// the 404 that `loadOrderById` would get for id=0 never fires.
   Future<bool> loadOrderFromLocal(String localId) async {
-    state = state.copyWith(isLoading: true, existingLocalOrderId: null);
+    state = state.copyWith(
+      isLoading: true,
+      clearExistingLocalOrderId: true,
+    );
     try {
       final db = ref.read(appDatabaseProvider);
 
@@ -1480,7 +1508,10 @@ class CartNotifier extends Notifier<CartState> {
     int posOrderId,
     int warehouseId,
   ) async {
-    state = state.copyWith(isLoading: true, existingLocalOrderId: null);
+    state = state.copyWith(
+      isLoading: true,
+      clearExistingLocalOrderId: true,
+    );
     try {
       final db = ref.read(appDatabaseProvider);
       final localRow =
@@ -1500,7 +1531,16 @@ class CartNotifier extends Notifier<CartState> {
       final itemsData = await apiClient.getOrderItems(companyId, posOrderId);
       final customerId = order['customerId'] ?? order['CustomerId'];
       if (customerId != null) {
-        final customers = ref.read(allCustomersProvider).value ?? const [];
+        // AWAIT the list rather than reading a cold `.value`. Nothing keeps
+        // allCustomersProvider warm on a reopen path, so the snapshot read was
+        // usually null and the order silently came back as Walk-in — the same
+        // cold-read trap already fixed in _seedDefaultCustomer.
+        List<Customer> customers;
+        try {
+          customers = await ref.read(allCustomersProvider.future);
+        } catch (_) {
+          customers = const [];
+        }
         final customer = customers.where((c) => c.id == customerId).firstOrNull;
         if (customer != null) {
           await setCustomer(companyId, customer);
@@ -1563,6 +1603,10 @@ class CartNotifier extends Notifier<CartState> {
         clearBooking: loadedBookingId == null,
         isLoading: false,
         existingLocalOrderId: localRow?.localId,
+        // localRow is null on this branch (it is the API fallback), so the line
+        // above is a no-op by design — be explicit that this cart has no local
+        // row rather than letting the previous order's id ride along.
+        clearExistingLocalOrderId: localRow == null,
       );
 
       final warehouses = ref.read(allWarehousesProvider).value ?? const [];

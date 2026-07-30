@@ -1,0 +1,18 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Dashboard (Web Tailscale)",
+            "request": "launch",
+            "type": "dart",
+            "args": [
+                "-d",
+                "chrome",
+                "--web-hostname",
+                "100.114.12.38",
+                "--web-port",
+                "8081"
+            ]
+        }
+    ]
+}

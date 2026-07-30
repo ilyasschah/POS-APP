@@ -26,19 +26,11 @@ struct UsersView: View {
             .navigationTitle("User Management")
             .background(.ultraThinMaterial)
             .refreshable { await reload() }
-            .task { await reload() }
-            .confirmationDialog("Reset this user's password?",
-                                isPresented: Binding(
-                                    get: { userPendingReset != nil },
-                                    set: { if !$0 { userPendingReset = nil } }),
-                                titleVisibility: .visible,
-                                presenting: userPendingReset) { user in
-                Button("Reset Password", role: .destructive) {
-                    Task { await performReset(for: user) }
+            .onAppear { Task { await reload() } }
+            .sheet(item: $userPendingReset) { user in
+                ResetPasswordSheet(user: user) { newPassword in
+                    await performReset(for: user, newPassword: newPassword)
                 }
-                Button("Cancel", role: .cancel) { userPendingReset = nil }
-            } message: { user in
-                Text("An admin password reset will be triggered for \(user.userName ?? user.email ?? "this user").")
             }
             .alert("Password Reset", isPresented: $showResult) {
                 Button("OK", role: .cancel) { }
@@ -52,13 +44,13 @@ struct UsersView: View {
     private func userRow(_ user: UserDto) -> some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text(user.userName ?? user.email ?? "Unknown")
+                Text(user.displayName)
                     .font(.headline)
                 HStack(spacing: 8) {
-                    Text(user.role ?? "No role")
+                    Text(user.roleName)
                         .font(.caption)
                         .foregroundColor(.secondary)
-                    statusBadge(isBlocked: user.isBlocked ?? false)
+                    statusBadge(isEnabled: user.isEnabled)
                 }
             }
             Spacer()
@@ -74,14 +66,14 @@ struct UsersView: View {
     }
 
     @ViewBuilder
-    private func statusBadge(isBlocked: Bool) -> some View {
-        Text(isBlocked ? "Blocked" : "Active")
+    private func statusBadge(isEnabled: Bool) -> some View {
+        Text(isEnabled ? "Active" : "Disabled")
             .font(.caption2)
             .fontWeight(.semibold)
             .padding(.horizontal, 8)
             .padding(.vertical, 2)
-            .background((isBlocked ? Color.red : Color.green).opacity(0.2), in: Capsule())
-            .foregroundColor(isBlocked ? .red : .green)
+            .background((isEnabled ? Color.green : Color.red).opacity(0.2), in: Capsule())
+            .foregroundColor(isEnabled ? .green : .red)
     }
 
     private func reload() async {
@@ -89,12 +81,67 @@ struct UsersView: View {
         await vm.load(apiBaseUrl: auth.apiBaseUrl, token: token)
     }
 
-    private func performReset(for user: UserDto) async {
-        let ok = await vm.resetPassword(for: user, apiBaseUrl: auth.apiBaseUrl, token: auth.jwtToken ?? "")
-        userPendingReset = nil
+    private func performReset(for user: UserDto, newPassword: String) async -> Bool {
+        let ok = await vm.resetPassword(for: user,
+                                        newPassword: newPassword,
+                                        apiBaseUrl: auth.apiBaseUrl,
+                                        token: auth.jwtToken ?? "")
         resultMessage = ok
-            ? "Password reset triggered for \(user.userName ?? user.email ?? "the user")."
+            ? "Password reset for \(user.displayName)."
             : (vm.errorMessage ?? "Password reset failed.")
         showResult = true
+        return ok
+    }
+}
+
+// MARK: - Reset password sheet
+
+struct ResetPasswordSheet: View {
+    let user: UserDto
+    let onReset: (String) async -> Bool
+
+    @State private var newPassword = ""
+    @State private var confirmPassword = ""
+    @State private var isSaving = false
+    @Environment(\.dismiss) private var dismiss
+
+    private var canSubmit: Bool {
+        newPassword.count >= 6 && newPassword == confirmPassword
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Reset password for \(user.displayName)") {
+                    SecureField("New password", text: $newPassword)
+                    SecureField("Confirm password", text: $confirmPassword)
+                    if !confirmPassword.isEmpty && newPassword != confirmPassword {
+                        Text("Passwords don't match")
+                            .font(.caption)
+                            .foregroundColor(.red)
+                    }
+                }
+            }
+            .navigationTitle("Reset Password")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {
+                        Task {
+                            isSaving = true
+                            let ok = await onReset(newPassword)
+                            isSaving = false
+                            if ok { dismiss() }
+                        }
+                    } label: {
+                        if isSaving { ProgressView() } else { Text("Reset") }
+                    }
+                    .disabled(isSaving || !canSubmit)
+                }
+            }
+        }
     }
 }

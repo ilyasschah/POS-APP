@@ -76,6 +76,7 @@ namespace Api.Queries.DocumentQuery
                     .Where(di => docIds.Contains(di.DocumentId))
                     .Select(di => new
                     {
+                        di.Id,
                         di.DocumentId,
                         di.ProductId,
                         di.Quantity,
@@ -102,12 +103,14 @@ namespace Api.Queries.DocumentQuery
                             g => g.Key,
                             g => g.Select(i => new SalesHistoryItemDto
                             {
-                                ProductId    = i.ProductId,
-                                Quantity     = i.Quantity,
-                                UnitPrice    = i.Price,
-                                Discount     = i.Discount,
-                                DiscountType = i.DiscountType,
-                                Total        = i.Total,
+                                Id             = i.Id,
+                                ProductId      = i.ProductId,
+                                Quantity       = i.Quantity,
+                                UnitPrice      = i.Price,
+                                Discount       = i.Discount,
+                                DiscountType   = i.DiscountType,
+                                Total          = i.Total,
+                                PriceBeforeTax = i.PriceBeforeTax,
                             }).ToList())
                     : new Dictionary<int, List<SalesHistoryItemDto>>();
 

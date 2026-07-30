@@ -5,9 +5,7 @@ struct DashboardView: View {
     @Bindable var auth: AuthManager
     @State private var dashboard = DashboardManager()
     @State private var showDatePicker = false
-    @AppStorage("currencySymbol", store: UserDefaults(suiteName: "group.com.futur3.ownerapp")) private var currencySymbol = "DH"
     @AppStorage("isDarkMode") private var isDarkMode = true
-    @State private var showSettings = false
     var body: some View {
         NavigationStack {
             ZStack {
@@ -210,18 +208,6 @@ struct DashboardView: View {
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {ToolbarItem(placement: .topBarTrailing) {
-                                Button(action: {
-                                    showSettings = true
-                                }) {
-                                    Image(systemName: "gearshape.fill")
-                                        .foregroundColor(.primary)
-                                }
-                            }
-                        }
-                        .sheet(isPresented: $showSettings) {
-                            SettingsView(auth: auth)
-                        }
             .sheet(isPresented: $showDatePicker) {
                 ScrollView {
                     VStack(spacing: 20) {
@@ -346,6 +332,6 @@ struct DashboardView: View {
             
             let formattedNumber = formatter.string(from: NSNumber(value: value)) ?? "\(value)"
             
-            return "\(formattedNumber) \(currencySymbol)"
+            return "\(formattedNumber) DH"
         }
 }

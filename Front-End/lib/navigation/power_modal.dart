@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
+import 'package:pos_app/core/responsive.dart';
 import 'package:pos_app/navigation/nav_widgets.dart';
 
 class PowerModal extends StatelessWidget {
@@ -9,11 +10,21 @@ class PowerModal extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    // Restart and "Turn off PC" are DESKTOP-ONLY facts about the machine.
+    // On an Android tablet neither is reachable: relaunching needs
+    // Platform.resolvedExecutable (there is no such binary to exec) and the
+    // shutdown branch below matches no platform at all, so the button sat
+    // there labelled "Turn off PC" and did precisely nothing when tapped.
+    // Offering an action the platform cannot perform is the bug — hide them.
+    final isDesktop =
+        Platform.isWindows || Platform.isMacOS || Platform.isLinux;
     return Dialog(
       backgroundColor: context.navSidebarBg,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Container(
-        width: 600,
+        // A fixed 600 overflows a 7"-class tablet in landscape once the dialog
+        // insets are taken off; cap it to the viewport.
+        width: context.dialogWidth(600),
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -41,46 +52,48 @@ class PowerModal extends StatelessWidget {
                   iconColor: cs.onSurface,
                   onTap: () => exit(0),
                 ),
-                _PowerOptionCard(
-                  icon: Icons.refresh,
-                  label: AppLocalizations.of(context).restartApplication,
-                  iconColor: cs.onSurface,
-                  onTap: () async {
-                    try {
-                      // FIX: Use Process.start in detached mode so it doesn't wait
-                      await Process.start(
-                        Platform.resolvedExecutable,
-                        [],
-                        mode: ProcessStartMode.detached,
-                      );
-                      exit(0); // Now this triggers immediately
-                    } catch (e) {
-                      if (context.mounted) Navigator.pop(context);
-                    }
-                  },
-                ),
-                _PowerOptionCard(
-                  icon: Icons.power_settings_new,
-                  label: AppLocalizations.of(context).turnOffPc,
-                  iconColor: cs.error,
-                  textColor: cs.error,
-                  onTap: () async {
-                    try {
-                      if (Platform.isWindows) {
-                        await Process.run('shutdown', ['/s', '/t', '0']);
-                      } else if (Platform.isMacOS) {
-                        await Process.run('osascript', [
-                          '-e',
-                          'tell app "System Events" to shut down',
-                        ]);
-                      } else if (Platform.isLinux) {
-                        await Process.run('systemctl', ['poweroff']);
+                if (isDesktop) ...[
+                  _PowerOptionCard(
+                    icon: Icons.refresh,
+                    label: AppLocalizations.of(context).restartApplication,
+                    iconColor: cs.onSurface,
+                    onTap: () async {
+                      try {
+                        // FIX: Use Process.start in detached mode so it doesn't wait
+                        await Process.start(
+                          Platform.resolvedExecutable,
+                          [],
+                          mode: ProcessStartMode.detached,
+                        );
+                        exit(0); // Now this triggers immediately
+                      } catch (e) {
+                        if (context.mounted) Navigator.pop(context);
                       }
-                    } catch (e) {
-                      if (context.mounted) Navigator.pop(context);
-                    }
-                  },
-                ),
+                    },
+                  ),
+                  _PowerOptionCard(
+                    icon: Icons.power_settings_new,
+                    label: AppLocalizations.of(context).turnOffPc,
+                    iconColor: cs.error,
+                    textColor: cs.error,
+                    onTap: () async {
+                      try {
+                        if (Platform.isWindows) {
+                          await Process.run('shutdown', ['/s', '/t', '0']);
+                        } else if (Platform.isMacOS) {
+                          await Process.run('osascript', [
+                            '-e',
+                            'tell app "System Events" to shut down',
+                          ]);
+                        } else if (Platform.isLinux) {
+                          await Process.run('systemctl', ['poweroff']);
+                        }
+                      } catch (e) {
+                        if (context.mounted) Navigator.pop(context);
+                      }
+                    },
+                  ),
+                ],
               ],
             ),
             const SizedBox(height: 32),

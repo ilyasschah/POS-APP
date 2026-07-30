@@ -4,13 +4,10 @@ struct SettingsView: View {
     @Bindable var auth: AuthManager
     
     // Auto-saving preferences using AppStorage
-    @AppStorage("currencySymbol", store: UserDefaults(suiteName: "group.com.futur3.ownerapp")) private var currencySymbol = "$"
     @AppStorage("useLiquidGlass") private var useLiquidGlass = true
     @AppStorage("glassTransparency") private var glassTransparency = 0.2
     @AppStorage("isDarkMode") private var isDarkMode = true
-    
-    @Environment(\.dismiss) var dismiss
-    
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -52,28 +49,11 @@ struct SettingsView: View {
                         }
                     }
                     .listRowBackground(rowBackground)
-                    
-                    Section(header: Text("Localization")) {
-                        HStack {
-                            Text("Currency Symbol")
-                            Spacer()
-                            TextField("$", text: $currencySymbol)
-                                .multilineTextAlignment(.trailing)
-                                .frame(width: 50)
-                                .textFieldStyle(.roundedBorder)
-                        }
-                    }
-                    .listRowBackground(rowBackground)
                 }
                 .scrollContentBackground(.hidden)
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }
-                }
-            }
             // Apply the dark/light mode preference strictly to this view hierarchy
             .preferredColorScheme(isDarkMode ? .dark : .light)
         }

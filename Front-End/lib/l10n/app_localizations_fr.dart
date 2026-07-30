@@ -5453,6 +5453,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get backupPathHintUnix => 'ex. /home/user/backups';
 
   @override
+  String get backupPathHintManaged =>
+      'Géré par l\'application — touchez Ouvrir l\'emplacement';
+
+  @override
   String get exchangeRateHint => 'ex. 1.08  (1 principale = X secondaire)';
 
   @override

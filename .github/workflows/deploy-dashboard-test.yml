@@ -1,0 +1,68 @@
+name: Deploy Dashboard to OVH Test
+
+# Runs on the self-hosted runner installed directly on the OVH test box.
+# Builds OCTOPUS_DASHBOARD_WEB and replaces files under C:\inetpub\wwwroot\dashboard
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "OCTOPUS_DASHBOARD_WEB/**"
+      - ".github/workflows/deploy-dashboard-test.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-dashboard-test
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, Windows, ovh-test]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Build Flutter Web (Release)
+        shell: powershell
+        run: |
+          Set-Location "OCTOPUS_DASHBOARD_WEB"
+          flutter pub get
+          flutter build web --release
+          if ($LASTEXITCODE -ne 0) { throw "flutter build web failed" }
+          
+          $publishDir = Join-Path $env:GITHUB_WORKSPACE "OCTOPUS_DASHBOARD_WEB\build\web"
+          echo "PUBLISH_DIR=$publishDir" >> $env:GITHUB_ENV
+
+      - name: Replace site files
+        shell: powershell
+        run: |
+          $targetDir = "C:\inetpub\wwwroot\dashboard"
+          if (-not (Test-Path $targetDir)) { New-Item -ItemType Directory -Path $targetDir -Force }
+          
+          # Robocopy replaces all static site files
+          robocopy "$env:PUBLISH_DIR" "$targetDir" /MIR /NFL /NDL /NJH /NJS
+          $rc = $LASTEXITCODE
+          if ($rc -ge 8) { throw "robocopy failed with exit code $rc" }
+          
+          # Exit code 0-7 from robocopy represents successful file operations
+          exit 0
+
+      - name: Health check
+        if: always()
+        shell: powershell
+        run: |
+          $ok = $false
+          for ($i = 0; $i -lt 10; $i++) {
+            try {
+              # Adjust URI if your IIS site is bound to a specific port or subpath
+              $r = Invoke-WebRequest -Uri "https://51-91-6-6.sslip.io/dashboard" -UseBasicParsing -TimeoutSec 10
+              if ($r.StatusCode -eq 200) { $ok = $true; break }
+            } catch {}
+            Start-Sleep -Seconds 3
+          }
+          if (-not $ok) { throw "Health check failed: Dashboard did not return 200 after deploy" }
+          Write-Host "Dashboard deploy healthy!"
