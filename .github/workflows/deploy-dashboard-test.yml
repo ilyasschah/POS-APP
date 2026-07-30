@@ -21,16 +21,19 @@ jobs:
       - name: Build Flutter Web (Release)
         shell: powershell
         env:
-          CI: true # Tells Flutter it's running in an automated environment
+          CI: true
         run: |
           Set-Location "OCTOPUS_DASHBOARD_WEB"
           
-          # Disable the analytics prompt so the runner doesn't freeze waiting for input
+          # 1. Force delete the stuck lock file from previous cancelled runs
+          Remove-Item -Path "C:\flutter\bin\cache\lock_file" -Force -ErrorAction SilentlyContinue
+          
+          # 2. Disable analytics
           & "C:\flutter\bin\flutter.bat" config --no-analytics
           
-          # Call Flutter directly using your server's exact path
-          & "C:\flutter\bin\flutter.bat" pub get
-          & "C:\flutter\bin\flutter.bat" build web --release
+          # 3. Run with verbose (-v) logging so it never hangs silently
+          & "C:\flutter\bin\flutter.bat" pub get -v
+          & "C:\flutter\bin\flutter.bat" build web --release -v
           
           if ($LASTEXITCODE -ne 0) { throw "flutter build web failed" }
           
