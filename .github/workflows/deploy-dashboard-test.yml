@@ -23,9 +23,9 @@ jobs:
         run: |
           Set-Location "OCTOPUS_DASHBOARD_WEB"
           
-          # Call Flutter directly using your server's exact path
-          & "C:\Users\Administrator\Documents\ilyass\flutter\bin\flutter.bat" pub get
-          & "C:\Users\Administrator\Documents\ilyass\flutter\bin\flutter.bat" build web --release
+          # Call Flutter from the new public root directory
+          & "C:\flutter\bin\flutter.bat" pub get
+          & "C:\flutter\bin\flutter.bat" build web --release
           
           if ($LASTEXITCODE -ne 0) { throw "flutter build web failed" }
           
