@@ -17,7 +17,6 @@ jobs:
     runs-on: [self-hosted, Windows, ovh-test]
     steps:
       - uses: actions/checkout@v4
-
       - name: Build Flutter Web (Release)
         working-directory: ./OCTOPUS_DASHBOARD_WEB
         shell: powershell
@@ -27,7 +26,13 @@ jobs:
           # 1. Force delete the stuck lock file
           Remove-Item -Path "C:\flutter\bin\cache\lock_file" -Force -ErrorAction SilentlyContinue
           
-          # 2. Run Flutter commands (Analytics is now permanently disabled on the server!)
+          # 2. Tell Git the Flutter directory is safe for the background runner
+          git config --global --add safe.directory C:/flutter
+          
+          # 3. Disable analytics
+          & "C:\flutter\bin\flutter.bat" config --no-analytics
+          
+          # 4. Run Flutter commands
           & "C:\flutter\bin\flutter.bat" pub get -v
           & "C:\flutter\bin\flutter.bat" build web --release -v
           
