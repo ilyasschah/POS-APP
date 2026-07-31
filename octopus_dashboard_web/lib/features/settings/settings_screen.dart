@@ -31,10 +31,7 @@ class SettingsScreen extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  'Sign out?',
-                  style: AppText.headline(palette.primaryText),
-                ),
+                Text('Sign out?', style: AppText.headline(palette.primaryText)),
                 const SizedBox(height: 10),
                 Text(
                   "You'll need to sign in again to view your dashboard.",
@@ -151,8 +148,30 @@ class SettingsScreen extends ConsumerWidget {
                   ],
                 ),
               ),
-
               const SizedBox(height: 20),
+              _SectionLabel('Language / اللغة'),
+              GlassCard(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: SegmentedButton<String>(
+                    segments: const [
+                      ButtonSegment(value: 'en', label: Text('English')),
+                      ButtonSegment(value: 'fr', label: Text('Français')),
+                      ButtonSegment(value: 'ar', label: Text('العربية')),
+                    ],
+                    selected: {settings.language},
+                    onSelectionChanged: (Set<String> newSelection) {
+                      settingsController.setLanguage(newSelection.first);
+                    },
+                    style: SegmentedButton.styleFrom(
+                      selectedBackgroundColor: palette.accent.withValues(
+                        alpha: 0.2,
+                      ),
+                      selectedForegroundColor: palette.accent,
+                    ),
+                  ),
+                ),
+              ),
               _SectionLabel('Appearance & UI'),
               GlassCard(
                 child: Column(
