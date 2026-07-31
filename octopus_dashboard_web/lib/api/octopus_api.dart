@@ -29,7 +29,7 @@ class LoginResult {
 /// users list at `GetAllUsers` while everything else lists at `GetAll`.
 /// These are not typos to "fix" — getting them wrong 404s.
 class OctopusApi {
-  OctopusApi({required String baseUrl, String? token})
+  OctopusApi({required String baseUrl, String? token, this.onTokenExpired})
     : _dio = Dio(
         BaseOptions(
           baseUrl: normalizeBaseUrl(baseUrl),
@@ -44,6 +44,7 @@ class OctopusApi {
       );
 
   final Dio _dio;
+  final void Function()? onTokenExpired;
 
   /// Trims stray whitespace and trailing slashes so a user-typed URL like
   /// `https://host/api/ ` still composes correctly.
@@ -240,6 +241,9 @@ class OctopusApi {
     try {
       return await request();
     } on DioException catch (error) {
+      if (error.response?.statusCode == 401) {
+        onTokenExpired?.call();
+      }
       throw ApiException.from(error);
     } on ApiException {
       rethrow;

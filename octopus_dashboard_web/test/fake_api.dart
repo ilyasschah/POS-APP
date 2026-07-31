@@ -12,10 +12,12 @@ import 'package:octopus_dashboard_web/models/user.dart';
 /// product with no stock row — so layout tests exercise the cases most likely
 /// to overflow.
 class FakeApi implements OctopusApi {
-  FakeApi({this.failWith});
+  FakeApi({this.failWith, this.onTokenExpired});
 
   /// When set, every call throws this instead of returning data.
   final Object? failWith;
+  @override
+  final void Function()? onTokenExpired;
 
   Future<T> _respond<T>(T value) async {
     if (failWith != null) throw failWith!;
@@ -47,14 +49,15 @@ class FakeApi implements OctopusApi {
       ],
       topProducts: const [
         TopProduct(
-          productName:
-              'Extra Large Double Cheeseburger With Everything On It',
+          productName: 'Extra Large Double Cheeseburger With Everything On It',
           quantity: 40,
           total: 400,
         ),
         TopProduct(productName: 'Pepsi', quantity: 25, total: 250),
       ],
-      topProductGroups: const [TopProductGroup(groupName: 'Drinks', total: 900)],
+      topProductGroups: const [
+        TopProductGroup(groupName: 'Drinks', total: 900),
+      ],
       topCustomers: const [
         TopCustomer(
           customerName: 'A Very Long Corporate Customer Name SARL',
