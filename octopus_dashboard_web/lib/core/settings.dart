@@ -17,6 +17,7 @@ class AppSettings {
     required this.darkMode,
     required this.glassEnabled,
     required this.glassOpacity,
+    required this.language,
   });
 
   /// Dark is the default — this is a dark-mode-first design.
@@ -29,15 +30,18 @@ class AppSettings {
 
   /// Tint strength of translucent panels, 0.05–0.50.
   final double glassOpacity;
+  final String language;
 
   AppSettings copyWith({
     bool? darkMode,
     bool? glassEnabled,
     double? glassOpacity,
+    String? language,
   }) => AppSettings(
     darkMode: darkMode ?? this.darkMode,
     glassEnabled: glassEnabled ?? this.glassEnabled,
     glassOpacity: glassOpacity ?? this.glassOpacity,
+    language: language ?? this.language,
   );
 
   static const double minOpacity = 0.05;
@@ -58,10 +62,15 @@ class SettingsController extends Notifier<AppSettings> {
       glassEnabled: prefs.getBool(PrefKeys.glassEnabled) ?? true,
       glassOpacity:
           prefs.getDouble(PrefKeys.glassOpacity) ?? AppSettings.defaultOpacity,
+      language: prefs.getString(PrefKeys.language) ?? 'en',
     );
   }
 
   SharedPreferences get _prefs => ref.read(sharedPreferencesProvider);
+  void setLanguage(String code) {
+    state = state.copyWith(language: code);
+    _prefs.setString(PrefKeys.language, code);
+  }
 
   void setDarkMode(bool value) {
     state = state.copyWith(darkMode: value);

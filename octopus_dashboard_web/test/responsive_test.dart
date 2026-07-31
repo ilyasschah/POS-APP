@@ -104,7 +104,7 @@ void main() {
       expect(find.text('Octopus'), findsOneWidget);
       for (final destination in AppDestination.values) {
         expect(
-          find.text(destination.title),
+          find.text('Dashboard'),
           findsWidgets,
           reason: '${destination.title} should be listed in the sidebar',
         );

@@ -1,8 +1,8 @@
-import 'package:flutter/gestures.dart';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'l10n/app_localizations.dart';
 import 'core/settings.dart';
 import 'core/theme.dart';
 import 'features/auth/auth_controller.dart';
@@ -11,9 +11,7 @@ import 'features/shell/app_shell.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Resolved before the first frame so the persisted theme is already correct
-  // when the app paints — no flash of the wrong mode on load.
+  channelBuffers.resize('flutter/lifecycle', 100);
   final prefs = await SharedPreferences.getInstance();
 
   runApp(
@@ -29,6 +27,7 @@ class OctopusApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final language = ref.watch(settingsProvider.select((s) => s.language));
     final isDarkMode = ref.watch(settingsProvider.select((s) => s.darkMode));
     final isAuthenticated = ref.watch(
       authProvider.select((s) => s.isAuthenticated),
@@ -37,10 +36,11 @@ class OctopusApp extends ConsumerWidget {
     return MaterialApp(
       title: 'Octopus Owner Dashboard',
       debugShowCheckedModeBanner: false,
+      locale: Locale(language),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       theme: AppTheme.build(Brightness.light),
       darkTheme: AppTheme.build(Brightness.dark),
-      // Dark-mode-first: the active theme follows the user's own preference,
-      // not the OS setting.
       themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
       home: isAuthenticated ? const AppShell() : const LoginScreen(),
       scrollBehavior: const _AppScrollBehavior(),
