@@ -17,7 +17,7 @@ Future<ProviderContainer> _container({Object? failWith}) async {
     overrides: [
       sharedPreferencesProvider.overrideWithValue(prefs),
       apiFactoryProvider.overrideWithValue(
-        ({required String baseUrl, String? token}) =>
+        ({required String baseUrl, String? token, onTokenExpired}) =>
             FakeApi(failWith: failWith),
       ),
     ],
@@ -123,18 +123,16 @@ void main() {
   testWidgets('the login card stays narrow on a wide desktop viewport', (
     tester,
   ) async {
-    await _pumpLogin(
-      tester,
-      await _container(),
-      size: const Size(1920, 1080),
-    );
+    await _pumpLogin(tester, await _container(), size: const Size(1920, 1080));
 
     // The form must not stretch across a 1920px monitor.
     final card = tester.getSize(
-      find.ancestor(
-        of: find.text('Octopus Owner'),
-        matching: find.byType(ConstrainedBox),
-      ).first,
+      find
+          .ancestor(
+            of: find.text('Octopus Owner'),
+            matching: find.byType(ConstrainedBox),
+          )
+          .first,
     );
     expect(card.width, lessThanOrEqualTo(520));
     expect(tester.takeException(), isNull);

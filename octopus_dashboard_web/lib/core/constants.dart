@@ -40,4 +40,5 @@ abstract final class PrefKeys {
   static const glassEnabled = 'glassEffectEnabled';
   static const glassOpacity = 'glassTransparency';
   static const apiBaseUrl = 'apiBaseUrl';
+  static const apiToken = 'apiToken';
 }

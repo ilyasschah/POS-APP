@@ -76,6 +76,7 @@ class AuthController extends Notifier<AuthState> {
       // build shipped with.
       baseUrl: prefs.getString(PrefKeys.apiBaseUrl) ?? AppConfig.defaultBaseUrl,
       email: AppConfig.defaultEmail,
+      token: prefs.getString(PrefKeys.apiToken),
     );
   }
 
@@ -121,6 +122,9 @@ class AuthController extends Notifier<AuthState> {
         await ref
             .read(sharedPreferencesProvider)
             .setString(PrefKeys.apiBaseUrl, baseUrl);
+        await ref
+            .read(sharedPreferencesProvider)
+            .setString(PrefKeys.apiToken, result.token!);
       } catch (_) {
         // Ignored on purpose.
       }
@@ -149,13 +153,21 @@ class AuthController extends Notifier<AuthState> {
   }
 
   void signOut() {
+    try {
+      ref.read(sharedPreferencesProvider).remove(PrefKeys.apiToken);
+    } catch (_) {}
     state = state.copyWith(clearToken: true, clearError: true);
   }
 }
 
 /// Constructs API clients. Overridden in tests to inject a fake; there is no
 /// other reason to replace it.
-typedef ApiFactory = OctopusApi Function({required String baseUrl, String? token});
+typedef ApiFactory =
+    OctopusApi Function({
+      required String baseUrl,
+      String? token,
+      void Function()? onTokenExpired,
+    });
 
 final apiFactoryProvider = Provider<ApiFactory>((ref) => OctopusApi.new);
 
@@ -169,12 +181,13 @@ final authProvider = NotifierProvider<AuthController, AuthState>(
 /// (such as `isLoading` flipping during sign-in) don't needlessly rebuild the
 /// client or invalidate every screen that depends on it.
 final apiProvider = Provider<OctopusApi>((ref) {
-  final session = ref.watch(
-    authProvider.select((s) => (s.baseUrl, s.token)),
-  );
+  final session = ref.watch(authProvider.select((s) => (s.baseUrl, s.token)));
   final api = ref.read(apiFactoryProvider)(
     baseUrl: session.$1,
     token: session.$2,
+    onTokenExpired: () {
+      ref.read(authProvider.notifier).signOut();
+    },
   );
   ref.onDispose(api.close);
   return api;
