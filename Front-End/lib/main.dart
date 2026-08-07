@@ -14,6 +14,8 @@ import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:pos_app/license/license_service.dart';
 import 'package:pos_app/license/subscription_blocked_screen.dart';
 import 'package:pos_app/settings/settings_provider.dart';
+import 'package:pos_app/database/database_provider.dart';
+import 'package:pos_app/settings/device_scoped_settings.dart';
 import 'package:pos_app/settings/local_ui_prefs.dart';
 import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/app_settings/app_settings_provider.dart';
@@ -38,6 +40,10 @@ void main() async {
   // (master-login/sync need it, and it can't come from the cloud-synced settings
   // because you need the endpoint to reach the cloud in the first place).
   initApiBaseUrl(prefs.getString(kApiBaseUrlPrefKey));
+  // Same reasoning, one layer up: this terminal's printer / backup-path / COM
+  // port choices are device-local and must be in memory before the first read of
+  // appSettingsProvider, whose build() is synchronous and cannot await.
+  await DeviceScopedSettings.init(prefs);
 
   // Graceful auth-failure handling: when the server rejects our token with 401,
   // the Dio interceptor routes here, to the login screen (once, debounced). A
@@ -91,6 +97,10 @@ class _MyAppState extends ConsumerState<MyApp> {
     final companyId = await storage.getCompanyId();
     if (companyId != null) {
       if (await checkCompanyExists(companyId) == CompanyExistence.deleted) {
+        // Same as the in-session guard in MainLayout: wipe the local mirror
+        // first. Unlinking alone left the deleted company's whole dataset in
+        // pos_app.sqlite forever.
+        await ref.read(appDatabaseProvider).purgeAllLocalData();
         await storage.unlinkDevice();
         return const _BootDecision(false, null);
       }

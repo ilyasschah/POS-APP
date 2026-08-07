@@ -110,6 +110,10 @@ class OctopusApi {
           ..._companyQuery,
           'startDate': Fmt.apiDate(startDate),
           'endDate': Fmt.apiDate(endDate),
+          // Sale timestamps are stored in UTC, so the server needs our offset
+          // to bucket "Hourly Peak Times" by local hour. Without it a 19:30
+          // local sale in UTC+1 is reported as 18h.
+          'tzOffsetMinutes': DateTime.now().timeZoneOffset.inMinutes,
         },
         cancelToken: cancelToken,
       );

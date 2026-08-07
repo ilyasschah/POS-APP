@@ -84,32 +84,7 @@ namespace Api.Commands.PosOrderCommands.BatchSync
                                 OrderNumber   = item.Order.Number,
                                 ClientDocumentNumber = item.ClientDocumentNumber,
                                 Discounts = item.Discounts,
-                                Items = item.Items.Select(i =>
-                                {
-                                    // Resolve the discount type-aware: 0 = a
-                                    // percentage of the unit price, 1 = a fixed
-                                    // money amount. Matches how the offline client
-                                    // and the document editor resolve it, so a
-                                    // "50%" item line stays 50% end-to-end instead
-                                    // of being read as 50 money off.
-                                    var discAmt = i.DiscountType == 0
-                                        ? i.Price * i.Discount / 100m
-                                        : i.Discount;
-                                    return new CheckoutItemDto
-                                    {
-                                        ProductId                   = i.ProductId,
-                                        LineLocalId                 = i.LineLocalId,
-                                        PriceBeforeTaxAfterDiscount = i.Price - discAmt,
-                                        PriceAfterDiscount          = i.Price - discAmt,
-                                        Total                       = (i.Price - discAmt) * i.Quantity,
-                                        TotalAfterDocumentDiscount  = (i.Price - discAmt) * i.Quantity,
-                                        Taxes = i.Taxes.Select(t => new CheckoutItemTaxDto
-                                        {
-                                            TaxId  = t.TaxId,
-                                            Amount = t.Amount,
-                                        }).ToList(),
-                                    };
-                                }).ToList(),
+                                Items = BuildCheckoutItems(item),
                             };
 
                             var checkoutResult = await _mediator.Send(
@@ -215,32 +190,7 @@ namespace Api.Commands.PosOrderCommands.BatchSync
                                 OrderNumber    = item.Order.Number,
                                 ClientDocumentNumber = item.ClientDocumentNumber,
                                 Discounts = item.Discounts,
-                                Items = item.Items.Select(i =>
-                                {
-                                    // Resolve the discount type-aware: 0 = a
-                                    // percentage of the unit price, 1 = a fixed
-                                    // money amount. Matches how the offline client
-                                    // and the document editor resolve it, so a
-                                    // "50%" item line stays 50% end-to-end instead
-                                    // of being read as 50 money off.
-                                    var discAmt = i.DiscountType == 0
-                                        ? i.Price * i.Discount / 100m
-                                        : i.Discount;
-                                    return new CheckoutItemDto
-                                    {
-                                        ProductId                   = i.ProductId,
-                                        LineLocalId                 = i.LineLocalId,
-                                        PriceBeforeTaxAfterDiscount = i.Price - discAmt,
-                                        PriceAfterDiscount          = i.Price - discAmt,
-                                        Total                       = (i.Price - discAmt) * i.Quantity,
-                                        TotalAfterDocumentDiscount  = (i.Price - discAmt) * i.Quantity,
-                                        Taxes = i.Taxes.Select(t => new CheckoutItemTaxDto
-                                        {
-                                            TaxId  = t.TaxId,
-                                            Amount = t.Amount,
-                                        }).ToList(),
-                                    };
-                                }).ToList(),
+                                Items = BuildCheckoutItems(item),
                             };
 
                             // Returns Document.Id (+ per-line DocumentItem ids) so the
@@ -289,6 +239,53 @@ namespace Api.Commands.PosOrderCommands.BatchSync
                 }
 
                 return response;
+            }
+
+            /// <summary>
+            /// Builds the checkout line DTOs for one order: each line's total
+            /// after the ITEM discount.
+            ///
+            /// The ORDER-level reduction is deliberately NOT apportioned here.
+            /// Checkout reconciles the lines to the order's grand total itself
+            /// (<c>PosOrderCheckoutService.ApportionDocumentDiscount</c>), and
+            /// that is the only place that accounts for every discount source:
+            /// this method can see <c>Order.Discount</c> and nothing else, so it
+            /// would silently miss loyalty points and promotions — those leave
+            /// <c>Order.Discount</c> at 0 and land in <c>DiscountLine</c> instead.
+            /// </summary>
+            private static List<CheckoutItemDto> BuildCheckoutItems(
+                BatchSyncOrderItem item)
+            {
+                return item.Items.Select(i =>
+                {
+                    // Resolve the discount type-aware: 0 = a percentage of the
+                    // unit price, 1 = a fixed money amount. Matches how the
+                    // offline client and the document editor resolve it, so a
+                    // "50%" item line stays 50% end-to-end instead of being read
+                    // as 50 money off.
+                    var discAmt = i.DiscountType == 0
+                        ? i.Price * i.Discount / 100m
+                        : i.Discount;
+                    var net = i.Price - discAmt;
+                    var total = net * i.Quantity;
+
+                    return new CheckoutItemDto
+                    {
+                        ProductId                   = i.ProductId,
+                        LineLocalId                 = i.LineLocalId,
+                        PriceBeforeTaxAfterDiscount = net,
+                        PriceAfterDiscount          = net,
+                        Total                       = total,
+                        // Overwritten by checkout's reconciliation — sent only
+                        // because the DTO field is required.
+                        TotalAfterDocumentDiscount  = total,
+                        Taxes = i.Taxes.Select(t => new CheckoutItemTaxDto
+                        {
+                            TaxId  = t.TaxId,
+                            Amount = t.Amount,
+                        }).ToList(),
+                    };
+                }).ToList();
             }
         }
     }

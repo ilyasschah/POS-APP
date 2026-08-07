@@ -11,6 +11,7 @@ import 'package:pos_app/app_settings/service_type_model.dart';
 import 'package:pos_app/app_settings/service_status_model.dart';
 import 'package:pos_app/app_settings/booking_settings_model.dart';
 import 'package:pos_app/sync/sync_provider.dart';
+import 'package:pos_app/settings/device_scoped_settings.dart';
 import 'package:pos_app/settings/settings_provider.dart';
 
 /// Streamed from Drift instead of fetched per build. The previous FutureProvider
@@ -50,9 +51,24 @@ class AppSettingsNotifier extends Notifier<Map<String, String>> {
     final rawProps = ref.watch(rawAppPropertiesProvider);
     rawProps.whenData((props) {
       for (final p in props) {
+        // A device-scoped key arriving from the cloud was set on ANOTHER
+        // terminal. Keep it only if it is usable here — a `D:\…` backup path, a
+        // Windows print-queue name or a `COM2` on an Android tablet is worse
+        // than no value at all, because every consumer then acts on it and
+        // fails. Dropping it falls through to the platform-neutral default.
+        if (DeviceScopedSettings.isDeviceScoped(p.name)) {
+          final usable = DeviceScopedSettings.sanitizeInherited(p.name, p.value);
+          if (usable == null) continue;
+          map[p.name] = usable;
+          continue;
+        }
         map[p.name] = p.value;
       }
     });
+
+    // This terminal's own hardware/filesystem choices outrank anything the
+    // cloud carries for the same key — that is the whole point of the layer.
+    map.addAll(DeviceScopedSettings.overrides);
 
     // Re-apply any optimistic writes so the theme/settings don't flash back to
     // defaults while rawAppPropertiesProvider is reloading after a save.
@@ -113,6 +129,13 @@ class AppSettingsNotifier extends Notifier<Map<String, String>> {
     _pendingOverrides[key] = value;
     state = {...state, key: value};
 
+    // ⚠️ ORDER IS LOAD-BEARING: the side effects below must run BEFORE the
+    // device-scoped early return. `Application.Api.BaseUrl` is device-scoped
+    // *and* needs `setApiBaseUrl()` to take effect without a restart — returning
+    // first would persist the new endpoint while the running app kept dialling
+    // the old one, which is precisely the "why is it still talking to the wrong
+    // server" class of bug this whole area is about.
+
     // Cache theme to SharedPreferences for instant 0ms booting.
     // MUST go through the device notifiers, not setString directly: MyApp reads
     // deviceAccentColorProvider / deviceThemeModeProvider FIRST and only falls
@@ -128,6 +151,19 @@ class AppSettingsNotifier extends Notifier<Map<String, String>> {
       // next createDio() targets the new endpoint (it's not cloud-synced).
       ref.read(sharedPreferencesProvider).setString(kApiBaseUrlPrefKey, value);
       setApiBaseUrl(value);
+    }
+
+    // Per-terminal keys stop here: local prefs only, never
+    // /ApplicationProperties/*. Pushing a printer queue name, a `D:\` backup
+    // path — or this terminal's API endpoint — to the cloud is what sent one
+    // machine's settings to every other one.
+    if (DeviceScopedSettings.isDeviceScoped(key)) {
+      await DeviceScopedSettings.set(
+        ref.read(sharedPreferencesProvider),
+        key,
+        value,
+      );
+      return;
     }
 
     final company = ref.read(selectedCompanyProvider);

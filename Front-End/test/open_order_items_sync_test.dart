@@ -85,7 +85,7 @@ void main() {
       () async {
     final api = _FakeApi(orders: [_order], items: _items);
 
-    await syncOpenOrdersToDrift(db, 1, api: api);
+    await syncOpenOrdersToDrift(db, 1, fallbackWarehouseId: 2, api: api);
 
     final header = await (db.select(db.posOrdersTable)
           ..where((t) => t.serverId.equals(77)))
@@ -115,19 +115,19 @@ void main() {
   test('re-syncing an unchanged order does not refetch its lines', () async {
     final api = _FakeApi(orders: [_order], items: _items);
 
-    await syncOpenOrdersToDrift(db, 1, api: api);
+    await syncOpenOrdersToDrift(db, 1, fallbackWarehouseId: 2, api: api);
     expect(api.getOrderItemsCalls, 1);
 
     // This poll runs every 20s; refetching every open order each tick would be
     // one request per order forever.
-    await syncOpenOrdersToDrift(db, 1, api: api);
+    await syncOpenOrdersToDrift(db, 1, fallbackWarehouseId: 2, api: api);
     expect(api.getOrderItemsCalls, 1, reason: 'nothing changed — no refetch');
     expect(await itemsFor('svr_77'), hasLength(2));
   });
 
   test('a total change on another terminal refreshes the lines', () async {
     final api = _FakeApi(orders: [_order], items: _items);
-    await syncOpenOrdersToDrift(db, 1, api: api);
+    await syncOpenOrdersToDrift(db, 1, fallbackWarehouseId: 2, api: api);
 
     final edited = _FakeApi(
       orders: [
@@ -138,7 +138,7 @@ void main() {
         {'id': 503, 'productId': 12, 'quantity': 1.0, 'price': 15.0},
       ],
     );
-    await syncOpenOrdersToDrift(db, 1, api: edited);
+    await syncOpenOrdersToDrift(db, 1, fallbackWarehouseId: 2, api: edited);
 
     expect(edited.getOrderItemsCalls, 1);
     // Stale lines beside a fresh total is the same class of bug as no lines at
@@ -157,7 +157,7 @@ void main() {
       ],
       items: _items,
     );
-    await syncOpenOrdersToDrift(db, 1, api: api);
+    await syncOpenOrdersToDrift(db, 1, fallbackWarehouseId: 2, api: api);
     expect(api.getOrderItemsCalls, 1);
 
     final swapped = _FakeApi(
@@ -169,7 +169,7 @@ void main() {
         {'id': 504, 'productId': 12, 'quantity': 1.0, 'price': 15.0},
       ],
     );
-    await syncOpenOrdersToDrift(db, 1, api: swapped);
+    await syncOpenOrdersToDrift(db, 1, fallbackWarehouseId: 2, api: swapped);
 
     expect(swapped.getOrderItemsCalls, 1, reason: 'stamp moved — must refetch');
     final lines = await itemsFor('svr_77');
@@ -183,7 +183,7 @@ void main() {
       ],
       items: const [],
     );
-    await syncOpenOrdersToDrift(db, 1, api: quiet);
+    await syncOpenOrdersToDrift(db, 1, fallbackWarehouseId: 2, api: quiet);
     expect(quiet.getOrderItemsCalls, 0, reason: 'stamp was persisted');
   });
 
@@ -217,7 +217,7 @@ void main() {
         );
 
     final api = _FakeApi(orders: [_order], items: _items);
-    await syncOpenOrdersToDrift(db, 1, api: api);
+    await syncOpenOrdersToDrift(db, 1, fallbackWarehouseId: 2, api: api);
 
     expect(api.getOrderItemsCalls, 0, reason: 'must not touch a pending row');
     final lines = await itemsFor('local-uuid-1');
@@ -267,7 +267,7 @@ void main() {
     );
 
     // The server no longer lists 77 — it was checked out (or voided) elsewhere.
-    await syncOpenOrdersToDrift(db, 1, api: _FakeApi(orders: const [], items: const []));
+    await syncOpenOrdersToDrift(db, 1, fallbackWarehouseId: 2, api: _FakeApi(orders: const [], items: const []));
 
     final row = await (db.select(db.posOrdersTable)
           ..where((t) => t.localId.equals('local-uuid-9')))
@@ -280,14 +280,14 @@ void main() {
 
   test('a server-materialised row for a closed order is deleted outright',
       () async {
-    await syncOpenOrdersToDrift(db, 1, api: _FakeApi(orders: [_order], items: _items));
+    await syncOpenOrdersToDrift(db, 1, fallbackWarehouseId: 2, api: _FakeApi(orders: [_order], items: _items));
     expect(
       await (db.select(db.posOrdersTable)..where((t) => t.serverId.equals(77)))
           .getSingleOrNull(),
       isNotNull,
     );
 
-    await syncOpenOrdersToDrift(db, 1, api: _FakeApi(orders: const [], items: const []));
+    await syncOpenOrdersToDrift(db, 1, fallbackWarehouseId: 2, api: _FakeApi(orders: const [], items: const []));
 
     // Nothing local to preserve — it only ever mirrored the server.
     expect(
@@ -320,7 +320,7 @@ void main() {
           ),
         );
 
-    await syncOpenOrdersToDrift(db, 1, api: _FakeApi(orders: const [], items: const []));
+    await syncOpenOrdersToDrift(db, 1, fallbackWarehouseId: 2, api: _FakeApi(orders: const [], items: const []));
 
     for (final id in ['local-uuid-3', 'local-uuid-4']) {
       final row = await (db.select(db.posOrdersTable)
@@ -345,7 +345,7 @@ void main() {
       items: _items,
     );
 
-    await syncOpenOrdersToDrift(db, 1, api: api);
+    await syncOpenOrdersToDrift(db, 1, fallbackWarehouseId: 2, api: api);
 
     final row = await (db.select(db.posOrdersTable)
           ..where((t) => t.serverId.equals(77)))
@@ -354,7 +354,7 @@ void main() {
   });
 
   test('a customer assigned elsewhere reaches an already-known order', () async {
-    await syncOpenOrdersToDrift(db, 1, api: _FakeApi(orders: [_order], items: _items));
+    await syncOpenOrdersToDrift(db, 1, fallbackWarehouseId: 2, api: _FakeApi(orders: [_order], items: _items));
     expect(
       (await (db.select(db.posOrdersTable)..where((t) => t.serverId.equals(77)))
               .getSingle())
@@ -365,6 +365,7 @@ void main() {
     await syncOpenOrdersToDrift(
       db,
       1,
+      fallbackWarehouseId: 2,
       api: _FakeApi(orders: [
         {..._order, 'customerId': 42},
       ], items: _items),
@@ -392,11 +393,275 @@ void main() {
           ..where((t) => t.localId.equals('local-uuid-7')))
         .write(const PosOrdersTableCompanion(customerId: Value(99)));
 
-    await syncOpenOrdersToDrift(db, 1, api: _FakeApi(orders: [_order], items: _items));
+    await syncOpenOrdersToDrift(db, 1, fallbackWarehouseId: 2, api: _FakeApi(orders: [_order], items: _items));
 
     final row = await (db.select(db.posOrdersTable)
           ..where((t) => t.localId.equals('local-uuid-7')))
         .getSingle();
     expect(row.customerId, 99, reason: 'unpushed local choice wins');
+  });
+
+  // ── Duplicate rows: the bug that killed open-order sync outright ───────────
+  //
+  // Case 2 required `syncStatus == 'synced'` to adopt a just-pushed local row —
+  // but an offline-created row is 'pending' until its push finishes, so the one
+  // shape Case 2 exists to catch could never match. Every such order fell to
+  // Case 3 and got a TWIN `svr_<id>` row on the same table ("saving an old order
+  // created a new one with the same table id").
+  //
+  // The twin then poisoned everything: Case 1 resolved with `getSingleOrNull()`,
+  // which THROWS on two rows, and the 10s poll's only catch is bare. So one
+  // duplicate silently ended open-order sync on that device — no void ever
+  // disappeared, no paid order ever left the list, no KDS "ready" ever landed.
+
+  test('a pushed local order is adopted, not duplicated as a second row',
+      () async {
+    // Rung up here, saved offline, pushed — the serverId stamp has not landed
+    // back on the row yet (or was lost). syncStatus is 'pending', as it always
+    // is for a row created offline.
+    await db.into(db.posOrdersTable).insert(
+          PosOrdersTableCompanion.insert(
+            localId: 'local-uuid-adopt',
+            companyId: 1,
+            userId: 3,
+            serviceType: 0,
+            openedAt: DateTime.now().toUtc(),
+            status: const Value(0),
+            warehouseId: 2,
+            lastModified: DateTime.now().toUtc(),
+            orderName: const Value('ORD- T4'),
+            tableId: const Value(12),
+            syncStatus: const Value('pending'),
+          ),
+        );
+
+    await syncOpenOrdersToDrift(
+        db, 1, fallbackWarehouseId: 2,
+        api: _FakeApi(orders: [_order], items: _items));
+
+    final onTable12 = await (db.select(db.posOrdersTable)
+          ..where((t) => t.tableId.equals(12))
+          ..where((t) => t.status.equals(0)))
+        .get();
+    // Fails against the pre-fix code with length 2 — the reported symptom.
+    expect(onTable12, hasLength(1),
+        reason: 'one order on table 12, not a twin');
+    expect(onTable12.single.localId, 'local-uuid-adopt',
+        reason: 'the local row owns the cart/discount/document links');
+    expect(onTable12.single.serverId, 77);
+  });
+
+  test('an existing duplicate is healed instead of throwing forever', () async {
+    // A device already damaged by the old race: two rows, one serverId.
+    await insertLocalSyncedOrder(
+      localId: 'local-uuid-keep',
+      serverId: 77,
+      tableId: 12,
+    );
+    await db.into(db.posOrderItemsTable).insert(
+          PosOrderItemsTableCompanion.insert(
+            localId: 'line-1',
+            orderId: 'local-uuid-keep',
+            productId: 9,
+            quantity: 2.0,
+            unitPrice: 15.0,
+            warehouseId: 2,
+          ),
+        );
+    await insertLocalSyncedOrder(
+      localId: 'svr_77',
+      serverId: 77,
+      tableId: 12,
+    );
+
+    // Against the pre-fix code this THROWS ("too many rows") and every later
+    // tick throws too, so the device never syncs open orders again.
+    await syncOpenOrdersToDrift(
+        db, 1, fallbackWarehouseId: 2,
+        api: _FakeApi(orders: [_order], items: _items));
+
+    final rows = await (db.select(db.posOrdersTable)
+          ..where((t) => t.serverId.equals(77)))
+        .get();
+    expect(rows, hasLength(1), reason: 'duplicate must be collapsed');
+    expect(rows.single.localId, 'local-uuid-keep',
+        reason: 'the row carrying line items wins over the svr_ sentinel');
+    expect(await itemsFor('local-uuid-keep'), isNotEmpty);
+  });
+
+  test('a locally-edited order keeps its own total against a stale server value',
+      () async {
+    // The cashier added a line and saved; the push has not gone out. The server
+    // still reports the old total. Writing it back reverted their edit — and the
+    // push then sent the reverted figure.
+    await insertLocalSyncedOrder(
+      localId: 'local-uuid-edit',
+      serverId: 77,
+      tableId: 12,
+      syncStatus: 'pending',
+    );
+    await (db.update(db.posOrdersTable)
+          ..where((t) => t.localId.equals('local-uuid-edit')))
+        .write(const PosOrdersTableCompanion(total: Value(72.5)));
+
+    await syncOpenOrdersToDrift(
+        db, 1, fallbackWarehouseId: 2,
+        api: _FakeApi(orders: [_order], items: _items));
+
+    final row = await (db.select(db.posOrdersTable)
+          ..where((t) => t.localId.equals('local-uuid-edit')))
+        .getSingle();
+    expect(row.total, 72.5, reason: 'server total (45.0) must not win here');
+  });
+
+  // ── Fields the DTO cannot carry, or never carried ─────────────────────────
+  //
+  // Audited against the live schema on 2026-08-06. `dbo.PosOrder` has NO
+  // Status, WarehouseId or BookingId column, and `PosOrderDto` exposes no
+  // warehouse either — yet this pull read `o['warehouseId'] ?? 1` and wrote a
+  // hardcoded discount of 0. Company 25 owns warehouses 17 and 20; there is no
+  // warehouse 1.
+
+  test('a pulled order sources from THIS terminal, not a hardcoded warehouse 1',
+      () async {
+    // The server sends no warehouse at all — PosOrderDto has no such field.
+    final serverOrder = Map<String, dynamic>.from(_order)..remove('warehouseId');
+    await syncOpenOrdersToDrift(
+      db,
+      1,
+      fallbackWarehouseId: 17,
+      api: _FakeApi(orders: [serverOrder], items: _items),
+    );
+
+    final row = await (db.select(db.posOrdersTable)
+          ..where((t) => t.serverId.equals(77)))
+        .getSingle();
+    // Was 1 — an id the company does not own. Every later save of this order
+    // was then rejected by BulkAdd as "out of stock in this warehouse".
+    expect(row.warehouseId, 17);
+    for (final line in await itemsFor(row.localId)) {
+      expect(line.warehouseId, 17, reason: 'lines must match their order');
+    }
+  });
+
+  test('a whole-order discount survives the trip to another terminal', () async {
+    await syncOpenOrdersToDrift(
+      db,
+      1,
+      fallbackWarehouseId: 17,
+      api: _FakeApi(
+        orders: [
+          {..._order, 'discount': 10.0, 'discountType': 0},
+        ],
+        items: _items,
+      ),
+    );
+
+    final row = await (db.select(db.posOrdersTable)
+          ..where((t) => t.serverId.equals(77)))
+        .getSingle();
+    // Case 3 hardcoded `discount: 0`, so a discount granted on till 1 vanished
+    // here — and re-saving pushed the 0 back, wiping it there too.
+    expect(row.discount, 10.0);
+    expect(row.discountType, 0);
+  });
+
+  test('a discount or service-type change elsewhere reaches an existing row',
+      () async {
+    await syncOpenOrdersToDrift(db, 1, fallbackWarehouseId: 17,
+        api: _FakeApi(orders: [_order], items: _items));
+
+    await syncOpenOrdersToDrift(
+      db,
+      1,
+      fallbackWarehouseId: 17,
+      api: _FakeApi(
+        orders: [
+          {..._order, 'discount': 5.0, 'discountType': 1, 'serviceType': 2},
+        ],
+        items: _items,
+      ),
+    );
+
+    final row = await (db.select(db.posOrdersTable)
+          ..where((t) => t.serverId.equals(77)))
+        .getSingle();
+    // Case 1 reconciled none of these, so the two tills could ping-pong an
+    // order between two different states forever.
+    expect(row.discount, 5.0);
+    expect(row.discountType, 1);
+    expect(row.serviceType, 2);
+  });
+
+  test('a same-DAY swap is caught by LastItemId, which the stamp cannot do',
+      () async {
+    // 🚨 ItemsLastChanged is MAX(PosOrderItem.DateCreated) and that column is
+    // SQL type `date` — the time is truncated on write. So two edits on the same
+    // day carry an IDENTICAL stamp, which is the only case that matters. Here
+    // the stamp does not move and neither does total or count; only LastItemId
+    // does, because a swap re-inserts and IDENTITY never reissues.
+    const sameDay = '2026-07-24T00:00:00Z';
+    final api = _FakeApi(
+      orders: [
+        {..._order, 'itemCount': 2, 'itemsLastChanged': sameDay, 'lastItemId': 502},
+      ],
+      items: _items,
+    );
+    await syncOpenOrdersToDrift(db, 1, fallbackWarehouseId: 17, api: api);
+    expect(api.getOrderItemsCalls, 1);
+
+    final swapped = _FakeApi(
+      orders: [
+        {..._order, 'itemCount': 2, 'itemsLastChanged': sameDay, 'lastItemId': 504},
+      ],
+      items: [
+        _items.first,
+        {'id': 504, 'productId': 12, 'quantity': 1.0, 'price': 15.0},
+      ],
+    );
+    await syncOpenOrdersToDrift(db, 1, fallbackWarehouseId: 17, api: swapped);
+
+    expect(swapped.getOrderItemsCalls, 1,
+        reason: 'identical stamp, identical total and count — only MAX(Id) moved');
+    final lines = await itemsFor('svr_77');
+    expect(lines.map((l) => l.productId), containsAll([9, 12]));
+    expect(lines.map((l) => l.productId), isNot(contains(11)));
+
+    // And it settles — no refetch loop.
+    final quiet = _FakeApi(
+      orders: [
+        {..._order, 'itemCount': 2, 'itemsLastChanged': sameDay, 'lastItemId': 504},
+      ],
+      items: const [],
+    );
+    await syncOpenOrdersToDrift(db, 1, fallbackWarehouseId: 17, api: quiet);
+    expect(quiet.getOrderItemsCalls, 0);
+  });
+
+  test('a booking order pulled elsewhere keeps its reservation link', () async {
+    // PosOrderDto cannot carry a bookingId — the relation lives on
+    // Booking.PosOrderId. Without recovering it locally, paying this order on
+    // the second till would never complete the reservation.
+    await db.into(db.bookingsTable).insert(
+          BookingsTableCompanion.insert(
+            id: const Value(88),
+            companyId: 1,
+            reservationName: const Value('Ilyass'),
+            startTime: DateTime.now().toUtc(),
+            endTime: DateTime.now().toUtc().add(const Duration(hours: 1)),
+            guestCount: const Value(2),
+            status: const Value(3),
+            posOrderId: const Value(77),
+            lastModified: DateTime.now().toUtc(),
+          ),
+        );
+
+    await syncOpenOrdersToDrift(db, 1, fallbackWarehouseId: 17,
+        api: _FakeApi(orders: [_order], items: _items));
+
+    final row = await (db.select(db.posOrdersTable)
+          ..where((t) => t.serverId.equals(77)))
+        .getSingle();
+    expect(row.bookingId, 88);
   });
 }

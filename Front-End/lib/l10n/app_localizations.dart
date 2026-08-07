@@ -2950,6 +2950,12 @@ abstract class AppLocalizations {
   /// **'No printers found'**
   String get noPrintersFound;
 
+  /// No description provided for @printerSelectionUnsupportedOnThisDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'This device cannot choose a system printer. Printing opens the device\'s own print dialog instead.'**
+  String get printerSelectionUnsupportedOnThisDevice;
+
   /// No description provided for @numberOfCopies.
   ///
   /// In en, this message translates to:
@@ -8932,6 +8938,18 @@ abstract class AppLocalizations {
   /// **'Kitchen print error: {message}'**
   String kitchenPrintError(String message);
 
+  /// No description provided for @kitchenTicketsPrinted.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Kitchen ticket sent} other{{count} kitchen tickets sent}}'**
+  String kitchenTicketsPrinted(num count);
+
+  /// No description provided for @kitchenNoStationMatched.
+  ///
+  /// In en, this message translates to:
+  /// **'No station printer covers these items — printing the full ticket instead.'**
+  String get kitchenNoStationMatched;
+
   /// No description provided for @couldNotSaveOrder.
   ///
   /// In en, this message translates to:
@@ -10207,6 +10225,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'RETRY CONNECTION'**
   String get retryConnectionUpper;
+
+  /// Shows WHICH API server answered the licence check. Load-bearing for diagnosis: a terminal pointed at the wrong backend gets a valid 'expired' answer from it and looks identical to a real lapse.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked against {endpoint}'**
+  String checkedAgainstEndpoint(String endpoint);
 
   /// Deliberately does NOT convert — silently converting g to kg would be a 1000x pricing bug. See PROJECT_DOCUMENTATION §4.6.
   ///

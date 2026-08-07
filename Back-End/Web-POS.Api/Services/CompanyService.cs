@@ -225,10 +225,15 @@ public class CompanyService
                 new SqlParameter("@cid", id));
 
             // Re-enable FK enforcement on the same CompanyId-scoped tables.
+            // WITH CHECK, not a bare CHECK CONSTRAINT: the bare form re-arms the
+            // constraint but leaves it is_not_trusted = 1, because SQL Server
+            // never re-validates the existing rows. Untrusted FKs are excluded
+            // from the optimiser's join-elimination and can mask a genuine
+            // orphan introduced while enforcement was off.
             await _db.Database.ExecuteSqlRawAsync(@"
                 DECLARE @sql NVARCHAR(MAX) = N'';
                 SELECT @sql += 'ALTER TABLE ' + QUOTENAME(SCHEMA_NAME(t.schema_id)) + '.' + QUOTENAME(t.name)
-                             + ' CHECK CONSTRAINT ALL;' + CHAR(10)
+                             + ' WITH CHECK CHECK CONSTRAINT ALL;' + CHAR(10)
                 FROM sys.tables t
                 WHERE EXISTS (SELECT 1 FROM sys.columns c WHERE c.object_id = t.object_id AND c.name = 'CompanyId');
                 EXEC sp_executesql @sql;");
@@ -236,19 +241,48 @@ public class CompanyService
             await tx.CommitAsync();
         });
 
-        // Also remove the company's SaaS control-plane tenant (separate Master DB
-        // → its own operation). Non-fatal: a Master-DB hiccup must not fail the
-        // company delete; the orphan tenant can be cleared later.
+        // Also remove the company's SaaS control-plane tenant. This lives in a
+        // SEPARATE database (web-pos-master), so it cannot join the transaction
+        // above and a Master-DB outage must not fail the company delete.
+        //
+        // 🚨 It used to be swallowed into a LogWarning while the admin portal
+        // still reported "Company and all its data were deleted." — so a failure
+        // here left the Tenant, its Subscription, its DeviceRegistry seats and
+        // its Pillar-5 audit rows alive, with nothing on screen to say so. That
+        // is the "deleted a company but it didn't delete all its data" report.
+        // The tenant-data purge above has already committed and is not undone;
+        // the caller is told exactly what remains so it can be retried.
         try
         {
             await _provisioning.DeprovisionTenantAsync(id);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex,
-                "Company {CompanyId} deleted but Master-DB tenant removal failed — clear it later.", id);
+            _logger.LogError(ex,
+                "Company {CompanyId} data was deleted, but Master-DB tenant removal failed.", id);
+            throw new CompanyPartiallyDeletedException(id, ex);
         }
 
         return true;
+    }
+}
+
+/// The company's own data was deleted, but its SaaS control-plane tenant
+/// (Master DB: Tenant + Subscription + DeviceRegistry + TransactionAudit)
+/// was not. Distinct from a plain failure because the tenant-data purge has
+/// already COMMITTED — retrying the delete will report "does not exist", so the
+/// operator must clear the tenant separately (or re-run once the Master DB is
+/// reachable). Surfaced so the admin portal stops claiming a clean delete.
+public class CompanyPartiallyDeletedException : Exception
+{
+    public int CompanyId { get; }
+
+    public CompanyPartiallyDeletedException(int companyId, Exception inner)
+        : base($"Company {companyId}'s data was deleted, but its licensing tenant " +
+               "could not be removed from the Master database. The tenant, its " +
+               "subscription and its device seats still exist — clear them once " +
+               "the Master database is reachable.", inner)
+    {
+        CompanyId = companyId;
     }
 }

@@ -485,7 +485,15 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                               'discountType': cart.manualCartDiscountType,
                               'total': ref.read(cartTotalProvider),
                               'customerId': cart.selectedCustomer?.id,
-                              'warehouseId': cart.activeWarehouseId ?? 1,
+                              // Not `?? 1`: selectedWarehouseProvider is seeded
+                              // asynchronously, so substituting 1 mid-seed pins
+                              // the order to a warehouse the company may not own
+                              // (company 25 owns 17 and 20 — there is no 1) AND
+                              // outranks Order.DefaultWarehouseId, because
+                              // effectiveWarehouseId accepts any id > 0.
+                              'warehouseId': ref
+                                  .read(cartProvider.notifier)
+                                  .effectiveWarehouseId,
                             });
                             ref.read(kitchenSyncProvider).push();
 
@@ -495,7 +503,9 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                                 .read(cartProvider.notifier)
                                 .setOrderContext(
                                   cart.activePosOrderId!,
-                                  cart.activeWarehouseId ?? 1,
+                                  ref
+                                      .read(cartProvider.notifier)
+                                      .effectiveWarehouseId,
                                   tableId: selectedSpace.id,
                                   orderNumber: newOrderNumber,
                                 );
@@ -833,8 +843,10 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                                 final routing = ref.read(
                                   printerRoutingProvider,
                                 );
+                                var printed = 0;
+                                var fellBack = false;
                                 if (routing.hasKitchenStations) {
-                                  await routing.printStationTickets(
+                                  printed = await routing.printStationTickets(
                                     items: cartItems,
                                     orderNumber: orderNo,
                                     cashierName: cashierName,
@@ -842,7 +854,17 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                                     roundNumber: roundNum,
                                     printTime: DateTime.now(),
                                   );
-                                } else {
+                                  // 🚨 A station only prints the items matching
+                                  // its printer group, and skips the order
+                                  // entirely when none match. With stations
+                                  // configured but none covering this cart, the
+                                  // button previously did *nothing at all* — no
+                                  // ticket, no error, no message. Fall back to
+                                  // the full ticket so pressing Kitchen always
+                                  // produces one.
+                                  fellBack = printed == 0;
+                                }
+                                if (printed == 0) {
                                   await ReceiptPrinterService()
                                       .printKitchenTicket(
                                         orderNumber: orderNo,
@@ -853,6 +875,23 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                                         items: cartItems,
                                         roleSettings: roleSettings,
                                       );
+                                  printed = 1;
+                                }
+                                // Always confirm. Printing is fire-and-forget at
+                                // the dispatcher (a dead printer must never
+                                // crash a sale), so without this the operator
+                                // has no way to tell a sent ticket from a
+                                // silently dropped one.
+                                if (context.mounted) {
+                                  showAppSnackbar(
+                                    context,
+                                    ref,
+                                    fellBack
+                                        ? AppLocalizations.of(context)
+                                            .kitchenNoStationMatched
+                                        : AppLocalizations.of(context)
+                                            .kitchenTicketsPrinted(printed),
+                                  );
                                 }
                               } catch (e) {
                                 if (context.mounted) {
@@ -2476,7 +2515,10 @@ class _CartSectionState extends ConsumerState<CartSection> {
     try {
       final db = ref.read(appDatabaseProvider);
       final serverId = cartState.activePosOrderId ?? 0;
-      final warehouseId = cartState.activeWarehouseId ?? 1;
+      // Voiding restocks every line, so a hardcoded 1 would return the stock to
+      // a warehouse the company may not own — silently, and unrecoverably once
+      // the void has synced. effectiveWarehouseId resolves it properly.
+      final warehouseId = ref.read(cartProvider.notifier).effectiveWarehouseId;
       final orderNumber = cartState.orderNumber ?? 'UNKNOWN';
       final existLocalId = cartState.existingLocalOrderId;
 
@@ -3974,11 +4016,20 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
       final bookingId = widget.cartState.bookingId;
 
       if (activePosOrderId != null && companyId != null) {
+        final movedUserId =
+            _selectedStaff?.id ?? ref.read(currentUserProvider)?.id ?? 0;
+        // Compute the destination name BEFORE the server call. It used to be
+        // derived afterwards, purely for the cart, so the server kept the
+        // ORIGIN table's name — an order moved to A5 stayed "ORD- A7" server-
+        // side while the cart said "ORD- A5", and the pull's name-matching
+        // branch then had two disagreeing views of the same order.
+        final destinationName = _selectedRoom != null
+            ? 'ORD- ${_selectedRoom!.name}'
+            : (widget.cartState.orderNumber ?? "ORD-TEMP");
         final updateRequest = {
           "id": activePosOrderId,
-          "userId":
-              _selectedStaff?.id ?? ref.read(currentUserProvider)?.id ?? 0,
-          "number": widget.cartState.orderNumber ?? "ORD-TEMP",
+          "userId": movedUserId,
+          "number": destinationName,
           "discount": widget.cartState.manualCartDiscount,
           "discountType": widget.cartState.manualCartDiscountType,
           "total": ref.read(cartTotalProvider),
@@ -4005,14 +4056,33 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
         }
 
         if (newTable != null) {
-          final newOrderNumber = 'ORD- ${newTable.name}';
+          // 🚨 Move the LOCAL row too. Floor-plan occupancy is derived from open
+          // `pos_orders.tableId` (§3 — `floor_plan_tables.status` is dead), so
+          // updating only the server and the cart left the ORIGIN table showing
+          // occupied and the order visible on both. On a `pending` row it was
+          // worse: the pull won't overwrite its tableId, so the stale value also
+          // got pushed back, dragging the server order to the old table again.
+          final localId = widget.cartState.existingLocalOrderId ??
+              (await ref
+                      .read(appDatabaseProvider)
+                      .getOpenOrderByServerId(activePosOrderId))
+                  ?.localId;
+          if (localId != null) {
+            await ref.read(appDatabaseProvider).moveOrderToTable(
+                  localId: localId,
+                  tableId: newTable.id,
+                  orderName: destinationName,
+                  userId: movedUserId,
+                );
+          }
           ref
               .read(cartProvider.notifier)
               .setOrderContext(
                 activePosOrderId,
-                widget.cartState.activeWarehouseId ?? 1,
+                // Same reason as the service-type move above — never hardcode 1.
+                ref.read(cartProvider.notifier).effectiveWarehouseId,
                 tableId: newTable.id,
-                orderNumber: newOrderNumber,
+                orderNumber: destinationName,
               );
         }
       }

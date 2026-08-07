@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
+import 'package:pos_app/api/api_client.dart' show apiBaseUrl;
 import 'package:pos_app/auth/auth_storage.dart';
 import 'package:pos_app/auth/login_screen.dart';
 import 'package:pos_app/license/license_service.dart';
@@ -164,6 +165,25 @@ class _SubscriptionBlockedScreenState
                     ),
                   ),
                 ],
+                // 🚨 Which server answered. Without this the screen is
+                // undiagnosable: a terminal pointed at the WRONG backend gets a
+                // perfectly valid "expired" lease from it and shows exactly the
+                // same words as a genuinely lapsed subscription. That cost a
+                // full debugging session — a POS on the compiled-in default
+                // endpoint reported "Expired on 30 Jul" while the intended
+                // server said the subscription ran to 16 Aug. Always show the
+                // endpoint here, and on the tampered screen too: "contact your
+                // provider" is useless advice if the terminal is asking the
+                // wrong provider.
+                const Gap(16),
+                Text(
+                  AppLocalizations.of(context).checkedAgainstEndpoint(apiBaseUrl),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: cs.onSurfaceVariant.withValues(alpha: 0.7),
+                    fontSize: 12,
+                  ),
+                ),
                 const Gap(32),
                 FilledButton.icon(
                   onPressed: _checking ? null : _retry,

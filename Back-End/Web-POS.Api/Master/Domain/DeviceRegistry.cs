@@ -22,7 +22,11 @@ namespace Api.Master.Domain
 
         [MaxLength(255)] public string? DeviceName { get; set; }
 
-        /// <summary>active | blocked</summary>
+        /// <summary>
+        /// active | inactive | blocked (+ 'revoked' on legacy rows only — a
+        /// revoke now deletes the row). Only <c>active</c> counts against the
+        /// subscription's seat allowance.
+        /// </summary>
         [MaxLength(20)]
         public string Status { get; set; } = "active";
 

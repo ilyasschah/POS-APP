@@ -9,10 +9,14 @@ namespace Api.Services;
 public class UserDevicePinService
 {
     private readonly UserDevicePinRepository _repository;
+    private readonly Api.Master.Services.ITenantProvisioningService _provisioning;
 
-    public UserDevicePinService(UserDevicePinRepository repository)
+    public UserDevicePinService(
+        UserDevicePinRepository repository,
+        Api.Master.Services.ITenantProvisioningService provisioning)
     {
         _repository = repository;
+        _provisioning = provisioning;
     }
 
     public async Task<string> SetDevicePinAsync(SetDevicePinRequest request , int companyId)
@@ -43,14 +47,35 @@ public class UserDevicePinService
     }
     public async Task<bool> RevokeDevicePinAsync(RevokeDeviceRequest request, int companyId, CancellationToken cancellationToken = default)
     {
-        var existingPinRecord = await _repository.GetByUserAndDeviceAsync(request.UserId, request.DeviceId, companyId);
-        if (existingPinRecord != null)
+        // 🚨 Blanking the PIN alone was never a revoke. It stopped THIS user
+        // PIN-ing in on that terminal, and nothing else: the device kept its
+        // master session, kept syncing, and kept occupying a paid seat — it did
+        // not appear removed anywhere the admin could see, and it never signed
+        // out. Removing a terminal has to reach the DeviceRegistry too.
+        //
+        // Every user's PIN on the terminal is cleared, not just the caller's: the
+        // registry row is deleted for the whole account, so leaving another
+        // cashier's PIN behind would keep the device listed on their screen —
+        // pointing at a device that is no longer enrolled at all.
+        var pinRecords = await _repository.GetByDeviceAsync(request.DeviceId, companyId, cancellationToken);
+        foreach (var pin in pinRecords) pin.HashedPin = string.Empty;
+        if (pinRecords.Count > 0) await _repository.SaveChangesAsync(cancellationToken);
+
+        // Control plane lives in a SEPARATE database, so this cannot join the
+        // transaction above. Non-fatal: a Master-DB hiccup must not fail the PIN
+        // revoke, and the next revoke is idempotent.
+        var deviceRevoked = false;
+        try
         {
-            existingPinRecord.HashedPin = string.Empty;
-            await _repository.UpdateAsync(existingPinRecord);
-            return true;
+            deviceRevoked = await _provisioning.RevokeDeviceAsync(
+                companyId, request.DeviceId, cancellationToken);
         }
-        return false;
+        catch
+        {
+            // The registry row survives until this is retried; the PINs are gone.
+        }
+
+        return pinRecords.Count > 0 || deviceRevoked;
     }
 
 }

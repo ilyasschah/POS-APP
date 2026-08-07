@@ -3,6 +3,7 @@ import 'package:dio/io.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:pos_app/auth/auth_token_cache.dart';
+import 'package:pos_app/core/config.dart';
 import 'package:pos_app/auth/session_expiry.dart';
 import 'package:pos_app/cart/checkout_models.dart';
 import 'package:pos_app/api/promotion_models.dart';
@@ -11,7 +12,11 @@ import 'package:pos_app/company/company_model.dart';
 import 'package:pos_app/document/document_type_constants.dart';
 
 /// Compiled-in default API endpoint, used until a device-local override is set.
-const String kDefaultApiBaseUrl = 'https://51-91-6-6.sslip.io/api';
+///
+/// Declared in ONE place ([AppConfig.defaultApiBaseUrl]) — this used to be a
+/// third independent copy of the same URL, so changing "the default" could
+/// leave a fresh install pointing at a different server than intended.
+const String kDefaultApiBaseUrl = AppConfig.defaultApiBaseUrl;
 
 /// The active API base URL. Held in memory (seeded from SharedPreferences at
 /// boot via [initApiBaseUrl]) so the sync/synchronous [createDio] never awaits.

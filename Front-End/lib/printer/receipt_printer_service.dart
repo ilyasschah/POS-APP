@@ -10,6 +10,7 @@ import 'package:pos_app/customer/customer_model.dart';
 import 'package:pos_app/printer/pdf_fonts.dart';
 import 'package:pos_app/printer/pdf_file_name.dart';
 import 'package:pos_app/printer/pdf_save_service.dart';
+import 'package:pos_app/printer/printer_platform.dart';
 import 'package:pos_app/reports/z_report_model.dart';
 import 'package:printing/printing.dart';
 
@@ -155,7 +156,13 @@ class ReceiptPrinterService {
   ) async {
     final bytes = await pdf.save();
     Printer? target;
-    if (printerName != null && printerName.isNotEmpty) {
+    // Gated: on Android `listPrinters()` has no implementation and throws, so
+    // this used to run — and silently fail — on every single print. The saved
+    // printer name there is a Windows queue inherited through the (formerly
+    // cloud-synced) setting anyway, so there is nothing it could ever match.
+    if (PrinterPlatform.canPrintSilently &&
+        printerName != null &&
+        printerName.isNotEmpty) {
       try {
         final printers = await Printing.listPrinters();
         target = printers.where((p) => p.name == printerName).firstOrNull;

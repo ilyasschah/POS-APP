@@ -14,6 +14,22 @@ namespace Api.Repository
             return await _db.UserDevicePins
                 .FirstOrDefaultAsync(p => p.UserId == userId && p.DeviceId == deviceId && p.CompanyId == companyId, cancellationToken);
         }
+
+        /// <summary>
+        /// Every user's PIN row on one terminal. Revoking removes the terminal
+        /// from the ACCOUNT, not from one cashier, so all of them are cleared —
+        /// otherwise the device stays listed under every other user who had a PIN
+        /// on it, pointing at a registry row that no longer exists.
+        /// </summary>
+        public async Task<List<UserDevicePin>> GetByDeviceAsync(string deviceId, int companyId, CancellationToken cancellationToken = default)
+        {
+            return await _db.UserDevicePins
+                .Where(p => p.DeviceId == deviceId && p.CompanyId == companyId)
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
+            => await _db.SaveChangesAsync(cancellationToken);
         public async Task<List<UserDevicePinDto>> GetActiveDevicesAsync(int? userId,int companyId, CancellationToken cancellationToken = default)
         {
             // Exclude revoked devices. RevokeDevicePinAsync blanks the HashedPin

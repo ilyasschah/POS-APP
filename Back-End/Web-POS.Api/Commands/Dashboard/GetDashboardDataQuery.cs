@@ -20,7 +20,16 @@ namespace Api.Commands.Dashboard
     public record TopGroupDto(string GroupName, decimal Total);
     public record TopCustomerDto(string CustomerName, decimal Total);
 
-    public record GetDashboardDataQuery(int CompanyId, DateTime StartDate, DateTime EndDate) : IRequest<DashboardDataDto>;
+    /// <param name="TzOffsetMinutes">
+    /// The caller's offset from UTC, in minutes (e.g. +60 for UTC+1). Used to
+    /// report Hourly Peak Times in local time — see the Handler. 0 keeps the
+    /// legacy UTC behaviour for callers that don't send it.
+    /// </param>
+    public record GetDashboardDataQuery(
+        int CompanyId,
+        DateTime StartDate,
+        DateTime EndDate,
+        int TzOffsetMinutes = 0) : IRequest<DashboardDataDto>;
 
     // 3. The Handler
     public class GetDashboardDataQueryHandler : IRequestHandler<GetDashboardDataQuery, DashboardDataDto>
@@ -54,14 +63,24 @@ namespace Api.Commands.Dashboard
                 .OrderBy(x => x.Year).ThenBy(x => x.Month)
                 .ToList();
 
-            // 2. Fetch Hourly Sales
+            // 2. Fetch Hourly Sales.
+            // The view buckets on the UTC hour, because StockDate is written as
+            // DateTime.UtcNow. Rotate the buckets into the caller's timezone so
+            // "Hourly Peak Times" reads in local time and agrees with the POS
+            // app, which buckets on toLocal(). Rotating whole buckets is exact
+            // for whole-hour offsets; a :30/:45 zone lands on the nearest hour,
+            // which is as precise as an hour bucket gets anyway.
             var hourlyData = await baseQuery
                 .GroupBy(x => x.SalesHour)
                 .Select(g => new { Hour = g.Key, Total = g.Sum(x => x.ItemTotal) })
                 .ToListAsync(cancellationToken);
 
+            var offsetHours = (int)Math.Round(
+                request.TzOffsetMinutes / 60.0, MidpointRounding.AwayFromZero);
+
             dashboardData.HourlySales = hourlyData
-                .Select(x => new HourlySaleDto(x.Hour, x.Total))
+                .GroupBy(x => ((x.Hour + offsetHours) % 24 + 24) % 24)
+                .Select(g => new HourlySaleDto(g.Key, g.Sum(x => x.Total)))
                 .OrderBy(x => x.Hour)
                 .ToList();
 

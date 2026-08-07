@@ -839,7 +839,13 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
             icon: const Icon(Icons.refresh),
             tooltip: AppLocalizations.of(context).syncAndRefresh,
             onPressed: () {
-              ref.read(syncStateProvider.notifier).sync().catchError((_) {});
+              // The refresh button ON the documents screen — the single most
+              // likely place someone checks whether another till's delete has
+              // landed. Must reconcile deletions, not just pull additions.
+              ref
+                  .read(syncStateProvider.notifier)
+                  .sync(manual: true)
+                  .catchError((_) {});
               ref.invalidate(allDocumentsProvider);
             },
           ),
@@ -988,12 +994,30 @@ class _DocumentTable extends ConsumerWidget {
   }
 
   List<DataColumn> _buildColumns(BuildContext context, Map<String, bool> v, ThemeData t) {
+    // Which column absorbs the surplus width. The ConstrainedBox above already
+    // makes the table fill its pane, but with NO flex column `RenderTable`
+    // spreads the slack EQUALLY — so a date column stretches as much as a
+    // customer name. Customer is the widest-varying field; Number is the
+    // fallback when it is switched off. If both are hidden the table simply
+    // reverts to the even spread, which is what it did before.
+    final flexKey = v['Customer'] == true
+        ? 'Customer'
+        : (v['Number'] == true ? 'Number' : null);
+    TableColumnWidth? flexFor(String key) =>
+        key == flexKey ? const IntrinsicColumnWidth(flex: 1) : null;
+
     return [
       if (v['ID'] == true) DataColumn(label: Text(AppLocalizations.of(context).idLabel), numeric: true),
-      if (v['Number'] == true) DataColumn(label: Text(AppLocalizations.of(context).colNumber)),
+      if (v['Number'] == true)
+        DataColumn(
+            label: Text(AppLocalizations.of(context).colNumber),
+            columnWidth: flexFor('Number')),
       if (v['Doc Type'] == true) DataColumn(label: Text(AppLocalizations.of(context).colType)),
       if (v['Paid'] == true) DataColumn(label: Text(AppLocalizations.of(context).colStatus)),
-      if (v['Customer'] == true) DataColumn(label: Text(AppLocalizations.of(context).colCustomer)),
+      if (v['Customer'] == true)
+        DataColumn(
+            label: Text(AppLocalizations.of(context).colCustomer),
+            columnWidth: flexFor('Customer')),
       if (v['Date'] == true) DataColumn(label: Text(AppLocalizations.of(context).colDate)),
       if (v['Order #'] == true) DataColumn(label: Text(AppLocalizations.of(context).colOrderNo)),
       if (v['User'] == true) DataColumn(label: Text(AppLocalizations.of(context).colUser)),

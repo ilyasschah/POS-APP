@@ -87,11 +87,11 @@ public class PosOrderRepository
     /// without pulling every line on every 20s poll — see PosOrderDto.ItemCount.
     /// Orders with no items are simply absent from the result.
     /// </summary>
-    public async Task<Dictionary<int, (int Count, DateTime? LastChanged)>> GetItemStatsAsync(
+    public async Task<Dictionary<int, (int Count, DateTime? LastChanged, int MaxId)>> GetItemStatsAsync(
         List<int> orderIds, CancellationToken cancellationToken = default)
     {
         if (orderIds.Count == 0)
-            return new Dictionary<int, (int, DateTime?)>();
+            return new Dictionary<int, (int, DateTime?, int)>();
 
         var rows = await _db.PosOrderItems
             .AsNoTracking()
@@ -101,11 +101,17 @@ public class PosOrderRepository
             {
                 PosOrderId = g.Key,
                 Count = g.Count(),
-                LastChanged = (DateTime?)g.Max(i => i.DateCreated)
+                LastChanged = (DateTime?)g.Max(i => i.DateCreated),
+                // See PosOrderDto.LastItemId: DateCreated is a SQL `date`, so
+                // LastChanged only resolves to the day and cannot detect a
+                // same-day edit. MAX(Id) always advances because a swap
+                // re-inserts and IDENTITY never reissues.
+                MaxId = g.Max(i => i.Id)
             })
             .ToListAsync(cancellationToken);
 
-        return rows.ToDictionary(r => r.PosOrderId, r => (r.Count, r.LastChanged));
+        return rows.ToDictionary(
+            r => r.PosOrderId, r => (r.Count, r.LastChanged, r.MaxId));
     }
 
     public async Task<PosOrder?> GetByNumberAsync(string number, int companyId)

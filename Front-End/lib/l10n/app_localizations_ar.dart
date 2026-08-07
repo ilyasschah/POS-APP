@@ -1474,6 +1474,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get noPrintersFound => 'لم يتم العثور على طابعات';
 
   @override
+  String get printerSelectionUnsupportedOnThisDevice =>
+      'لا يمكن لهذا الجهاز اختيار طابعة من النظام. ستفتح الطباعة مربع حوار الطباعة الخاص بالجهاز بدلاً من ذلك.';
+
+  @override
   String get numberOfCopies => 'عدد النسخ';
 
   @override
@@ -4812,6 +4816,26 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String kitchenTicketsPrinted(num count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.compact(
+      locale: localeName,
+    );
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'تم إرسال $countString تذاكر مطبخ',
+      one: 'تم إرسال تذكرة المطبخ',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get kitchenNoStationMatched =>
+      'لا توجد طابعة قسم تغطي هذه الأصناف — ستتم طباعة التذكرة الكاملة بدلاً من ذلك.';
+
+  @override
   String couldNotSaveOrder(String message) {
     return 'تعذر حفظ الطلب: $message';
   }
@@ -5651,6 +5675,11 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get retryConnectionUpper => 'إعادة محاولة الاتصال';
+
+  @override
+  String checkedAgainstEndpoint(String endpoint) {
+    return 'تم التحقق عبر $endpoint';
+  }
 
   @override
   String scaleUnitMismatch(String scaleUnit, String productUnit) {

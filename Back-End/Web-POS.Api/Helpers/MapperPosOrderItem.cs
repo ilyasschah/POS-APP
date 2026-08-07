@@ -21,6 +21,8 @@ namespace Api.Helpers
                 Discount = entity.Discount,
                 DiscountType = entity.DiscountType,
                 DiscountAppliedType = entity.DiscountAppliedType,
+                DiscountInputValue = entity.DiscountInputValue,
+                DiscountInputType = entity.DiscountInputType,
                 IsFeatured = entity.IsFeatured,
                 VoidedBy = entity.VoidedBy,
                 VoidedByUserName = entity.VoidedByUser?.Username ?? "N/A",

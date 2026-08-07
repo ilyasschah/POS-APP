@@ -14,6 +14,7 @@ import 'package:pos_app/bookings/bookings_provider.dart';
 import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/navigation/main_layout.dart';
+import 'package:pos_app/sync/sync_manager.dart' show SyncManager;
 import 'package:pos_app/sync/sync_notifier.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
 import 'package:pos_app/cart/cart_provider.dart';
@@ -94,7 +95,13 @@ final kitchenStatusWatcherProvider = Provider<void>((ref) {
 
   Future<void> tick() async {
     try {
-      await syncOpenOrdersToDrift(db, companyId);
+      await syncOpenOrdersToDrift(
+        db,
+        companyId,
+        // This terminal's own sourcing warehouse — the server does not store one
+        // per order. Read fresh each tick so a warehouse switch is picked up.
+        fallbackWarehouseId: ref.read(cartProvider.notifier).effectiveWarehouseId,
+      );
     } catch (_) {
       // Offline or transient API error — local Drift state stays as-is.
     }
@@ -178,6 +185,69 @@ Future<void> _pullOrderItems(
   });
 }
 
+/// Collapses local `pos_orders` rows that share a `serverId` down to one.
+///
+/// 🚨 Why this exists: [syncOpenOrdersToDrift] resolves its Case-1 match with
+/// `getSingleOrNull()`, which **throws** when the query returns more than one
+/// row. Its only production caller ([kitchenStatusWatcherProvider]) swallows
+/// errors, so a single duplicate silently ended open-order syncing on that
+/// device for good — no voids landing, no paid orders leaving the list, no KDS
+/// "ready" badge. The race that created them is now prevented (see the
+/// `pushInFlight` guard), but devices already carrying a duplicate need it gone.
+///
+/// The keeper is the row with real local provenance: a UUID localId outranks a
+/// pull-materialised `svr_<id>` sentinel, because the UUID row is the one the
+/// cart, discount lines and document rows all reference.
+Future<void> _healDuplicateServerIds(AppDatabase db, int companyId) async {
+  final rows = await (db.select(db.posOrdersTable)
+        ..where((t) => t.companyId.equals(companyId))
+        ..where((t) => t.serverId.isNotNull()))
+      .get();
+
+  final byServerId = <int, List<PosOrdersTableData>>{};
+  for (final r in rows) {
+    (byServerId[r.serverId!] ??= []).add(r);
+  }
+
+  for (final entry in byServerId.entries) {
+    if (entry.value.length < 2) continue;
+
+    final group = entry.value;
+    // Prefer a locally-originated row; among those, the one that actually has
+    // line items (an empty sentinel carries nothing worth keeping).
+    PosOrdersTableData? keeper;
+    for (final r in group) {
+      if (r.localId.startsWith('svr_')) continue;
+      keeper ??= r;
+      final itemCount = await (db.select(db.posOrderItemsTable)
+            ..where((t) => t.orderId.equals(r.localId)))
+          .get()
+          .then((i) => i.length);
+      if (itemCount > 0) {
+        keeper = r;
+        break;
+      }
+    }
+    keeper ??= group.first;
+
+    for (final r in group) {
+      if (r.localId == keeper.localId) continue;
+      await db.transaction(() async {
+        await (db.delete(db.posOrderItemsTable)
+              ..where((t) => t.orderId.equals(r.localId)))
+            .go();
+        await (db.delete(db.posOrdersTable)
+              ..where((t) => t.localId.equals(r.localId)))
+            .go();
+      });
+      debugPrint(
+        'syncOpenOrdersToDrift: dropped duplicate order row ${r.localId} '
+        '(serverId ${entry.key}); kept ${keeper.localId}.',
+      );
+    }
+  }
+}
+
 /// Fetches open orders from the API and reconciles them into the local Drift
 /// `pos_orders` table **and their line items**. Shared by the Open Orders
 /// screen's manual refresh and the background [kitchenStatusWatcherProvider].
@@ -188,14 +258,45 @@ Future<void> _pullOrderItems(
 ///   3. Brand-new server order → insert with a `svr_<id>` sentinel localId.
 /// Finally, sentinel rows for orders no longer open on the server are removed.
 /// [api] exists purely as a test seam — production callers use the default.
+/// [fallbackWarehouseId] is the warehouse THIS terminal should source a
+/// server-originated order from.
+///
+/// 🚨 It is required because **`PosOrderDto` carries no warehouse at all** — and
+/// neither does the `PosOrder` table; warehouse is a sourcing decision made by
+/// the till doing the work, never persisted with the order. This code read
+/// `o['warehouseId'] ?? 1`, so every open order pulled from another terminal
+/// landed on **warehouse 1** — an id company 25 does not even own (it has 17 and
+/// 20). Editing such an order then failed outright: the save posts to
+/// `/PosOrderItem/BulkAdd` with `warehouseId: 1`, the server finds no `Stock`
+/// rows for that warehouse, and rejects every line with *"Product X is out of
+/// stock in this warehouse"*. Two devices, and the second one simply could not
+/// save. Pass the device's own `effectiveWarehouseId`.
 Future<void> syncOpenOrdersToDrift(
   AppDatabase db,
   int companyId, {
+  required int fallbackWarehouseId,
   ApiClient? api,
 }) async {
+  // 🚨 Never reconcile while SyncManager's push phase is running. Both write
+  // `pos_orders`, and the push creates a server order BEFORE it can stamp the
+  // serverId back onto the local row (`/PosOrder/Create` → `setServerId`). A
+  // poll landing inside that window sees an order it can't match locally and
+  // materialises a SECOND row for it (Case 3, `svr_<id>`) — two local rows for
+  // one order, on one table. That is the "saving an old order created a new one
+  // with the same table id" bug, and it also poisons every later poll (see the
+  // duplicate heal below). Skipping is free: the next tick is 10s away.
+  if (SyncManager.pushInFlight) return;
+
   final client = api ?? ApiClient();
   final orders = await client.getAllPosOrders(companyId);
   final now = DateTime.now().toUtc();
+
+  // Heal any duplicate serverId groups left by an earlier build's race before
+  // touching anything else — `getSingleOrNull` below THROWS on a duplicate, and
+  // the only caller catches silently, so one duplicate used to kill this
+  // device's open-order sync permanently (voids never disappeared, paid orders
+  // never left the list). Keep the row carrying local work; drop the sentinel.
+  await _healDuplicateServerIds(db, companyId);
 
   final openServerIds = <int>{};
 
@@ -218,21 +319,49 @@ Future<void> syncOpenOrdersToDrift(
     // `pos_orders.customerId`, and this pull is the only thing that ever writes
     // that column for an order this device did not create.
     final customerId = (o['customerId'] ?? o['CustomerId']) as int?;
+    // The WHOLE-ORDER discount. Case 3 used to hardcode 0 and Case 1 never
+    // reconciled it, so a cart-level discount applied on one till vanished on
+    // every other one — and worse, re-saving there pushed the 0 back, wiping the
+    // discount on the till that granted it.
+    final discount = ((o['discount'] ?? o['Discount']) as num?)?.toDouble() ?? 0;
+    final discountType = (o['discountType'] ?? o['DiscountType']) as int? ?? 0;
+    final serviceType = (o['serviceType'] ?? o['ServiceType']) as int? ?? 0;
 
-    // Line-content change detectors (PosOrderDto). Both are absent on an API
-    // build that predates them — left null, the checks below simply skip and the
+    // Line-content change detectors (PosOrderDto). All absent on an API build
+    // that predates them — left null, the checks below simply skip and the
     // total-only behaviour applies.
     final serverItemCount = (o['itemCount'] ?? o['ItemCount']) as int?;
     final rawStamp = (o['itemsLastChanged'] ?? o['ItemsLastChanged']) as String?;
     final itemsLastChanged =
         rawStamp == null ? null : DateTime.tryParse(rawStamp)?.toUtc();
+    // 🚨 The detector that actually works for a SAME-DAY edit. `ItemsLastChanged`
+    // is MAX(PosOrderItem.DateCreated), and that column is SQL type `date` — the
+    // time is truncated on write, giving it one-DAY resolution. A same-price
+    // swap on another till moves neither Total nor ItemCount, and its stamp
+    // compares equal, so it was invisible for the rest of the day. MAX(Id)
+    // always advances: a swap re-inserts, and IDENTITY never reissues.
+    final lastItemId = (o['lastItemId'] ?? o['LastItemId']) as int?;
 
     // Case 1: Already in Drift matched by serverId — patch the volatile fields
     // (serviceStatus is the whole point: that's how a KDS "ready" reaches POS).
+    //
+    // `.get().firstOrNull` rather than `getSingleOrNull()`: the latter THROWS on
+    // a duplicate, and this function's production caller swallows errors, so one
+    // duplicate row used to stop open-order sync on the device forever. Dupes
+    // are prevented (the pushInFlight guard) and healed (_healDuplicateServerIds
+    // above), but this must never be the thing that takes the poll down again.
     final existingByServerId = await (db.select(db.posOrdersTable)
-          ..where((t) => t.serverId.equals(id)))
-        .getSingleOrNull();
+          ..where((t) => t.serverId.equals(id))
+          ..limit(1))
+        .get()
+        .then((r) => r.firstOrNull);
     if (existingByServerId != null) {
+      // A row with unpushed local work owns its own header. The server's copy
+      // predates that work, so writing total/tableId back over it reverted the
+      // cashier's just-saved edit (and the push then sent the reverted total).
+      // serviceStatus is the exception — it is the KDS "ready" signal and is
+      // only ever set server-side.
+      final locallyOwned = existingByServerId.syncStatus != 'synced';
       // Don't let a server pull DOWNGRADE a locally-set "ready" (3). The KDS
       // marked it done over the LAN; the backend may not have caught up yet
       // (offline, or mid-flight). Keep it at 3 until the order leaves the open
@@ -242,24 +371,49 @@ Future<void> syncOpenOrdersToDrift(
               serviceStatus < kServiceStatusReady;
       final effectiveStatus =
           keepReady ? kServiceStatusReady : serviceStatus;
-      final totalChanged = existingByServerId.total != total;
+      final totalChanged =
+          !locallyOwned && existingByServerId.total != total;
+      final tableChanged =
+          !locallyOwned && existingByServerId.tableId != tableId;
       // Only adopt the server's customer on a row with nothing unpushed. On a
       // 'pending' row the cashier may have just picked a customer that this
       // pull has not seen yet — taking the server's (older) value would wipe it.
-      final adoptCustomer = existingByServerId.syncStatus == 'synced' &&
-          existingByServerId.customerId != customerId;
+      final adoptCustomer =
+          !locallyOwned && existingByServerId.customerId != customerId;
+      // The rest of the header. These were never reconciled at all, so an edit
+      // made on another till stayed invisible here — and because this device
+      // then pushed its own stale copy back on the next save, the two terminals
+      // could ping-pong an order between two different states indefinitely.
+      final discountChanged = !locallyOwned &&
+          (existingByServerId.discount != discount ||
+              existingByServerId.discountType != discountType);
+      final serviceTypeChanged =
+          !locallyOwned && existingByServerId.serviceType != serviceType;
+      final nameChanged = !locallyOwned &&
+          serverName != null &&
+          serverName.isNotEmpty &&
+          existingByServerId.orderName != serverName;
       if (existingByServerId.serviceStatus != effectiveStatus ||
           totalChanged ||
           adoptCustomer ||
-          existingByServerId.tableId != tableId) {
+          tableChanged ||
+          discountChanged ||
+          serviceTypeChanged ||
+          nameChanged) {
         await (db.update(db.posOrdersTable)
               ..where((t) => t.localId.equals(existingByServerId.localId)))
             .write(PosOrdersTableCompanion(
           serviceStatus: Value(effectiveStatus),
-          total: Value(total),
-          tableId: Value(tableId),
+          total: totalChanged ? Value(total) : const Value.absent(),
+          tableId: tableChanged ? Value(tableId) : const Value.absent(),
           customerId:
               adoptCustomer ? Value(customerId) : const Value.absent(),
+          discount: discountChanged ? Value(discount) : const Value.absent(),
+          discountType:
+              discountChanged ? Value(discountType) : const Value.absent(),
+          serviceType:
+              serviceTypeChanged ? Value(serviceType) : const Value.absent(),
+          orderName: nameChanged ? Value(serverName) : const Value.absent(),
           lastModified: Value(now),
         ));
       }
@@ -278,12 +432,36 @@ Future<void> syncOpenOrdersToDrift(
       // 'synced' is load-bearing — a row with unpushed local edits must keep its
       // own lines, per the pull/insertOrReplace rule in handoff §3.
       if (existingByServerId.syncStatus == 'synced') {
-        final localItemCount = await (db.select(db.posOrderItemsTable)
+        final localItems = await (db.select(db.posOrderItemsTable)
               ..where((t) => t.orderId.equals(existingByServerId.localId)))
-            .get()
-            .then((r) => r.length);
+            .get();
+        final localItemCount = localItems.length;
         final countChanged =
             serverItemCount != null && serverItemCount != localItemCount;
+        // Highest server item id this device currently holds. `_pullOrderItems`
+        // replaces the line set wholesale and names every pulled row
+        // `svri_<serverItemId>`, so this is EXACTLY the server's MAX(Id) as of
+        // the last pull — no extra column needed to remember it.
+        //
+        // `!=` rather than `<`: a pure deletion can LOWER the server's maximum,
+        // and that is a change too. A row whose localId isn't `svri_`-shaped
+        // (the server sent no id) yields null and forces a refetch, which is the
+        // safe direction.
+        int? localMaxItemId = 0;
+        for (final it in localItems) {
+          if (!it.localId.startsWith('svri_')) {
+            localMaxItemId = null;
+            break;
+          }
+          final parsed = int.tryParse(it.localId.substring(5));
+          if (parsed == null) {
+            localMaxItemId = null;
+            break;
+          }
+          if (parsed > localMaxItemId!) localMaxItemId = parsed;
+        }
+        final lastItemIdChanged =
+            lastItemId != null && localMaxItemId != lastItemId;
         // Compare INSTANTS, not DateTime objects. Dart's `==` also requires the
         // same isUtc flag, and Drift reads a dateTime() column back as LOCAL
         // while this value is parsed as UTC — so `!=` was true forever and every
@@ -307,12 +485,16 @@ Future<void> syncOpenOrdersToDrift(
         if (localItemCount == 0 ||
             totalChanged ||
             countChanged ||
+            lastItemIdChanged ||
             stampChanged) {
           await _pullOrderItems(
             db,
             companyId,
             existingByServerId.localId,
             id,
+            // The server stores no warehouse per order, so re-source the lines
+            // from whatever this row already resolved to rather than trusting a
+            // value that never came from the server.
             existingByServerId.warehouseId,
             client,
           );
@@ -321,17 +503,31 @@ Future<void> syncOpenOrdersToDrift(
       continue;
     }
 
-    // Case 2: A local UUID row with no serverId exists for the same order name
-    // (created offline, just pushed by BatchSync). Stamp the serverId on it so
-    // it won't appear as a duplicate after the next pull.
+    // Case 2: A local UUID row with no serverId exists for the same order
+    // (created here, already pushed). Stamp the serverId on it so Case 3 below
+    // doesn't materialise a SECOND row for the same order.
+    //
+    // 🚨 This used to require `syncStatus == 'synced'` — which an offline-created
+    // row NEVER is until its push completes. So the one shape this case exists
+    // to catch could not match it, and every such order fell through to Case 3
+    // and got a twin `svr_<id>` row on the same table. Match on "no serverId yet"
+    // instead; that, not the sync status, is what identifies an unadopted row.
+    //
+    // Scoped by company AND table as well as order name: two devices ringing up
+    // offline can both mint "ORD- #001" from their own daily counter, and
+    // adopting the wrong one would hand this device another terminal's order.
     if (serverName != null && serverName.isNotEmpty) {
-      final existingByName = await (db.select(db.posOrdersTable)
+      final candidates = await (db.select(db.posOrdersTable)
+            ..where((t) => t.companyId.equals(companyId))
             ..where((t) => t.orderName.equals(serverName))
             ..where((t) => t.status.equals(0))
-            ..where((t) => t.syncStatus.equals('synced'))
-            ..limit(1))
-          .getSingleOrNull();
-      if (existingByName != null && existingByName.serverId == null) {
+            ..where((t) => t.serverId.isNull()))
+          .get();
+      final existingByName = candidates
+              .where((r) => r.tableId == tableId)
+              .firstOrNull ??
+          (candidates.length == 1 ? candidates.first : null);
+      if (existingByName != null) {
         await (db.update(db.posOrdersTable)
               ..where((t) => t.localId.equals(existingByName.localId)))
             .write(PosOrdersTableCompanion(
@@ -344,7 +540,17 @@ Future<void> syncOpenOrdersToDrift(
 
     // Case 3: Genuine server-originated order not yet in local Drift —
     // insert with a deterministic sentinel localId.
-    final warehouseId = (o['warehouseId'] ?? o['WarehouseId']) as int? ?? 1;
+    //
+    // The warehouse is THIS terminal's, not the server's: neither `PosOrder` nor
+    // `PosOrderDto` carries one. The old `?? 1` produced a warehouse the company
+    // may not own, and every later save of the order was then rejected as out of
+    // stock.
+    final warehouseId = fallbackWarehouseId;
+    // Restore the booking link locally. `PosOrderDto` cannot carry it — the
+    // relation lives on `Booking.PosOrderId` — so without this a reservation's
+    // order opened on a second till has no booking attached, and paying it never
+    // completes the reservation.
+    final bookingId = await db.bookingIdForPosOrder(id);
     await db.into(db.posOrdersTable).insertOnConflictUpdate(
       PosOrdersTableCompanion(
         localId: Value('svr_$id'),
@@ -353,13 +559,17 @@ Future<void> syncOpenOrdersToDrift(
         userId: Value((o['userId'] ?? o['UserId']) as int? ?? 0),
         tableId: Value(tableId),
         customerId: Value(customerId),
-        serviceType: Value((o['serviceType'] ?? o['ServiceType']) as int? ?? 0),
+        serviceType: Value(serviceType),
         serviceStatus: Value(serviceStatus),
         orderName: Value(serverName),
+        bookingId: Value(bookingId),
         openedAt: Value(now),
         status: const Value(0),
         total: Value(total),
-        discount: const Value(0),
+        // Was hardcoded 0 — a whole-order discount granted on another till was
+        // silently dropped here, and re-saving pushed the 0 back over it.
+        discount: Value(discount),
+        discountType: Value(discountType),
         warehouseId: Value(warehouseId),
         syncStatus: const Value('synced'),
         lastModified: Value(now),
@@ -454,8 +664,13 @@ class _OpenOrdersScreenState extends ConsumerState<OpenOrdersScreen> {
     try {
       // Full push+pull first (documents/voids, products, …) so a void or edit
       // made on another device lands, then the open-orders pull for live status.
-      await ref.read(syncStateProvider.notifier).sync();
-      await syncOpenOrdersToDrift(ref.read(appDatabaseProvider), company.id);
+      await ref.read(syncStateProvider.notifier).sync(manual: true);
+      await syncOpenOrdersToDrift(
+        ref.read(appDatabaseProvider),
+        company.id,
+        fallbackWarehouseId:
+            ref.read(cartProvider.notifier).effectiveWarehouseId,
+      );
     } catch (_) {
       // Offline or API error — Drift stream already shows local orders.
     } finally {

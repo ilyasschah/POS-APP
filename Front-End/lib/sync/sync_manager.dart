@@ -8,6 +8,8 @@ import 'package:uuid/uuid.dart';
 import 'package:pos_app/auth/auth_storage.dart';
 import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/database/app_database.dart';
+import 'package:pos_app/document/document_type_constants.dart';
+import 'package:pos_app/settings/device_identity.dart';
 import 'package:pos_app/sync/image_sync_helper.dart';
 import 'package:pos_app/sync/sync_status.dart';
 
@@ -28,6 +30,22 @@ import 'package:pos_app/sync/sync_status.dart';
 class SeatLimitException implements Exception {
   final String message;
   SeatLimitException(this.message);
+  @override
+  String toString() => message;
+}
+
+/// Thrown when the server reports this terminal was **removed from the account**
+/// by an admin (User info → Active devices → revoke).
+///
+/// Deliberately NOT a [SeatLimitException]: a seat/licence block is a condition
+/// to be fixed on the account, and the terminal keeps its enrolment while the
+/// operator sorts it out. A revoke means this device is no longer enrolled at
+/// all, so the only correct response is to sign out and ask for the account
+/// credentials again — which a fresh master login then honours, re-admitting the
+/// device (see `RegisterOrValidateDeviceAsync(isInteractiveLogin: true)`).
+class DeviceRevokedException implements Exception {
+  final String message;
+  DeviceRevokedException(this.message);
   @override
   String toString() => message;
 }
@@ -61,6 +79,21 @@ class SyncManager {
   static const _kDocuments = 'documents';
   static const _kLoyaltyCards = 'loyalty_cards';
 
+  /// True while [_pushAll] is running anywhere in the process.
+  ///
+  /// 🚨 Read by `syncOpenOrdersToDrift` (the 10s open-order poll), which must
+  /// NOT reconcile mid-push: `pushPendingOpenOrders` creates the server order
+  /// and only then stamps the id back onto the local row, so a poll landing in
+  /// that window can't match the order locally and materialises a second
+  /// `svr_<id>` row for it. Two local rows sharing one serverId then made the
+  /// poll's `getSingleOrNull()` throw on every subsequent tick — killing
+  /// open-order sync on that device permanently.
+  ///
+  /// Static because the poll is a plain function with no SyncManager handle,
+  /// and there is only ever one sync in flight (the notifier gates on
+  /// `isLoading`).
+  static bool pushInFlight = false;
+
   /// Labels of steps that failed during the most recent [sync] run. Reset at the
   /// start of each run; safe as instance state because syncs never overlap (the
   /// notifier/watchers gate on `isLoading`).
@@ -84,15 +117,46 @@ class SyncManager {
       await op();
     } on SeatLimitException {
       rethrow; // licensing block must surface to the UI, not be swallowed
+    } on DeviceRevokedException {
+      rethrow; // must reach the UI to sign the terminal out — never swallowed
     } catch (e) {
       _failedSteps.add(label);
       debugPrint('sync step "$label" failed — $e');
     }
   }
 
+  /// Tells the control plane what this terminal is called, so the account's
+  /// "Active devices" list can show "POS1" instead of a `POS-<uuid>` signature.
+  ///
+  /// Deliberately NOT a `_step`: the name is a label, not data. A stale API
+  /// (404), an unlinked terminal (401) or a Master-DB hiccup must not paint a
+  /// red row in the Sync Status panel over something no operator can act on —
+  /// and the next sync retries it anyway. Rename-only server-side: it never
+  /// touches seat status, so it cannot register or reactivate a device.
+  Future<void> _reportDeviceName(String deviceName) async {
+    try {
+      await dio.post(
+        '/Master/RenameDevice',
+        queryParameters: {
+          'deviceId': dio.options.headers['X-Device-Id'],
+          'deviceName': deviceName,
+        },
+      );
+    } catch (e) {
+      debugPrint('device name not reported (retried next sync) — $e');
+    }
+  }
+
   /// Runs a full bidirectional sync and returns the labels of any steps that
   /// failed (empty list = everything synced cleanly).
-  Future<List<String>> sync(int companyId) async {
+  ///
+  /// [manual] marks an **operator-initiated** run (the Sync button, the sync
+  /// panel, a pull-to-refresh) as opposed to a background one (connectivity
+  /// restored, the hourly timer, fire-and-forget after a save). It forces the
+  /// document pull to do a full-window pass, so a sale deleted on another till
+  /// disappears on this one the moment someone asks it to — instead of whenever
+  /// the 6-hour reconcile cadence next comes round.
+  Future<List<String>> sync(int companyId, {bool manual = false}) async {
     _failedSteps.clear();
     _rejectionNotices.clear();
 
@@ -100,6 +164,22 @@ class SyncManager {
     // signature, so the server can enforce the seat cap at each BatchSync ingress
     // (orders, shifts, loyalty cards, time-clock).
     dio.options.headers['X-Device-Id'] = await authStorage.getOrCreateDeviceId();
+    // Ride along with the signature so DeviceRegistry keeps the operator-facing
+    // name current — a POS renamed in Settings shows up renamed on the account's
+    // device list. Omitted when unset: the server treats "no name" as "no change",
+    // so it can never blank a name that was already recorded.
+    final deviceName = await getDeviceName();
+    if (deviceName.isNotEmpty) {
+      dio.options.headers['X-Device-Name'] = deviceName;
+      // 🚨 The header ALONE is not enough, and this call is why. The server only
+      // reads it inside SeatGuard, which runs at the BatchSync ingresses (orders,
+      // shifts, loyalty cards, time clock) — endpoints a terminal with nothing
+      // pending never calls. So a till that was already named and had no unpushed
+      // work could press Sync forever and its registry row kept the name it was
+      // first registered with. Reported live: pressing Sync repeatedly left three
+      // devices reading "POS terminal".
+      await _reportDeviceName(deviceName);
+    }
 
     // Sliding-window token refresh: exchange the still-valid device JWT for a
     // fresh one so live terminals never hit expiry on the gated admin-write
@@ -140,7 +220,8 @@ class SyncManager {
     // pullMasterData isolates each entity internally; pullDocuments is wrapped
     // here so a document-pull failure is reported but never throws.
     await pullMasterData(companyId);
-    await _step('documents', () => pullDocuments(companyId));
+    await _step(
+        'documents', () => pullDocuments(companyId, forceFullPull: manual));
     // After documents (so each line's local document exists to attach to).
     await _step('discountLines', () => pullDiscountLines(companyId));
 
@@ -148,6 +229,29 @@ class SyncManager {
   }
 
   Future<void> _pushAll(int companyId) async {
+    pushInFlight = true;
+    try {
+      await _pushAllInner(companyId);
+    } finally {
+      pushInFlight = false;
+    }
+  }
+
+  /// 🚨 EVERY step here goes through [_step]. It used to be a bare sequence of
+  /// awaits, which meant the FIRST pusher that threw silently cancelled every
+  /// pusher after it — and `pushPendingOrders` rethrows any DioException
+  /// (a 400/500 on one stuck sale) from position 14 of 30. Everything below it
+  /// — documents, refunds, paid status, payments, VOIDS, cash movements,
+  /// Z-reports, customers, bookings, warehouses, stock — never ran at all while
+  /// that one order stayed stuck. That is why a void, a payment and a document
+  /// delete could all "not sync" at once with no error shown anywhere.
+  ///
+  /// [_step] still rethrows [SeatLimitException], so a licensing block keeps
+  /// aborting the run loudly instead of being swallowed.
+  ///
+  /// The ORDER below is load-bearing and must not be rearranged — see the
+  /// comments on each group.
+  Future<void> _pushAllInner(int companyId) async {
     // Drop unsyncable orphans (temp-product refs whose product row is gone)
     // before pushing, so they don't 400-loop forever and a sale that sold a
     // now-deleted product doesn't sit stuck at "(Pending sync)".
@@ -156,69 +260,93 @@ class SyncManager {
       debugPrint('purgeOrphanedTempRefs: removed $purged orphaned row(s).');
     }
 
+    // Give back a second chance to orders parked at terminal `failed` by an
+    // INFRASTRUCTURE fault (schema mismatch, DB timeout, dead connection).
+    // Nothing else in the app can requeue them, so without this a completed
+    // paid sale stays stranded for good once the server hiccups.
+    final requeued = await db.requeueInfrastructureFailedOrders();
+    if (requeued > 0) {
+      debugPrint('requeued $requeued order(s) failed by a server fault.');
+    }
+
     // ── Master data first ────────────────────────────────────────────────────
     // Everything an order/document/payment can reference by id must be created
     // (and its temp→real id remapped onto referencing rows) BEFORE those orders
     // push — otherwise BatchSync 400s on a productId/taxId/paymentTypeId the
     // server has never seen, and the sale gets stuck at "(Pending sync)".
-    await pushPendingProductGroupOps(companyId); // remaps products.groupId
-    await pushPendingProductOps(companyId);      // remaps order/doc items.productId
-    await pushPendingProductCommentOps(companyId); // comments on offline products
-    await pushPendingBarcodeOps(companyId);
-    await pushPendingTaxOps(companyId);          // remaps product-tax + item taxes
-    await pushPendingPaymentTypeOps(companyId);  // remaps payments/orders.paymentTypeId
-    await pushPendingVoidReasonOps(companyId);
-    await pushPendingPromotionOps(companyId);
+    await _step('push:productGroups',
+        () => pushPendingProductGroupOps(companyId)); // remaps products.groupId
+    await _step('push:products',
+        () => pushPendingProductOps(companyId)); // remaps order/doc items.productId
+    await _step('push:productComments',
+        () => pushPendingProductCommentOps(companyId)); // offline products
+    await _step('push:barcodes', () => pushPendingBarcodeOps(companyId));
+    await _step('push:taxes',
+        () => pushPendingTaxOps(companyId)); // remaps product-tax + item taxes
+    await _step('push:paymentTypes',
+        () => pushPendingPaymentTypeOps(companyId)); // remaps paymentTypeId
+    await _step('push:voidReasons', () => pushPendingVoidReasonOps(companyId));
+    await _step('push:promotions', () => pushPendingPromotionOps(companyId));
     // Tables must own real ids before ANY transactional row that points at one:
     // orders carry floorPlanTableId, bookings carry a tableIds list.
-    await pushPendingFloorPlanTableOps(companyId); // remaps orders + bookings
+    await _step('push:floorPlanTables',
+        () => pushPendingFloorPlanTableOps(companyId)); // remaps orders+bookings
     // ── Transactional data (now all their referenced ids are real) ───────────
-    await pushPendingOpenOrders(companyId);
-    await pushPendingOrders(companyId);
+    await _step('push:openOrders', () => pushPendingOpenOrders(companyId));
+    await _step('push:orders', () => pushPendingOrders(companyId));
     // Manual document editor: create/update/delete headers + their line items.
     // Runs before paid-status/payments so a locally-created document already
     // carries its server id when those are pushed.
-    await pushPendingDocuments(companyId);
-    await pushPendingDocumentItems(companyId);
+    await _step('push:documents', () => pushPendingDocuments(companyId));
+    await _step('push:documentItems', () => pushPendingDocumentItems(companyId));
     // Offline refunds (device-local /Document/Refund). Runs after orders +
     // documents so a verified refund's original sale already exists server-side.
-    await pushPendingRefundOps(companyId);
+    await _step('push:refunds', () => pushPendingRefundOps(companyId));
     // Paid-status + standalone payment edits made in the document editor. Run
     // after pushPendingOrders so locally-created documents already carry their
     // server id before their payments are pushed.
-    await pushPendingPaidStatus(companyId);
-    await pushPendingPayments(companyId);
+    await _step('push:paidStatus', () => pushPendingPaidStatus(companyId));
+    await _step('push:payments', () => pushPendingPayments(companyId));
     // Heal checkout payments that are still 'pending' under an already-synced
     // document (they were posted server-side by checkout, so they're not lost).
-    await db.reconcileSyncedCheckoutPayments();
-    await pushPendingVoids(companyId);
-    await pushPendingCashMovements(companyId);
-    await pushPendingZReports(companyId);
-    await pushPendingUserOps(companyId);
-    await pushPendingCustomerOps(companyId);
-    await pushPendingCustomerDiscountOps(companyId);
+    await _step('push:reconcilePayments',
+        () => db.reconcileSyncedCheckoutPayments());
+    await _step('push:voids', () => pushPendingVoids(companyId));
+    await _step('push:cashMovements',
+        () => pushPendingCashMovements(companyId));
+    await _step('push:zReports', () => pushPendingZReports(companyId));
+    await _step('push:users', () => pushPendingUserOps(companyId));
+    await _step('push:customers', () => pushPendingCustomerOps(companyId));
+    await _step('push:customerDiscounts',
+        () => pushPendingCustomerDiscountOps(companyId));
     // Bookings reference customers/users (now pushed) by id.
-    await pushPendingBookings(companyId);
-    await pushPendingLoyaltyCardOps(companyId);
-    await pushPendingShifts(companyId);
-    await pushPendingTimeClockEntries(companyId);
-    await pushPendingAppProperties(companyId);
-    await pushPendingCompanyOps(companyId);
+    await _step('push:bookings', () => pushPendingBookings(companyId));
+    await _step('push:loyaltyCards',
+        () => pushPendingLoyaltyCardOps(companyId));
+    await _step('push:shifts', () => pushPendingShifts(companyId));
+    await _step('push:timeClock',
+        () => pushPendingTimeClockEntries(companyId));
+    await _step('push:appProperties',
+        () => pushPendingAppProperties(companyId));
+    await _step('push:company', () => pushPendingCompanyOps(companyId));
     // Warehouse + stock ordering matters:
     //  1. create/update warehouses first (a stock "move" may target a brand-new
     //     warehouse that must exist on the server),
     //  2. then push the stock revoke/move ops (empties a warehouse),
     //  3. then delete warehouses (the backend FK rejects deleting one that
     //     still holds stock).
-    await pushPendingWarehouseOps(companyId, deletePhase: false);
-    await pushPendingStockOps(companyId);
+    await _step('push:warehouses',
+        () => pushPendingWarehouseOps(companyId, deletePhase: false));
+    await _step('push:stockOps', () => pushPendingStockOps(companyId));
     // Offline stock + stock-control edits made on the Stock screen.
-    await pushPendingStocks(companyId);
-    await pushPendingStockControls(companyId);
+    await _step('push:stocks', () => pushPendingStocks(companyId));
+    await _step('push:stockControls',
+        () => pushPendingStockControls(companyId));
     // Product↔tax assignments — after products (productId) and taxes (taxId)
     // have both been pushed + remapped above.
-    await pushPendingProductTaxes(companyId);
-    await pushPendingWarehouseOps(companyId, deletePhase: true);
+    await _step('push:productTaxes', () => pushPendingProductTaxes(companyId));
+    await _step('push:warehouseDeletes',
+        () => pushPendingWarehouseOps(companyId, deletePhase: true));
   }
 
   // ==========================================================================
@@ -1258,6 +1386,18 @@ class SyncManager {
       if (e.response?.statusCode == 403) {
         final data = e.response?.data;
         final err = data is Map ? data['error'] : null;
+        // The admin removed this terminal from the account (User info → Active
+        // devices). Distinct from a seat/licence block: that one is a condition
+        // to fix on the account, whereas this terminal is simply no longer
+        // enrolled, so it must sign out and re-authenticate rather than sit on
+        // a blocking screen. Handled by the caller, which unlinks and routes to
+        // master login.
+        if (err == 'device_revoked') {
+          throw DeviceRevokedException(
+            (data is Map ? data['message'] as String? : null) ??
+                'This terminal was removed from the account. Sign in again to reconnect it.',
+          );
+        }
         if (err == 'seat_limit_exceeded' || err == 'device_blocked') {
           throw SeatLimitException(
             (data is Map ? data['message'] as String? : null) ??
@@ -1307,10 +1447,50 @@ class SyncManager {
           }
         } else {
           final error = r['error'] as String? ?? 'Unknown server error.';
-          await db.markOrderFailed(localId, error);
+          // 🚨 `failed` is TERMINAL — the push only ever selects 'pending', and
+          // nothing in the app requeues. That is right for a BUSINESS rejection
+          // (a duplicate number, a deleted product) which retrying cannot fix,
+          // and catastrophic for an INFRASTRUCTURE fault, which strands a real
+          // paid sale forever.
+          //
+          // It happened on 2026-08-06: `PosOrderItem` gained two columns, the
+          // API was restarted before the migration was applied, and BatchSync
+          // came back "Invalid column name 'DiscountInputValue'". A completed,
+          // paid sale went to `failed` and no amount of syncing would ever
+          // retry it. handoff §3 warned about exactly this — "watch for it
+          // whenever a push payload changes".
+          if (_isRetryableServerError(error)) {
+            await db.setOrderSyncError(localId, error);
+            debugPrint(
+                'pushPendingOrders: $localId kept pending (retryable) — $error');
+          } else {
+            await db.markOrderFailed(localId, error);
+          }
         }
       } catch (_) {}
     }
+  }
+
+  /// True when a server-reported failure is an INFRASTRUCTURE fault rather than
+  /// a business rejection — i.e. the same payload can succeed later, so the row
+  /// must stay `pending` instead of being parked at terminal `failed`.
+  ///
+  /// Deliberately a small allow-list of unmistakable infrastructure signatures.
+  /// Defaulting the other way (retry unless proven business) would re-push a
+  /// genuinely rejected order every sync, forever.
+  static bool _isRetryableServerError(String error) {
+    final e = error.toLowerCase();
+    return e.contains('invalid column name') || // model/schema mismatch
+        e.contains('invalid object name') || //   missing table/view
+        e.contains('timeout') ||
+        // NOT covered by 'timeout': SQL Server's pre-login failure reads
+        // "The wait operation timed out" (Win32Exception 258) — handoff §3.
+        e.contains('timed out') ||
+        e.contains('deadlock') ||
+        e.contains('transport') ||
+        e.contains('connection') ||
+        e.contains('pre-login') || //              Win32Exception 258
+        e.contains('temporarily unable'); //       the API's own 503 text
   }
 
   Map<String, dynamic> _orderToBatchJson(
@@ -3943,16 +4123,51 @@ class SyncManager {
     for (final doc in await db.getDocumentsBySyncStatus(
         companyId, SyncStatuses.pendingDelete)) {
       try {
-        if (doc.serverId != null) {
-          await dio.delete<dynamic>(
-            '/Document/Delete',
-            queryParameters: {'id': doc.serverId, 'companyId': companyId},
-          );
+        // 🚨 The local row must NOT be dropped until the server copy is gone,
+        // or the delete is lost forever: this row is the only record that the
+        // deletion ever happened. The old code hard-deleted locally even when
+        // `serverId` was null — so a document whose local row had lost its
+        // server link vanished here and survived online for good ("deleted from
+        // the POS, still in the online database").
+        var serverId = doc.serverId;
+
+        // No local link but the document carries a server-issued number — ask
+        // the server for its id rather than giving up. This is the shape that
+        // leaked: a document pulled or reconciled by number, then deleted.
+        if (serverId == null && (doc.number?.isNotEmpty ?? false)) {
+          try {
+            final res = await dio.get<dynamic>(
+              '/Document/GetByNumber',
+              queryParameters: {'number': doc.number, 'companyId': companyId},
+            );
+            final body = res.data;
+            serverId = body is Map
+                ? (body['id'] ?? body['Id']) as int?
+                : null;
+          } on DioException catch (de) {
+            // 404 = the server genuinely has no such document. Nothing to
+            // delete there, so the local row can go.
+            if (de.response?.statusCode != 404) rethrow;
+          }
         }
+
+        if (serverId != null) {
+          try {
+            await dio.delete<dynamic>(
+              '/Document/Delete',
+              queryParameters: {'id': serverId, 'companyId': companyId},
+            );
+          } on DioException catch (de) {
+            // Already gone server-side is the outcome we wanted.
+            if (de.response?.statusCode != 404) rethrow;
+          }
+        }
+
         await (db.delete(db.documentsTable)
               ..where((t) => t.localId.equals(doc.localId)))
             .go();
       } catch (e) {
+        // Row stays 'pending_delete' — the next sync retries it.
         debugPrint('pushPendingDocuments (delete) ${doc.localId} failed — $e');
       }
     }
@@ -4290,15 +4505,50 @@ class SyncManager {
   // PULL — Documents from /Document/GetSalesHistory
   // ==========================================================================
 
-  /// Pulls the last 90 days of sales documents from the server and upserts
-  /// them into the local Drift DocumentsTable.
+  /// Every DocumentType the pull mirrors. **Sending this list is what makes
+  /// documents cross devices at all**: `/Document/GetSalesHistory` defaults to
+  /// `DocumentTypeId == 2` (Sales) and used to hard-code it, so a refund, a
+  /// purchase, or anything created in the document editor on one terminal could
+  /// never reach another one — the "documents are not synced" report. An older
+  /// API ignores the parameter and simply returns sales, i.e. today's behaviour.
+  static const List<int> _kPulledDocumentTypes = [
+    DocumentTypes.purchase,
+    DocumentTypes.sales,
+    DocumentTypes.inventoryCount,
+    DocumentTypes.refund,
+    DocumentTypes.stockReturn,
+    DocumentTypes.lossAndDamage,
+    DocumentTypes.proforma,
+  ];
+
+  /// How often a BACKGROUND sync drops the delta watermark for a full-window
+  /// pass. A delta pull can only ever ADD or UPDATE — it can't see a document
+  /// that was DELETED on another terminal, because a deleted row has no
+  /// `DateUpdated` to report. The periodic full pass is what lets
+  /// [pullDocuments] notice absences and retire the local copies.
   ///
-  /// Two cases per server document:
+  /// ⚠️ This throttle exists purely to keep the automatic (connectivity /
+  /// hourly / after-every-save) syncs cheap. It must **never** gate an
+  /// operator-pressed Sync — see [sync]'s `manual` flag. Someone who deletes a
+  /// sale on one till and taps Sync on another expects it gone *now*, not within
+  /// six hours, and a stale figure on screen is exactly the failure this whole
+  /// area is about.
+  static const Duration _kDocumentReconcileInterval = Duration(hours: 6);
+  static const _kDocumentsFullPull = 'documents_full';
+
+  /// Pulls the last 90 days of documents from the server and upserts them into
+  /// the local Drift DocumentsTable.
+  ///
+  /// Three cases per server document:
   ///   1. A local row with the same serverId already exists (created at checkout
   ///      on this device) → update the server-assigned document number.
-  ///   2. No local row (created on another device) → insert a new 'srv_X'
+  ///   2. A local row matches by number but has no serverId → adopt it.
+  ///   3. No local row (created on another device) → insert a new 'srv_X'
   ///      sentinel row so the local history is complete across all devices.
-  Future<void> pullDocuments(int companyId) async {
+  ///
+  /// On a full-window pass it also RETIRES local documents the server no longer
+  /// reports — see [_reconcileDeletedDocuments].
+  Future<void> pullDocuments(int companyId, {bool forceFullPull = false}) async {
     final now = DateTime.now().toUtc();
     final from = now.subtract(const Duration(days: 90));
 
@@ -4306,7 +4556,14 @@ class SyncManager {
     // (DateUpdated) since the last successful pull, so a steady device transfers
     // almost nothing instead of the whole 90-day window every sync. The local DB
     // is never pruned, so unreturned (unchanged) docs simply stay as they are.
-    final watermark = await _getLastSync(_kDocuments);
+    //
+    // [forceFullPull] is set by an operator-pressed Sync so deletions made on
+    // another till are reconciled immediately rather than on the 6-hour cadence.
+    final lastFull = await _getLastSync(_kDocumentsFullPull);
+    final isFullPass = forceFullPull ||
+        lastFull == null ||
+        now.difference(lastFull) >= _kDocumentReconcileInterval;
+    final watermark = isFullPass ? null : await _getLastSync(_kDocuments);
 
     try {
       final res = await dio.get<dynamic>(
@@ -4318,6 +4575,9 @@ class SyncManager {
           // Pull line items + customerId so the local DB can compute the
           // dashboard / item-level reports fully offline.
           'includeItems': true,
+          // Repeated as documentTypeIds=1&documentTypeIds=2&… (Dio's default
+          // ListFormat.multi), which is what ASP.NET binds to List<int>.
+          'documentTypeIds': _kPulledDocumentTypes,
           if (watermark != null)
             'modifiedAfter': watermark.toUtc().toIso8601String(),
         },
@@ -4351,8 +4611,39 @@ class SyncManager {
         final refOf = d['referenceDocumentNumber'] as String?;
         final paid = (d['paidStatus'] as num?)?.toInt() ?? 1;
         final customerId = (d['customerId'] as num?)?.toInt();
+        // Absent on an API build that predates the field. Falling back to Sales
+        // matches the Drift column default, i.e. the old behaviour — but a
+        // CURRENT API now types refunds and purchases correctly, which the
+        // dashboard and Z-report classify on (never on the total's sign).
+        final docTypeId =
+            (d['documentTypeId'] as num?)?.toInt() ?? DocumentTypes.sales;
+        final warehouseId = (d['warehouseId'] as num?)?.toInt() ?? 0;
+        final userId = (d['userId'] as num?)?.toInt() ?? 0;
         final rawItems =
             ((d['items'] as List?) ?? const []).cast<Map<String, dynamic>>();
+        final rawPayments =
+            ((d['payments'] as List?) ?? const []).cast<Map<String, dynamic>>();
+
+        // Payment rows for a given document localId. Keyed by a deterministic
+        // `srvp_<serverId>` localId so re-pulling the same payment updates one
+        // row instead of accumulating duplicates.
+        List<PaymentsTableCompanion> buildPayments(String docLocalId) =>
+            rawPayments.map((m) {
+              final pid = (m['id'] as num?)?.toInt();
+              return PaymentsTableCompanion.insert(
+                localId: pid != null ? 'srvp_$pid' : const Uuid().v4(),
+                documentId: docLocalId,
+                paymentTypeId: (m['paymentTypeId'] as num?)?.toInt() ?? 0,
+                amount: ((m['amount'] as num?) ?? 0).toDouble(),
+                userId: (m['userId'] as num?)?.toInt() ?? 0,
+                date: DateTime.tryParse((m['date'] ?? '') as String) ?? date,
+                serverId: Value(pid),
+                zReportId: Value((m['zReportId'] as num?)?.toInt()),
+                companyId: Value(companyId),
+                // Pulled FROM the server — nothing to push back.
+                syncStatus: const Value(SyncStatuses.synced),
+              );
+            }).toList();
 
         // Build item rows for a given document localId. The server item id is
         // captured (when present) so the offline editor can later edit/delete
@@ -4412,6 +4703,13 @@ class SyncManager {
             await db.batch((b) =>
                 b.insertAll(db.documentItemsTable, buildItems(existing.localId)));
           }
+          // Payments, unlike items, are reconciled on EVERY pull rather than
+          // backfilled once: a payment can be added or removed on another
+          // terminal long after the document was created, and this row already
+          // existing here is no evidence that its payments are current. The
+          // replace is server-scoped — local pending payments are untouched.
+          await db.replaceServerPayments(
+              existing.localId, buildPayments(existing.localId));
           continue;
         }
 
@@ -4420,12 +4718,15 @@ class SyncManager {
         // by number and stamp the serverId so we adopt the existing row instead
         // of inserting a duplicate. Its local total/items are preserved.
         if (number.isNotEmpty) {
+          // `.get().firstOrNull`, never `getSingleOrNull()` — the latter throws
+          // on a duplicate number, which would abort the whole document pull.
           final byNumber =
               await (db.select(db.documentsTable)
                     ..where((t) => t.number.equals(number))
                     ..where((t) => t.serverId.isNull())
                     ..limit(1))
-                  .getSingleOrNull();
+                  .get()
+                  .then((r) => r.firstOrNull);
           if (byNumber != null) {
             await (db.update(db.documentsTable)
                   ..where((t) => t.localId.equals(byNumber.localId)))
@@ -4439,6 +4740,8 @@ class SyncManager {
               await db.batch((b) => b.insertAll(
                   db.documentItemsTable, buildItems(byNumber.localId)));
             }
+            await db.replaceServerPayments(
+                byNumber.localId, buildPayments(byNumber.localId));
             continue;
           }
         }
@@ -4446,15 +4749,18 @@ class SyncManager {
         // Case 2: new document from another device — insert sentinel row
         // plus its line items + customerId so the local DB can compute the
         // dashboard / item reports offline.
-        // userId / warehouseId are not returned by GetSalesHistory; use 0.
         final docLocalId = 'srv_$serverId';
         await db.upsertServerDocument(
           document: DocumentsTableCompanion(
             localId: Value(docLocalId),
             serverId: Value(serverId),
             companyId: Value(companyId),
-            userId: const Value(0),
-            warehouseId: const Value(0),
+            // Previously hardcoded 0 — GetSalesHistory didn't return them. It
+            // does now, so a cross-device document is no longer invisible to
+            // every warehouse- or user-scoped screen.
+            userId: Value(userId),
+            warehouseId: Value(warehouseId),
+            documentTypeId: Value(docTypeId),
             number: Value(number),
             total: Value(total),
             discount: Value(disc),
@@ -4467,12 +4773,74 @@ class SyncManager {
             lastModified: Value(date),
           ),
           items: buildItems(docLocalId),
+          payments: buildPayments(docLocalId),
         );
       }
 
+      if (isFullPass) {
+        await _reconcileDeletedDocuments(
+          companyId,
+          serverIdsInWindow: list
+              .map((d) => (d['id'] as num?)?.toInt() ?? 0)
+              .where((id) => id != 0)
+              .toSet(),
+          windowStart: from,
+        );
+        await _setLastSync(_kDocumentsFullPull, now);
+      }
       await _setLastSync(_kDocuments, now);
     } catch (e) {
       debugPrint('pullDocuments failed: $e — local history preserved.');
+    }
+  }
+
+  /// Removes local documents the server no longer has.
+  ///
+  /// 🚨 Deleting a document on one terminal left it on every other one forever:
+  /// [pullDocuments] only ever inserts or updates, and a deleted row obviously
+  /// reports no `DateUpdated`, so the delta pull is structurally blind to it.
+  /// This is the counterpart — on a full-window pass, anything inside the window
+  /// that the server did NOT return has been deleted there, so drop it here too.
+  ///
+  /// Three guards, all load-bearing:
+  ///  * only rows with a `serverId` — a locally-created document the server has
+  ///    never seen is not "missing", it is *pending*;
+  ///  * only `synced` rows — a `pending_*` row is owned by the pusher until it
+  ///    lands, and this must never race it;
+  ///  * only rows dated inside the pulled window — the local DB keeps history
+  ///    older than 90 days that the server was never asked about.
+  Future<void> _reconcileDeletedDocuments(
+    int companyId, {
+    required Set<int> serverIdsInWindow,
+    required DateTime windowStart,
+  }) async {
+    final local = await (db.select(db.documentsTable)
+          ..where((t) => t.companyId.equals(companyId))
+          ..where((t) => t.serverId.isNotNull())
+          ..where((t) => t.syncStatus.equals(SyncStatuses.synced))
+          ..where((t) => t.date.isBiggerOrEqualValue(windowStart)))
+        .get();
+
+    var removed = 0;
+    for (final doc in local) {
+      if (serverIdsInWindow.contains(doc.serverId)) continue;
+      await db.transaction(() async {
+        await db.purgeDiscountLinesFor(doc.localId);
+        await (db.delete(db.documentItemsTable)
+              ..where((t) => t.documentId.equals(doc.localId)))
+            .go();
+        await (db.delete(db.paymentsTable)
+              ..where((t) => t.documentId.equals(doc.localId)))
+            .go();
+        await (db.delete(db.documentsTable)
+              ..where((t) => t.localId.equals(doc.localId)))
+            .go();
+      });
+      removed++;
+    }
+    if (removed > 0) {
+      debugPrint(
+          'pullDocuments: retired $removed document(s) deleted on another device.');
     }
   }
 

@@ -46,6 +46,16 @@
                         <div class="small">@TempData["Success"]</div>
                     </div>
                 }
+                @* Partial success — the action mostly worked but left something
+                   behind (e.g. a company deleted while its Master-DB licensing
+                   tenant survived). Distinct from Error so the operator is not
+                   told to retry an action that has already committed. *@
+                @if (TempData["Warning"] != null)
+                {
+                    <div class="card" role="alert" style="border-left:4px solid #E0A400; padding:0.85rem; margin-bottom:1rem;">
+                        <div class="small">@TempData["Warning"]</div>
+                    </div>
+                }
                 @if (TempData["Error"] != null)
                 {
                     <div class="card" role="alert" style="border-left:4px solid #D66; padding:0.85rem; margin-bottom:1rem;">

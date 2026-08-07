@@ -1475,6 +1475,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noPrintersFound => 'No printers found';
 
   @override
+  String get printerSelectionUnsupportedOnThisDevice =>
+      'This device cannot choose a system printer. Printing opens the device\'s own print dialog instead.';
+
+  @override
   String get numberOfCopies => 'Number of Copies';
 
   @override
@@ -4801,6 +4805,26 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String kitchenTicketsPrinted(num count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.compact(
+      locale: localeName,
+    );
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString kitchen tickets sent',
+      one: 'Kitchen ticket sent',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get kitchenNoStationMatched =>
+      'No station printer covers these items — printing the full ticket instead.';
+
+  @override
   String couldNotSaveOrder(String message) {
     return 'Could not save order: $message';
   }
@@ -5607,6 +5631,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get retryConnectionUpper => 'RETRY CONNECTION';
+
+  @override
+  String checkedAgainstEndpoint(String endpoint) {
+    return 'Checked against $endpoint';
+  }
 
   @override
   String scaleUnitMismatch(String scaleUnit, String productUnit) {

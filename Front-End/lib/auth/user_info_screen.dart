@@ -9,6 +9,12 @@ import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/utils/api_error_parser.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
 
+/// Fallback label for a terminal that has never reported its POS name: the tail
+/// of its `POS-<uuid>` signature. Enough to tell two rows apart when revoking,
+/// without pasting 40 characters into a list tile.
+String _shortDeviceId(String deviceId) =>
+    deviceId.length <= 12 ? deviceId : '…${deviceId.substring(deviceId.length - 8)}';
+
 class UserInfoScreen extends ConsumerStatefulWidget {
   /// Opens the POS navigation drawer. Supplied by MainLayout; when null the
   /// app-bar menu button is hidden (e.g. if pushed as a standalone route).
@@ -461,8 +467,17 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
                             itemCount: _activeDevices.length,
                             itemBuilder: (context, index) {
                               final device = _activeDevices[index];
+                              final deviceId = device['deviceId'] as String;
                               final isCurrentDevice =
-                                  device['deviceId'] == _currentDeviceId;
+                                  deviceId == _currentDeviceId;
+                              // The terminal's own POS name, recorded in the
+                              // device registry. A device enrolled before names
+                              // were reported has none yet — show a short form of
+                              // the signature rather than the full UUID, which is
+                              // unreadable and identifies nothing to an operator.
+                              final name = (device['deviceName'] as String?)
+                                      ?.trim() ??
+                                  '';
                               return ListTile(
                                 leading: Icon(
                                   isCurrentDevice
@@ -472,7 +487,13 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
                                       ? context.successColor
                                       : Colors.grey,
                                 ),
-                                title: Text(device['deviceId']),
+                                title: Text(
+                                  name.isNotEmpty
+                                      ? name
+                                      : _shortDeviceId(deviceId),
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w600),
+                                ),
                                 subtitle: Text(
                                   AppLocalizations.of(context).linkedAt(
                                       DateTime.parse(device['createdAt'])
@@ -494,7 +515,7 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
                                           color: context.dangerColor,
                                         ),
                                         onPressed: () =>
-                                            _revokeDevice(device['deviceId']),
+                                            _revokeDevice(deviceId),
                                       ),
                               );
                             },

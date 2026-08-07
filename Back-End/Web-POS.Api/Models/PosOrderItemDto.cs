@@ -13,6 +13,12 @@ namespace Api.Models
         public decimal Discount { get; set; }
         public int DiscountType { get; set; }
         public int DiscountAppliedType { get; set; }
+        /// The per-item discount as the operator ENTERED it (10 + type 0 = "10%")
+        /// while Discount holds the resolved per-unit money. See
+        /// PosOrderItem.DiscountInputValue — null means "not recorded", and the
+        /// client falls back to Discount.
+        public decimal? DiscountInputValue { get; set; }
+        public int? DiscountInputType { get; set; }
         public bool IsFeatured { get; set; }
         public int? VoidedBy { get; set; }
         public string? VoidedByUserName { get; set; }
@@ -65,6 +71,12 @@ namespace Api.Models
         public string? Comment { get; set; }
         public string? Bundle { get; set; }
         public int DiscountAppliedType { get; set; }
+        /// The per-item discount as the operator ENTERED it (10 + type 0 = "10%")
+        /// while Discount holds the resolved per-unit money. See
+        /// PosOrderItem.DiscountInputValue — null means "not recorded", and the
+        /// client falls back to Discount.
+        public decimal? DiscountInputValue { get; set; }
+        public int? DiscountInputType { get; set; }
         public List<int> AppliedTaxIds { get; set; } = new List<int>();
         // Per-item tax amounts from offline checkout. Populated by the Flutter
         // client so BatchSync can pass them to CheckoutItemDto.Taxes and create

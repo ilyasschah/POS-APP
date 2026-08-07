@@ -7047,6 +7047,9 @@ class _DeviceNameDialogState extends State<_DeviceNameDialog> {
             controller: _ctrl,
             autofocus: true,
             textCapitalization: TextCapitalization.characters,
+            // Same rules as onboarding's field: what's on screen is what gets
+            // stored, instead of the name being silently rewritten on save.
+            inputFormatters: const [DeviceNameInputFormatter()],
             decoration: InputDecoration(
               labelText: AppLocalizations.of(context).deviceNameLower,
               hintText: AppLocalizations.of(context).setHintCaisse,
