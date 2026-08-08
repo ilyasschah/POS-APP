@@ -2200,6 +2200,12 @@ List<SearchableSetting> _kSearchableSettings(
     trailingBuilder: (_) => const _SwitchControl(SettingKeys.showKitchenBtn),
   ),
   SearchableSetting(
+    title: AppLocalizations.of(context).setAdditionButton,
+    tabName: 'General · POS Buttons',
+    tabIndex: 0,
+    trailingBuilder: (_) => const _SwitchControl(SettingKeys.showAdditionBtn),
+  ),
+  SearchableSetting(
     title: AppLocalizations.of(context).setTaxButton,
     tabName: 'General · POS Buttons',
     tabIndex: 0,
@@ -3921,6 +3927,11 @@ class _GeneralTab extends ConsumerWidget {
                     key: SettingKeys.showKitchenBtn,
                     label: AppLocalizations.of(context).setSendToKitchen,
                     icon: Icons.kitchen_outlined,
+                  ),
+                  (
+                    key: SettingKeys.showAdditionBtn,
+                    label: AppLocalizations.of(context).posAddition,
+                    icon: Icons.receipt_long_outlined,
                   ),
                   (
                     key: SettingKeys.showTaxBtn,

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -40,6 +41,7 @@ import 'package:pos_app/floor_plan/floor_plan_table.dart';
 import 'package:pos_app/auth/user_model.dart';
 import 'package:pos_app/product/product_comment_model.dart';
 // import 'package:pos_app/menu/open_orders_screen.dart';
+import 'package:pos_app/printer/kitchen_ticket_data.dart';
 import 'package:pos_app/printer/receipt_printer_service.dart';
 import 'package:pos_app/printer/printer_routing_service.dart';
 import 'package:pos_app/refund/refund_dialog.dart';
@@ -75,6 +77,80 @@ class MenuScreen extends ConsumerStatefulWidget {
 
 class _MenuScreenState extends ConsumerState<MenuScreen> {
   List<PromotionDto> _activePromos = const [];
+
+  /// Prints the **Addition** — the pre-bill the customer settles against.
+  ///
+  /// 🚨 This banks NOTHING: no document, no payment, no stock movement, no
+  /// loyalty accrual, no sync. It is a read-only render of the live cart, so
+  /// pressing it five times is harmless and none of it shows up in the reports.
+  /// Everything that turns a cart into a sale lives in `PaymentCheckoutDialog`.
+  ///
+  /// Reuses `printCartReceipt` with `isGuestCheck: true`, which the builder
+  /// already understood but nothing ever passed — that flag adds the
+  /// "*** GUEST CHECK ***" banner and suppresses the parts that would be lies
+  /// on an unpaid bill: the payment/change rows, points earned/balance, and the
+  /// barcode (which encodes a sale that does not exist yet).
+  Future<void> _printAddition(BuildContext context, WidgetRef ref) async {
+    final company = ref.read(selectedCompanyProvider);
+    if (company == null) return;
+    final cart = ref.read(cartProvider);
+    if (cart.items.isEmpty) return;
+
+    try {
+      final notifier = ref.read(cartProvider.notifier);
+      final settings = ref.read(appSettingsProvider);
+
+      Uint8List? logoBytes;
+      final logoB64 = company.logo;
+      if (logoB64 != null && logoB64.isNotEmpty) {
+        try {
+          logoBytes = base64Decode(logoB64);
+        } catch (_) {}
+      }
+
+      // ⚠️ Totals come from the cart notifier, never re-derived here — line tax
+      // has exactly one source of truth (handoff §3), and `discountTotal`
+      // already includes the per-item promotion, so adding it again would
+      // double-count it. Same composition the checkout dialog snapshots.
+      await ReceiptPrinterService().printCartReceipt(
+        company: company,
+        cashier: ref.read(currentUserProvider),
+        customer: cart.selectedCustomer,
+        orderNumber: cart.orderNumber ?? 'WALK-IN',
+        // No document number: nothing has been banked, so the PDF names itself
+        // after the order + print time.
+        printTime: DateTime.now(),
+        items: cart.items,
+        subtotal: notifier.subtotal,
+        totalDiscount: notifier.discountTotal +
+            notifier.customerDiscountAmount +
+            notifier.manualCartDiscountAmount,
+        totalTax: notifier.taxTotal,
+        grandTotal: ref.read(cartTotalProvider),
+        currencySymbol: ref.read(currencySymbolProvider),
+        logoBytes: logoBytes,
+        roleSettings: settings,
+        isGuestCheck: true,
+      );
+
+      if (context.mounted) {
+        showAppSnackbar(
+          context,
+          ref,
+          AppLocalizations.of(context).additionPrinted,
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        showAppSnackbar(
+          context,
+          ref,
+          AppLocalizations.of(context).kitchenPrintError('$e'),
+          isError: true,
+        );
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -225,6 +301,8 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
         settings[SettingKeys.showTablesBtn]?.toLowerCase() != 'false';
     final showKitchenBtn =
         settings[SettingKeys.showKitchenBtn]?.toLowerCase() != 'false';
+    final showAdditionBtn =
+        settings[SettingKeys.showAdditionBtn]?.toLowerCase() != 'false';
     final showTaxBtn =
         settings[SettingKeys.showTaxBtn]?.toLowerCase() != 'false';
     final showQuantityBtn =
@@ -822,14 +900,30 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                                 final cashier = ref.read(currentUserProvider);
                                 final cart = ref.read(cartProvider);
                                 final cartItems = cart.items;
-                                final serviceLabel = switch (cart.serviceType) {
-                                  0 => 'Dine In',
-                                  1 => 'Takeaway',
-                                  _ => 'Order',
-                                };
-                                final roundNum = cartItems.isNotEmpty
-                                    ? cartItems.first.roundNumber
-                                    : 1;
+                                // 🚨 Was a hardcoded English switch
+                                // (0→"Dine In", 1→"Takeaway", _→"Order") that
+                                // ignored the venue's configured service types
+                                // entirely. It didn't even match the shipped
+                                // defaults ("Dine-In"), and every type beyond
+                                // the first two — Delivery, and anything the
+                                // operator added — reached the kitchen as the
+                                // meaningless word "Order".
+                                final serviceLabel =
+                                    KitchenTicketData.serviceLabel(
+                                  ref
+                                      .read(appSettingsProvider.notifier)
+                                      .customServiceTypes,
+                                  cart.serviceType,
+                                  fallback:
+                                      AppLocalizations.of(context).posOrder,
+                                );
+                                // The table, resolved to its NAME. Previously it
+                                // reached the kitchen only by accident, embedded
+                                // in the order number.
+                                final tableName = KitchenTicketData.tableName(
+                                  ref.read(allRoomsProvider).value ?? const [],
+                                  cart.floorPlanTableId,
+                                );
                                 final orderNo = cart.orderNumber ?? 'WALK-IN';
                                 final cashierName =
                                     cashier?.displayName ?? 'Unknown';
@@ -851,7 +945,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                                     orderNumber: orderNo,
                                     cashierName: cashierName,
                                     serviceType: serviceLabel,
-                                    roundNumber: roundNum,
+                                    tableName: tableName,
                                     printTime: DateTime.now(),
                                   );
                                   // 🚨 A station only prints the items matching
@@ -870,7 +964,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                                         orderNumber: orderNo,
                                         cashierName: cashierName,
                                         serviceType: serviceLabel,
-                                        roundNumber: roundNum,
+                                        tableName: tableName,
                                         printTime: DateTime.now(),
                                         items: cartItems,
                                         roleSettings: roleSettings,
@@ -906,6 +1000,21 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                                 }
                               }
                             },
+                    ),
+
+                  // ── Addition (pre-bill / guest check) ─────────────────────
+                  // Prints what the customer OWES so they can settle up. It
+                  // banks nothing: no document, no payment, no stock movement,
+                  // no loyalty. That separation is the whole point — pressing it
+                  // twice must be harmless, and it must never look like a sale
+                  // in the reports.
+                  if (showAdditionBtn)
+                    _MenuHeaderActionBtn(
+                      icon: Icons.receipt_long,
+                      label: AppLocalizations.of(context).posAddition,
+                      onTap: cartState.items.isEmpty
+                          ? null
+                          : () => _printAddition(context, ref),
                     ),
           // --- Warehouse Switcher (centered picker, like the customer one) ---
           if (showWarehouseBtn)

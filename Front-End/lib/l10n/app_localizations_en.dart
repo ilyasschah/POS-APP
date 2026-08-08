@@ -3530,6 +3530,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get posKitchen => 'Kitchen';
 
   @override
+  String get posAddition => 'Addition';
+
+  @override
+  String get setAdditionButton => 'Addition button';
+
+  @override
+  String get additionPrinted => 'Addition printed';
+
+  @override
+  String get posOrder => 'Order';
+
+  @override
   String get posBookings => 'Bookings';
 
   @override

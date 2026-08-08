@@ -3562,6 +3562,18 @@ class AppLocalizationsFr extends AppLocalizations {
   String get posKitchen => 'Cuisine';
 
   @override
+  String get posAddition => 'Addition';
+
+  @override
+  String get setAdditionButton => 'Bouton Addition';
+
+  @override
+  String get additionPrinted => 'Addition imprimée';
+
+  @override
+  String get posOrder => 'Commande';
+
+  @override
   String get posBookings => 'Réservations';
 
   @override

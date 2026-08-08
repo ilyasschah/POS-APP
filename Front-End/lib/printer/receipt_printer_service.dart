@@ -741,7 +741,13 @@ class ReceiptPrinterService {
     required String orderNumber,
     required String cashierName,
     required String serviceType,
-    int roundNumber = 1,
+    /// The table this order is seated at, when it has one.
+    ///
+    /// 🚨 Printed on its own line. It used to reach the kitchen ONLY by accident,
+    /// embedded in `orderNumber` ("ORD- Table 1") — so any change to the order
+    /// naming scheme silently stopped telling the kitchen where to take the
+    /// food, with nothing failing anywhere. Null for takeaway/delivery.
+    String? tableName,
     required DateTime printTime,
     required List<CartItem> items,
     List<List<String>> itemComments = const [],
@@ -790,12 +796,26 @@ class ReceiptPrinterService {
             pw.SizedBox(height: 4),
 
             // ── Meta info ─────────────────────────────────────────────
+            // `Round:` was removed here — nothing in the app ever incremented
+            // CartItem.roundNumber, so it printed a constant "1" on every
+            // ticket and told the kitchen nothing. Reinstate it only alongside
+            // real course tracking.
             pw.Text('User: $cashierName', style: ts(10)),
-            pw.Text('Order: $orderNumber   Round: $roundNumber', style: ts(10)),
+            pw.Text('Order: $orderNumber', style: ts(10)),
             pw.Text('Time: ${_fmtDateTime(printTime)}', style: ts(10)),
             pw.SizedBox(height: 6),
 
-            // ── Service type ──────────────────────────────────────────
+            // ── Table + service type ──────────────────────────────────
+            // The table is the single most operationally useful line on a
+            // dine-in ticket, so it gets the larger type; omitted entirely when
+            // the order has no table (takeaway/delivery) rather than printing
+            // an empty label.
+            if (tableName != null && tableName.trim().isNotEmpty) ...[
+              pw.Center(
+                child: pw.Text(tableName.trim(), style: ts(18, bold: true)),
+              ),
+              pw.SizedBox(height: 2),
+            ],
             pw.Center(child: pw.Text(serviceType, style: ts(13, bold: true))),
             pw.SizedBox(height: 6),
             pw.Divider(borderStyle: pw.BorderStyle.dashed),

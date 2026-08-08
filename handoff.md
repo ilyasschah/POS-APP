@@ -207,6 +207,27 @@ Reported as a UX problem — the device list shows `POS-1e88b40d-287a-48c8-8de0-
 - `test/device_name_test.dart` (7), including one that pins the report happening **with an empty push queue** — the exact shape the first cut missed. **Verified by reverting the header block: `Expected: 'POS1' / Actual: <null>`.** Full suite 208 → **215**, `flutter analyze` clean, `dotnet build -t:Compile` 0 errors.
 - 🚨 **The API must be restarted** for any of the server half to take effect.
 
+### 2.0.0o — DONE 2026-08-06: "Addition" (pre-bill / guest check) button
+
+New POS button beside Kitchen that prints what the customer **owes**, so they can settle up.
+
+- 🚨 **It banks NOTHING** — no document, no payment, no stock movement, no loyalty accrual, no sync. A read-only render of the live cart, so pressing it repeatedly is harmless and none of it reaches the reports. Everything that turns a cart into a sale stays in `PaymentCheckoutDialog`; the two share only the PDF builder.
+- **`printCartReceipt(isGuestCheck: true)` already existed and had NEVER been called** — the flag was in the builder with zero call sites, so the behaviour it documents had never once run. It adds the `*** GUEST CHECK ***` banner and suppresses everything that would be a lie on an unpaid bill: the payment row, change due, points earned, points balance, and the **barcode** (which encodes a sale that does not exist yet). It also names the PDF after the order rather than a document number.
+- Uses the **built-in `Receipt` printer role**, so paper size, margins, font, header/footer, RTL, copies and printer name all come from the same place as a real receipt.
+- ⚠️ **Totals come from `CartNotifier`, never re-derived** (§3 — line tax has exactly one source of truth). `discountTotal` already includes the per-item promotion, so the total-discount composition mirrors the checkout dialog's snapshot exactly rather than being reinvented.
+- Toggle: **`ButtonBar.ShowAddition`**, default `'true'`, wired into both the POS Buttons list and the searchable-settings index — independent of the Kitchen toggle so a venue can run one without the other.
+- `test/addition_guest_check_test.dart` (5). ⚠️ Worth reusing: it **stubs `PrintingPlatform.instance`** to capture the real generated PDF bytes, which is the only way to assert print behaviour in this repo. First draft of this file asserted the length of a hand-written list of suppressed sections — decorative, proving nothing — and was replaced with renders that actually compare guest-check vs paid output, isolate the barcode's contribution, and prove `Copies` produces N jobs.
+
+### 2.0.0n — DONE 2026-08-06: kitchen ticket content — dead field out, table + service type fixed
+
+Three defects found by walking the ticket builder field by field. All three were invisible to the compiler, the linter and the suite — they only show up on paper, in a kitchen, mid-service.
+
+- **`Round: N` removed.** `CartItem.roundNumber` is **never incremented anywhere in the app**, so every ticket ever printed said `Round: 1`. Dead ink. The `roundNumber` parameter is gone from `printKitchenTicket` and `printStationTickets` too; reinstate it only alongside real course tracking. (`PosOrderItem.RoundNumber` on the wire is untouched.)
+- 🚨 **Service type was a hardcoded English switch** — `0 → 'Dine In'`, `1 → 'Takeaway'`, `_ → 'Order'` — ignoring `Pos.CustomServiceTypes` entirely. It did not even match the shipped defaults (**"Dine-In"**, with a hyphen), and **Delivery — plus every type an operator adds — reached the kitchen as the meaningless word "Order"**, indistinguishable from a plain dine-in order.
+- 🚨 **The table reached the kitchen only BY ACCIDENT**, embedded in the order number (`ORD- Table 1`). There was no table field. Any change to order naming would have silently stopped telling the kitchen where the food goes, with nothing failing anywhere. Now its own centred 18pt line — larger than the service type, since it is the most operationally useful thing on a dine-in ticket — and **omitted entirely** (not blank-labelled) for takeaway/delivery or a deleted table.
+- Both lookups extracted to **`lib/printer/kitchen_ticket_data.dart`** purely so they could be tested; they were inline expressions in the button before. `test/kitchen_ticket_data_test.dart` (10) covers the venue's own wording, the flattened-to-"Order" regression, a fully custom type set, unknown/blank ids, and every table case (resolved, absent, deleted, blank, whitespace-trimmed).
+- ⚠️ **`itemComments` is a dead parameter.** Only `printStationTickets` forwards it and nothing ever populates it — per-item notes reach the ticket solely via `CartItem.comment` (split on newlines). Left in place rather than removed, but do not assume it carries anything.
+
 ### 2.0.0m — DONE 2026-08-06: the POS Kitchen button silently did nothing
 
 - 🚨 **The chain was wired end to end**, which is exactly why it looked fine: button → `PrinterRoutingService` → `ReceiptPrinterService.printKitchenTicket` → `_dispatch`, all `await`ed, with a try/catch that snackbars on error. Nothing was broken *structurally*.

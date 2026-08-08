@@ -1393,6 +1393,13 @@
   "posTransfer": "Transfer",
   "posRefund": "Refund",
   "posKitchen": "Kitchen",
+  "posAddition": "Addition",
+  "@posAddition": {
+    "description": "POS button that prints the pre-bill (guest check) the customer settles against. NOT a payment — nothing is banked."
+  },
+  "setAdditionButton": "Addition button",
+  "additionPrinted": "Addition printed",
+  "posOrder": "Order",
   "posBookings": "Bookings",
   "posPromos": "Promos",
   "posVoid": "VOID",

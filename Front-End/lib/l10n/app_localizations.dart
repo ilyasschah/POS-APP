@@ -6778,6 +6778,30 @@ abstract class AppLocalizations {
   /// **'Kitchen'**
   String get posKitchen;
 
+  /// POS button that prints the pre-bill (guest check) the customer settles against. NOT a payment — nothing is banked.
+  ///
+  /// In en, this message translates to:
+  /// **'Addition'**
+  String get posAddition;
+
+  /// No description provided for @setAdditionButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Addition button'**
+  String get setAdditionButton;
+
+  /// No description provided for @additionPrinted.
+  ///
+  /// In en, this message translates to:
+  /// **'Addition printed'**
+  String get additionPrinted;
+
+  /// No description provided for @posOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Order'**
+  String get posOrder;
+
   /// No description provided for @posBookings.
   ///
   /// In en, this message translates to:

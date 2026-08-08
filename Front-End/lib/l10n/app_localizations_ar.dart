@@ -3520,6 +3520,18 @@ class AppLocalizationsAr extends AppLocalizations {
   String get posKitchen => 'المطبخ';
 
   @override
+  String get posAddition => 'الحساب';
+
+  @override
+  String get setAdditionButton => 'زر الحساب';
+
+  @override
+  String get additionPrinted => 'تمت طباعة الحساب';
+
+  @override
+  String get posOrder => 'طلب';
+
+  @override
   String get posBookings => 'الحجوزات';
 
   @override
