@@ -1,11 +1,8 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
-using Microsoft.AspNetCore.Hosting.Server;
-using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using Api.Repository;
@@ -20,11 +17,23 @@ var builder = WebApplication.CreateBuilder(args);
 
 // ================== LOGGING ==================
 builder.Logging.ClearProviders();
-builder.Logging.AddConsole();
+// One line per entry instead of the default's two, with a timestamp. The default
+// console formatter puts the category on its own line, which doubles the height of
+// every log and makes a real warning easy to scroll past.
+builder.Logging.AddSimpleConsole(o =>
+{
+    o.SingleLine = true;
+    o.TimestampFormat = "HH:mm:ss ";
+});
 
 // Reduce EF Core SQL noise
 builder.Logging.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.Warning);
 builder.Logging.AddFilter("Microsoft.EntityFrameworkCore.Infrastructure", LogLevel.Warning);
+// Kestrel's "Now listening on / Application started / Hosting environment /
+// Content root path" — four lines saying what the startup banner says better, and
+// it prints them before the banner so they read as the real output. Warnings and
+// errors from the host still come through.
+builder.Logging.AddFilter("Microsoft.Hosting.Lifetime", LogLevel.Warning);
 
 // ================== CONFIG ==================
 // Machine-local overrides. Git-ignored, and excluded from publish output via the
@@ -402,206 +411,26 @@ else
 
 var app = builder.Build();
 
-// ================== STARTUP LOGS ==================
+// ================== STARTUP ==================
 var logger = app.Services.GetRequiredService<ILogger<Program>>();
 
-logger.LogInformation("========================================");
-logger.LogInformation("Web POS - Api starting");
-logger.LogInformation("Environment: {env}", app.Environment.EnvironmentName);
-logger.LogInformation("Content root: {root}", app.Environment.ContentRootPath);
-logger.LogInformation("========================================");
+// Findings, not diagnostics — these always print. In Development they also carry
+// what WOULD have been fatal on a server, so problems surface on the dev box first.
+Api.Startup.StartupDiagnostics.WriteWarnings(logger, configReport);
 
-// ================== CONFIG DIAGNOSTICS ==================
-// Answers "is the server actually reading my environment variables?" from the
-// first lines of the log. Secrets are masked to first/last 4 chars — never log
-// a whole secret. Each value also reports WHICH provider won, so an env var
-// that silently lost to appsettings.json (or was never seen) is obvious.
-static string MaskSecret(string? value)
-{
-    if (string.IsNullOrEmpty(value)) return "<EMPTY / NOT SET>";
-    if (value.Length <= 8) return $"**** (len={value.Length} — suspiciously short)";
-    return $"{value[..4]}...{value[^4..]} (len={value.Length})";
-}
+// The full masked configuration dump. OFF unless Startup:Diagnostics=true; the
+// banner prints the hint automatically when something looks wrong.
+Api.Startup.StartupDiagnostics.WriteIfEnabled(app, logger, dataProtectionKeyStore);
 
-static string MaskConnectionString(string? cs) =>
-    string.IsNullOrEmpty(cs)
-        ? "<EMPTY / NOT SET>"
-        : System.Text.RegularExpressions.Regex.Replace(
-            cs, @"(Password\s*=\s*)[^;]*", "$1****",
-            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+// NOTE: there is deliberately no second lease-key check here. StartupConfigurationValidator
+// already reports a missing signing key (and the unwritable-content-root case this
+// block never covered), and WriteWarnings above prints it — having both meant the
+// same warning appeared twice on every single boot.
 
-// Providers are applied in order and the LAST one holding a key wins, so walk
-// them backwards and report the first hit — that is the effective source.
-static string SourceOf(IConfiguration config, string key)
-{
-    if (config is not IConfigurationRoot root) return "unknown";
-    foreach (var provider in root.Providers.Reverse())
-    {
-        if (provider.TryGet(key, out _))
-            return provider.ToString() ?? provider.GetType().Name;
-    }
-    return "<no provider supplied this key>";
-}
-
-// Warnings collected before the logger existed — surface them now, loudly. In
-// Development this also carries the findings that WOULD have been fatal in
-// Production, so problems are visible on the dev box before they reach a server.
-foreach (var warning in configReport.Warnings)
-    logger.LogWarning("CONFIG: {warning}", warning);
-
-logger.LogInformation("--- Configuration providers (later overrides earlier) ---");
-if (app.Configuration is IConfigurationRoot configRoot)
-{
-    foreach (var provider in configRoot.Providers)
-        logger.LogInformation("    {provider}", provider.ToString());
-}
-
-logger.LogInformation("--- Resolved configuration ---");
-logger.LogInformation("ASPNETCORE_ENVIRONMENT  : {value}",
-    Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
-        ?? "<not set> -> defaults to Production");
-logger.LogInformation("Jwt:Secret              : {value}  [source: {source}]",
-    MaskSecret(app.Configuration["Jwt:Secret"]), SourceOf(app.Configuration, "Jwt:Secret"));
-logger.LogInformation("Jwt:Issuer              : {value}  [source: {source}]",
-    app.Configuration["Jwt:Issuer"] ?? "<not set>", SourceOf(app.Configuration, "Jwt:Issuer"));
-logger.LogInformation("Jwt:Audience            : {value}  [source: {source}]",
-    app.Configuration["Jwt:Audience"] ?? "<not set>", SourceOf(app.Configuration, "Jwt:Audience"));
-logger.LogInformation("Lease:PrivateKeyPem     : {value}  [source: {source}]",
-    string.IsNullOrWhiteSpace(app.Configuration["Lease:PrivateKeyPem"])
-        ? "<not set> -> falling back to lease_signing_key.pem on disk"
-        : $"<supplied, {app.Configuration["Lease:PrivateKeyPem"]!.Length} chars>",
-    SourceOf(app.Configuration, "Lease:PrivateKeyPem"));
-logger.LogInformation("ConnectionStrings:Default: {value}  [source: {source}]",
-    MaskConnectionString(app.Configuration.GetConnectionString("DefaultConnection")),
-    SourceOf(app.Configuration, "ConnectionStrings:DefaultConnection"));
-logger.LogInformation("ConnectionStrings:Master : {value}  [source: {source}]",
-    MaskConnectionString(app.Configuration.GetConnectionString("MasterConnection")),
-    SourceOf(app.Configuration, "ConnectionStrings:MasterConnection"));
-// Printed because "everyone got signed out again" is otherwise diagnosed by guesswork.
-logger.LogInformation("DataProtection keys      : {value}", dataProtectionKeyStore);
-logger.LogInformation("AdminPortal:SeedPassword : {value}  [source: {source}]",
-    string.IsNullOrWhiteSpace(app.Configuration[Api.Admin.AdminUserSeeder.SeedPasswordConfigKey])
-        ? "<not set> -> first admin seeds with the PUBLISHED default password"
-        : "<supplied>",
-    SourceOf(app.Configuration, Api.Admin.AdminUserSeeder.SeedPasswordConfigKey));
-
-// Loud, actionable warning for the failure that actually bites on a new box.
-var leaseKeyOnDisk = Path.Combine(app.Environment.ContentRootPath, "lease_signing_key.pem");
-if (string.IsNullOrWhiteSpace(app.Configuration["Lease:PrivateKeyPem"]) &&
-    !File.Exists(leaseKeyOnDisk))
-{
-    logger.LogWarning(
-        "No lease signing key configured and none on disk at {path} — a NEW keypair " +
-        "will be generated. Leases/public keys issued by any other server instance " +
-        "will not validate against it.", leaseKeyOnDisk);
-}
-logger.LogInformation("========================================");
-
-// Safe DB health check (no SQL spam)
-using (var scope = app.Services.CreateScope())
-{
-    try
-    {
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var canConnect = db.Database.CanConnect();
-        logger.LogInformation("Database status: {status}", canConnect ? "OK" : "FAILED");
-
-        // Ensure the global reference tables exist (re-seeds if a wipe emptied
-        // them) so the app can never start up without the static data it needs.
-        if (canConnect)
-        {
-            await Api.Services.GlobalDefaultsSeeder.SeedAsync(db);
-            logger.LogInformation("Global reference data verified/seeded.");
-
-            // Backfill any security keys added in app updates onto existing
-            // companies (e.g. CashMovement / ShiftManagement). Idempotent —
-            // only adds missing keys, never touches admin-customised levels.
-            await Api.Services.CompanyDefaultsSeeder.BackfillSecurityKeysAsync(db);
-            logger.LogInformation("Security keys verified/backfilled for existing companies.");
-        }
-    }
-    catch (Exception ex)
-    {
-        logger.LogError(ex, "Database check / global seed failed");
-    }
-}
-
-// Pillar 5 — ensure the clone-audit ledger exists in the Master DB. The control
-// plane has no EF migrations (it's provisioned from docs/sql/master-db-schema.sql),
-// so this self-heals the one additive table. Idempotent + non-fatal: an absent or
-// unreachable Master DB never blocks boot.
-using (var scope = app.Services.CreateScope())
-{
-    try
-    {
-        var master = scope.ServiceProvider.GetRequiredService<Api.Master.MasterDbContext>();
-        if (master.Database.CanConnect())
-        {
-            await master.Database.ExecuteSqlRawAsync(@"
-                IF OBJECT_ID('dbo.TransactionAudit', 'U') IS NULL
-                BEGIN
-                    CREATE TABLE dbo.TransactionAudit (
-                        Id            INT IDENTITY(1,1) PRIMARY KEY,
-                        TenantId      INT NOT NULL,
-                        CompanyId     INT NOT NULL,
-                        ClientTxnId   NVARCHAR(128) NOT NULL,
-                        FirstDeviceId NVARCHAR(128) NOT NULL,
-                        LastDeviceId  NVARCHAR(128) NULL,
-                        SeenCount     INT NOT NULL DEFAULT(1),
-                        IsFlagged     BIT NOT NULL DEFAULT(0),
-                        FlagReason    NVARCHAR(64) NULL,
-                        FirstSeenUtc  DATETIME2 NOT NULL DEFAULT(SYSUTCDATETIME()),
-                        LastSeenUtc   DATETIME2 NOT NULL DEFAULT(SYSUTCDATETIME())
-                    );
-                    CREATE UNIQUE INDEX UX_TransactionAudit_Tenant_Txn
-                        ON dbo.TransactionAudit (TenantId, ClientTxnId);
-                END");
-            logger.LogInformation("Pillar 5 clone-audit table verified.");
-
-            // Admin portal accounts. Same reasoning and same non-fatal contract as
-            // the block above: no EF migrations on this database, so the table is
-            // self-healed here for any machine that has not run
-            // docs/sql/master-db-schema.sql.
-            //
-            // ⚠️ Both of these must complete BEFORE the pipeline starts serving.
-            // From the moment the API loads, EF emits every AdminUser column in
-            // every query for that entity — a missing table is an immediate
-            // "Invalid object name", not a deferred one.
-            //
-            // Caught separately from the block above: "the Master DB is down" and
-            // "this login cannot create tables" look identical from the portal (every
-            // sign-in fails) but need completely different fixes, and the second is
-            // the likely one on a server where the API's SQL login is not db_owner.
-            try
-            {
-                await Api.Admin.AdminUserSeeder.EnsureTableAsync(master);
-                await Api.Admin.AdminUserSeeder.SeedFirstAdminAsync(
-                    master, logger,
-                    app.Configuration[Api.Admin.AdminUserSeeder.SeedPasswordConfigKey]);
-                logger.LogInformation("Admin portal account table verified.");
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex,
-                    "ADMIN PORTAL UNUSABLE: could not create or seed dbo.AdminUser in the " +
-                    "Master database. Every /admin sign-in will fail until this is fixed. " +
-                    "If the API's SQL login lacks CREATE TABLE rights, run the AdminUser " +
-                    "block from docs/sql/master-db-schema.sql against the Master DB by hand " +
-                    "and restart — the seed then runs on the next boot.");
-            }
-        }
-        else
-        {
-            logger.LogWarning(
-                "Master DB is unreachable — admin portal accounts could not be verified, " +
-                "so /admin sign-in will fail until it is back.");
-        }
-    }
-    catch (Exception ex)
-    {
-        logger.LogWarning(ex, "Master DB table ensure skipped (Master DB unavailable?)");
-    }
-}
+// Reachability checks + the idempotent, non-fatal schema/seed work both databases
+// need before the first request. Returns what the startup banner reports.
+var startupReport = await Api.Startup.DatabaseBootstrapper.RunAsync(
+    app, logger, dataProtectionKeyStore);
 
 // ================== PIPELINE ==================
 
@@ -636,34 +465,18 @@ app.MapRazorPages();
 // redirected on to the login page from there; this is just a redirect.
 app.MapGet("/", () => Results.Redirect("/admin/companies")).AllowAnonymous();
 
-// On startup, open the admin portal in the default browser. It lands on the login
-// page when there is no session — there is no key to pre-authorise any more.
-//
-// Development only. Spawning a browser is a convenience for whoever pressed F5;
-// on a server (or inside a test host) there is no desktop to open it on, and the
-// attempt is pure noise. Both launch profiles set ASPNETCORE_ENVIRONMENT=Development,
-// so the F5 behaviour is unchanged.
-if (app.Environment.IsDevelopment())
-{
-    app.Lifetime.ApplicationStarted.Register(() =>
-    {
-        try
-        {
-            var addresses = app.Services.GetService<IServer>()?
-                .Features.Get<IServerAddressesFeature>()?.Addresses;
-            var baseUrl = (addresses != null
-                ? addresses.FirstOrDefault(a => a.StartsWith("http://")) ?? addresses.FirstOrDefault()
-                : null) ?? "http://localhost:5002";
-            baseUrl = baseUrl.Replace("0.0.0.0", "localhost").Replace("[::]", "localhost").TrimEnd('/');
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = $"{baseUrl}/admin/companies",
-                UseShellExecute = true,
-            });
-        }
-        catch { /* opening a browser is best-effort — never block startup */ }
-    });
-}
+// 🚨 "/admin" is what a human types, but NO page lives there — the portal's first
+// screen is /admin/companies. Without this the request matches no endpoint at all,
+// so it falls through to the global JWT FallbackPolicy and is answered by the
+// BEARER handler, which challenges with a bare 401 instead of redirecting to the
+// login page the way the cookie handler would. The result is "This page isn't
+// working — HTTP ERROR 401" on the most obvious URL in the whole product.
+app.MapGet("/admin", () => Results.Redirect("/admin/companies")).AllowAnonymous();
+
+// Prints the banner (URLs + health) once Kestrel is listening, and in Development
+// opens the portal in a browser. Both need the bound addresses, which do not exist
+// until ApplicationStarted.
+Api.Startup.StartupConsole.Register(app, startupReport);
 
 app.Run();
 
