@@ -32,6 +32,24 @@ public class AdminPortalAuthenticationTests : IClassFixture<AdminPortalFactory>
             StringComparison.OrdinalIgnoreCase);
     }
 
+    [Theory]
+    [InlineData("/admin")]
+    [InlineData("/admin/")]
+    [InlineData("/")]
+    public async Task The_obvious_entry_urls_lead_into_the_portal(string path)
+    {
+        var client = _factory.CreatePortalClient();
+
+        var response = await client.GetAsync(path);
+
+        // Specifically NOT 401. "/admin" matches no page, so without an explicit
+        // redirect it reaches the global JWT fallback policy and the bearer handler
+        // answers with a bare 401 — the browser shows "This page isn't working"
+        // on the address every operator types first.
+        Assert.Equal(HttpStatusCode.Found, response.StatusCode);
+        Assert.StartsWith("/admin", response.Headers.Location!.ToString());
+    }
+
     [Fact]
     public async Task The_login_page_itself_is_reachable_while_signed_out()
     {
