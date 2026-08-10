@@ -12,9 +12,15 @@
 
         <!-- Sidebar removed — navigation now lives in the horizontal top bar. -->
         <main class="main-area">
+            @*  Signed-out pages (the login form) render the shell without navigation
+                or account actions — every one of those destinations would just
+                bounce back to the login page. *@
+            @{ var isSignedIn = User.Identity?.IsAuthenticated == true; }
             <header class="topbar">
                 <div class="topbar-left">
                     <div class="brand">POS Admin</div>
+                    @if (isSignedIn)
+                    {
                     <nav class="nav-horizontal" aria-label="Main navigation">
                         <a class="nav-item @(Context.Request.Path.StartsWithSegments("/Admin/Companies")?"active":"")" asp-page="/Admin/Companies/Index">
                             <!-- SVG: building icon -->
@@ -27,19 +33,47 @@
                             Subscriptions
                         </a>
                     </nav>
+                    }
                 </div>
 
                 <div class="top-actions">
-                    <a class="btn-ghost" asp-page="/Admin/Companies/Create">New Company</a>
+                    @if (isSignedIn)
+                    {
+                        <a class="btn-ghost" asp-page="/Admin/Companies/Create">New Company</a>
+                    }
                     <button id="themeToggle" class="theme-toggle" aria-pressed="false" title="Toggle theme" aria-label="Toggle theme">
                         <!-- default icon replaced by JS on load -->
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.2" /></svg>
                     </button>
-                    <div class="user-menu small text-muted">Admin</div>
+                    @if (isSignedIn)
+                    {
+                        <a class="user-menu small text-muted" asp-page="/Admin/Account/Password" title="Change password">
+                            @(User.FindFirst(Api.Admin.AdminPortalAuth.DisplayNameClaim)?.Value ?? User.Identity!.Name)
+                        </a>
+                        @* POST, not a link: a GET sign-out can be fired by any
+                           <img> on any page the operator happens to open. *@
+                        <form method="post" asp-page="/Admin/Logout" style="display:inline;">
+                            <button type="submit" class="btn-ghost">Sign out</button>
+                        </form>
+                    }
                 </div>
             </header>
 
             <section class="content-wrap container-main">
+                @* Standing warning while the seeded account still carries the
+                   password published in the source. Deliberately a banner and not a
+                   forced redirect — locking the operator out of the portal until
+                   they change it would also lock them out of every other repair. *@
+                @if (isSignedIn && User.FindFirst(Api.Admin.AdminPortalAuth.MustChangePasswordClaim)?.Value == "true")
+                {
+                    <div class="card" role="alert" style="border-left:4px solid #E0A400; padding:0.85rem; margin-bottom:1rem;">
+                        <div class="small">
+                            This account still uses the default password that ships with the software.
+                            <a asp-page="/Admin/Account/Password">Change it now</a>.
+                        </div>
+                    </div>
+                }
+
                 @if (TempData["Success"] != null)
                 {
                     <div class="card" role="status" style="border-left:4px solid var(--accent); padding:0.85rem; margin-bottom:1rem;">

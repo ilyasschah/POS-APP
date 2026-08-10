@@ -58,6 +58,25 @@ CREATE TABLE dbo.DeviceRegistry (
 );
 GO
 
+-- ── AdminUser: back-office operator accounts for the /admin portal ──
+-- These administer EVERY company, which is why they live here and not in
+-- web-pos: the per-company cascade delete must never be able to reach them.
+-- Unrelated to dbo.PosUser in web-pos, which is a cashier of one company.
+-- Kept in sync with the self-healing block in Program.cs (Api.Admin.AdminUserSeeder).
+IF OBJECT_ID('dbo.AdminUser') IS NULL
+CREATE TABLE dbo.AdminUser (
+    Id                 INT IDENTITY(1,1) PRIMARY KEY,
+    Username           NVARCHAR(100) NOT NULL,
+    PasswordHash       NVARCHAR(255) NOT NULL,   -- BCrypt. Never plaintext.
+    DisplayName        NVARCHAR(255) NULL,
+    IsActive           BIT       NOT NULL CONSTRAINT DF_AdminUser_IsActive DEFAULT(1),
+    MustChangePassword BIT       NOT NULL CONSTRAINT DF_AdminUser_MustChange DEFAULT(0),
+    CreatedAt          DATETIME2 NOT NULL CONSTRAINT DF_AdminUser_CreatedAt DEFAULT(SYSUTCDATETIME()),
+    LastLoginAt        DATETIME2 NULL,
+    CONSTRAINT UQ_AdminUser_Username UNIQUE (Username)
+);
+GO
+
 -- ── BillingEvent: idempotent Stripe webhook ledger ──
 IF OBJECT_ID('dbo.BillingEvent') IS NULL
 CREATE TABLE dbo.BillingEvent (

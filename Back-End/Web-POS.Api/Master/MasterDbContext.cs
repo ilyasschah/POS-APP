@@ -19,6 +19,7 @@ namespace Api.Master
         public DbSet<DeviceRegistry> Devices => Set<DeviceRegistry>();
         public DbSet<BillingEvent> BillingEvents => Set<BillingEvent>();
         public DbSet<TransactionAudit> TransactionAudits => Set<TransactionAudit>();
+        public DbSet<AdminUser> AdminUsers => Set<AdminUser>();
 
         protected override void OnModelCreating(ModelBuilder b)
         {
@@ -29,6 +30,10 @@ namespace Api.Master
             b.Entity<DeviceRegistry>().HasIndex(d => new { d.TenantId, d.DeviceId }).IsUnique();
             b.Entity<BillingEvent>().HasIndex(e => e.StripeEventId).IsUnique();
             b.Entity<TransactionAudit>().HasIndex(a => new { a.TenantId, a.ClientTxnId }).IsUnique();
+            // Usernames are the portal's login identity, so a duplicate must be
+            // impossible rather than merely unlikely — the seeder's "no users yet"
+            // guard is not a lock, and two instances can boot at the same time.
+            b.Entity<AdminUser>().HasIndex(u => u.Username).IsUnique();
         }
     }
 }

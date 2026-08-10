@@ -113,6 +113,9 @@ builder.Services.AddSingleton<Api.Master.Services.LeaseKeyService>();
 builder.Services.AddScoped<Api.Master.Services.LeaseService>();
 // Pillar 5 — clone / duplication audit.
 builder.Services.AddScoped<Api.Master.Services.ICloneAuditService, Api.Master.Services.CloneAuditService>();
+// Admin portal accounts (also in the Master DB — they administer every company,
+// so they must sit outside the per-company cascade delete).
+builder.Services.AddScoped<Api.Admin.AdminUserService>();
 
 // ================== REPOSITORIES ==================
 builder.Services.AddScoped<MenuRepository>();
@@ -222,11 +225,23 @@ builder.Services.AddTransient(
 
 // ================== MVC / SWAGGER ==================
 builder.Services.AddControllers();
-// Admin SaaS portal (server-rendered Razor Pages under /admin). The portal has
-// its own shared-secret gate (AdminPortalGate middleware), not JWT, so its pages
-// must opt out of the global FallbackPolicy below or they'd demand a bearer token.
+// Admin SaaS portal (server-rendered Razor Pages under /admin). It authenticates
+// with its own COOKIE scheme and per-user accounts (Api.Admin.AdminPortalAuth) —
+// not the JWT the POS clients carry, and no longer the shared ?key= secret.
 builder.Services.AddRazorPages(options =>
-    options.Conventions.AllowAnonymousToFolder("/Admin"));
+{
+    // Attaching an explicit policy is doing two jobs. It gates the portal on a
+    // signed-in admin, AND it gives these pages authorization metadata of their
+    // own — which is what excludes them from the global JWT FallbackPolicy below.
+    // The fallback only applies to endpoints that declare nothing.
+    options.Conventions.AuthorizeFolder("/Admin", Api.Admin.AdminPortalAuth.PolicyName);
+
+    // ⚠️ The two pages that MUST stay reachable while signed out. Without these the
+    // login form is itself behind the login and the portal is unreachable from a
+    // browser with no cookie — i.e. every browser, the first time.
+    options.Conventions.AllowAnonymousToPage(Api.Admin.AdminPortalAuth.LoginPage);
+    options.Conventions.AllowAnonymousToPage(Api.Admin.AdminPortalAuth.LogoutPage);
+});
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -255,12 +270,22 @@ builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("ManagerOnly", policy => policy.RequireRole("Admin"));
 
+    // The admin portal's own policy. ⚠️ AddAuthenticationSchemes is load-bearing:
+    // the API's DEFAULT scheme is JwtBearer, so a policy that does not name the
+    // cookie scheme authenticates a browser request against the bearer handler,
+    // never sees the portal cookie, and challenges an already-signed-in operator
+    // in a loop.
+    options.AddPolicy(Api.Admin.AdminPortalAuth.PolicyName, policy => policy
+        .AddAuthenticationSchemes(Api.Admin.AdminPortalAuth.Scheme)
+        .RequireAuthenticatedUser());
+
     // Fail-closed: every endpoint requires an authenticated user UNLESS it opts out
     // with [AllowAnonymous]. This is the safety net — a newly-added controller is
     // protected by default instead of silently shipping open (which is how ~45
     // controllers ended up unauthenticated). The deliberate anonymous surface is:
     // POST /api/Auth/Login, GET /api/Master/LeasePublicKey, GET /api/Master/Lease,
-    // the /Admin portal pages (gated by AdminPortalGate), and the "/" redirect.
+    // the admin portal's login/logout pages, and the "/" redirect. The rest of the
+    // /Admin folder carries the AdminPortal policy above instead.
     options.FallbackPolicy = new AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
         .Build();
@@ -307,6 +332,26 @@ builder.Services
                 Encoding.UTF8.GetBytes(jwtSecret)),
             ClockSkew = TimeSpan.FromSeconds(30)
         };
+    })
+    // The admin portal's session cookie. A second, NON-default scheme: the POS API
+    // keeps authenticating with JwtBearer, and only the /Admin pages name this one.
+    .AddCookie(Api.Admin.AdminPortalAuth.Scheme, opt =>
+    {
+        opt.Cookie.Name = Api.Admin.AdminPortalAuth.CookieName;
+        opt.Cookie.HttpOnly = true;
+        opt.Cookie.SameSite = SameSiteMode.Lax;
+        // SameAsRequest, not Always: the portal is served over plain http on the
+        // LAN (the dev box binds http://…:5002), and Always would issue a cookie
+        // the browser refuses to send back — an unfixable login loop.
+        opt.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+
+        opt.LoginPath = Api.Admin.AdminPortalAuth.LoginPath;
+        opt.LogoutPath = Api.Admin.AdminPortalAuth.LogoutPath;
+        opt.AccessDeniedPath = Api.Admin.AdminPortalAuth.LoginPath;
+        opt.ReturnUrlParameter = "returnUrl";
+
+        opt.ExpireTimeSpan = Api.Admin.AdminPortalAuth.SessionLifetime;
+        opt.SlidingExpiration = true;
     });
 
 var app = builder.Build();
@@ -375,9 +420,6 @@ logger.LogInformation("Jwt:Issuer              : {value}  [source: {source}]",
     app.Configuration["Jwt:Issuer"] ?? "<not set>", SourceOf(app.Configuration, "Jwt:Issuer"));
 logger.LogInformation("Jwt:Audience            : {value}  [source: {source}]",
     app.Configuration["Jwt:Audience"] ?? "<not set>", SourceOf(app.Configuration, "Jwt:Audience"));
-logger.LogInformation("AdminPortal:AccessKey   : {value}  [source: {source}]",
-    MaskSecret(app.Configuration["AdminPortal:AccessKey"]),
-    SourceOf(app.Configuration, "AdminPortal:AccessKey"));
 logger.LogInformation("Lease:PrivateKeyPem     : {value}  [source: {source}]",
     string.IsNullOrWhiteSpace(app.Configuration["Lease:PrivateKeyPem"])
         ? "<not set> -> falling back to lease_signing_key.pem on disk"
@@ -390,14 +432,7 @@ logger.LogInformation("ConnectionStrings:Master : {value}  [source: {source}]",
     MaskConnectionString(app.Configuration.GetConnectionString("MasterConnection")),
     SourceOf(app.Configuration, "ConnectionStrings:MasterConnection"));
 
-// Loud, actionable warnings for the two failures that actually bite on a new box.
-if (string.IsNullOrWhiteSpace(app.Configuration["AdminPortal:AccessKey"]))
-{
-    logger.LogWarning(
-        "AdminPortal:AccessKey is EMPTY — /admin will return 503 " +
-        "\"Admin portal disabled\". Set the AdminPortal__AccessKey environment " +
-        "variable (note the DOUBLE underscore) and restart.");
-}
+// Loud, actionable warning for the failure that actually bites on a new box.
 var leaseKeyOnDisk = Path.Combine(app.Environment.ContentRootPath, "lease_signing_key.pem");
 if (string.IsNullOrWhiteSpace(app.Configuration["Lease:PrivateKeyPem"]) &&
     !File.Exists(leaseKeyOnDisk))
@@ -469,11 +504,24 @@ using (var scope = app.Services.CreateScope())
                         ON dbo.TransactionAudit (TenantId, ClientTxnId);
                 END");
             logger.LogInformation("Pillar 5 clone-audit table verified.");
+
+            // Admin portal accounts. Same reasoning and same non-fatal contract as
+            // the block above: no EF migrations on this database, so the table is
+            // self-healed here for any machine that has not run
+            // docs/sql/master-db-schema.sql.
+            //
+            // ⚠️ Both of these must complete BEFORE the pipeline starts serving.
+            // From the moment the API loads, EF emits every AdminUser column in
+            // every query for that entity — a missing table is an immediate
+            // "Invalid object name", not a deferred one.
+            await Api.Admin.AdminUserSeeder.EnsureTableAsync(master);
+            await Api.Admin.AdminUserSeeder.SeedFirstAdminAsync(master, logger);
+            logger.LogInformation("Admin portal account table verified.");
         }
     }
     catch (Exception ex)
     {
-        logger.LogWarning(ex, "Clone-audit table ensure skipped (Master DB unavailable?)");
+        logger.LogWarning(ex, "Master DB table ensure skipped (Master DB unavailable?)");
     }
 }
 
@@ -492,34 +540,60 @@ app.UseSwaggerUI(c => {
 //app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
 app.UseStaticFiles();
+
+// Hardening headers for every /admin response. ⚠️ BEFORE UseAuthorization, not
+// after (where the old AdminPortalGate sat): an unauthenticated request is
+// short-circuited by the authorization middleware with a 302 to the login page,
+// so anything registered after it never runs for the very responses that most
+// need no-store.
+app.UseMiddleware<Api.Middleware.AdminPortalSecurityHeaders>();
+
 app.UseAuthentication();
 app.UseAuthorization();
-// Shared-secret gate for the /admin SaaS portal (no login form).
-app.UseMiddleware<Api.Middleware.AdminPortalGate>();
 app.MapControllers();
 app.MapRazorPages();
 
 // Hitting the site root lands you on the admin portal. Anonymous — the portal
-// itself is gated downstream by AdminPortalGate; this is just a redirect.
+// pages carry their own authorization policy, so an unauthenticated visitor is
+// redirected on to the login page from there; this is just a redirect.
 app.MapGet("/", () => Results.Redirect("/admin/companies")).AllowAnonymous();
 
-// On startup, open the admin portal in the default browser already authorised
-// with the access key (sets the cookie) — so there's no manual key step.
-app.Lifetime.ApplicationStarted.Register(() =>
+// On startup, open the admin portal in the default browser. It lands on the login
+// page when there is no session — there is no key to pre-authorise any more.
+//
+// Development only. Spawning a browser is a convenience for whoever pressed F5;
+// on a server (or inside a test host) there is no desktop to open it on, and the
+// attempt is pure noise. Both launch profiles set ASPNETCORE_ENVIRONMENT=Development,
+// so the F5 behaviour is unchanged.
+if (app.Environment.IsDevelopment())
 {
-    try
+    app.Lifetime.ApplicationStarted.Register(() =>
     {
-        var key = app.Configuration["AdminPortal:AccessKey"] ?? "";
-        var addresses = app.Services.GetService<IServer>()?
-            .Features.Get<IServerAddressesFeature>()?.Addresses;
-        var baseUrl = (addresses != null
-            ? addresses.FirstOrDefault(a => a.StartsWith("http://")) ?? addresses.FirstOrDefault()
-            : null) ?? "http://localhost:5002";
-        baseUrl = baseUrl.Replace("0.0.0.0", "localhost").Replace("[::]", "localhost").TrimEnd('/');
-        var url = $"{baseUrl}/admin/companies?key={Uri.EscapeDataString(key)}";
-        Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true });
-    }
-    catch { /* opening a browser is best-effort — never block startup */ }
-});
+        try
+        {
+            var addresses = app.Services.GetService<IServer>()?
+                .Features.Get<IServerAddressesFeature>()?.Addresses;
+            var baseUrl = (addresses != null
+                ? addresses.FirstOrDefault(a => a.StartsWith("http://")) ?? addresses.FirstOrDefault()
+                : null) ?? "http://localhost:5002";
+            baseUrl = baseUrl.Replace("0.0.0.0", "localhost").Replace("[::]", "localhost").TrimEnd('/');
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = $"{baseUrl}/admin/companies",
+                UseShellExecute = true,
+            });
+        }
+        catch { /* opening a browser is best-effort — never block startup */ }
+    });
+}
 
 app.Run();
+
+/// <summary>
+/// Top-level statements compile into an INTERNAL Program class, which
+/// <c>WebApplicationFactory&lt;Program&gt;</c> cannot reach. Declaring the partial
+/// makes it public so Web-POS.Api.Tests can boot the real pipeline — the only way
+/// to test that an unauthenticated /admin request is actually redirected, rather
+/// than testing a hand-rebuilt imitation of the pipeline.
+/// </summary>
+public partial class Program { }
