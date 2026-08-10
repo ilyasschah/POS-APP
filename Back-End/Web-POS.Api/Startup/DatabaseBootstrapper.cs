@@ -1,4 +1,4 @@
-using Api.DataBase;
+﻿using Api.DataBase;
 using Microsoft.EntityFrameworkCore;
 
 namespace Api.Startup;
@@ -20,9 +20,9 @@ namespace Api.Startup;
 public static class DatabaseBootstrapper
 {
     public static async Task<StartupReport> RunAsync(
-        WebApplication app, ILogger logger, string dataProtectionKeyStore)
+        WebApplication app, ILogger logger)
     {
-        var report = new StartupReport { DataProtectionKeyStore = dataProtectionKeyStore };
+        var report = new StartupReport();
 
         await EnsureTenantDatabaseAsync(app, logger, report);
         await EnsureMasterDatabaseAsync(app, logger, report);

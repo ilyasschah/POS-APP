@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
@@ -365,49 +365,23 @@ builder.Services
     });
 
 // ================== DATA PROTECTION ==================
-// The portal's session cookie AND every antiforgery token are encrypted with Data
-// Protection keys, so where those keys live decides whether a deploy is invisible
-// or hostile. Under IIS with no user profile loaded the framework falls back to an
-// EPHEMERAL key ring — fresh keys on every app-pool recycle — which signs every
-// operator out on each deploy and turns a login form that was already open into a
-// 400 "antiforgery token invalid" that looks like a broken login page.
+// Not an access key and not a second login — these are the keys ASP.NET Core uses
+// to encrypt and sign the admin portal's session cookie and its antiforgery
+// tokens. Cookie authentication cannot work without them, so this is not optional
+// machinery; the only real choice is where the key ring is stored, and the
+// framework's own default is left in charge of that deliberately.
 //
-// SetApplicationName pins key isolation to a fixed string rather than the content
-// root path, so the ring survives the site being redeployed to a different folder.
-var dataProtection = builder.Services.AddDataProtection().SetApplicationName("Web-POS.Api");
-
-// Optional. ⚠️ Point it OUTSIDE the deployed site root — the test deploy mirrors
-// the publish output with `robocopy /MIR`, which deletes anything inside that it
-// did not just copy, keys included.
-var dataProtectionKeyPath = builder.Configuration["DataProtection:KeyPath"];
-string dataProtectionKeyStore;
-
-if (string.IsNullOrWhiteSpace(dataProtectionKeyPath))
-{
-    dataProtectionKeyStore =
-        "<framework default — set DataProtection:KeyPath to keep sessions across deploys>";
-}
-else
-{
-    // Probed rather than trusted, and non-fatal either way: an unwritable key
-    // folder must not take the whole POS API offline over a back-office cookie.
-    try
-    {
-        Directory.CreateDirectory(dataProtectionKeyPath);
-        var probe = Path.Combine(dataProtectionKeyPath, $".writeprobe-{Guid.NewGuid():N}.tmp");
-        File.WriteAllText(probe, string.Empty);
-        File.Delete(probe);
-
-        dataProtection.PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeyPath));
-        dataProtectionKeyStore = dataProtectionKeyPath;
-    }
-    catch (Exception ex)
-    {
-        dataProtectionKeyStore =
-            $"<framework default — DataProtection:KeyPath '{dataProtectionKeyPath}' " +
-            $"is not usable: {ex.Message}>";
-    }
-}
+// An explicit key folder was tried and REMOVED: it needed a directory outside the
+// deployed site root, write permission for the IIS app pool, and a deploy step to
+// create and grant it — which failed twice and, being its own step, took the
+// secrets-injection step down with it. Under IIS the framework already persists
+// keys in the registry, and the worst case if it ever does not is that admins sign
+// in again after a deploy. That is not worth a fragile deployment.
+//
+// SetApplicationName is the one line kept: it pins key isolation to a fixed string
+// instead of the content root path, so moving the site does not invalidate every
+// existing session. It needs no folder, no permissions and no deploy step.
+builder.Services.AddDataProtection().SetApplicationName("Web-POS.Api");
 
 var app = builder.Build();
 
@@ -420,7 +394,7 @@ Api.Startup.StartupDiagnostics.WriteWarnings(logger, configReport);
 
 // The full masked configuration dump. OFF unless Startup:Diagnostics=true; the
 // banner prints the hint automatically when something looks wrong.
-Api.Startup.StartupDiagnostics.WriteIfEnabled(app, logger, dataProtectionKeyStore);
+Api.Startup.StartupDiagnostics.WriteIfEnabled(app, logger);
 
 // NOTE: there is deliberately no second lease-key check here. StartupConfigurationValidator
 // already reports a missing signing key (and the unwritable-content-root case this
@@ -429,8 +403,7 @@ Api.Startup.StartupDiagnostics.WriteIfEnabled(app, logger, dataProtectionKeyStor
 
 // Reachability checks + the idempotent, non-fatal schema/seed work both databases
 // need before the first request. Returns what the startup banner reports.
-var startupReport = await Api.Startup.DatabaseBootstrapper.RunAsync(
-    app, logger, dataProtectionKeyStore);
+var startupReport = await Api.Startup.DatabaseBootstrapper.RunAsync(app, logger);
 
 // ================== PIPELINE ==================
 

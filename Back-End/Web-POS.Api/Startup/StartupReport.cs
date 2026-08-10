@@ -1,4 +1,4 @@
-namespace Api.Startup;
+﻿namespace Api.Startup;
 
 /// <summary>
 /// The handful of facts the startup banner shows.
@@ -14,9 +14,6 @@ public sealed class StartupReport
 
     /// <summary>False when the AdminUser table could not be created or seeded — every /admin sign-in will fail.</summary>
     public bool AdminPortalReady { get; set; }
-
-    /// <summary>Where the session/antiforgery keys live. Decides whether a restart signs everyone out.</summary>
-    public string DataProtectionKeyStore { get; set; } = string.Empty;
 
     /// <summary>Set while an admin account still carries the password published in the source.</summary>
     public bool AdminPortalOnDefaultPassword { get; set; }

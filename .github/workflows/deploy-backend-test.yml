@@ -58,40 +58,15 @@ jobs:
           # without this, a successful copy still fails the step.
           exit 0
 
-      - name: Ensure Data Protection key ring survives the deploy
-        shell: powershell
-        # The portal's session cookie and every antiforgery token are encrypted with
-        # Data Protection keys. This folder is deliberately OUTSIDE the site root:
-        # the "Replace site files" step above runs robocopy /MIR, which deletes
-        # anything under the site that it did not just copy. Keys kept inside would
-        # be wiped on every deploy, signing out every operator and turning an already
-        # open login form into a 400.
-        run: |
-          $keyPath = "C:\inetpub\pos-api-keys"
-          if (-not (Test-Path $keyPath)) { New-Item -ItemType Directory -Path $keyPath -Force | Out-Null }
-
-          # The app pool identity must be able to write here. Best-effort on purpose:
-          # the app probes writability at startup and falls back to the framework
-          # default rather than failing, so a permissions problem degrades to "signed
-          # out on deploy" instead of taking the whole API down.
-          #
-          # $(...) around the variable is required - PowerShell would otherwise read
-          # "$env:POS_API_APP_POOL:" as a provider path and swallow the colon that
-          # separates the principal from the rights.
-          $principal = "IIS AppPool\$($env:POS_API_APP_POOL)"
-          icacls $keyPath /grant "$($principal):(OI)(CI)M" | Out-Null
-          # icacls is a native exe: a failure sets $LASTEXITCODE, it does not throw,
-          # so try/catch would never see it and the runner would propagate the code
-          # and fail the whole deploy over a permissions grant.
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "::warning::Could not grant '$principal' write access to $keyPath. Admin portal sessions will not survive deploys. Check the API startup log line 'DataProtection keys'."
-          }
-          exit 0
-        env:
-          POS_API_APP_POOL: ${{ vars.TEST_APP_POOL_NAME || 'pos-api' }}
-
       - name: Inject Test environment secrets into web.config
         shell: powershell
+        # 🚨 THE most important step in this workflow: without it the site runs with
+        # no connection strings and no JWT secret.
+        #
+        # It has no companions on purpose. A separate "set up the Data Protection
+        # key folder" step used to run before it, and when that step failed on a
+        # permissions error GitHub SKIPPED this one — deploying the whole site
+        # unconfigured. Nothing optional belongs anywhere near this step.
         env:
           TEST_DB_CONN: ${{ secrets.TEST_DB_CONNECTION_STRING }}
           TEST_MASTER_DB_CONN: ${{ secrets.TEST_MASTER_DB_CONNECTION_STRING }}
@@ -103,6 +78,7 @@ jobs:
           if ([string]::IsNullOrWhiteSpace($env:TEST_ADMIN_SEED_PASSWORD)) {
             Write-Host "::warning::TEST_ADMIN_PORTAL_SEED_PASSWORD is not set. If the Master DB has no admin account yet, /admin will be seeded with the default password from the source - on a public URL. Set the secret and redeploy, or change the password immediately at /admin/account/password."
           }
+
           $path = "C:\inetpub\wwwroot\pos-api\web.config"
           [xml]$xml = Get-Content $path -Raw
           $aspNetCore = $xml.SelectSingleNode("//aspNetCore")
@@ -120,7 +96,6 @@ jobs:
           Add-EnvVar "ConnectionStrings__DefaultConnection" $env:TEST_DB_CONN
           Add-EnvVar "ConnectionStrings__MasterConnection" $env:TEST_MASTER_DB_CONN
           Add-EnvVar "Jwt__Secret" $env:TEST_JWT_SECRET
-          Add-EnvVar "DataProtection__KeyPath" "C:\inetpub\pos-api-keys"
 
           # AdminPortal__AccessKey is GONE. The portal used to be gated by that one
           # shared secret; it now has real per-user accounts in the Master DB, and
@@ -165,16 +140,31 @@ jobs:
         # perfectly healthy are (a) the login page ending up behind its own login and
         # (b) the AdminUser table failing to create in the Master DB. Both surface here.
         run: |
-          # Windows PowerShell 5.1 is inconsistent about -MaximumRedirection 0: a 3xx
-          # sometimes returns the response and sometimes throws a WebException. Read
-          # the status from whichever way it comes back.
+          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+          # Invoke-WebRequest is NOT usable here. In Windows PowerShell 5.1,
+          # -MaximumRedirection 0 against a 3xx throws MaximumRedirectExceeded as an
+          # InvalidOperationException that carries NO .Response, so the status code
+          # is unreachable — a redirect, which is exactly what this check is looking
+          # for, becomes an unhandled error. HttpWebRequest with AllowAutoRedirect
+          # off returns 3xx as an ordinary response instead.
           function Get-Status([string]$url) {
+            $req = [System.Net.HttpWebRequest]::Create($url)
+            $req.AllowAutoRedirect = $false
+            $req.Timeout = 15000
+            $req.Method = "GET"
             try {
-              $r = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 15 `
-                     -MaximumRedirection 0 -ErrorAction Stop
-              return [int]$r.StatusCode
+              $resp = $req.GetResponse()
+              $code = [int]$resp.StatusCode
+              $resp.Close()
+              return $code
             } catch [System.Net.WebException] {
-              if ($_.Exception.Response) { return [int]$_.Exception.Response.StatusCode }
+              # 4xx/5xx still arrive as exceptions, but with the response attached.
+              if ($_.Exception.Response) {
+                $code = [int]$_.Exception.Response.StatusCode
+                $_.Exception.Response.Close()
+                return $code
+              }
               throw
             }
           }
