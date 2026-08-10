@@ -93,13 +93,36 @@ Filename: "{tmp}\VC_redist.x64.exe"; Parameters: "/install /passive /norestart";
 ; Launch the app automatically after installation finishes
 Filename: "{app}\{#AppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(AppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 
-[UninstallDelete]
-; Wipes the Roaming AppData folder (where shared_preferences.json and secure storage live)
-Type: filesandordirs; Name: "{userappdata}\com.example\pos_app"
-; Wipes the Local AppData folder (where some caches or DBs might live)
-Type: filesandordirs; Name: "{localappdata}\com.example\pos_app"
-; Wipes the Documents folder (just in case Drift DBs were saved here)
-Type: filesandordirs; Name: "{userdocs}\com.example\pos_app"
+; ── Uninstall deliberately leaves local data behind ──────────────────────────
+;
+; There is no [UninstallDelete] section, and that is a decision, not an omission.
+; The three entries that used to be here were removed because every one of them
+; was either wrong or dangerous:
+;
+;  1. THE PATHS WERE MOSTLY DEAD. Measured on a real install: only
+;     {userappdata}\com.example\pos_app exists. {localappdata}\com.example\pos_app
+;     and {userdocs}\com.example\pos_app do not exist and never did, so two of the
+;     three lines deleted nothing while reading as though they cleaned up.
+;
+;  2. THE DATABASE WAS NEVER COVERED ANYWAY. Drift opens
+;     getApplicationDocumentsDirectory()/pos_app.sqlite — i.e. Documents\pos_app.sqlite,
+;     NOT a com.example\pos_app subfolder. The one file that matters was the one
+;     file no entry matched.
+;
+;  3. PER-USER PATHS ARE UNRELIABLE HERE. This installer runs elevated
+;     (DefaultDirName is under Program Files), so {userappdata} / {localappdata} /
+;     {userdocs} resolve to the profile of whoever ran the uninstaller — typically
+;     an admin, not the cashier whose data it was meant to remove. Inno warns about
+;     exactly this at compile time ("UsedUserAreasWarning").
+;
+;  4. IT WOULD DESTROY MONEY. pos_app.sqlite holds sales that have not yet synced
+;     to the server. Uninstall-to-reinstall is a routine troubleshooting step, and
+;     silently wiping unpushed transactions during one is unacceptable for a POS.
+;
+; To remove a terminal's data on purpose, delete these by hand while signed in as
+; that Windows user — after confirming the Sync panel shows nothing pending:
+;     %APPDATA%\com.example\pos_app     (settings, credentials)
+;     %USERPROFILE%\Documents\pos_app.sqlite   (the local database)
 
 [Code]
 // Pascal Script to check if the Visual C++ Redistributable is already installed

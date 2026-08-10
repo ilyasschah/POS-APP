@@ -78,6 +78,23 @@ void main() {
         reason: 'Fallback "$fallback" must be numeric major.minor.patch.');
   });
 
+  test('the installer never deletes local data on uninstall', () {
+    final iss = File('octopus_setup.iss').readAsStringSync();
+
+    // Removed on purpose, and easy to "helpfully" restore because its absence
+    // looks like missing cleanup. It is not:
+    //   * the installer runs elevated, so {userappdata}/{userdocs} resolve to the
+    //     admin who ran the uninstaller, not the cashier whose data it targets;
+    //   * pos_app.sqlite holds sales that have not synced yet, and
+    //     uninstall-to-reinstall is a routine troubleshooting step.
+    expect(
+      RegExp(r'^\s*\[UninstallDelete\]', multiLine: true).hasMatch(iss),
+      isFalse,
+      reason: 'Uninstall must not remove local data — see the comment block in '
+          'octopus_setup.iss for why. Removing unsynced sales loses real money.',
+    );
+  });
+
   test('the installer keeps a fixed AppId so upgrades stay upgrades', () {
     final iss = File('octopus_setup.iss').readAsStringSync();
 
