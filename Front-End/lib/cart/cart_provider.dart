@@ -753,7 +753,37 @@ class CartNotifier extends Notifier<CartState> {
     final cust = lines
         .where((l) => l.source == DiscountSource.customerProfile)
         .firstOrNull;
-    return (customer: customer, value: cust?.value, type: cust?.valueType);
+    if (cust != null) {
+      return (customer: customer, value: cust.value, type: cust.valueType);
+    }
+
+    // 🚨 No `customer_profile` line means one of two things, and only one of
+    // them is "no discount":
+    //   • the order really carries none — the fallback below finds nothing
+    //     either, so the result is identical; or
+    //   • the order was PULLED from another terminal. `discount_lines` never
+    //     cross the wire for an OPEN order (only checkout's BatchSync sends
+    //     them), so a cross-device order arrives with no lines at all.
+    //
+    // The second case was a real money discrepancy: this terminal applied no
+    // customer discount, so its grand total came out HIGHER than the till that
+    // rang the order up — and checking out here would have charged the customer
+    // the undiscounted price. The discount itself is master data, so read it
+    // from the local mirror exactly as picking that customer on a fresh order
+    // would. Drift, not the API: reopening an order must work offline.
+    if (customerId == null) {
+      return (customer: customer, value: null, type: null);
+    }
+    final profile = await (db.select(db.customerDiscountsTable)
+          ..where((t) => t.customerId.equals(customerId))
+          ..where((t) => t.syncStatus.isNotIn(['pending_delete']))
+          ..limit(1))
+        .get()
+        .then((r) => r.firstOrNull);
+    if (profile == null || profile.value <= 0) {
+      return (customer: customer, value: null, type: null);
+    }
+    return (customer: customer, value: profile.value, type: profile.type);
   }
 
   Future<void> clearFloorPlanTable(
@@ -1753,7 +1783,11 @@ class CartNotifier extends Notifier<CartState> {
       final success = await apiClient.voidPosOrder(
         companyId,
         state.activePosOrderId!,
-        state.activeWarehouseId ?? 1,
+        // `?? 1` here targeted a warehouse the company may not even own (see
+        // effectiveWarehouseId). Voiding restores stock, so a bogus id restocks
+        // the wrong place. effectiveWarehouseId resolves selection → configured
+        // default and only then falls back.
+        effectiveWarehouseId,
       );
       if (success) {
         _notifyKitchen();

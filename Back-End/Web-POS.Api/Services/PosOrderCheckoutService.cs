@@ -18,6 +18,67 @@ namespace Api.Services
             _counterRepo = counterRepo;
         }
 
+        /// <summary>
+        /// Splits the document-level reduction across a sale's lines so that
+        /// <c>SUM(DocumentItem.TotalAfterDocumentDiscount) == Document.Total</c>.
+        ///
+        /// That column is the revenue figure every sales view sums —
+        /// vw_DashboardSalesData, vw_SalesByProduct, vw_SalesByTax, vw_ProfitRow,
+        /// vw_SalesItemList. Clients send a per-line value for it, but despite the
+        /// name it only ever reflected the ITEM discount: nothing subtracted the
+        /// order-level reduction, so all of those reports read gross instead of
+        /// collected. Measured on 2026-08-06: the dashboard said 96.00 where the
+        /// documents and the payments said 85.00 — an 8.00 manual cart discount
+        /// plus a 3.00 loyalty-points redemption.
+        ///
+        /// Derived from <paramref name="grandTotal"/> rather than from
+        /// Document.Discount on purpose. Only the manual cart discount reaches that
+        /// column; loyalty points and promotions land in DiscountLine instead, and
+        /// leave Document.Discount at 0. The grand total is already net of every
+        /// source, so reconciling to it covers them all without this method having
+        /// to enumerate them.
+        ///
+        /// The remainder lands on the last line rather than rounding every share,
+        /// so the column sums EXACTLY to the header — rounding per line drifts by a
+        /// cent and leaves the reports permanently disagreeing with the documents.
+        /// </summary>
+        private static decimal[] ApportionDocumentDiscount(
+            IReadOnlyList<decimal> lineTotals, decimal grandTotal)
+        {
+            var result = new decimal[lineTotals.Count];
+            decimal gross = 0;
+            for (var i = 0; i < lineTotals.Count; i++) gross += lineTotals[i];
+
+            // Only ever a reduction. When the grand total meets or exceeds the line
+            // gross — tax-exclusive pricing adding tax on top, or a payload we
+            // can't reconcile — every line keeps its own total.
+            var discount = gross - grandTotal;
+            if (gross <= 0 || discount <= 0)
+            {
+                for (var i = 0; i < lineTotals.Count; i++) result[i] = lineTotals[i];
+                return result;
+            }
+            if (discount > gross) discount = gross;
+
+            decimal allocated = 0;
+            for (var i = 0; i < lineTotals.Count; i++)
+            {
+                decimal share;
+                if (i == lineTotals.Count - 1)
+                {
+                    share = discount - allocated;
+                }
+                else
+                {
+                    share = Math.Round(discount * lineTotals[i] / gross, 2,
+                        MidpointRounding.AwayFromZero);
+                    allocated += share;
+                }
+                result[i] = lineTotals[i] - share;
+            }
+            return result;
+        }
+
         public async Task<CheckoutResult> CheckoutAsync(int companyId, int userId, CheckoutPosOrderRequest req)
         {
             var strategy = _db.Database.CreateExecutionStrategy();
@@ -153,12 +214,25 @@ namespace Api.Services
                     // posOrderItems derive from the same client list, so same-product
                     // lines stay in order.
                     var consumedItemIds = new HashSet<int>();
+                    var lines = new List<(CheckoutItemDto Dto, PosOrderItem Cart)>(req.Items.Count);
                     foreach (var frontendItem in req.Items)
                     {
                         var originalCartItem = posOrderItems.FirstOrDefault(
                             i => i.ProductId == frontendItem.ProductId && !consumedItemIds.Contains(i.Id));
                         if (originalCartItem == null) continue;
                         consumedItemIds.Add(originalCartItem.Id);
+                        lines.Add((frontendItem, originalCartItem));
+                    }
+
+                    // Resolve the lines first (above) so the split below runs over
+                    // exactly the rows that reach the table — the rounding remainder
+                    // has to land on a line that actually gets persisted.
+                    var netTotals = ApportionDocumentDiscount(
+                        lines.Select(l => l.Dto.Total).ToList(), documentGrandTotal);
+
+                    for (var idx = 0; idx < lines.Count; idx++)
+                    {
+                        var (frontendItem, originalCartItem) = lines[idx];
 
                         var docItem = DocumentItem.Create(
                             companyId: companyId,
@@ -174,7 +248,9 @@ namespace Api.Services
                             priceBeforeTaxAfterDiscount: frontendItem.PriceBeforeTaxAfterDiscount,
                             priceAfterDiscount: frontendItem.PriceAfterDiscount,
                             total: frontendItem.Total,
-                            totalAfterDocumentDiscount: frontendItem.TotalAfterDocumentDiscount,
+                            // Recomputed, not taken from the payload — see
+                            // ApportionDocumentDiscount.
+                            totalAfterDocumentDiscount: netTotals[idx],
                             discountApplyRule: false
                         );
 

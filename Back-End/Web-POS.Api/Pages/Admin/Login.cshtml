@@ -1,0 +1,44 @@
+@page
+@model Api.Pages.Admin.LoginModel
+@{
+    ViewData["Title"] = "Sign in";
+}
+
+<div style="max-width:420px; margin:6vh auto 0;">
+    <div class="text-center mb-4">
+        <div class="brand" style="font-size:1.4rem;">POS Admin</div>
+        <div class="text-muted small mt-1">Sign in to manage companies and subscriptions</div>
+    </div>
+
+    <form method="post" class="card text-main">
+        @* Carried explicitly rather than relying on the browser resubmitting the
+           query string, so a deep link the operator was challenged on survives the
+           round trip. LoginModel.SafeReturnUrl rejects anything non-local. *@
+        <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="card mb-3" role="alert" style="border-left:4px solid #D66; padding:0.75rem;">
+                <div class="small">@Model.ErrorMessage</div>
+            </div>
+        }
+
+        <div class="form-field">
+            <label asp-for="Input.Username">Username</label>
+            <input asp-for="Input.Username" autocomplete="username" autofocus required />
+        </div>
+
+        <div class="form-field">
+            <label asp-for="Input.Password">Password</label>
+            <input asp-for="Input.Password" type="password" autocomplete="current-password" required />
+        </div>
+
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <input type="checkbox" asp-for="Input.RememberMe" id="rememberMe"
+                   style="width:18px; height:18px; accent-color: var(--accent); cursor:pointer;" />
+            <label for="rememberMe" class="mb-0 small" style="cursor:pointer;">Keep me signed in on this computer</label>
+        </div>
+
+        <button type="submit" class="btn-primary" style="width:100%; padding:0.65rem; font-size:1rem;">Sign in</button>
+    </form>
+</div>

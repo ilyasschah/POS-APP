@@ -72,19 +72,26 @@ namespace Api.Controllers
             [FromQuery] int? userId = null,
             [FromQuery] int? customerId = null,
             [FromQuery] bool includeItems = false,
-            [FromQuery] DateTime? modifiedAfter = null, CancellationToken ct = default)
+            [FromQuery] DateTime? modifiedAfter = null,
+            // Repeatable: ?documentTypeIds=2&documentTypeIds=4. Omitted → sales
+            // only, the historical behaviour the sales-history screen relies on.
+            // The offline sync pull passes every type; without that a refund or a
+            // manually-created document could never reach a second device.
+            [FromQuery] List<int>? documentTypeIds = null,
+            CancellationToken ct = default)
         {
             if (companyId <= 0) return BadRequest("Company ID is required");
 
             return Ok(await mediator.Send(new GetSalesHistoryQuery
             {
-                CompanyId     = companyId,
-                StartDate     = startDate,
-                EndDate       = endDate,
-                UserId        = userId,
-                CustomerId    = customerId,
-                IncludeItems  = includeItems,
-                ModifiedAfter = modifiedAfter,
+                CompanyId       = companyId,
+                StartDate       = startDate,
+                EndDate         = endDate,
+                UserId          = userId,
+                CustomerId      = customerId,
+                IncludeItems    = includeItems,
+                ModifiedAfter   = modifiedAfter,
+                DocumentTypeIds = documentTypeIds,
             }, ct));
         }
 

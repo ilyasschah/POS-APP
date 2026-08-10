@@ -5,14 +5,18 @@ import 'package:gap/gap.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:pos_app/api/api_client.dart';
+import 'package:pos_app/app_settings/app_settings_model.dart';
+import 'package:pos_app/app_settings/app_settings_provider.dart';
 import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/auth/auth_storage.dart';
 import 'package:pos_app/auth/login_screen.dart';
 import 'package:pos_app/company/company_provider.dart';
+import 'package:pos_app/core/config.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:pos_app/license/license_service.dart';
 import 'package:pos_app/onboarding/onboarding_prefs.dart';
 import 'package:pos_app/onboarding/onboarding_screen.dart';
+import 'package:pos_app/settings/device_identity.dart';
 import 'package:pos_app/settings/settings_provider.dart';
 import 'package:pos_app/sync/sync_provider.dart';
 import 'package:pos_app/utils/api_error_parser.dart';
@@ -52,6 +56,22 @@ class _MasterLoginScreenState extends ConsumerState<MasterLoginScreen> {
     super.dispose();
   }
 
+  /// Repoints this terminal at [env] and applies it immediately, so the very
+  /// next request — the login POST below — already goes to the chosen server.
+  ///
+  /// Writes through `appSettingsProvider` rather than SharedPreferences
+  /// directly: that path also calls `setApiBaseUrl()` (in-memory, picked up by
+  /// the next `createDio()`) and keeps the Settings → Connection field in step.
+  /// `Application.Api.BaseUrl` is device-scoped, so this never leaves the
+  /// terminal — a POS on the LAN endpoint must not push it to one on the hosted
+  /// endpoint.
+  Future<void> _selectEnvironment(ApiEnvironment env) async {
+    await ref
+        .read(appSettingsProvider.notifier)
+        .set(SettingKeys.apiBaseUrl, env.baseUrl);
+    if (mounted) setState(() {});
+  }
+
   Future<void> _registerDevice() async {
     setState(() => _isLoading = true);
     try {
@@ -59,12 +79,19 @@ class _MasterLoginScreenState extends ConsumerState<MasterLoginScreen> {
       final deviceId = await storage.getOrCreateDeviceId();
       final dio = createDio();
 
+      // The POS name doubles as the terminal's label in DeviceRegistry, so the
+      // account's device list reads "POS1" rather than a UUID. Blank on a first
+      // install (onboarding asks for it right after this) — the server then keeps
+      // whatever it has, and the name arrives with the first sync or rename.
+      final deviceName = await getDeviceName();
+
       final response = await dio.post(
         '/Auth/Login',
         data: {
           'email': _emailController.text.trim(),
           'password': _passwordController.text,
           'deviceId': deviceId,
+          if (deviceName.isNotEmpty) 'deviceName': deviceName,
         },
       );
 
@@ -210,7 +237,19 @@ class _MasterLoginScreenState extends ConsumerState<MasterLoginScreen> {
                   style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14),
                 ),
 
-                const Gap(40),
+                const Gap(32),
+
+                // Which backend this terminal registers against. Deliberately
+                // ON the master-login screen: it is the FIRST thing a fresh
+                // install does, and picking the wrong server here is invisible
+                // afterwards — the app logs in, syncs, and faithfully reports
+                // whatever that server believes, including a subscription
+                // expiry from a tenant that isn't yours.
+                _EnvironmentPicker(
+                  onChanged: _selectEnvironment,
+                ),
+
+                const Gap(24),
 
                 TextField(
                   controller: _emailController,
@@ -289,6 +328,63 @@ class _MasterLoginScreenState extends ConsumerState<MasterLoginScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Dev / Test backend picker shown on the master-login screen.
+///
+/// Mirrors the segmented control in `octopus_dashboard_web`. It reads the LIVE
+/// endpoint rather than holding its own state, so it can never disagree with
+/// what the app is actually dialling — the failure mode being guarded against
+/// is precisely a UI that claims one server while requests go to another.
+///
+/// A hand-entered endpoint (Settings → Connection) matches neither segment. The
+/// control then selects nothing and names the custom URL underneath, rather than
+/// mislabelling it as Dev or Test.
+class _EnvironmentPicker extends ConsumerWidget {
+  const _EnvironmentPicker({required this.onChanged});
+
+  final ValueChanged<ApiEnvironment> onChanged;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
+    // Watched so the label follows a change made in Settings while this screen
+    // is open; `apiBaseUrl` itself is the in-memory value createDio() reads.
+    ref.watch(appSettingsProvider);
+    final current = apiBaseUrl;
+    final selected = ApiEnvironment.forUrl(current);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SegmentedButton<ApiEnvironment>(
+          segments: [
+            for (final env in ApiEnvironment.values)
+              ButtonSegment(value: env, label: Text(env.label)),
+          ],
+          // An empty set is valid only with emptySelectionAllowed — needed for
+          // the custom-URL case below.
+          selected: selected == null ? const {} : {selected},
+          emptySelectionAllowed: true,
+          showSelectedIcon: false,
+          onSelectionChanged: (s) {
+            if (s.isNotEmpty) onChanged(s.first);
+          },
+        ),
+        const Gap(8),
+        Text(
+          selected == null
+              ? AppLocalizations.of(context).checkedAgainstEndpoint(current)
+              : current,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 11,
+            color: cs.onSurfaceVariant.withValues(alpha: 0.75),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -1,5 +1,6 @@
 // lib/app_settings_model.dart
 
+import 'package:pos_app/core/config.dart';
 import 'package:pos_app/database/app_database.dart';
 
 class AppProperty {
@@ -362,6 +363,9 @@ class SettingKeys {
   static const showBookingBtn = 'ButtonBar.ShowBooking';
   static const showTablesBtn = 'ButtonBar.ShowTables';
   static const showKitchenBtn = 'ButtonBar.ShowKitchen';
+  /// Pre-bill ("Addition") button — prints the guest check the customer settles
+  /// against. Nothing is banked, so it is separate from the Pay button.
+  static const showAdditionBtn = 'ButtonBar.ShowAddition';
   static const showTaxBtn = 'ButtonBar.ShowTax';
   static const showQuantityBtn = 'ButtonBar.ShowQuantity';
 
@@ -434,7 +438,10 @@ const Map<String, String> kSettingDefaults = {
   SettingKeys.dbBackupIntervalHours: '0',
   SettingKeys.dbBackupAutoDelete: 'false',
   SettingKeys.dbBackupRetentionDays: '10',
-  SettingKeys.apiBaseUrl: 'https://51-91-6-6.sslip.io/api',
+  // Single source of truth — see AppConfig. Spelling the URL out again here is
+  // what let the Settings field advertise one endpoint while the app actually
+  // dialled another.
+  SettingKeys.apiBaseUrl: AppConfig.defaultApiBaseUrl,
   SettingKeys.scaleEnabled: 'false',
   SettingKeys.scalePort: 'COM2',
   SettingKeys.scaleBaudRate: '9600',
@@ -630,6 +637,7 @@ const Map<String, String> kSettingDefaults = {
   SettingKeys.showBookingBtn: 'true',
   SettingKeys.showTablesBtn: 'true',
   SettingKeys.showKitchenBtn: 'true',
+  SettingKeys.showAdditionBtn: 'true',
   SettingKeys.showTaxBtn: 'true',
   SettingKeys.showQuantityBtn: 'true',
 

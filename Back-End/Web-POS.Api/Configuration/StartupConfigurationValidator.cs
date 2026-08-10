@@ -27,7 +27,9 @@ public static class StartupConfigurationValidator
         var isDev = env.IsDevelopment();
 
         ValidateJwtSecret(config, report);
-        ValidateAdminPortalAccessKey(config, report);
+        // There is deliberately no AdminPortal:AccessKey check any more. The portal
+        // moved to per-user accounts in the Master DB (Api.Admin.AdminUserSeeder),
+        // so there is no shared secret left to configure or to get wrong.
         ValidateLeaseSigningKey(config, env, report);
         ValidateConnectionStrings(config, report);
 
@@ -73,30 +75,6 @@ public static class StartupConfigurationValidator
                 "Jwt:Secret is still a placeholder value shipped with the source. Anyone with the\n" +
                 "    repository can forge Admin tokens.\n" +
                 "    Fix: replace Jwt__Secret with a real random secret and restart.");
-        }
-    }
-
-    private static void ValidateAdminPortalAccessKey(IConfiguration config, ValidationReport report)
-    {
-        var key = config["AdminPortal:AccessKey"];
-
-        // Deliberately a WARNING, never fatal: the POS API is fully functional
-        // without the admin portal, and AdminPortalGate already fails closed with a
-        // 503. Aborting startup here would take the whole POS offline because an
-        // optional back-office page was unconfigured.
-        if (string.IsNullOrWhiteSpace(key))
-        {
-            report.Warnings.Add(
-                "AdminPortal:AccessKey is not set — the /admin portal will return 503 " +
-                "\"Admin portal disabled\". The POS API itself is unaffected.\n" +
-                "    Fix: set the environment variable  AdminPortal__AccessKey  (DOUBLE underscore).");
-        }
-        else if (key.Length < 16)
-        {
-            report.Warnings.Add(
-                $"AdminPortal:AccessKey is only {key.Length} characters. It is the single credential " +
-                "guarding destructive operations (delete company, reset passwords); 24+ random " +
-                "characters is strongly recommended.");
         }
     }
 
@@ -227,7 +205,6 @@ public static class StartupConfigurationValidator
         }
         sb.AppendLine("  Environment variables use DOUBLE underscores to express nesting:");
         sb.AppendLine("      Jwt:Secret            ->  Jwt__Secret");
-        sb.AppendLine("      AdminPortal:AccessKey ->  AdminPortal__AccessKey");
         sb.AppendLine("  A shell opened before the variable was set will not see it — open a new one.");
         sb.AppendLine("================================================================");
         return sb.ToString();

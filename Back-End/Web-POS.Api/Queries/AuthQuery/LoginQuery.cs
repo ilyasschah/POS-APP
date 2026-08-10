@@ -55,8 +55,14 @@ public class LoginQuery : IRequest<LoginResponse>
             {
                 try
                 {
+                    // The name is the terminal's own POS name ("POS1"), which is
+                    // also its document-number prefix. It used to be the constant
+                    // "POS terminal", so every row in DeviceRegistry carried the
+                    // same useless label and the admin device list could only show
+                    // the UUID. A client that sends none leaves the stored name
+                    // untouched (see RegisterOrValidateDeviceAsync).
                     var seat = await _provisioning.RegisterOrValidateDeviceAsync(
-                        user.CompanyId, request.Request.DeviceId!, "POS terminal");
+                        user.CompanyId, request.Request.DeviceId!, request.Request.DeviceName, isInteractiveLogin: true);
 
                     if (!seat.Allowed &&
                         (seat.Reason == "seat_limit_exceeded" || seat.Reason == "device_blocked"))

@@ -94,32 +94,38 @@ namespace Api.Commands.PosOrderItemCommands.Add
                         // happened offline, so it must post even if stock is now negative.
                         if (preventNegativeInventory && !command.AllowNegativeStock)
                         {
-                            foreach (var req in command.Items)
+                            // Checked PER PRODUCT, not per line. A product may occupy
+                            // several rows (`Order.SeparateRowForEachItem`), and the
+                            // per-line form compared each row's quantity against the
+                            // SAME existing row — so "2 × Coffee on two rows" was tested
+                            // as two independent +2 deltas instead of one net +4, and a
+                            // re-save of an unchanged order could even report a phantom
+                            // shortage. The aggregate is what actually hits stock.
+                            foreach (var group in command.Items.GroupBy(i => i.ProductId))
                             {
-                                var product = products[req.ProductId];
+                                var product = products[group.Key];
                                 if (product.IsService) continue;
 
-                                var existingItem = existingItems.FirstOrDefault(e => e.ProductId == req.ProductId);
-                                decimal oldQuantity = existingItem?.Quantity ?? 0;
-                                decimal delta = req.Quantity - oldQuantity;
+                                decimal incoming = group.Sum(i => i.Quantity);
+                                decimal current = existingItems
+                                    .Where(e => e.ProductId == group.Key)
+                                    .Sum(e => e.Quantity);
+                                decimal delta = incoming - current;
+                                if (delta <= 0) continue;
 
-                                if (delta > 0)
+                                if (!stocks.TryGetValue(group.Key, out var stock) || stock.Quantity < delta)
                                 {
-                                    // We need more stock
-                                    if (!stocks.TryGetValue(req.ProductId, out var stock) || stock.Quantity < delta)
-                                    {
-                                        // Fallback Check
-                                        var otherWarehouses = await _db.Stocks
-                                            .Include(s => s.Warehouse)
-                                            .Where(s => s.ProductId == req.ProductId && s.WarehouseId != command.WarehouseId && s.Quantity >= delta && s.CompanyId == command.CompanyId)
-                                            .Select(s => s.Warehouse.Name)
-                                            .ToListAsync(cancellationToken);
+                                    // Fallback Check
+                                    var otherWarehouses = await _db.Stocks
+                                        .Include(s => s.Warehouse)
+                                        .Where(s => s.ProductId == group.Key && s.WarehouseId != command.WarehouseId && s.Quantity >= delta && s.CompanyId == command.CompanyId)
+                                        .Select(s => s.Warehouse.Name)
+                                        .ToListAsync(cancellationToken);
 
-                                        string whList = otherWarehouses.Any() ? string.Join(", ", otherWarehouses) : "None";
-                                        response.Success = false;
-                                        response.Message = $"Product {product.Name} is out of stock in this warehouse (needed {delta} more). It is available in Warehouse(s): {whList}.";
-                                        return response;
-                                    }
+                                    string whList = otherWarehouses.Any() ? string.Join(", ", otherWarehouses) : "None";
+                                    response.Success = false;
+                                    response.Message = $"Product {product.Name} is out of stock in this warehouse (needed {delta} more). It is available in Warehouse(s): {whList}.";
+                                    return response;
                                 }
                             }
                         }
@@ -127,10 +133,46 @@ namespace Api.Commands.PosOrderItemCommands.Add
                         // --- Task 2: Deduct Stock (Delta) and Check Warnings ---
                         var warnings = new List<string>();
 
-                        // 1. Handle items to remove (Add back stock)
-                        var itemsToRemove = existingItems
-                            .Where(e => !incomingProductIds.Contains(e.ProductId))
-                            .ToList();
+                        // 🚨 A product can legitimately appear on SEVERAL lines of one
+                        // order — `Order.SeparateRowForEachItem` makes the POS add a new
+                        // cart row per tap instead of incrementing, so "2 × Coffee, one
+                        // with a comment" is two rows, not one.
+                        //
+                        // Every match below therefore pairs incoming lines to existing
+                        // rows BY POSITION within their ProductId group. Matching on
+                        // ProductId alone (`FirstOrDefault(e => e.ProductId == ...)`)
+                        // silently corrupted such an order on every re-save: both
+                        // incoming lines resolved to the SAME server row, so one row was
+                        // written twice (last one wins), the other kept stale values,
+                        // and the stock delta was computed twice against one quantity.
+                        // Deleting one of the two lines was worse — `incomingProductIds`
+                        // still contained the product, so neither row was removed and
+                        // the deleted line survived server-side forever.
+                        //
+                        // The payload carries no line identity, and the client always
+                        // sends the order's COMPLETE line set, so positional pairing
+                        // within a product group is exact: same count → update in place,
+                        // fewer → delete the surplus, more → insert the extras.
+                        var incomingByProduct = command.Items
+                            .GroupBy(i => i.ProductId)
+                            .ToDictionary(g => g.Key, g => g.ToList());
+                        var existingByProduct = existingItems
+                            .GroupBy(e => e.ProductId)
+                            .ToDictionary(g => g.Key, g => g.OrderBy(e => e.Id).ToList());
+
+                        // 1. Handle items to remove (Add back stock). A product missing
+                        // from the payload loses ALL its rows; a product whose line count
+                        // dropped loses the surplus (the highest ids, so the oldest rows
+                        // keep their identity).
+                        var itemsToRemove = new List<PosOrderItem>();
+                        foreach (var (productId, rows) in existingByProduct)
+                        {
+                            var keep = incomingByProduct.TryGetValue(productId, out var inc)
+                                ? inc.Count
+                                : 0;
+                            if (rows.Count > keep)
+                                itemsToRemove.AddRange(rows.Skip(keep));
+                        }
 
                         foreach (var item in itemsToRemove)
                         {
@@ -156,11 +198,26 @@ namespace Api.Commands.PosOrderItemCommands.Add
                             _db.PosOrderItems.RemoveRange(toRemove);
                         }
 
-                        // 2. Handle items to add/update
+                        // 2. Handle items to add/update, pairing by position WITHIN each
+                        // ProductId group (see the note above) so an order carrying the
+                        // same product on several rows round-trips intact.
+                        var removedIds = itemsToRemove.Select(x => x.Id).ToHashSet();
+                        var survivorsByProduct = trackingExistingItems
+                            .Where(e => !removedIds.Contains(e.Id))
+                            .GroupBy(e => e.ProductId)
+                            .ToDictionary(g => g.Key, g => g.OrderBy(e => e.Id).ToList());
+                        var takenPerProduct = new Dictionary<int, int>();
+
                         foreach (var req in command.Items)
                         {
                             var product = products[req.ProductId];
-                            var existingItem = trackingExistingItems.FirstOrDefault(e => e.ProductId == req.ProductId);
+                            var slot = takenPerProduct.TryGetValue(req.ProductId, out var used) ? used : 0;
+                            takenPerProduct[req.ProductId] = slot + 1;
+
+                            PosOrderItem? existingItem = null;
+                            if (survivorsByProduct.TryGetValue(req.ProductId, out var rows) && slot < rows.Count)
+                                existingItem = rows[slot];
+
                             decimal oldQuantity = existingItem?.Quantity ?? 0;
                             decimal delta = req.Quantity - oldQuantity;
 
@@ -168,7 +225,8 @@ namespace Api.Commands.PosOrderItemCommands.Add
                             {
                                 existingItem.UpdateDetails(
                                     req.Quantity, req.Price, req.Discount, req.DiscountType,
-                                    req.DiscountAppliedType, req.Comment
+                                    req.DiscountAppliedType, req.Comment,
+                                    req.DiscountInputValue, req.DiscountInputType
                                 );
                                 _db.PosOrderItems.Update(existingItem);
                             }
@@ -179,7 +237,9 @@ namespace Api.Commands.PosOrderItemCommands.Add
                                     productId: req.ProductId, roundNumber: req.RoundNumber,
                                     quantity: req.Quantity, price: req.Price, discount: req.Discount,
                                     discountType: req.DiscountType, discountAppliedType: req.DiscountAppliedType,
-                                    comment: req.Comment, bundle: req.Bundle
+                                    comment: req.Comment, bundle: req.Bundle,
+                                    discountInputValue: req.DiscountInputValue,
+                                    discountInputType: req.DiscountInputType
                                 );
                                 _db.PosOrderItems.Add(newItem);
                             }
@@ -230,9 +290,22 @@ namespace Api.Commands.PosOrderItemCommands.Add
                             _db.Set<PosOrderItemTax>().RemoveRange(oldTaxes);
                         }
 
+                        // Positional within the ProductId group, exactly as above:
+                        // FirstOrDefault attached BOTH lines' taxes to the same row when
+                        // a product occupied two, leaving the other row untaxed.
+                        var savedByProduct = currentItems
+                            .GroupBy(i => i.ProductId)
+                            .ToDictionary(g => g.Key, g => g.OrderBy(i => i.Id).ToList());
+                        var taxSlot = new Dictionary<int, int>();
+
                         foreach (var req in command.Items)
                         {
-                            var savedItem = currentItems.FirstOrDefault(i => i.ProductId == req.ProductId);
+                            var slot = taxSlot.TryGetValue(req.ProductId, out var used) ? used : 0;
+                            taxSlot[req.ProductId] = slot + 1;
+
+                            PosOrderItem? savedItem = null;
+                            if (savedByProduct.TryGetValue(req.ProductId, out var saved) && slot < saved.Count)
+                                savedItem = saved[slot];
 
                             if (savedItem != null && req.AppliedTaxIds != null && req.AppliedTaxIds.Any())
                             {

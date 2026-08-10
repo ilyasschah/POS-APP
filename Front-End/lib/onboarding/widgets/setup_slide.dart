@@ -5,12 +5,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/core/device_theme_mode_provider.dart';
 import 'package:pos_app/onboarding/onboarding_seed.dart';
 import 'package:pos_app/onboarding/widgets/onboarding_scaffold.dart';
+import 'package:pos_app/settings/device_identity.dart';
 import 'package:pos_app/settings/local_ui_prefs.dart';
 
-/// "Quick setup" slide — look & feel plus the on-screen keyboard. Appearance is
-/// device-local and applies LIVE; the keyboard is a per-company setting parked
-/// in the onboarding seed and applied on first login. Tables / booking are no
-/// longer here — they're driven by the activity slide that follows.
+/// "Quick setup" slide — the terminal's name, look & feel, and the on-screen
+/// keyboard. The name and appearance are device-local and apply LIVE; the
+/// keyboard is a per-company setting parked in the onboarding seed and applied
+/// on first login. Tables / booking are no longer here — they're driven by the
+/// activity slide that follows.
 class SetupSlide extends ConsumerWidget {
   const SetupSlide({super.key});
 
@@ -59,6 +61,22 @@ class SetupSlide extends ConsumerWidget {
               ),
               const SizedBox(height: 24),
 
+              // Named FIRST: it becomes the prefix of every document number this
+              // terminal issues, so it has to be decided before the POS rings up
+              // anything — and it is what the account's device list shows instead
+              // of the raw hardware signature.
+              const _SectionLabel('TERMINAL'),
+              const _PosNameField(),
+              Padding(
+                padding: const EdgeInsets.only(top: 6, bottom: 4),
+                child: Text(
+                  AppLocalizations.of(context).posNameFullHint,
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: cs.onSurfaceVariant),
+                ),
+              ),
+
+              const SizedBox(height: 8),
               const _SectionLabel('APPEARANCE'),
               _Row(
                 label: AppLocalizations.of(context).theme,
@@ -139,6 +157,59 @@ class SetupSlide extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Names this terminal (the `pos.device.name` device-local pref).
+///
+/// Persisted **as it is typed** rather than behind a Save button: an onboarding
+/// slide has no save affordance, and swiping to the next one must not silently
+/// drop the name. Empty is skipped so clearing the field mid-edit never writes
+/// the `sanitizeDeviceName` fallback ("POS") over a real name.
+class _PosNameField extends ConsumerStatefulWidget {
+  const _PosNameField();
+
+  @override
+  ConsumerState<_PosNameField> createState() => _PosNameFieldState();
+}
+
+class _PosNameFieldState extends ConsumerState<_PosNameField> {
+  final _ctrl = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Onboarding is also reachable on a terminal that has been registered for a
+    // while (registered device, never onboarded), so prefill an existing name
+    // instead of inviting the operator to overwrite it with a blank.
+    getDeviceName().then((name) {
+      if (mounted && name.isNotEmpty && _ctrl.text.isEmpty) _ctrl.text = name;
+    });
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: _ctrl,
+      textCapitalization: TextCapitalization.characters,
+      inputFormatters: const [DeviceNameInputFormatter()],
+      decoration: InputDecoration(
+        labelText: AppLocalizations.of(context).deviceNameLower,
+        hintText: AppLocalizations.of(context).setHintCaisse,
+        border: const OutlineInputBorder(),
+        prefixIcon: const Icon(Icons.point_of_sale),
+      ),
+      onChanged: (v) {
+        if (v.isEmpty) return;
+        ref.read(deviceNameProvider.notifier).setName(v);
+      },
     );
   }
 }

@@ -6,6 +6,13 @@ public class LoginRequest
     public string Password { get; set; } = string.Empty;
     /// <summary>Device signature (Pillar 4) — registered against the seat cap at login.</summary>
     public string? DeviceId { get; set; }
+
+    /// <summary>
+    /// This terminal's operator-facing POS name ("POS1"), so DeviceRegistry lists
+    /// it by the label the venue uses. Optional — an older client omits it and the
+    /// registry keeps whatever name it already holds.
+    /// </summary>
+    public string? DeviceName { get; set; }
 }
 
 public class LoginResponse

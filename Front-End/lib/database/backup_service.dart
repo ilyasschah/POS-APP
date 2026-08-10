@@ -29,13 +29,26 @@ class BackupService {
   /// it can write without SAF plumbing, and it is still reachable over USB /
   /// a file manager at `Android/data/<package>/files/POS_Backups`.
   /// Elsewhere it falls back to `<Documents>/POS_Backups`.
+  /// A Windows-shaped location: `D:\x`, `C:/x` or a `\\server\share` UNC path.
+  static bool _isDesktopPath(String value) =>
+      value.startsWith(r'\\') || RegExp(r'^[A-Za-z]:[\\/]').hasMatch(value);
+
   static Future<String> resolveBackupDir(String backupDir) async {
     final dir = backupDir.trim();
 
     if (usesManagedBackupDir) {
       // A `content://` URI (or any non-path) can never be written to — drop it
       // and use the managed location instead of failing the backup.
-      if (dir.isNotEmpty && !dir.contains('://')) {
+      //
+      // 🚨 So can a WINDOWS path. `Database.BackupPath` used to be cloud-synced,
+      // so a Windows POS saving `D:\POS_Backups` pushed it to every tablet; this
+      // check passed it through (non-empty, no `://`) and `backupNow` then ran
+      // `Directory(r'D:\POS_Backups').createSync()` on Android, which either
+      // throws or silently creates a literal `D:\POS_Backups` folder name. That
+      // is why backups "did not work at all" on the tablets. The key is now
+      // device-scoped (see DeviceScopedSettings), and this is the belt-and-
+      // braces guard for a value already stored on an existing install.
+      if (dir.isNotEmpty && !dir.contains('://') && !_isDesktopPath(dir)) {
         return dir;
       }
       // getExternalStorageDirectory is Android-only and may be null; app
@@ -99,11 +112,16 @@ class BackupService {
 
   /// Deletes .sqlite files in [backupDir] that are older than [retentionDays].
   /// Returns the count of deleted files.
+  ///
+  /// [backupDir] goes through [resolveBackupDir] first. It used to be used raw,
+  /// so on Android — where the configured value is ignored in favour of the
+  /// managed folder — this pointed at a directory that does not exist and
+  /// pruning silently never ran. Same on a desktop with the setting left blank.
   static Future<int> pruneOldBackups({
     required String backupDir,
     required int retentionDays,
   }) async {
-    final dir = Directory(backupDir.trim());
+    final dir = Directory(await resolveBackupDir(backupDir));
     if (!dir.existsSync()) return 0;
 
     final cutoff = DateTime.now().subtract(Duration(days: retentionDays));

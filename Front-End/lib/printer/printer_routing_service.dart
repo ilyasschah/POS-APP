@@ -63,7 +63,7 @@ class PrinterRoutingService {
     required String orderNumber,
     required String cashierName,
     required String serviceType,
-    int roundNumber = 1,
+    String? tableName,
     DateTime? printTime,
     List<List<String>> itemComments = const [],
   }) async {
@@ -108,7 +108,7 @@ class PrinterRoutingService {
         orderNumber: orderNumber,
         cashierName: cashierName,
         serviceType: label,
-        roundNumber: roundNumber,
+        tableName: tableName,
         printTime: when,
         items: sub,
         itemComments: subComments,

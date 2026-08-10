@@ -1374,6 +1374,13 @@ namespace Api.Migrations
                     b.Property<int>("DiscountAppliedType")
                         .HasColumnType("int");
 
+                    b.Property<int?>("DiscountInputType")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("DiscountInputValue")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<int>("DiscountType")
                         .HasColumnType("int");
 

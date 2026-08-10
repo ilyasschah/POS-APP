@@ -14,6 +14,7 @@ import 'package:pos_app/currency/currencies_provider.dart';
 import 'package:pos_app/customer/customer_model.dart';
 import 'package:pos_app/kitchen/printer_group_model.dart';
 import 'package:pos_app/printer/printer_config_model.dart';
+import 'package:pos_app/printer/printer_platform.dart';
 import 'package:pos_app/printer/receipt_printer_service.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
 
@@ -114,7 +115,13 @@ class _PrintersTabState extends ConsumerState<_PrintersTab> {
   Future<void> _loadPrinters() async {
     setState(() => _loading = true);
     try {
-      final list = await Printing.listPrinters();
+      // Android/iOS have no printer-enumeration API — the call throws and the
+      // catch below turned that into an empty list, i.e. "no printers found",
+      // which is a different (and misleading) statement. The UI branches on
+      // PrinterPlatform.canListSystemPrinters and explains instead.
+      final list = PrinterPlatform.canListSystemPrinters
+          ? await Printing.listPrinters()
+          : <Printer>[];
       if (mounted) setState(() { _printers = list; _loading = false; });
     } catch (_) {
       if (mounted) setState(() => _loading = false);
@@ -485,7 +492,19 @@ class _PrinterRowCard extends ConsumerWidget {
                           ),
                         ),
                       )
-                    : options.isEmpty
+                    // "No printers found" is only true where enumerating them is
+                    // possible at all. On Android/iOS there is no such API, so
+                    // the old message blamed the venue's hardware for a platform
+                    // limitation — and offered a Refresh button that could never
+                    // change the answer.
+                    : !PrinterPlatform.canListSystemPrinters
+                        ? Text(
+                            AppLocalizations.of(context)
+                                .printerSelectionUnsupportedOnThisDevice,
+                            style: TextStyle(
+                                fontSize: 13, color: theme.hintColor, height: 1.4),
+                          )
+                        : options.isEmpty
                         ? Row(
                             children: [
                               Expanded(
@@ -598,7 +617,13 @@ class _RolePrinterTabState extends ConsumerState<_RolePrinterTab>
   Future<void> _loadPrinters() async {
     setState(() => _loadingPrinters = true);
     try {
-      final list = await Printing.listPrinters();
+      // Android/iOS have no printer-enumeration API — the call throws and the
+      // catch below turned that into an empty list, i.e. "no printers found",
+      // which is a different (and misleading) statement. The UI branches on
+      // PrinterPlatform.canListSystemPrinters and explains instead.
+      final list = PrinterPlatform.canListSystemPrinters
+          ? await Printing.listPrinters()
+          : <Printer>[];
       if (mounted) setState(() { _printers = list; _loadingPrinters = false; });
     } catch (_) {
       if (mounted) setState(() => _loadingPrinters = false);

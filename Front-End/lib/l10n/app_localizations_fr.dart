@@ -1481,6 +1481,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get noPrintersFound => 'Aucune imprimante trouvée';
 
   @override
+  String get printerSelectionUnsupportedOnThisDevice =>
+      'Cet appareil ne peut pas sélectionner d\'imprimante système. L\'impression ouvre la boîte de dialogue d\'impression de l\'appareil.';
+
+  @override
   String get numberOfCopies => 'Nombre de copies';
 
   @override
@@ -3558,6 +3562,18 @@ class AppLocalizationsFr extends AppLocalizations {
   String get posKitchen => 'Cuisine';
 
   @override
+  String get posAddition => 'Addition';
+
+  @override
+  String get setAdditionButton => 'Bouton Addition';
+
+  @override
+  String get additionPrinted => 'Addition imprimée';
+
+  @override
+  String get posOrder => 'Commande';
+
+  @override
   String get posBookings => 'Réservations';
 
   @override
@@ -4856,6 +4872,26 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String kitchenTicketsPrinted(num count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.compact(
+      locale: localeName,
+    );
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString tickets cuisine envoyés',
+      one: 'Ticket cuisine envoyé',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get kitchenNoStationMatched =>
+      'Aucune imprimante de poste ne couvre ces articles — impression du ticket complet à la place.';
+
+  @override
   String couldNotSaveOrder(String message) {
     return 'Impossible d\'enregistrer la commande : $message';
   }
@@ -5671,6 +5707,11 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get retryConnectionUpper => 'RÉESSAYER LA CONNEXION';
+
+  @override
+  String checkedAgainstEndpoint(String endpoint) {
+    return 'Vérifié auprès de $endpoint';
+  }
 
   @override
   String scaleUnitMismatch(String scaleUnit, String productUnit) {

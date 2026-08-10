@@ -47,6 +47,7 @@ namespace Api.Queries.PosOrderQuery
                     if (!stats.TryGetValue(dto.Id, out var s)) continue;
                     dto.ItemCount = s.Count;
                     dto.ItemsLastChanged = s.LastChanged;
+                    dto.LastItemId = s.MaxId;
                 }
 
                 return dtos;

@@ -149,7 +149,11 @@ class SyncStatusDialog extends ConsumerWidget {
                   FilledButton.icon(
                     onPressed: isSyncing
                         ? null
-                        : () => ref.read(syncStateProvider.notifier).sync(),
+                        // manual: the operator pressed Sync, so reconcile
+                        // deletions from other tills now, not in 6 hours.
+                        : () => ref
+                            .read(syncStateProvider.notifier)
+                            .sync(manual: true),
                     icon: isSyncing
                         ? const SizedBox(
                             width: 16,

@@ -27,15 +27,22 @@ namespace Api.Master.Services
                     companyId, deviceId, request.Headers["X-Device-Name"].ToString());
 
                 if (!seat.Allowed &&
-                    (seat.Reason == "seat_limit_exceeded" || seat.Reason == "device_blocked"))
+                    (seat.Reason == "seat_limit_exceeded" ||
+                     seat.Reason == "device_blocked" ||
+                     seat.Reason == "device_revoked"))
                 {
                     return new ObjectResult(new
                     {
                         success = false,
                         error = seat.Reason,
-                        message = seat.Reason == "seat_limit_exceeded"
-                            ? $"This account is licensed for {seat.SeatAllowance} terminal(s) and that limit is reached — this device is not authorized to sync."
-                            : "This device has been blocked by the account administrator.",
+                        message = seat.Reason switch
+                        {
+                            "seat_limit_exceeded" =>
+                                $"This account is licensed for {seat.SeatAllowance} terminal(s) and that limit is reached — this device is not authorized to sync.",
+                            "device_revoked" =>
+                                "This terminal was removed from the account. Sign in again to reconnect it.",
+                            _ => "This device has been blocked by the account administrator.",
+                        },
                         activeSeats = seat.ActiveSeats,
                         seatAllowance = seat.SeatAllowance,
                     })

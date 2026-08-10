@@ -219,11 +219,20 @@ class LicenseService {
       final leaseResp = await dio
           .get('/Master/Lease', queryParameters: {'companyId': companyId});
       final lease = (leaseResp.data as Map?)?['lease'] as String?;
-      if (lease != null && lease.isNotEmpty) {
-        await _storage.saveLease(lease);
-        final issuedAt = _decodeIssuedAt(lease);
-        if (issuedAt != null) await _storage.recordServerTime(issuedAt);
+      if (lease == null || lease.isEmpty) {
+        // 🚨 The request SUCCEEDED but carried no lease (e.g. the company has no
+        // tenant on this server). Returning `evaluate()` here re-judged the OLD
+        // cached lease and reported it as *expired* — telling the operator their
+        // subscription had lapsed when the truth is "this server has nothing to
+        // say about this company". Null means "no answer", which the retry
+        // surfaces as a connection problem instead.
+        debugPrint('lease refresh: server returned no lease for company '
+            '$companyId at $apiBaseUrl');
+        return null;
       }
+      await _storage.saveLease(lease);
+      final issuedAt = _decodeIssuedAt(lease);
+      if (issuedAt != null) await _storage.recordServerTime(issuedAt);
       return evaluate();
     } catch (e) {
       debugPrint('lease refresh skipped (offline?) — $e');

@@ -719,10 +719,32 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                             ],
                           ),
                           clipBehavior: Clip.antiAlias,
-                          child: SingleChildScrollView(
-                            child: SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: DataTable(
+                          // 🚨 A horizontal SingleChildScrollView hands its child
+                          // UNBOUNDED width, so the DataTable sized itself to its
+                          // intrinsic content and left a dead gap down the right
+                          // of the pane. Two things are needed to fix that, and
+                          // neither works alone:
+                          //
+                          //  1. `minWidth: c.maxWidth` — tell the table it may be
+                          //     as wide as the pane (still unbounded above, so a
+                          //     narrow window/tablet keeps scrolling horizontally
+                          //     instead of overflowing).
+                          //  2. a FLEX column. Per DataTable's own rule, a column
+                          //     only stretches when it is the single text column
+                          //     (all others `numeric`); every column here is text,
+                          //     so all five got a plain `IntrinsicColumnWidth()`
+                          //     and the table stayed hugged to its content no
+                          //     matter what width it was offered. The product name
+                          //     absorbs the slack — the other four are short,
+                          //     fixed-shape values that look wrong stretched.
+                          child: LayoutBuilder(
+                            builder: (context, c) => SingleChildScrollView(
+                              child: SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: ConstrainedBox(
+                                  constraints:
+                                      BoxConstraints(minWidth: c.maxWidth),
+                                  child: DataTable(
                               showCheckboxColumn: false,
                               headingRowColor: WidgetStateProperty.all(
                                 theme.colorScheme
@@ -731,7 +753,14 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                               columnSpacing: 12,
                               horizontalMargin: 12,
                               columns: [
-                                DataColumn(label: Text(AppLocalizations.of(context).productLabel)),
+                                DataColumn(
+                                  label: Text(AppLocalizations.of(context).productLabel),
+                                  // Intrinsic width is the FLOOR, flex takes the
+                                  // rest — so a long product name is never
+                                  // truncated to make room for the gap.
+                                  columnWidth:
+                                      const IntrinsicColumnWidth(flex: 1),
+                                ),
                                 DataColumn(label: Text(AppLocalizations.of(context).fieldCode)),
                                 DataColumn(label: Text(AppLocalizations.of(context).fieldQuantity)),
                                 DataColumn(
@@ -742,7 +771,9 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                                   .map((item) => _buildRow(
                                       context, item, sym))
                                   .toList(),
-                            ),
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
                         ),

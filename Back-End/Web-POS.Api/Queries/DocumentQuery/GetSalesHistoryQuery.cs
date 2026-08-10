@@ -21,6 +21,18 @@ namespace Api.Queries.DocumentQuery
         // The date-range filter still bounds the result. Null = full window.
         public DateTime? ModifiedAfter { get; set; }
 
+        /// <summary>
+        /// Document types to return. Null/empty keeps the historical behaviour —
+        /// SALES ONLY (type 2) — so the sales-history screen is unaffected.
+        ///
+        /// 🚨 That hard-coded `DocumentTypeId == 2` filter is why documents "did
+        /// not sync": the offline pull (`pullDocuments`) has no other source, so
+        /// a refund, a purchase, or anything created in the document editor on
+        /// one terminal could NEVER reach another one. The sync pull now asks for
+        /// every type explicitly.
+        /// </summary>
+        public List<int>? DocumentTypeIds { get; set; }
+
         public class Handler : IRequestHandler<GetSalesHistoryQuery, List<SalesHistoryDocumentDto>>
         {
             private readonly AppDbContext _db;
@@ -33,12 +45,19 @@ namespace Api.Queries.DocumentQuery
                 var startDate = request.StartDate.Date;
                 var endDate   = request.EndDate.Date;
 
+                // Sales-only unless the caller names the types it wants. Keeping
+                // the default preserves the sales-history screen; the offline
+                // sync pull passes every type so cross-device documents work.
+                var typeIds = request.DocumentTypeIds is { Count: > 0 }
+                    ? request.DocumentTypeIds
+                    : new List<int> { 2 };
+
                 var docsQuery = _db.Documents
                     .AsNoTracking()
-                    .Where(d => d.CompanyId    == request.CompanyId
-                             && d.DocumentTypeId == 2   // Sales
-                             && d.Date           >= startDate
-                             && d.Date           <= endDate);
+                    .Where(d => d.CompanyId == request.CompanyId
+                             && typeIds.Contains(d.DocumentTypeId)
+                             && d.Date       >= startDate
+                             && d.Date       <= endDate);
 
                 if (request.UserId.HasValue)
                     docsQuery = docsQuery.Where(d => d.UserId == request.UserId.Value);
@@ -96,6 +115,22 @@ namespace Api.Queries.DocumentQuery
                     .GroupBy(i => i.DocumentId)
                     .ToDictionary(g => g.Key, g => g.Sum(i => i.PriceBeforeTax * i.Quantity));
 
+                // Same includeItems gate as the lines: only the sync pull needs the
+                // rows themselves; the screen is served by PaymentSummary below.
+                var paymentRowsByDoc = request.IncludeItems
+                    ? paymentsByDoc.ToDictionary(
+                        kv => kv.Key,
+                        kv => kv.Value.Select(p => new SalesHistoryPaymentDto
+                        {
+                            Id            = p.Id,
+                            PaymentTypeId = p.PaymentTypeId,
+                            Amount        = p.Amount,
+                            UserId        = p.UserId,
+                            Date          = p.Date,
+                            ZReportId     = p.ZReportId,
+                        }).ToList())
+                    : new Dictionary<int, List<SalesHistoryPaymentDto>>();
+
                 var itemsByDoc = request.IncludeItems
                     ? items
                         .GroupBy(i => i.DocumentId)
@@ -136,6 +171,9 @@ namespace Api.Queries.DocumentQuery
                         TaxTotal                 = d.Total - totalBeforeTax,
                         Discount                 = d.Discount,
                         PaidStatus               = d.PaidStatus,
+                        DocumentTypeId           = d.DocumentTypeId,
+                        WarehouseId              = d.WarehouseId,
+                        UserId                   = d.UserId,
                         PaymentSummary           = docPays.Count > 0
                             ? string.Join(" / ", docPays
                                 .Select(p => p.PaymentType?.Name)
@@ -143,6 +181,7 @@ namespace Api.Queries.DocumentQuery
                                 .Distinct())
                             : "N/A",
                         Items = itemsByDoc.GetValueOrDefault(d.Id) ?? [],
+                        Payments = paymentRowsByDoc.GetValueOrDefault(d.Id) ?? [],
                     };
                 }).ToList();
             }

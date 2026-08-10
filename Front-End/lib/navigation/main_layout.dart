@@ -23,7 +23,9 @@ import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/auth/auth_storage.dart';
 import 'package:pos_app/auth/login_screen.dart';
 import 'package:pos_app/auth/master_login_screen.dart';
+import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/sync/account_status_provider.dart';
+import 'package:pos_app/utils/snackbar_helper.dart';
 import 'package:pos_app/database/backup_scheduler.dart';
 import 'package:pos_app/cash/cash_movement_screen.dart';
 import 'package:pos_app/time_clock/time_clock_screen.dart';
@@ -220,8 +222,32 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
     ref.listen<bool>(accountRevokedProvider, (prev, next) async {
       if (next != true) return;
       ref.read(accountRevokedProvider.notifier).reset();
+      // Erase the local mirror BEFORE unlinking. Unlinking alone only clears the
+      // JWT/lease/company-id — it left the deleted company's entire dataset in
+      // pos_app.sqlite, readable and backed up, for good. Deleting a tenant has
+      // to reach its terminals too.
+      await ref.read(appDatabaseProvider).purgeAllLocalData();
       await ref.read(authStorageProvider).unlinkDevice();
       if (!context.mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const MasterLoginScreen()),
+        (_) => false,
+      );
+    });
+
+    // Revoked-terminal guard: an admin removed this device from the account
+    // (User info → Active devices). Sign out and return to master login so the
+    // operator can re-enrol it — a fresh master login clears the revoke.
+    //
+    // ⚠️ Unlike the deleted-COMPANY guard above, this must NOT purge local data.
+    // The company is still theirs, and an unpushed sale sitting here is real
+    // money that has to survive to be synced once they sign back in.
+    ref.listen<String?>(deviceRevokedProvider, (prev, next) async {
+      if (next == null) return;
+      ref.read(deviceRevokedProvider.notifier).reset();
+      await ref.read(authStorageProvider).unlinkDevice();
+      if (!context.mounted) return;
+      showAppSnackbar(context, ref, next, isError: true);
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const MasterLoginScreen()),
         (_) => false,

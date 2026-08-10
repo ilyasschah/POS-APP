@@ -722,19 +722,36 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
             ),
           ),
           Expanded(
-            child: SingleChildScrollView(
+            // A horizontal SingleChildScrollView gives its child UNBOUNDED
+            // width, so the table sized itself to its content and left dead
+            // space down the right. `minWidth` only — never a max — so a preview
+            // with many columns still scrolls rather than overflowing.
+            child: LayoutBuilder(
+              builder: (context, c) => SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: SingleChildScrollView(
-                child: DataTable(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minWidth: c.maxWidth),
+                  child: DataTable(
                   headingRowColor: WidgetStateProperty.all(
                       cs.surfaceContainerHighest),
                   dataRowMinHeight: 28,
                   dataRowMaxHeight: 32,
                   headingRowHeight: 36,
                   columnSpacing: 24,
+                  // The FIRST column takes the slack. Which columns appear here
+                  // is user-controlled (visibleFields), so there is no fixed
+                  // "name" column to flex — and with no flex at all RenderTable
+                  // spreads the surplus equally, widening a 4-character code as
+                  // much as a product name.
                   columns: visibleFields
-                      .map((f) => DataColumn(
-                          label: Text(_fieldLabel(context, f.key),
+                      .asMap()
+                      .entries
+                      .map((e) => DataColumn(
+                          columnWidth: e.key == 0
+                              ? const IntrinsicColumnWidth(flex: 1)
+                              : null,
+                          label: Text(_fieldLabel(context, e.value.key),
                               style: const TextStyle(fontSize: 12))))
                       .toList(),
                   rows: _dataRows.take(50).map((row) {
@@ -746,8 +763,10 @@ class _ProductImportScreenState extends ConsumerState<ProductImportScreen>
                       }).toList(),
                     );
                   }).toList(),
+                  ),
                 ),
               ),
+            ),
             ),
           ),
         ],

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/license/license_service.dart';
 import 'package:pos_app/sync/account_status_provider.dart';
+import 'package:pos_app/sync/sync_manager.dart' show DeviceRevokedException;
 import 'package:pos_app/sync/sync_provider.dart';
 
 /// Tracks the in-flight state of a manual sync. `isLoading` is true while a sync
@@ -20,7 +21,14 @@ class SyncNotifier extends AsyncNotifier<List<String>> {
   /// Kicks off a full bidirectional sync. UI bindings should call this and
   /// observe `state.isLoading` / `state.hasError` rather than awaiting the
   /// future, so multiple consumers can react without races.
-  Future<void> sync() async {
+  ///
+  /// Pass [manual] `true` when the operator explicitly asked for it (the Sync
+  /// button, the sync panel, a pull-to-refresh). That forces the document pull
+  /// to reconcile deletions immediately instead of on its 6-hour cadence — so
+  /// "delete the sale on till 1, press Sync on till 2" removes it there and
+  /// then. Background callers (connectivity restored, the hourly timer, the
+  /// fire-and-forget push after a save) leave it false and stay cheap.
+  Future<void> sync({bool manual = false}) async {
     final companyId = ref.read(selectedCompanyProvider)?.id;
     if (companyId == null) {
       // No company selected — surface as an error so the snackbar fires.
@@ -51,7 +59,18 @@ class SyncNotifier extends AsyncNotifier<List<String>> {
         try {
           await ref.read(licenseServiceProvider).refreshFromServer(companyId);
         } catch (_) {/* offline / server down — cached lease stays valid */}
-        return ref.read(syncManagerProvider).sync(companyId);
+        try {
+          return await ref
+              .read(syncManagerProvider)
+              .sync(companyId, manual: manual);
+        } on DeviceRevokedException catch (e) {
+          // The admin removed this terminal. Flag it for the shell to sign out
+          // and route to master login; surfacing it as a plain sync error would
+          // leave the operator on a till that can never sync again with no idea
+          // why. Not rethrown — the terminal is being signed out, not failing.
+          ref.read(deviceRevokedProvider.notifier).markRevoked(e.message);
+          return const <String>[];
+        }
       },
     );
   }

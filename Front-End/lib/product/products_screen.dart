@@ -1010,11 +1010,31 @@ class _ProductListContent extends ConsumerWidget {
                       dataRowMaxHeight: 65,
                       onSelectAll: (val) => onSelectionChanged(
                           val == true ? products.map((p) => p.id).toSet() : {}),
-                      columns: activeCols
-                          .map((c) => DataColumn(
-                              label: Text(productColumnLabel(context, c.key)),
-                              numeric: c.numeric))
-                          .toList(),
+                      // The ConstrainedBox above already makes the table fill
+                      // its pane, but with no flex column `RenderTable` spreads
+                      // the surplus EQUALLY — a numeric price column stretches
+                      // as much as a product name. Give the slack to the first
+                      // TEXT column (the name, in every default layout).
+                      //
+                      // NB when exactly one column is non-numeric, DataTable
+                      // already flexes it on its own (`_onlyTextColumn`); this
+                      // just makes the behaviour hold for the usual case of
+                      // several text columns.
+                      columns: () {
+                        final flexKey = activeCols
+                            .where((c) => !c.numeric)
+                            .firstOrNull
+                            ?.key;
+                        return activeCols
+                            .map((c) => DataColumn(
+                                label:
+                                    Text(productColumnLabel(context, c.key)),
+                                numeric: c.numeric,
+                                columnWidth: c.key == flexKey
+                                    ? const IntrinsicColumnWidth(flex: 1)
+                                    : null))
+                            .toList();
+                      }(),
                       rows: products.map((p) {
                         return DataRow(
                           selected: effectiveSelected.contains(p.id),

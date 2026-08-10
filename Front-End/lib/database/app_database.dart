@@ -2889,6 +2889,42 @@ class AppDatabase extends _$AppDatabase {
     ));
   }
 
+  /// Erases every row this terminal holds, leaving the schema intact.
+  ///
+  /// 🚨 Called when the server reports that this terminal's company has been
+  /// **deleted in the admin portal**. Until this existed, revocation only ran
+  /// `AuthStorage.unlinkDevice()` — which clears the JWT, the lease and the
+  /// cached company id, and touches **nothing in Drift**. So every product,
+  /// price, customer, order, document, payment and setting of the deleted
+  /// company stayed on disk in `pos_app.sqlite` indefinitely: still readable,
+  /// still copied into every nightly backup, and still there if the terminal was
+  /// later re-linked to a *different* company. Deleting a tenant has to mean its
+  /// data is gone from the terminals too, not just from the server.
+  ///
+  /// A **full** wipe rather than a `WHERE company_id = ?` sweep, deliberately:
+  ///  * a terminal is linked to exactly one company at a time (`AuthStorage`
+  ///    stores a single company id), so there is no second tenant to preserve;
+  ///  * many child tables (`pos_order_items`, `document_items`, `payments`,
+  ///    `discount_lines`, `pos_order_item_taxes`…) key off a parent's **localId**
+  ///    and carry no `company_id` at all — a scoped sweep would leave them behind
+  ///    as permanent orphans, which is the exact failure being fixed;
+  ///  * the reference mirrors (`countries`, `currencies`, `document_types`,
+  ///    `document_categories`) are re-pulled on the next sync at no cost.
+  ///
+  /// ⚠️ This destroys unsynced local work. That is correct here and only here:
+  /// the company no longer exists server-side, so a pending sale has nowhere
+  /// left to go. **Never call this for a sign-out, a seat release, or a lease
+  /// expiry** — those terminals must keep their data.
+  Future<void> purgeAllLocalData() async {
+    await transaction(() async {
+      // FKs are declared with cascades; clearing children first keeps the order
+      // irrelevant and avoids depending on `PRAGMA foreign_keys` being on.
+      for (final table in allTables) {
+        await delete(table).go();
+      }
+    });
+  }
+
   /// Deletes an editor document offline-first. A never-synced document (and its
   /// items, via cascade) is removed outright; a synced one is soft-deleted
   /// ('pending_delete') so the pusher can DELETE it on the next sync.
@@ -3213,6 +3249,7 @@ class AppDatabase extends _$AppDatabase {
   Future<void> upsertServerDocument({
     required DocumentsTableCompanion document,
     required List<DocumentItemsTableCompanion> items,
+    List<PaymentsTableCompanion> payments = const [],
   }) {
     return transaction(() async {
       await into(documentsTable).insertOnConflictUpdate(document);
@@ -3223,7 +3260,45 @@ class AppDatabase extends _$AppDatabase {
       if (items.isNotEmpty) {
         await batch((b) { b.insertAll(documentItemsTable, items); });
       }
+      await replaceServerPayments(document.localId.value, payments);
     });
+  }
+
+  /// Replaces the SERVER-OWNED payments of a document, leaving local work alone.
+  ///
+  /// 🚨 There was no payment pull at all — `payments` had a push and nothing
+  /// else — so a sale rung up on one terminal reached every other one with zero
+  /// payment rows. Sales history showed "N/A" in the Paiement column, and far
+  /// worse, the Z-report's breakdown-by-payment-type and the credit screen read
+  /// the same table, so **each till only ever counted its own sales**.
+  ///
+  /// ⚠️ Only `synced` rows are replaced. A payment still queued here
+  /// (`pending`, `pending_create/update/delete`) is owned by the pusher until it
+  /// lands; deleting it would drop money the server has not seen yet — the same
+  /// rule as every other pull (handoff §3).
+  Future<void> replaceServerPayments(
+    String documentLocalId,
+    List<PaymentsTableCompanion> payments,
+  ) async {
+    final localPending = await (select(paymentsTable)
+          ..where((t) => t.documentId.equals(documentLocalId))
+          ..where((t) => t.syncStatus.equals('synced').not()))
+        .get();
+    // A pulled payment that this device is already holding as a pending edit
+    // must not be re-inserted underneath that edit.
+    final heldServerIds =
+        localPending.map((p) => p.serverId).whereType<int>().toSet();
+
+    await (delete(paymentsTable)
+          ..where((t) => t.documentId.equals(documentLocalId))
+          ..where((t) => t.syncStatus.equals('synced')))
+        .go();
+
+    for (final p in payments) {
+      final sid = p.serverId.present ? p.serverId.value : null;
+      if (sid != null && heldServerIds.contains(sid)) continue;
+      await into(paymentsTable).insertOnConflictUpdate(p);
+    }
   }
 
   /// Queues a voided order for server sync and deletes the local open-order row.
@@ -3391,6 +3466,70 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
+  /// The open local row for a server order id, or null.
+  ///
+  /// `.get().firstOrNull`, never `getSingleOrNull()` — that throws on a
+  /// duplicate serverId, and a caller in a UI action would surface it as an
+  /// opaque failure (see the open-order pull, where exactly that killed sync).
+  Future<PosOrdersTableData?> getOpenOrderByServerId(int serverId) =>
+      (select(posOrdersTable)
+            ..where((t) => t.serverId.equals(serverId))
+            ..where((t) => t.status.equals(0))
+            ..limit(1))
+          .get()
+          .then((r) => r.firstOrNull);
+
+  /// Moves an open order's LOCAL row to another table.
+  ///
+  /// 🚨 The Transfer dialog updated the server (`/PosOrder/Update`) and the
+  /// in-memory cart, and wrote **nothing to Drift** — so the old table stayed
+  /// occupied and the order appeared on BOTH: floor-plan occupancy is derived
+  /// from local open `pos_orders.tableId` (see §3 — `floor_plan_tables.status`
+  /// is a dead column), and that row still pointed at the origin.
+  ///
+  /// Worse for a row with unpushed edits: the open-order pull deliberately will
+  /// not overwrite a `pending` row's `tableId`, so the stale table survived the
+  /// next poll AND the eventual push sent it back — dragging the server order
+  /// to the table it had just been moved off.
+  ///
+  /// [orderName] is written alongside because the transfer renames the order
+  /// after its destination table; leaving the two to disagree is what let the
+  /// name-matching branch of the pull adopt the wrong row.
+  ///
+  /// The row keeps its current `syncStatus`: if it was `pending` it still has
+  /// work to push, and if it was `synced` the server has already been told.
+  Future<void> moveOrderToTable({
+    required String localId,
+    required int? tableId,
+    String? orderName,
+    int? userId,
+  }) {
+    return (update(posOrdersTable)..where((t) => t.localId.equals(localId)))
+        .write(PosOrdersTableCompanion(
+      tableId: Value(tableId),
+      orderName: orderName == null ? const Value.absent() : Value(orderName),
+      userId: userId == null ? const Value.absent() : Value(userId),
+      lastModified: Value(DateTime.now().toUtc()),
+    ));
+  }
+
+  /// The booking that owns server order [posOrderId], or null.
+  ///
+  /// 🚨 This is the ONLY way a second terminal can recover the link. The
+  /// relation is stored on `Booking.PosOrderId` — `PosOrder` has no BookingId
+  /// column and `PosOrderDto` therefore cannot carry one — so an order pulled by
+  /// `syncOpenOrdersToDrift` arrives with no booking attached. Without this
+  /// lookup, opening a reservation's order on another till lost its booking, and
+  /// paying it never completed the reservation.
+  Future<int?> bookingIdForPosOrder(int posOrderId) async {
+    final row = await (select(bookingsTable)
+          ..where((t) => t.posOrderId.equals(posOrderId))
+          ..limit(1))
+        .get()
+        .then((r) => r.firstOrNull);
+    return row?.id;
+  }
+
   /// Sets a booking's forward link to its now-synced order (the reverse
   /// pos_orders.bookingId already exists). The row stays 'synced' — the server
   /// was just updated by the order push — so this only keeps the local
@@ -3422,6 +3561,52 @@ class AppDatabase extends _$AppDatabase {
     await (update(posOrdersTable)..where((t) => t.bookingId.equals(tempId)))
         .write(PosOrdersTableCompanion(bookingId: Value(realId)));
     return affected;
+  }
+
+  /// Returns orders parked at terminal `failed` whose recorded reason is an
+  /// INFRASTRUCTURE fault, and flips them back to `pending` so the next push
+  /// picks them up. Returns how many were requeued.
+  ///
+  /// 🚨 `failed` has no retry path anywhere — the push queries select `pending`
+  /// only. That is correct for a business rejection, and data loss for a server
+  /// fault: on 2026-08-06 a **completed, paid sale** was stranded permanently
+  /// because the API was restarted before a migration was applied and BatchSync
+  /// answered "Invalid column name 'DiscountInputValue'". The push path no
+  /// longer marks such failures terminal; this heals rows stranded before that
+  /// fix shipped, and any future one that slips through.
+  ///
+  /// Matching is on the same signatures as `SyncManager._isRetryableServerError`
+  /// — narrow on purpose, so a genuinely rejected order is never re-pushed in a
+  /// loop.
+  Future<int> requeueInfrastructureFailedOrders() async {
+    const signatures = [
+      'invalid column name',
+      'invalid object name',
+      'timeout',
+      // SQL Server's Win32Exception 258 says "timed out", not "timeout".
+      'timed out',
+      'deadlock',
+      'transport',
+      'connection',
+      'pre-login',
+      'temporarily unable',
+    ];
+    final failed = await (select(posOrdersTable)
+          ..where((t) => t.syncStatus.equals('failed')))
+        .get();
+
+    var requeued = 0;
+    for (final row in failed) {
+      final reason = (row.syncError ?? '').toLowerCase();
+      if (!signatures.any(reason.contains)) continue;
+      await (update(posOrdersTable)
+            ..where((t) => t.localId.equals(row.localId)))
+          .write(const PosOrdersTableCompanion(
+        syncStatus: Value('pending'),
+      ));
+      requeued++;
+    }
+    return requeued;
   }
 
   /// Record a failure on the order header. The row stays in the DB and the

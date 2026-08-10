@@ -6,6 +6,7 @@ import 'package:pos_app/floor_plan/floor_plan_provider.dart';
 import 'package:pos_app/floor_plan/floor_plan_table_provider.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
 import 'package:pos_app/auth/auth_provider.dart';
+import 'package:pos_app/cart/cart_provider.dart';
 import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/menu/open_orders_screen.dart' show syncOpenOrdersToDrift;
@@ -54,7 +55,12 @@ class _FloorPlanScreenState extends ConsumerState<FloorPlanScreen> {
     if (companyId == null) return;
     if (mounted) setState(() => _syncing = true);
     try {
-      await syncOpenOrdersToDrift(ref.read(appDatabaseProvider), companyId);
+      await syncOpenOrdersToDrift(
+        ref.read(appDatabaseProvider),
+        companyId,
+        fallbackWarehouseId:
+            ref.read(cartProvider.notifier).effectiveWarehouseId,
+      );
     } catch (_) {
       // Offline or API error — the Drift stream keeps showing local state.
     } finally {
@@ -71,8 +77,13 @@ class _FloorPlanScreenState extends ConsumerState<FloorPlanScreen> {
     if (companyId == null) return;
     if (mounted) setState(() => _syncing = true);
     try {
-      await ref.read(syncStateProvider.notifier).sync();
-      await syncOpenOrdersToDrift(ref.read(appDatabaseProvider), companyId);
+      await ref.read(syncStateProvider.notifier).sync(manual: true);
+      await syncOpenOrdersToDrift(
+        ref.read(appDatabaseProvider),
+        companyId,
+        fallbackWarehouseId:
+            ref.read(cartProvider.notifier).effectiveWarehouseId,
+      );
     } catch (_) {
       // Offline or API error — the Drift stream keeps showing local state.
     } finally {

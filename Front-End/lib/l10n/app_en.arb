@@ -574,6 +574,7 @@
   "mergeIdenticalItems": "Merge identical items",
   "noCategoryFilter": "No category filter — prints every item",
   "noPrintersFound": "No printers found",
+  "printerSelectionUnsupportedOnThisDevice": "This device cannot choose a system printer. Printing opens the device's own print dialog instead.",
   "numberOfCopies": "Number of Copies",
   "openCashDrawerLower": "Open cash drawer",
   "options": "Options",
@@ -1392,6 +1393,13 @@
   "posTransfer": "Transfer",
   "posRefund": "Refund",
   "posKitchen": "Kitchen",
+  "posAddition": "Addition",
+  "@posAddition": {
+    "description": "POS button that prints the pre-bill (guest check) the customer settles against. NOT a payment — nothing is banked."
+  },
+  "setAdditionButton": "Addition button",
+  "additionPrinted": "Addition printed",
+  "posOrder": "Order",
   "posBookings": "Bookings",
   "posPromos": "Promos",
   "posVoid": "VOID",
@@ -2264,6 +2272,11 @@
   },
   "unitsFallback": "unit(s)",
   "kitchenPrintError": "Kitchen print error: {message}",
+  "kitchenTicketsPrinted": "{count, plural, =1{Kitchen ticket sent} other{{count} kitchen tickets sent}}",
+  "@kitchenTicketsPrinted": {
+    "placeholders": { "count": { "type": "num", "format": "compact" } }
+  },
+  "kitchenNoStationMatched": "No station printer covers these items — printing the full ticket instead.",
   "@kitchenPrintError": {
     "placeholders": {
       "message": {
@@ -2876,6 +2889,11 @@
   "poweredByPos": "Powered by POS",
   "reconnectingEllipsis": "Reconnecting…",
   "retryConnectionUpper": "RETRY CONNECTION",
+  "checkedAgainstEndpoint": "Checked against {endpoint}",
+  "@checkedAgainstEndpoint": {
+    "description": "Shows WHICH API server answered the licence check. Load-bearing for diagnosis: a terminal pointed at the wrong backend gets a valid 'expired' answer from it and looks identical to a real lapse.",
+    "placeholders": { "endpoint": { "type": "String" } }
+  },
   "scaleUnitMismatch": "Scale reads {scaleUnit} but this item is priced per {productUnit} — no conversion is applied.",
   "@scaleUnitMismatch": {
     "placeholders": {

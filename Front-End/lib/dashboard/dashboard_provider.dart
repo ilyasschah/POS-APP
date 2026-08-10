@@ -92,20 +92,63 @@ Future<DashboardData> _computeLocalDashboard(
     }
   }
 
-  // Line items for the in-range documents (present for local-origin orders).
-  // Refund line items are subtracted (again normalized by parent doc type, not
-  // stored sign) so top products/groups reflect net quantities and revenue.
+  // Line items for the in-range documents (present for local-origin orders),
+  // grouped by parent document so the order-level reduction can be split
+  // across each document's own lines below. Refund line items are subtracted
+  // (normalized by parent doc type, not stored sign) so top products/groups
+  // reflect net quantities and revenue.
   final allItems = await db.select(db.documentItemsTable).get();
-  final productQty = <int, double>{};
-  final productTotal = <int, double>{};
+  final itemsByDoc = <String, List<DocumentItemsTableData>>{};
   for (final it in allItems) {
     if (!docIds.contains(it.documentId)) continue;
-    final isRefund = refundDocIds.contains(it.documentId);
-    final qty   = isRefund ? -it.quantity.abs() : it.quantity.abs();
-    final total = isRefund ? -it.total.abs()    : it.total.abs();
-    productQty[it.productId]   = (productQty[it.productId] ?? 0) + qty;
-    productTotal[it.productId] = (productTotal[it.productId] ?? 0) + total;
+    itemsByDoc.putIfAbsent(it.documentId, () => []).add(it);
   }
+
+  // `document_items.total` is the line total after the ITEM discount only —
+  // nothing subtracts the order-level reduction (manual cart discount, loyalty
+  // points, promotions). Summing it raw made Top Products / Top Groups add up
+  // to the GROSS while the totals above showed the net actually collected:
+  // measured 2026-08-06, these cards said 96.00 against an 85.00 total sales.
+  // Split the difference across each document's lines — same apportioning the
+  // server now does at checkout (PosOrderCheckoutService.ApportionDocument-
+  // Discount) — so the cards agree with each other and with the web dashboard.
+  final docTotals = {for (final d in inRange) d.localId: d.total.abs()};
+
+  final productQty = <int, double>{};
+  final productTotal = <int, double>{};
+  itemsByDoc.forEach((docId, items) {
+    final isRefund = refundDocIds.contains(docId);
+    final gross = items.fold<double>(0, (s, it) => s + it.total.abs());
+    final headerTotal = docTotals[docId] ?? gross;
+
+    // Only ever a reduction. A header at or above the line gross — tax added
+    // on top, or a pulled document whose items didn't come with it — leaves
+    // every line at its own total.
+    var discount = gross - headerTotal;
+    if (gross <= 0 || discount <= 0) discount = 0;
+    if (discount > gross) discount = gross;
+
+    var allocated = 0.0;
+    for (var i = 0; i < items.length; i++) {
+      final it = items[i];
+      final lineGross = it.total.abs();
+      final isLast = i == items.length - 1;
+      // The last line absorbs the remainder, so the lines sum exactly to the
+      // header instead of drifting a cent away from it.
+      final share = discount == 0
+          ? 0.0
+          : isLast
+              ? discount - allocated
+              : (discount * lineGross / gross * 100).roundToDouble() / 100;
+      if (!isLast) allocated += share;
+
+      final net = lineGross - share;
+      final qty = isRefund ? -it.quantity.abs() : it.quantity.abs();
+      productQty[it.productId] = (productQty[it.productId] ?? 0) + qty;
+      productTotal[it.productId] =
+          (productTotal[it.productId] ?? 0) + (isRefund ? -net : net);
+    }
+  });
 
   // Name + group lookups.
   final products = await (db.select(db.productsTable)

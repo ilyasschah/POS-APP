@@ -79,6 +79,27 @@ namespace Api.Controllers
         }
 
         /// <summary>
+        /// Renames this terminal in the registry so the admin device list shows
+        /// "POS1" instead of a UUID. CompanyId comes from the caller's token, so a
+        /// device can only rename within its own tenant. Seat state is untouched —
+        /// this is a label change, never a registration.
+        /// </summary>
+        [Authorize]
+        [HttpPost("[action]")]
+        public async Task<IActionResult> RenameDevice([FromQuery] string deviceId, [FromQuery] string deviceName)
+        {
+            if (string.IsNullOrWhiteSpace(deviceId))
+                return BadRequest(new { message = "deviceId is required." });
+            if (string.IsNullOrWhiteSpace(deviceName))
+                return BadRequest(new { message = "deviceName is required." });
+            if (!int.TryParse(User.FindFirstValue("companyId"), out var companyId) || companyId <= 0)
+                return Unauthorized();
+
+            var renamed = await provisioning.RenameDeviceAsync(companyId, deviceId, deviceName);
+            return Ok(new { success = renamed });
+        }
+
+        /// <summary>
         /// Releases this device's seat on sign-out (Pillar 4). CompanyId comes from
         /// the caller's token so a device can only release itself within its own
         /// tenant; the device re-activates automatically on its next login/sync.
