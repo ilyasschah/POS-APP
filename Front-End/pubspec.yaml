@@ -56,6 +56,11 @@ dependencies:
   sqlite3: ^3.3.3
   # Pillar 3 — stable per-device fingerprint used as HKDF salt for the DB key.
   device_info_plus: ^11.1.0
+  # Reads the version the app was BUILT with, so `version:` above is the single
+  # source of truth. It was previously a string literal in the About tab, which
+  # meant the number on screen could not disagree with the shipped build — it
+  # simply never changed. An updater that compares versions needs this to be real.
+  package_info_plus: ^8.1.2
   # Pillar 3 — HMAC/SHA-256 for HKDF key derivation (never a hardcoded key).
   crypto: ^3.0.6
   path_provider: ^2.1.5

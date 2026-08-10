@@ -2,10 +2,25 @@
 ; Inno Setup Script for Octopus POS (Flutter Windows App)
 
 #define AppName "Octopus POS"
-#define AppVersion "1.0.0"
 #define AppPublisher "FUTUR3"
 #define AppExeName "pos_app.exe"
 #define BuildDir "build\windows\x64\runner\Release"
+
+; The version comes from OUTSIDE this file, so pubspec.yaml stays the single
+; source of truth. The release pipeline reads `version:` from pubspec and passes
+; it in:
+;     ISCC octopus_setup.iss /DAppVersion=1.2.3
+;
+; ⚠️ It MUST be plain numeric "major.minor.patch". VersionInfoVersion below
+; rejects anything else at compile time, so strip pubspec's "+build" suffix and
+; do not pass pre-release tags like "1.2.3-beta".
+;
+; The fallback exists only so the script still compiles by hand. 0.0.0 is chosen
+; because it is obviously not a release — a hardcoded "1.0.0" here is exactly how
+; the installer's number stopped matching the app's in the first place.
+#ifndef AppVersion
+  #define AppVersion "0.0.0"
+#endif
 
 [Setup]
 ; General App Information
@@ -14,13 +29,31 @@ AppVersion={#AppVersion}
 AppPublisher={#AppPublisher}
 WizardStyle=modern
 
+; ⚠️ Identity for upgrades. Inno keys "is this an upgrade or a second install?"
+; on AppId, and when AppId is absent it silently falls back to AppName — so
+; renaming the product would turn every future update into a parallel install
+; with a duplicate Add/Remove Programs entry.
+; The literal string below is the value AppName was already producing, so
+; existing installations in the field keep upgrading in place. Do NOT change it
+; to a GUID without accepting that those machines need a manual uninstall first.
+AppId=Octopus POS
+
+; Stamps the version onto the setup .exe itself, so the file's Properties tab
+; agrees with what it installs.
+VersionInfoVersion={#AppVersion}
+VersionInfoProductName={#AppName}
+VersionInfoCompany={#AppPublisher}
+
 ; Default Installation Folder
 DefaultDirName={autopf}\{#AppName}
 DefaultGroupName={#AppName}
 
 ; Output Settings (Where the setup.exe will be saved)
+; Output/ is git-ignored — installers belong on a GitHub Release, not in the repo.
+; The filename carries the real version so two builds can never overwrite each
+; other, and so a downloaded file says what it is.
 OutputDir=Output
-OutputBaseFilename=Octopus_POS_Setup_v1.0
+OutputBaseFilename=Octopus_POS_Setup_v{#AppVersion}
 Compression=lzma2
 SolidCompression=yes
 
