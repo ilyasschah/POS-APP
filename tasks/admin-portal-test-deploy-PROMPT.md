@@ -42,7 +42,7 @@ than reasoning from the source.
 - The **test-server hardening is UNCOMMITTED** on `main`:
   ```
   M .github/workflows/deploy-backend-test.yml
-  M Back-End/Web-POS.Api/Program.cs                    (DataProtection, split error logging, diagnostics)
+  M Back-End/Web-POS.Api/Program.cs                    (startup console, split error logging, diagnostics)
   M Back-End/Web-POS.Api/Admin/AdminUserSeeder.cs      (AdminPortal:SeedPassword override)
   M Back-End/Web-POS.Api.Tests/AdminPortalFactory.cs
   M Back-End/Web-POS.Api.Tests/AdminUserSeederTests.cs
@@ -73,7 +73,6 @@ ASPNETCORE_ENVIRONMENT              = Test
 ConnectionStrings__DefaultConnection
 ConnectionStrings__MasterConnection
 Jwt__Secret
-DataProtection__KeyPath             = C:\inetpub\pos-api-keys
 AdminPortal__SeedPassword           (only if the secret is set)
 ```
 `AdminPortal__AccessKey` **was removed from this workflow** — it is dead config.
@@ -87,8 +86,8 @@ AdminPortal__SeedPassword           (only if the secret is set)
   `ConnectionStrings:DefaultConnection` aborts startup and the site is simply
   dead. `TestServerConfigurationTests.cs` pins that the injected set boots.
 - **`stdoutLogEnabled="false"` in `web.config`.** Every diagnostic added for this
-  feature — `SECURITY: … default password`, `DataProtection keys      : …`,
-  `ADMIN PORTAL UNUSABLE`, `AdminPortal:SeedPassword : …` — goes to stdout and is
+  feature — `SECURITY: … default password`, `ADMIN PORTAL UNUSABLE`,
+  `AdminPortal:SeedPassword : …` — goes to stdout and is
   therefore **thrown away by default**. To read it, flip `stdoutLogEnabled` to
   `true`, recycle, reproduce, read `.\logs\stdout*`, then flip it back.
   ⚠️ That edit is **lost on the next deploy** (see below). Prefer verifying state
@@ -97,9 +96,9 @@ AdminPortal__SeedPassword           (only if the secret is set)
   patched by the workflow. **Any hand edit to it is destroyed by the next deploy.**
   Durable changes belong in the workflow, not in the file.
 - **`robocopy /MIR` deletes anything in the site root it did not just copy.** Only
-  `logs\`, `app_offline.htm` and `lease_signing_key.pem` are excluded. This is
-  exactly why the Data Protection keys live at `C:\inetpub\pos-api-keys`,
-  **outside** the site root. Do not move them in.
+  `logs\`, `app_offline.htm` and `lease_signing_key.pem` are excluded. Anything
+  that must survive a deploy has to live outside the site folder or be added to
+  the `/XF` / `/XD` exclusions.
 - **Never leave `app_offline.htm` behind** — the site stays down until someone
   notices. The workflow removes it in an `if: always()` step; if you create one by
   hand, remove it the same way.
@@ -121,13 +120,13 @@ AdminPortal__SeedPassword           (only if the secret is set)
   **if the wrong password gets seeded, redeploying will NOT fix it.** Either sign
   in and change it at `/admin/account/password`, or delete the row and let the
   next start reseed.
-- **Data Protection decides whether a deploy is invisible or hostile.** Under IIS
-  with no user profile the framework falls back to an *ephemeral* key ring: every
-  deploy signs all operators out and a login form left open across the recycle
-  fails with a 400 that looks like a broken page. `DataProtection:KeyPath` fixes
-  it, but only if the app pool identity can **write** there. The app probes
-  writability and falls back non-fatally, so this fails *quietly* — the startup
-  log's `DataProtection keys` line is the only place it shows.
+- **Data Protection keys are NOT an access key** — they encrypt the portal's
+  session cookie and its antiforgery tokens, so cookie auth cannot exist without
+  them. The framework's own key storage is used deliberately; an explicit key
+  folder was tried and removed after it failed twice on runner permissions and
+  took the secrets-injection step down with it. If admins ever report being
+  signed out after each deploy, that is the framework's key ring not persisting —
+  a nuisance, not a fault, and worth fixing only if it actually happens.
 - **`hostingModel="inprocess"`** (verified in `web.config`), so
   `Request.IsHttps` is the real client scheme and the session cookie is issued
   `Secure` behind the IIS HTTPS. **If anyone ever switches to out-of-process, the
@@ -149,8 +148,7 @@ AdminPortal__SeedPassword           (only if the secret is set)
 2. **Before that push, set the GitHub secret `TEST_ADMIN_PORTAL_SEED_PASSWORD`.**
    If it is unset the workflow prints a `::warning::` and the portal seeds with
    the password published in this repo, on a public hostname. Also delete the now
-   unused `TEST_ADMIN_PORTAL_ACCESS_KEY`, and set repo variable
-   `TEST_APP_POOL_NAME` if the app pool is not called `pos-api`.
+   unused `TEST_ADMIN_PORTAL_ACCESS_KEY`.
 3. **Verify against the server, in this order.** Report each as pass/fail with the
    evidence, not a summary:
    - `web.config` on disk carries the expected `<environmentVariables>` and **no**
@@ -158,9 +156,6 @@ AdminPortal__SeedPassword           (only if the secret is set)
    - `[web-pos-master].dbo.AdminUser` exists with the 8 expected columns and
      `UQ_AdminUser_Username`; exactly one row; `PasswordHash` starts `$2` and is
      60 chars (**never print the hash or the password**).
-   - `C:\inetpub\pos-api-keys` exists, the app pool can write to it, and the
-     startup log's `DataProtection keys` line names it rather than
-     `<framework default …>`.
    - Over **HTTPS**: `/admin/companies` signed out → **302** to `/admin/login`
      carrying `X-Content-Type-Options`, `X-Frame-Options: DENY`,
      `Referrer-Policy`, `Cache-Control: no-store`.

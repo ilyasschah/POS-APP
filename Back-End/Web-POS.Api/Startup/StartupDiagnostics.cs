@@ -1,4 +1,4 @@
-using Api.Configuration;
+﻿using Api.Configuration;
 
 namespace Api.Startup;
 
@@ -35,7 +35,7 @@ public static class StartupDiagnostics
             logger.LogWarning("CONFIG: {warning}", warning);
     }
 
-    public static void WriteIfEnabled(WebApplication app, ILogger logger, string dataProtectionKeyStore)
+    public static void WriteIfEnabled(WebApplication app, ILogger logger)
     {
         if (!IsEnabled(app.Configuration)) return;
 
@@ -68,10 +68,6 @@ public static class StartupDiagnostics
             string.IsNullOrWhiteSpace(config[Api.Admin.AdminUserSeeder.SeedPasswordConfigKey])
                 ? "<not set> -> first admin seeds with the PUBLISHED default password"
                 : "<supplied>");
-
-        // Not a configuration key, but the answer to "why did everyone get signed
-        // out again", which is otherwise diagnosed by guesswork.
-        logger.LogInformation("DataProtection keys      : {value}", dataProtectionKeyStore);
     }
 
     private static void Report(ILogger logger, IConfiguration config, string key, string value) =>
