@@ -26,6 +26,15 @@ public static class AdminUserSeeder
     private const string DefaultDisplayName = "Administrator";
 
     /// <summary>
+    /// Overrides the seeded password. Set it on any server whose /admin is
+    /// reachable from outside the building — the test box answers on a public
+    /// hostname, and a published default password on a public URL is an open door,
+    /// not a default.
+    /// Leave it unset locally and the seed stays <see cref="DefaultPassword"/>.
+    /// </summary>
+    public const string SeedPasswordConfigKey = "AdminPortal:SeedPassword";
+
+    /// <summary>
     /// Idempotent DDL, kept character-for-character equivalent to the AdminUser
     /// block in docs/sql/master-db-schema.sql. Changing one means changing both.
     /// </summary>
@@ -60,31 +69,49 @@ public static class AdminUserSeeder
     /// </summary>
     /// <returns>True when an account was created by this call.</returns>
     public static async Task<bool> SeedFirstAdminAsync(
-        MasterDbContext db, ILogger logger, CancellationToken ct = default)
+        MasterDbContext db, ILogger logger, string? configuredPassword = null,
+        CancellationToken ct = default)
     {
         if (await db.AdminUsers.AnyAsync(ct))
             return false;
 
+        // Whitespace counts as "not configured": an env var that exists but is empty
+        // is the shape a mis-wired CI secret takes, and silently seeding a blank
+        // password would be worse than seeding the documented one.
+        var usingDefault = string.IsNullOrWhiteSpace(configuredPassword);
+        var password = usingDefault ? DefaultPassword : configuredPassword!;
+
         db.AdminUsers.Add(new AdminUser
         {
             Username = DefaultUsername,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(DefaultPassword),
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
             DisplayName = DefaultDisplayName,
             IsActive = true,
-            // The password is published in this source file, so the account is
-            // only as safe as the first person to log in and change it.
-            MustChangePassword = true,
+            // Only nag when the credential is the one published in this source file.
+            // A password supplied by the deployment is already the operator's own,
+            // and a banner they cannot make go away just trains them to ignore it.
+            MustChangePassword = usingDefault,
             CreatedAt = DateTime.UtcNow,
         });
 
         await db.SaveChangesAsync(ct);
 
-        logger.LogWarning(
-            "SECURITY: the admin portal had no accounts, so the default account " +
-            "'{username}' was created with the well-known password '{password}'. " +
-            "Anyone who can reach {loginPath} can sign in with it. Change it now at " +
-            "/admin/account/password — the portal will keep warning until you do.",
-            DefaultUsername, DefaultPassword, AdminPortalAuth.LoginPath);
+        if (usingDefault)
+        {
+            logger.LogWarning(
+                "SECURITY: the admin portal had no accounts, so the default account " +
+                "'{username}' was created with the well-known password '{password}'. " +
+                "Anyone who can reach {loginPath} can sign in with it. Change it at " +
+                "/admin/account/password — the portal will keep warning until you do. " +
+                "On any internet-reachable server set {configKey} instead.",
+                DefaultUsername, DefaultPassword, AdminPortalAuth.LoginPath, SeedPasswordConfigKey);
+        }
+        else
+        {
+            logger.LogInformation(
+                "Admin portal account '{username}' created from the configured {configKey}.",
+                DefaultUsername, SeedPasswordConfigKey);
+        }
 
         return true;
     }

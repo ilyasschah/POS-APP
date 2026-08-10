@@ -30,7 +30,10 @@ public class AdminPortalFactory : WebApplicationFactory<Program>
     {
         // Not "Development": that path downgrades every configuration error to a
         // warning, so a test host would keep booting after a real misconfiguration.
-        builder.UseEnvironment("Testing");
+        // Deliberately NOT "Test" either — that is the OVH test server's own
+        // environment name, and two different things answering to one name is how
+        // someone later assumes this host reproduces that deployment.
+        builder.UseEnvironment("IntegrationTest");
 
         // StartupConfigurationValidator is fatal outside Development, and it runs in
         // Program.cs's top-level statements — before any IWebHostBuilder callback can

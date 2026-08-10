@@ -14,10 +14,10 @@ namespace Api.Tests;
 /// </summary>
 public class AdminUserSeederTests
 {
-    private static Task<bool> SeedAsync(MasterDbFixture fx)
+    private static Task<bool> SeedAsync(MasterDbFixture fx, string? configuredPassword = null)
     {
         using var db = fx.NewContext();
-        return AdminUserSeeder.SeedFirstAdminAsync(db, NullLogger.Instance);
+        return AdminUserSeeder.SeedFirstAdminAsync(db, NullLogger.Instance, configuredPassword);
     }
 
     [Fact]
@@ -53,6 +53,64 @@ public class AdminUserSeederTests
         Assert.True(BCrypt.Net.BCrypt.Verify(AdminUserSeeder.DefaultPassword, user.PasswordHash));
         Assert.False(BCrypt.Net.BCrypt.Verify("Admin@1234", user.PasswordHash));
         Assert.False(BCrypt.Net.BCrypt.Verify("", user.PasswordHash));
+    }
+
+    [Fact]
+    public async Task A_configured_seed_password_replaces_the_published_default()
+    {
+        // How a public server avoids standing up /admin with a password anyone can
+        // read in this repository.
+        using var fx = new MasterDbFixture();
+        const string deployed = "a-secret-set-by-the-deployment";
+
+        Assert.True(await SeedAsync(fx, deployed));
+
+        using var db = fx.NewContext();
+        var user = await db.AdminUsers.SingleAsync();
+
+        Assert.True(BCrypt.Net.BCrypt.Verify(deployed, user.PasswordHash));
+        Assert.False(BCrypt.Net.BCrypt.Verify(AdminUserSeeder.DefaultPassword, user.PasswordHash));
+
+        // No banner: the credential is already the operator's own, and a warning
+        // they cannot clear only teaches them to ignore warnings.
+        Assert.False(user.MustChangePassword);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task A_blank_configured_password_falls_back_to_the_default_and_warns(string? configured)
+    {
+        // The shape a mis-wired CI secret takes. Seeding an empty password would be
+        // far worse than seeding the documented one.
+        using var fx = new MasterDbFixture();
+
+        Assert.True(await SeedAsync(fx, configured));
+
+        using var db = fx.NewContext();
+        var user = await db.AdminUsers.SingleAsync();
+
+        Assert.True(BCrypt.Net.BCrypt.Verify(AdminUserSeeder.DefaultPassword, user.PasswordHash));
+        Assert.False(BCrypt.Net.BCrypt.Verify("", user.PasswordHash));
+        Assert.True(user.MustChangePassword);
+    }
+
+    [Fact]
+    public async Task A_configured_password_never_overwrites_an_existing_account()
+    {
+        // The seed password is injected on EVERY deploy, so it must stay inert once
+        // an account exists — otherwise each release would silently reset a password
+        // the operator had changed, back to whatever is in the CI secret.
+        using var fx = new MasterDbFixture();
+        await SeedAsync(fx);
+
+        Assert.False(await SeedAsync(fx, "a-different-password-from-a-later-deploy"));
+
+        using var db = fx.NewContext();
+        var user = await db.AdminUsers.SingleAsync();
+        Assert.True(BCrypt.Net.BCrypt.Verify(AdminUserSeeder.DefaultPassword, user.PasswordHash));
+        Assert.False(BCrypt.Net.BCrypt.Verify("a-different-password-from-a-later-deploy", user.PasswordHash));
     }
 
     [Fact]

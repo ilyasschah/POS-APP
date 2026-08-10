@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.EntityFrameworkCore;
@@ -354,6 +355,51 @@ builder.Services
         opt.SlidingExpiration = true;
     });
 
+// ================== DATA PROTECTION ==================
+// The portal's session cookie AND every antiforgery token are encrypted with Data
+// Protection keys, so where those keys live decides whether a deploy is invisible
+// or hostile. Under IIS with no user profile loaded the framework falls back to an
+// EPHEMERAL key ring — fresh keys on every app-pool recycle — which signs every
+// operator out on each deploy and turns a login form that was already open into a
+// 400 "antiforgery token invalid" that looks like a broken login page.
+//
+// SetApplicationName pins key isolation to a fixed string rather than the content
+// root path, so the ring survives the site being redeployed to a different folder.
+var dataProtection = builder.Services.AddDataProtection().SetApplicationName("Web-POS.Api");
+
+// Optional. ⚠️ Point it OUTSIDE the deployed site root — the test deploy mirrors
+// the publish output with `robocopy /MIR`, which deletes anything inside that it
+// did not just copy, keys included.
+var dataProtectionKeyPath = builder.Configuration["DataProtection:KeyPath"];
+string dataProtectionKeyStore;
+
+if (string.IsNullOrWhiteSpace(dataProtectionKeyPath))
+{
+    dataProtectionKeyStore =
+        "<framework default — set DataProtection:KeyPath to keep sessions across deploys>";
+}
+else
+{
+    // Probed rather than trusted, and non-fatal either way: an unwritable key
+    // folder must not take the whole POS API offline over a back-office cookie.
+    try
+    {
+        Directory.CreateDirectory(dataProtectionKeyPath);
+        var probe = Path.Combine(dataProtectionKeyPath, $".writeprobe-{Guid.NewGuid():N}.tmp");
+        File.WriteAllText(probe, string.Empty);
+        File.Delete(probe);
+
+        dataProtection.PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeyPath));
+        dataProtectionKeyStore = dataProtectionKeyPath;
+    }
+    catch (Exception ex)
+    {
+        dataProtectionKeyStore =
+            $"<framework default — DataProtection:KeyPath '{dataProtectionKeyPath}' " +
+            $"is not usable: {ex.Message}>";
+    }
+}
+
 var app = builder.Build();
 
 // ================== STARTUP LOGS ==================
@@ -431,6 +477,13 @@ logger.LogInformation("ConnectionStrings:Default: {value}  [source: {source}]",
 logger.LogInformation("ConnectionStrings:Master : {value}  [source: {source}]",
     MaskConnectionString(app.Configuration.GetConnectionString("MasterConnection")),
     SourceOf(app.Configuration, "ConnectionStrings:MasterConnection"));
+// Printed because "everyone got signed out again" is otherwise diagnosed by guesswork.
+logger.LogInformation("DataProtection keys      : {value}", dataProtectionKeyStore);
+logger.LogInformation("AdminPortal:SeedPassword : {value}  [source: {source}]",
+    string.IsNullOrWhiteSpace(app.Configuration[Api.Admin.AdminUserSeeder.SeedPasswordConfigKey])
+        ? "<not set> -> first admin seeds with the PUBLISHED default password"
+        : "<supplied>",
+    SourceOf(app.Configuration, Api.Admin.AdminUserSeeder.SeedPasswordConfigKey));
 
 // Loud, actionable warning for the failure that actually bites on a new box.
 var leaseKeyOnDisk = Path.Combine(app.Environment.ContentRootPath, "lease_signing_key.pem");
@@ -514,9 +567,34 @@ using (var scope = app.Services.CreateScope())
             // From the moment the API loads, EF emits every AdminUser column in
             // every query for that entity — a missing table is an immediate
             // "Invalid object name", not a deferred one.
-            await Api.Admin.AdminUserSeeder.EnsureTableAsync(master);
-            await Api.Admin.AdminUserSeeder.SeedFirstAdminAsync(master, logger);
-            logger.LogInformation("Admin portal account table verified.");
+            //
+            // Caught separately from the block above: "the Master DB is down" and
+            // "this login cannot create tables" look identical from the portal (every
+            // sign-in fails) but need completely different fixes, and the second is
+            // the likely one on a server where the API's SQL login is not db_owner.
+            try
+            {
+                await Api.Admin.AdminUserSeeder.EnsureTableAsync(master);
+                await Api.Admin.AdminUserSeeder.SeedFirstAdminAsync(
+                    master, logger,
+                    app.Configuration[Api.Admin.AdminUserSeeder.SeedPasswordConfigKey]);
+                logger.LogInformation("Admin portal account table verified.");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex,
+                    "ADMIN PORTAL UNUSABLE: could not create or seed dbo.AdminUser in the " +
+                    "Master database. Every /admin sign-in will fail until this is fixed. " +
+                    "If the API's SQL login lacks CREATE TABLE rights, run the AdminUser " +
+                    "block from docs/sql/master-db-schema.sql against the Master DB by hand " +
+                    "and restart — the seed then runs on the next boot.");
+            }
+        }
+        else
+        {
+            logger.LogWarning(
+                "Master DB is unreachable — admin portal accounts could not be verified, " +
+                "so /admin sign-in will fail until it is back.");
         }
     }
     catch (Exception ex)
