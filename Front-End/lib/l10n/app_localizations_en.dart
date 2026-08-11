@@ -5827,4 +5827,57 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get accessRulesNotSynced =>
       'Access rules haven\'t reached this device yet. Connect to the network and sync, then try again.';
+
+  @override
+  String get updateSectionTitle => 'Software update';
+
+  @override
+  String get updateAutoCheckLabel => 'Check for updates automatically';
+
+  @override
+  String get updateCheckNow => 'Check now';
+
+  @override
+  String get updateChecking => 'Checking…';
+
+  @override
+  String get updateUpToDate => 'You are on the latest version';
+
+  @override
+  String updateAvailableLabel(String version) {
+    return 'Version $version is available';
+  }
+
+  @override
+  String get updateDownloadAction => 'Download update';
+
+  @override
+  String updateDownloadingLabel(String percent) {
+    return 'Downloading… $percent%';
+  }
+
+  @override
+  String get updateInstallAction => 'Install and restart';
+
+  @override
+  String get updateCancelAction => 'Cancel download';
+
+  @override
+  String get updateFailedLabel => 'Could not check for updates';
+
+  @override
+  String get updateBlockedByCart =>
+      'Finish or clear the current sale before updating.';
+
+  @override
+  String updatePendingWarning(int count) {
+    return '$count item(s) still waiting to sync. Sync first if you can.';
+  }
+
+  @override
+  String get updateRestartNotice => 'The app will close to install the update.';
+
+  @override
+  String get updateUnsupportedPlatform =>
+      'In-app updates are available on Windows only.';
 }

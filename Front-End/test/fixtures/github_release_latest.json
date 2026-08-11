@@ -1,0 +1,21 @@
+{
+  "tag_name": "v1.0.1",
+  "name": "Octopus POS 1.0.1",
+  "draft": false,
+  "prerelease": false,
+  "body": "**Windows installer** \u00e2\u20ac\u201d download the `.exe` below and run it.\n\nUpgrades an existing install in place; your local database and\nsettings are left untouched.\n\nSHA-256: `73add0f5a8eb434b8588ab1e2aeac75c51f19872a84b28053948bb75bb12169d`\n\n\n## What's Changed\n* Test to main by @ilyasschah in https://github.com/ilyasschah/POS-APP/pull/1\n* Update Handoff documentation with latest test API details and user-ed\u00e2\u20ac\u00a6 by @ilyasschah in https://github.com/ilyasschah/POS-APP/pull/2\n* Add Flutter Web PWA specification and initial implementation for Stoc\u00e2\u20ac\u00a6 by @ilyasschah in https://github.com/ilyasschah/POS-APP/pull/3\n* dashboard  by @ilyasschah in https://github.com/ilyasschah/POS-APP/pull/4\n* Merge pull request #4 from ilyasschah/main by @ilyasschah in https://github.com/ilyasschah/POS-APP/pull/5\n* bash: command not found. by @ilyasschah in https://github.com/ilyasschah/POS-APP/pull/6\n* Update Flutter build commands to use absolute path for consistency by @ilyasschah in https://github.com/ilyasschah/POS-APP/pull/7\n* Remove Flutter setup step from deployment workflow by @ilyasschah in https://github.com/ilyasschah/POS-APP/pull/8\n* Update Flutter build commands to use new public root directory path by @ilyasschah in https://github.com/ilyasschah/POS-APP/pull/9\n* Update Flutter build step to disable analytics prompt and clarify env\u00e2\u20ac\u00a6 by @ilyasschah in https://github.com/ilyasschah/POS-APP/pull/10\n* Refactor Flutter build step to improve clarity and add verbose logging by @ilyasschah in https://github.com/ilyasschah/POS-APP/pull/11\n* Refactor Flutter build step to simplify commands and improve clarity by @ilyasschah in https://github.com/ilyasschah/POS-APP/pull/12\n* Refactor Flutter build step to clarify directory safety and analytics\u00e2\u20ac\u00a6 by @ilyasschah in https://github.com/ilyasschah/POS-APP/pull/13\n* Update Flutter build command to include base-href and fix health chec\u00e2\u20ac\u00a6 by @ilyasschah in https://github.com/ilyasschah/POS-APP/pull/14\n* Test by @ilyasschah in https://github.com/ilyasschah/POS-APP/pull/15\n* add token handel by @ilyasschah in https://github.com/ilyasschah/POS-APP/pull/16\n* Add localization support for Arabic, English, and French; update sett\u00e2\u20ac\u00a6 by @ilyasschah in https://github.com/ilyasschah/POS-APP/pull/17\n* Test by @ilyasschah in https://github.com/ilyasschah/POS-APP/pull/18\n* Merge pull request #18 from ilyasschah/test by @ilyasschah in https://github.com/ilyasschah/POS-APP/pull/19\n* Merge pull request #19 from ilyasschah/main by @ilyasschah in https://github.com/ilyasschah/POS-APP/pull/20\n\n\n**Full Changelog**: https://github.com/ilyasschah/POS-APP/commits/v1.0.1",
+  "assets": [
+    {
+      "name": "Octopus_POS_Setup_v1.0.1.exe",
+      "size": 43310641,
+      "browser_download_url": "https://github.com/ilyasschah/POS-APP/releases/download/v1.0.1/Octopus_POS_Setup_v1.0.1.exe",
+      "content_type": "application/x-msdos-program"
+    },
+    {
+      "name": "Octopus_POS_Setup_v1.0.1.exe.sha256",
+      "size": 96,
+      "browser_download_url": "https://github.com/ilyasschah/POS-APP/releases/download/v1.0.1/Octopus_POS_Setup_v1.0.1.exe.sha256",
+      "content_type": "application/octet-stream"
+    }
+  ]
+}

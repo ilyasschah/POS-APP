@@ -2274,7 +2274,12 @@
   "kitchenPrintError": "Kitchen print error: {message}",
   "kitchenTicketsPrinted": "{count, plural, =1{Kitchen ticket sent} other{{count} kitchen tickets sent}}",
   "@kitchenTicketsPrinted": {
-    "placeholders": { "count": { "type": "num", "format": "compact" } }
+    "placeholders": {
+      "count": {
+        "type": "num",
+        "format": "compact"
+      }
+    }
   },
   "kitchenNoStationMatched": "No station printer covers these items — printing the full ticket instead.",
   "@kitchenPrintError": {
@@ -2892,7 +2897,11 @@
   "checkedAgainstEndpoint": "Checked against {endpoint}",
   "@checkedAgainstEndpoint": {
     "description": "Shows WHICH API server answered the licence check. Load-bearing for diagnosis: a terminal pointed at the wrong backend gets a valid 'expired' answer from it and looks identical to a real lapse.",
-    "placeholders": { "endpoint": { "type": "String" } }
+    "placeholders": {
+      "endpoint": {
+        "type": "String"
+      }
+    }
   },
   "scaleUnitMismatch": "Scale reads {scaleUnit} but this item is priced per {productUnit} — no conversion is applied.",
   "@scaleUnitMismatch": {
@@ -3030,5 +3039,41 @@
   "testMessageSent": "Test message sent.",
   "testSignalSentToDrawer": "Test signal sent to cash drawer",
   "urlCopied": "URL copied",
-  "accessRulesNotSynced": "Access rules haven't reached this device yet. Connect to the network and sync, then try again."
+  "accessRulesNotSynced": "Access rules haven't reached this device yet. Connect to the network and sync, then try again.",
+  "updateSectionTitle": "Software update",
+  "updateAutoCheckLabel": "Check for updates automatically",
+  "updateCheckNow": "Check now",
+  "updateChecking": "Checking…",
+  "updateUpToDate": "You are on the latest version",
+  "updateAvailableLabel": "Version {version} is available",
+  "@updateAvailableLabel": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateDownloadAction": "Download update",
+  "updateDownloadingLabel": "Downloading… {percent}%",
+  "@updateDownloadingLabel": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "updateInstallAction": "Install and restart",
+  "updateCancelAction": "Cancel download",
+  "updateFailedLabel": "Could not check for updates",
+  "updateBlockedByCart": "Finish or clear the current sale before updating.",
+  "updatePendingWarning": "{count} item(s) still waiting to sync. Sync first if you can.",
+  "@updatePendingWarning": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "updateRestartNotice": "The app will close to install the update.",
+  "updateUnsupportedPlatform": "In-app updates are available on Windows only."
 }

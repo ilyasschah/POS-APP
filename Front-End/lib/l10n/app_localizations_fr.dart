@@ -5895,4 +5895,59 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get accessRulesNotSynced =>
       'Les règles d\'accès ne sont pas encore arrivées sur cet appareil. Connectez-vous au réseau et synchronisez, puis réessayez.';
+
+  @override
+  String get updateSectionTitle => 'Mise à jour du logiciel';
+
+  @override
+  String get updateAutoCheckLabel =>
+      'Rechercher les mises à jour automatiquement';
+
+  @override
+  String get updateCheckNow => 'Vérifier maintenant';
+
+  @override
+  String get updateChecking => 'Vérification…';
+
+  @override
+  String get updateUpToDate => 'Vous utilisez la dernière version';
+
+  @override
+  String updateAvailableLabel(String version) {
+    return 'La version $version est disponible';
+  }
+
+  @override
+  String get updateDownloadAction => 'Télécharger la mise à jour';
+
+  @override
+  String updateDownloadingLabel(String percent) {
+    return 'Téléchargement… $percent %';
+  }
+
+  @override
+  String get updateInstallAction => 'Installer et redémarrer';
+
+  @override
+  String get updateCancelAction => 'Annuler le téléchargement';
+
+  @override
+  String get updateFailedLabel => 'Impossible de vérifier les mises à jour';
+
+  @override
+  String get updateBlockedByCart =>
+      'Terminez ou videz la vente en cours avant la mise à jour.';
+
+  @override
+  String updatePendingWarning(int count) {
+    return '$count élément(s) en attente de synchronisation. Synchronisez d’abord si possible.';
+  }
+
+  @override
+  String get updateRestartNotice =>
+      'L\'application se fermera pour installer la mise à jour.';
+
+  @override
+  String get updateUnsupportedPlatform =>
+      'Les mises à jour intégrées sont disponibles uniquement sous Windows.';
 }

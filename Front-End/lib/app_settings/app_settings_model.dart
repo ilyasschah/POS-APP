@@ -104,6 +104,9 @@ class SettingKeys {
   static const autoprint = 'Print.AutoPrint';
   static const paperSize = 'Print.PaperSize';
 
+  // App updates (Windows only). Device-scoped — see device_scoped_settings.dart.
+  static const autoCheckUpdates = 'App.Update.AutoCheck';
+
   // Dual Currency
   static const dualCurrencyEnabled = 'DualCurrency.Enabled';
   static const dualCurrencySymbol = 'DualCurrency.Symbol';
@@ -427,6 +430,9 @@ const Map<String, String> kSettingDefaults = {
   SettingKeys.printCopies: '1',
   SettingKeys.autoprint: 'false',
   SettingKeys.paperSize: '80mm',
+  // On by default: a till running an old build is a support problem nobody
+  // reports. The operator can still turn it off per terminal.
+  SettingKeys.autoCheckUpdates: 'true',
   SettingKeys.dualCurrencyEnabled: 'false',
   SettingKeys.dualCurrencySymbol: '€',
   SettingKeys.dualCurrencyRate: '1.0',
