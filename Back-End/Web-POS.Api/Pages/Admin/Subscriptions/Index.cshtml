@@ -4,134 +4,177 @@
     ViewData["Title"] = "Subscriptions";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h3 class="mb-0">Subscriptions <span class="small text-muted">— @Model.Rows.Count</span></h3>
-        <div class="text-muted small">Stop or resume billing, adjust seats &amp; days — company data is never touched</div>
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <div class="page-pretitle">Billing</div>
+                <h2 class="page-title">
+                    Subscriptions
+                    <span class="badge bg-secondary-lt ms-2">@Model.Rows.Count</span>
+                </h2>
+                <div class="text-secondary mt-1">
+                    Stop or resume billing, adjust seats &amp; days — company data is never touched
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
-@if (Model.MasterUnavailable)
-{
-    <div class="card" role="alert" style="border-left:4px solid #f59e0b; padding:0.85rem; margin-bottom:1rem;">
-        <div class="small">Control plane unavailable — subscription details can't be loaded right now.</div>
-    </div>
-}
+<div class="page-body">
+    <div class="container-xl">
 
-@if (Model.Rows.Count == 0)
-{
-    <div class="card" style="padding:1rem">No companies yet.</div>
-}
-else
-{
-    <div class="card">
-        <div style="overflow:auto">
-            <table class="table-clean" aria-describedby="subscriptions-table">
-                <thead>
-                    <tr>
-                        <th>Company</th>
-                        <th>Status</th>
-                        <th>Seats <span class="small text-muted">(active / allowed)</span></th>
-                        <th>Days left</th>
-                        <th class="text-end">Manage</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var r in Model.Rows)
-                    {
-                        <tr>
-                            <td>
-                                <strong>@r.Name</strong>
-                                <div class="small text-muted">#@r.CompanyId</div>
-                            </td>
-                            <td>
-                                @if (!r.HasSubscription)
-                                {
-                                    <span class="pill pill-muted">No subscription</span>
-                                }
-                                else if (r.IsActive)
-                                {
-                                    <span class="pill pill-ok">Active</span>
-                                }
-                                else
-                                {
-                                    <span class="pill pill-bad">Stopped</span>
-                                }
-                            </td>
-                            <td>
-                                @if (r.HasSubscription)
-                                {
-                                    var over = r.ActiveDevices > r.SeatAllowance;
-                                    <div class="mb-1" style="font-weight:600; color:@(over ? "#ef4444" : "var(--text)")">
-                                        @r.ActiveDevices / @r.SeatAllowance
-                                    </div>
-                                    <form method="post" asp-page-handler="SetSeats" class="inline-mini">
-                                        <input type="hidden" name="companyId" value="@r.CompanyId" />
-                                        <input type="number" name="seats" min="1" value="@r.SeatAllowance" aria-label="Seats" />
-                                        <button class="btn-ghost" type="submit">Set</button>
-                                    </form>
-                                }
-                                else
-                                {
-                                    <span class="text-muted">—</span>
-                                }
-                            </td>
-                            <td>
-                                @if (r.HasSubscription)
-                                {
-                                    var dl = r.DaysLeft ?? 0;
-                                    var color = !r.IsActive ? "var(--muted)" : (dl <= 0 ? "#ef4444" : (dl <= 7 ? "#f59e0b" : "var(--text)"));
-                                    <div class="mb-1" style="font-weight:600; color:@color">
-                                        @(r.DaysLeft?.ToString() ?? "—") <span class="small text-muted fw-normal">day(s)</span>
-                                    </div>
-                                    @if (r.PeriodEnd != null)
-                                    {
-                                        <div class="small text-muted mb-1">ends @r.PeriodEnd.Value.ToUniversalTime().ToString("yyyy-MM-dd")</div>
-                                    }
-                                    <form method="post" asp-page-handler="SetDays" class="inline-mini">
-                                        <input type="hidden" name="companyId" value="@r.CompanyId" />
-                                        <input type="number" name="days" min="0" value="@(r.DaysLeft ?? 0)" aria-label="Days" />
-                                        <button class="btn-ghost" type="submit">Set</button>
-                                    </form>
-                                }
-                                else
-                                {
-                                    <span class="text-muted">—</span>
-                                }
-                            </td>
-                            <td class="text-end">
-                                @if (!r.HasSubscription)
-                                {
-                                    <form method="post" asp-page-handler="Start">
-                                        <input type="hidden" name="companyId" value="@r.CompanyId" />
-                                        <input type="hidden" name="name" value="@r.Name" />
-                                        <input type="hidden" name="seats" value="1" />
-                                        <input type="hidden" name="days" value="30" />
-                                        <button class="btn-primary" type="submit">Start subscription</button>
-                                    </form>
-                                }
-                                else if (r.IsActive)
-                                {
-                                    <form method="post" asp-page-handler="Toggle"
-                                          onsubmit="return confirm('Stop this subscription? The company keeps all its data, but its terminals are blocked until you resume.');">
-                                        <input type="hidden" name="companyId" value="@r.CompanyId" />
-                                        <input type="hidden" name="turnOn" value="false" />
-                                        <button class="btn-ghost" type="submit" style="color:#ef4444; border-color:rgba(239,68,68,0.3)">Stop</button>
-                                    </form>
-                                }
-                                else
-                                {
-                                    <form method="post" asp-page-handler="Toggle">
-                                        <input type="hidden" name="companyId" value="@r.CompanyId" />
-                                        <input type="hidden" name="turnOn" value="true" />
-                                        <button class="btn-primary" type="submit">Resume</button>
-                                    </form>
-                                }
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+        @if (Model.MasterUnavailable)
+        {
+            <div class="alert alert-warning" role="alert">
+                Control plane unavailable — subscription details can't be loaded right now.
+            </div>
+        }
+
+        @if (Model.Rows.Count == 0)
+        {
+            <div class="card">
+                <div class="empty">
+                    <p class="empty-title">No companies yet</p>
+                    <p class="empty-subtitle text-secondary">
+                        Create an organization first — subscriptions are managed per company.
+                    </p>
+                    <div class="empty-action">
+                        <a class="btn btn-primary" asp-page="/Admin/Companies/Create">New Company</a>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="card table-scroll-hint">
+                <div class="table-responsive">
+                    <table class="table table-vcenter card-table table-min table-mobile-stack" style="--table-min:62rem;">
+                        <thead>
+                            <tr>
+                                <th>Company</th>
+                                <th>Status</th>
+                                <th>Seats <span class="text-secondary fw-normal">(active / allowed)</span></th>
+                                <th>Days left</th>
+                                <th class="w-1"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var r in Model.Rows)
+                            {
+                                <tr>
+                                    <td class="cell-title">
+                                        <div class="fw-bold">@r.Name</div>
+                                        <div class="text-secondary small fw-normal">#@r.CompanyId</div>
+                                    </td>
+                                    <td data-label="Status">
+                                        @if (!r.HasSubscription)
+                                        {
+                                            <span class="badge bg-secondary-lt">No subscription</span>
+                                        }
+                                        else if (r.IsActive)
+                                        {
+                                            <span class="badge bg-success-lt">Active</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger-lt">Stopped</span>
+                                        }
+                                    </td>
+
+                                    @*  cell-block: on phones the label sits above and the
+                                        editor spreads to the full card width, instead of
+                                        being crushed into the right-hand value slot. *@
+                                    <td class="@(r.HasSubscription ? "cell-block" : "")" data-label="Seats">
+                                        @if (r.HasSubscription)
+                                        {
+                                            var over = r.ActiveDevices > r.SeatAllowance;
+                                            <div class="fw-bold mb-2 @(over ? "text-danger" : "")">
+                                                @r.ActiveDevices / @r.SeatAllowance
+                                            </div>
+                                            <form method="post" asp-page-handler="SetSeats" class="d-flex gap-2 m-0">
+                                                <input type="hidden" name="companyId" value="@r.CompanyId" />
+                                                @*  Tabler's native input-group replaces the OS-drawn
+                                                    number spinner with real, themed targets. *@
+                                                <div class="input-group" style="max-width:11rem;">
+                                                    <button class="btn btn-icon" type="button" data-step="-1" tabindex="-1" aria-label="Decrease seats for @r.Name">&minus;</button>
+                                                    <input type="number" class="form-control text-center px-1" name="seats" min="1" value="@r.SeatAllowance" aria-label="Seat allowance for @r.Name" />
+                                                    <button class="btn btn-icon" type="button" data-step="1" tabindex="-1" aria-label="Increase seats for @r.Name">+</button>
+                                                </div>
+                                                <button class="btn btn-primary" type="submit">Set</button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-secondary">—</span>
+                                        }
+                                    </td>
+
+                                    <td class="@(r.HasSubscription ? "cell-block" : "")" data-label="Days left">
+                                        @if (r.HasSubscription)
+                                        {
+                                            var dl = r.DaysLeft ?? 0;
+                                            var toneClass = !r.IsActive ? "text-secondary" : (dl <= 0 ? "text-danger" : (dl <= 7 ? "text-warning" : ""));
+                                            <div class="fw-bold @toneClass">
+                                                @(r.DaysLeft?.ToString() ?? "—") <span class="text-secondary fw-normal">day(s)</span>
+                                            </div>
+                                            @if (r.PeriodEnd != null)
+                                            {
+                                                <div class="text-secondary small mb-2">ends @r.PeriodEnd.Value.ToUniversalTime().ToString("yyyy-MM-dd")</div>
+                                            }
+                                            <form method="post" asp-page-handler="SetDays" class="d-flex gap-2 m-0">
+                                                <input type="hidden" name="companyId" value="@r.CompanyId" />
+                                                <div class="input-group" style="max-width:11rem;">
+                                                    <button class="btn btn-icon" type="button" data-step="-1" tabindex="-1" aria-label="Decrease days for @r.Name">&minus;</button>
+                                                    <input type="number" class="form-control text-center px-1" name="days" min="0" value="@(r.DaysLeft ?? 0)" aria-label="Days left for @r.Name" />
+                                                    <button class="btn btn-icon" type="button" data-step="1" tabindex="-1" aria-label="Increase days for @r.Name">+</button>
+                                                </div>
+                                                <button class="btn btn-primary" type="submit">Set</button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-secondary">—</span>
+                                        }
+                                    </td>
+
+                                    <td class="cell-block" data-label="Manage">
+                                        <div class="btn-list justify-content-end">
+                                            @if (!r.HasSubscription)
+                                            {
+                                                <form method="post" asp-page-handler="Start" class="m-0">
+                                                    <input type="hidden" name="companyId" value="@r.CompanyId" />
+                                                    <input type="hidden" name="name" value="@r.Name" />
+                                                    <input type="hidden" name="seats" value="1" />
+                                                    <input type="hidden" name="days" value="30" />
+                                                    <button class="btn btn-primary" type="submit">Start subscription</button>
+                                                </form>
+                                            }
+                                            else if (r.IsActive)
+                                            {
+                                                <form method="post" asp-page-handler="Toggle" class="m-0"
+                                                      onsubmit="return confirm('Stop this subscription? The company keeps all its data, but its terminals are blocked until you resume.');">
+                                                    <input type="hidden" name="companyId" value="@r.CompanyId" />
+                                                    <input type="hidden" name="turnOn" value="false" />
+                                                    <button class="btn btn-outline-danger" type="submit">Stop</button>
+                                                </form>
+                                            }
+                                            else
+                                            {
+                                                <form method="post" asp-page-handler="Toggle" class="m-0">
+                                                    <input type="hidden" name="companyId" value="@r.CompanyId" />
+                                                    <input type="hidden" name="turnOn" value="true" />
+                                                    <button class="btn btn-primary" type="submit">Resume</button>
+                                                </form>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
     </div>
-}
+</div>

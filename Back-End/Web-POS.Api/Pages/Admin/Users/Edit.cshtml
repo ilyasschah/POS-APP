@@ -4,60 +4,74 @@
     ViewData["Title"] = "Edit User";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4 text-main">
-    <div>
-        <h3 class="mb-0">Edit User <span class="text-muted small fw-normal">#@Model.Input.UserId</span></h3>
-        <div class="text-muted small mt-1">Update user profile, role, and system access</div>
-    </div>
-    <div class="top-actions">
-        <a class="btn-ghost" asp-page="/Admin/Companies/Details" asp-route-id="@Model.Input.CompanyId">Cancel & Back</a>
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <div class="page-pretitle">User #@Model.Input.UserId</div>
+                <h2 class="page-title">Edit User</h2>
+                <div class="text-secondary mt-1">Update user profile, role, and system access</div>
+            </div>
+            <div class="col-12 col-md-auto ms-md-auto d-print-none">
+                <div class="btn-list d-grid d-md-block">
+                    <a class="btn btn-ghost-secondary" asp-page="/Admin/Companies/Details" asp-route-id="@Model.Input.CompanyId">Cancel &amp; Back</a>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
-<form method="post" class="card mb-4 text-main">
-    <input type="hidden" asp-for="Input.CompanyId" />
-    <input type="hidden" asp-for="Input.UserId" />
+<div class="page-body">
+    <div class="container-xl">
+        <form method="post" class="card">
+            <input type="hidden" asp-for="Input.CompanyId" />
+            <input type="hidden" asp-for="Input.UserId" />
 
-    <div class="brand mb-4" style="font-size: 1rem;">User Profile</div>
+            <div class="card-header"><h3 class="card-title">User Profile</h3></div>
 
-    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:1.25rem;">
-        <div class="form-field mb-0">
-            <label>Username <span style="color:#ef4444">*</span></label>
-            <input asp-for="Input.Username" required />
-        </div>
-        <div class="form-field mb-0">
-            <label>Email Address</label>
-            <input type="email" asp-for="Input.Email" placeholder="user@example.com" />
-        </div>
-        <div class="form-field mb-0">
-            <label>First Name</label>
-            <input asp-for="Input.FirstName" />
-        </div>
-        <div class="form-field mb-0">
-            <label>Last Name</label>
-            <input asp-for="Input.LastName" />
-        </div>
-        <div class="form-field mb-0">
-            <label>Role</label>
-            <!-- Converted numeric input to the intuitive Role dropdown -->
-            <select asp-for="Input.AccessLevel">
-                <option value="0">Admin</option>
-                <option value="1">Cashier</option>
-            </select>
-        </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <label class="form-label required">Username</label>
+                        <input class="form-control" asp-for="Input.Username" required />
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" class="form-control" asp-for="Input.Email" placeholder="user@example.com" />
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">First Name</label>
+                        <input class="form-control" asp-for="Input.FirstName" />
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">Last Name</label>
+                        <input class="form-control" asp-for="Input.LastName" />
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">Role</label>
+                        <!-- Converted numeric input to the intuitive Role dropdown -->
+                        <select class="form-select" asp-for="Input.AccessLevel">
+                            <option value="0">Admin</option>
+                            <option value="1">Cashier</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-check form-switch form-check-single">
+                            <input class="form-check-input" type="checkbox" asp-for="Input.IsEnabled" id="enabledToggle" />
+                            <span class="form-check-label">Account Enabled (Active)</span>
+                        </label>
+                    </div>
+                    <div class="col-12">
+                        <div class="alert alert-info mb-0" role="note">
+                            To change this user's password, use the <strong>Reset</strong> action on the organization's details page.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-footer d-grid d-md-flex justify-content-md-end">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+        </form>
     </div>
-
-    <div class="mt-4 pt-4" style="border-top: 1px solid var(--border);">
-        <div class="d-flex align-items-center gap-2 mb-4">
-            <input type="checkbox" asp-for="Input.IsEnabled" id="enabledToggle" style="width:18px; height:18px; accent-color: var(--accent); cursor: pointer;" />
-            <label for="enabledToggle" class="mb-0" style="font-weight: 500; cursor:pointer;">Account Enabled (Active)</label>
-        </div>
-
-        <div class="d-flex justify-content-between align-items-center">
-            <p class="text-muted small mb-0">
-                To change this user's password, use the <strong style="color: #d97706 !important;">Reset</strong> action on the organization's details page.
-            </p>
-            <button type="submit" class="btn-primary" style="padding: 0.6rem 2rem; font-size: 1rem;">Save Changes</button>
-        </div>
-    </div>
-</form>
+</div>

@@ -4,120 +4,122 @@
     ViewData["Title"] = "Companies Dashboard";
 }
 
-<style>
-    /* Force theme text variables to override Bootstrap's default dark text */
-    .text-muted {
-        color: var(--muted) !important;
-    }
-
-    .text-main, h2, h3, h5, p, strong {
-        color: var(--text) !important;
-    }
-
-    .table-clean th {
-        color: var(--muted) !important;
-    }
-
-    .table-clean td {
-        color: var(--text) !important;
-    }
-
-    /* Hide the sidebar specifically for this page */
-    .sidebar {
-        display: none !important;
-    }
-
-    .stat-card {
-        background: var(--muted-surface);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 1.25rem;
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    }
-
-    .stat-value {
-        font-size: 2rem;
-        font-weight: 700;
-        color: var(--text) !important;
-        line-height: 1;
-    }
-</style>
-
-<div class="mb-4 text-main">
-    <h2 class="mb-1 fw-bold">Organizations</h2>
-    <div class="text-muted small">Manage companies, subscriptions, and billing status</div>
-</div>
-
-<!-- Dashboard Stats -->
-<div class="row mb-4">
-    <div class="col-md-4">
-        <div class="stat-card">
-            <div style="background: rgba(63,96,120,0.1); color: var(--accent); padding: 1rem; border-radius: 12px;">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <div class="page-pretitle">Overview</div>
+                <h2 class="page-title">Organizations</h2>
+                <div class="text-secondary mt-1">Manage companies, subscriptions, and billing status</div>
             </div>
-            <div>
-                <div class="text-muted small mb-1">Total Companies</div>
-                <div class="stat-value">@Model.Companies.Count</div>
+            @*  col-12 col-md-auto: the button sits beside the title on desktop and
+                drops to its own full-width row on a phone. *@
+            <div class="col-12 col-md-auto ms-md-auto d-print-none">
+                <div class="btn-list d-grid d-md-block">
+                    <a class="btn btn-primary" asp-page="Create">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+                        New Company
+                    </a>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Main Table -->
-@if (Model.Companies.Count == 0)
-{
-    <div class="card text-center py-5 text-main">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.5" class="mb-3"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-        <h5 class="mb-2">No companies found</h5>
-        <p class="text-muted mb-4">Get started by creating your first organization and provisioning a tenant.</p>
-        <!-- Keeping the button here since it's the empty state, but you can remove it if you prefer -->
-        <a class="btn-primary" asp-page="Create">Create Company</a>
-    </div>
-}
-else
-{
-    <div class="card p-0" style="overflow: hidden;">
-        <div class="table-responsive">
-            <table class="table-clean" aria-describedby="companies-table">
-                <thead style="background: var(--muted-surface);">
-                    <tr>
-                        <th style="padding-left: 1.5rem;">ID</th>
-                        <th>Organization</th>
-                        <th>Location</th>
-                        <th>Contact Email</th>
-                        <th>Phone</th>
-                        <th class="text-end" style="padding-right: 1.5rem;">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var c in Model.Companies)
-                    {
-                        <tr>
-                            <td class="text-muted small" style="padding-left: 1.5rem;">#@c.Id</td>
-                            <td><strong class="text-main">@c.Name</strong></td>
-                            <td>
-                                <span style="background: var(--muted-surface); color: var(--text); padding: 3px 8px; border-radius: 6px; font-size: 0.85rem; border: 1px solid var(--border);">
-                                    @c.CountryName
+<div class="page-body">
+    <div class="container-xl">
+
+        <div class="row row-cards mb-3">
+            <div class="col-12 col-sm-6 col-lg-4">
+                <div class="card card-sm">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-auto">
+                                <span class="bg-primary text-white avatar">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18" /><path d="M5 21V7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v14" /><path d="M9 10h.01M13 10h.01M17 10h.01" /></svg>
                                 </span>
-                            </td>
-                            <td class="text-muted small">@(string.IsNullOrEmpty(c.Email) ? "—" : c.Email)</td>
-                            <td class="text-muted small">@(string.IsNullOrEmpty(c.PhoneNumber) ? "—" : c.PhoneNumber)</td>
-                            <td class="text-end" style="padding-right: 1.5rem;">
-                                <div class="d-flex justify-content-end gap-2">
-                                    <a class="btn-ghost" style="padding: 0.25rem 0.6rem; font-size: 0.85rem;" asp-page="Details" asp-route-id="@c.Id">Details</a>
-                                    <a class="btn-ghost" style="padding: 0.25rem 0.6rem; font-size: 0.85rem;" asp-page="Edit" asp-route-id="@c.Id">Edit</a>
-                                    <form method="post" asp-page-handler="Delete" asp-route-id="@c.Id" class="d-inline m-0"
-                                          onsubmit="return confirm('Delete company &quot;@c.Name&quot; and ALL its data? This cannot be undone.');">
-                                        <button type="submit" class="btn-ghost" style="padding: 0.25rem 0.6rem; font-size: 0.85rem; color: #ef4444; border-color: rgba(239,68,68,0.3);">Delete</button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+                            </div>
+                            <div class="col">
+                                <div class="font-weight-medium h1 mb-0">@Model.Companies.Count</div>
+                                <div class="text-secondary">Total companies</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
+
+        @if (Model.Companies.Count == 0)
+        {
+            <div class="card">
+                <div class="empty">
+                    <div class="empty-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-lg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18" /><path d="M5 21V7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v14" /><path d="M9 10h.01M13 10h.01M17 10h.01" /></svg>
+                    </div>
+                    <p class="empty-title">No companies found</p>
+                    <p class="empty-subtitle text-secondary">
+                        Get started by creating your first organization and provisioning a tenant.
+                    </p>
+                    <div class="empty-action">
+                        <a class="btn btn-primary" asp-page="Create">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+                            Create Company
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            @*  Two behaviours from one markup:
+                  - md and up: .table-responsive scrolls sideways, and
+                    .table-scroll-hint fades the edge that has more content.
+                  - below md: .table-mobile-stack re-flows each row into a card,
+                    taking its labels from the data-label attributes. *@
+            <div class="card table-scroll-hint">
+                <div class="table-responsive">
+                    <table class="table table-vcenter card-table table-min table-mobile-stack">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Organization</th>
+                                <th>Location</th>
+                                <th>Contact Email</th>
+                                <th>Phone</th>
+                                <th class="w-1"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var c in Model.Companies)
+                            {
+                                <tr>
+                                    <td class="text-secondary" data-label="ID">#@c.Id</td>
+                                    <td class="cell-title">
+                                        <a class="text-reset fw-bold text-decoration-none" asp-page="Details" asp-route-id="@c.Id">@c.Name</a>
+                                    </td>
+                                    <td data-label="Location"><span class="badge bg-secondary-lt">@c.CountryName</span></td>
+                                    <td class="text-secondary break-anywhere" data-label="Email">@(string.IsNullOrEmpty(c.Email) ? "—" : c.Email)</td>
+                                    <td class="text-secondary text-nowrap" data-label="Phone">@(string.IsNullOrEmpty(c.PhoneNumber) ? "—" : c.PhoneNumber)</td>
+                                    <td class="cell-block" data-label="Actions">
+                                        @*  flex-nowrap keeps the three on one line inside the w-1
+                                            action column; theme.css lets them wrap again once the
+                                            row becomes a stacked card. All three carry a border so
+                                            the destructive one does not read as a stray link. *@
+                                        <div class="btn-list flex-nowrap justify-content-end">
+                                            <a class="btn btn-sm" asp-page="Details" asp-route-id="@c.Id">Details</a>
+                                            <a class="btn btn-sm" asp-page="Edit" asp-route-id="@c.Id">Edit</a>
+                                            <form method="post" asp-page-handler="Delete" asp-route-id="@c.Id" class="m-0"
+                                                  onsubmit="return confirm('Delete company &quot;@c.Name&quot; and ALL its data? This cannot be undone.');">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
     </div>
-}
+</div>

@@ -4,136 +4,163 @@
     ViewData["Title"] = "Provision New Organization";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h3 class="mb-0">Provision New Organization</h3>
-        <div class="text-muted small mt-1">Create a company, configure subscription limits, and set up the initial user.</div>
-    </div>
-    <div class="top-actions">
-        <a class="btn-ghost" asp-page="Index">Back to Dashboard</a>
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <div class="page-pretitle">Organizations</div>
+                <h2 class="page-title">Provision New Organization</h2>
+                <div class="text-secondary mt-1">Create a company, configure subscription limits, and set up the initial user.</div>
+            </div>
+            <div class="col-12 col-md-auto ms-md-auto d-print-none">
+                <div class="btn-list d-grid d-md-block">
+                    <a class="btn btn-ghost-secondary" asp-page="Index">Back to Dashboard</a>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
-<form method="post" class="content-wrap p-0">
+<div class="page-body">
+    <div class="container-xl">
+        <form method="post">
+            <div class="row row-cards">
 
-    <!-- Card 1: Company Profile -->
-    <div class="card mb-4">
-        <div class="brand mb-3" style="font-size: 1rem;">Organization Profile</div>
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:1.25rem;">
-            <div class="form-field mb-0">
-                <label>Company Name <span style="color:#ef4444">*</span></label>
-                <input asp-for="Input.Name" required placeholder="e.g., Acme Corp" />
+                <!-- Company Profile -->
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header"><h3 class="card-title">Organization Profile</h3></div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label required">Company Name</label>
+                                    <input class="form-control" asp-for="Input.Name" required placeholder="e.g., Acme Corp" />
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label required">Country</label>
+                                    @if (Model.Countries.Count > 0)
+                                    {
+                                        <select class="form-select" asp-for="Input.CountryId" required>
+                                            <option value="">-- Select Country --</option>
+                                            @foreach (var c in Model.Countries)
+                                            {
+                                                <option value="@c.Id">@c.Name (@c.Id)</option>
+                                            }
+                                        </select>
+                                    }
+                                    else
+                                    {
+                                        <input type="number" class="form-control" asp-for="Input.CountryId" placeholder="Country ID" required />
+                                        <small class="form-hint">No countries found — enter an existing CountryId.</small>
+                                    }
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label">Email Address</label>
+                                    <input type="email" class="form-control" asp-for="Input.Email" placeholder="billing@example.com" />
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label">Phone Number</label>
+                                    <input type="tel" class="form-control" asp-for="Input.PhoneNumber" placeholder="+1 (555) 000-0000" />
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label">Street Address</label>
+                                    <input class="form-control" asp-for="Input.Address" placeholder="123 Main St" />
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label">City</label>
+                                    <input class="form-control" asp-for="Input.City" placeholder="Metropolis" />
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label">Postal Code</label>
+                                    <input class="form-control" asp-for="Input.PostalCode" placeholder="10001" />
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label">Tax / VAT Number</label>
+                                    <input class="form-control" asp-for="Input.TaxNumber" placeholder="XX123456789" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SaaS Provisioning -->
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header"><h3 class="card-title">SaaS Subscription &amp; Licensing</h3></div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label">Billing Period</label>
+                                    <select class="form-select" asp-for="Input.SubscriptionDays">
+                                        <option value="14">14 days (Trial)</option>
+                                        <option value="30" selected>1 month (30 days)</option>
+                                        <option value="90">3 months (Quarterly)</option>
+                                        <option value="180">6 months (Biannual)</option>
+                                        <option value="365">1 year (Annual)</option>
+                                    </select>
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label">Seat Allowance (Terminals)</label>
+                                    <input type="number" class="form-control" min="1" asp-for="Input.SeatAllowance" placeholder="e.g., 5" />
+                                    <small class="form-hint">Maximum active devices allowed to sync.</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Initial User -->
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <label class="form-check form-switch form-check-single mb-0">
+                                <input class="form-check-input" type="checkbox" asp-for="Input.CreateFirstUser" id="createFirstUserToggle" />
+                                <span class="form-check-label h3 mb-0">Provision Initial User</span>
+                            </label>
+                        </div>
+                        <div class="card-body">
+                            <div id="firstUserFields" class="row g-3" style="opacity:0.5; pointer-events:none; transition:opacity 0.2s ease;">
+                                <div class="col-12 col-md-6 col-lg-4">
+                                    <label class="form-label">Username</label>
+                                    <input class="form-control" asp-for="Input.Username" autocomplete="new-username" />
+                                </div>
+                                <div class="col-12 col-md-6 col-lg-4">
+                                    <label class="form-label">Password</label>
+                                    <input type="password" class="form-control" asp-for="Input.Password" autocomplete="new-password" />
+                                </div>
+                                <div class="col-12 col-md-6 col-lg-4">
+                                    <label class="form-label">Access Level</label>
+                                    <select class="form-select" asp-for="Input.AccessLevel">
+                                        <option value="1">Admin</option>
+                                        <option value="0">Cashier</option>
+                                    </select>
+                                </div>
+                                <div class="col-12 col-md-6 col-lg-4">
+                                    <label class="form-label">First Name</label>
+                                    <input class="form-control" asp-for="Input.FirstName" />
+                                </div>
+                                <div class="col-12 col-md-6 col-lg-4">
+                                    <label class="form-label">Last Name</label>
+                                    <input class="form-control" asp-for="Input.LastName" />
+                                </div>
+                                <div class="col-12 col-md-6 col-lg-4">
+                                    <label class="form-label">User Email</label>
+                                    <input type="email" class="form-control" asp-for="Input.UserEmail" />
+                                </div>
+                            </div>
+                        </div>
+                        @*  d-grid below md makes the submit full-width and thumb-reachable;
+                            from md up it returns to a right-aligned button. *@
+                        <div class="card-footer d-grid d-md-flex justify-content-md-end">
+                            <button type="submit" class="btn btn-primary">Create Organization</button>
+                        </div>
+                    </div>
+                </div>
+
             </div>
-            <div class="form-field mb-0">
-                <label>Country <span style="color:#ef4444">*</span></label>
-                @if (Model.Countries.Count > 0)
-                {
-                    <select asp-for="Input.CountryId" required>
-                        <option value="">-- Select Country --</option>
-                        @foreach (var c in Model.Countries)
-                        {
-                            <option value="@c.Id">@c.Name (@c.Id)</option>
-                        }
-                    </select>
-                }
-                else
-                {
-                    <input type="number" asp-for="Input.CountryId" placeholder="Country ID" required />
-                    <div class="small text-muted mt-1">No countries found — enter an existing CountryId.</div>
-                }
-            </div>
-            <div class="form-field mb-0">
-                <label>Email Address</label>
-                <input type="email" asp-for="Input.Email" placeholder="billing@example.com" />
-            </div>
-            <div class="form-field mb-0">
-                <label>Phone Number</label>
-                <input type="tel" asp-for="Input.PhoneNumber" placeholder="+1 (555) 000-0000" />
-            </div>
-            <div class="form-field mb-0">
-                <label>Street Address</label>
-                <input asp-for="Input.Address" placeholder="123 Main St" />
-            </div>
-            <div class="form-field mb-0">
-                <label>City</label>
-                <input asp-for="Input.City" placeholder="Metropolis" />
-            </div>
-            <div class="form-field mb-0">
-                <label>Postal Code</label>
-                <input asp-for="Input.PostalCode" placeholder="10001" />
-            </div>
-            <div class="form-field mb-0">
-                <label>Tax / VAT Number</label>
-                <input asp-for="Input.TaxNumber" placeholder="XX123456789" />
-            </div>
-        </div>
+        </form>
     </div>
-
-    <!-- Card 2: SaaS Provisioning -->
-    <div class="card mb-4">
-        <div class="brand mb-3" style="font-size: 1rem;">SaaS Subscription & Licensing</div>
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:1.25rem;">
-            <div class="form-field mb-0">
-                <label>Billing Period</label>
-                <select asp-for="Input.SubscriptionDays">
-                    <option value="14">14 days (Trial)</option>
-                    <option value="30" selected>1 month (30 days)</option>
-                    <option value="90">3 months (Quarterly)</option>
-                    <option value="180">6 months (Biannual)</option>
-                    <option value="365">1 year (Annual)</option>
-                </select>
-            </div>
-            <div class="form-field mb-0">
-                <label>Seat Allowance (Terminals)</label>
-                <input type="number" min="1" asp-for="Input.SeatAllowance" placeholder="e.g., 5" />
-                <div class="small text-muted mt-1">Maximum active devices allowed to sync.</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Card 3: Initial User -->
-    <div class="card mb-4">
-        <div class="d-flex align-items-center gap-2 mb-4">
-            <input type="checkbox" asp-for="Input.CreateFirstUser" id="createFirstUserToggle" style="width:18px; height:18px; accent-color: var(--accent); cursor: pointer;" />
-            <label for="createFirstUserToggle" class="brand mb-0" style="font-size: 1rem; cursor:pointer;">Provision Initial User</label>
-        </div>
-
-        <div id="firstUserFields" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:1.25rem; opacity: 0.5; pointer-events: none; transition: all 0.3s ease;">
-            <div class="form-field mb-0">
-                <label>Username</label>
-                <input asp-for="Input.Username" autocomplete="new-username" />
-            </div>
-            <div class="form-field mb-0">
-                <label>Password</label>
-                <input type="password" asp-for="Input.Password" autocomplete="new-password" />
-            </div>
-            <div class="form-field mb-0">
-                <label>Access Level</label>
-                <!-- Replacing numeric 0/1 with an intuitive dropdown -->
-                <select asp-for="Input.AccessLevel">
-                    <option value="1">Admin</option>
-                    <option value="0">Cashier</option>
-                </select>
-            </div>
-            <div class="form-field mb-0">
-                <label>First Name</label>
-                <input asp-for="Input.FirstName" />
-            </div>
-            <div class="form-field mb-0">
-                <label>Last Name</label>
-                <input asp-for="Input.LastName" />
-            </div>
-            <div class="form-field mb-0">
-                <label>User Email</label>
-                <input type="email" asp-for="Input.UserEmail" />
-            </div>
-        </div>
-    </div>
-
-    <div class="d-flex justify-content-end mt-4 mb-5">
-        <button type="submit" class="btn-primary" style="padding: 0.6rem 2rem; font-size: 1rem;">Create Organization</button>
-    </div>
-</form>
+</div>
 
 <script>
     // UX Enhancement: Greys out the user fields until the toggle is checked
@@ -142,20 +169,19 @@
         const fields = document.getElementById("firstUserFields");
 
         function updateState() {
-            if (toggle.checked) {
-                fields.style.opacity = "1";
-                fields.style.pointerEvents = "auto";
+            const on = toggle.checked;
+            fields.style.opacity = on ? "1" : "0.5";
+            fields.style.pointerEvents = on ? "auto" : "none";
 
-                // Automatically set required attributes when enabled
-                document.getElementById("Input_Username").setAttribute("required", "required");
-                document.getElementById("Input_Password").setAttribute("required", "required");
+            // Only require credentials while the section is actually in play.
+            const username = document.getElementById("Input_Username");
+            const password = document.getElementById("Input_Password");
+            if (on) {
+                username.setAttribute("required", "required");
+                password.setAttribute("required", "required");
             } else {
-                fields.style.opacity = "0.5";
-                fields.style.pointerEvents = "none";
-
-                // Remove required attributes when disabled
-                document.getElementById("Input_Username").removeAttribute("required");
-                document.getElementById("Input_Password").removeAttribute("required");
+                username.removeAttribute("required");
+                password.removeAttribute("required");
             }
         }
 
