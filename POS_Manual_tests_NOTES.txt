@@ -1,2 +1,5 @@
 POS NOTES 
 =======================================================
+change pubspec to 1.0.3+5, 
+commit, push, 
+git tag v1.0.3 && git push origin v1.0.3
