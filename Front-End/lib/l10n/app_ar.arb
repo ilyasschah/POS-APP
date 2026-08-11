@@ -1739,5 +1739,21 @@
   "testMessageSent": "تم إرسال رسالة الاختبار.",
   "testSignalSentToDrawer": "تم إرسال إشارة اختبار إلى درج النقد",
   "urlCopied": "تم نسخ الرابط",
-  "accessRulesNotSynced": "لم تصل قواعد الوصول إلى هذا الجهاز بعد. اتصل بالشبكة وقم بالمزامنة ثم أعد المحاولة."
+  "accessRulesNotSynced": "لم تصل قواعد الوصول إلى هذا الجهاز بعد. اتصل بالشبكة وقم بالمزامنة ثم أعد المحاولة.",
+  "updateSectionTitle": "تحديث البرنامج",
+  "updateAutoCheckLabel": "البحث عن التحديثات تلقائيًا",
+  "updateCheckNow": "التحقق الآن",
+  "updateChecking": "جارٍ التحقق…",
+  "updateUpToDate": "أنت تستخدم أحدث إصدار",
+  "updateAvailableLabel": "الإصدار {version} متاح",
+  "updateDownloadAction": "تنزيل التحديث",
+  "updateDownloadingLabel": "جارٍ التنزيل… {percent}٪",
+  "updateInstallAction": "التثبيت وإعادة التشغيل",
+  "updateCancelAction": "إلغاء التنزيل",
+  "updateFailedLabel": "تعذّر التحقق من التحديثات",
+  "updateBlockedByCart": "أكمل عملية البيع الحالية أو امسحها قبل التحديث.",
+  "updatePendingWarning": "{count} عنصر/عناصر في انتظار المزامنة. زامن أولًا إن أمكن.",
+  "updateRestartNotice": "سيتم إغلاق التطبيق لتثبيت التحديث.",
+  "updateUnsupportedPlatform": "التحديثات داخل التطبيق متاحة على نظام Windows فقط.",
+  "updateAvailableSnackbar": "الإصدار {version} متاح — افتح الإعدادات ‹ حول لتثبيته."
 }

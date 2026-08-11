@@ -67,6 +67,11 @@ class DeviceScopedSettings {
     // The KDS endpoints a terminal pushes to are a LAN concern of that
     // terminal's network, not a company-wide fact.
     'Kitchen.DisplayIps',
+    // Whether THIS install polls for a new version. Per-terminal because the
+    // updater only exists on Windows — cloud-syncing it would push a setting to
+    // the Android tablets that they can never act on, and would let one till
+    // silently turn off updating for the whole venue.
+    'App.Update.AutoCheck',
   };
 
   /// Suffixes that make a key per-terminal whatever its role prefix.

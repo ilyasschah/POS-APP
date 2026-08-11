@@ -5867,4 +5867,62 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get accessRulesNotSynced =>
       'لم تصل قواعد الوصول إلى هذا الجهاز بعد. اتصل بالشبكة وقم بالمزامنة ثم أعد المحاولة.';
+
+  @override
+  String get updateSectionTitle => 'تحديث البرنامج';
+
+  @override
+  String get updateAutoCheckLabel => 'البحث عن التحديثات تلقائيًا';
+
+  @override
+  String get updateCheckNow => 'التحقق الآن';
+
+  @override
+  String get updateChecking => 'جارٍ التحقق…';
+
+  @override
+  String get updateUpToDate => 'أنت تستخدم أحدث إصدار';
+
+  @override
+  String updateAvailableLabel(String version) {
+    return 'الإصدار $version متاح';
+  }
+
+  @override
+  String get updateDownloadAction => 'تنزيل التحديث';
+
+  @override
+  String updateDownloadingLabel(String percent) {
+    return 'جارٍ التنزيل… $percent٪';
+  }
+
+  @override
+  String get updateInstallAction => 'التثبيت وإعادة التشغيل';
+
+  @override
+  String get updateCancelAction => 'إلغاء التنزيل';
+
+  @override
+  String get updateFailedLabel => 'تعذّر التحقق من التحديثات';
+
+  @override
+  String get updateBlockedByCart =>
+      'أكمل عملية البيع الحالية أو امسحها قبل التحديث.';
+
+  @override
+  String updatePendingWarning(int count) {
+    return '$count عنصر/عناصر في انتظار المزامنة. زامن أولًا إن أمكن.';
+  }
+
+  @override
+  String get updateRestartNotice => 'سيتم إغلاق التطبيق لتثبيت التحديث.';
+
+  @override
+  String get updateUnsupportedPlatform =>
+      'التحديثات داخل التطبيق متاحة على نظام Windows فقط.';
+
+  @override
+  String updateAvailableSnackbar(String version) {
+    return 'الإصدار $version متاح — افتح الإعدادات ‹ حول لتثبيته.';
+  }
 }

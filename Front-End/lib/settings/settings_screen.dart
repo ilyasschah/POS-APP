@@ -16,6 +16,11 @@ import 'package:pos_app/customer_display/customer_display_web_server.dart';
 import 'package:pos_app/customer_display/customer_display_screen.dart';
 import 'package:pos_app/core/app_theme.dart';
 import 'package:pos_app/core/app_version.dart';
+import 'package:pos_app/sync/pending_count_provider.dart';
+import 'package:pos_app/update/app_release.dart';
+import 'package:pos_app/update/update_guard.dart';
+import 'package:pos_app/update/update_providers.dart';
+import 'package:pos_app/update/update_service.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
@@ -6655,6 +6660,10 @@ class _AboutTab extends ConsumerWidget {
           ),
           const SizedBox(height: 20),
 
+          // ── Software update ───────────────────────────────────────────────
+          const _UpdateCard(),
+          const SizedBox(height: 20),
+
           // ── Company ───────────────────────────────────────────────────────
           _SettingsCard(
             title: AppLocalizations.of(context).setCompany,
@@ -7085,5 +7094,197 @@ class _DeviceNameDialogState extends State<_DeviceNameDialog> {
         ),
       ],
     );
+  }
+}
+
+/// Software update controls for the About tab.
+///
+/// Windows only — Android cannot silently self-install, so the card renders an
+/// explanation there rather than a button that cannot work (same pattern as the
+/// serial-scale card).
+class _UpdateCard extends ConsumerWidget {
+  const _UpdateCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+
+    if (!UpdateService.isSupported) {
+      return _SettingsCard(
+        title: l10n.updateSectionTitle,
+        children: [
+          Text(
+            l10n.updateUnsupportedPlatform,
+            style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+          ),
+        ],
+      );
+    }
+
+    final status = ref.watch(updateControllerProvider);
+    final blockers = ref.watch(updateBlockersProvider);
+    final controller = ref.read(updateControllerProvider.notifier);
+
+    return _SettingsCard(
+      title: l10n.updateSectionTitle,
+      children: [
+        _SettingSwitch(
+          settingKey: SettingKeys.autoCheckUpdates,
+          label: l10n.updateAutoCheckLabel,
+        ),
+        const SizedBox(height: 8),
+        _updateStatusLine(context, status),
+        const SizedBox(height: 12),
+
+        // Warnings sit above the action so they are read before it is pressed,
+        // not after.
+        for (final blocker in blockers)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  blocker.isFatal ? Icons.error_outline : Icons.info_outline,
+                  size: 18,
+                  color: blocker.isFatal
+                      ? theme.colorScheme.error
+                      : theme.colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _blockerMessage(context, ref, blocker),
+                    style: TextStyle(
+                      color: blocker.isFatal
+                          ? theme.colorScheme.error
+                          : theme.colorScheme.onSurfaceVariant,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: _updateAction(context, ref, status, blockers, controller),
+        ),
+      ],
+    );
+  }
+
+  String _blockerMessage(
+      BuildContext context, WidgetRef ref, UpdateBlocker blocker) {
+    final l10n = AppLocalizations.of(context);
+    switch (blocker) {
+      case UpdateBlocker.activeCart:
+        return l10n.updateBlockedByCart;
+      case UpdateBlocker.unsyncedWork:
+        final pending = ref.watch(pendingOrdersCountProvider).value ?? 0;
+        return l10n.updatePendingWarning(pending);
+    }
+  }
+
+  Widget _updateStatusLine(BuildContext context, UpdateStatus status) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+
+    final text = switch (status) {
+      UpdateIdle() => '',
+      UpdateChecking() => l10n.updateChecking,
+      UpdateUpToDate() => l10n.updateUpToDate,
+      UpdateAvailable(:final release) =>
+        l10n.updateAvailableLabel(release.version.toString()),
+      UpdateDownloading(:final fraction) => l10n.updateDownloadingLabel(
+          fraction == null ? '…' : (fraction * 100).toStringAsFixed(0)),
+      UpdateReadyToInstall() => l10n.updateRestartNotice,
+      UpdateFailed(:final message) => '${l10n.updateFailedLabel} — $message',
+    };
+
+    if (text.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(text, style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),
+        if (status is UpdateDownloading) ...[
+          const SizedBox(height: 8),
+          // Indeterminate until the server declares a content length.
+          LinearProgressIndicator(value: status.fraction),
+        ],
+      ],
+    );
+  }
+
+  Widget _updateAction(
+    BuildContext context,
+    WidgetRef ref,
+    UpdateStatus status,
+    List<UpdateBlocker> blockers,
+    UpdateController controller,
+  ) {
+    final l10n = AppLocalizations.of(context);
+
+    switch (status) {
+      case UpdateChecking():
+        return const SizedBox(
+          height: 24,
+          width: 24,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        );
+
+      case UpdateAvailable(:final release):
+        return FilledButton.icon(
+          onPressed: () => controller.download(release),
+          icon: const Icon(Icons.download),
+          label: Text(l10n.updateDownloadAction),
+        );
+
+      case UpdateDownloading():
+        return OutlinedButton.icon(
+          onPressed: controller.cancelDownload,
+          icon: const Icon(Icons.close),
+          label: Text(l10n.updateCancelAction),
+        );
+
+      case UpdateReadyToInstall():
+        // Disabled — not hidden — while a sale is open, so the reason stays on
+        // screen next to the warning explaining it.
+        final allowed = canInstallUpdate(blockers);
+        return FilledButton.icon(
+          onPressed: allowed ? () => _install(context, ref, controller) : null,
+          icon: const Icon(Icons.restart_alt),
+          label: Text(l10n.updateInstallAction),
+        );
+
+      default:
+        return OutlinedButton.icon(
+          onPressed: controller.check,
+          icon: const Icon(Icons.system_update_alt),
+          label: Text(l10n.updateCheckNow),
+        );
+    }
+  }
+
+  Future<void> _install(
+      BuildContext context, WidgetRef ref, UpdateController controller) async {
+    final launched = await controller.install();
+    if (!context.mounted) return;
+
+    if (!launched) {
+      showAppSnackbar(
+          context, ref, AppLocalizations.of(context).updateFailedLabel,
+          isError: true);
+      return;
+    }
+
+    // Windows cannot replace pos_app.exe while it is running — the installer is
+    // waiting on exactly that. Give the detached process a moment to take hold,
+    // then quit.
+    await Future<void>.delayed(const Duration(milliseconds: 400));
+    exit(0);
   }
 }

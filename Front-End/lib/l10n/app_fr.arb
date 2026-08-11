@@ -1739,5 +1739,21 @@
   "testMessageSent": "Message de test envoyé.",
   "testSignalSentToDrawer": "Signal de test envoyé au tiroir-caisse",
   "urlCopied": "URL copiée",
-  "accessRulesNotSynced": "Les règles d'accès ne sont pas encore arrivées sur cet appareil. Connectez-vous au réseau et synchronisez, puis réessayez."
+  "accessRulesNotSynced": "Les règles d'accès ne sont pas encore arrivées sur cet appareil. Connectez-vous au réseau et synchronisez, puis réessayez.",
+  "updateSectionTitle": "Mise à jour du logiciel",
+  "updateAutoCheckLabel": "Rechercher les mises à jour automatiquement",
+  "updateCheckNow": "Vérifier maintenant",
+  "updateChecking": "Vérification…",
+  "updateUpToDate": "Vous utilisez la dernière version",
+  "updateAvailableLabel": "La version {version} est disponible",
+  "updateDownloadAction": "Télécharger la mise à jour",
+  "updateDownloadingLabel": "Téléchargement… {percent} %",
+  "updateInstallAction": "Installer et redémarrer",
+  "updateCancelAction": "Annuler le téléchargement",
+  "updateFailedLabel": "Impossible de vérifier les mises à jour",
+  "updateBlockedByCart": "Terminez ou videz la vente en cours avant la mise à jour.",
+  "updatePendingWarning": "{count} élément(s) en attente de synchronisation. Synchronisez d’abord si possible.",
+  "updateRestartNotice": "L'application se fermera pour installer la mise à jour.",
+  "updateUnsupportedPlatform": "Les mises à jour intégrées sont disponibles uniquement sous Windows.",
+  "updateAvailableSnackbar": "La version {version} est disponible — ouvrez Réglages › À propos pour l’installer."
 }

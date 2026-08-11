@@ -10543,6 +10543,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Access rules haven\'t reached this device yet. Connect to the network and sync, then try again.'**
   String get accessRulesNotSynced;
+
+  /// No description provided for @updateSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Software update'**
+  String get updateSectionTitle;
+
+  /// No description provided for @updateAutoCheckLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Check for updates automatically'**
+  String get updateAutoCheckLabel;
+
+  /// No description provided for @updateCheckNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Check now'**
+  String get updateCheckNow;
+
+  /// No description provided for @updateChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking…'**
+  String get updateChecking;
+
+  /// No description provided for @updateUpToDate.
+  ///
+  /// In en, this message translates to:
+  /// **'You are on the latest version'**
+  String get updateUpToDate;
+
+  /// No description provided for @updateAvailableLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Version {version} is available'**
+  String updateAvailableLabel(String version);
+
+  /// No description provided for @updateDownloadAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Download update'**
+  String get updateDownloadAction;
+
+  /// No description provided for @updateDownloadingLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading… {percent}%'**
+  String updateDownloadingLabel(String percent);
+
+  /// No description provided for @updateInstallAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Install and restart'**
+  String get updateInstallAction;
+
+  /// No description provided for @updateCancelAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel download'**
+  String get updateCancelAction;
+
+  /// No description provided for @updateFailedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not check for updates'**
+  String get updateFailedLabel;
+
+  /// No description provided for @updateBlockedByCart.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish or clear the current sale before updating.'**
+  String get updateBlockedByCart;
+
+  /// No description provided for @updatePendingWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} item(s) still waiting to sync. Sync first if you can.'**
+  String updatePendingWarning(int count);
+
+  /// No description provided for @updateRestartNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'The app will close to install the update.'**
+  String get updateRestartNotice;
+
+  /// No description provided for @updateUnsupportedPlatform.
+  ///
+  /// In en, this message translates to:
+  /// **'In-app updates are available on Windows only.'**
+  String get updateUnsupportedPlatform;
+
+  /// No description provided for @updateAvailableSnackbar.
+  ///
+  /// In en, this message translates to:
+  /// **'Version {version} is available — open Settings › About to install it.'**
+  String updateAvailableSnackbar(String version);
 }
 
 class _AppLocalizationsDelegate
