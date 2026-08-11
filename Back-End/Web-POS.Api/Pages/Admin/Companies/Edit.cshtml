@@ -4,58 +4,71 @@
     ViewData["Title"] = "Edit Organization";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4 text-main">
-    <div>
-        <h3 class="mb-0">Edit Organization <span class="text-muted small fw-normal">#@Model.Input.Id</span></h3>
-        <div class="text-muted small mt-1">Update company profile and contact information</div>
-    </div>
-    <div class="top-actions">
-        <a class="btn-ghost" asp-page="Details" asp-route-id="@Model.Input.Id">Cancel & Back</a>
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <div class="page-pretitle">Organization #@Model.Input.Id</div>
+                <h2 class="page-title">Edit Organization</h2>
+                <div class="text-secondary mt-1">Update company profile and contact information</div>
+            </div>
+            <div class="col-12 col-md-auto ms-md-auto d-print-none">
+                <div class="btn-list d-grid d-md-block">
+                    <a class="btn btn-ghost-secondary" asp-page="Details" asp-route-id="@Model.Input.Id">Cancel &amp; Back</a>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
-<form method="post" class="card mb-4 text-main">
-    <input type="hidden" asp-for="Input.Id" />
+<div class="page-body">
+    <div class="container-xl">
+        <form method="post" class="card">
+            <input type="hidden" asp-for="Input.Id" />
 
-    <div class="brand mb-4" style="font-size: 1rem;">Organization Profile</div>
+            <div class="card-header"><h3 class="card-title">Organization Profile</h3></div>
 
-    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:1.25rem;">
-        <div class="form-field mb-0">
-            <label>Company Name <span style="color:#ef4444">*</span></label>
-            <input asp-for="Input.Name" required placeholder="e.g., Acme Corp" />
-        </div>
-        <div class="form-field mb-0">
-            <label>Country ID <span style="color:#ef4444">*</span></label>
-            <input type="number" asp-for="Input.CountryId" required placeholder="e.g., 1" />
-            <div class="small text-muted mt-1">Numeric identifier for the country.</div>
-        </div>
-        <div class="form-field mb-0">
-            <label>Email Address</label>
-            <input type="email" asp-for="Input.Email" placeholder="billing@example.com" />
-        </div>
-        <div class="form-field mb-0">
-            <label>Phone Number</label>
-            <input type="tel" asp-for="Input.PhoneNumber" placeholder="+1 (555) 000-0000" />
-        </div>
-        <div class="form-field mb-0">
-            <label>Street Address</label>
-            <input asp-for="Input.Address" placeholder="123 Main St" />
-        </div>
-        <div class="form-field mb-0">
-            <label>City</label>
-            <input asp-for="Input.City" placeholder="Metropolis" />
-        </div>
-        <div class="form-field mb-0">
-            <label>Postal Code</label>
-            <input asp-for="Input.PostalCode" placeholder="10001" />
-        </div>
-        <div class="form-field mb-0">
-            <label>Tax / VAT Number</label>
-            <input asp-for="Input.TaxNumber" placeholder="XX123456789" />
-        </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <label class="form-label required">Company Name</label>
+                        <input class="form-control" asp-for="Input.Name" required placeholder="e.g., Acme Corp" />
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label required">Country ID</label>
+                        <input type="number" class="form-control" asp-for="Input.CountryId" required placeholder="e.g., 1" />
+                        <small class="form-hint">Numeric identifier for the country.</small>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" class="form-control" asp-for="Input.Email" placeholder="billing@example.com" />
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">Phone Number</label>
+                        <input type="tel" class="form-control" asp-for="Input.PhoneNumber" placeholder="+1 (555) 000-0000" />
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">Street Address</label>
+                        <input class="form-control" asp-for="Input.Address" placeholder="123 Main St" />
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">City</label>
+                        <input class="form-control" asp-for="Input.City" placeholder="Metropolis" />
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">Postal Code</label>
+                        <input class="form-control" asp-for="Input.PostalCode" placeholder="10001" />
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">Tax / VAT Number</label>
+                        <input class="form-control" asp-for="Input.TaxNumber" placeholder="XX123456789" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-footer d-grid d-md-flex justify-content-md-end">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+        </form>
     </div>
-
-    <div class="mt-4 pt-4" style="border-top: 1px solid var(--border);">
-        <button type="submit" class="btn-primary" style="padding: 0.6rem 2rem; font-size: 1rem;">Save Changes</button>
-    </div>
-</form>
+</div>
