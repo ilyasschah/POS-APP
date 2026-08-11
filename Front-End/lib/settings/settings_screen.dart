@@ -15,6 +15,7 @@ import 'package:pos_app/utils/customer_display_service.dart';
 import 'package:pos_app/customer_display/customer_display_web_server.dart';
 import 'package:pos_app/customer_display/customer_display_screen.dart';
 import 'package:pos_app/core/app_theme.dart';
+import 'package:pos_app/core/app_version.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
@@ -6622,7 +6623,12 @@ class _AboutTab extends ConsumerWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  AppLocalizations.of(context).versionLabel('1.0.0'),
+                  // Read from the running build, never hardcoded — see
+                  // core/app_version.dart. Blank until the async read lands,
+                  // which is a single cached platform call.
+                  AppLocalizations.of(context).versionLabel(
+                    ref.watch(appVersionProvider).value?.display ?? '…',
+                  ),
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.8),
                     fontSize: 14,

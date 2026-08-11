@@ -44,3 +44,8 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 .env
+
+# Inno Setup output. Installers are release artifacts, not source — they belong
+# on a GitHub Release. A 42 MB .exe was tracked here and every rebuild added
+# another copy to history permanently.
+/Output/

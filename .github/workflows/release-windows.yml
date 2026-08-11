@@ -1,0 +1,149 @@
+name: Release Windows Installer
+
+# Builds the Flutter Windows app, packages it with Inno Setup, and publishes the
+# installer as a GitHub Release asset. That Release is what the in-app updater
+# will read from, so the version has to be trustworthy — see the guard below.
+#
+# To cut a release:
+#   1. bump `version:` in Front-End/pubspec.yaml
+#   2. commit, then tag it:  git tag v1.2.3 && git push origin v1.2.3
+#
+# The tag must match pubspec exactly or the build fails on purpose.
+
+on:
+  push:
+    tags: ["v*"]
+  # Running this manually builds and packages but never publishes — the publish
+  # step is gated on a tag. Use it to test the pipeline; the installer comes out
+  # as a downloadable build artifact.
+  workflow_dispatch:
+
+permissions:
+  contents: write # required to create the Release and upload the asset
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: Front-End
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          # Pinned to the version the app is developed against. "stable" would
+          # silently move under the release and make a failed build impossible to
+          # reproduce later.
+          flutter-version: "3.44.6"
+          channel: stable
+          cache: true
+
+      # ── Version: pubspec is the ONLY source ───────────────────────────────
+      - name: Resolve version from pubspec
+        id: version
+        shell: pwsh
+        run: |
+          $line = (Get-Content pubspec.yaml | Select-String '^version:').Line
+          $full = $line.Split(':')[1].Trim()          # e.g. 1.2.3+4
+          $numeric = $full.Split('+')[0]              # e.g. 1.2.3
+
+          # Inno's VersionInfoVersion rejects anything that is not major.minor.patch,
+          # so catch a bad pubspec here rather than 5 minutes into the build.
+          if ($numeric -notmatch '^\d+\.\d+\.\d+$') {
+            throw "pubspec version '$full' is not major.minor.patch."
+          }
+
+          "full=$full"       >> $env:GITHUB_OUTPUT
+          "numeric=$numeric" >> $env:GITHUB_OUTPUT
+          Write-Host "pubspec version: $full (numeric $numeric)"
+
+      - name: Tag must match pubspec
+        # The whole point of the single-source work: a tag that disagrees with the
+        # shipped build would make the updater compare against a version that was
+        # never built. Skipped for workflow_dispatch, which has no tag.
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}" -replace '^v', ''
+          $pubspec = "${{ steps.version.outputs.numeric }}"
+          if ($tag -ne $pubspec) {
+            throw "Tag v$tag does not match pubspec version $pubspec. Bump pubspec.yaml, commit, then re-tag."
+          }
+
+      # ── Build ─────────────────────────────────────────────────────────────
+      - run: flutter pub get
+
+      - run: flutter analyze lib test
+
+      - run: flutter test
+
+      - run: flutter build windows --release
+
+      # ── Package ───────────────────────────────────────────────────────────
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup --no-progress -y
+
+      - name: Build installer
+        shell: pwsh
+        # /DAppVersion is how pubspec's number reaches the .iss — the script has no
+        # hardcoded version, only a 0.0.0 fallback for hand builds.
+        run: |
+          # ⚠️ Never hardcode the ISCC path. Inno 6 lands in "Program Files (x86)",
+          # Inno 7 in "Program Files", and choco may ship either — guessing a
+          # version number is how a working machine still reports "not installed".
+          $iscc = (Get-Command ISCC.exe -ErrorAction SilentlyContinue).Source
+          if (-not $iscc) {
+            $iscc = Get-ChildItem 'C:\Program Files*\Inno Setup*\ISCC.exe' -ErrorAction SilentlyContinue |
+                    Select-Object -First 1 -ExpandProperty FullName
+          }
+          if (-not $iscc) { throw "ISCC.exe not found after installing Inno Setup." }
+          Write-Host "Using $iscc"
+
+          & $iscc /DAppVersion=${{ steps.version.outputs.numeric }} octopus_setup.iss
+          if ($LASTEXITCODE -ne 0) { throw "ISCC failed with exit code $LASTEXITCODE" }
+
+      - name: Checksum
+        id: hash
+        shell: pwsh
+        # The in-app updater must verify what it downloaded before running it.
+        # Published next to the installer so the manifest can carry the expected value.
+        run: |
+          $exe = "Output/Octopus_POS_Setup_v${{ steps.version.outputs.numeric }}.exe"
+          if (-not (Test-Path $exe)) { throw "Installer not found at $exe" }
+          $sha = (Get-FileHash $exe -Algorithm SHA256).Hash.ToLower()
+          "$sha  $(Split-Path $exe -Leaf)" | Out-File "$exe.sha256" -Encoding ascii
+          "sha256=$sha" >> $env:GITHUB_OUTPUT
+          Write-Host "SHA-256: $sha"
+
+      - name: Upload build artifact
+        # Always kept, so a dry run still produces something testable.
+        uses: actions/upload-artifact@v4
+        with:
+          name: Octopus_POS_Setup_v${{ steps.version.outputs.numeric }}
+          path: |
+            Front-End/Output/*.exe
+            Front-End/Output/*.sha256
+          retention-days: 14
+
+      # ── Publish ───────────────────────────────────────────────────────────
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Octopus POS ${{ steps.version.outputs.numeric }}
+          # Release notes are generated from the commits since the last tag, so
+          # the tag message does not have to be maintained by hand.
+          generate_release_notes: true
+          files: |
+            Front-End/Output/*.exe
+            Front-End/Output/*.sha256
+          body: |
+            **Windows installer** — download the `.exe` below and run it.
+
+            Upgrades an existing install in place; your local database and
+            settings are left untouched.
+
+            SHA-256: `${{ steps.hash.outputs.sha256 }}`
