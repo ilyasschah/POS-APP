@@ -1754,5 +1754,6 @@
   "updateBlockedByCart": "Terminez ou videz la vente en cours avant la mise à jour.",
   "updatePendingWarning": "{count} élément(s) en attente de synchronisation. Synchronisez d’abord si possible.",
   "updateRestartNotice": "L'application se fermera pour installer la mise à jour.",
-  "updateUnsupportedPlatform": "Les mises à jour intégrées sont disponibles uniquement sous Windows."
+  "updateUnsupportedPlatform": "Les mises à jour intégrées sont disponibles uniquement sous Windows.",
+  "updateAvailableSnackbar": "La version {version} est disponible — ouvrez Réglages › À propos pour l’installer."
 }

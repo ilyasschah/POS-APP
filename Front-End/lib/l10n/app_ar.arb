@@ -1754,5 +1754,6 @@
   "updateBlockedByCart": "أكمل عملية البيع الحالية أو امسحها قبل التحديث.",
   "updatePendingWarning": "{count} عنصر/عناصر في انتظار المزامنة. زامن أولًا إن أمكن.",
   "updateRestartNotice": "سيتم إغلاق التطبيق لتثبيت التحديث.",
-  "updateUnsupportedPlatform": "التحديثات داخل التطبيق متاحة على نظام Windows فقط."
+  "updateUnsupportedPlatform": "التحديثات داخل التطبيق متاحة على نظام Windows فقط.",
+  "updateAvailableSnackbar": "الإصدار {version} متاح — افتح الإعدادات ‹ حول لتثبيته."
 }

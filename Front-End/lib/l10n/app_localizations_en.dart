@@ -5880,4 +5880,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get updateUnsupportedPlatform =>
       'In-app updates are available on Windows only.';
+
+  @override
+  String updateAvailableSnackbar(String version) {
+    return 'Version $version is available — open Settings › About to install it.';
+  }
 }

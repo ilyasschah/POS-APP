@@ -5920,4 +5920,9 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get updateUnsupportedPlatform =>
       'التحديثات داخل التطبيق متاحة على نظام Windows فقط.';
+
+  @override
+  String updateAvailableSnackbar(String version) {
+    return 'الإصدار $version متاح — افتح الإعدادات ‹ حول لتثبيته.';
+  }
 }

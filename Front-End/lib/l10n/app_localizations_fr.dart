@@ -5950,4 +5950,9 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get updateUnsupportedPlatform =>
       'Les mises à jour intégrées sont disponibles uniquement sous Windows.';
+
+  @override
+  String updateAvailableSnackbar(String version) {
+    return 'La version $version est disponible — ouvrez Réglages › À propos pour l’installer.';
+  }
 }

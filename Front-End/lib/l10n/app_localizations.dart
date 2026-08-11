@@ -10633,6 +10633,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'In-app updates are available on Windows only.'**
   String get updateUnsupportedPlatform;
+
+  /// No description provided for @updateAvailableSnackbar.
+  ///
+  /// In en, this message translates to:
+  /// **'Version {version} is available — open Settings › About to install it.'**
+  String updateAvailableSnackbar(String version);
 }
 
 class _AppLocalizationsDelegate

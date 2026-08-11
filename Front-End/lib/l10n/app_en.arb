@@ -3075,5 +3075,13 @@
     }
   },
   "updateRestartNotice": "The app will close to install the update.",
-  "updateUnsupportedPlatform": "In-app updates are available on Windows only."
+  "updateUnsupportedPlatform": "In-app updates are available on Windows only.",
+  "updateAvailableSnackbar": "Version {version} is available — open Settings › About to install it.",
+  "@updateAvailableSnackbar": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  }
 }

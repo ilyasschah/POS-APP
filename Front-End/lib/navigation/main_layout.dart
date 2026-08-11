@@ -35,6 +35,9 @@ import 'package:pos_app/shift/shift_management_screen.dart';
 import 'package:pos_app/kitchen/pos_kitchen_server.dart';
 import 'package:pos_app/sync/connectivity_watcher.dart';
 import 'package:pos_app/sync/auto_sync_watcher.dart';
+import 'package:pos_app/update/app_release.dart';
+import 'package:pos_app/update/update_providers.dart';
+import 'package:pos_app/update/update_watcher.dart';
 import 'package:pos_app/sync/sync_button.dart';
 import 'package:pos_app/security/security_guard.dart';
 import 'package:pos_app/security/security_keys.dart';
@@ -114,6 +117,11 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
   // Guards the window-close hook against re-entry (double-clicking the close
   // button) so the on-close backup + destroy only run once.
   bool _closing = false;
+
+  // Version already announced to the operator this session. The auto-check
+  // repeats every 6 hours, so without this the same snackbar would reappear all
+  // day for an update they have already decided not to install yet.
+  String? _announcedUpdateVersion;
 
   // window_manager only exists on desktop; the on-close backup hook is a no-op
   // on Android/iOS (mirrors the guard in main()).
@@ -206,6 +214,12 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
     // watcher). Cleaned up via ref.onDispose when MainLayout is popped.
     ref.watch(autoSyncWatcherProvider);
 
+    // Periodic "is there a newer build?" poll, gated by the App.Update.AutoCheck
+    // toggle. It only checks — downloading and installing stay explicit, because
+    // installing closes the app and only a human can judge whether that is safe
+    // right now. Result surfaces in Settings → About.
+    ref.watch(updateWatcherProvider);
+
     // Background poll for KDS order-status changes so the "ready" badge stays
     // live even while the cashier is on the POS menu. Kept alive for the
     // session like the watchers above.
@@ -219,6 +233,24 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
     // company/tenant no longer exists (deleted in the admin portal), unlink the
     // device and return to the master login. Fires only on a real server "gone"
     // signal (see SyncNotifier) — never on an offline/transient error.
+    // One-time nudge when the background poll finds a newer build. Deliberately
+    // a snackbar and not a dialog: it must never interrupt a sale in progress,
+    // and the operator can act on it whenever it suits them.
+    ref.listen<UpdateStatus>(updateControllerProvider, (prev, next) {
+      if (next is! UpdateAvailable) return;
+
+      final version = next.release.version.toString();
+      if (_announcedUpdateVersion == version) return;
+      _announcedUpdateVersion = version;
+
+      if (!mounted) return;
+      showAppSnackbar(
+        context,
+        ref,
+        AppLocalizations.of(context).updateAvailableSnackbar(version),
+      );
+    });
+
     ref.listen<bool>(accountRevokedProvider, (prev, next) async {
       if (next != true) return;
       ref.read(accountRevokedProvider.notifier).reset();
