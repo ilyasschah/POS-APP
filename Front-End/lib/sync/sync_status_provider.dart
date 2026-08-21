@@ -39,6 +39,7 @@ class _Entity {
     this.table, {
     this.hasSyncStatus = true,
     this.hasSyncError = false,
+    this.filter,
   });
   final String label;
   final String table;
@@ -47,6 +48,11 @@ class _Entity {
   /// Whether the table carries a `sync_error` column we can surface as the
   /// failure reason. (Many tables don't — they fall back to a generic message.)
   final bool hasSyncError;
+
+  /// Extra SQL predicate narrowing this row to a subset of [table] — lets one
+  /// table appear as two operator-meaningful lines (see `pos_orders` below).
+  /// Literal SQL, never operator input.
+  final String? filter;
 }
 
 // Working states that mean "not yet on the server, will be retried".
@@ -59,7 +65,14 @@ const _failedStates = "('failed','sync_failed')";
 // (order items, item taxes, document items) are intentionally folded into their
 // parent — a pending child can't exist without a pending parent.
 const _entities = <_Entity>[
-  _Entity('Sales orders', 'pos_orders', hasSyncError: true),
+  // `pos_orders` holds two things an operator reads very differently, so it is
+  // reported as two lines. "Sales orders 1 pending" was the label on a COMPLETED,
+  // PAID sale waiting to upload — it read like an unfinished order sitting on a
+  // table, and an operator deleted the row to tidy up, which stranded the sale
+  // (backlog item 33). status 1 = closed sale, status 0 = order still open.
+  _Entity('Completed sales', 'pos_orders',
+      hasSyncError: true, filter: 'status = 1'),
+  _Entity('Open orders', 'pos_orders', hasSyncError: true, filter: 'status = 0'),
   _Entity('Documents', 'documents'),
   _Entity('Payments', 'payments'),
   _Entity('Voids', 'pending_voids'),
@@ -90,6 +103,7 @@ const _entities = <_Entity>[
 
 String _buildSql() {
   final selects = _entities.map((e) {
+    final where = e.filter == null ? '' : ' WHERE ${e.filter}';
     if (e.hasSyncStatus) {
       // MAX(...) over the non-synced rows surfaces a stored reason if any row
       // has one (NULLs are ignored). Tables without the column select NULL.
@@ -100,11 +114,11 @@ String _buildSql() {
           'SUM(CASE WHEN sync_status IN $_pendingStates THEN 1 ELSE 0 END) AS pending, '
           'SUM(CASE WHEN sync_status IN $_failedStates THEN 1 ELSE 0 END) AS failed, '
           '$errorCol AS error '
-          'FROM ${e.table}';
+          'FROM ${e.table}$where';
     }
     // Op-queue table: every row is outstanding work, none can be "failed".
     return "SELECT '${e.label}' AS label, COUNT(*) AS pending, 0 AS failed, "
-        'NULL AS error FROM ${e.table}';
+        'NULL AS error FROM ${e.table}$where';
   });
   return selects.join('\nUNION ALL\n');
 }

@@ -8,7 +8,10 @@ import 'package:uuid/uuid.dart';
 import 'package:pos_app/auth/auth_storage.dart';
 import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/database/app_database.dart';
+import 'package:pos_app/uom/unit_of_measure.dart';
 import 'package:pos_app/document/document_type_constants.dart';
+import 'package:pos_app/product/product_group_reconcile.dart';
+import 'package:pos_app/session/pos_session_status.dart';
 import 'package:pos_app/settings/device_identity.dart';
 import 'package:pos_app/sync/image_sync_helper.dart';
 import 'package:pos_app/sync/sync_status.dart';
@@ -219,7 +222,8 @@ class SyncManager {
     // ── PULL phase (cloud → local) ─────────────────────────────────────────
     // pullMasterData isolates each entity internally; pullDocuments is wrapped
     // here so a document-pull failure is reported but never throws.
-    await pullMasterData(companyId);
+    await pullMasterData(companyId, manual: manual);
+    await _step('sessions', () => pullSessions(companyId));
     await _step(
         'documents', () => pullDocuments(companyId, forceFullPull: manual));
     // After documents (so each line's local document exists to attach to).
@@ -269,6 +273,11 @@ class SyncManager {
       debugPrint('requeued $requeued order(s) failed by a server fault.');
     }
 
+    // Rebuild carrier rows for paid sales whose `pos_orders` row went missing,
+    // BEFORE push:orders below so the repair and the send happen in one sync.
+    await _step(
+        'push:repairStranded', () => repairStrandedCheckouts(companyId));
+
     // ── Master data first ────────────────────────────────────────────────────
     // Everything an order/document/payment can reference by id must be created
     // (and its temp→real id remapped onto referencing rows) BEFORE those orders
@@ -292,6 +301,10 @@ class SyncManager {
     await _step('push:floorPlanTables',
         () => pushPendingFloorPlanTableOps(companyId)); // remaps orders+bookings
     // ── Transactional data (now all their referenced ids are real) ───────────
+    // 🚨 SESSIONS FIRST. An order carries its session's localId and the server
+    // can only resolve it once the session exists — parent before child, the
+    // same rule that puts products before orders above.
+    await _step('push:sessions', () => pushPendingSessions(companyId));
     await _step('push:openOrders', () => pushPendingOpenOrders(companyId));
     await _step('push:orders', () => pushPendingOrders(companyId));
     // Manual document editor: create/update/delete headers + their line items.
@@ -425,7 +438,7 @@ class SyncManager {
     }
   }
 
-  Future<void> pullMasterData(int companyId) async {
+  Future<void> pullMasterData(int companyId, {bool manual = false}) async {
     // Each pull is isolated via [_step] — a single entity failing (network blip,
     // unexpected payload) must not abort the remaining pulls.
     await _step('products', () => pullProducts(companyId));
@@ -434,7 +447,8 @@ class SyncManager {
     await _step('floorPlanTables', () => pullFloorPlanTables(companyId));
     await _step('users', () => pullUsers(companyId));
     await _step('appProperties', () => pullAppProperties(companyId));
-    await _step('productGroups', () => pullProductGroups(companyId));
+    await _step('productGroups',
+        () => pullProductGroups(companyId, forceReconcile: manual));
     await _step('paymentTypes', () => pullPaymentTypes(companyId));
     await _step('customers', () => pullCustomers(companyId));
     await _step('promotions', () => pullPromotions(companyId));
@@ -456,6 +470,7 @@ class SyncManager {
     await _step('stockControls', () => pullStockControls(companyId));
     await _step('productTaxes', () => pullProductTaxes(companyId));
     await _step('barcodes', () => pullBarcodes(companyId));
+    await _step('barcodeRules', () => pullBarcodeRules(companyId));
     // ── v39 schema-clone tables (cloud → local mirror) ──
     await _step('countries', () => pullCountries(companyId));
     await _step('currencies', () => pullCurrencies(companyId));
@@ -816,6 +831,50 @@ class SyncManager {
               companyId: Value(companyId),
               value: Value(b['value'] as String? ?? ''),
               syncStatus: const Value('synced'),
+            ));
+      }
+    });
+  }
+
+  /// Mirrors the company's barcode nomenclature into the local cache.
+  ///
+  /// Full replace inside one transaction: the rules are an ORDERED list where
+  /// the first match wins, so a half-applied update could decode a scale label
+  /// with the wrong rule. Read-only locally — the settings screen edits through
+  /// the API — so there is no pending state to preserve.
+  ///
+  /// An older server has no such endpoint and answers 404; that is not an error
+  /// worth failing the sync over, so the cache is simply left as it was and the
+  /// POS falls back to the shipped defaults.
+  Future<void> pullBarcodeRules(int companyId) async {
+    final List<dynamic>? rows;
+    try {
+      final res = await dio.get<List<dynamic>>(
+        '/BarcodeRules/GetAll',
+        queryParameters: {'companyId': companyId},
+      );
+      rows = res.data;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return;
+      rethrow;
+    }
+    if (rows == null) return;
+
+    await db.transaction(() async {
+      await (db.delete(db.barcodeRulesTable)
+            ..where((t) => t.companyId.equals(companyId)))
+          .go();
+
+      for (final r in rows!.cast<Map<String, dynamic>>()) {
+        await db.into(db.barcodeRulesTable).insert(BarcodeRulesTableCompanion(
+              id: Value((r['id'] as num?)?.toInt() ?? 0),
+              companyId: Value(companyId),
+              name: Value(r['name'] as String? ?? ''),
+              sequence: Value((r['sequence'] as num?)?.toInt() ?? 0),
+              type: Value(r['type'] as String? ?? 'Unit'),
+              encoding: Value(r['encoding'] as String? ?? 'Any'),
+              pattern: Value(r['pattern'] as String? ?? ''),
+              isEnabled: Value(r['isEnabled'] as bool? ?? true),
             ));
       }
     });
@@ -1357,6 +1416,174 @@ class SyncManager {
     }
   }
 
+  /// Pulls every register's sessions so the session LIST is complete.
+  ///
+  /// 🚨 A device only ever creates its own sessions, so without this the list
+  /// would show one register's history and look like data loss on a two-till
+  /// shop. Read-only: rows from other devices arrive with a `srvs_<id>` local
+  /// id and are never pushed back — this terminal is not their owner.
+  ///
+  /// A row this device owns (its localId is already here) is only refreshed
+  /// while it is `synced`. A local session with unpushed changes belongs to the
+  /// pusher until it lands — the same rule `pullDocuments` follows, and what
+  /// stops a pull clobbering a close that has not been sent yet.
+  Future<void> pullSessions(int companyId) async {
+    final res = await dio.get<List<dynamic>>(
+      '/PosSession/History',
+      queryParameters: {'companyId': companyId, 'take': 200},
+    );
+    final rows = res.data;
+    if (rows == null) return;
+
+    for (final raw in rows.cast<Map<String, dynamic>>()) {
+      final serverId = (raw['id'] as num?)?.toInt();
+      if (serverId == null) continue;
+      final localId = (raw['localId'] as String?)?.trim();
+      final key = (localId != null && localId.isNotEmpty)
+          ? localId
+          : 'srvs_$serverId';
+
+      final existing = await (db.select(db.shiftsTable)
+            ..where((t) => t.localId.equals(key)))
+          .getSingleOrNull();
+      if (existing != null && existing.syncStatus != 'synced') continue;
+
+      DateTime? date(String? v) => v == null ? null : DateTime.tryParse(v);
+
+      await db.into(db.shiftsTable).insertOnConflictUpdate(
+            ShiftsTableCompanion.insert(
+              localId: key,
+              companyId: companyId,
+              userId: (raw['openedByUserId'] as num?)?.toInt() ?? 0,
+              openedAt: date(raw['openedAt'] as String?) ?? DateTime.now().toUtc(),
+              lastModified:
+                  date(raw['lastModified'] as String?) ?? DateTime.now().toUtc(),
+              serverId: Value(serverId),
+              posDeviceUid: Value(existing?.posDeviceUid),
+              posDeviceName: Value(raw['posDeviceName'] as String?),
+              startingCash:
+                  Value(((raw['openingCash'] as num?) ?? 0).toDouble()),
+              expectedCash: Value((raw['expectedCash'] as num?)?.toDouble()),
+              actualEndingCash:
+                  Value((raw['actualEndingCash'] as num?)?.toDouble()),
+              cashDifference: Value((raw['cashDifference'] as num?)?.toDouble()),
+              closingNote: Value(raw['closingNote'] as String?),
+              openingNote: Value(raw['openingNote'] as String?),
+              closedByUserId: Value((raw['closedByUserId'] as num?)?.toInt()),
+              closedAt: Value(date(raw['closedAt'] as String?)),
+              status: Value((raw['status'] as num?)?.toInt() ??
+                  PosSessionStatus.closed),
+              forceClosed: Value(raw['forceClosed'] as bool? ?? false),
+              forceClosedByUserId:
+                  Value((raw['forceClosedByUserId'] as num?)?.toInt()),
+              forceCloseReason: Value(raw['forceCloseReason'] as String?),
+              hasLateArrivals: Value(raw['hasLateArrivals'] as bool? ?? false),
+              syncStatus: const Value('synced'),
+            ),
+          );
+    }
+  }
+
+  /// Pushes POS sessions opened/advanced on this device.
+  ///
+  /// 🚨 Runs BEFORE the order pushers, and that ordering is load-bearing: an
+  /// order carries its session's `localId`, and the server can only resolve
+  /// that to a session id if the session has already arrived. Same parent-first
+  /// rule as products before orders in [_pushAllInner].
+  ///
+  /// 🚨 Idempotent by construction. `/PosSession/Sync` is keyed on the client
+  /// `localId`, so the dangerous case — the server creates the session, the
+  /// response is lost, the device retries — returns the SAME session instead of
+  /// a second one. That is why the endpoint is a state RECONCILE rather than a
+  /// set of transitions: replaying the whole queue is a no-op, not an error.
+  ///
+  /// The local `localId` is never rewritten. Stamping `serverId` is the only
+  /// local change, so the orders/payments/cash rows pointing at the session by
+  /// localId keep working untouched.
+  Future<void> pushPendingSessions(int companyId) async {
+    final pending = await db.getPendingSessions();
+    if (pending.isEmpty) return;
+
+    for (final session in pending) {
+      try {
+        final res = await dio.post<Map<String, dynamic>>(
+          '/PosSession/Sync',
+          queryParameters: {'companyId': companyId},
+          data: {
+            'localId': session.localId,
+            'deviceUid': session.posDeviceUid,
+            'deviceName': await getDeviceName(),
+            'userId': session.userId,
+            'openingCash': session.startingCash,
+            'openedAt': session.openedAt.toIso8601String(),
+            'status': session.status,
+            if (session.closedByUserId != null)
+              'closedByUserId': session.closedByUserId,
+            if (session.actualEndingCash != null)
+              'countedCash': session.actualEndingCash,
+            if (session.closingNote != null) 'closingNote': session.closingNote,
+            if (session.openingNote != null) 'openingNote': session.openingNote,
+          },
+        );
+
+        final serverId = (res.data?['id'] as num?)?.toInt();
+        if (serverId != null && serverId > 0) {
+          await db.markSessionSynced(session.localId, serverId);
+        }
+      } catch (e) {
+        await _resolveRejection(
+          error: e,
+          syncStatus: session.syncStatus,
+          logLabel: 'pushPendingSessions: ${session.localId}',
+          entityLabel: 'POS session',
+          apply: (status, _) => (db.update(db.shiftsTable)
+                ..where((t) => t.localId.equals(session.localId)))
+              .write(ShiftsTableCompanion(syncStatus: Value(status))),
+        );
+      }
+    }
+  }
+
+  /// Repairs paid sales whose `pos_orders` carrier row is gone, so they can be
+  /// pushed again. Returns how many carriers were rebuilt.
+  ///
+  /// 🚨 Why this exists: a checkout Document + Payment are created SERVER-SIDE
+  /// by `/PosOrder/BatchSync`, which is why `pushPendingDocuments` /
+  /// `pushPendingPayments` skip `'pending'` rows (pushing them there too would
+  /// double-create every sale). So the order row is the only thing that can
+  /// carry an offline sale to the cloud — remove it and no client code path can
+  /// ever send that sale, while Sync Status keeps reporting it as pending. A
+  /// live terminal lost a 90 MAD sale this way on 2026-08-15 (its rows were
+  /// deleted by hand in a DB tool, which the app cannot prevent).
+  ///
+  /// The app's own delete paths are guarded separately — see
+  /// `AppDatabase.assertNotUnbankedCarrier`. This is the recovery half.
+  Future<int> repairStrandedCheckouts(int companyId) async {
+    final stranded = await db.findStrandedCheckouts(companyId);
+    if (stranded.isEmpty) return 0;
+
+    var rebuilt = 0;
+    for (final doc in stranded) {
+      final outcome = await db.rebuildOrderForStrandedCheckout(doc.localId);
+      switch (outcome) {
+        case StrandedRepairOutcome.rebuilt:
+          rebuilt++;
+          debugPrint('repairStrandedCheckouts: rebuilt carrier for '
+              '${doc.number ?? doc.localId} (${doc.total}) — will push now.');
+        case StrandedRepairOutcome.unrecoverable:
+          // Its lines and/or its payment are gone too, so there is no faithful
+          // sale left to replay. Park it at `failed` rather than leave it in the
+          // pending count, which would never come down.
+          await db.markStrandedCheckoutFailed(doc.localId);
+          debugPrint('repairStrandedCheckouts: ${doc.number ?? doc.localId} '
+              'cannot be rebuilt (no items and/or no payment) — marked failed.');
+        case StrandedRepairOutcome.skipped:
+          break;
+      }
+    }
+    return rebuilt;
+  }
+
   Future<void> pushPendingOrders(int companyId) async {
     final pending = await db.getPendingOrders();
     if (pending.isEmpty) return;
@@ -1510,6 +1737,10 @@ class SyncManager {
       // Device-local document number issued offline at checkout. The server
       // keeps it verbatim instead of generating its own (offline-first).
       'clientDocumentNumber': o.order.number,
+      // The session's CLIENT localId, not a server id — the session may have
+      // been opened offline too. The server maps it; a null (pre-session order,
+      // or the guard still off) banks the sale unattached rather than failing.
+      'sessionLocalId': o.order.sessionLocalId,
       'order': {
         'userId': o.order.userId,
         'number': o.order.orderName,
@@ -1731,6 +1962,11 @@ class SyncManager {
               'Discount': item.discount,
               'discountType': item.discountType,
               'DiscountType': item.discountType,
+              // Input form (10% vs fixed) so another till shows what was typed.
+              'discountInputValue': item.discountInputValue,
+              'DiscountInputValue': item.discountInputValue,
+              'discountInputType': item.discountInputType,
+              'DiscountInputType': item.discountInputType,
               'discountAppliedType': 0,
               'DiscountAppliedType': 0,
               'comment': item.comment,
@@ -1880,6 +2116,10 @@ class SyncManager {
             // expects 0 (cash in) / 1 (cash out). Convert at the boundary.
             'startingCashType': m.type == 'in' ? 0 : 1,
             if (m.note != null && m.note!.isNotEmpty) 'description': m.note,
+            // The session that was trading when the drawer moved. Sent as the
+            // client localId because a movement recorded offline belongs to a
+            // session that may not have reached the server yet.
+            if (m.sessionLocalId != null) 'sessionLocalId': m.sessionLocalId,
           },
         );
 
@@ -2070,6 +2310,8 @@ class SyncManager {
               'code': p.code,
               'plu': p.plu,
               'measurementUnit': p.measurementUnit,
+              'uomId': p.uomId,
+              'isToWeigh': p.isToWeigh,
               'price': p.price,
               'cost': p.cost,
               'markup': p.markup,
@@ -2114,6 +2356,8 @@ class SyncManager {
                     code: Value(p.code),
                     plu: Value(p.plu),
                     measurementUnit: Value(p.measurementUnit),
+                    uomId: Value(p.uomId),
+                    isToWeigh: Value(p.isToWeigh),
                     description: Value(p.description),
                     markup: Value(p.markup),
                     rank: Value(p.rank),
@@ -2140,6 +2384,8 @@ class SyncManager {
               'code': p.code,
               'plu': p.plu,
               'measurementUnit': p.measurementUnit,
+              'uomId': p.uomId,
+              'isToWeigh': p.isToWeigh,
               'price': p.price,
               'cost': p.cost,
               'markup': p.markup,
@@ -2421,6 +2667,13 @@ class SyncManager {
               code: Value(json['code'] as String?),
               plu: Value(json['plu'] as int?),
               measurementUnit: Value(json['measurementUnit'] as String?),
+              // A server that predates the UoM catalog sends neither field.
+              // Deriving the unit from the legacy text beats defaulting a
+              // kilogram product to pieces, which would deduct whole kilos for
+              // every gram sold.
+              uomId: Value((json['uomId'] as num?)?.toInt() ??
+                  uomFromLegacyText(json['measurementUnit'] as String?)),
+              isToWeigh: Value(json['isToWeigh'] as bool? ?? false),
               description: Value(json['description'] as String?),
               markup: Value((json['markup'] as num?)?.toDouble()),
               rank: Value(json['rank'] as int? ?? 0),
@@ -2889,20 +3142,30 @@ class SyncManager {
     }
   }
 
-  Future<void> pullProductGroups(int companyId) async {
+  Future<void> pullProductGroups(int companyId,
+      {bool forceReconcile = false}) async {
     final startedAt = DateTime.now().toUtc();
-    final watermark = await _getLastSync(_kProductGroups);
+    // On a manual sync (operator pressed Sync) drop the watermark and pull the
+    // FULL set so DELETIONS can be reconciled below: a delta pull is structurally
+    // blind to a group deleted on another device — the row is simply absent from a
+    // "changed since" response, so it would otherwise linger here forever. Group
+    // icons come inline (base64), so background syncs stay incremental to avoid
+    // re-transferring them. Mirrors pullDocuments' forceFullPull.
+    final watermark =
+        forceReconcile ? null : await _getLastSync(_kProductGroups);
 
     final res = await dio.get<List<dynamic>>(
       '/ProductGroups/GetAll',
       queryParameters: _query(companyId, watermark),
     );
     final rows = res.data ?? const [];
+    final serverIds = <int>{};
 
     // Sequential image saves + upserts. Can't use db.batch here because the
     // ImageSyncHelper awaits don't compose with batch's sync callback.
     for (final json in rows.cast<Map<String, dynamic>>()) {
       final id = json['id'] as int;
+      serverIds.add(id);
 
       // Don't overwrite rows that have unsync-ed local edits.
       final existing = await (db.select(
@@ -2932,6 +3195,24 @@ class SyncManager {
               syncStatus: const Value('synced'),
             ),
           );
+    }
+
+    // Reconcile deletions on the full pass: a locally-`synced` group the server
+    // no longer returns was deleted on another device → remove it (and its cached
+    // icon). Rows with pending local ops (create/update/delete not yet pushed)
+    // are left to the pusher, never wiped here.
+    if (forceReconcile) {
+      final r = await retireDeletedProductGroups(db,
+          companyId: companyId, serverIds: serverIds);
+      for (final path in r.iconPaths) {
+        try {
+          await File(path).delete();
+        } catch (_) {}
+      }
+      if (r.removed > 0) {
+        debugPrint(
+            'pullProductGroups: retired ${r.removed} group(s) deleted on another device.');
+      }
     }
 
     await _setLastSync(_kProductGroups, startedAt);
@@ -4598,6 +4879,24 @@ class SyncManager {
           .whereType<String>()
           .toSet();
 
+      // Server session id -> this device's session localId.
+      //
+      // The server links a payment to a session by SERVER id; the local
+      // payments table keys on the session's localId, which is what the
+      // register's Payments tab and its closing count both filter on. Without
+      // the translation every pulled payment landed with no session at all, so
+      // a till that had taken money reported "no payments" and a total of 0.00.
+      //
+      // Read once per pull rather than per payment: a sync can carry hundreds
+      // of documents and the sessions table has a handful of rows.
+      final sessionRows = await (db.select(db.shiftsTable)
+            ..where((t) => t.serverId.isNotNull()))
+          .get();
+      final sessionLocalIdByServerId = {
+        for (final row in sessionRows)
+          if (row.serverId != null) row.serverId!: row.localId,
+      };
+
       for (final d in list) {
         final serverId = (d['id'] as num?)?.toInt() ?? 0;
         if (serverId == 0) continue;
@@ -4640,6 +4939,12 @@ class SyncManager {
                 serverId: Value(pid),
                 zReportId: Value((m['zReportId'] as num?)?.toInt()),
                 companyId: Value(companyId),
+                // Null when the sale was banked with no session, or when the
+                // session belongs to a register this device has never pulled —
+                // both are legitimate, and both simply leave the payment
+                // unattached rather than guessing at a drawer.
+                sessionLocalId: Value(
+                    sessionLocalIdByServerId[(m['sessionId'] as num?)?.toInt()]),
                 // Pulled FROM the server — nothing to push back.
                 syncStatus: const Value(SyncStatuses.synced),
               );
@@ -4717,6 +5022,28 @@ class SyncManager {
         // its own queue) carries the server number but no serverId yet — match
         // by number and stamp the serverId so we adopt the existing row instead
         // of inserting a duplicate. Its local total/items are preserved.
+        //
+        // 🚨 DATA LOSS GUARD — `syncStatus NOT IN (pending_*)`.
+        //
+        // Adoption marks the row `synced`, which permanently retires it from the
+        // push queue. That is correct for a row the server has ALREADY seen, and
+        // catastrophic for one it has not: the sale stops being pushed and never
+        // reaches the cloud, while the local row starts impersonating a
+        // different server document that merely shares its number.
+        //
+        // Document numbers are per-terminal sequences (POS1-200-000004), so a
+        // collision is not hypothetical — it is close to guaranteed after a
+        // RESTORE. A till works offline for two days issuing …000004, dies, and
+        // its backup is restored onto a new machine; meanwhile the account has
+        // its own …000004. Without this guard the pull adopts the offline sale
+        // into the server's document and the two days of takings are silently
+        // gone. That is exactly the reported "the cloud overwrote my restored
+        // data".
+        //
+        // Same principle Case 1 above already states: the pusher owns a row
+        // until it reaches the server. A pending_create document is not the
+        // server's document — it is one that still has to be sent, and it will
+        // be given its own number and id when it is.
         if (number.isNotEmpty) {
           // `.get().firstOrNull`, never `getSingleOrNull()` — the latter throws
           // on a duplicate number, which would abort the whole document pull.
@@ -4724,6 +5051,13 @@ class SyncManager {
               await (db.select(db.documentsTable)
                     ..where((t) => t.number.equals(number))
                     ..where((t) => t.serverId.isNull())
+                    // Only a row the server has ALREADY accepted may be adopted.
+                    // Expressed as "== synced", never as a list of pending_*
+                    // values: a POS checkout writes plain `'pending'`, so an
+                    // exclusion list that named only the manual editor's
+                    // pending_create/update/delete left every ordinary SALE
+                    // adoptable — the exact rows this guard exists to protect.
+                    ..where((t) => t.syncStatus.equals(SyncStatuses.synced))
                     ..limit(1))
                   .get()
                   .then((r) => r.firstOrNull);
@@ -4789,8 +5123,45 @@ class SyncManager {
         await _setLastSync(_kDocumentsFullPull, now);
       }
       await _setLastSync(_kDocuments, now);
+      // Now that the cloud's numbers are local, make sure this terminal's
+      // counter is past them — see [advanceDocumentCounters].
+      await advanceDocumentCounters(companyId);
     } catch (e) {
       debugPrint('pullDocuments failed: $e — local history preserved.');
+    }
+  }
+
+  /// Advances the device-local document counters past every number already
+  /// issued under this terminal's prefix.
+  ///
+  /// The counter is device-local and the sync never touches it, so a RESTORE
+  /// rolls it back while the cloud keeps every number the dead terminal issued.
+  /// The till then re-issues those numbers for different sales — the live
+  /// `POS1-200-000007` collision (two unrelated sales, one number) that
+  /// `UQ_Document_Number_PerCompany` then rejected. Item 30's server-side
+  /// renumber rescues the push; this stops the collision happening at all.
+  ///
+  /// Best-effort: a failure here must never fail a document pull, and the next
+  /// sync tries again.
+  Future<void> advanceDocumentCounters(int companyId) async {
+    try {
+      final deviceName = await getDeviceName();
+      for (final code in const [
+        DocumentTypes.salesCode,
+        DocumentTypes.refundCode,
+      ]) {
+        final skipped = await db.advanceLocalDocumentCounter(
+          companyId: companyId,
+          deviceName: deviceName,
+          docTypeCode: code,
+        );
+        if (skipped > 0) {
+          debugPrint('advanceDocumentCounters: counter $companyId:$code moved '
+              'forward $skipped number(s) to clear already-issued ones.');
+        }
+      }
+    } catch (e) {
+      debugPrint('advanceDocumentCounters failed: $e');
     }
   }
 
@@ -5354,10 +5725,63 @@ class SyncManager {
 
     await _setLastSync(_kAppProperties, startedAt);
 
+    // ⚠️ MUST run before the seeder: the seeder materialises a row for every
+    // missing key, so once it has written `General.DefaultTaxRateIds: ''` the
+    // migration's "does the new key have a row yet?" test answers yes and the
+    // operator's configured tax is stranded on the dead key forever.
+    await _migrateRenamedSettingKeys(companyId);
+
     // Materialise any settings that still have NO row after the pull, so the DB
     // ends up with an explicit row for EVERY setting (with its default value) on
     // first open — instead of only the ones the operator has touched.
     await _seedMissingAppPropertyDefaults(companyId);
+  }
+
+  /// One-shot carry-over for settings that changed key name between releases.
+  ///
+  /// Currently just `Products.DefaultTaxRateIds` → `General.DefaultTaxRateIds`
+  /// (2026-08-15, when the default-tax picker moved next to its companion
+  /// switch in General → Tax). Writes the new key as `pending` so the value
+  /// reaches the server on the next push; the legacy row is deliberately left
+  /// alone so the migration stays reversible.
+  ///
+  /// Idempotent: a company that already has a row for the new key — including
+  /// an intentionally EMPTY one — is skipped, so this never re-resurrects a
+  /// default the operator has since cleared.
+  Future<void> _migrateRenamedSettingKeys(int companyId) async {
+    const renames = {
+      SettingKeys.legacyDefaultTaxRateIds: SettingKeys.defaultTaxRateIds,
+    };
+
+    final existing = await (db.select(db.appPropertiesTable)
+          ..where((t) => t.companyId.equals(companyId)))
+        .get();
+
+    for (final entry in renames.entries) {
+      final alreadyMigrated = existing.any((r) => r.name == entry.value);
+      if (alreadyMigrated) continue;
+
+      final legacy = existing.where((r) => r.name == entry.key).firstOrNull;
+      final carried = legacy?.value?.trim() ?? '';
+      if (carried.isEmpty) continue;
+
+      await db
+          .into(db.appPropertiesTable)
+          .insertOnConflictUpdate(
+            AppPropertiesTableCompanion(
+              // Same deterministic (companyId, key) temp id as
+              // AppSettingsNotifier._tempIdForKey / the seeder, so a later edit
+              // updates this row instead of creating a second one.
+              id: Value(-((Object.hash(companyId, entry.value) & 0x7fffffff) + 1)),
+              companyId: Value(companyId),
+              name: Value(entry.value),
+              value: Value(legacy!.value),
+              lastModified: Value(DateTime.now().toUtc()),
+              syncStatus: const Value('pending'),
+            ),
+          );
+      debugPrint('Migrated setting ${entry.key} → ${entry.value}.');
+    }
   }
 
   /// Writes a `pending` row (using each setting's built-in default) for every

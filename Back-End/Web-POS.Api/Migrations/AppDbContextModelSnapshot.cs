@@ -80,6 +80,53 @@ namespace Api.Migrations
                     b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
                 });
 
+            modelBuilder.Entity("Api.Domain.BarcodeRule", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Encoding")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("LastModified")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Pattern")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("Sequence")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "Sequence");
+
+                    b.ToTable("BarcodeRule");
+                });
+
             modelBuilder.Entity("Api.Domain.Booking", b =>
                 {
                     b.Property<int>("Id")
@@ -544,6 +591,9 @@ namespace Api.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<bool>("ArrivedAfterClose")
+                        .HasColumnType("bit");
+
                     b.Property<int>("CompanyId")
                         .HasColumnType("int");
 
@@ -600,6 +650,9 @@ namespace Api.Migrations
                     b.Property<int>("ServiceType")
                         .HasColumnType("int");
 
+                    b.Property<int?>("SessionId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("StockDate")
                         .HasColumnType("datetime2");
 
@@ -620,6 +673,8 @@ namespace Api.Migrations
                     b.HasIndex("CustomerId");
 
                     b.HasIndex("DocumentTypeId");
+
+                    b.HasIndex("SessionId");
 
                     b.HasIndex("UserId");
 
@@ -1209,6 +1264,9 @@ namespace Api.Migrations
                     b.Property<int>("PaymentTypeId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("SessionId")
+                        .HasColumnType("int");
+
                     b.Property<int>("UserId")
                         .HasColumnType("int");
 
@@ -1220,6 +1278,8 @@ namespace Api.Migrations
                     b.HasIndex("DocumentId");
 
                     b.HasIndex("PaymentTypeId");
+
+                    b.HasIndex("SessionId");
 
                     b.HasIndex("UserId");
 
@@ -1291,6 +1351,43 @@ namespace Api.Migrations
                     b.ToTable("PaymentType");
                 });
 
+            modelBuilder.Entity("Api.Domain.PosDevice", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DeviceUid")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTime>("FirstSeenAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("LastModified")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("LastSeenAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "DeviceUid")
+                        .IsUnique();
+
+                    b.ToTable("PosDevice");
+                });
+
             modelBuilder.Entity("Api.Domain.PosOrder", b =>
                 {
                     b.Property<int>("Id")
@@ -1331,6 +1428,9 @@ namespace Api.Migrations
                     b.Property<int>("ServiceType")
                         .HasColumnType("int");
 
+                    b.Property<int?>("SessionId")
+                        .HasColumnType("int");
+
                     b.Property<decimal?>("Total")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
@@ -1341,6 +1441,8 @@ namespace Api.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CustomerId");
+
+                    b.HasIndex("SessionId");
 
                     b.HasIndex("UserId");
 
@@ -1516,6 +1618,48 @@ namespace Api.Migrations
                     b.ToTable("PosPrinterSettings");
                 });
 
+            modelBuilder.Entity("Api.Domain.PosSessionPaymentCount", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("Counted")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("DateCreated")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal?>("Difference")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("Expected")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("PaymentTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SessionId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PaymentTypeId");
+
+                    b.HasIndex("SessionId", "PaymentTypeId")
+                        .IsUnique();
+
+                    b.ToTable("PosSessionPaymentCount");
+                });
+
             modelBuilder.Entity("Api.Domain.PosVoid", b =>
                 {
                     b.Property<int>("Id")
@@ -1653,6 +1797,9 @@ namespace Api.Migrations
                     b.Property<bool>("IsTaxInclusivePrice")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsToWeigh")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsUsingDefaultQuantity")
                         .HasColumnType("bit");
 
@@ -1687,6 +1834,9 @@ namespace Api.Migrations
                         .HasColumnType("int");
 
                     b.Property<int?>("Rank")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UomId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -2589,17 +2739,56 @@ namespace Api.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<decimal?>("CashDifference")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<DateTime?>("ClosedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<int?>("ClosedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ClosingNote")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<int>("CompanyId")
                         .HasColumnType("int");
 
+                    b.Property<decimal?>("ExpectedCash")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("ForceCloseReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("ForceClosed")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("ForceClosedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("HasLateArrivals")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime>("LastModified")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("LocalId")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
                     b.Property<DateTime>("OpenedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("OpeningNote")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int?>("PosDeviceId")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("StartingCash")
                         .HasPrecision(18, 2)
@@ -2612,6 +2801,12 @@ namespace Api.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "LocalId")
+                        .IsUnique()
+                        .HasFilter("[LocalId] IS NOT NULL");
+
+                    b.HasIndex("PosDeviceId", "Status");
 
                     b.ToTable("Shift");
                 });
@@ -2637,6 +2832,9 @@ namespace Api.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("SessionId")
+                        .HasColumnType("int");
+
                     b.Property<int>("StartingCashType")
                         .HasColumnType("int");
 
@@ -2647,6 +2845,8 @@ namespace Api.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("SessionId");
 
                     b.HasIndex("UserId");
 
@@ -3182,6 +3382,10 @@ namespace Api.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<string>("DisplayNumber")
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
                     b.Property<int>("FromDocumentId")
                         .HasColumnType("int");
 
@@ -3190,6 +3394,12 @@ namespace Api.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("Number")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PosDeviceId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("SessionId")
                         .HasColumnType("int");
 
                     b.Property<decimal>("TaxableTotal")
@@ -3221,7 +3431,65 @@ namespace Api.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("PosDeviceId");
+
+                    b.HasIndex("SessionId");
+
+                    b.HasIndex("CompanyId", "PosDeviceId");
+
                     b.ToTable("ZReport");
+                });
+
+            modelBuilder.Entity("Api.Domain.ZReportCorrection", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Acknowledged")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("AcknowledgedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("AcknowledgedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("FirstDetectedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("LastDetectedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("LateAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("LateCashAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("LateOrderCount")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("OriginalZReportId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SessionId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SessionId", "OriginalZReportId")
+                        .IsUnique()
+                        .HasFilter("[OriginalZReportId] IS NOT NULL");
+
+                    b.ToTable("ZReportCorrection");
                 });
 
             modelBuilder.Entity("Api.Domain.ZReportPaymentSummary", b =>
@@ -3279,6 +3547,17 @@ namespace Api.Migrations
                     b.Navigation("Company");
 
                     b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("Api.Domain.BarcodeRule", b =>
+                {
+                    b.HasOne("Api.Domain.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Company");
                 });
 
             modelBuilder.Entity("Api.Domain.Booking", b =>
@@ -3349,6 +3628,11 @@ namespace Api.Migrations
                         .HasForeignKey("DocumentTypeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("Api.Domain.Shift", null)
+                        .WithMany()
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Api.Domain.User", "User")
                         .WithMany()
@@ -3485,6 +3769,11 @@ namespace Api.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Api.Domain.Shift", null)
+                        .WithMany()
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Api.Domain.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
@@ -3520,6 +3809,11 @@ namespace Api.Migrations
                     b.HasOne("Api.Domain.Customer", "Customer")
                         .WithMany()
                         .HasForeignKey("CustomerId");
+
+                    b.HasOne("Api.Domain.Shift", null)
+                        .WithMany()
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Api.Domain.User", "User")
                         .WithMany()
@@ -3582,6 +3876,25 @@ namespace Api.Migrations
                     b.Navigation("PosOrderItem");
 
                     b.Navigation("Tax");
+                });
+
+            modelBuilder.Entity("Api.Domain.PosSessionPaymentCount", b =>
+                {
+                    b.HasOne("Api.Domain.PaymentType", "PaymentType")
+                        .WithMany()
+                        .HasForeignKey("PaymentTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Api.Domain.Shift", "Session")
+                        .WithMany()
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PaymentType");
+
+                    b.Navigation("Session");
                 });
 
             modelBuilder.Entity("Api.Domain.PosVoid", b =>
@@ -3686,8 +3999,23 @@ namespace Api.Migrations
                     b.Navigation("Promotion");
                 });
 
+            modelBuilder.Entity("Api.Domain.Shift", b =>
+                {
+                    b.HasOne("Api.Domain.PosDevice", "PosDevice")
+                        .WithMany()
+                        .HasForeignKey("PosDeviceId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("PosDevice");
+                });
+
             modelBuilder.Entity("Api.Domain.StartingCash", b =>
                 {
+                    b.HasOne("Api.Domain.Shift", null)
+                        .WithMany()
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Api.Domain.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
@@ -3783,6 +4111,30 @@ namespace Api.Migrations
                         .IsRequired();
 
                     b.Navigation("Company");
+                });
+
+            modelBuilder.Entity("Api.Domain.ZReport", b =>
+                {
+                    b.HasOne("Api.Domain.PosDevice", null)
+                        .WithMany()
+                        .HasForeignKey("PosDeviceId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Api.Domain.Shift", null)
+                        .WithMany()
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("Api.Domain.ZReportCorrection", b =>
+                {
+                    b.HasOne("Api.Domain.Shift", "Session")
+                        .WithMany()
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Session");
                 });
 
             modelBuilder.Entity("Api.Domain.ZReportPaymentSummary", b =>

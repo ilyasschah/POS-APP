@@ -66,6 +66,30 @@ class AppSettingsNotifier extends Notifier<Map<String, String>> {
       }
     });
 
+    // Carry a pre-rename default-tax configuration over to the new key. Done
+    // against the RAW rows, not `map`, because kSettingDefaults has already
+    // seeded the new key with '' — so "is it empty?" cannot tell an untouched
+    // install from an operator who deliberately deselected every tax. The
+    // presence of a row can: once the new key has one, it is authoritative,
+    // empty or not, and deselecting stops resurrecting the legacy value.
+    //
+    // Read-only migration on purpose. SyncManager._migrateRenamedSettingKeys
+    // does the durable write; this exists so a till that is offline (or never
+    // pulls again) keeps its default tax from the very first frame.
+    rawProps.whenData((props) {
+      final hasNewRow = props.any(
+        (p) => p.name == SettingKeys.defaultTaxRateIds,
+      );
+      if (hasNewRow) return;
+      for (final p in props) {
+        if (p.name == SettingKeys.legacyDefaultTaxRateIds &&
+            p.value.trim().isNotEmpty) {
+          map[SettingKeys.defaultTaxRateIds] = p.value;
+          break;
+        }
+      }
+    });
+
     // This terminal's own hardware/filesystem choices outrank anything the
     // cloud carries for the same key — that is the whole point of the layer.
     map.addAll(DeviceScopedSettings.overrides);

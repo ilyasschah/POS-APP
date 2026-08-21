@@ -169,4 +169,74 @@ void main() {
     final rows = await db.select(db.posOrdersTable).get();
     expect(rows.single.serverId, isNull);
   });
+
+  // ── saveAndSuspend: the POS header's Tables / Bookings buttons ────────────
+  //
+  // Reported by the operator: open a table, save, reopen it, then press TABLES
+  // in the POS header — and the table ends up holding TWO orders. Cause was
+  // `saveAndSuspend` keeping its own copy of the save that minted a fresh
+  // localId with serverId:null every single time, so suspending an order that
+  // already had a row inserted a second one. It now delegates to
+  // `saveOrderLocally`, which resolves the existing row.
+  group('saveAndSuspend parks the SAME order', () {
+    test('suspending a resumed order does not create a second one', () async {
+      final localId = await _parkOrder(db, bookingId: 42);
+      final cart = _container(db).read(cartProvider.notifier);
+      await cart.loadOrderFromLocal(localId);
+
+      expect(await cart.saveAndSuspend(companyId: 1, userId: 1), isTrue);
+
+      final rows = await db.select(db.posOrdersTable).get();
+      expect(
+        rows,
+        hasLength(1),
+        reason: 'the reported bug: two open orders on one table',
+      );
+      expect(rows.single.localId, localId);
+    });
+
+    test('it preserves the booking link the old copy dropped', () async {
+      final localId = await _parkOrder(db, bookingId: 42);
+      final cart = _container(db).read(cartProvider.notifier);
+      await cart.loadOrderFromLocal(localId);
+
+      await cart.saveAndSuspend(companyId: 1, userId: 1);
+
+      // The private copy never wrote bookingId, so parking a reservation's
+      // order via the header button silently unlinked it from its booking.
+      expect((await db.select(db.posOrdersTable).get()).single.bookingId, 42);
+    });
+
+    test('it empties the till so the next order starts clean', () async {
+      final localId = await _parkOrder(db, bookingId: 42);
+      final cart = _container(db).read(cartProvider.notifier);
+      await cart.loadOrderFromLocal(localId);
+
+      await cart.saveAndSuspend(companyId: 1, userId: 1);
+
+      expect(cart.state.items, isEmpty);
+      expect(cart.state.activePosOrderId, isNull);
+    });
+
+    test('suspending twice still leaves exactly one row', () async {
+      // The operator bouncing between the POS and the floor plan must not
+      // accumulate a row per trip.
+      final localId = await _parkOrder(db);
+      final container = _container(db);
+      final cart = container.read(cartProvider.notifier);
+
+      await cart.loadOrderFromLocal(localId);
+      await cart.saveAndSuspend(companyId: 1, userId: 1);
+      await cart.loadOrderFromLocal(localId);
+      await cart.saveAndSuspend(companyId: 1, userId: 1);
+
+      expect(await db.select(db.posOrdersTable).get(), hasLength(1));
+    });
+
+    test('it refuses when there is no open order', () async {
+      final cart = _container(db).read(cartProvider.notifier);
+      expect(await cart.saveAndSuspend(companyId: 1, userId: 1), isFalse);
+      expect(await db.select(db.posOrdersTable).get(), isEmpty);
+    });
+  });
 }

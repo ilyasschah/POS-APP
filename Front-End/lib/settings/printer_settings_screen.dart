@@ -661,6 +661,8 @@ class _RolePrinterTabState extends ConsumerState<_RolePrinterTab>
         price: 100,
         appliedTaxes: [demoTax],
         measurementUnit: 'pcs',
+        // Exclusive, to match the hardcoded tax-exclusive summary below.
+        isTaxInclusive: false,
       ),
       CartItem(
         cartItemId: 'demo-2',
@@ -670,6 +672,7 @@ class _RolePrinterTabState extends ConsumerState<_RolePrinterTab>
         quantity: 2,
         price: 12,
         appliedTaxes: [demoTax],
+        isTaxInclusive: false,
       ),
     ];
     // Consistent tax-exclusive totals for the summary block.
@@ -2217,6 +2220,18 @@ class _CustomizeReceiptTab extends StatelessWidget {
         ),
 
         _PCard(
+          title: AppLocalizations.of(context).kitchenPrintingSection,
+          icon: Icons.soup_kitchen,
+          children: [
+            _PSSwitch(
+              settingKey: SettingKeys.autoKitchenPrintOnCheckout,
+              label: AppLocalizations.of(context).autoKitchenPrintOnCheckout,
+              subtitle: AppLocalizations.of(context).autoKitchenPrintSubtitle,
+            ),
+          ],
+        ),
+
+        _PCard(
           title: AppLocalizations.of(context).companyHeader,
           icon: Icons.storefront_outlined,
           children: [
@@ -2587,6 +2602,9 @@ class _PrintTemplatesTab extends StatelessWidget {
                 hint: AppLocalizations.of(context).invoiceTitleHint),
             _PSSwitch(
                 settingKey: SettingKeys.invoicePrintA5, label: AppLocalizations.of(context).printInA5),
+            _PSSwitch(
+                settingKey: SettingKeys.invoiceRightToLeft,
+                label: AppLocalizations.of(context).rightToLeft),
           ],
         ),
         _PCard(

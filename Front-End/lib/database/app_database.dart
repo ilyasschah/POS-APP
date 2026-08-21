@@ -10,6 +10,7 @@ import 'package:sqlite3/sqlite3.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:pos_app/database/device_key_service.dart';
+import 'package:pos_app/database/restore_service.dart';
 import 'package:pos_app/document/document_type_constants.dart';
 
 part 'app_database.g.dart';
@@ -68,6 +69,15 @@ class ProductsTable extends Table {
   TextColumn get syncStatus =>
       text().withDefault(const Constant('synced'))();
   TextColumn get syncError => text().nullable()();
+
+  // ---- Schema v61 additions: sell by weight ----
+  // Id into the hardcoded UnitOfMeasure catalog (lib/uom/unit_of_measure.dart).
+  // Defaults to 1 (pieces), which converts 1:1 and so cannot disturb the stock
+  // figures an existing install already holds.
+  IntColumn get uomId => integer().withDefault(const Constant(1))();
+
+  // Sold by weight — drives the POS scale/keypad flow and the Price button.
+  BoolColumn get isToWeigh => boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -492,6 +502,15 @@ class PosOrdersTable extends Table {
   /// one at the same price). Null on locally-created orders and on any row
   /// pulled from an API build that predates the field.
   DateTimeColumn get itemsLastChanged => dateTime().nullable()();
+  /// The POS session this belongs to, by the session's CLIENT localId.
+  ///
+  /// 🚨 The localId, never the server id. A sale rung up offline belongs to a
+  /// session that may itself not have reached the server yet, so the only
+  /// stable handle at write time is the client UUID — exactly why
+  /// `pos_order_items.orderId` references `pos_orders.localId`. The push
+  /// resolves it to a server session id; the local row keeps the UUID.
+  TextColumn get sessionLocalId => text().nullable()();
+
 }
 
 @TableIndex(name: 'idx_pos_order_items_order_id', columns: {#orderId})
@@ -530,6 +549,22 @@ class PosOrderItemsTable extends Table {
   TextColumn get bundle => text().nullable()();
   IntColumn get discountAppliedType => integer().nullable()();
   IntColumn get companyId => integer().nullable()();
+  // The per-item discount as the operator ENTERED it (value + type: 10 + 0 = "10%")
+  // while `discount` holds the resolved per-unit money. Null = not recorded → the
+  // cart falls back to `discount`. Carries the input form across tills for an OPEN
+  // order, where discount_lines don't cross until checkout.
+  RealColumn get discountInputValue => real().nullable()();
+  IntColumn get discountInputType => integer().nullable()();
+
+  /// Whether [unitPrice] already CONTAINS this line's taxes, pinned from the
+  /// product at the moment the order was parked.
+  ///
+  /// Deliberately stored rather than re-read from the product on reopen: an
+  /// admin editing the product's tax mode must not silently reprice an order
+  /// that is already sitting on a table. Null = a row written before this
+  /// column existed → the cart falls back to `true`, matching the
+  /// `Product.IsTaxInclusivePrice` default on both databases.
+  BoolColumn get isTaxInclusive => boolean().nullable()();
 }
 
 // Offline tax breakdown — one row per item × tax-rate per saved order.
@@ -586,6 +621,15 @@ class StartingCashTable extends Table {
   TextColumn get description => text().nullable()();
   IntColumn get startingCashType => integer().nullable()();
   DateTimeColumn get dateCreated => dateTime().nullable()();
+  /// The POS session this belongs to, by the session's CLIENT localId.
+  ///
+  /// 🚨 The localId, never the server id. A sale rung up offline belongs to a
+  /// session that may itself not have reached the server yet, so the only
+  /// stable handle at write time is the client UUID — exactly why
+  /// `pos_order_items.orderId` references `pos_orders.localId`. The push
+  /// resolves it to a server session id; the local row keeps the UUID.
+  TextColumn get sessionLocalId => text().nullable()();
+
 }
 
 class ZReportsTable extends Table {
@@ -778,6 +822,15 @@ class DocumentsTable extends Table {
   BoolColumn get isClockedOut => boolean().nullable()();
   DateTimeColumn get dateCreated => dateTime().nullable()();
   DateTimeColumn get dateUpdated => dateTime().nullable()();
+  /// The POS session this belongs to, by the session's CLIENT localId.
+  ///
+  /// 🚨 The localId, never the server id. A sale rung up offline belongs to a
+  /// session that may itself not have reached the server yet, so the only
+  /// stable handle at write time is the client UUID — exactly why
+  /// `pos_order_items.orderId` references `pos_orders.localId`. The push
+  /// resolves it to a server session id; the local row keeps the UUID.
+  TextColumn get sessionLocalId => text().nullable()();
+
 }
 
 class DocumentItemsTable extends Table {
@@ -850,6 +903,15 @@ class PaymentsTable extends Table {
   Set<Column> get primaryKey => {localId};
   DateTimeColumn get dateCreated => dateTime().nullable()();
   IntColumn get companyId => integer().nullable()();
+  /// The POS session this belongs to, by the session's CLIENT localId.
+  ///
+  /// 🚨 The localId, never the server id. A sale rung up offline belongs to a
+  /// session that may itself not have reached the server yet, so the only
+  /// stable handle at write time is the client UUID — exactly why
+  /// `pos_order_items.orderId` references `pos_orders.localId`. The push
+  /// resolves it to a server session id; the local row keeps the UUID.
+  TextColumn get sessionLocalId => text().nullable()();
+
 }
 
 /// Discrete origin of a [DiscountLinesTable] row. Stored as text in
@@ -931,6 +993,37 @@ class DiscountLinesTable extends Table {
 // Adds and deletes are written locally first with a pending syncStatus so
 // they appear immediately in the UI and SyncManager pushes them on next sync.
 // ============================================================================
+
+// ============================================================================
+// BARCODE RULES — the company's barcode nomenclature.
+// Cached locally because the POS has to decode a scale label while offline: a
+// scan cannot wait on a round trip, and a shop with no connection still weighs
+// sugar. Read-only on this side — the settings screen edits it through the API
+// and the next pull overwrites the cache, so there is no syncStatus column.
+// ============================================================================
+class BarcodeRulesTable extends Table {
+  @override
+  String get tableName => 'barcode_rules';
+
+  IntColumn get id => integer()();
+  IntColumn get companyId => integer()();
+  TextColumn get name => text()();
+
+  /// Ascending evaluation order — first match wins.
+  IntColumn get sequence => integer()();
+
+  /// 'Unit' | 'Weighted' | 'Priced' | 'Discounted'.
+  TextColumn get type => text()();
+
+  /// 'Any' | 'Ean13' | 'UpcA'.
+  TextColumn get encoding => text()();
+
+  TextColumn get pattern => text()();
+  BoolColumn get isEnabled => boolean().withDefault(const Constant(true))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
 
 class BarcodesTable extends Table {
   @override
@@ -1057,6 +1150,40 @@ class ShiftsTable extends Table {
   /// hours simultaneously on one station without colliding with the single
   /// drawer shift. Local-only differentiation flag.
   BoolColumn get isDrawerShift =>
+      boolean().withDefault(const Constant(false))();
+
+  // ── POS SESSION (schema v58) ───────────────────────────────────────────
+  // A row with `posDeviceUid != null` is a POS SESSION — the trading period of
+  // one register. A row without it is an attendance shift, untouched by all of
+  // this. Same discriminator the backend uses (`Shift.PosDeviceId != null`).
+  //
+  // 🚨 The DEVICE UID is stored, not the server's PosDevice.Id, and that is the
+  // whole point: a session opened with no connectivity has never seen a server
+  // id, and the terminal's GUID is something it always knows. The server maps
+  // uid → PosDevice on push.
+  TextColumn get posDeviceUid => text().nullable()();
+
+  /// The register's display name ("POS1"). Stored on the row rather than looked
+  /// up, because the session list shows OTHER devices' sessions too and this
+  /// terminal only knows its own name.
+  TextColumn get posDeviceName => text().nullable()();
+
+  // Session status reuses `status` with PosSessionStatus values 10–13, kept
+  // deliberately disjoint from the attendance 0/1 in the same column so no
+  // query can confuse a closed shift with a trading register.
+  IntColumn get closedByUserId => integer().nullable()();
+  RealColumn get expectedCash => real().nullable()();
+  RealColumn get cashDifference => real().nullable()();
+  TextColumn get closingNote => text().nullable()();
+
+  /// Free text from the Opening Control screen.
+  TextColumn get openingNote => text().nullable()();
+  BoolColumn get forceClosed => boolean().withDefault(const Constant(false))();
+  IntColumn get forceClosedByUserId => integer().nullable()();
+  TextColumn get forceCloseReason => text().nullable()();
+
+  /// A sale belonging to this session reached the server after it closed.
+  BoolColumn get hasLateArrivals =>
       boolean().withDefault(const Constant(false))();
 
   TextColumn get syncStatus =>
@@ -1506,6 +1633,7 @@ class ZReportPaymentSummariesTable extends Table {
     DocumentItemsTable,
     PaymentsTable,
     BarcodesTable,
+  BarcodeRulesTable,
     CustomerDiscountsTable,
     LoyaltyCardsTable,
     TimeClockEntriesTable,
@@ -1529,13 +1657,84 @@ class AppDatabase extends _$AppDatabase {
   /// Lets order save/resume be exercised against actual SQLite.
   AppDatabase.forTesting(super.executor) : super();
 
+  /// The schema this build understands, readable WITHOUT opening a database.
+  ///
+  /// Restore validation needs it before Drift is touched: a backup whose
+  /// `user_version` is higher came from a newer build, and Drift migrates
+  /// forward only, so opening it here would corrupt it.
+  static const int expectedSchemaVersion = 61;
+
   @override
-  int get schemaVersion => 55;
+  int get schemaVersion => expectedSchemaVersion;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) async => m.createAll(),
         onUpgrade: (m, from, to) async {
+          // v57: pin whether the line's unitPrice includes its tax, so a parked
+          // order reprices identically when reopened even if the product's tax
+          // mode is edited meanwhile. Existing rows get NULL → treated as
+          // tax-inclusive, which is the Product default on both DBs and how
+          // every product in the catalogue is actually configured.
+          // v58: POS sessions. Every column is nullable or defaulted, so an
+          // existing install upgrades with no backfill: attendance shifts keep
+          // `posDeviceUid = NULL` and behave exactly as before, and every
+          // pre-session order/document/payment keeps `sessionLocalId = NULL`.
+          // v60: the register's name on the session row, so the list can show
+          // sessions from every device.
+          // v61: sell by weight. Both columns are defaulted, so existing rows
+          // upgrade with no backfill — every product starts as pieces and not
+          // weighed, exactly how it behaved before. The next master-data pull
+          // brings the server's real values, including the units the backend
+          // migration derived from the legacy MeasurementUnit text.
+          if (from < 61) {
+            await m.addColumn(productsTable, productsTable.uomId);
+            await m.addColumn(productsTable, productsTable.isToWeigh);
+            await m.createTable(barcodeRulesTable);
+          }
+
+          if (from < 60) {
+            await m.addColumn(shiftsTable, shiftsTable.posDeviceName);
+          }
+
+          // v59: the Opening Control note (Odoo parity).
+          if (from < 59) {
+            await m.addColumn(shiftsTable, shiftsTable.openingNote);
+          }
+
+          if (from < 58) {
+            await m.addColumn(shiftsTable, shiftsTable.posDeviceUid);
+            await m.addColumn(shiftsTable, shiftsTable.closedByUserId);
+            await m.addColumn(shiftsTable, shiftsTable.expectedCash);
+            await m.addColumn(shiftsTable, shiftsTable.cashDifference);
+            await m.addColumn(shiftsTable, shiftsTable.closingNote);
+            await m.addColumn(shiftsTable, shiftsTable.forceClosed);
+            await m.addColumn(shiftsTable, shiftsTable.forceClosedByUserId);
+            await m.addColumn(shiftsTable, shiftsTable.forceCloseReason);
+            await m.addColumn(shiftsTable, shiftsTable.hasLateArrivals);
+            await m.addColumn(posOrdersTable, posOrdersTable.sessionLocalId);
+            await m.addColumn(documentsTable, documentsTable.sessionLocalId);
+            await m.addColumn(paymentsTable, paymentsTable.sessionLocalId);
+            await m.addColumn(
+                startingCashTable, startingCashTable.sessionLocalId);
+          }
+
+          if (from < 57) {
+            await m.addColumn(
+                posOrderItemsTable, posOrderItemsTable.isTaxInclusive);
+          }
+
+          // v56: carry the manual item-discount INPUT (10% vs a fixed amount) on
+          // the order line so it survives an OPEN order crossing to another till,
+          // where discount_lines don't reach until checkout. Existing rows get
+          // NULL and fall back to the resolved money, exactly as before.
+          if (from < 56) {
+            await m.addColumn(
+                posOrderItemsTable, posOrderItemsTable.discountInputValue);
+            await m.addColumn(
+                posOrderItemsTable, posOrderItemsTable.discountInputType);
+          }
+
           // v55: the newest line's server timestamp, mirrored from
           // PosOrderDto.ItemsLastChanged. Lets syncOpenOrdersToDrift notice that
           // ANOTHER terminal swapped a line for one at the same price — an edit
@@ -2477,6 +2676,66 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
+  /// Attaches sales that predate session stamping to the session that rang
+  /// them up, and reports how many rows it repaired.
+  ///
+  /// 🚨 Local linkage ONLY: `sync_status` and `last_modified` are deliberately
+  /// left alone, so a repair never re-queues a document the server already has.
+  /// The rows are matched narrowly — same company, no session yet, inside the
+  /// session's own window, and numbered with this register's prefix — because
+  /// the local database also holds documents pulled from OTHER tills, and
+  /// absorbing one of those into this drawer would invent takings.
+  ///
+  /// Idempotent: a second run matches nothing and writes nothing.
+  Future<int> attachOrphanSalesToSession({
+    required String sessionLocalId,
+    required int companyId,
+    required DateTime from,
+    required DateTime to,
+    required String numberPrefix,
+  }) async {
+    final like = '$numberPrefix-%';
+    return transaction(() async {
+      final orphans = await (select(documentsTable)
+            ..where((t) =>
+                t.companyId.equals(companyId) &
+                t.sessionLocalId.isNull() &
+                t.number.like(like) &
+                t.date.isBiggerOrEqualValue(from) &
+                t.date.isSmallerOrEqualValue(to)))
+          .get();
+      if (orphans.isEmpty) return 0;
+
+      final ids = orphans.map((d) => d.localId).toList();
+      var repaired = 0;
+
+      repaired += await (update(documentsTable)
+            ..where((t) => t.localId.isIn(ids)))
+          .write(DocumentsTableCompanion(
+              sessionLocalId: Value(sessionLocalId)));
+
+      // The payments follow their document: they were taken at the till that
+      // raised it, in the session that owned that till at the time.
+      repaired += await (update(paymentsTable)
+            ..where((t) =>
+                t.documentId.isIn(ids) & t.sessionLocalId.isNull()))
+          .write(PaymentsTableCompanion(
+              sessionLocalId: Value(sessionLocalId)));
+
+      // The pos_order shares its document's localId (checkout mints one UUID
+      // for both), so match on that rather than on the number prefix — the
+      // prefix alone has no time bound and would sweep up every sale this
+      // register has ever made into whichever session was repaired first.
+      repaired += await (update(posOrdersTable)
+            ..where((t) =>
+                t.localId.isIn(ids) & t.sessionLocalId.isNull()))
+          .write(PosOrdersTableCompanion(
+              sessionLocalId: Value(sessionLocalId)));
+
+      return repaired;
+    });
+  }
+
   /// Called after BatchSync succeeds: stamps the server Document.Id onto the
   /// locally-created Document and flips syncStatus to 'synced'.
   Future<void> linkDocumentToServer(String localId, int documentServerId) {
@@ -3305,6 +3564,12 @@ class AppDatabase extends _$AppDatabase {
   /// Items cascade-delete via the FK. The caller should also restore local
   /// stock quantities (via deductStockForCheckout with negative quantities or
   /// a dedicated helper) so the UI reflects the freed inventory immediately.
+  ///
+  /// Refuses (throws [UnbankedCheckoutException]) when the order is still the
+  /// carrier for an unbanked checkout — see [assertNotUnbankedCarrier]. A void
+  /// only ever targets an OPEN order, which has no document, so this cannot fire
+  /// in a normal flow; it is here because deleting that row is the one action
+  /// that permanently strands a paid sale.
   Future<void> queueVoidAndDeleteOrder({
     required String localId,
     required int serverOrderId,
@@ -3314,7 +3579,8 @@ class AppDatabase extends _$AppDatabase {
     required int warehouseId,
     required String itemsJson,
     String? reason,
-  }) {
+  }) async {
+    await assertNotUnbankedCarrier(localId);
     return transaction(() async {
       await into(pendingVoidsTable).insert(
         PendingVoidsTableCompanion(
@@ -3353,13 +3619,245 @@ class AppDatabase extends _$AppDatabase {
         syncStatus: Value('synced'),
       ));
 
+  // ─── The `pos_orders` carrier rule (backlog item 33) ───────────────────────
+  //
+  // 🚨 A completed offline sale is carried to the server BY ITS `pos_orders`
+  // ROW. The Document + Payment are created server-side as a side effect of
+  // `/PosOrder/BatchSync`, which is why `pushPendingDocuments` /
+  // `pushPendingPayments` deliberately skip `'pending'` rows (pushing them there
+  // too would double-create every sale — see `lib/sync/sync_status.dart`).
+  //
+  // The consequence: delete the order row before the push lands and NO code path
+  // on the client can ever send that sale again. It sits in Sync Status as a
+  // number that counts down forever while the takings are, in practice, gone.
+  // That happened on a live terminal on 2026-08-15.
+  //
+  // Two defences, both below: nothing in the app removes a carrier row while its
+  // checkout is unbanked, and anything already orphaned (a hand-run DELETE in a
+  // DB tool can't be prevented) is rebuilt from the document it left behind.
+
+  /// True when [orderLocalId] is still the only carrier for an unbanked
+  /// checkout: a SALES document exists under the same local id, has never been
+  /// stamped with a `serverId`, and is still `'pending'`.
+  ///
+  /// Refunds are excluded on purpose — they reach the server through
+  /// `pushPendingRefundOps` (`/Document/Refund`), not through an order row, so
+  /// they are never stranded by one going missing.
+  Future<bool> isUnbankedCheckoutCarrier(String orderLocalId) async {
+    final doc = await (select(documentsTable)
+          ..where((t) => t.localId.equals(orderLocalId))
+          ..where((t) => t.documentTypeId.equals(DocumentTypes.sales))
+          ..where((t) => t.serverId.isNull())
+          ..where((t) => t.syncStatus.equals('pending'))
+          ..limit(1))
+        .getSingleOrNull();
+    return doc != null;
+  }
+
+  /// Throws [UnbankedCheckoutException] if removing [orderLocalId] would strand
+  /// a paid sale. Called by every app-side path that deletes a `pos_orders` row
+  /// for a reason OTHER than "the server has it now".
+  Future<void> assertNotUnbankedCarrier(String orderLocalId) async {
+    if (await isUnbankedCheckoutCarrier(orderLocalId)) {
+      throw UnbankedCheckoutException(orderLocalId);
+    }
+  }
+
+  /// Deletes a local order row and its discount lines, refusing if that would
+  /// strand an unbanked sale. Items cascade via the FK; `discount_lines` link by
+  /// local id with no cascade, so they are purged explicitly.
+  ///
+  /// For orders the app discards deliberately (void of a never-pushed order).
+  Future<void> deleteLocalOrder(String localId) async {
+    await assertNotUnbankedCarrier(localId);
+    await transaction(() async {
+      await (delete(posOrdersTable)..where((t) => t.localId.equals(localId)))
+          .go();
+      await purgeDiscountLinesFor(localId);
+    });
+  }
+
   /// Deletes a completed order and its items from local SQLite after the
   /// server confirms the Document + Payment were created. Items are removed
   /// automatically by the CASCADE FK on `pos_order_items.order_id`.
-  Future<void> deleteCompletedOrder(String localId) {
-    return (delete(posOrdersTable)
-          ..where((t) => t.localId.equals(localId)))
+  ///
+  /// Returns false — and keeps the row — when the checkout is still unbanked.
+  /// The normal push path stamps the document `synced` (`linkDocumentToServer`)
+  /// immediately before calling this, so a refusal means the caller got its
+  /// ordering wrong, not that the operator did something. Deliberately logged
+  /// rather than thrown: this runs inside the per-result loop of
+  /// `pushPendingOrders`, where a throw would be swallowed anyway.
+  Future<bool> deleteCompletedOrder(String localId) async {
+    if (await isUnbankedCheckoutCarrier(localId)) {
+      debugPrint(
+          'deleteCompletedOrder: refused for $localId — its checkout document '
+          'is still pending, deleting the order would strand the sale.');
+      return false;
+    }
+    await (delete(posOrdersTable)..where((t) => t.localId.equals(localId)))
         .go();
+    return true;
+  }
+
+  /// Sales documents that are `'pending'`, have no `serverId`, and whose
+  /// carrier `pos_orders` row no longer exists — i.e. paid sales that no push
+  /// path can reach. Cheap enough to run at the start of every sync.
+  ///
+  /// Scoped to [companyId]: rebuilding a carrier queues it for the push that is
+  /// running right now, and that push banks every pending order against the
+  /// company being synced.
+  Future<List<DocumentsTableData>> findStrandedCheckouts(int companyId) async {
+    final candidates = await (select(documentsTable)
+          ..where((t) => t.companyId.equals(companyId))
+          ..where((t) => t.documentTypeId.equals(DocumentTypes.sales))
+          ..where((t) => t.syncStatus.equals('pending'))
+          ..where((t) => t.serverId.isNull()))
+        .get();
+    if (candidates.isEmpty) return const [];
+
+    final carried = (await (selectOnly(posOrdersTable)
+              ..addColumns([posOrdersTable.localId])
+              ..where(posOrdersTable.localId
+                  .isIn(candidates.map((d) => d.localId).toList())))
+            .get())
+        .map((r) => r.read(posOrdersTable.localId)!)
+        .toSet();
+
+    return candidates.where((d) => !carried.contains(d.localId)).toList();
+  }
+
+  /// Rebuilds the missing `pos_orders` carrier for a stranded checkout from the
+  /// document it left behind, so the ordinary BatchSync push banks the sale.
+  ///
+  /// Rebuilding was chosen over a new "ingest a finished offline sale" endpoint
+  /// precisely because it reuses the proven server path: stock movement, loyalty
+  /// and the Z-report all keep behaving exactly as they do for a normal sale
+  /// instead of being re-implemented (which is how totals drift).
+  ///
+  /// Fidelity notes, all deliberate:
+  ///  * `pos_order_items` that OUTLIVED their header (a DB tool with
+  ///    `foreign_keys` off leaves them behind) are kept as-is — they carry the
+  ///    per-tax amounts, the kitchen comment and the per-item warehouse, which
+  ///    the document lines do not.
+  ///  * Rebuilt from `document_items`, a multi-tax line collapses to the single
+  ///    `taxId` the document stored, carrying the whole `taxAmount`. The money
+  ///    is exact; only the per-tax attribution is approximate.
+  ///  * `tableId` is left null. Occupancy is derived from OPEN orders, and this
+  ///    one is closed — re-pointing it at a table would re-occupy it.
+  ///
+  /// ⚠️ If the original push actually reached the server and only its response
+  /// was lost, replaying creates a duplicate (with a fresh number — the server
+  /// renumbers on collision, backlog item 30). That trade is taken knowingly:
+  /// `Document` carries no client id, so same-sale and different-sale are
+  /// indistinguishable server-side, and a visible duplicate an operator can void
+  /// is recoverable where a lost sale is not.
+  Future<StrandedRepairOutcome> rebuildOrderForStrandedCheckout(
+    String documentLocalId,
+  ) {
+    return transaction(() async {
+      final doc = await (select(documentsTable)
+            ..where((t) => t.localId.equals(documentLocalId)))
+          .getSingleOrNull();
+      if (doc == null ||
+          doc.serverId != null ||
+          doc.syncStatus != 'pending' ||
+          doc.documentTypeId != DocumentTypes.sales) {
+        return StrandedRepairOutcome.skipped;
+      }
+
+      final carrier = await (select(posOrdersTable)
+            ..where((t) => t.localId.equals(documentLocalId)))
+          .getSingleOrNull();
+      if (carrier != null) return StrandedRepairOutcome.skipped;
+
+      final survivingItems = await (select(posOrderItemsTable)
+            ..where((t) => t.orderId.equals(documentLocalId)))
+          .get();
+      final docItems = await (select(documentItemsTable)
+            ..where((t) => t.documentId.equals(documentLocalId)))
+          .get();
+      // The payment is what the checkout actually took, and BatchSync banks the
+      // sale against it. Without one there is nothing to infer it from —
+      // guessing a payment type would mis-state the drawer and the Z-report, so
+      // such a document is surfaced for a human instead.
+      final payments = await (select(paymentsTable)
+            ..where((t) => t.documentId.equals(documentLocalId)))
+          .get();
+      if ((survivingItems.isEmpty && docItems.isEmpty) || payments.isEmpty) {
+        return StrandedRepairOutcome.unrecoverable;
+      }
+
+      await into(posOrdersTable).insert(
+        PosOrdersTableCompanion.insert(
+          localId: documentLocalId,
+          companyId: doc.companyId,
+          userId: doc.userId,
+          serviceType: doc.serviceType,
+          openedAt: doc.date,
+          warehouseId: doc.warehouseId,
+          lastModified: DateTime.now().toUtc(),
+          closedAt: Value(doc.date),
+          status: const Value(1), // completed sale, awaiting upload
+          total: Value(doc.total),
+          discount: Value(doc.discount),
+          discountType: Value(doc.discountType),
+          customerId: Value(doc.customerId),
+          orderName: Value(doc.orderNumber),
+          // Carried verbatim so the server keeps the number already printed on
+          // the customer's receipt (it only reissues on a real collision).
+          number: Value(doc.number),
+          paymentTypeId: Value(payments.first.paymentTypeId),
+          amountPaid:
+              Value(payments.fold<double>(0, (sum, p) => sum + p.amount)),
+          syncStatus: const Value('pending'),
+        ),
+      );
+
+      if (survivingItems.isEmpty) {
+        await batch((b) {
+          b.insertAll(
+            posOrderItemsTable,
+            docItems.map((di) => PosOrderItemsTableCompanion(
+                  // The SAME line id the document item carries: BatchSync echoes
+                  // each created DocumentItem's server id back keyed by it, so
+                  // the local document_items row still gets stamped.
+                  localId: Value(di.localId),
+                  orderId: Value(documentLocalId),
+                  productId: Value(di.productId),
+                  quantity: Value(di.quantity),
+                  unitPrice: Value(di.unitPrice),
+                  discount: Value(di.discount),
+                  discountType: Value(di.discountType),
+                  taxRate: Value(di.taxRate),
+                  taxesJson: Value(di.taxId == null
+                      ? null
+                      : jsonEncode([
+                          {'id': di.taxId, 'amount': di.taxAmount}
+                        ])),
+                  warehouseId: Value(doc.warehouseId),
+                  syncStatus: const Value('pending'),
+                )),
+          );
+        });
+      }
+
+      return StrandedRepairOutcome.rebuilt;
+    });
+  }
+
+  /// Parks an unrecoverable stranded checkout (and its payment) at `failed` so
+  /// Sync Status shows it as needing attention instead of counting it as
+  /// pending work that will never complete.
+  Future<void> markStrandedCheckoutFailed(String documentLocalId) {
+    return transaction(() async {
+      await (update(documentsTable)
+            ..where((t) => t.localId.equals(documentLocalId)))
+          .write(const DocumentsTableCompanion(syncStatus: Value('failed')));
+      await (update(paymentsTable)
+            ..where((t) => t.documentId.equals(documentLocalId))
+            ..where((t) => t.syncStatus.equals('pending')))
+          .write(const PaymentsTableCompanion(syncStatus: Value('failed')));
+    });
   }
 
   /// Upserts an open (status=0) order and replaces its items atomically.
@@ -4037,6 +4535,56 @@ class AppDatabase extends _$AppDatabase {
     return '$prefix-$docTypeCode-${seq.toString().padLeft(6, '0')}';
   }
 
+  /// Pushes the device-local counter PAST the highest number already issued
+  /// under this terminal's prefix, and reports how many numbers it skipped
+  /// (0 = already ahead, nothing written).
+  ///
+  /// 🚨 The counter lives in a device-local table the sync never touches, so it
+  /// ROLLS BACK with a restore while the cloud keeps every number the dead
+  /// terminal had already issued. The till then re-issues `POS1-200-000007` for
+  /// a completely different sale — which is how two unrelated sales end up
+  /// sharing a number and colliding on `UQ_Document_Number_PerCompany`.
+  ///
+  /// Run after every document pull, so both halves are covered: numbers the
+  /// cloud already holds, and (after a restore) numbers sitting in the restored
+  /// backup itself. The server-side renumber (backlog item 30) stays as the
+  /// safety net — this is the first line of defence.
+  Future<int> advanceLocalDocumentCounter({
+    required int companyId,
+    required String deviceName,
+    required String docTypeCode,
+  }) async {
+    final prefix = '${_sanitizeDevicePrefix(deviceName)}-$docTypeCode-';
+    final rows = await (select(documentsTable)
+          ..where((t) => t.companyId.equals(companyId))
+          ..where((t) => t.number.like('$prefix%')))
+        .get();
+
+    // Match the trailing digit run only — a hand-typed number sharing the
+    // prefix ("POS1-200-000007-2") must not be read as a sequence value.
+    final pattern = RegExp('^${RegExp.escape(prefix)}([0-9]+)\$');
+    var highest = 0;
+    for (final r in rows) {
+      final m = pattern.firstMatch(r.number ?? '');
+      final seq = m == null ? null : int.tryParse(m.group(1)!);
+      if (seq != null && seq > highest) highest = seq;
+    }
+    if (highest == 0) return 0;
+
+    final key = '$companyId:$docTypeCode';
+    return transaction(() async {
+      final row = await (select(localDocCountersTable)
+            ..where((t) => t.key.equals(key)))
+          .getSingleOrNull();
+      final current = row?.value ?? 0;
+      if (current >= highest) return 0;
+      await into(localDocCountersTable).insertOnConflictUpdate(
+        LocalDocCountersTableCompanion(key: Value(key), value: Value(highest)),
+      );
+      return highest - current;
+    });
+  }
+
   static String _sanitizeDevicePrefix(String name) {
     final cleaned = name.toUpperCase().replaceAll(RegExp('[^A-Z0-9]'), '');
     if (cleaned.isEmpty) return 'POS';
@@ -4654,6 +5202,34 @@ class PosOrderWithItems {
   const PosOrderWithItems({required this.order, required this.items});
 }
 
+/// Outcome of [AppDatabase.rebuildOrderForStrandedCheckout].
+enum StrandedRepairOutcome {
+  /// A carrier `pos_orders` row was rebuilt — the next BatchSync push banks it.
+  rebuilt,
+
+  /// Nothing to do: the document already has a carrier, or is no longer
+  /// stranded (adopted / synced in the meantime). Idempotency case.
+  skipped,
+
+  /// Cannot be replayed: the lines and/or the payment are gone too, so there is
+  /// no faithful sale left to send. Parked at `failed` for manual review rather
+  /// than counted as pending forever.
+  unrecoverable,
+}
+
+/// Thrown when the app is about to delete a `pos_orders` row that is still the
+/// only carrier for an unbanked checkout — see
+/// [AppDatabase.rebuildOrderForStrandedCheckout] for why that strands the sale.
+class UnbankedCheckoutException implements Exception {
+  const UnbankedCheckoutException(this.orderLocalId);
+  final String orderLocalId;
+
+  @override
+  String toString() =>
+      'This sale has not reached the cloud yet, so its order row cannot be '
+      'removed ($orderLocalId). Sync first, then try again.';
+}
+
 // ============================================================================
 // PHASE 7 — CASH MOVEMENT + Z-REPORT OFFLINE QUEUE HELPERS
 // Mounted as a Dart extension so the AppDatabase class stays readable. All
@@ -4995,8 +5571,37 @@ extension OfflineQueueHelpers on AppDatabase {
 
   Future<List<ShiftsTableData>> getPendingShifts() {
     return (select(shiftsTable)
-          ..where((t) => t.syncStatus.equals('pending')))
+          ..where((t) => t.syncStatus.equals('pending'))
+          // Attendance shifts only. POS sessions live in this table too but
+          // push through `pushPendingSessions` on their own endpoint — sending
+          // one to /Shifts/BatchSync would create a device-less shift with no
+          // session semantics at all.
+          ..where((t) => t.posDeviceUid.isNull()))
         .get();
+  }
+
+  /// POS sessions waiting to reach the server.
+  ///
+  /// Selected on `pending_create` — the GENERIC-pusher family. Sessions are
+  /// created by a direct POST, not as a side effect of BatchSync, so writing
+  /// them as plain `'pending'` would put them in the checkout-artifact family
+  /// and they would never be pushed at all (see `lib/sync/sync_status.dart`).
+  Future<List<ShiftsTableData>> getPendingSessions() {
+    return (select(shiftsTable)
+          ..where((t) => t.posDeviceUid.isNotNull())
+          ..where((t) => t.syncStatus.equals('pending_create')))
+        .get();
+  }
+
+  /// Stamps the server id on a session and marks it synced. The session's
+  /// `localId` is NOT touched — every order, payment and cash movement points
+  /// at it, and rewriting those links is exactly what this design avoids.
+  Future<void> markSessionSynced(String localId, int serverId) {
+    return (update(shiftsTable)..where((t) => t.localId.equals(localId)))
+        .write(ShiftsTableCompanion(
+      serverId: Value(serverId),
+      syncStatus: const Value('synced'),
+    ));
   }
 
   Future<ShiftsTableData?> getActiveShift(int companyId) {
@@ -5104,6 +5709,13 @@ LazyDatabase _openConnection() {
     // The sqlite3 native-assets hook (see pubspec `hooks.user_defines`) bundles
     // a prebuilt SQLCipher library and resolves it for us — no manual library
     // loading / Android workaround needed.
+    // ⚠️ FIRST, before anything opens the file: swap in a database the operator
+    // staged for restore. Drift holds the live file open for the whole session
+    // and Windows will not let an open file be replaced, so a restore can only
+    // ever happen here — in the gap between process start and the first open.
+    // A no-op when nothing is staged, which is every normal boot.
+    await RestoreService.applyStagedRestore();
+
     final dir = await getApplicationDocumentsDirectory();
     final file = File(p.join(dir.path, 'pos_app.sqlite'));
 

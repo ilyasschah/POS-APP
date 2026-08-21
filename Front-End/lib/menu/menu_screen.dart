@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:pos_app/barcode/scan_bus.dart';
+import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
@@ -6,11 +8,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import 'package:pos_app/core/dropdown_options.dart';
 import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/menu/open_orders_screen.dart';
 import 'package:pos_app/navigation/main_layout.dart';
 import 'package:pos_app/product/product_provider.dart';
 import 'package:pos_app/product/product_model.dart';
+import 'package:pos_app/session/session_gate.dart';
+import 'package:pos_app/product/product_search.dart';
+import 'package:pos_app/product/product_search_bar.dart';
+import 'package:pos_app/barcode/barcode_provider.dart';
 import 'package:pos_app/cart/cart_provider.dart';
 import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/customer/customer_picker_dialog.dart';
@@ -49,7 +56,11 @@ import 'package:pos_app/security/security_guard.dart';
 import 'package:pos_app/security/security_keys.dart';
 import 'package:pos_app/utils/error_handler.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
-import 'package:pos_app/utils/scale_barcode_parser.dart';
+import 'package:pos_app/barcode/nomenclature/barcode_matcher.dart';
+import 'package:pos_app/barcode/nomenclature/barcode_rule.dart';
+import 'package:pos_app/barcode/nomenclature/barcode_rules_provider.dart';
+import 'package:pos_app/menu/weigh_item_dialog.dart';
+import 'package:pos_app/uom/unit_of_measure.dart';
 import 'package:pos_app/customer_display/customer_display_provider.dart';
 import 'package:pos_app/stock/stock_provider.dart';
 import 'package:pos_app/stock/stock_control_provider.dart';
@@ -77,6 +88,70 @@ class MenuScreen extends ConsumerStatefulWidget {
 
 class _MenuScreenState extends ConsumerState<MenuScreen> {
   List<PromotionDto> _activePromos = const [];
+
+  /// Leaves the POS via a header button, dealing with the open order first,
+  /// then navigating to [initialIndex] in [MainLayout].
+  ///
+  /// Shared by the Tables and Bookings buttons because they must treat the
+  /// cart the same way, and did not: Tables parked the order while Bookings
+  /// called `clearCart()` outright, throwing away whatever was rung up. An
+  /// order left behind is recoverable; a discarded one is not.
+  ///
+  /// Two cases:
+  ///  • **Empty cart with an active order** — the order exists but holds
+  ///    nothing, so it is deleted rather than parked as an empty shell.
+  ///  • **Cart with items** — parked via `saveAndSuspend`, which upserts the
+  ///    row this cart is already backed by. A save failure ABORTS the
+  ///    navigation, so the operator sees the error while still on the order
+  ///    instead of arriving at the floor plan having quietly lost it.
+  Future<void> _leavePosFor(int initialIndex) async {
+    final cart = ref.read(cartProvider);
+    final companyId = ref.read(selectedCompanyProvider)?.id;
+
+    if (cart.items.isEmpty) {
+      if (cart.activePosOrderId != null && companyId != null) {
+        try {
+          await ApiClient().deletePosOrder(
+            companyId,
+            cart.activePosOrderId!,
+            cart.activeWarehouseId ??
+                ref.read(selectedWarehouseProvider)?.id ??
+                1,
+          );
+          ref.read(kitchenSyncProvider).push();
+        } catch (_) {}
+      }
+      ref.read(cartProvider.notifier).clearCart();
+    } else if (companyId != null) {
+      final user = ref.read(currentUserProvider);
+      try {
+        await ref.read(cartProvider.notifier).saveAndSuspend(
+              companyId: companyId,
+              userId: user?.id ?? 0,
+            );
+      } catch (e) {
+        if (mounted) {
+          showAppSnackbar(
+            context,
+            ref,
+            AppLocalizations.of(context).couldNotSaveOrder('$e'),
+            isError: true,
+          );
+        }
+        return;
+      }
+    }
+
+    if (mounted) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (_) => MainLayout(initialIndex: initialIndex),
+        ),
+        (route) => false,
+      );
+    }
+  }
 
   /// Prints the **Addition** — the pre-bill the customer settles against.
   ///
@@ -733,12 +808,31 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                                 );
                                 return;
                               }
-                              final newQty = await showQuantityKeypad(
-                                context,
-                                itemName: item.productName,
-                                initialQuantity: item.quantity,
-                                unit: item.measurementUnit,
-                              );
+                              // Odoo's "the Price button updates the quantity"
+                              // note maps onto THIS button: it is the affordance
+                              // that changes a weighed line's amount. A weighed
+                              // line goes back through the scale dialog so the
+                              // cashier can simply re-weigh; everything else
+                              // keeps the plain keypad.
+                              final unit = uomById(item.uomId);
+                              final double? newQty;
+                              if (item.isToWeigh) {
+                                newQty = await showWeighItemDialog(
+                                  context,
+                                  ref,
+                                  itemName: item.productName,
+                                  uomId: item.uomId,
+                                  unitPrice: item.price,
+                                  currencySymbol: ref.read(currencySymbolProvider),
+                                );
+                              } else {
+                                newQty = await showQuantityKeypad(
+                                  context,
+                                  itemName: item.productName,
+                                  initialQuantity: item.quantity,
+                                  unit: unit.code,
+                                );
+                              }
                               if (newQty == null || !context.mounted) return;
                               if (newQty < 0) {
                                 showAppSnackbar(
@@ -749,6 +843,11 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                                 );
                                 return;
                               }
+                              // Taken exactly as typed. Snapping to the unit's
+                              // rounding here turned a deliberate 0.5 on a pcs
+                              // line into 1 — the app silently overruling the
+                              // cashier. Float noise is dealt with at the
+                              // storage boundary instead.
                               ref
                                   .read(cartProvider.notifier)
                                   .updateItemQuantity(item.cartItemId, newQty);
@@ -1047,75 +1146,17 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
             _MenuHeaderActionBtn(
               icon: Icons.calendar_month,
               label: AppLocalizations.of(context).posBookings,
-              onTap: () {
-                ref.read(cartProvider.notifier).clearCart();
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const MainLayout(initialIndex: 2),
-                  ), // Index 2 is Bookings
-                  (route) => false,
-                );
-              },
+              // Index 2 is Bookings. Parks the order on the way out, same as
+              // Tables — it used to `clearCart()` outright, silently binning
+              // whatever the operator had rung up.
+              onTap: () => _leavePosFor(2),
             ),
           if (floorPlanEnabled && showTablesBtn)
             _MenuHeaderActionBtn(
               icon: Icons.grid_view,
               label: settings[SettingKeys.tablesButtonLabel] ??
                   AppLocalizations.of(context).tablesLabel,
-              onTap: () async {
-                final cart = ref.read(cartProvider);
-                final companyId = ref.read(selectedCompanyProvider)?.id;
-
-                if (cart.items.isEmpty) {
-                  if (cart.activePosOrderId != null && companyId != null) {
-                    try {
-                      await ApiClient().deletePosOrder(
-                        companyId,
-                        cart.activePosOrderId!,
-                        cart.activeWarehouseId ??
-                            ref.read(selectedWarehouseProvider)?.id ??
-                            1,
-                      );
-                      ref.read(kitchenSyncProvider).push();
-                    } catch (_) {}
-                  }
-                  ref.read(cartProvider.notifier).clearCart();
-                } else {
-                  if (companyId != null) {
-                    final user = ref.read(currentUserProvider);
-                    try {
-                      await ref
-                          .read(cartProvider.notifier)
-                          .saveAndSuspend(
-                            apiClient: ApiClient(),
-                            companyId: companyId,
-                            userId: user?.id ?? 0,
-                          );
-                    } catch (e) {
-                      if (context.mounted) {
-                        showAppSnackbar(
-                          context,
-                          ref,
-                          AppLocalizations.of(context).couldNotSaveOrder('$e'),
-                          isError: true,
-                        );
-                      }
-                      return;
-                    }
-                  }
-                }
-
-                if (context.mounted) {
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const MainLayout(initialIndex: 4),
-                    ),
-                    (route) => false,
-                  );
-                }
-              },
+              onTap: () => _leavePosFor(4), // Index 4 is the floor plan
             ),
 
           // Promotion — special override action, pinned to the far right. Amber
@@ -1225,6 +1266,11 @@ class BrowserSection extends ConsumerStatefulWidget {
 class _BrowserSectionState extends ConsumerState<BrowserSection> {
   // Current page in the paged Grid layout (ignored in the scrollable List one).
   int _currentPage = 0;
+  /// Scans that did not arrive through the search field: the global keyboard
+  /// listener, and the debug panel's simulator. Both are routed into
+  /// [_handleBarcodeSubmit] — the same method the search field calls — so
+  /// there is exactly one decode path to reason about.
+  StreamSubscription<Scan>? _scanSub;
   List<PromotionDto> _activePromos = const [];
   Map<int, double> _stockMap = const {};
   Map<int, StockControl> _stockControlMap = const {};
@@ -1235,7 +1281,26 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
   final ScrollController _gridScrollController = ScrollController();
 
   @override
+  void initState() {
+    super.initState();
+    _scanSub = ref.read(scanBusProvider).stream.listen((scan) {
+      // 🚨 A HARDWARE scan only acts while the POS tab is the one on screen.
+      // This screen stays mounted behind Documents, Settings and the rest
+      // (LazyIndexedStack keeps it alive), so without this a barcode read while
+      // someone browsed reports would quietly add a line to a cart nobody is
+      // looking at. A SIMULATED scan is someone deliberately testing from the
+      // debug panel and is always delivered.
+      if (scan.source == ScanSource.hardware &&
+          ref.read(mainNavigationIndexProvider) != 0) {
+        return;
+      }
+      _handleBarcodeSubmit(scan.code);
+    });
+  }
+
+  @override
   void dispose() {
+    _scanSub?.cancel();
     _searchCtrl.dispose();
     _gridScrollController.dispose();
     super.dispose();
@@ -1254,82 +1319,99 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
   }
 
   /// Called when the search field is submitted (e.g. barcode scanner sends Enter).
-  /// Tries scale-barcode parsing first; falls back to exact barcode lookup.
-  /// On a match the item is added to the cart and the search field is cleared.
+  ///
+  /// The scan is read through the company's barcode nomenclature: the first rule
+  /// whose pattern matches decides whether the code is a plain product, a
+  /// weighed one, one carrying a price, or one carrying a discount. On a match
+  /// the item is added to the cart and the search field is cleared.
   Future<void> _handleBarcodeSubmit(String input) async {
     final trimmed = input.trim();
     if (trimmed.isEmpty) return;
 
     final settings = ref.read(appSettingsProvider);
     final allProducts = ref.read(allProductsListProvider).value ?? [];
+    // Both barcode stores — the `products.barcode` column AND the `barcodes`
+    // table the product editor's Barcodes tab writes to. Without the second one
+    // a barcode an admin deliberately added was findable in the Products screen
+    // yet did nothing when scanned at the till (backlog item 34).
+    final extraBarcodes =
+        ref.read(allBarcodesByProductIdProvider).value ?? const {};
+    final sellable = allProducts.where((p) => p.isEnabled);
 
-    final scaleData = parseScaleBarcode(trimmed, settings);
+    final scan = matchBarcode(trimmed, readBarcodeRules(ref));
 
     Product? match;
     double quantity;
+    double? discountPercent;
 
-    if (scaleData != null) {
-      // Scale barcode path: look up by product code or barcode field
-      match = allProducts.where((p) {
-        if (!p.isEnabled) return false;
-        final code = scaleData.productCode.toLowerCase();
-        return (p.code?.toLowerCase() == code) ||
-            p.barcodes.any((b) => b.toLowerCase() == code);
-      }).firstOrNull;
+    // The key excludes any embedded value, so every weight of one product
+    // resolves to the same lookup. Code is tried first, then barcodes —
+    // deterministic where a single pass would take whichever Drift returned
+    // first when both kinds of match existed.
+    final key = scan?.productKey ?? trimmed;
+    match = sellable
+            .where((p) => p.code?.toLowerCase() == key.toLowerCase())
+            .firstOrNull ??
+        findProductByBarcode(sellable, key, extraBarcodes: extraBarcodes);
 
-      if (match == null) {
-        if (mounted) {
-          showAppSnackbar(
-            context,
-            ref,
-            AppLocalizations.of(context)
-                .scaleBarcodeProductNotFound(scaleData.productCode),
-            isError: true,
-          );
-        }
-        return;
+    if (match == null) {
+      // A rule claimed the barcode but no product carries that key — worth
+      // saying so, because the usual cause is a product whose stored barcode
+      // does not have the embedded positions zeroed. A plain unmatched scan
+      // stays silent and leaves the text for the cashier to search with.
+      if (scan != null && scan.rule.type != BarcodeRuleType.unit && mounted) {
+        showAppSnackbar(
+          context,
+          ref,
+          AppLocalizations.of(context).scaleBarcodeProductNotFound(key),
+          isError: true,
+        );
       }
+      return;
+    }
 
-      if (scaleData.isPrice) {
+    switch (scan?.rule.type) {
+      case BarcodeRuleType.weighted:
+        quantity = scan!.value;
+
+      case BarcodeRuleType.priced:
+        // The label carries a line TOTAL, so the quantity is whatever that
+        // total buys at the product's unit price.
         final unitPrice = match.price;
         if (unitPrice <= 0) {
           if (mounted) {
-            showAppSnackbar(
-              context,
-              ref,
-              AppLocalizations.of(context).cannotCalcQuantity,
-              isError: true,
-            );
+            showAppSnackbar(context, ref,
+                AppLocalizations.of(context).cannotCalcQuantity,
+                isError: true);
           }
           return;
         }
-        quantity = scaleData.parsedValue / unitPrice;
-      } else {
-        quantity = scaleData.parsedValue;
-      }
+        quantity = scan!.value / unitPrice;
 
-      if (quantity <= 0) {
-        if (mounted) {
-          showAppSnackbar(
-            context,
-            ref,
-            AppLocalizations.of(context).parsedQuantityZero,
-            isError: true,
-          );
-        }
-        return;
+      case BarcodeRuleType.discounted:
+        // The value is a percentage off this line, not a quantity.
+        quantity = 1.0;
+        discountPercent = scan!.value;
+
+      case BarcodeRuleType.unit:
+      case null:
+        quantity = 1.0;
+    }
+
+    // A priced label dividing into an unrepresentable fraction (12.50 / 3.00)
+    // genuinely produces 4.166666…, which must not reach a decimal(18,4)
+    // column as one figure and the receipt as another. Snapped at the storage
+    // precision, NOT the unit's rounding — the latter would quantise a real
+    // 0.5 on a pcs product up to 1.
+    quantity = snapToStorage(quantity);
+
+    if (quantity <= 0) {
+      if (mounted) {
+        showAppSnackbar(
+            context, ref, AppLocalizations.of(context).parsedQuantityZero,
+            isError: true);
       }
-    } else {
-      // Standard barcode path: exact match only; non-match leaves search text intact
-      match = allProducts
-          .where(
-            (p) =>
-                p.isEnabled &&
-                p.barcodes.any((b) => b.toLowerCase() == trimmed.toLowerCase()),
-          )
-          .firstOrNull;
-      if (match == null) return;
-      quantity = 1.0;
+      return;
     }
 
     // Ensure an active order exists (same logic as product-card tap)
@@ -1413,6 +1495,8 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
         isPriceChangeAllowed: match.isPriceChangeAllowed,
         isUsingDefaultQuantity: match.isUsingDefaultQuantity,
         measurementUnit: match.measurementUnit,
+        uomId: match.uomId,
+        isToWeigh: match.isToWeigh,
         isService: match.isService,
       );
       ref
@@ -1422,6 +1506,35 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
             quantity: quantity,
             measurementUnit: match.measurementUnit,
           );
+
+      // A discount barcode carries a percentage for the line it was scanned
+      // onto, so it is applied after the item exists rather than baked into
+      // addItem — which has no notion of a scanned discount.
+      //
+      // setItemDiscount stores an ABSOLUTE per-unit amount (discountType 1);
+      // inputValue/inputType keep the percentage the label actually carried, so
+      // reopening the discount dialog shows "20%" rather than the money it
+      // worked out to.
+      if (discountPercent != null && discountPercent > 0) {
+        // The LAST matching line: with `Order.SeparateRowForEachItem` on, the
+        // scan just appended a new row, and the discount belongs to that one
+        // rather than to an identical product added earlier.
+        final lines = ref
+            .read(cartProvider)
+            .items
+            .where((i) => i.productId == match!.id);
+        final line = lines.isEmpty ? null : lines.last;
+        if (line != null) {
+          ref.read(cartProvider.notifier).setItemDiscount(
+                line.cartItemId,
+                match.price * (discountPercent / 100),
+                1,
+                inputValue: discountPercent,
+                inputType: 0,
+              );
+        }
+      }
+
       _searchCtrl.clear();
       ref.read(searchQueryProvider.notifier).state = '';
     } catch (e) {
@@ -1668,12 +1781,28 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
     final searchQuery = ref.watch(searchQueryProvider);
     final selectedCompany = ref.watch(selectedCompanyProvider);
     final settings = ref.watch(appSettingsProvider);
+    // Secondary barcodes (the `barcodes` table). Watched so a barcode added on
+    // another terminal shows up here after the next sync without a reopen.
+    final extraBarcodes =
+        ref.watch(allBarcodesByProductIdProvider).value ?? const {};
 
     if (selectedCompany == null) {
       return Center(
         child: Text(AppLocalizations.of(context).noCompanySelected),
       );
     }
+
+    // 🚨 No session, no selling. Rendered as an ACTIONABLE screen with an
+    // "Open Register" button rather than an empty grid or an error — a cashier
+    // who cannot sell must be shown the one thing that fixes it, not left
+    // guessing. `sessionGateProvider` fails OPEN when it cannot determine the
+    // state, so a transient fault never lands here.
+    final gate = ref.watch(sessionGateProvider);
+    if (gate == SessionGate.blockedNoSession ||
+        gate == SessionGate.blockedNotTrading) {
+      return SessionBlockedScreen(gate: gate);
+    }
+
     if (asyncGroups.isLoading || asyncProducts.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -1694,23 +1823,19 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
 
     final sortBy = settings[SettingKeys.productSorting] ?? 'Name';
     if (isSearching) {
-      final List<Product> filtered = allProducts.where((p) {
-        if (!p.isEnabled) return false;
-        final query = searchQuery.toLowerCase();
-        switch (effectiveMode) {
-          case 'Code':
-            return p.code?.toLowerCase().contains(query) ?? false;
-          case 'Barcode':
-            return p.barcodes.any((b) => b.toLowerCase().contains(query));
-          case 'All fields':
-            return p.name.toLowerCase().contains(query) ||
-                (p.code?.toLowerCase().contains(query) ?? false) ||
-                p.barcodes.any((b) => b.toLowerCase().contains(query));
-          case 'Name':
-          default:
-            return p.name.toLowerCase().contains(query);
-        }
-      }).toList();
+      // `isEnabled` stays HERE, not in productMatchesSearch: the till must never
+      // offer a disabled product, while the Products management screen must be
+      // able to find one. See the predicate's doc comment.
+      final List<Product> filtered = allProducts
+          .where((p) =>
+              p.isEnabled &&
+              productMatchesSearch(
+                p,
+                searchQuery,
+                effectiveMode,
+                extraBarcodes: extraBarcodes[p.id] ?? const [],
+              ))
+          .toList();
       _sortProducts(filtered, sortBy);
       itemsToDisplay = filtered;
     } else {
@@ -1753,101 +1878,18 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
     return Column(
       children: [
         // ── Search bar ──────────────────────────────────────────────────────
+        // Shared with the Products management screen — see ProductSearchBar.
         if (showSearchBtn)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _searchCtrl,
-                    textInputAction: TextInputAction.search,
-                    decoration: InputDecoration(
-                      hintText: AppLocalizations.of(context).searchProductsHint,
-                      prefixIcon: const PhosphorIcon(
-                        PhosphorIconsRegular.magnifyingGlass,
-                        size: 20,
-                      ),
-                      fillColor: cs.surfaceContainer,
-                      filled: true,
-                      suffixIcon: searchQuery.isNotEmpty
-                          ? IconButton(
-                              icon: const PhosphorIcon(
-                                PhosphorIconsRegular.x,
-                                size: 18,
-                              ),
-                              onPressed: () {
-                                _searchCtrl.clear();
-                                ref.read(searchQueryProvider.notifier).state =
-                                    '';
-                              },
-                            )
-                          : null,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        vertical: 14,
-                        horizontal: 16,
-                      ),
-                    ),
-                    onChanged: (v) =>
-                        ref.read(searchQueryProvider.notifier).state = v,
-                    onSubmitted: _handleBarcodeSubmit,
-                  ),
-                ),
-                if (showSearchOptions) ...[
-                  const SizedBox(width: 8),
-                  Container(
-                    height: 50,
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    decoration: BoxDecoration(
-                      color: cs.surfaceContainer,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        for (final (mode, icon) in <(String, IconData)>[
-                          ('All fields', PhosphorIconsRegular.asterisk),
-                          ('Barcode', PhosphorIconsRegular.barcode),
-                          ('Code', PhosphorIconsRegular.hash),
-                          ('Name', PhosphorIconsRegular.tag),
-                        ])
-                          Tooltip(
-                            message: mode,
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(8),
-                              onTap: () =>
-                                  setState(() => _activeSearchMode = mode),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: effectiveMode == mode
-                                      ? cs.primary.withValues(alpha: 0.15)
-                                      : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: PhosphorIcon(
-                                  icon,
-                                  size: 20,
-                                  color: effectiveMode == mode
-                                      ? cs.primary
-                                      : cs.onSurfaceVariant,
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ],
-            ),
+          ProductSearchBar(
+            controller: _searchCtrl,
+            query: searchQuery,
+            scope: effectiveMode,
+            hintText: AppLocalizations.of(context).searchProductsHint,
+            showScopeButtons: showSearchOptions,
+            onQueryChanged: (v) =>
+                ref.read(searchQueryProvider.notifier).state = v,
+            onScopeChanged: (mode) => setState(() => _activeSearchMode = mode),
+            onSubmitted: _handleBarcodeSubmit,
           ),
 
         // ── Breadcrumb ──────────────────────────────────────────────────────
@@ -2146,7 +2188,23 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
         }
 
         double quantity = 1.0;
-        if (!product.isUsingDefaultQuantity) {
+        if (product.isToWeigh && !product.isService) {
+          // Odoo's flow: a weighed product asks for its quantity up front —
+          // from the scale when one is configured, from the keypad otherwise.
+          // Checked before isUsingDefaultQuantity so a product carrying both
+          // settings does not ask twice.
+          if (!context.mounted) return;
+          final weighed = await showWeighItemDialog(
+            context,
+            ref,
+            itemName: product.name,
+            uomId: product.uomId,
+            unitPrice: product.price,
+            currencySymbol: sym,
+          );
+          if (weighed == null) return;
+          quantity = weighed;
+        } else if (!product.isUsingDefaultQuantity) {
           if (!context.mounted) return;
           final qty = await _showQuantityInputDialog(
             context,
@@ -2239,6 +2297,8 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
             isPriceChangeAllowed: product.isPriceChangeAllowed,
             isUsingDefaultQuantity: product.isUsingDefaultQuantity,
             measurementUnit: product.measurementUnit,
+            uomId: product.uomId,
+            isToWeigh: product.isToWeigh,
             isService: product.isService,
           );
           ref
@@ -2686,12 +2746,11 @@ class _CartSectionState extends ConsumerState<CartSection> {
       } else {
         // Local-only order (never pushed to server) — just delete the row.
         if (existLocalId != null) {
-          await (db.delete(
-            db.posOrdersTable,
-          )..where((t) => t.localId.equals(existLocalId))).go();
-          // Remove its discount_lines too (they link by local id with no FK
-          // cascade) so a voided order leaves no discount records behind.
-          await db.purgeDiscountLinesFor(existLocalId);
+          // Guarded: refuses (and surfaces an error) if this row is still the
+          // only carrier for an unbanked checkout, which deleting would strand
+          // permanently. Also purges the order's discount_lines, which link by
+          // local id with no FK cascade.
+          await db.deleteLocalOrder(existLocalId);
           // Restore local stock.
           await db.deductStockForCheckout(
             items: cartItems
@@ -2779,24 +2838,16 @@ class _CartSectionState extends ConsumerState<CartSection> {
     );
   }
 
-  // Gross line total for a cart item: net amount after discounts + item-level tax
-  double _grossLineTotal(CartItem item) {
-    final net =
-        (item.price - item.discount - item.promotionalDiscount) * item.quantity;
-    return item.appliedTaxes.fold(net, (sum, t) {
-      if (t.isFixed) return sum + t.rate * item.quantity;
-      return sum + net * (t.rate / 100);
-    });
-  }
+  // Gross line figures now come from the cart notifier — these used to add tax
+  // on top of `item.price` unconditionally, which double-taxed every
+  // tax-INCLUSIVE product on the POS line rows (a 90 MAD product showed 108).
+  // The notifier divides the tax back out of an inclusive price first.
+  double _grossLineTotal(CartItem item) =>
+      ref.read(cartProvider.notifier).grossLineTotal(item);
 
   // Full-price gross for the strikethrough label (before item discounts + tax)
-  double _grossLineFullPrice(CartItem item) {
-    final net = item.price * item.quantity;
-    return item.appliedTaxes.fold(net, (sum, t) {
-      if (t.isFixed) return sum + t.rate * item.quantity;
-      return sum + net * (t.rate / 100);
-    });
-  }
+  double _grossLineFullPrice(CartItem item) =>
+      ref.read(cartProvider.notifier).grossLineFullPrice(item);
 
   @override
   Widget build(BuildContext context) {
@@ -3166,9 +3217,11 @@ class _CartSectionState extends ConsumerState<CartSection> {
                                 InkWell(
                                   onTap: () {
                                     final controller = TextEditingController(
-                                      text: item.quantity % 1 == 0
-                                          ? item.quantity.toInt().toString()
-                                          : item.quantity.toStringAsFixed(2),
+                                      // Seeded at full precision: whatever sits
+                                      // here is what gets parsed back on Set,
+                                      // so a rounded seed rewrites the line.
+                                      text: formatQuantityValue(
+                                          item.quantity, item.uomId),
                                     );
                                     showDialog(
                                       context: context,
@@ -3183,7 +3236,8 @@ class _CartSectionState extends ConsumerState<CartSection> {
                                           autofocus: true,
                                           decoration: InputDecoration(
                                             labelText: AppLocalizations.of(context).fieldQuantity,
-                                            suffixText: item.measurementUnit,
+                                            suffixText: item.measurementUnit ??
+                                                uomById(item.uomId).code,
                                           ),
                                         ),
                                         actions: [
@@ -3735,13 +3789,21 @@ Widget _totalsRow(
 
 // --- Quantity display helper
 String _formatCartQty(CartItem item) {
-  final qty = item.quantity % 1 == 0
-      ? item.quantity.toInt().toString()
-      : item.quantity.toStringAsFixed(2);
-  if (item.measurementUnit != null && item.measurementUnit!.isNotEmpty) {
-    return '$qty ${item.measurementUnit}';
-  }
-  return 'x$qty';
+  // At the line's own unit precision: a weighed line reads `0.500 kg`, not the
+  // old fixed 2-decimal `0.5` — and never `0.13` for a real 0.125 kg.
+  final unit = uomById(item.uomId);
+  final qty = formatQuantityValue(item.quantity, item.uomId);
+
+  // The legacy free-text unit is preferred for display when it disagrees with
+  // the catalog code, so a line parked before the UoM catalog existed still
+  // shows whatever it was sold as.
+  final label = (item.measurementUnit?.isNotEmpty ?? false)
+      ? item.measurementUnit!
+      : unit.code;
+
+  return item.uomId == kUomPieces && (item.measurementUnit?.isEmpty ?? true)
+      ? 'x$qty'
+      : '$qty $label';
 }
 
 // --- Dialog helpers
@@ -3993,14 +4055,44 @@ class _ItemTaxDialogState extends ConsumerState<_ItemTaxDialog> {
     final cs = theme.colorScheme;
     final allTaxesAsync = ref.watch(allTaxesProvider);
 
+    // With General.TaxIncludedByDefault on, tax is an admin decision made in
+    // the product editor / Settings — not something the cashier renegotiates
+    // per line. The dialog still OPENS (so the operator can see exactly what
+    // is being charged and why the blue TAX badge is there); it just can't be
+    // edited. One rule for every line, whether the tax came from the product's
+    // own assignment or from the configured default, so two lines side by side
+    // never behave differently.
+    final locked =
+        ref
+            .watch(appSettingsProvider)[SettingKeys.taxIncludedByDefault]
+            ?.toLowerCase() ==
+        'true';
+
     return AlertDialog(
       backgroundColor: theme.cardColor,
       titlePadding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
-      title: Text(
-        AppLocalizations.of(context).taxesForProduct(widget.item.productName),
-        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
+      title: Row(
+        children: [
+          Expanded(
+            child: Text(
+              AppLocalizations.of(
+                context,
+              ).taxesForProduct(widget.item.productName),
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          if (locked)
+            Tooltip(
+              message: AppLocalizations.of(context).taxLockedBySetting,
+              child: Icon(
+                Icons.lock_outline,
+                size: 16,
+                color: cs.onSurface.withValues(alpha: 0.5),
+              ),
+            ),
+        ],
       ),
       contentPadding: const EdgeInsets.fromLTRB(4, 4, 4, 0),
       content: SizedBox(
@@ -4023,67 +4115,121 @@ class _ItemTaxDialogState extends ConsumerState<_ItemTaxDialog> {
             }
             return ConstrainedBox(
               constraints: const BoxConstraints(maxHeight: 320),
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: taxes.length,
-                itemBuilder: (ctx, i) {
-                  final tax = taxes[i];
-                  final isSelected = _selectedTaxes.any((t) => t.id == tax.id);
-
-                  return CheckboxListTile(
-                    dense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                    controlAffinity: ListTileControlAffinity.leading,
-                    activeColor: cs.primary,
-                    title: Text(tax.name, style: const TextStyle(fontSize: 13)),
-                    subtitle: Text(
-                      "${tax.rate}${tax.isFixed ? '' : '%'}",
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: cs.onSurface.withValues(alpha: 0.6),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (locked)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                      child: Text(
+                        AppLocalizations.of(context).taxLockedBySetting,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontStyle: FontStyle.italic,
+                          color: cs.onSurface.withValues(alpha: 0.6),
+                        ),
                       ),
                     ),
-                    value: isSelected,
-                    onChanged: (val) {
-                      setState(() {
-                        if (val == true) {
-                          _selectedTaxes.add(
-                            MenuTax(
-                              id: tax.id,
-                              name: tax.name,
-                              rate: tax.rate,
-                              isFixed: tax.isFixed,
-                              isTaxOnTotal: tax.isTaxOnTotal,
+                  Flexible(
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: taxes.length,
+                      itemBuilder: (ctx, i) {
+                        final tax = taxes[i];
+                        final isSelected = _selectedTaxes.any(
+                          (t) => t.id == tax.id,
+                        );
+
+                        return CheckboxListTile(
+                          dense: true,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                          ),
+                          controlAffinity: ListTileControlAffinity.leading,
+                          activeColor: cs.primary,
+                          title: Text(
+                            tax.name,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: cs.onSurface.withValues(
+                                alpha: locked && !isSelected ? 0.5 : 1,
+                              ),
                             ),
-                          );
-                        } else {
-                          _selectedTaxes.removeWhere((t) => t.id == tax.id);
-                        }
-                      });
-                    },
-                  );
-                },
+                          ),
+                          subtitle: Text(
+                            "${tax.rate}${tax.isFixed ? '' : '%'}",
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: cs.onSurface.withValues(alpha: 0.6),
+                            ),
+                          ),
+                          secondary: locked && isSelected
+                              ? Icon(
+                                  Icons.lock_outline,
+                                  size: 15,
+                                  color: cs.onSurface.withValues(alpha: 0.5),
+                                )
+                              : null,
+                          value: isSelected,
+                          // A null callback is what makes Checkbox render its
+                          // disabled state — nothing to check, nothing to
+                          // uncheck.
+                          onChanged: locked
+                              ? null
+                              : (val) {
+                                  setState(() {
+                                    if (val == true) {
+                                      _selectedTaxes.add(
+                                        MenuTax(
+                                          id: tax.id,
+                                          name: tax.name,
+                                          rate: tax.rate,
+                                          isFixed: tax.isFixed,
+                                          isTaxOnTotal: tax.isTaxOnTotal,
+                                        ),
+                                      );
+                                    } else {
+                                      _selectedTaxes.removeWhere(
+                                        (t) => t.id == tax.id,
+                                      );
+                                    }
+                                  });
+                                },
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
             );
           },
         ),
       ),
       actionsPadding: const EdgeInsets.fromLTRB(8, 0, 12, 8),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(AppLocalizations.of(context).actionCancel),
-        ),
-        FilledButton(
-          onPressed: () {
-            ref
-                .read(cartProvider.notifier)
-                .updateItemTaxes(widget.item.cartItemId, _selectedTaxes);
-            Navigator.pop(context);
-          },
-          child: Text(AppLocalizations.of(context).actionApply),
-        ),
-      ],
+      actions: locked
+          // Read-only: a single dismiss. No Apply button at all, so there is no
+          // path that could write a tax change from the till.
+          ? [
+              FilledButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(AppLocalizations.of(context).actionClose),
+              ),
+            ]
+          : [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(AppLocalizations.of(context).actionCancel),
+              ),
+              FilledButton(
+                onPressed: () {
+                  ref
+                      .read(cartProvider.notifier)
+                      .updateItemTaxes(widget.item.cartItemId, _selectedTaxes);
+                  Navigator.pop(context);
+                },
+                child: Text(AppLocalizations.of(context).actionApply),
+              ),
+            ],
     );
   }
 }
@@ -4120,6 +4266,14 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
   Future<void> _confirm() async {
     setState(() => _saving = true);
     final companyId = ref.read(selectedCompanyProvider)?.id;
+
+    // Captured for the rollback below: the optimistic local move has to be
+    // undoable if the server rejects the transfer.
+    final oldTableId = widget.cartState.floorPlanTableId;
+    final previousOrderNumber = widget.cartState.orderNumber;
+    final previousUserId = ref.read(currentUserProvider)?.id;
+    String? movedLocalId;
+
     try {
       final activePosOrderId = widget.cartState.activePosOrderId;
       final bookingId = widget.cartState.bookingId;
@@ -4151,26 +4305,20 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
               ref.read(selectedWarehouseProvider)?.id ??
               1,
         };
-        await ApiClient().updatePosOrder(companyId, updateRequest);
-        ref.read(kitchenSyncProvider).push();
-
-        final oldTableId = widget.cartState.floorPlanTableId;
         final newTable = _selectedRoom;
-        if (oldTableId != null &&
-            newTable != null &&
-            oldTableId != newTable.id) {
-          try {
-            await ApiClient().freeFloorPlanTable(companyId, oldTableId);
-          } catch (_) {}
-        }
 
+        // ── LOCAL FIRST ───────────────────────────────────────────────────
+        // Floor-plan occupancy is derived from open `pos_orders.tableId`
+        // (§3 — `floor_plan_tables.status` is dead), so the origin table only
+        // frees once this local row moves. This used to run AFTER two awaited
+        // network round trips, which is exactly why the old table sat there
+        // looking occupied "until it synced" — and why tapping it in that
+        // window raised "Could not find active order".
+        //
+        // Writing local first makes the floor plan correct on the next frame.
+        // The server still decides: if it rejects, the catch below puts the
+        // row back, so the optimism is never left standing on a failure.
         if (newTable != null) {
-          // 🚨 Move the LOCAL row too. Floor-plan occupancy is derived from open
-          // `pos_orders.tableId` (§3 — `floor_plan_tables.status` is dead), so
-          // updating only the server and the cart left the ORIGIN table showing
-          // occupied and the order visible on both. On a `pending` row it was
-          // worse: the pull won't overwrite its tableId, so the stale value also
-          // got pushed back, dragging the server order to the old table again.
           final localId = widget.cartState.existingLocalOrderId ??
               (await ref
                       .read(appDatabaseProvider)
@@ -4183,6 +4331,7 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                   orderName: destinationName,
                   userId: movedUserId,
                 );
+            movedLocalId = localId;
           }
           ref
               .read(cartProvider.notifier)
@@ -4193,6 +4342,20 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                 tableId: newTable.id,
                 orderNumber: destinationName,
               );
+          // Repaint the floor plan / open-orders list off the row just written.
+          ref.invalidate(openOrdersProvider);
+        }
+
+        // ── THEN the server ───────────────────────────────────────────────
+        await ApiClient().updatePosOrder(companyId, updateRequest);
+        ref.read(kitchenSyncProvider).push();
+
+        if (oldTableId != null &&
+            newTable != null &&
+            oldTableId != newTable.id) {
+          try {
+            await ApiClient().freeFloorPlanTable(companyId, oldTableId);
+          } catch (_) {}
         }
       }
 
@@ -4214,13 +4377,40 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
         );
       }
 
-      ref.read(cartProvider.notifier).clearCart();
+      // The cart deliberately KEEPS the order. It used to `clearCart()` here,
+      // which threw away the very order this dialog had just re-pointed at the
+      // destination table — so the till came back empty and the next tap rang
+      // up a SECOND order instead of continuing the transferred one. The cart
+      // context was already moved above, and `existingLocalOrderId` survives
+      // `setOrderContext`, so carrying on and saving updates the same order.
       ref.invalidate(openOrdersProvider);
-      await Future.delayed(const Duration(milliseconds: 300));
-      if (companyId != null) {
-        await syncLatestOrderNumber(ref, companyId);
-      }
     } catch (e) {
+      // Put the optimistic local move back — the server did not accept it, so
+      // leaving the order on the destination table would strand it somewhere
+      // it does not belong and free a table that is still occupied.
+      if (movedLocalId != null) {
+        try {
+          await ref.read(appDatabaseProvider).moveOrderToTable(
+                localId: movedLocalId,
+                tableId: oldTableId,
+                orderName: previousOrderNumber,
+                userId: previousUserId,
+              );
+          final activePosOrderId = widget.cartState.activePosOrderId;
+          if (activePosOrderId != null) {
+            ref.read(cartProvider.notifier).setOrderContext(
+                  activePosOrderId,
+                  ref.read(cartProvider.notifier).effectiveWarehouseId,
+                  tableId: oldTableId,
+                  orderNumber: previousOrderNumber,
+                );
+          }
+          ref.invalidate(openOrdersProvider);
+        } catch (_) {
+          // Rollback itself failed — the next pull reconciles from the server,
+          // which never accepted the move in the first place.
+        }
+      }
       if (mounted) {
         showAppSnackbar(
           context,
@@ -4263,27 +4453,37 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
               loading: () => const LinearProgressIndicator(),
               error: (_, __) => const SizedBox.shrink(),
               data: (users) {
+                // Keyed by ID, never by the User object — see
+                // [dropdownOptionsById] for why. The extra exposure here: a
+                // staff member who has since been DISABLED is filtered out of
+                // `enabled` while still being this order's assignee, and the
+                // helper unions them back in.
                 final enabled = users.where((u) => u.isEnabled).toList();
-                return DropdownButtonFormField<User?>(
-                  initialValue: _selectedStaff,
+                final opts =
+                    dropdownOptionsById(enabled, _selectedStaff, (u) => u.id);
+                final unique = opts.options;
+                return DropdownButtonFormField<int?>(
+                  initialValue: opts.value,
                   decoration: InputDecoration(
                     labelText: AppLocalizations.of(context).assignStaff,
                     prefixIcon: const Icon(Icons.badge),
                     border: const OutlineInputBorder(),
                   ),
                   items: [
-                    DropdownMenuItem<User?>(
+                    DropdownMenuItem<int?>(
                       value: null,
                       child: Text(AppLocalizations.of(context).unassigned),
                     ),
-                    ...enabled.map(
-                      (u) => DropdownMenuItem<User?>(
-                        value: u,
+                    ...unique.map(
+                      (u) => DropdownMenuItem<int?>(
+                        value: u.id,
                         child: Text(u.displayName),
                       ),
                     ),
                   ],
-                  onChanged: (u) => setState(() => _selectedStaff = u),
+                  onChanged: (id) => setState(() {
+                    _selectedStaff = unique.where((u) => u.id == id).firstOrNull;
+                  }),
                 );
               },
             ),
@@ -4293,37 +4493,51 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                 loading: () => const LinearProgressIndicator(),
                 error: (_, __) => const SizedBox.shrink(),
                 data: (freeRooms) {
-                  // This order's OWN table reads as occupied (it is holding it),
-                  // so the free list excludes it — but it is the dropdown's
-                  // current value, and a DropdownButton whose value is not among
-                  // its items throws. Union it back in, same as the saved-port
-                  // case in _ScalePortDropdown.
-                  final rooms = [
-                    ...freeRooms,
-                    if (_selectedRoom != null &&
-                        !freeRooms.any((r) => r.id == _selectedRoom!.id))
-                      _selectedRoom!,
-                  ];
-                  return DropdownButtonFormField<FloorPlanTable?>(
-                    initialValue: _selectedRoom,
+                  // ⚠️ Keyed by ID, not by the FloorPlanTable object.
+                  //
+                  // FloorPlanTable declares no `==`, so Dart compares by
+                  // IDENTITY. `_selectedRoom` is seeded in initState from a
+                  // `ref.read(allRoomsProvider)` snapshot, while these items
+                  // come from a later emission of a DIFFERENT provider — same
+                  // table, freshly constructed object. The previous guard here
+                  // only handled "table missing from the list" (comparing ids)
+                  // while still handing the widget the stale OBJECT, so it
+                  // matched ZERO items and the assert took down the whole
+                  // dialog the moment Transfer was pressed on a seated order.
+                  //
+                  // The helper also unions this order's own table back in — it
+                  // reads as occupied because it is holding it, so the free
+                  // list excludes it — and de-dupes, which covers the "2 or
+                  // more" half of the same assert.
+                  final opts =
+                      dropdownOptionsById(freeRooms, _selectedRoom, (r) => r.id);
+                  final unique = opts.options;
+
+                  return DropdownButtonFormField<int?>(
+                    initialValue: opts.value,
                     decoration: InputDecoration(
                       labelText: AppLocalizations.of(context).assignRoomOrResource,
                       prefixIcon: const Icon(Icons.meeting_room),
                       border: const OutlineInputBorder(),
                     ),
                     items: [
-                      DropdownMenuItem<FloorPlanTable?>(
+                      DropdownMenuItem<int?>(
                         value: null,
                         child: Text(AppLocalizations.of(context).noRoom),
                       ),
-                      ...rooms.map(
-                        (t) => DropdownMenuItem<FloorPlanTable?>(
-                          value: t,
+                      ...unique.map(
+                        (t) => DropdownMenuItem<int?>(
+                          value: t.id,
                           child: Text(t.name),
                         ),
                       ),
                     ],
-                    onChanged: (t) => setState(() => _selectedRoom = t),
+                    // Re-resolve the object from the LIVE list, so everything
+                    // downstream (_confirm's floorPlanTableId / name) works off
+                    // the instance the user actually picked.
+                    onChanged: (id) => setState(() {
+                      _selectedRoom = unique.where((r) => r.id == id).firstOrNull;
+                    }),
                   );
                 },
               ),

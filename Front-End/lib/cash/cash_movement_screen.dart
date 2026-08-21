@@ -8,6 +8,8 @@ import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/database/database_provider.dart';
+import 'package:pos_app/session/session_gate.dart';
+import 'package:pos_app/session/session_summary_provider.dart';
 import 'package:pos_app/navigation/main_layout.dart';
 import 'package:pos_app/navigation/nav_widgets.dart';
 
@@ -77,6 +79,14 @@ class _CashMovementScreenState extends ConsumerState<CashMovementScreen> {
       // to /StartingCash/Add when network is available. The entries list is a
       // live stream off the local table, so the new row appears instantly —
       // no network round-trip and no manual invalidation needed.
+      // Cash in/out moves the drawer, so it belongs to a session — same rule
+      // as a sale, and what makes the movement reconcilable at closing.
+      if (!await SessionGuard.ensureCanSell(context, ref)) {
+        if (mounted) setState(() => _saving = false);
+        return;
+      }
+      if (!mounted) return;
+
       final db = ref.read(appDatabaseProvider);
       await db.insertOfflineCashMovement(
         StartingCashTableCompanion.insert(
@@ -89,6 +99,12 @@ class _CashMovementScreenState extends ConsumerState<CashMovementScreen> {
               ? null
               : _descCtrl.text.trim()),
           createdAt: DateTime.now().toUtc(),
+          // Bind the movement to the session that was trading. The drawer only
+          // moves during a session, so this is what makes it reconcilable —
+          // and it replaces the legacy `ZReportNumber`, which was company-wide
+          // and could not tell two registers apart.
+          sessionLocalId: Value(
+              ref.read(activeSessionRowProvider).value?.localId),
         ),
       );
       _amountCtrl.text = '0';

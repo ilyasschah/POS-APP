@@ -443,6 +443,9 @@
   "change": "الباقي",
   "collapseSidebar": "طيّ الشريط الجانبي",
   "companyHeader": "ترويسة الشركة",
+  "kitchenPrintingSection": "طباعة المطبخ",
+  "autoKitchenPrintOnCheckout": "طباعة تذاكر المطبخ تلقائيًا عند الدفع",
+  "autoKitchenPrintSubtitle": "هذا الجهاز فقط. عند إتمام البيع، تُطبع نفس تذاكر المحطات مثل زر المطبخ.",
   "companyPhoneTel": "هاتف الشركة",
   "companyTaxNumber": "الرقم الضريبي للشركة",
   "customLabels": "تسميات مخصصة",
@@ -681,6 +684,12 @@
   "posButtonsHint": "اختر أزرار الإجراءات التي تظهر في الشاشة الرئيسية.",
   "couldNotLoadTaxRates": "تعذّر تحميل نسب الضرائب",
   "noTaxRatesDefined": "لم تُحدَّد أي نسب ضريبة بعد. أضِفها من نسب الضرائب.",
+  "taxDefaultRequiredTitle": "اختر نسبة ضريبة افتراضية",
+  "taxDefaultRequiredBody": "السعر شامل الضريبة يتطلّب نسبة ضريبة افتراضية. اختر واحدة على الأقل — ستُطبَّق على كل منتج جديد وتُقفَل في نقطة البيع.",
+  "taxDefaultRequiredNoRates": "لم تُحدَّد أي نسب ضريبة بعد. أنشئ واحدة من نسب الضرائب قبل تفعيل هذا الخيار.",
+  "defaultTaxRateDisabledHint": "فعِّل السعر شامل الضريبة أعلاه لتطبيق نسبة ضريبة افتراضية.",
+  "taxLockedBySetting": "مضبوط في الإعدادات ← عام ← الضريبة. لا يمكن تغييره هنا.",
+  "taxLockedShort": "مقفل",
   "couldNotLoadWarehouses": "تعذّر تحميل المستودعات",
   "defaultWarehouseHint": "يُستخدم للتحقق من توفّر المخزون في شاشة نقطة البيع.",
   "waitingForScale": "في انتظار إرسال الوزن من الميزان…",
@@ -845,7 +854,7 @@
   "setDefaultDueDays": "تاريخ الاستحقاق الافتراضي (أيام)",
   "setDefaultMeasurementUnit": "وحدة القياس الافتراضية",
   "setDefaultScreen": "الشاشة الافتراضية",
-  "setDefaultSearch": "البحث الافتراضي",
+  "setDefaultSearch": "وضع البحث الافتراضي",
   "setDefaultServiceType": "نوع الخدمة الافتراضي",
   "setDefaultTaxRate": "نسبة الضريبة الافتراضية",
   "setDefaultWarehouse": "المستودع الافتراضي",
@@ -961,7 +970,7 @@
   "setShowOrderTotalOnPole": "إظهار إجمالي الطلب على شاشة VFD / LCD",
   "setShowOrderTypeButtons": "إظهار أزرار نوع الطلب في نقطة البيع",
   "setShowProductImages": "إظهار صور المنتجات في شبكة نقطة البيع",
-  "setShowSearchOptions": "إظهار خيارات البحث",
+  "setShowSearchOptions": "إظهار أزرار وضع البحث",
   "setShowServiceStatusBadge": "إظهار شارة حالة الخدمة على البطاقات",
   "setShowSyncNotification": "إظهار إشعار المزامنة",
   "setShowTablesButton": "إظهار زر الطاولات في نقطة البيع",
@@ -1029,6 +1038,7 @@
   "errorLoadingGroups": "خطأ في تحميل الفئات",
   "allProducts": "كل المنتجات",
   "noProductsFound": "لم يتم العثور على منتجات.",
+  "noProductsMatchSearch": "لا يوجد منتج يطابق \"{query}\".",
   "productNameRequired": "اسم المنتج *",
   "categoryGroup": "الفئة / المجموعة",
   "noneUncategorized": "بدون (غير مصنّف)",
@@ -1036,6 +1046,68 @@
   "plu": "PLU",
   "measurementUnit": "وحدة القياس",
   "measurementUnitHint": "مثال: كجم، قطعة",
+  "sellByWeight": "البيع بالوزن",
+  "sellByWeightHint": "عند التفعيل، تطلب نقطة البيع كمية بدل إضافة وحدة واحدة. وإذا لم يكن هناك ميزان متصل، فإن زر «السعر» يعدّل الكمية.",
+  "uomStockUnit": "وحدة المخزون",
+  "uomCategoryUnit": "وحدة",
+  "uomCategoryWeight": "وزن",
+  "uomCategoryVolume": "حجم",
+  "uomCategoryLength": "طول",
+  "uomStockHeldIn": "يُحسب المخزون بـ {unit}.",
+  "@uomStockHeldIn": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "uomStockConversionNote": "السعر لكل {unit}. المخزون يتحرك بـ {stockUnit} — 1 {unit} = {factor} {stockUnit}.",
+  "@uomStockConversionNote": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      },
+      "factor": {
+        "type": "String"
+      },
+      "stockUnit": {
+        "type": "String"
+      }
+    }
+  },
+  "weighItem": "وزن الصنف",
+  "placeOnScale": "ضع الصنف على الميزان",
+  "scaleNotConnected": "لا يوجد ميزان متصل — أدخل الكمية",
+  "useThisWeight": "استخدام هذا الوزن",
+  "enterQuantity": "إدخال الكمية",
+  "priceEditsQuantity": "السعر يعدّل الكمية",
+  "barcodeRules": "قواعد الباركود",
+  "barcodeRulesHint": "تحدد قواعد الباركود كيفية قراءة الباركود الممسوح. يُطابَق الباركود مع أول قاعدة يناسبها النمط، لذا فإن الترتيب مهم. يمكن للنمط أن يتضمن قيمة مثل الوزن أو السعر: {NNDD} تحدد مواضع الأرقام، ومواضع D هي خانات عشرية. المنتج الذي يحمل باركوده قيمة مضمّنة يجب أن يخزّن تلك المواضع أصفارًا.",
+  "ruleName": "اسم القاعدة",
+  "ruleType": "النوع",
+  "ruleEncoding": "الترميز",
+  "rulePattern": "نمط الباركود",
+  "ruleTypeUnit": "منتج بالوحدة",
+  "ruleTypeWeighted": "منتج بالوزن",
+  "ruleTypePriced": "منتج بالسعر",
+  "ruleTypeDiscounted": "منتج بخصم",
+  "addRuleLine": "إضافة سطر",
+  "barcodeRulesSaved": "تم حفظ قواعد الباركود",
+  "testBarcode": "اختبار باركود",
+  "testBarcodeNoMatch": "لا توجد قاعدة تطابق هذا الباركود",
+  "testBarcodeMatched": "القاعدة {rule} — القيمة {value}",
+  "@testBarcodeMatched": {
+    "placeholders": {
+      "rule": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "weightNotAllowedForService": "لا يمكن بيع الخدمة بالوزن.",
+  "scaleReadFailed": "تعذّرت قراءة الميزان",
   "ageRestrictionHint": "مثال: 18",
   "sellingPriceRequired": "سعر البيع *",
   "purchaseCost": "سعر الشراء",
@@ -1050,6 +1122,36 @@
   "productImage": "صورة المنتج",
   "productImageHint": "تحل محل الأيقونة الافتراضية في شاشة نقطة البيع.",
   "removeImage": "إزالة الصورة",
+  "taxInclusiveNotAppliedNote": "تنبيه: لا تزال نقطة البيع تضيف هذه الضريبة فوق السعر. السعر الشامل للضريبة مخزَّن على المنتج لكنه غير مطبَّق عند الدفع بعد.",
+  "pricingTab": "التسعير",
+  "taxBreakdownIncluded": "{price} يشمل {tax} ضريبة · الصافي {net}",
+  "@taxBreakdownIncluded": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      },
+      "tax": {
+        "type": "String"
+      },
+      "net": {
+        "type": "String"
+      }
+    }
+  },
+  "taxBreakdownAdded": "{price} + {tax} ضريبة = {total}",
+  "@taxBreakdownAdded": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      },
+      "tax": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
   "applyTaxes": "تطبيق الضرائب",
   "failedToLoadTaxes": "فشل تحميل الضرائب",
   "primaryTaxRate": "نسبة الضريبة الأساسية",
@@ -1095,6 +1197,8 @@
   "addFirstPaymentType": "أضف أول نوع دفع",
   "deletePaymentTypeConfirm": "هل تريد حذف نوع الدفع «{name}»؟",
   "fieldNameRequired": "الاسم *",
+  "codeRequired": "الرمز *",
+  "taxCodeAlreadyUsed": "مستخدم بالفعل في ضريبة أخرى",
   "fieldCode": "الرمز",
   "fieldPosition": "الترتيب",
   "fieldShortcut": "الاختصار",
@@ -1621,7 +1725,7 @@
   "syncNow": "المزامنة الآن",
   "syncProductComments": "تعليقات المنتجات",
   "syncProductTaxes": "ضرائب المنتجات",
-  "syncSalesOrders": "طلبات البيع",
+  "syncCompletedSales": "مبيعات مكتملة بانتظار الرفع",
   "syncShifts": "الورديات",
   "syncStatusTitle": "حالة المزامنة",
   "syncStockCounts": "جرد المخزون",
@@ -1755,5 +1859,205 @@
   "updatePendingWarning": "{count} عنصر/عناصر في انتظار المزامنة. زامن أولًا إن أمكن.",
   "updateRestartNotice": "سيتم إغلاق التطبيق لتثبيت التحديث.",
   "updateUnsupportedPlatform": "التحديثات داخل التطبيق متاحة على نظام Windows فقط.",
-  "updateAvailableSnackbar": "الإصدار {version} متاح — افتح الإعدادات ‹ حول لتثبيته."
+  "updateAvailableSnackbar": "الإصدار {version} متاح — افتح الإعدادات ‹ حول لتثبيته.",
+  "setDocuments": "المستندات",
+  "resetDatabaseTitle": "إعادة تعيين قاعدة البيانات",
+  "resetDatabaseAction": "إعادة تعيين قاعدة البيانات",
+  "resetWarningBanner": "عملية مدمّرة. تحذف البيانات المحددة للشركة بأكملها — وستفقدها كل نقطة بيع عند المزامنة التالية. لا يمكن التراجع.",
+  "resetStepBackupTitle": "مسار النسخ الاحتياطي",
+  "resetStepBackupSubtitle": "الموقع الذي ستُحفظ فيه النسخة",
+  "resetStepBackupHint": "تُأخذ نسخة من هذا الجهاز قبل إعادة التعيين. إذا فشلت، تُلغى العملية.",
+  "resetBackupManagedHint": "تخزين التطبيق (هذا الجهاز)",
+  "resetStepEntitiesTitle": "اختر العناصر",
+  "resetStepEntitiesSubtitle": "ستُحذف العناصر المحددة من قاعدة البيانات",
+  "resetStepConfirmTitle": "التأكيد",
+  "resetStepConfirmSubtitle": "التفويض وتنفيذ إعادة التعيين",
+  "resetAdminPin": "أدخل رمز المسؤول",
+  "resetAlsoClearsDocuments": "يمسح أيضاً المستندات — سجلات البيع تشير إليها.",
+  "resetDocumentsNote": "المبيعات والطلبات والمدفوعات والإلغاءات وتقارير Z. تُحفظ الحجوزات.",
+  "resetEverything": "كل شيء",
+  "resetEverythingNote": "كل بيانات الشركة. يُحتفظ بالمستخدمين والإعدادات.",
+  "resetWrongPin": "رمز غير صحيح.",
+  "resetConfirmTitle": "إعادة تعيين قاعدة البيانات؟",
+  "resetConfirmBody": "يحذف هذا نهائياً البيانات المحددة لكل الشركة، على جميع الأجهزة. لا يمكن استرجاعها إلا من النسخة المحلية.",
+  "resetConfirmAction": "نعم، أعد التعيين",
+  "resetNoCompany": "لا توجد شركة محددة على هذا الجهاز.",
+  "resetPhaseBackup": "جارٍ نسخ هذا الجهاز…",
+  "resetPhaseServer": "جارٍ مسح بيانات الحساب…",
+  "resetPhaseLocal": "جارٍ مسح هذا الجهاز…",
+  "resetDoneTitle": "اكتملت إعادة التعيين",
+  "resetRestartManually": "يرجى إغلاق التطبيق وإعادة فتحه.",
+  "resetOnlyAdmins": "فقط المسؤولون يمكنهم إعادة التعيين.",
+  "resetRestartingIn": "إعادة التشغيل خلال {seconds}…",
+  "@resetRestartingIn": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "resetBackupSavedTo": "حُفظت النسخة في {path}",
+  "@resetBackupSavedTo": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "restoreDatabaseTitle": "الاستعادة من نسخة احتياطية",
+  "restoreDatabaseAction": "استعادة نسخة…",
+  "restoreDatabaseHint": "يستبدل كل ما في هذا الجهاز بملف نسخة احتياطية. سيُعاد تشغيل التطبيق.",
+  "restorePickTitle": "اختر ملف نسخة (.sqlite)",
+  "restoreRejectedTitle": "تعذّرت استعادة هذا الملف",
+  "restoreConfirmTitle": "استعادة هذه النسخة؟",
+  "restoreConfirmBody": "سيُستبدل كل ما على هذا الجهاز بالنسخة. تُحفظ قاعدتك الحالية باسم pos_app.superseded.sqlite تحسّباً.",
+  "restoreConfirmAction": "استعادة وإعادة تشغيل",
+  "restoreStagedTitle": "النسخة جاهزة",
+  "restoreStagedBody": "سيُعاد تشغيل التطبيق لتركيب قاعدة البيانات. سجّل الدخول بعدها — وسيُرفع العمل غير المتزامن عند المزامنة التالية.",
+  "restoreErrMissing": "لم يعد الملف موجوداً.",
+  "restoreErrNotSqlite": "هذا ليس ملف قاعدة بيانات.",
+  "restoreErrEncrypted": "هذه النسخة مشفّرة لجهاز آخر ولا يمكن فتحها هنا. استعدها على الجهاز الذي أنشأها، أو ابدأ من جديد من السحابة.",
+  "restoreErrNotPosBackup": "هذه قاعدة بيانات، لكنها ليست نسخة POS.",
+  "restoreErrNewerSchema": "أُنشئت هذه النسخة بإصدار أحدث (قاعدة v{found}، وهذا الإصدار يفهم v{supported}). حدّث التطبيق أولاً.",
+  "@restoreErrNewerSchema": {
+    "placeholders": {
+      "found": {
+        "type": "int"
+      },
+      "supported": {
+        "type": "int"
+      }
+    }
+  },
+  "dbMissingTitle": "لم يُعثر على قاعدة البيانات المحلية",
+  "dbMissingBody": "ملف قاعدة بيانات هذا الجهاز مفقود — ربما حُذف أو نُقل أو على قرص غير متصل.\n\nالبدء من جديد يُنزّل بياناتك من السحابة، لكن ما لم يتزامن أبداً لا يمكن استرجاعه.",
+  "dbMissingRestore": "استعادة من ملف نسخة",
+  "dbMissingFresh": "البدء من جديد من السحابة",
+  "dbMissingFreshConfirm": "البدء من جديد؟ سيُفقد كل ما لم يصل إلى السحابة.",
+  "onboardingDataTitle": "إعداد هذا الجهاز",
+  "onboardingDataSubtitle": "كيف يحصل هذا الجهاز على بياناته؟",
+  "onboardingCloudTitle": "المزامنة مع السحابة",
+  "onboardingCloudBody": "سجّل الدخول ونزّل بيانات شركتك. اختر هذا لجهاز جديد.",
+  "onboardingRestoreTitle": "استعادة من نسخة",
+  "onboardingRestoreBody": "استخدم نسخة .sqlite من جهاز آخر — لاستبدال جهاز، بما في ذلك العمل غير المتزامن.",
+  "balanceDue": "الرصيد المستحق",
+  "telLabel": "هاتف",
+  "itemsLabel": "العناصر",
+  "timeLabel": "الوقت",
+  "unitPriceLabel": "سعر الوحدة",
+  "taxInvoiceUpper": "فاتورة ضريبية",
+  "billTo": "الفاتورة إلى",
+  "invoicesUpper": "الفواتير",
+  "saveReceiptTitle": "حفظ الإيصال",
+  "saveGuestCheckTitle": "حفظ فاتورة الضيف",
+  "saveInvoicePdfTitle": "حفظ الفاتورة PDF",
+  "zReportUpper": "تقرير Z",
+  "endOfReport": "*** نهاية التقرير ***",
+  "totalQty": "إجمالي الكمية",
+  "pointsBalance": "رصيد النقاط",
+  "ptsShort": "نقطة",
+  "invoiceNoLabel": "رقم الفاتورة",
+  "pointsUsed": "النقاط المستخدمة",
+  "paymentStatus": "حالة الدفع",
+  "pageNumberLabel": "صفحة {number}",
+  "createdWith": "أُنشئت بواسطة",
+  "backupPathRequiredTitle": "اختر مجلد النسخ الاحتياطي",
+  "backupPathRequiredBody": "يحتاج النسخ الاحتياطي التلقائي إلى مجلد للكتابة فيه. اختر مجلدًا الآن، وإلا ستُحفظ النسخ في مكان لم تختره.",
+  "backupPathNotSet": "يبقى النسخ الاحتياطي التلقائي متوقفًا حتى يتم تحديد مجلد.",
+  "posSession": "جلسة نقطة البيع",
+  "sessionNoneTitle": "لا توجد جلسة مفتوحة",
+  "sessionNoneBody": "لم تبدأ هذه الصندوق العمل بعد. افتح جلسة لبدء اليوم.",
+  "openRegister": "فتح الصندوق",
+  "continueSelling": "متابعة البيع",
+  "sessionNumber": "الجلسة",
+  "sessionDevice": "الجهاز",
+  "sessionOpenedAt": "فُتحت في",
+  "sessionOpenedBy": "فتحها",
+  "sessionClosedBy": "أغلقها",
+  "sessionStatusLabel": "الحالة",
+  "sessionOpeningCash": "النقد الافتتاحي",
+  "sessionExpectedCash": "النقد المتوقع",
+  "sessionCountedCash": "النقد المعدود",
+  "sessionDifference": "الفرق",
+  "sessionOrders": "الطلبات",
+  "sessionPaymentTotals": "إجماليات الدفع",
+  "sessionSyncStatus": "المزامنة",
+  "sessionSynced": "تمت المزامنة",
+  "sessionNotSyncedYet": "لم تُرسل إلى السحابة بعد",
+  "sessionUnsyncedSales": "{count} عملية بيع ما زالت على هذا الجهاز",
+  "sessionOpenOrders": "{count} طلب ما زال معلقاً",
+  "sessionCannotClose": "لا يمكن الإغلاق بعد",
+  "sessionForceClosed": "أُغلقت قسراً",
+  "sessionLateArrivals": "وصلت مبيعات متأخرة بعد الإغلاق — تحتاج تسوية",
+  "sessionCashInferred": "طرق النقد مستنتجة — حدّدها في الإعدادات ← الطلب والدفع.",
+  "sessionOpeningCashPrompt": "كم المبلغ النقدي في الدرج للبدء؟",
+  "sessionHistory": "سجل الجلسات",
+  "sessionNoHistory": "لا توجد جلسات.",
+  "sessionConfirmOpening": "تأكيد الافتتاح",
+  "sessionInProgress": "قيد التنفيذ",
+  "sessionClosingControl": "مراقبة الإغلاق",
+  "sessionClosedPosted": "مغلقة ومُرحّلة",
+  "openingControl": "مراقبة الافتتاح",
+  "openingNote": "ملاحظة الافتتاح",
+  "openingNoteHint": "أضف ملاحظة افتتاح…",
+  "closingRegister": "إغلاق الصندوق",
+  "closingNote": "ملاحظة الإغلاق",
+  "closingNoteHint": "أضف ملاحظة إغلاق…",
+  "sessionOrdersTotal": "{count} مستندات: {total}",
+  "sessionExpected": "المتوقع",
+  "sessionCounted": "المعدود",
+  "sessionOpeningRow": "الافتتاح",
+  "sessionCashInOutRow": "إدخال / إخراج نقد",
+  "sessionCashPaymentsRow": "مدفوعات نقدية",
+  "cashCount": "عدّ النقد",
+  "dailySale": "مبيعات اليوم",
+  "actionDiscard": "تجاهل",
+  "managerAuthRequired": "الفرق {diff} يتجاوز الحد {max}. مطلوب تصريح المدير.",
+  "managerAuthorise": "تصريح المدير",
+  "managerPinPrompt": "أدخل رمز مدير للسماح بهذا الفرق.",
+  "managerPinWrong": "هذا الرمز ليس رمز مدير.",
+  "sessionRequiredTitle": "افتح الصندوق أولاً",
+  "sessionRequiredBody": "المبيعات والمرتجعات وحركات النقد تتبع جلسة. افتح الصندوق لبدء العمل.",
+  "sessionNotTradingBody": "يجري إغلاق هذا الصندوق. أكمل عملية العدّ ثم افتح جلسة جديدة.",
+  "setRequireOpenSession": "اشترط جلسة مفتوحة للبيع",
+  "sessionsTitle": "الجلسات",
+  "sessionColId": "رقم الجلسة",
+  "sessionColPos": "نقطة البيع",
+  "sessionColOpenedBy": "فتحها",
+  "sessionColOpening": "تاريخ الافتتاح",
+  "sessionColClosing": "تاريخ الإغلاق",
+  "sessionColStarting": "الرصيد الافتتاحي",
+  "sessionColEnding": "الرصيد الختامي",
+  "sessionColTheoretical": "الإغلاق النظري",
+  "sessionColStatus": "الحالة",
+  "sessionSearchHint": "بحث…",
+  "sessionCountOf": "{shown} / {total}",
+  "sessionDetails": "تفاصيل الجلسة",
+  "sessionCurrentOnThisDevice": "الجلسة الحالية على هذا الجهاز",
+  "sessionClosedAt": "أُغلقت في",
+  "sessionDuration": "المدة",
+  "sessionTotalTaken": "إجمالي المقبوض",
+  "sessionCashMovements": "حركات النقد",
+  "sessionNotes": "ملاحظات",
+  "cashDrawer": "درج النقد",
+  "sessionRemoteFiguresOffline": "هذه الجلسة تخص صندوقًا آخر — تُحمَّل مبالغها من الخادم.",
+  "sessionDocuments": "المستندات",
+  "sessionOverviewTab": "نظرة عامة",
+  "sessionPaymentsTab": "المدفوعات",
+  "sessionNoPayments": "لا توجد مدفوعات في هذه الجلسة بعد.",
+  "sessionOpenDocumentHint": "اضغط على دفعة لفتح مستندها",
+  "sessionDocumentUnavailable": "هذا المستند غير موجود على هذا الجهاز.",
+  "developerMode": "وضع المطور",
+  "developerModeHint": "يعرض زر تصحيح عائمًا على هذا الجهاز، مع محاكي باركود للسعر والوزن.",
+  "generateScaleBarcode": "ملصق الميزان",
+  "scaleBarcodeRuleUnusable": "القاعدة {pattern} لا يمكنها توليد باركود منتج.",
+  "barcodeAlreadyUsedBy": "{code} ينتمي بالفعل إلى {product}.",
+  "setPosSession": "جلسة نقطة البيع",
+  "setCashMethods": "طرق النقد",
+  "cashMethodsHint": "طرق الدفع التي تخرج من درج النقد وتُعدّ يدويًا عند الإغلاق. إلغاء تحديدها جميعًا يعيد الاستنتاج التلقائي.",
+  "cashMethodsInferredHint": "غير محددة — مستنتجة من «يسمح بإعادة الباقي».",
+  "cashMethodsConfirm": "استخدم هذه",
+  "noPaymentMethodsDefined": "لا توجد طرق دفع معرّفة.",
+  "setMaxCashDifference": "فرق النقد المسموح",
+  "maxCashDifferenceHint": "إذا تجاوزه الفرق، يتطلب الإغلاق رمز مسؤول."
 }

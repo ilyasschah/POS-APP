@@ -73,9 +73,11 @@ void main() {
       (tester) async {
     final c = await pump(tester, width: 400);
 
-    // 6 pages: welcome, features, quick-start, setup, layout, activity → 3
-    // Next taps reach the setup slide.
-    for (var i = 0; i < 3; i++) {
+    // 7 pages: welcome, DATA SOURCE, features, quick-start, setup, layout,
+    // activity → 4 Next taps reach the setup slide. The data-source slide sits
+    // second (cloud vs restore-a-backup); "Next" advances past it exactly like
+    // its own "Sync with the cloud" card does.
+    for (var i = 0; i < 4; i++) {
       await tester.tap(find.text('Next'));
       await tester.pumpAndSettle();
     }

@@ -29,7 +29,10 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/scale/scale_service.dart';
+import 'package:pos_app/settings/barcode_rules_editor.dart';
+import 'package:pos_app/database/restore_flow.dart';
 import 'package:pos_app/settings/local_ui_prefs.dart';
+import 'package:pos_app/settings/reset_database_section.dart';
 import 'package:pos_app/app_settings/app_settings_provider.dart';
 import 'package:pos_app/app_settings/service_type_model.dart';
 import 'package:pos_app/app_settings/service_status_model.dart';
@@ -50,9 +53,13 @@ import 'package:pos_app/kitchen/printer_group_model.dart';
 import 'package:pos_app/product/product_group_model.dart';
 import 'package:pos_app/product/product_group_provider.dart';
 import 'package:pos_app/stock/warehouse_provider.dart';
+import 'package:pos_app/tax/tax_model.dart';
 import 'package:pos_app/tax/tax_provider.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
 import 'package:pos_app/settings/device_identity.dart';
+import 'package:pos_app/settings/developer_mode.dart';
+import 'package:pos_app/session/session_summary_provider.dart';
+import 'package:pos_app/cart/payment_type_provider.dart';
 import 'package:pos_app/onboarding/onboarding_prefs.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -2074,8 +2081,16 @@ List<SearchableSetting> _kSearchableSettings(
     title: AppLocalizations.of(context).setTaxIncludedByDefault,
     tabName: 'General · Tax',
     tabIndex: 0,
-    trailingBuilder: (_) =>
-        const _SwitchControl(SettingKeys.taxIncludedByDefault),
+    // Deliberately NOT a bare _SwitchControl: flipping this on requires a
+    // default tax rate, and that gate lives in the real control. Searching for
+    // it opens the tab so the operator gets the switch AND the picker.
+    trailingBuilder: (openTab) => _OpenTabButton(openTab),
+  ),
+  SearchableSetting(
+    title: AppLocalizations.of(context).setDefaultTaxRate,
+    tabName: 'General · Tax',
+    tabIndex: 0,
+    trailingBuilder: (openTab) => _OpenTabButton(openTab),
   ),
   SearchableSetting(
     title: AppLocalizations.of(context).setThemeMode,
@@ -2504,12 +2519,6 @@ List<SearchableSetting> _kSearchableSettings(
   SearchableSetting(
     title: AppLocalizations.of(context).setDefaultWarehouse,
     tabName: 'Products · Inventory',
-    tabIndex: 2,
-    trailingBuilder: (openTab) => _OpenTabButton(openTab),
-  ),
-  SearchableSetting(
-    title: AppLocalizations.of(context).setDefaultTaxRate,
-    tabName: 'Products · Product Defaults',
     tabIndex: 2,
     trailingBuilder: (openTab) => _OpenTabButton(openTab),
   ),
@@ -3719,12 +3728,12 @@ class _GeneralTab extends ConsumerWidget {
         ),
         _SettingsCard(
           title: AppLocalizations.of(context).setTaxHeader,
-          children: [
-            _SettingSwitch(
-              settingKey: SettingKeys.taxIncludedByDefault,
-              label: AppLocalizations.of(context).setTaxIncludedByDefault,
-              subtitle: AppLocalizations.of(context).setTaxInclusiveDefaultHint,
-            ),
+          children: const [
+            // The switch and the picker are one feature: the switch is
+            // meaningless without a rate to apply, so they sit together. The
+            // picker used to live in the Products tab.
+            _TaxIncludedByDefaultSwitch(),
+            _DefaultTaxRatesSelector(),
           ],
         ),
         _SettingsCard(
@@ -4154,6 +4163,21 @@ class _OrderPaymentTab extends ConsumerWidget {
             const SizedBox(height: 8),
           ],
         ),
+        // ── POS session ───────────────────────────────────────────────────
+        // 🚨 Both settings here decide what happens at CLOSING. Without the
+        // cash methods the till has to guess which tenders came out of the
+        // drawer, and a mis-guess moves money between "counted" and merely
+        // "confirmed" — which is why the session screen nags until this is set
+        // rather than quietly carrying on.
+        _SettingsCard(
+          title: AppLocalizations.of(context).setPosSession,
+          children: const [
+            _CashPaymentMethodsSelector(),
+            Divider(height: 24),
+            _MaxCashDifferenceField(),
+            SizedBox(height: 8),
+          ],
+        ),
         _SettingsCard(
           title: AppLocalizations.of(context).setVoidItems,
           children: [
@@ -4261,19 +4285,379 @@ class _OrderPaymentTab extends ConsumerWidget {
 
 // ── Products ──────────────────────────────────────────────────────────────────
 
+/// The "Tax Included in Price by Default" switch, with the invariant that
+/// makes the rest of the feature safe to build on: **ON implies at least one
+/// default tax rate is configured.**
+///
+/// Flipping it on with nothing selected does not write `true` and bounce back
+/// — it opens the picker first and only commits if the operator actually
+/// chooses a rate. Everything downstream (the product editor's pre-fill, the
+/// read-only cart dialog) can therefore treat "switch is on" as "there is a
+/// tax to show" and skip the empty branch entirely.
+class _TaxIncludedByDefaultSwitch extends ConsumerWidget {
+  const _TaxIncludedByDefaultSwitch();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final settings = ref.watch(appSettingsProvider);
+    final value =
+        settings[SettingKeys.taxIncludedByDefault]?.toLowerCase() == 'true';
+
+    return SwitchListTile(
+      title: Text(l.setTaxIncludedByDefault),
+      subtitle: Text(l.setTaxInclusiveDefaultHint),
+      value: value,
+      activeThumbColor: theme.colorScheme.primary,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+      onChanged: (v) async {
+        final notifier = ref.read(appSettingsProvider.notifier);
+
+        // Turning it OFF is always allowed, and deliberately leaves
+        // DefaultTaxRateIds untouched so flipping back ON restores the same
+        // configuration instead of asking again.
+        if (!v) {
+          await notifier.setBool(SettingKeys.taxIncludedByDefault, false);
+          return;
+        }
+
+        final alreadyConfigured = parseDefaultTaxRateIds(
+          settings[SettingKeys.defaultTaxRateIds],
+        ).isNotEmpty;
+        if (alreadyConfigured) {
+          await notifier.setBool(SettingKeys.taxIncludedByDefault, true);
+          return;
+        }
+
+        final picked = await showDialog<bool>(
+          context: context,
+          builder: (_) => const _DefaultTaxRatePickerDialog(),
+        );
+        // Cancelled, or dismissed without choosing — the switch never moves.
+        if (picked != true) return;
+        await notifier.setBool(SettingKeys.taxIncludedByDefault, true);
+      },
+    );
+  }
+}
+
+/// Modal shown when the tax-inclusive switch is turned on with no default tax
+/// configured. Pops `true` only once at least one rate is selected AND saved,
+/// which is the signal [_TaxIncludedByDefaultSwitch] needs to commit the flip.
+class _DefaultTaxRatePickerDialog extends ConsumerStatefulWidget {
+  const _DefaultTaxRatePickerDialog();
+
+  @override
+  ConsumerState<_DefaultTaxRatePickerDialog> createState() =>
+      _DefaultTaxRatePickerDialogState();
+}
+
+class _DefaultTaxRatePickerDialogState
+    extends ConsumerState<_DefaultTaxRatePickerDialog> {
+  late final Set<int> _selected = parseDefaultTaxRateIds(
+    ref.read(appSettingsProvider)[SettingKeys.defaultTaxRateIds],
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final taxesAsync = ref.watch(allTaxesProvider);
+    final enabledTaxes =
+        taxesAsync.value?.where((t) => t.isEnabled).toList() ?? const [];
+    final hasRates = enabledTaxes.isNotEmpty;
+
+    return AlertDialog(
+      backgroundColor: theme.cardColor,
+      title: Text(l.taxDefaultRequiredTitle, style: const TextStyle(fontSize: 17)),
+      content: SizedBox(
+        width: 380,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              hasRates ? l.taxDefaultRequiredBody : l.taxDefaultRequiredNoRates,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: cs.onSurface.withValues(alpha: 0.7),
+              ),
+            ),
+            if (hasRates) ...[
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 10,
+                runSpacing: 8,
+                children: [
+                  for (final tax in enabledTaxes)
+                    _TaxRateChip(
+                      tax: tax,
+                      selected: _selected.contains(tax.id),
+                      onSelected: (on) => setState(() {
+                        if (on) {
+                          _selected.add(tax.id);
+                        } else {
+                          _selected.remove(tax.id);
+                        }
+                      }),
+                    ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: Text(l.actionCancel),
+        ),
+        FilledButton(
+          // Disabled until the invariant can actually be satisfied.
+          onPressed: _selected.isEmpty
+              ? null
+              : () async {
+                  final ordered = _selected.toList()..sort();
+                  await ref
+                      .read(appSettingsProvider.notifier)
+                      .set(
+                        SettingKeys.defaultTaxRateIds,
+                        ordered.join(','),
+                      );
+                  if (context.mounted) Navigator.pop(context, true);
+                },
+          child: Text(l.actionApply),
+        ),
+      ],
+    );
+  }
+}
+
+/// One selectable tax-rate chip. Extracted so the settings picker and the
+/// gate dialog render identically.
+class _TaxRateChip extends StatelessWidget {
+  final Tax tax;
+  final bool selected;
+  final ValueChanged<bool>? onSelected;
+
+  const _TaxRateChip({
+    required this.tax,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final disabled = onSelected == null;
+
+    return FilterChip(
+      label: Text(
+        '${tax.name} (${_formatTaxRate(tax.rate, tax.isFixed)})',
+      ),
+      selected: selected,
+      onSelected: onSelected,
+      showCheckmark: true,
+      selectedColor: cs.primaryContainer,
+      checkmarkColor: cs.onPrimaryContainer,
+      backgroundColor: cs.surfaceContainerHighest,
+      // Material greys a disabled chip's fill but NOT its border or label, so
+      // both are dimmed explicitly — otherwise the "off" state reads as active.
+      side: BorderSide(
+        color: selected
+            ? cs.primary.withValues(alpha: disabled ? 0.4 : 1)
+            : cs.outline.withValues(alpha: disabled ? 0.15 : 0.3),
+      ),
+      labelStyle: TextStyle(
+        color: (selected ? cs.onPrimaryContainer : cs.onSurface).withValues(
+          alpha: disabled ? 0.5 : 1,
+        ),
+        fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+      ),
+    );
+  }
+}
+
+String _formatTaxRate(double rate, bool isFixed) {
+  final n = rate == rate.roundToDouble()
+      ? rate.toStringAsFixed(0)
+      : rate.toString();
+  return isFixed ? n : '$n%';
+}
+
 /// "Default tax rate" picker. Lists every tax from the local Drift cache
 /// (`allTaxesProvider`) as toggleable chips and persists the chosen IDs as a
-/// comma-separated string in [SettingKeys.defaultTaxRateIds]. The cart reads
-/// the same setting to auto-apply these taxes when a product is added without
-/// its own tax assignments — exactly what selecting taxes manually produces.
+/// comma-separated string in [SettingKeys.defaultTaxRateIds].
+///
+/// Lives in General → Tax, directly under the switch it belongs to. When that
+/// switch is OFF the chips render greyed out and inert rather than
+/// disappearing — the selection is kept, so turning the feature back on
+/// restores it, and the operator can still see what is configured.
+/// Which payment methods come out of the CASH DRAWER.
+///
+/// 🚨 The company setting is authoritative when set, and inferred otherwise —
+/// the inference (`isChangeAllowed`) is a development fallback that exists so a
+/// fresh install shows something plausible, NOT a configuration. A method
+/// wrongly counted as cash inflates the expected drawer and turns an honest
+/// count into a shortfall; wrongly counted as electronic hides a real one.
+/// Both sides read the same setting, so this screen is the single place that
+/// decides it (`PosSessionService.GetCashPaymentTypeIdsAsync` mirrors it).
+///
+/// Clearing every method returns to inference rather than meaning "no cash" —
+/// the storage cannot express an empty set, and a till that counts nothing is
+/// not a case worth inventing syntax for.
+class _CashPaymentMethodsSelector extends ConsumerWidget {
+  const _CashPaymentMethodsSelector();
+
+  Future<void> _write(WidgetRef ref, Set<int> ids) {
+    final ordered = ids.toList()..sort();
+    return ref
+        .read(appSettingsProvider.notifier)
+        .set(SettingKeys.cashPaymentTypeIds, ordered.join(','));
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final settings = ref.watch(appSettingsProvider);
+    final typesAsync = ref.watch(allPaymentTypesProvider);
+
+    final configured =
+        (settings[SettingKeys.cashPaymentTypeIds] ?? '').trim().isNotEmpty;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l.setCashMethods,
+            style: theme.textTheme.bodyMedium
+                ?.copyWith(fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            l.cashMethodsHint,
+            style: theme.textTheme.bodySmall
+                ?.copyWith(color: cs.onSurface.withValues(alpha: 0.5)),
+          ),
+          const SizedBox(height: 12),
+          typesAsync.when(
+            loading: () => const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+            error: (_, __) => Text(
+              l.noPaymentMethodsDefined,
+              style: theme.textTheme.bodySmall?.copyWith(color: cs.error),
+            ),
+            data: (types) {
+              final usable = types.where((t) => t.isEnabled).toList()
+                ..sort((a, b) => a.ordinal.compareTo(b.ordinal));
+              if (usable.isEmpty) {
+                return Text(
+                  l.noPaymentMethodsDefined,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: cs.onSurface.withValues(alpha: 0.6),
+                    fontStyle: FontStyle.italic,
+                  ),
+                );
+              }
+
+              // What the till would use RIGHT NOW — the configured set, or the
+              // inference standing in for it. Toggling writes this whole set
+              // back with one change, so the first tap promotes the guess into
+              // a decision instead of collapsing it to a single method.
+              final effective = resolveCashPaymentTypeIds(settings, usable);
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 8,
+                    children: [
+                      for (final t in usable)
+                        FilterChip(
+                          label: Text(t.name),
+                          avatar: Icon(
+                            effective.contains(t.id)
+                                ? Icons.payments
+                                : Icons.credit_card,
+                            size: 16,
+                          ),
+                          selected: effective.contains(t.id),
+                          onSelected: (on) {
+                            final next = {...effective};
+                            if (on) {
+                              next.add(t.id);
+                            } else {
+                              next.remove(t.id);
+                            }
+                            _write(ref, next);
+                          },
+                        ),
+                    ],
+                  ),
+                  if (!configured) ...[
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Icon(Icons.info_outline,
+                            size: 16, color: context.warningColor),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            l.cashMethodsInferredHint,
+                            style: theme.textTheme.bodySmall
+                                ?.copyWith(color: context.warningColor),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        // One tap turns the guess into the stored answer, which
+                        // is what silences the session screen's banner.
+                        TextButton(
+                          onPressed: () => _write(ref, effective),
+                          child: Text(l.cashMethodsConfirm),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The cash difference a cashier may close through on their own.
+class _MaxCashDifferenceField extends ConsumerWidget {
+  const _MaxCashDifferenceField();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
+    return _SettingTextField(
+      settingKey: SettingKeys.maxCashDifference,
+      label: l.setMaxCashDifference,
+      hint: l.maxCashDifferenceHint,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+    );
+  }
+}
+
 class _DefaultTaxRatesSelector extends ConsumerWidget {
   const _DefaultTaxRatesSelector();
-
-  Set<int> _selectedIds(String? raw) => (raw ?? '')
-      .split(',')
-      .map((e) => int.tryParse(e.trim()))
-      .whereType<int>()
-      .toSet();
 
   Future<void> _toggle(WidgetRef ref, Set<int> current, int id, bool on) {
     final next = {...current};
@@ -4290,12 +4674,17 @@ class _DefaultTaxRatesSelector extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
+    final settings = ref.watch(appSettingsProvider);
     final taxesAsync = ref.watch(allTaxesProvider);
-    final selected = _selectedIds(
-      ref.watch(appSettingsProvider)[SettingKeys.defaultTaxRateIds],
+    final selected = parseDefaultTaxRateIds(
+      settings[SettingKeys.defaultTaxRateIds],
     );
+    final enabled =
+        settings[SettingKeys.taxIncludedByDefault]?.toLowerCase() == 'true';
+    final dim = enabled ? 1.0 : 0.5;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
@@ -4303,16 +4692,17 @@ class _DefaultTaxRatesSelector extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            AppLocalizations.of(context).setDefaultTaxRate,
+            l.setDefaultTaxRate,
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.w500,
+              color: cs.onSurface.withValues(alpha: dim),
             ),
           ),
           const SizedBox(height: 2),
           Text(
-            AppLocalizations.of(context).defaultTaxRateFullHint,
+            enabled ? l.defaultTaxRateFullHint : l.defaultTaxRateDisabledHint,
             style: theme.textTheme.bodySmall?.copyWith(
-              color: cs.onSurface.withValues(alpha: 0.5),
+              color: cs.onSurface.withValues(alpha: enabled ? 0.5 : 0.4),
             ),
           ),
           const SizedBox(height: 12),
@@ -4326,14 +4716,14 @@ class _DefaultTaxRatesSelector extends ConsumerWidget {
               ),
             ),
             error: (_, __) => Text(
-              AppLocalizations.of(context).couldNotLoadTaxRates,
+              l.couldNotLoadTaxRates,
               style: theme.textTheme.bodySmall?.copyWith(color: cs.error),
             ),
             data: (taxes) {
-              final enabled = taxes.where((t) => t.isEnabled).toList();
-              if (enabled.isEmpty) {
+              final enabledTaxes = taxes.where((t) => t.isEnabled).toList();
+              if (enabledTaxes.isEmpty) {
                 return Text(
-                  AppLocalizations.of(context).noTaxRatesDefined,
+                  l.noTaxRatesDefined,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: cs.onSurface.withValues(alpha: 0.6),
                     fontStyle: FontStyle.italic,
@@ -4344,31 +4734,24 @@ class _DefaultTaxRatesSelector extends ConsumerWidget {
                 spacing: 10,
                 runSpacing: 8,
                 children: [
-                  for (final tax in enabled)
-                    FilterChip(
-                      label: Text(
-                        '${tax.name} '
-                        '(${_formatRate(tax.rate, tax.isFixed)})',
-                      ),
+                  for (final tax in enabledTaxes)
+                    _TaxRateChip(
+                      tax: tax,
                       selected: selected.contains(tax.id),
-                      onSelected: (on) => _toggle(ref, selected, tax.id, on),
-                      showCheckmark: true,
-                      selectedColor: cs.primaryContainer,
-                      checkmarkColor: cs.onPrimaryContainer,
-                      backgroundColor: cs.surfaceContainerHighest,
-                      side: BorderSide(
-                        color: selected.contains(tax.id)
-                            ? cs.primary
-                            : cs.outline.withValues(alpha: 0.3),
-                      ),
-                      labelStyle: TextStyle(
-                        color: selected.contains(tax.id)
-                            ? cs.onPrimaryContainer
-                            : cs.onSurface,
-                        fontWeight: selected.contains(tax.id)
-                            ? FontWeight.w600
-                            : FontWeight.w400,
-                      ),
+                      // Deselecting the LAST rate while the feature is on would
+                      // break the "ON ⇒ a default exists" invariant, so the
+                      // final chip refuses to turn itself off. Turn the switch
+                      // off instead.
+                      onSelected: !enabled
+                          ? null
+                          : (on) {
+                              if (!on &&
+                                  selected.length == 1 &&
+                                  selected.contains(tax.id)) {
+                                return;
+                              }
+                              _toggle(ref, selected, tax.id, on);
+                            },
                     ),
                 ],
               );
@@ -4377,13 +4760,6 @@ class _DefaultTaxRatesSelector extends ConsumerWidget {
         ],
       ),
     );
-  }
-
-  static String _formatRate(double rate, bool isFixed) {
-    final n = rate == rate.roundToDouble()
-        ? rate.toStringAsFixed(0)
-        : rate.toString();
-    return isFixed ? n : '$n%';
   }
 }
 
@@ -4541,8 +4917,8 @@ class _ProductsTab extends ConsumerWidget {
         _SettingsCard(
           title: AppLocalizations.of(context).setProductDefaults,
           children: [
-            const _DefaultTaxRatesSelector(),
-            const Divider(height: 1, indent: 20, endIndent: 20),
+            // "Default tax rate" moved to General → Tax (2026-08-15) to sit
+            // with the tax-inclusive switch that gates it.
             _SettingTextField(
               settingKey: SettingKeys.defaultMeasurementUnit,
               label: AppLocalizations.of(context).setDefaultMeasurementUnit,
@@ -4621,63 +4997,20 @@ class _WeighingScaleTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(appSettingsProvider);
-    final barcodeOn =
-        settings[SettingKeys.scaleBarcodeEnabled]?.toLowerCase() == 'true';
     final serialOn =
         settings[SettingKeys.scaleEnabled]?.toLowerCase() == 'true';
 
     return _TabScrollView(
       cards: [
+        // Replaces the six Scale.Barcode.* settings this card used to hold.
+        // Those could only ever express ONE scale format per company; the
+        // nomenclature is an ordered rule list, so a shop can carry a weight
+        // format and a price format side by side. Companies configured under
+        // the old scheme had their settings translated into an equivalent rule
+        // by BarcodeRuleSeeder.BackfillAsync, so nothing needs re-entering.
         _SettingsCard(
-          title: AppLocalizations.of(context).setBarcodeParsing,
-          children: [
-            _SettingSwitch(
-              settingKey: SettingKeys.scaleBarcodeEnabled,
-              label: AppLocalizations.of(context).setEnableScaleBarcode,
-              subtitle: AppLocalizations.of(context).setScaleBarcodeHint,
-            ),
-            Opacity(
-              opacity: barcodeOn ? 1.0 : 0.4,
-              child: IgnorePointer(
-                ignoring: !barcodeOn,
-                child: Column(
-                  children: [
-                    _SettingTextField(
-                      settingKey: SettingKeys.scaleBarcodePrefix,
-                      label: AppLocalizations.of(context).setFirstTwoDigits,
-                      hint: 'e.g. 21',
-                    ),
-                    _StepperRow(
-                      label: AppLocalizations.of(context).setProductCodeDigits,
-                      settingKey: SettingKeys.scaleBarcodeCodeLength,
-                      min: 1,
-                      max: 10,
-                    ),
-                    _StepperRow(
-                      label: AppLocalizations.of(context).setNumberOfDecimals,
-                      settingKey: SettingKeys.scaleBarcodeDecimalPlaces,
-                      min: 0,
-                      max: 5,
-                    ),
-                    _SettingSwitch(
-                      settingKey: SettingKeys.scaleBarcodeTrimZeros,
-                      label: AppLocalizations.of(context).trimZerosFromCode,
-                      subtitle: AppLocalizations.of(
-                        context,
-                      ).setStripLeadingZeros,
-                    ),
-                    _SettingSwitch(
-                      settingKey: SettingKeys.scaleBarcodePrintsPrice,
-                      label: AppLocalizations.of(context).setScalePrintsPrice,
-                      subtitle: AppLocalizations.of(
-                        context,
-                      ).scaleBarcodePriceHint,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
+          title: AppLocalizations.of(context).barcodeRules,
+          children: const [BarcodeRulesEditor()],
         ),
         _SettingsCard(
           title: AppLocalizations.of(context).setSerialConnection,
@@ -6093,6 +6426,14 @@ class _DatabaseTabState extends ConsumerState<_DatabaseTab> {
               settingKey: SettingKeys.autoSyncEnabled,
               label: AppLocalizations.of(context).setEnableAutoSync,
             ),
+            // 🚨 The recovery path for the session gate, and the reason it is
+            // reachable from Settings rather than buried: the gate stops a till
+            // selling, so if session state is ever wrong on a real register the
+            // shop needs a way back that does not require a developer.
+            _SettingSwitch(
+              settingKey: SettingKeys.requireOpenSession,
+              label: AppLocalizations.of(context).setRequireOpenSession,
+            ),
             if (autoSyncEnabled)
               _SettingDropdown(
                 settingKey: SettingKeys.autoSyncMode,
@@ -6137,6 +6478,30 @@ class _DatabaseTabState extends ConsumerState<_DatabaseTab> {
                 ),
               ),
             ),
+            // Restore — the other half of Backup, and it lives right beside it
+            // because a backup nobody can restore is not a backup.
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 2, 20, 2),
+              child: OutlinedButton.icon(
+                onPressed: _isBackingUp
+                    ? null
+                    : () => runRestoreFlow(context, ref),
+                icon: const Icon(Icons.restore),
+                label: Text(AppLocalizations.of(context).restoreDatabaseAction),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 48),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 6),
+              child: Text(
+                AppLocalizations.of(context).restoreDatabaseHint,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
+                ),
+              ),
+            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 0, 20, 14),
               child: TextButton.icon(
@@ -6175,10 +6540,7 @@ class _DatabaseTabState extends ConsumerState<_DatabaseTab> {
                 ),
               ),
             ),
-            _SettingSwitch(
-              settingKey: SettingKeys.dbAutoBackup,
-              label: AppLocalizations.of(context).setEnableAutomaticBackups,
-            ),
+            const _AutoBackupSwitch(),
             Opacity(
               opacity: autoEnabled ? 1.0 : 0.4,
               child: IgnorePointer(
@@ -6241,6 +6603,90 @@ class _DatabaseTabState extends ConsumerState<_DatabaseTab> {
   }
 }
 
+/// "Enable automatic backups" — which cannot be turned on without a folder to
+/// write to.
+///
+/// 🚨 Turning it on with an empty path used to look like it worked: nothing
+/// complained, and `BackupService.resolveBackupDir('')` quietly falls back to
+/// `<Documents>/POS_Backups`. So the terminal really was backing up — into a
+/// folder the operator never chose and would not think to look in, which is the
+/// same as having no backup on the day they need one. Reported 2026-08-16.
+///
+/// Enabling now opens the folder picker and only commits if a folder is
+/// actually chosen — the same shape as `_TaxIncludedByDefaultSwitch` (backlog
+/// item 5), where a switch whose feature needs configuration refuses to store
+/// `true` in a state it cannot honour.
+///
+/// Android/iOS write to a managed app-storage folder with nothing to pick, so
+/// there the switch behaves exactly as before.
+class _AutoBackupSwitch extends ConsumerWidget {
+  const _AutoBackupSwitch();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final settings = ref.watch(appSettingsProvider);
+    final path = (settings[SettingKeys.dbBackupPath] ?? '').trim();
+    final managed = BackupService.usesManagedBackupDir;
+    final value =
+        (settings[SettingKeys.dbAutoBackup] ?? '').toLowerCase() == 'true';
+
+    // Rendered directly rather than through _SettingSwitch, which writes the
+    // new value BEFORE its callback runs: enabling would store `true`, then the
+    // guard would store `false` again — a visible flicker and two writes of a
+    // synced setting for what is really one refused change.
+    return SwitchListTile(
+      title: Text(l.setEnableAutomaticBackups),
+      // Only while it is OFF: an install from before this guard existed can be
+      // ON with an empty path (backing up to the fallback location), and
+      // telling that operator backups "stay off" would be a lie.
+      subtitle: (!managed && path.isEmpty && !value)
+          ? Text(l.backupPathNotSet)
+          : null,
+      value: value,
+      activeThumbColor: theme.colorScheme.primary,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+      onChanged: (enabled) async {
+        final notifier = ref.read(appSettingsProvider.notifier);
+        if (!enabled || managed || path.isNotEmpty) {
+          await notifier.setBool(SettingKeys.dbAutoBackup, enabled);
+          return;
+        }
+
+        final proceed = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            icon: Icon(Icons.folder_open_outlined,
+                color: Theme.of(ctx).colorScheme.primary, size: 30),
+            title: Text(l.backupPathRequiredTitle),
+            content: Text(l.backupPathRequiredBody),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text(l.actionCancel),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: Text(l.selectBackupFolder),
+              ),
+            ],
+          ),
+        );
+        if (proceed != true) return;
+
+        final picked = await FilePicker.platform.getDirectoryPath(
+          dialogTitle: l.selectBackupFolder,
+        );
+        if (picked == null || picked.trim().isEmpty) return;
+
+        await notifier.set(SettingKeys.dbBackupPath, picked);
+        await notifier.setBool(SettingKeys.dbAutoBackup, true);
+      },
+    );
+  }
+}
+
 /// Backup location text field with a "…" browse button.
 /// Saves to [SettingKeys.dbBackupPath] on focus-loss/submit/browse.
 class _BackupLocationField extends ConsumerStatefulWidget {
@@ -6291,6 +6737,16 @@ class _BackupLocationFieldState extends ConsumerState<_BackupLocationField> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // The controller is seeded once in initState, so a path set from ANYWHERE
+    // else — the "enable automatic backups" guard opens the same folder picker
+    // — would leave this box showing the old (usually empty) value until the
+    // screen was reopened, making it look like the choice had not been saved.
+    ref.listen(appSettingsProvider, (_, next) {
+      final stored = (next[SettingKeys.dbBackupPath] ?? '').trim();
+      if (stored.isNotEmpty && stored != _ctrl.text.trim()) {
+        _ctrl.text = stored;
+      }
+    });
     // Android/iOS write to a managed app-storage folder — there is nothing to
     // type and nothing to browse. Showing an editable path box with a "…"
     // button there offered a choice the platform cannot honour, and any value
@@ -6735,6 +7191,44 @@ class _AboutTab extends ConsumerWidget {
               ],
             ),
           ),
+
+          // ── Reset database ────────────────────────────────────────────────
+          // Admin only (accessLevel 0 == Admin, 1 == Cashier). The card is not
+          // rendered at all for a cashier rather than shown-and-disabled: this
+          // wipes company-wide data, so it should not even be discoverable from
+          // a till someone is standing at. The PIN check inside is the real
+          // authorisation — this is just the first door.
+          if (ref.watch(currentUserProvider)?.accessLevel == 0)
+            _SettingsCard(
+              title: AppLocalizations.of(context).resetDatabaseTitle,
+              children: const [ResetDatabaseSection()],
+            ),
+
+          // ── Developer ─────────────────────────────────────────────────────
+          // Admin only, and off by default: the switch puts a floating debug
+          // button on top of the till whose panel injects barcodes into the
+          // live scan handler. That is exactly right for diagnosing a scale
+          // label and exactly wrong for a cashier to find by accident.
+          if (ref.watch(currentUserProvider)?.accessLevel == 0)
+            _SettingsCard(
+              title: AppLocalizations.of(context).developerMode,
+              children: [
+                SwitchListTile(
+                  title: Text(AppLocalizations.of(context).developerMode),
+                  subtitle: Text(
+                    AppLocalizations.of(context).developerModeHint,
+                    style: TextStyle(
+                        fontSize: 12,
+                        color: theme.colorScheme.onSurfaceVariant),
+                  ),
+                  secondary: Icon(Icons.bug_report,
+                      color: theme.colorScheme.primary),
+                  value: ref.watch(developerModeProvider),
+                  onChanged: (v) =>
+                      ref.read(developerModeProvider.notifier).set(v),
+                ),
+              ],
+            ),
 
           // ── System ────────────────────────────────────────────────────────
           _SettingsCard(

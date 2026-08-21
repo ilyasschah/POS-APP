@@ -260,4 +260,137 @@ void main() {
       expect(uri, contains('documentTypeIds=$type'));
     }
   });
+
+  // ── Number-collision adoption (reported 2026-08-15) ───────────────────────
+  //
+  // `pullDocuments` "Case 1b" adopts a local row that has no serverId but whose
+  // NUMBER matches an incoming server document, stamping it `synced`. That is
+  // right for a row the server has already seen, and destroys money when it has
+  // not: `synced` retires the row from the push queue forever, so the sale never
+  // reaches the cloud while the local row starts impersonating a different
+  // server document that merely shares its number.
+  //
+  // Document numbers are per-terminal sequences, so a collision is near-guaranteed
+  // after a RESTORE: a till works offline issuing POS1-200-000004, dies, and its
+  // backup is restored onto a new machine while the account has its own
+  // …000004. This is the reported "the cloud overwrote my restored data".
+  group('a pending document is never adopted by number', () {
+    /// A sale rung up on THIS device that has never been pushed: no serverId,
+    /// pending_create. Row 4 of the operator's screenshot.
+    Future<void> insertUnsyncedDoc(String number) async {
+      await db.into(db.documentsTable).insert(
+            DocumentsTableCompanion.insert(
+              localId: 'local-offline-sale',
+              companyId: 25,
+              userId: 9,
+              warehouseId: 17,
+              date: DateTime.utc(2026, 8, 13, 10),
+              serverId: const Value(null),
+              number: Value(number),
+              total: const Value(88.0),
+              // 'pending' — what a POS checkout actually writes. An
+              // earlier version of this fixture used 'pending_create' (the
+              // manual document editor's status) and so passed against a guard
+              // that did not cover real sales at all.
+              syncStatus: const Value('pending'),
+              lastModified: DateTime.utc(2026, 8, 13, 10),
+            ),
+          );
+    }
+
+    test('it keeps its pending status and stays pushable', () async {
+      await insertUnsyncedDoc('POS1-200-000004');
+
+      // The cloud's OWN …000004 — a different sale, same number.
+      final adapter = _CannedAdapter([_serverDoc(109, 'POS1-200-000004')]);
+      await managerFor(adapter).pullDocuments(25);
+
+      final local = await (db.select(db.documentsTable)
+            ..where((t) => t.localId.equals('local-offline-sale')))
+          .getSingle();
+
+      // Pre-fix: serverId 109 and syncStatus 'synced' — the two days of takings
+      // silently retired from the push queue and never seen by the cloud again.
+      expect(local.syncStatus, 'pending',
+          reason: 'the pusher owns it until the server has actually seen it');
+      expect(local.serverId, isNull,
+          reason: 'adopting the server id makes it impersonate another sale');
+      expect(local.total, 88.0, reason: 'its own money must survive');
+    });
+
+    test('the server document is still stored, as a separate row', () async {
+      await insertUnsyncedDoc('POS1-200-000004');
+
+      final adapter = _CannedAdapter([_serverDoc(109, 'POS1-200-000004')]);
+      await managerFor(adapter).pullDocuments(25);
+
+      // Refusing to adopt must not mean dropping the server's document — both
+      // sales are real and both have to exist.
+      final all = await db.select(db.documentsTable).get();
+      expect(all, hasLength(2));
+      expect(all.map((d) => d.serverId).toSet(), {null, 109});
+    });
+
+    test('a NON-pending row with no serverId is still adopted', () async {
+      // The legitimate Case 1b: pushed through its own queue, server assigned
+      // the number, local row never got its id stamped. Adoption is correct
+      // here and must keep working — the guard has to be narrow.
+      await db.into(db.documentsTable).insert(
+            DocumentsTableCompanion.insert(
+              localId: 'awaiting-id-stamp',
+              companyId: 25,
+              userId: 9,
+              warehouseId: 17,
+              date: DateTime.utc(2026, 7, 26, 20),
+              serverId: const Value(null),
+              number: const Value('POS1-200-000007'),
+              total: const Value(35.0),
+              syncStatus: const Value('synced'),
+              lastModified: DateTime.utc(2026, 7, 26, 20),
+            ),
+          );
+
+      final adapter = _CannedAdapter([_serverDoc(120, 'POS1-200-000007')]);
+      await managerFor(adapter).pullDocuments(25);
+
+      final row = await (db.select(db.documentsTable)
+            ..where((t) => t.localId.equals('awaiting-id-stamp')))
+          .getSingle();
+      expect(row.serverId, 120, reason: 'this one SHOULD adopt');
+      expect(await db.select(db.documentsTable).get(), hasLength(1),
+          reason: 'adoption exists to prevent a duplicate row');
+    });
+
+    // Both statuses, explicitly. The first version of this guard listed only
+    // the manual editor's pending_create/update/delete and therefore protected
+    // nothing a cashier ever rings up. Naming both here is what stops that
+    // regressing.
+    for (final status in const ['pending', 'pending_create', 'pending_update']) {
+      test('status "$status" is never adopted by number', () async {
+        await db.into(db.documentsTable).insert(
+              DocumentsTableCompanion.insert(
+                localId: 'doc-$status',
+                companyId: 25,
+                userId: 9,
+                warehouseId: 17,
+                date: DateTime.utc(2026, 8, 13, 10),
+                serverId: const Value(null),
+                number: const Value('POS1-200-000009'),
+                total: const Value(42.0),
+                syncStatus: Value(status),
+                lastModified: DateTime.utc(2026, 8, 13, 10),
+              ),
+            );
+
+        final adapter = _CannedAdapter([_serverDoc(200, 'POS1-200-000009')]);
+        await managerFor(adapter).pullDocuments(25);
+
+        final row = await (db.select(db.documentsTable)
+              ..where((t) => t.localId.equals('doc-$status')))
+            .getSingle();
+        expect(row.serverId, isNull, reason: '$status must stay pushable');
+        expect(row.syncStatus, status);
+      });
+    }
+  });
 }

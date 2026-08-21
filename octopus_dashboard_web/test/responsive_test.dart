@@ -5,6 +5,7 @@ import 'package:octopus_dashboard_web/core/settings.dart';
 import 'package:octopus_dashboard_web/core/theme.dart';
 import 'package:octopus_dashboard_web/features/auth/auth_controller.dart';
 import 'package:octopus_dashboard_web/features/shell/app_shell.dart';
+import 'package:octopus_dashboard_web/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'fake_api.dart';
@@ -22,6 +23,38 @@ const viewports = <String, Size>{
 /// abbreviated titles, and a sidebar label like "Products & Prices" is
 /// identical to that screen's own page header.
 Finder navItem(AppDestination destination) => find.byIcon(destination.icon);
+
+ScaffoldState shellScaffold(WidgetTester tester) =>
+    tester.firstState<ScaffoldState>(find.byType(Scaffold));
+
+/// Selects a destination the way the current width exposes it.
+///
+/// Compact widths keep the destination list inside a drawer, and the drawer
+/// closes itself on every selection — so each hop has to reopen it. Wider
+/// widths show the rail or sidebar permanently.
+Future<void> tapDestination(
+  WidgetTester tester,
+  AppDestination destination,
+) async {
+  final scaffold = shellScaffold(tester);
+  if (scaffold.hasDrawer) {
+    scaffold.openDrawer();
+    await tester.pumpAndSettle();
+    // Scoped to the drawer: the screen behind it can carry the same icon.
+    await tester.tap(
+      find.descendant(
+        of: find.byType(Drawer),
+        matching: navItem(destination),
+      ),
+    );
+  } else {
+    await tester.tap(navItem(destination).first);
+  }
+  await tester.pumpAndSettle();
+}
+
+AppLocalizations localizationsOf(WidgetTester tester) =>
+    AppLocalizations.of(tester.element(find.byType(AppShell)))!;
 
 Future<ProviderContainer> makeContainer({Object? failWith}) async {
   SharedPreferences.setMockInitialValues({});
@@ -54,6 +87,10 @@ Future<void> pumpShell(
       container: scope,
       child: MaterialApp(
         theme: AppTheme.build(darkMode ? Brightness.dark : Brightness.light),
+        // The shell and every screen read AppLocalizations.of(context)!, so a
+        // MaterialApp without the delegates crashes on the first build.
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: const AppShell(),
       ),
     ),
@@ -63,23 +100,41 @@ Future<void> pumpShell(
 
 void main() {
   group('Responsive navigation', () {
-    testWidgets('360px uses a bottom navigation bar', (tester) async {
+    testWidgets('360px puts navigation in a drawer', (tester) async {
       await pumpShell(tester, const Size(360, 800));
-      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(shellScaffold(tester).hasDrawer, isTrue);
       expect(find.byType(NavigationRail), findsNothing);
     });
 
-    testWidgets('390px uses a bottom navigation bar', (tester) async {
+    testWidgets('390px puts navigation in a drawer', (tester) async {
       await pumpShell(tester, const Size(390, 844));
-      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(shellScaffold(tester).hasDrawer, isTrue);
       expect(find.byType(NavigationRail), findsNothing);
     });
 
-    testWidgets('599px still uses a bottom bar (breakpoint edge)', (
-      tester,
-    ) async {
+    testWidgets('599px still uses a drawer (breakpoint edge)', (tester) async {
       await pumpShell(tester, const Size(599, 900));
-      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(shellScaffold(tester).hasDrawer, isTrue);
+    });
+
+    testWidgets('the compact drawer lists every destination', (tester) async {
+      await pumpShell(tester, const Size(390, 844));
+
+      // Closed, the drawer is not built at all — nothing is on screen to tap
+      // until the app-bar button opens it.
+      expect(find.byType(Drawer), findsNothing);
+
+      shellScaffold(tester).openDrawer();
+      await tester.pumpAndSettle();
+
+      final loc = localizationsOf(tester);
+      for (final destination in AppDestination.values) {
+        expect(
+          find.descendant(of: find.byType(Drawer), matching: navItem(destination)),
+          findsOneWidget,
+          reason: '${destination.title(loc)} should be listed in the drawer',
+        );
+      }
     });
 
     testWidgets('600px switches to a navigation rail (breakpoint edge)', (
@@ -87,26 +142,27 @@ void main() {
     ) async {
       await pumpShell(tester, const Size(600, 900));
       expect(find.byType(NavigationRail), findsOneWidget);
-      expect(find.byType(NavigationBar), findsNothing);
+      expect(shellScaffold(tester).hasDrawer, isFalse);
     });
 
     testWidgets('768px uses a navigation rail', (tester) async {
       await pumpShell(tester, const Size(768, 1024));
       expect(find.byType(NavigationRail), findsOneWidget);
-      expect(find.byType(NavigationBar), findsNothing);
+      expect(shellScaffold(tester).hasDrawer, isFalse);
     });
 
     testWidgets('1280px uses the full sidebar', (tester) async {
       await pumpShell(tester, const Size(1280, 800));
-      expect(find.byType(NavigationBar), findsNothing);
       expect(find.byType(NavigationRail), findsNothing);
+      expect(shellScaffold(tester).hasDrawer, isFalse);
       // The sidebar shows the brand plus every destination's full title.
       expect(find.text('Octopus'), findsOneWidget);
+      final loc = localizationsOf(tester);
       for (final destination in AppDestination.values) {
         expect(
-          find.text('Dashboard'),
+          find.text(destination.title(loc)),
           findsWidgets,
-          reason: '${destination.title} should be listed in the sidebar',
+          reason: '${destination.title(loc)} should be listed in the sidebar',
         );
       }
     });
@@ -121,14 +177,14 @@ void main() {
       ) async {
         await pumpShell(tester, entry.value);
 
+        final loc = localizationsOf(tester);
         for (final destination in AppDestination.values) {
-          await tester.tap(navItem(destination).first);
-          await tester.pumpAndSettle();
+          await tapDestination(tester, destination);
 
           expect(
             tester.takeException(),
             isNull,
-            reason: '${destination.title} overflowed at ${entry.key}',
+            reason: '${destination.title(loc)} overflowed at ${entry.key}',
           );
         }
       });
@@ -149,8 +205,7 @@ void main() {
 
     testWidgets('stock lists unstocked products as Unassigned', (tester) async {
       await pumpShell(tester, const Size(1280, 800));
-      await tester.tap(navItem(AppDestination.stock).first);
-      await tester.pumpAndSettle();
+      await tapDestination(tester, AppDestination.stock);
 
       // Product 7 is stocked across two warehouses (400 + 77); product 8 has
       // no stock row at all and must still appear.
@@ -160,8 +215,7 @@ void main() {
 
     testWidgets('users show derived role and status', (tester) async {
       await pumpShell(tester, const Size(1280, 800));
-      await tester.tap(navItem(AppDestination.users).first);
-      await tester.pumpAndSettle();
+      await tapDestination(tester, AppDestination.users);
 
       expect(find.text('ilyasschah'), findsOneWidget);
       expect(find.text('Admin'), findsOneWidget);
@@ -173,8 +227,7 @@ void main() {
 
     testWidgets('products list shows price and cost', (tester) async {
       await pumpShell(tester, const Size(1280, 800));
-      await tester.tap(navItem(AppDestination.products).first);
-      await tester.pumpAndSettle();
+      await tapDestination(tester, AppDestination.products);
 
       expect(find.text('Pepsi'), findsOneWidget);
       expect(find.text('10.00 DH'), findsOneWidget);
@@ -198,16 +251,13 @@ void main() {
       await pumpShell(tester, const Size(1280, 800), container: scope);
       expect(api.productCalls, 0);
 
-      await tester.tap(navItem(AppDestination.products).first);
-      await tester.pumpAndSettle();
+      await tapDestination(tester, AppDestination.products);
       expect(api.productCalls, 1);
 
       // Navigate away, then back: the second visit must fetch again rather
       // than showing whatever was left over from the first.
-      await tester.tap(navItem(AppDestination.documents).first);
-      await tester.pumpAndSettle();
-      await tester.tap(navItem(AppDestination.products).first);
-      await tester.pumpAndSettle();
+      await tapDestination(tester, AppDestination.documents);
+      await tapDestination(tester, AppDestination.products);
 
       expect(
         api.productCalls,

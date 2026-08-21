@@ -60,7 +60,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get fieldPassword => 'كلمة المرور';
 
   @override
-  String get developerMode => 'وضع المطوّر';
+  String get developerMode => 'وضع المطور';
 
   @override
   String get unlinkDeviceConfirm => 'هل تريد بالتأكيد إلغاء ربط هذا الجهاز؟';
@@ -1378,6 +1378,17 @@ class AppLocalizationsAr extends AppLocalizations {
   String get companyHeader => 'ترويسة الشركة';
 
   @override
+  String get kitchenPrintingSection => 'طباعة المطبخ';
+
+  @override
+  String get autoKitchenPrintOnCheckout =>
+      'طباعة تذاكر المطبخ تلقائيًا عند الدفع';
+
+  @override
+  String get autoKitchenPrintSubtitle =>
+      'هذا الجهاز فقط. عند إتمام البيع، تُطبع نفس تذاكر المحطات مثل زر المطبخ.';
+
+  @override
   String get companyPhoneTel => 'هاتف الشركة';
 
   @override
@@ -2136,6 +2147,28 @@ class AppLocalizationsAr extends AppLocalizations {
       'لم تُحدَّد أي نسب ضريبة بعد. أضِفها من نسب الضرائب.';
 
   @override
+  String get taxDefaultRequiredTitle => 'اختر نسبة ضريبة افتراضية';
+
+  @override
+  String get taxDefaultRequiredBody =>
+      'السعر شامل الضريبة يتطلّب نسبة ضريبة افتراضية. اختر واحدة على الأقل — ستُطبَّق على كل منتج جديد وتُقفَل في نقطة البيع.';
+
+  @override
+  String get taxDefaultRequiredNoRates =>
+      'لم تُحدَّد أي نسب ضريبة بعد. أنشئ واحدة من نسب الضرائب قبل تفعيل هذا الخيار.';
+
+  @override
+  String get defaultTaxRateDisabledHint =>
+      'فعِّل السعر شامل الضريبة أعلاه لتطبيق نسبة ضريبة افتراضية.';
+
+  @override
+  String get taxLockedBySetting =>
+      'مضبوط في الإعدادات ← عام ← الضريبة. لا يمكن تغييره هنا.';
+
+  @override
+  String get taxLockedShort => 'مقفل';
+
+  @override
   String get couldNotLoadWarehouses => 'تعذّر تحميل المستودعات';
 
   @override
@@ -2692,7 +2725,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get setDefaultScreen => 'الشاشة الافتراضية';
 
   @override
-  String get setDefaultSearch => 'البحث الافتراضي';
+  String get setDefaultSearch => 'وضع البحث الافتراضي';
 
   @override
   String get setDefaultServiceType => 'نوع الخدمة الافتراضي';
@@ -3041,7 +3074,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get setShowProductImages => 'إظهار صور المنتجات في شبكة نقطة البيع';
 
   @override
-  String get setShowSearchOptions => 'إظهار خيارات البحث';
+  String get setShowSearchOptions => 'إظهار أزرار وضع البحث';
 
   @override
   String get setShowServiceStatusBadge => 'إظهار شارة حالة الخدمة على البطاقات';
@@ -3247,6 +3280,11 @@ class AppLocalizationsAr extends AppLocalizations {
   String get noProductsFound => 'لم يتم العثور على منتجات.';
 
   @override
+  String noProductsMatchSearch(String query) {
+    return 'لا يوجد منتج يطابق \"$query\".';
+  }
+
+  @override
   String get productNameRequired => 'اسم المنتج *';
 
   @override
@@ -3266,6 +3304,111 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get measurementUnitHint => 'مثال: كجم، قطعة';
+
+  @override
+  String get sellByWeight => 'البيع بالوزن';
+
+  @override
+  String get sellByWeightHint =>
+      'عند التفعيل، تطلب نقطة البيع كمية بدل إضافة وحدة واحدة. وإذا لم يكن هناك ميزان متصل، فإن زر «السعر» يعدّل الكمية.';
+
+  @override
+  String get uomStockUnit => 'وحدة المخزون';
+
+  @override
+  String get uomCategoryUnit => 'وحدة';
+
+  @override
+  String get uomCategoryWeight => 'وزن';
+
+  @override
+  String get uomCategoryVolume => 'حجم';
+
+  @override
+  String get uomCategoryLength => 'طول';
+
+  @override
+  String uomStockHeldIn(String unit) {
+    return 'يُحسب المخزون بـ $unit.';
+  }
+
+  @override
+  String uomStockConversionNote(String unit, String factor, String stockUnit) {
+    return 'السعر لكل $unit. المخزون يتحرك بـ $stockUnit — 1 $unit = $factor $stockUnit.';
+  }
+
+  @override
+  String get weighItem => 'وزن الصنف';
+
+  @override
+  String get placeOnScale => 'ضع الصنف على الميزان';
+
+  @override
+  String get scaleNotConnected => 'لا يوجد ميزان متصل — أدخل الكمية';
+
+  @override
+  String get useThisWeight => 'استخدام هذا الوزن';
+
+  @override
+  String get enterQuantity => 'أدخل الكمية';
+
+  @override
+  String get priceEditsQuantity => 'السعر يعدّل الكمية';
+
+  @override
+  String get barcodeRules => 'قواعد الباركود';
+
+  @override
+  String barcodeRulesHint(Object NNDD) {
+    return 'تحدد قواعد الباركود كيفية قراءة الباركود الممسوح. يُطابَق الباركود مع أول قاعدة يناسبها النمط، لذا فإن الترتيب مهم. يمكن للنمط أن يتضمن قيمة مثل الوزن أو السعر: $NNDD تحدد مواضع الأرقام، ومواضع D هي خانات عشرية. المنتج الذي يحمل باركوده قيمة مضمّنة يجب أن يخزّن تلك المواضع أصفارًا.';
+  }
+
+  @override
+  String get ruleName => 'اسم القاعدة';
+
+  @override
+  String get ruleType => 'النوع';
+
+  @override
+  String get ruleEncoding => 'الترميز';
+
+  @override
+  String get rulePattern => 'نمط الباركود';
+
+  @override
+  String get ruleTypeUnit => 'منتج بالوحدة';
+
+  @override
+  String get ruleTypeWeighted => 'منتج بالوزن';
+
+  @override
+  String get ruleTypePriced => 'منتج بالسعر';
+
+  @override
+  String get ruleTypeDiscounted => 'منتج بخصم';
+
+  @override
+  String get addRuleLine => 'إضافة سطر';
+
+  @override
+  String get barcodeRulesSaved => 'تم حفظ قواعد الباركود';
+
+  @override
+  String get testBarcode => 'اختبار باركود';
+
+  @override
+  String get testBarcodeNoMatch => 'لا توجد قاعدة تطابق هذا الباركود';
+
+  @override
+  String testBarcodeMatched(String rule, String value) {
+    return 'القاعدة $rule — القيمة $value';
+  }
+
+  @override
+  String get weightNotAllowedForService => 'لا يمكن بيع الخدمة بالوزن.';
+
+  @override
+  String get scaleReadFailed => 'تعذّرت قراءة الميزان';
 
   @override
   String get ageRestrictionHint => 'مثال: 18';
@@ -3309,6 +3452,23 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get removeImage => 'إزالة الصورة';
+
+  @override
+  String get taxInclusiveNotAppliedNote =>
+      'تنبيه: لا تزال نقطة البيع تضيف هذه الضريبة فوق السعر. السعر الشامل للضريبة مخزَّن على المنتج لكنه غير مطبَّق عند الدفع بعد.';
+
+  @override
+  String get pricingTab => 'التسعير';
+
+  @override
+  String taxBreakdownIncluded(String price, String tax, String net) {
+    return '$price يشمل $tax ضريبة · الصافي $net';
+  }
+
+  @override
+  String taxBreakdownAdded(String price, String tax, String total) {
+    return '$price + $tax ضريبة = $total';
+  }
 
   @override
   String get applyTaxes => 'تطبيق الضرائب';
@@ -3450,6 +3610,12 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get fieldNameRequired => 'الاسم *';
+
+  @override
+  String get codeRequired => 'الرمز *';
+
+  @override
+  String get taxCodeAlreadyUsed => 'مستخدم بالفعل في ضريبة أخرى';
 
   @override
   String get fieldCode => 'الرمز';
@@ -3594,9 +3760,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get refreshOrderNumber => 'تحديث رقم الطلب';
-
-  @override
-  String get enterQuantity => 'أدخل الكمية';
 
   @override
   String get setSalePrice => 'تعيين سعر البيع';
@@ -5424,6 +5587,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get syncCashMovements => 'الحركات النقدية';
 
   @override
+  String get syncCompletedSales => 'مبيعات مكتملة بانتظار الرفع';
+
+  @override
   String get syncCustomerDiscounts => 'خصومات العملاء';
 
   @override
@@ -5437,9 +5603,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get syncProductTaxes => 'ضرائب المنتجات';
-
-  @override
-  String get syncSalesOrders => 'طلبات البيع';
 
   @override
   String get syncShifts => 'الورديات';
@@ -5925,4 +6088,579 @@ class AppLocalizationsAr extends AppLocalizations {
   String updateAvailableSnackbar(String version) {
     return 'الإصدار $version متاح — افتح الإعدادات ‹ حول لتثبيته.';
   }
+
+  @override
+  String get setDocuments => 'المستندات';
+
+  @override
+  String get resetDatabaseTitle => 'إعادة تعيين قاعدة البيانات';
+
+  @override
+  String get resetDatabaseAction => 'إعادة تعيين قاعدة البيانات';
+
+  @override
+  String get resetWarningBanner =>
+      'عملية مدمّرة. تحذف البيانات المحددة للشركة بأكملها — وستفقدها كل نقطة بيع عند المزامنة التالية. لا يمكن التراجع.';
+
+  @override
+  String get resetStepBackupTitle => 'مسار النسخ الاحتياطي';
+
+  @override
+  String get resetStepBackupSubtitle => 'الموقع الذي ستُحفظ فيه النسخة';
+
+  @override
+  String get resetStepBackupHint =>
+      'تُأخذ نسخة من هذا الجهاز قبل إعادة التعيين. إذا فشلت، تُلغى العملية.';
+
+  @override
+  String get resetBackupManagedHint => 'تخزين التطبيق (هذا الجهاز)';
+
+  @override
+  String get resetStepEntitiesTitle => 'اختر العناصر';
+
+  @override
+  String get resetStepEntitiesSubtitle =>
+      'ستُحذف العناصر المحددة من قاعدة البيانات';
+
+  @override
+  String get resetStepConfirmTitle => 'التأكيد';
+
+  @override
+  String get resetStepConfirmSubtitle => 'التفويض وتنفيذ إعادة التعيين';
+
+  @override
+  String get resetAdminPin => 'أدخل رمز المسؤول';
+
+  @override
+  String get resetAlsoClearsDocuments =>
+      'يمسح أيضاً المستندات — سجلات البيع تشير إليها.';
+
+  @override
+  String get resetDocumentsNote =>
+      'المبيعات والطلبات والمدفوعات والإلغاءات وتقارير Z. تُحفظ الحجوزات.';
+
+  @override
+  String get resetEverything => 'كل شيء';
+
+  @override
+  String get resetEverythingNote =>
+      'كل بيانات الشركة. يُحتفظ بالمستخدمين والإعدادات.';
+
+  @override
+  String get resetWrongPin => 'رمز غير صحيح.';
+
+  @override
+  String get resetConfirmTitle => 'إعادة تعيين قاعدة البيانات؟';
+
+  @override
+  String get resetConfirmBody =>
+      'يحذف هذا نهائياً البيانات المحددة لكل الشركة، على جميع الأجهزة. لا يمكن استرجاعها إلا من النسخة المحلية.';
+
+  @override
+  String get resetConfirmAction => 'نعم، أعد التعيين';
+
+  @override
+  String get resetNoCompany => 'لا توجد شركة محددة على هذا الجهاز.';
+
+  @override
+  String get resetPhaseBackup => 'جارٍ نسخ هذا الجهاز…';
+
+  @override
+  String get resetPhaseServer => 'جارٍ مسح بيانات الحساب…';
+
+  @override
+  String get resetPhaseLocal => 'جارٍ مسح هذا الجهاز…';
+
+  @override
+  String get resetDoneTitle => 'اكتملت إعادة التعيين';
+
+  @override
+  String get resetRestartManually => 'يرجى إغلاق التطبيق وإعادة فتحه.';
+
+  @override
+  String get resetOnlyAdmins => 'فقط المسؤولون يمكنهم إعادة التعيين.';
+
+  @override
+  String resetRestartingIn(int seconds) {
+    return 'إعادة التشغيل خلال $seconds…';
+  }
+
+  @override
+  String resetBackupSavedTo(String path) {
+    return 'حُفظت النسخة في $path';
+  }
+
+  @override
+  String get restoreDatabaseTitle => 'الاستعادة من نسخة احتياطية';
+
+  @override
+  String get restoreDatabaseAction => 'استعادة نسخة…';
+
+  @override
+  String get restoreDatabaseHint =>
+      'يستبدل كل ما في هذا الجهاز بملف نسخة احتياطية. سيُعاد تشغيل التطبيق.';
+
+  @override
+  String get restorePickTitle => 'اختر ملف نسخة (.sqlite)';
+
+  @override
+  String get restoreRejectedTitle => 'تعذّرت استعادة هذا الملف';
+
+  @override
+  String get restoreConfirmTitle => 'استعادة هذه النسخة؟';
+
+  @override
+  String get restoreConfirmBody =>
+      'سيُستبدل كل ما على هذا الجهاز بالنسخة. تُحفظ قاعدتك الحالية باسم pos_app.superseded.sqlite تحسّباً.';
+
+  @override
+  String get restoreConfirmAction => 'استعادة وإعادة تشغيل';
+
+  @override
+  String get restoreStagedTitle => 'النسخة جاهزة';
+
+  @override
+  String get restoreStagedBody =>
+      'سيُعاد تشغيل التطبيق لتركيب قاعدة البيانات. سجّل الدخول بعدها — وسيُرفع العمل غير المتزامن عند المزامنة التالية.';
+
+  @override
+  String get restoreErrMissing => 'لم يعد الملف موجوداً.';
+
+  @override
+  String get restoreErrNotSqlite => 'هذا ليس ملف قاعدة بيانات.';
+
+  @override
+  String get restoreErrEncrypted =>
+      'هذه النسخة مشفّرة لجهاز آخر ولا يمكن فتحها هنا. استعدها على الجهاز الذي أنشأها، أو ابدأ من جديد من السحابة.';
+
+  @override
+  String get restoreErrNotPosBackup => 'هذه قاعدة بيانات، لكنها ليست نسخة POS.';
+
+  @override
+  String restoreErrNewerSchema(int found, int supported) {
+    return 'أُنشئت هذه النسخة بإصدار أحدث (قاعدة v$found، وهذا الإصدار يفهم v$supported). حدّث التطبيق أولاً.';
+  }
+
+  @override
+  String get dbMissingTitle => 'لم يُعثر على قاعدة البيانات المحلية';
+
+  @override
+  String get dbMissingBody =>
+      'ملف قاعدة بيانات هذا الجهاز مفقود — ربما حُذف أو نُقل أو على قرص غير متصل.\n\nالبدء من جديد يُنزّل بياناتك من السحابة، لكن ما لم يتزامن أبداً لا يمكن استرجاعه.';
+
+  @override
+  String get dbMissingRestore => 'استعادة من ملف نسخة';
+
+  @override
+  String get dbMissingFresh => 'البدء من جديد من السحابة';
+
+  @override
+  String get dbMissingFreshConfirm =>
+      'البدء من جديد؟ سيُفقد كل ما لم يصل إلى السحابة.';
+
+  @override
+  String get onboardingDataTitle => 'إعداد هذا الجهاز';
+
+  @override
+  String get onboardingDataSubtitle => 'كيف يحصل هذا الجهاز على بياناته؟';
+
+  @override
+  String get onboardingCloudTitle => 'المزامنة مع السحابة';
+
+  @override
+  String get onboardingCloudBody =>
+      'سجّل الدخول ونزّل بيانات شركتك. اختر هذا لجهاز جديد.';
+
+  @override
+  String get onboardingRestoreTitle => 'استعادة من نسخة';
+
+  @override
+  String get onboardingRestoreBody =>
+      'استخدم نسخة .sqlite من جهاز آخر — لاستبدال جهاز، بما في ذلك العمل غير المتزامن.';
+
+  @override
+  String get balanceDue => 'الرصيد المستحق';
+
+  @override
+  String get telLabel => 'هاتف';
+
+  @override
+  String get itemsLabel => 'العناصر';
+
+  @override
+  String get timeLabel => 'الوقت';
+
+  @override
+  String get unitPriceLabel => 'سعر الوحدة';
+
+  @override
+  String get taxInvoiceUpper => 'فاتورة ضريبية';
+
+  @override
+  String get billTo => 'الفاتورة إلى';
+
+  @override
+  String get invoicesUpper => 'الفواتير';
+
+  @override
+  String get saveReceiptTitle => 'حفظ الإيصال';
+
+  @override
+  String get saveGuestCheckTitle => 'حفظ فاتورة الضيف';
+
+  @override
+  String get saveInvoicePdfTitle => 'حفظ الفاتورة PDF';
+
+  @override
+  String get zReportUpper => 'تقرير Z';
+
+  @override
+  String get endOfReport => '*** نهاية التقرير ***';
+
+  @override
+  String get totalQty => 'إجمالي الكمية';
+
+  @override
+  String get pointsBalance => 'رصيد النقاط';
+
+  @override
+  String get ptsShort => 'نقطة';
+
+  @override
+  String get invoiceNoLabel => 'رقم الفاتورة';
+
+  @override
+  String get pointsUsed => 'النقاط المستخدمة';
+
+  @override
+  String get paymentStatus => 'حالة الدفع';
+
+  @override
+  String pageNumberLabel(String number) {
+    return 'صفحة $number';
+  }
+
+  @override
+  String get createdWith => 'أُنشئت بواسطة';
+
+  @override
+  String get backupPathRequiredTitle => 'اختر مجلد النسخ الاحتياطي';
+
+  @override
+  String get backupPathRequiredBody =>
+      'يحتاج النسخ الاحتياطي التلقائي إلى مجلد للكتابة فيه. اختر مجلدًا الآن، وإلا ستُحفظ النسخ في مكان لم تختره.';
+
+  @override
+  String get backupPathNotSet =>
+      'يبقى النسخ الاحتياطي التلقائي متوقفًا حتى يتم تحديد مجلد.';
+
+  @override
+  String get posSession => 'جلسة نقطة البيع';
+
+  @override
+  String get sessionNoneTitle => 'لا توجد جلسة مفتوحة';
+
+  @override
+  String get sessionNoneBody =>
+      'لم تبدأ هذه الصندوق العمل بعد. افتح جلسة لبدء اليوم.';
+
+  @override
+  String get openRegister => 'فتح الصندوق';
+
+  @override
+  String get continueSelling => 'متابعة البيع';
+
+  @override
+  String get sessionNumber => 'الجلسة';
+
+  @override
+  String get sessionDevice => 'الجهاز';
+
+  @override
+  String get sessionOpenedAt => 'فُتحت في';
+
+  @override
+  String get sessionOpenedBy => 'فتحها';
+
+  @override
+  String get sessionClosedBy => 'أغلقها';
+
+  @override
+  String get sessionStatusLabel => 'الحالة';
+
+  @override
+  String get sessionOpeningCash => 'النقد الافتتاحي';
+
+  @override
+  String get sessionExpectedCash => 'النقد المتوقع';
+
+  @override
+  String get sessionCountedCash => 'النقد المعدود';
+
+  @override
+  String get sessionDifference => 'الفرق';
+
+  @override
+  String get sessionOrders => 'الطلبات';
+
+  @override
+  String get sessionPaymentTotals => 'إجماليات الدفع';
+
+  @override
+  String get sessionSyncStatus => 'المزامنة';
+
+  @override
+  String get sessionSynced => 'تمت المزامنة';
+
+  @override
+  String get sessionNotSyncedYet => 'لم تُرسل إلى السحابة بعد';
+
+  @override
+  String sessionUnsyncedSales(int count) {
+    return '$count عملية بيع ما زالت على هذا الجهاز';
+  }
+
+  @override
+  String sessionOpenOrders(int count) {
+    return '$count طلب ما زال معلقاً';
+  }
+
+  @override
+  String get sessionCannotClose => 'لا يمكن الإغلاق بعد';
+
+  @override
+  String get sessionForceClosed => 'أُغلقت قسراً';
+
+  @override
+  String get sessionLateArrivals =>
+      'وصلت مبيعات متأخرة بعد الإغلاق — تحتاج تسوية';
+
+  @override
+  String get sessionCashInferred =>
+      'طرق النقد مستنتجة — حدّدها في الإعدادات ← الطلب والدفع.';
+
+  @override
+  String get sessionOpeningCashPrompt => 'كم المبلغ النقدي في الدرج للبدء؟';
+
+  @override
+  String get sessionHistory => 'سجل الجلسات';
+
+  @override
+  String get sessionNoHistory => 'لا توجد جلسات.';
+
+  @override
+  String get sessionConfirmOpening => 'تأكيد الافتتاح';
+
+  @override
+  String get sessionInProgress => 'قيد التنفيذ';
+
+  @override
+  String get sessionClosingControl => 'مراقبة الإغلاق';
+
+  @override
+  String get sessionClosedPosted => 'مغلقة ومُرحّلة';
+
+  @override
+  String get openingControl => 'مراقبة الافتتاح';
+
+  @override
+  String get openingNote => 'ملاحظة الافتتاح';
+
+  @override
+  String get openingNoteHint => 'أضف ملاحظة افتتاح…';
+
+  @override
+  String get closingRegister => 'إغلاق الصندوق';
+
+  @override
+  String get closingNote => 'ملاحظة الإغلاق';
+
+  @override
+  String get closingNoteHint => 'أضف ملاحظة إغلاق…';
+
+  @override
+  String sessionOrdersTotal(int count, String total) {
+    return '$count مستندات: $total';
+  }
+
+  @override
+  String get sessionExpected => 'المتوقع';
+
+  @override
+  String get sessionCounted => 'المعدود';
+
+  @override
+  String get sessionOpeningRow => 'الافتتاح';
+
+  @override
+  String get sessionCashInOutRow => 'إدخال / إخراج نقد';
+
+  @override
+  String get sessionCashPaymentsRow => 'مدفوعات نقدية';
+
+  @override
+  String get cashCount => 'عدّ النقد';
+
+  @override
+  String get dailySale => 'مبيعات اليوم';
+
+  @override
+  String get actionDiscard => 'تجاهل';
+
+  @override
+  String managerAuthRequired(String diff, String max) {
+    return 'الفرق $diff يتجاوز الحد $max. مطلوب تصريح المدير.';
+  }
+
+  @override
+  String get managerAuthorise => 'تصريح المدير';
+
+  @override
+  String get managerPinPrompt => 'أدخل رمز مدير للسماح بهذا الفرق.';
+
+  @override
+  String get managerPinWrong => 'هذا الرمز ليس رمز مدير.';
+
+  @override
+  String get sessionRequiredTitle => 'افتح الصندوق أولاً';
+
+  @override
+  String get sessionRequiredBody =>
+      'المبيعات والمرتجعات وحركات النقد تتبع جلسة. افتح الصندوق لبدء العمل.';
+
+  @override
+  String get sessionNotTradingBody =>
+      'يجري إغلاق هذا الصندوق. أكمل عملية العدّ ثم افتح جلسة جديدة.';
+
+  @override
+  String get setRequireOpenSession => 'اشترط جلسة مفتوحة للبيع';
+
+  @override
+  String get sessionsTitle => 'الجلسات';
+
+  @override
+  String get sessionColId => 'رقم الجلسة';
+
+  @override
+  String get sessionColPos => 'نقطة البيع';
+
+  @override
+  String get sessionColOpenedBy => 'فتحها';
+
+  @override
+  String get sessionColOpening => 'تاريخ الافتتاح';
+
+  @override
+  String get sessionColClosing => 'تاريخ الإغلاق';
+
+  @override
+  String get sessionColStarting => 'الرصيد الافتتاحي';
+
+  @override
+  String get sessionColEnding => 'الرصيد الختامي';
+
+  @override
+  String get sessionColTheoretical => 'الإغلاق النظري';
+
+  @override
+  String get sessionColStatus => 'الحالة';
+
+  @override
+  String get sessionSearchHint => 'بحث…';
+
+  @override
+  String sessionCountOf(int shown, int total) {
+    return '$shown / $total';
+  }
+
+  @override
+  String get sessionDetails => 'تفاصيل الجلسة';
+
+  @override
+  String get sessionCurrentOnThisDevice => 'الجلسة الحالية على هذا الجهاز';
+
+  @override
+  String get sessionClosedAt => 'أُغلقت في';
+
+  @override
+  String get sessionDuration => 'المدة';
+
+  @override
+  String get sessionTotalTaken => 'إجمالي المقبوض';
+
+  @override
+  String get sessionCashMovements => 'حركات النقد';
+
+  @override
+  String get sessionNotes => 'ملاحظات';
+
+  @override
+  String get cashDrawer => 'درج النقد';
+
+  @override
+  String get sessionRemoteFiguresOffline =>
+      'هذه الجلسة تخص صندوقًا آخر — تُحمَّل مبالغها من الخادم.';
+
+  @override
+  String get sessionDocuments => 'المستندات';
+
+  @override
+  String get sessionOverviewTab => 'نظرة عامة';
+
+  @override
+  String get sessionPaymentsTab => 'المدفوعات';
+
+  @override
+  String get sessionNoPayments => 'لا توجد مدفوعات في هذه الجلسة بعد.';
+
+  @override
+  String get sessionOpenDocumentHint => 'اضغط على دفعة لفتح مستندها';
+
+  @override
+  String get sessionDocumentUnavailable =>
+      'هذا المستند غير موجود على هذا الجهاز.';
+
+  @override
+  String get developerModeHint =>
+      'يعرض زر تصحيح عائمًا على هذا الجهاز، مع محاكي باركود للسعر والوزن.';
+
+  @override
+  String get generateScaleBarcode => 'ملصق الميزان';
+
+  @override
+  String scaleBarcodeRuleUnusable(String pattern) {
+    return 'القاعدة $pattern لا يمكنها توليد باركود منتج.';
+  }
+
+  @override
+  String barcodeAlreadyUsedBy(String code, String product) {
+    return '$code ينتمي بالفعل إلى $product.';
+  }
+
+  @override
+  String get setPosSession => 'جلسة نقطة البيع';
+
+  @override
+  String get setCashMethods => 'طرق النقد';
+
+  @override
+  String get cashMethodsHint =>
+      'طرق الدفع التي تخرج من درج النقد وتُعدّ يدويًا عند الإغلاق. إلغاء تحديدها جميعًا يعيد الاستنتاج التلقائي.';
+
+  @override
+  String get cashMethodsInferredHint =>
+      'غير محددة — مستنتجة من «يسمح بإعادة الباقي».';
+
+  @override
+  String get cashMethodsConfirm => 'استخدم هذه';
+
+  @override
+  String get noPaymentMethodsDefined => 'لا توجد طرق دفع معرّفة.';
+
+  @override
+  String get setMaxCashDifference => 'فرق النقد المسموح';
+
+  @override
+  String get maxCashDifferenceHint =>
+      'إذا تجاوزه الفرق، يتطلب الإغلاق رمز مسؤول.';
 }

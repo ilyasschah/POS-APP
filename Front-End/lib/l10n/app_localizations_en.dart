@@ -61,7 +61,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fieldPassword => 'Password';
 
   @override
-  String get developerMode => 'Developer Mode';
+  String get developerMode => 'Developer mode';
 
   @override
   String get unlinkDeviceConfirm =>
@@ -1379,6 +1379,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get companyHeader => 'Company Header';
 
   @override
+  String get kitchenPrintingSection => 'Kitchen Printing';
+
+  @override
+  String get autoKitchenPrintOnCheckout =>
+      'Auto-print kitchen tickets at checkout';
+
+  @override
+  String get autoKitchenPrintSubtitle =>
+      'This terminal only. On sale completion, fires the same station tickets as the Kitchen button.';
+
+  @override
   String get companyPhoneTel => 'Company phone (Tel)';
 
   @override
@@ -2146,6 +2157,28 @@ class AppLocalizationsEn extends AppLocalizations {
       'No tax rates defined yet. Add them under Tax Rates.';
 
   @override
+  String get taxDefaultRequiredTitle => 'Choose a default tax rate';
+
+  @override
+  String get taxDefaultRequiredBody =>
+      'Tax-inclusive pricing needs a default tax rate. Pick at least one — it will be applied to every new product and locked at the till.';
+
+  @override
+  String get taxDefaultRequiredNoRates =>
+      'No tax rates defined yet. Create one under Tax Rates before turning this on.';
+
+  @override
+  String get defaultTaxRateDisabledHint =>
+      'Turn on tax-inclusive pricing above to apply a default tax rate.';
+
+  @override
+  String get taxLockedBySetting =>
+      'Set in Settings → General → Tax. It can\'t be changed here.';
+
+  @override
+  String get taxLockedShort => 'Locked';
+
+  @override
   String get couldNotLoadWarehouses => 'Could not load warehouses';
 
   @override
@@ -2665,7 +2698,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get setCustomerButton => 'Customer button';
 
   @override
-  String get setCustomerDisplay => 'CUSTOMER DISPLAY';
+  String get setCustomerDisplay => 'Customer display';
 
   @override
   String get setCustomerDisplayEnabled => 'Customer display enabled';
@@ -2698,7 +2731,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get setDefaultScreen => 'Default screen';
 
   @override
-  String get setDefaultSearch => 'Default search';
+  String get setDefaultSearch => 'Default search mode';
 
   @override
   String get setDefaultServiceType => 'Default service type';
@@ -3052,7 +3085,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get setShowProductImages => 'Show Product Images in POS Grid';
 
   @override
-  String get setShowSearchOptions => 'Show search options';
+  String get setShowSearchOptions => 'Show search mode buttons';
 
   @override
   String get setShowServiceStatusBadge =>
@@ -3261,6 +3294,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noProductsFound => 'No products found.';
 
   @override
+  String noProductsMatchSearch(String query) {
+    return 'No product matches \"$query\".';
+  }
+
+  @override
   String get productNameRequired => 'Product Name *';
 
   @override
@@ -3280,6 +3318,112 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get measurementUnitHint => 'e.g. kg, pcs';
+
+  @override
+  String get sellByWeight => 'Sell by weight';
+
+  @override
+  String get sellByWeightHint =>
+      'When on, the POS asks for a quantity instead of adding one unit. With no scale connected, the \'Price\' button edits the quantity.';
+
+  @override
+  String get uomStockUnit => 'stock unit';
+
+  @override
+  String get uomCategoryUnit => 'Unit';
+
+  @override
+  String get uomCategoryWeight => 'Weight';
+
+  @override
+  String get uomCategoryVolume => 'Volume';
+
+  @override
+  String get uomCategoryLength => 'Length';
+
+  @override
+  String uomStockHeldIn(String unit) {
+    return 'Stock is counted in $unit.';
+  }
+
+  @override
+  String uomStockConversionNote(String unit, String factor, String stockUnit) {
+    return 'Priced per $unit. Stock still moves in $stockUnit — 1 $unit = $factor $stockUnit.';
+  }
+
+  @override
+  String get weighItem => 'Weigh item';
+
+  @override
+  String get placeOnScale => 'Place the item on the scale';
+
+  @override
+  String get scaleNotConnected => 'No scale connected — enter the quantity';
+
+  @override
+  String get useThisWeight => 'Use this weight';
+
+  @override
+  String get enterQuantity => 'Enter Quantity';
+
+  @override
+  String get priceEditsQuantity => 'Price edits quantity';
+
+  @override
+  String get barcodeRules => 'Barcode Rules';
+
+  @override
+  String barcodeRulesHint(Object NNDD) {
+    return 'Barcode rules define how a scanned barcode is read. A barcode is matched against the first rule whose pattern fits, so order matters. Patterns can embed a value such as a weight or a price: $NNDD marks where the digits sit, and D positions are decimals. A product whose barcode carries an embedded value must store those positions as zeros.';
+  }
+
+  @override
+  String get ruleName => 'Rule Name';
+
+  @override
+  String get ruleType => 'Type';
+
+  @override
+  String get ruleEncoding => 'Encoding';
+
+  @override
+  String get rulePattern => 'Barcode Pattern';
+
+  @override
+  String get ruleTypeUnit => 'Unit Product';
+
+  @override
+  String get ruleTypeWeighted => 'Weighted Product';
+
+  @override
+  String get ruleTypePriced => 'Priced Product';
+
+  @override
+  String get ruleTypeDiscounted => 'Discounted Product';
+
+  @override
+  String get addRuleLine => 'Add a line';
+
+  @override
+  String get barcodeRulesSaved => 'Barcode rules saved';
+
+  @override
+  String get testBarcode => 'Test a barcode';
+
+  @override
+  String get testBarcodeNoMatch => 'No rule matches this barcode';
+
+  @override
+  String testBarcodeMatched(String rule, String value) {
+    return 'Matched $rule — value $value';
+  }
+
+  @override
+  String get weightNotAllowedForService =>
+      'A service cannot be sold by weight.';
+
+  @override
+  String get scaleReadFailed => 'Could not read the scale';
 
   @override
   String get ageRestrictionHint => 'e.g. 18';
@@ -3323,6 +3467,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get removeImage => 'Remove Image';
+
+  @override
+  String get taxInclusiveNotAppliedNote =>
+      'Heads up: the till still adds this tax on top of the price. Tax-inclusive pricing is stored on the product but not yet applied at checkout.';
+
+  @override
+  String get pricingTab => 'Pricing';
+
+  @override
+  String taxBreakdownIncluded(String price, String tax, String net) {
+    return '$price includes $tax tax · net $net';
+  }
+
+  @override
+  String taxBreakdownAdded(String price, String tax, String total) {
+    return '$price + $tax tax = $total';
+  }
 
   @override
   String get applyTaxes => 'Apply Taxes';
@@ -3466,6 +3627,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fieldNameRequired => 'Name *';
 
   @override
+  String get codeRequired => 'Code *';
+
+  @override
+  String get taxCodeAlreadyUsed => 'Already used by another tax';
+
+  @override
   String get fieldCode => 'Code';
 
   @override
@@ -3604,9 +3771,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get refreshOrderNumber => 'Refresh order number';
-
-  @override
-  String get enterQuantity => 'Enter Quantity';
 
   @override
   String get setSalePrice => 'Set Sale Price';
@@ -5378,6 +5542,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get syncCashMovements => 'Cash movements';
 
   @override
+  String get syncCompletedSales => 'Completed sales awaiting upload';
+
+  @override
   String get syncCustomerDiscounts => 'Customer discounts';
 
   @override
@@ -5391,9 +5558,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get syncProductTaxes => 'Product taxes';
-
-  @override
-  String get syncSalesOrders => 'Sales orders';
 
   @override
   String get syncShifts => 'Shifts';
@@ -5885,4 +6049,585 @@ class AppLocalizationsEn extends AppLocalizations {
   String updateAvailableSnackbar(String version) {
     return 'Version $version is available — open Settings › About to install it.';
   }
+
+  @override
+  String get setDocuments => 'Documents';
+
+  @override
+  String get resetDatabaseTitle => 'RESET DATABASE';
+
+  @override
+  String get resetDatabaseAction => 'Reset database';
+
+  @override
+  String get resetWarningBanner =>
+      'This is a destructive operation. It deletes the selected data for your WHOLE company — every terminal loses it on its next sync. This cannot be undone.';
+
+  @override
+  String get resetStepBackupTitle => 'Backup database path';
+
+  @override
+  String get resetStepBackupSubtitle =>
+      'Location where database backup will be saved';
+
+  @override
+  String get resetStepBackupHint =>
+      'A backup of this device is taken before the reset. If the backup fails, the reset is cancelled.';
+
+  @override
+  String get resetBackupManagedHint => 'Managed app storage (this device)';
+
+  @override
+  String get resetStepEntitiesTitle => 'Select entities to reset';
+
+  @override
+  String get resetStepEntitiesSubtitle =>
+      'Selected entities will be deleted from the database';
+
+  @override
+  String get resetStepConfirmTitle => 'Confirmation';
+
+  @override
+  String get resetStepConfirmSubtitle =>
+      'Authorize and perform reset on selected entities';
+
+  @override
+  String get resetAdminPin => 'Enter administrator PIN';
+
+  @override
+  String get resetAlsoClearsDocuments =>
+      'Also clears Documents — sales rows reference these.';
+
+  @override
+  String get resetDocumentsNote =>
+      'Sales, orders, payments, voids and Z-reports. Bookings are kept.';
+
+  @override
+  String get resetEverything => 'Everything';
+
+  @override
+  String get resetEverythingNote =>
+      'All company data. Users and your settings are kept so you can sign back in.';
+
+  @override
+  String get resetWrongPin => 'Incorrect PIN.';
+
+  @override
+  String get resetConfirmTitle => 'Reset the database?';
+
+  @override
+  String get resetConfirmBody =>
+      'This permanently deletes the selected data for your whole company, on every terminal. Only the local backup can recover it.';
+
+  @override
+  String get resetConfirmAction => 'Yes, reset';
+
+  @override
+  String get resetNoCompany => 'No company is selected on this device.';
+
+  @override
+  String get resetPhaseBackup => 'Backing up this device…';
+
+  @override
+  String get resetPhaseServer => 'Clearing account data…';
+
+  @override
+  String get resetPhaseLocal => 'Clearing this device…';
+
+  @override
+  String get resetDoneTitle => 'Reset complete';
+
+  @override
+  String get resetRestartManually =>
+      'Please close and reopen the app to finish.';
+
+  @override
+  String get resetOnlyAdmins => 'Only administrators can reset the database.';
+
+  @override
+  String resetRestartingIn(int seconds) {
+    return 'Restarting in $seconds…';
+  }
+
+  @override
+  String resetBackupSavedTo(String path) {
+    return 'Backup saved to $path';
+  }
+
+  @override
+  String get restoreDatabaseTitle => 'Restore from backup';
+
+  @override
+  String get restoreDatabaseAction => 'Restore backup…';
+
+  @override
+  String get restoreDatabaseHint =>
+      'Replaces everything on this terminal with a backup file. The app restarts to complete it.';
+
+  @override
+  String get restorePickTitle => 'Select a backup file (.sqlite)';
+
+  @override
+  String get restoreRejectedTitle => 'This file cannot be restored';
+
+  @override
+  String get restoreConfirmTitle => 'Restore this backup?';
+
+  @override
+  String get restoreConfirmBody =>
+      'Everything currently on this terminal is replaced by the backup. Your current database is kept as pos_app.superseded.sqlite in case you picked the wrong file.';
+
+  @override
+  String get restoreConfirmAction => 'Restore and restart';
+
+  @override
+  String get restoreStagedTitle => 'Backup ready to restore';
+
+  @override
+  String get restoreStagedBody =>
+      'The app will restart to swap the database in. Sign in again afterwards — any work in the backup that never reached the cloud is uploaded on the next sync.';
+
+  @override
+  String get restoreErrMissing => 'The file no longer exists.';
+
+  @override
+  String get restoreErrNotSqlite => 'That is not a database file.';
+
+  @override
+  String get restoreErrEncrypted =>
+      'This backup is encrypted for a different device and cannot be opened here. Restore it on the terminal that created it, or start fresh and pull your data from the cloud.';
+
+  @override
+  String get restoreErrNotPosBackup =>
+      'That is a database, but not a POS backup.';
+
+  @override
+  String restoreErrNewerSchema(int found, int supported) {
+    return 'This backup was made by a newer version of the app (database v$found, this build understands v$supported). Update the app first.';
+  }
+
+  @override
+  String get dbMissingTitle => 'Local database not found';
+
+  @override
+  String get dbMissingBody =>
+      'The database file for this terminal is missing — it may have been deleted, moved, or be on a drive that is not connected.\n\nStarting fresh downloads your data from the cloud, but anything that never synced from this terminal cannot be recovered that way.';
+
+  @override
+  String get dbMissingRestore => 'Restore from a backup file';
+
+  @override
+  String get dbMissingFresh => 'Start fresh from the cloud';
+
+  @override
+  String get dbMissingFreshConfirm =>
+      'Start fresh? Anything on this terminal that never reached the cloud will be gone.';
+
+  @override
+  String get onboardingDataTitle => 'Set up this terminal';
+
+  @override
+  String get onboardingDataSubtitle => 'How should this terminal get its data?';
+
+  @override
+  String get onboardingCloudTitle => 'Sync with the cloud';
+
+  @override
+  String get onboardingCloudBody =>
+      'Sign in and download your company data. Choose this for a new terminal.';
+
+  @override
+  String get onboardingRestoreTitle => 'Restore from a backup';
+
+  @override
+  String get onboardingRestoreBody =>
+      'Use a .sqlite backup from another terminal — for replacing a machine, including work that never synced.';
+
+  @override
+  String get balanceDue => 'Balance Due';
+
+  @override
+  String get telLabel => 'Tel';
+
+  @override
+  String get itemsLabel => 'Items';
+
+  @override
+  String get timeLabel => 'Time';
+
+  @override
+  String get unitPriceLabel => 'Unit price';
+
+  @override
+  String get taxInvoiceUpper => 'TAX INVOICE';
+
+  @override
+  String get billTo => 'Bill to';
+
+  @override
+  String get invoicesUpper => 'INVOICES';
+
+  @override
+  String get saveReceiptTitle => 'Save Receipt';
+
+  @override
+  String get saveGuestCheckTitle => 'Save Guest Check';
+
+  @override
+  String get saveInvoicePdfTitle => 'Save Invoice PDF';
+
+  @override
+  String get zReportUpper => 'Z-REPORT';
+
+  @override
+  String get endOfReport => '*** END OF REPORT ***';
+
+  @override
+  String get totalQty => 'Total Qty';
+
+  @override
+  String get pointsBalance => 'Points Balance';
+
+  @override
+  String get ptsShort => 'pts';
+
+  @override
+  String get invoiceNoLabel => 'Invoice No.';
+
+  @override
+  String get pointsUsed => 'Points Used';
+
+  @override
+  String get paymentStatus => 'Payment status';
+
+  @override
+  String pageNumberLabel(String number) {
+    return 'Page $number';
+  }
+
+  @override
+  String get createdWith => 'Created with';
+
+  @override
+  String get backupPathRequiredTitle => 'Choose a backup folder';
+
+  @override
+  String get backupPathRequiredBody =>
+      'Automatic backups need a folder to write to. Pick one now — otherwise backups run to a location you did not choose.';
+
+  @override
+  String get backupPathNotSet =>
+      'Automatic backups stay off until a backup folder is set.';
+
+  @override
+  String get posSession => 'POS Session';
+
+  @override
+  String get sessionNoneTitle => 'No open session';
+
+  @override
+  String get sessionNoneBody =>
+      'This register is not trading yet. Open a session to start the day.';
+
+  @override
+  String get openRegister => 'Open Register';
+
+  @override
+  String get continueSelling => 'Continue Selling';
+
+  @override
+  String get sessionNumber => 'Session';
+
+  @override
+  String get sessionDevice => 'Device';
+
+  @override
+  String get sessionOpenedAt => 'Opened at';
+
+  @override
+  String get sessionOpenedBy => 'Opened by';
+
+  @override
+  String get sessionClosedBy => 'Closed by';
+
+  @override
+  String get sessionStatusLabel => 'Status';
+
+  @override
+  String get sessionOpeningCash => 'Opening cash';
+
+  @override
+  String get sessionExpectedCash => 'Expected cash';
+
+  @override
+  String get sessionCountedCash => 'Counted cash';
+
+  @override
+  String get sessionDifference => 'Difference';
+
+  @override
+  String get sessionOrders => 'Orders';
+
+  @override
+  String get sessionPaymentTotals => 'Payment totals';
+
+  @override
+  String get sessionSyncStatus => 'Synchronisation';
+
+  @override
+  String get sessionSynced => 'All synced';
+
+  @override
+  String get sessionNotSyncedYet => 'Not sent to the cloud yet';
+
+  @override
+  String sessionUnsyncedSales(int count) {
+    return '$count sale(s) still on this device';
+  }
+
+  @override
+  String sessionOpenOrders(int count) {
+    return '$count order(s) still parked';
+  }
+
+  @override
+  String get sessionCannotClose => 'Cannot close yet';
+
+  @override
+  String get sessionForceClosed => 'Force-closed';
+
+  @override
+  String get sessionLateArrivals =>
+      'Late sales arrived after closing — needs reconciliation';
+
+  @override
+  String get sessionCashInferred =>
+      'Cash methods are inferred — set which methods come out of the drawer in Settings → Order & Payment.';
+
+  @override
+  String get sessionOpeningCashPrompt =>
+      'How much cash is in the drawer to start?';
+
+  @override
+  String get sessionHistory => 'Session history';
+
+  @override
+  String get sessionNoHistory => 'No sessions yet.';
+
+  @override
+  String get sessionConfirmOpening => 'Confirm opening';
+
+  @override
+  String get sessionInProgress => 'In Progress';
+
+  @override
+  String get sessionClosingControl => 'Closing Control';
+
+  @override
+  String get sessionClosedPosted => 'Closed & Posted';
+
+  @override
+  String get openingControl => 'Opening Control';
+
+  @override
+  String get openingNote => 'Opening note';
+
+  @override
+  String get openingNoteHint => 'Add an opening note…';
+
+  @override
+  String get closingRegister => 'Closing Register';
+
+  @override
+  String get closingNote => 'Closing note';
+
+  @override
+  String get closingNoteHint => 'Add a closing note…';
+
+  @override
+  String sessionOrdersTotal(int count, String total) {
+    return '$count documents: $total';
+  }
+
+  @override
+  String get sessionExpected => 'Expected';
+
+  @override
+  String get sessionCounted => 'Counted';
+
+  @override
+  String get sessionOpeningRow => 'Opening';
+
+  @override
+  String get sessionCashInOutRow => 'Cash In / Out';
+
+  @override
+  String get sessionCashPaymentsRow => 'Payments in cash';
+
+  @override
+  String get cashCount => 'Cash Count';
+
+  @override
+  String get dailySale => 'Daily Sale';
+
+  @override
+  String get actionDiscard => 'Discard';
+
+  @override
+  String managerAuthRequired(String diff, String max) {
+    return 'Difference of $diff exceeds the allowed $max. Manager authorisation is required.';
+  }
+
+  @override
+  String get managerAuthorise => 'Manager authorisation';
+
+  @override
+  String get managerPinPrompt =>
+      'Enter an administrator\'s PIN to authorise this difference.';
+
+  @override
+  String get managerPinWrong => 'That PIN is not an administrator PIN.';
+
+  @override
+  String get sessionRequiredTitle => 'Open the register first';
+
+  @override
+  String get sessionRequiredBody =>
+      'Sales, refunds and cash movements belong to a session. Open the register to start trading.';
+
+  @override
+  String get sessionNotTradingBody =>
+      'This register is being closed. Finish the closing count, then open a new session.';
+
+  @override
+  String get setRequireOpenSession => 'Require an open session to sell';
+
+  @override
+  String get sessionsTitle => 'Sessions';
+
+  @override
+  String get sessionColId => 'Session ID';
+
+  @override
+  String get sessionColPos => 'Point of Sale';
+
+  @override
+  String get sessionColOpenedBy => 'Opened By';
+
+  @override
+  String get sessionColOpening => 'Opening Date';
+
+  @override
+  String get sessionColClosing => 'Closing Date';
+
+  @override
+  String get sessionColStarting => 'Starting Balance';
+
+  @override
+  String get sessionColEnding => 'Ending Balance';
+
+  @override
+  String get sessionColTheoretical => 'Theoretical Closing';
+
+  @override
+  String get sessionColStatus => 'Status';
+
+  @override
+  String get sessionSearchHint => 'Search…';
+
+  @override
+  String sessionCountOf(int shown, int total) {
+    return '$shown / $total';
+  }
+
+  @override
+  String get sessionDetails => 'Session details';
+
+  @override
+  String get sessionCurrentOnThisDevice => 'Current session on this device';
+
+  @override
+  String get sessionClosedAt => 'Closed at';
+
+  @override
+  String get sessionDuration => 'Duration';
+
+  @override
+  String get sessionTotalTaken => 'Total taken';
+
+  @override
+  String get sessionCashMovements => 'Cash movements';
+
+  @override
+  String get sessionNotes => 'Notes';
+
+  @override
+  String get cashDrawer => 'Cash drawer';
+
+  @override
+  String get sessionRemoteFiguresOffline =>
+      'This session belongs to another register — its takings load from the server.';
+
+  @override
+  String get sessionDocuments => 'Documents';
+
+  @override
+  String get sessionOverviewTab => 'Overview';
+
+  @override
+  String get sessionPaymentsTab => 'Payments';
+
+  @override
+  String get sessionNoPayments => 'No payments taken in this session yet.';
+
+  @override
+  String get sessionOpenDocumentHint => 'Tap a payment to open its document';
+
+  @override
+  String get sessionDocumentUnavailable =>
+      'That document is not on this device.';
+
+  @override
+  String get developerModeHint =>
+      'Shows a floating debug button on this terminal, with a barcode simulator for price and weight labels.';
+
+  @override
+  String get generateScaleBarcode => 'Scale label';
+
+  @override
+  String scaleBarcodeRuleUnusable(String pattern) {
+    return 'The rule $pattern cannot generate a product barcode.';
+  }
+
+  @override
+  String barcodeAlreadyUsedBy(String code, String product) {
+    return '$code already belongs to $product.';
+  }
+
+  @override
+  String get setPosSession => 'POS session';
+
+  @override
+  String get setCashMethods => 'Cash methods';
+
+  @override
+  String get cashMethodsHint =>
+      'Which payment methods come out of the cash drawer and get physically counted at closing. Clearing all of them goes back to guessing.';
+
+  @override
+  String get cashMethodsInferredHint =>
+      'Not set yet — these are guessed from \"change allowed\".';
+
+  @override
+  String get cashMethodsConfirm => 'Use these';
+
+  @override
+  String get noPaymentMethodsDefined => 'No payment methods defined.';
+
+  @override
+  String get setMaxCashDifference => 'Allowed cash difference';
+
+  @override
+  String get maxCashDifferenceHint =>
+      'Beyond this, closing the drawer needs an administrator PIN.';
 }

@@ -22,6 +22,8 @@ import 'package:pos_app/app_settings/app_settings_provider.dart';
 import 'package:pos_app/core/pos_virtual_keyboard.dart';
 import 'package:pos_app/core/app_theme.dart';
 import 'package:pos_app/core/device_theme_mode_provider.dart';
+import 'package:pos_app/database/db_missing_screen.dart';
+import 'package:pos_app/database/restore_service.dart';
 import 'package:pos_app/onboarding/onboarding_prefs.dart';
 import 'package:pos_app/onboarding/onboarding_screen.dart';
 import 'package:window_manager/window_manager.dart';
@@ -72,7 +74,13 @@ class MyApp extends ConsumerStatefulWidget {
 class _BootDecision {
   final bool registered;
   final LicenseEvaluation? license;
-  const _BootDecision(this.registered, this.license);
+
+  /// The terminal is registered but its database file has gone. Distinct from
+  /// a fresh install (where the file is *also* absent) — see [_decideBoot].
+  final bool databaseMissing;
+
+  const _BootDecision(this.registered, this.license,
+      {this.databaseMissing = false});
 }
 
 class _MyAppState extends ConsumerState<MyApp> {
@@ -84,9 +92,33 @@ class _MyAppState extends ConsumerState<MyApp> {
     _bootFuture = _decideBoot();
   }
 
-  Future<_BootDecision> _decideBoot() async {
+  /// Re-runs the boot decision with the missing-database gate skipped, for the
+  /// operator who chose "start fresh" on [DbMissingScreen]. The empty database
+  /// is created on the first open and the normal sync repopulates it.
+  Future<_BootDecision> _decideBootFresh() =>
+      _decideBoot(ignoreMissingDatabase: true);
+
+  Future<_BootDecision> _decideBoot({bool ignoreMissingDatabase = false}) async {
     final storage = ref.read(authStorageProvider);
     final registered = await storage.isDeviceRegistered();
+
+    // ⚠️ Checked BEFORE anything opens Drift, because opening a path that does
+    // not exist CREATES an empty database — silently. Without this the terminal
+    // boots looking like it lost every product and sale, with nothing on screen
+    // saying why, and the operator's next sale writes into the empty file.
+    //
+    // Registration lives in secure storage, not the database, which is what
+    // makes the two cases separable: no file + NOT registered is an ordinary
+    // fresh install; no file + registered means it went missing underneath a
+    // configured till. A staged restore is not a problem either way — the swap
+    // happens when the connection opens, so the file is about to exist.
+    if (!ignoreMissingDatabase &&
+        registered &&
+        await RestoreService.liveDatabaseMissing() &&
+        !(await RestoreService.stagedFile()).existsSync()) {
+      return const _BootDecision(true, null, databaseMissing: true);
+    }
+
     if (!registered) return const _BootDecision(false, null);
 
     // Deleted-account guard at boot: if this terminal's company was deleted in
@@ -200,6 +232,16 @@ class _MyAppState extends ConsumerState<MyApp> {
             );
           }
           final decision = snapshot.data!;
+          // Ahead of every other gate: with no database there is nothing for
+          // the licence check or the login picker to read, and letting the app
+          // through would quietly rebuild an empty one.
+          if (decision.databaseMissing) {
+            return DbMissingScreen(
+              // "Start fresh" just proceeds — the empty database gets created
+              // on the first open and the normal sync fills it from the cloud.
+              onStartFresh: () => setState(() => _bootFuture = _decideBootFresh()),
+            );
+          }
           if (!decision.registered) return const MasterLoginScreen();
           final license = decision.license;
           if (license != null && license.blocked) {

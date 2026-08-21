@@ -6477,6 +6477,31 @@ class $ProductsTableTable extends ProductsTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _uomIdMeta = const VerificationMeta('uomId');
+  @override
+  late final GeneratedColumn<int> uomId = GeneratedColumn<int>(
+    'uom_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _isToWeighMeta = const VerificationMeta(
+    'isToWeigh',
+  );
+  @override
+  late final GeneratedColumn<bool> isToWeigh = GeneratedColumn<bool>(
+    'is_to_weigh',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_to_weigh" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _imageMeta = const VerificationMeta('image');
   @override
   late final GeneratedColumn<Uint8List> image = GeneratedColumn<Uint8List>(
@@ -6525,6 +6550,8 @@ class $ProductsTableTable extends ProductsTable
     lastModified,
     syncStatus,
     syncError,
+    uomId,
+    isToWeigh,
     image,
     color,
   ];
@@ -6747,6 +6774,18 @@ class $ProductsTableTable extends ProductsTable
         syncError.isAcceptableOrUnknown(data['sync_error']!, _syncErrorMeta),
       );
     }
+    if (data.containsKey('uom_id')) {
+      context.handle(
+        _uomIdMeta,
+        uomId.isAcceptableOrUnknown(data['uom_id']!, _uomIdMeta),
+      );
+    }
+    if (data.containsKey('is_to_weigh')) {
+      context.handle(
+        _isToWeighMeta,
+        isToWeigh.isAcceptableOrUnknown(data['is_to_weigh']!, _isToWeighMeta),
+      );
+    }
     if (data.containsKey('image')) {
       context.handle(
         _imageMeta,
@@ -6880,6 +6919,14 @@ class $ProductsTableTable extends ProductsTable
         DriftSqlType.string,
         data['${effectivePrefix}sync_error'],
       ),
+      uomId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}uom_id'],
+      )!,
+      isToWeigh: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_to_weigh'],
+      )!,
       image: attachedDatabase.typeMapping.read(
         DriftSqlType.blob,
         data['${effectivePrefix}image'],
@@ -6927,6 +6974,8 @@ class ProductsTableData extends DataClass
   final DateTime lastModified;
   final String syncStatus;
   final String? syncError;
+  final int uomId;
+  final bool isToWeigh;
   final Uint8List? image;
   final String? color;
   const ProductsTableData({
@@ -6958,6 +7007,8 @@ class ProductsTableData extends DataClass
     required this.lastModified,
     required this.syncStatus,
     this.syncError,
+    required this.uomId,
+    required this.isToWeigh,
     this.image,
     this.color,
   });
@@ -7022,6 +7073,8 @@ class ProductsTableData extends DataClass
     if (!nullToAbsent || syncError != null) {
       map['sync_error'] = Variable<String>(syncError);
     }
+    map['uom_id'] = Variable<int>(uomId);
+    map['is_to_weigh'] = Variable<bool>(isToWeigh);
     if (!nullToAbsent || image != null) {
       map['image'] = Variable<Uint8List>(image);
     }
@@ -7087,6 +7140,8 @@ class ProductsTableData extends DataClass
       syncError: syncError == null && nullToAbsent
           ? const Value.absent()
           : Value(syncError),
+      uomId: Value(uomId),
+      isToWeigh: Value(isToWeigh),
       image: image == null && nullToAbsent
           ? const Value.absent()
           : Value(image),
@@ -7138,6 +7193,8 @@ class ProductsTableData extends DataClass
       lastModified: serializer.fromJson<DateTime>(json['lastModified']),
       syncStatus: serializer.fromJson<String>(json['syncStatus']),
       syncError: serializer.fromJson<String?>(json['syncError']),
+      uomId: serializer.fromJson<int>(json['uomId']),
+      isToWeigh: serializer.fromJson<bool>(json['isToWeigh']),
       image: serializer.fromJson<Uint8List?>(json['image']),
       color: serializer.fromJson<String?>(json['color']),
     );
@@ -7174,6 +7231,8 @@ class ProductsTableData extends DataClass
       'lastModified': serializer.toJson<DateTime>(lastModified),
       'syncStatus': serializer.toJson<String>(syncStatus),
       'syncError': serializer.toJson<String?>(syncError),
+      'uomId': serializer.toJson<int>(uomId),
+      'isToWeigh': serializer.toJson<bool>(isToWeigh),
       'image': serializer.toJson<Uint8List?>(image),
       'color': serializer.toJson<String?>(color),
     };
@@ -7208,6 +7267,8 @@ class ProductsTableData extends DataClass
     DateTime? lastModified,
     String? syncStatus,
     Value<String?> syncError = const Value.absent(),
+    int? uomId,
+    bool? isToWeigh,
     Value<Uint8List?> image = const Value.absent(),
     Value<String?> color = const Value.absent(),
   }) => ProductsTableData(
@@ -7250,6 +7311,8 @@ class ProductsTableData extends DataClass
     lastModified: lastModified ?? this.lastModified,
     syncStatus: syncStatus ?? this.syncStatus,
     syncError: syncError.present ? syncError.value : this.syncError,
+    uomId: uomId ?? this.uomId,
+    isToWeigh: isToWeigh ?? this.isToWeigh,
     image: image.present ? image.value : this.image,
     color: color.present ? color.value : this.color,
   );
@@ -7311,6 +7374,8 @@ class ProductsTableData extends DataClass
           ? data.syncStatus.value
           : this.syncStatus,
       syncError: data.syncError.present ? data.syncError.value : this.syncError,
+      uomId: data.uomId.present ? data.uomId.value : this.uomId,
+      isToWeigh: data.isToWeigh.present ? data.isToWeigh.value : this.isToWeigh,
       image: data.image.present ? data.image.value : this.image,
       color: data.color.present ? data.color.value : this.color,
     );
@@ -7347,6 +7412,8 @@ class ProductsTableData extends DataClass
           ..write('lastModified: $lastModified, ')
           ..write('syncStatus: $syncStatus, ')
           ..write('syncError: $syncError, ')
+          ..write('uomId: $uomId, ')
+          ..write('isToWeigh: $isToWeigh, ')
           ..write('image: $image, ')
           ..write('color: $color')
           ..write(')'))
@@ -7383,6 +7450,8 @@ class ProductsTableData extends DataClass
     lastModified,
     syncStatus,
     syncError,
+    uomId,
+    isToWeigh,
     $driftBlobEquality.hash(image),
     color,
   ]);
@@ -7418,6 +7487,8 @@ class ProductsTableData extends DataClass
           other.lastModified == this.lastModified &&
           other.syncStatus == this.syncStatus &&
           other.syncError == this.syncError &&
+          other.uomId == this.uomId &&
+          other.isToWeigh == this.isToWeigh &&
           $driftBlobEquality.equals(other.image, this.image) &&
           other.color == this.color);
 }
@@ -7451,6 +7522,8 @@ class ProductsTableCompanion extends UpdateCompanion<ProductsTableData> {
   final Value<DateTime> lastModified;
   final Value<String> syncStatus;
   final Value<String?> syncError;
+  final Value<int> uomId;
+  final Value<bool> isToWeigh;
   final Value<Uint8List?> image;
   final Value<String?> color;
   const ProductsTableCompanion({
@@ -7482,6 +7555,8 @@ class ProductsTableCompanion extends UpdateCompanion<ProductsTableData> {
     this.lastModified = const Value.absent(),
     this.syncStatus = const Value.absent(),
     this.syncError = const Value.absent(),
+    this.uomId = const Value.absent(),
+    this.isToWeigh = const Value.absent(),
     this.image = const Value.absent(),
     this.color = const Value.absent(),
   });
@@ -7514,6 +7589,8 @@ class ProductsTableCompanion extends UpdateCompanion<ProductsTableData> {
     required DateTime lastModified,
     this.syncStatus = const Value.absent(),
     this.syncError = const Value.absent(),
+    this.uomId = const Value.absent(),
+    this.isToWeigh = const Value.absent(),
     this.image = const Value.absent(),
     this.color = const Value.absent(),
   }) : companyId = Value(companyId),
@@ -7548,6 +7625,8 @@ class ProductsTableCompanion extends UpdateCompanion<ProductsTableData> {
     Expression<DateTime>? lastModified,
     Expression<String>? syncStatus,
     Expression<String>? syncError,
+    Expression<int>? uomId,
+    Expression<bool>? isToWeigh,
     Expression<Uint8List>? image,
     Expression<String>? color,
   }) {
@@ -7583,6 +7662,8 @@ class ProductsTableCompanion extends UpdateCompanion<ProductsTableData> {
       if (lastModified != null) 'last_modified': lastModified,
       if (syncStatus != null) 'sync_status': syncStatus,
       if (syncError != null) 'sync_error': syncError,
+      if (uomId != null) 'uom_id': uomId,
+      if (isToWeigh != null) 'is_to_weigh': isToWeigh,
       if (image != null) 'image': image,
       if (color != null) 'color': color,
     });
@@ -7617,6 +7698,8 @@ class ProductsTableCompanion extends UpdateCompanion<ProductsTableData> {
     Value<DateTime>? lastModified,
     Value<String>? syncStatus,
     Value<String?>? syncError,
+    Value<int>? uomId,
+    Value<bool>? isToWeigh,
     Value<Uint8List?>? image,
     Value<String?>? color,
   }) {
@@ -7650,6 +7733,8 @@ class ProductsTableCompanion extends UpdateCompanion<ProductsTableData> {
       lastModified: lastModified ?? this.lastModified,
       syncStatus: syncStatus ?? this.syncStatus,
       syncError: syncError ?? this.syncError,
+      uomId: uomId ?? this.uomId,
+      isToWeigh: isToWeigh ?? this.isToWeigh,
       image: image ?? this.image,
       color: color ?? this.color,
     );
@@ -7746,6 +7831,12 @@ class ProductsTableCompanion extends UpdateCompanion<ProductsTableData> {
     if (syncError.present) {
       map['sync_error'] = Variable<String>(syncError.value);
     }
+    if (uomId.present) {
+      map['uom_id'] = Variable<int>(uomId.value);
+    }
+    if (isToWeigh.present) {
+      map['is_to_weigh'] = Variable<bool>(isToWeigh.value);
+    }
     if (image.present) {
       map['image'] = Variable<Uint8List>(image.value);
     }
@@ -7786,6 +7877,8 @@ class ProductsTableCompanion extends UpdateCompanion<ProductsTableData> {
           ..write('lastModified: $lastModified, ')
           ..write('syncStatus: $syncStatus, ')
           ..write('syncError: $syncError, ')
+          ..write('uomId: $uomId, ')
+          ..write('isToWeigh: $isToWeigh, ')
           ..write('image: $image, ')
           ..write('color: $color')
           ..write(')'))
@@ -17469,6 +17562,17 @@ class $PosOrdersTableTable extends PosOrdersTable
         type: DriftSqlType.dateTime,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _sessionLocalIdMeta = const VerificationMeta(
+    'sessionLocalId',
+  );
+  @override
+  late final GeneratedColumn<String> sessionLocalId = GeneratedColumn<String>(
+    'session_local_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     localId,
@@ -17499,6 +17603,7 @@ class $PosOrdersTableTable extends PosOrdersTable
     bookingId,
     bookingStaffId,
     itemsLastChanged,
+    sessionLocalId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -17724,6 +17829,15 @@ class $PosOrdersTableTable extends PosOrdersTable
         ),
       );
     }
+    if (data.containsKey('session_local_id')) {
+      context.handle(
+        _sessionLocalIdMeta,
+        sessionLocalId.isAcceptableOrUnknown(
+          data['session_local_id']!,
+          _sessionLocalIdMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -17845,6 +17959,10 @@ class $PosOrdersTableTable extends PosOrdersTable
         DriftSqlType.dateTime,
         data['${effectivePrefix}items_last_changed'],
       ),
+      sessionLocalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}session_local_id'],
+      ),
     );
   }
 
@@ -17891,6 +18009,15 @@ class PosOrdersTableData extends DataClass
   /// one at the same price). Null on locally-created orders and on any row
   /// pulled from an API build that predates the field.
   final DateTime? itemsLastChanged;
+
+  /// The POS session this belongs to, by the session's CLIENT localId.
+  ///
+  /// 🚨 The localId, never the server id. A sale rung up offline belongs to a
+  /// session that may itself not have reached the server yet, so the only
+  /// stable handle at write time is the client UUID — exactly why
+  /// `pos_order_items.orderId` references `pos_orders.localId`. The push
+  /// resolves it to a server session id; the local row keeps the UUID.
+  final String? sessionLocalId;
   const PosOrdersTableData({
     required this.localId,
     this.serverId,
@@ -17920,6 +18047,7 @@ class PosOrdersTableData extends DataClass
     this.bookingId,
     this.bookingStaffId,
     this.itemsLastChanged,
+    this.sessionLocalId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -17983,6 +18111,9 @@ class PosOrdersTableData extends DataClass
     }
     if (!nullToAbsent || itemsLastChanged != null) {
       map['items_last_changed'] = Variable<DateTime>(itemsLastChanged);
+    }
+    if (!nullToAbsent || sessionLocalId != null) {
+      map['session_local_id'] = Variable<String>(sessionLocalId);
     }
     return map;
   }
@@ -18049,6 +18180,9 @@ class PosOrdersTableData extends DataClass
       itemsLastChanged: itemsLastChanged == null && nullToAbsent
           ? const Value.absent()
           : Value(itemsLastChanged),
+      sessionLocalId: sessionLocalId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sessionLocalId),
     );
   }
 
@@ -18088,6 +18222,7 @@ class PosOrdersTableData extends DataClass
       itemsLastChanged: serializer.fromJson<DateTime?>(
         json['itemsLastChanged'],
       ),
+      sessionLocalId: serializer.fromJson<String?>(json['sessionLocalId']),
     );
   }
   @override
@@ -18122,6 +18257,7 @@ class PosOrdersTableData extends DataClass
       'bookingId': serializer.toJson<int?>(bookingId),
       'bookingStaffId': serializer.toJson<int?>(bookingStaffId),
       'itemsLastChanged': serializer.toJson<DateTime?>(itemsLastChanged),
+      'sessionLocalId': serializer.toJson<String?>(sessionLocalId),
     };
   }
 
@@ -18154,6 +18290,7 @@ class PosOrdersTableData extends DataClass
     Value<int?> bookingId = const Value.absent(),
     Value<int?> bookingStaffId = const Value.absent(),
     Value<DateTime?> itemsLastChanged = const Value.absent(),
+    Value<String?> sessionLocalId = const Value.absent(),
   }) => PosOrdersTableData(
     localId: localId ?? this.localId,
     serverId: serverId.present ? serverId.value : this.serverId,
@@ -18191,6 +18328,9 @@ class PosOrdersTableData extends DataClass
     itemsLastChanged: itemsLastChanged.present
         ? itemsLastChanged.value
         : this.itemsLastChanged,
+    sessionLocalId: sessionLocalId.present
+        ? sessionLocalId.value
+        : this.sessionLocalId,
   );
   PosOrdersTableData copyWithCompanion(PosOrdersTableCompanion data) {
     return PosOrdersTableData(
@@ -18248,6 +18388,9 @@ class PosOrdersTableData extends DataClass
       itemsLastChanged: data.itemsLastChanged.present
           ? data.itemsLastChanged.value
           : this.itemsLastChanged,
+      sessionLocalId: data.sessionLocalId.present
+          ? data.sessionLocalId.value
+          : this.sessionLocalId,
     );
   }
 
@@ -18281,7 +18424,8 @@ class PosOrdersTableData extends DataClass
           ..write('dateCreated: $dateCreated, ')
           ..write('bookingId: $bookingId, ')
           ..write('bookingStaffId: $bookingStaffId, ')
-          ..write('itemsLastChanged: $itemsLastChanged')
+          ..write('itemsLastChanged: $itemsLastChanged, ')
+          ..write('sessionLocalId: $sessionLocalId')
           ..write(')'))
         .toString();
   }
@@ -18316,6 +18460,7 @@ class PosOrdersTableData extends DataClass
     bookingId,
     bookingStaffId,
     itemsLastChanged,
+    sessionLocalId,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -18348,7 +18493,8 @@ class PosOrdersTableData extends DataClass
           other.dateCreated == this.dateCreated &&
           other.bookingId == this.bookingId &&
           other.bookingStaffId == this.bookingStaffId &&
-          other.itemsLastChanged == this.itemsLastChanged);
+          other.itemsLastChanged == this.itemsLastChanged &&
+          other.sessionLocalId == this.sessionLocalId);
 }
 
 class PosOrdersTableCompanion extends UpdateCompanion<PosOrdersTableData> {
@@ -18380,6 +18526,7 @@ class PosOrdersTableCompanion extends UpdateCompanion<PosOrdersTableData> {
   final Value<int?> bookingId;
   final Value<int?> bookingStaffId;
   final Value<DateTime?> itemsLastChanged;
+  final Value<String?> sessionLocalId;
   final Value<int> rowid;
   const PosOrdersTableCompanion({
     this.localId = const Value.absent(),
@@ -18410,6 +18557,7 @@ class PosOrdersTableCompanion extends UpdateCompanion<PosOrdersTableData> {
     this.bookingId = const Value.absent(),
     this.bookingStaffId = const Value.absent(),
     this.itemsLastChanged = const Value.absent(),
+    this.sessionLocalId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   PosOrdersTableCompanion.insert({
@@ -18441,6 +18589,7 @@ class PosOrdersTableCompanion extends UpdateCompanion<PosOrdersTableData> {
     this.bookingId = const Value.absent(),
     this.bookingStaffId = const Value.absent(),
     this.itemsLastChanged = const Value.absent(),
+    this.sessionLocalId = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : localId = Value(localId),
        companyId = Value(companyId),
@@ -18478,6 +18627,7 @@ class PosOrdersTableCompanion extends UpdateCompanion<PosOrdersTableData> {
     Expression<int>? bookingId,
     Expression<int>? bookingStaffId,
     Expression<DateTime>? itemsLastChanged,
+    Expression<String>? sessionLocalId,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -18509,6 +18659,7 @@ class PosOrdersTableCompanion extends UpdateCompanion<PosOrdersTableData> {
       if (bookingId != null) 'booking_id': bookingId,
       if (bookingStaffId != null) 'booking_staff_id': bookingStaffId,
       if (itemsLastChanged != null) 'items_last_changed': itemsLastChanged,
+      if (sessionLocalId != null) 'session_local_id': sessionLocalId,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -18542,6 +18693,7 @@ class PosOrdersTableCompanion extends UpdateCompanion<PosOrdersTableData> {
     Value<int?>? bookingId,
     Value<int?>? bookingStaffId,
     Value<DateTime?>? itemsLastChanged,
+    Value<String?>? sessionLocalId,
     Value<int>? rowid,
   }) {
     return PosOrdersTableCompanion(
@@ -18573,6 +18725,7 @@ class PosOrdersTableCompanion extends UpdateCompanion<PosOrdersTableData> {
       bookingId: bookingId ?? this.bookingId,
       bookingStaffId: bookingStaffId ?? this.bookingStaffId,
       itemsLastChanged: itemsLastChanged ?? this.itemsLastChanged,
+      sessionLocalId: sessionLocalId ?? this.sessionLocalId,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -18664,6 +18817,9 @@ class PosOrdersTableCompanion extends UpdateCompanion<PosOrdersTableData> {
     if (itemsLastChanged.present) {
       map['items_last_changed'] = Variable<DateTime>(itemsLastChanged.value);
     }
+    if (sessionLocalId.present) {
+      map['session_local_id'] = Variable<String>(sessionLocalId.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -18701,6 +18857,7 @@ class PosOrdersTableCompanion extends UpdateCompanion<PosOrdersTableData> {
           ..write('bookingId: $bookingId, ')
           ..write('bookingStaffId: $bookingStaffId, ')
           ..write('itemsLastChanged: $itemsLastChanged, ')
+          ..write('sessionLocalId: $sessionLocalId, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -18963,6 +19120,42 @@ class $PosOrderItemsTableTable extends PosOrderItemsTable
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _discountInputValueMeta =
+      const VerificationMeta('discountInputValue');
+  @override
+  late final GeneratedColumn<double> discountInputValue =
+      GeneratedColumn<double>(
+        'discount_input_value',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _discountInputTypeMeta = const VerificationMeta(
+    'discountInputType',
+  );
+  @override
+  late final GeneratedColumn<int> discountInputType = GeneratedColumn<int>(
+    'discount_input_type',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isTaxInclusiveMeta = const VerificationMeta(
+    'isTaxInclusive',
+  );
+  @override
+  late final GeneratedColumn<bool> isTaxInclusive = GeneratedColumn<bool>(
+    'is_tax_inclusive',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_tax_inclusive" IN (0, 1))',
+    ),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     localId,
@@ -18987,6 +19180,9 @@ class $PosOrderItemsTableTable extends PosOrderItemsTable
     bundle,
     discountAppliedType,
     companyId,
+    discountInputValue,
+    discountInputType,
+    isTaxInclusive,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -19162,6 +19358,33 @@ class $PosOrderItemsTableTable extends PosOrderItemsTable
         companyId.isAcceptableOrUnknown(data['company_id']!, _companyIdMeta),
       );
     }
+    if (data.containsKey('discount_input_value')) {
+      context.handle(
+        _discountInputValueMeta,
+        discountInputValue.isAcceptableOrUnknown(
+          data['discount_input_value']!,
+          _discountInputValueMeta,
+        ),
+      );
+    }
+    if (data.containsKey('discount_input_type')) {
+      context.handle(
+        _discountInputTypeMeta,
+        discountInputType.isAcceptableOrUnknown(
+          data['discount_input_type']!,
+          _discountInputTypeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_tax_inclusive')) {
+      context.handle(
+        _isTaxInclusiveMeta,
+        isTaxInclusive.isAcceptableOrUnknown(
+          data['is_tax_inclusive']!,
+          _isTaxInclusiveMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -19259,6 +19482,18 @@ class $PosOrderItemsTableTable extends PosOrderItemsTable
         DriftSqlType.int,
         data['${effectivePrefix}company_id'],
       ),
+      discountInputValue: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}discount_input_value'],
+      ),
+      discountInputType: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}discount_input_type'],
+      ),
+      isTaxInclusive: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_tax_inclusive'],
+      ),
     );
   }
 
@@ -19292,6 +19527,18 @@ class PosOrderItemsTableData extends DataClass
   final String? bundle;
   final int? discountAppliedType;
   final int? companyId;
+  final double? discountInputValue;
+  final int? discountInputType;
+
+  /// Whether [unitPrice] already CONTAINS this line's taxes, pinned from the
+  /// product at the moment the order was parked.
+  ///
+  /// Deliberately stored rather than re-read from the product on reopen: an
+  /// admin editing the product's tax mode must not silently reprice an order
+  /// that is already sitting on a table. Null = a row written before this
+  /// column existed → the cart falls back to `true`, matching the
+  /// `Product.IsTaxInclusivePrice` default on both databases.
+  final bool? isTaxInclusive;
   const PosOrderItemsTableData({
     required this.localId,
     required this.orderId,
@@ -19315,6 +19562,9 @@ class PosOrderItemsTableData extends DataClass
     this.bundle,
     this.discountAppliedType,
     this.companyId,
+    this.discountInputValue,
+    this.discountInputType,
+    this.isTaxInclusive,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -19364,6 +19614,15 @@ class PosOrderItemsTableData extends DataClass
     }
     if (!nullToAbsent || companyId != null) {
       map['company_id'] = Variable<int>(companyId);
+    }
+    if (!nullToAbsent || discountInputValue != null) {
+      map['discount_input_value'] = Variable<double>(discountInputValue);
+    }
+    if (!nullToAbsent || discountInputType != null) {
+      map['discount_input_type'] = Variable<int>(discountInputType);
+    }
+    if (!nullToAbsent || isTaxInclusive != null) {
+      map['is_tax_inclusive'] = Variable<bool>(isTaxInclusive);
     }
     return map;
   }
@@ -19416,6 +19675,15 @@ class PosOrderItemsTableData extends DataClass
       companyId: companyId == null && nullToAbsent
           ? const Value.absent()
           : Value(companyId),
+      discountInputValue: discountInputValue == null && nullToAbsent
+          ? const Value.absent()
+          : Value(discountInputValue),
+      discountInputType: discountInputType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(discountInputType),
+      isTaxInclusive: isTaxInclusive == null && nullToAbsent
+          ? const Value.absent()
+          : Value(isTaxInclusive),
     );
   }
 
@@ -19449,6 +19717,11 @@ class PosOrderItemsTableData extends DataClass
         json['discountAppliedType'],
       ),
       companyId: serializer.fromJson<int?>(json['companyId']),
+      discountInputValue: serializer.fromJson<double?>(
+        json['discountInputValue'],
+      ),
+      discountInputType: serializer.fromJson<int?>(json['discountInputType']),
+      isTaxInclusive: serializer.fromJson<bool?>(json['isTaxInclusive']),
     );
   }
   @override
@@ -19477,6 +19750,9 @@ class PosOrderItemsTableData extends DataClass
       'bundle': serializer.toJson<String?>(bundle),
       'discountAppliedType': serializer.toJson<int?>(discountAppliedType),
       'companyId': serializer.toJson<int?>(companyId),
+      'discountInputValue': serializer.toJson<double?>(discountInputValue),
+      'discountInputType': serializer.toJson<int?>(discountInputType),
+      'isTaxInclusive': serializer.toJson<bool?>(isTaxInclusive),
     };
   }
 
@@ -19503,6 +19779,9 @@ class PosOrderItemsTableData extends DataClass
     Value<String?> bundle = const Value.absent(),
     Value<int?> discountAppliedType = const Value.absent(),
     Value<int?> companyId = const Value.absent(),
+    Value<double?> discountInputValue = const Value.absent(),
+    Value<int?> discountInputType = const Value.absent(),
+    Value<bool?> isTaxInclusive = const Value.absent(),
   }) => PosOrderItemsTableData(
     localId: localId ?? this.localId,
     orderId: orderId ?? this.orderId,
@@ -19528,6 +19807,15 @@ class PosOrderItemsTableData extends DataClass
         ? discountAppliedType.value
         : this.discountAppliedType,
     companyId: companyId.present ? companyId.value : this.companyId,
+    discountInputValue: discountInputValue.present
+        ? discountInputValue.value
+        : this.discountInputValue,
+    discountInputType: discountInputType.present
+        ? discountInputType.value
+        : this.discountInputType,
+    isTaxInclusive: isTaxInclusive.present
+        ? isTaxInclusive.value
+        : this.isTaxInclusive,
   );
   PosOrderItemsTableData copyWithCompanion(PosOrderItemsTableCompanion data) {
     return PosOrderItemsTableData(
@@ -19569,6 +19857,15 @@ class PosOrderItemsTableData extends DataClass
           ? data.discountAppliedType.value
           : this.discountAppliedType,
       companyId: data.companyId.present ? data.companyId.value : this.companyId,
+      discountInputValue: data.discountInputValue.present
+          ? data.discountInputValue.value
+          : this.discountInputValue,
+      discountInputType: data.discountInputType.present
+          ? data.discountInputType.value
+          : this.discountInputType,
+      isTaxInclusive: data.isTaxInclusive.present
+          ? data.isTaxInclusive.value
+          : this.isTaxInclusive,
     );
   }
 
@@ -19596,7 +19893,10 @@ class PosOrderItemsTableData extends DataClass
           ..write('dateCreated: $dateCreated, ')
           ..write('bundle: $bundle, ')
           ..write('discountAppliedType: $discountAppliedType, ')
-          ..write('companyId: $companyId')
+          ..write('companyId: $companyId, ')
+          ..write('discountInputValue: $discountInputValue, ')
+          ..write('discountInputType: $discountInputType, ')
+          ..write('isTaxInclusive: $isTaxInclusive')
           ..write(')'))
         .toString();
   }
@@ -19625,6 +19925,9 @@ class PosOrderItemsTableData extends DataClass
     bundle,
     discountAppliedType,
     companyId,
+    discountInputValue,
+    discountInputType,
+    isTaxInclusive,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -19651,7 +19954,10 @@ class PosOrderItemsTableData extends DataClass
           other.dateCreated == this.dateCreated &&
           other.bundle == this.bundle &&
           other.discountAppliedType == this.discountAppliedType &&
-          other.companyId == this.companyId);
+          other.companyId == this.companyId &&
+          other.discountInputValue == this.discountInputValue &&
+          other.discountInputType == this.discountInputType &&
+          other.isTaxInclusive == this.isTaxInclusive);
 }
 
 class PosOrderItemsTableCompanion
@@ -19678,6 +19984,9 @@ class PosOrderItemsTableCompanion
   final Value<String?> bundle;
   final Value<int?> discountAppliedType;
   final Value<int?> companyId;
+  final Value<double?> discountInputValue;
+  final Value<int?> discountInputType;
+  final Value<bool?> isTaxInclusive;
   final Value<int> rowid;
   const PosOrderItemsTableCompanion({
     this.localId = const Value.absent(),
@@ -19702,6 +20011,9 @@ class PosOrderItemsTableCompanion
     this.bundle = const Value.absent(),
     this.discountAppliedType = const Value.absent(),
     this.companyId = const Value.absent(),
+    this.discountInputValue = const Value.absent(),
+    this.discountInputType = const Value.absent(),
+    this.isTaxInclusive = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   PosOrderItemsTableCompanion.insert({
@@ -19727,6 +20039,9 @@ class PosOrderItemsTableCompanion
     this.bundle = const Value.absent(),
     this.discountAppliedType = const Value.absent(),
     this.companyId = const Value.absent(),
+    this.discountInputValue = const Value.absent(),
+    this.discountInputType = const Value.absent(),
+    this.isTaxInclusive = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : localId = Value(localId),
        orderId = Value(orderId),
@@ -19757,6 +20072,9 @@ class PosOrderItemsTableCompanion
     Expression<String>? bundle,
     Expression<int>? discountAppliedType,
     Expression<int>? companyId,
+    Expression<double>? discountInputValue,
+    Expression<int>? discountInputType,
+    Expression<bool>? isTaxInclusive,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -19783,6 +20101,10 @@ class PosOrderItemsTableCompanion
       if (discountAppliedType != null)
         'discount_applied_type': discountAppliedType,
       if (companyId != null) 'company_id': companyId,
+      if (discountInputValue != null)
+        'discount_input_value': discountInputValue,
+      if (discountInputType != null) 'discount_input_type': discountInputType,
+      if (isTaxInclusive != null) 'is_tax_inclusive': isTaxInclusive,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -19810,6 +20132,9 @@ class PosOrderItemsTableCompanion
     Value<String?>? bundle,
     Value<int?>? discountAppliedType,
     Value<int?>? companyId,
+    Value<double?>? discountInputValue,
+    Value<int?>? discountInputType,
+    Value<bool?>? isTaxInclusive,
     Value<int>? rowid,
   }) {
     return PosOrderItemsTableCompanion(
@@ -19835,6 +20160,9 @@ class PosOrderItemsTableCompanion
       bundle: bundle ?? this.bundle,
       discountAppliedType: discountAppliedType ?? this.discountAppliedType,
       companyId: companyId ?? this.companyId,
+      discountInputValue: discountInputValue ?? this.discountInputValue,
+      discountInputType: discountInputType ?? this.discountInputType,
+      isTaxInclusive: isTaxInclusive ?? this.isTaxInclusive,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -19908,6 +20236,15 @@ class PosOrderItemsTableCompanion
     if (companyId.present) {
       map['company_id'] = Variable<int>(companyId.value);
     }
+    if (discountInputValue.present) {
+      map['discount_input_value'] = Variable<double>(discountInputValue.value);
+    }
+    if (discountInputType.present) {
+      map['discount_input_type'] = Variable<int>(discountInputType.value);
+    }
+    if (isTaxInclusive.present) {
+      map['is_tax_inclusive'] = Variable<bool>(isTaxInclusive.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -19939,6 +20276,9 @@ class PosOrderItemsTableCompanion
           ..write('bundle: $bundle, ')
           ..write('discountAppliedType: $discountAppliedType, ')
           ..write('companyId: $companyId, ')
+          ..write('discountInputValue: $discountInputValue, ')
+          ..write('discountInputType: $discountInputType, ')
+          ..write('isTaxInclusive: $isTaxInclusive, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -20681,6 +21021,17 @@ class $StartingCashTableTable extends StartingCashTable
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _sessionLocalIdMeta = const VerificationMeta(
+    'sessionLocalId',
+  );
+  @override
+  late final GeneratedColumn<String> sessionLocalId = GeneratedColumn<String>(
+    'session_local_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     localId,
@@ -20697,6 +21048,7 @@ class $StartingCashTableTable extends StartingCashTable
     description,
     startingCashType,
     dateCreated,
+    sessionLocalId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -20818,6 +21170,15 @@ class $StartingCashTableTable extends StartingCashTable
         ),
       );
     }
+    if (data.containsKey('session_local_id')) {
+      context.handle(
+        _sessionLocalIdMeta,
+        sessionLocalId.isAcceptableOrUnknown(
+          data['session_local_id']!,
+          _sessionLocalIdMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -20883,6 +21244,10 @@ class $StartingCashTableTable extends StartingCashTable
         DriftSqlType.dateTime,
         data['${effectivePrefix}date_created'],
       ),
+      sessionLocalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}session_local_id'],
+      ),
     );
   }
 
@@ -20912,6 +21277,15 @@ class StartingCashTableData extends DataClass
   final String? description;
   final int? startingCashType;
   final DateTime? dateCreated;
+
+  /// The POS session this belongs to, by the session's CLIENT localId.
+  ///
+  /// 🚨 The localId, never the server id. A sale rung up offline belongs to a
+  /// session that may itself not have reached the server yet, so the only
+  /// stable handle at write time is the client UUID — exactly why
+  /// `pos_order_items.orderId` references `pos_orders.localId`. The push
+  /// resolves it to a server session id; the local row keeps the UUID.
+  final String? sessionLocalId;
   const StartingCashTableData({
     required this.localId,
     this.serverId,
@@ -20927,6 +21301,7 @@ class StartingCashTableData extends DataClass
     this.description,
     this.startingCashType,
     this.dateCreated,
+    this.sessionLocalId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -20959,6 +21334,9 @@ class StartingCashTableData extends DataClass
     if (!nullToAbsent || dateCreated != null) {
       map['date_created'] = Variable<DateTime>(dateCreated);
     }
+    if (!nullToAbsent || sessionLocalId != null) {
+      map['session_local_id'] = Variable<String>(sessionLocalId);
+    }
     return map;
   }
 
@@ -20990,6 +21368,9 @@ class StartingCashTableData extends DataClass
       dateCreated: dateCreated == null && nullToAbsent
           ? const Value.absent()
           : Value(dateCreated),
+      sessionLocalId: sessionLocalId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sessionLocalId),
     );
   }
 
@@ -21013,6 +21394,7 @@ class StartingCashTableData extends DataClass
       description: serializer.fromJson<String?>(json['description']),
       startingCashType: serializer.fromJson<int?>(json['startingCashType']),
       dateCreated: serializer.fromJson<DateTime?>(json['dateCreated']),
+      sessionLocalId: serializer.fromJson<String?>(json['sessionLocalId']),
     );
   }
   @override
@@ -21033,6 +21415,7 @@ class StartingCashTableData extends DataClass
       'description': serializer.toJson<String?>(description),
       'startingCashType': serializer.toJson<int?>(startingCashType),
       'dateCreated': serializer.toJson<DateTime?>(dateCreated),
+      'sessionLocalId': serializer.toJson<String?>(sessionLocalId),
     };
   }
 
@@ -21051,6 +21434,7 @@ class StartingCashTableData extends DataClass
     Value<String?> description = const Value.absent(),
     Value<int?> startingCashType = const Value.absent(),
     Value<DateTime?> dateCreated = const Value.absent(),
+    Value<String?> sessionLocalId = const Value.absent(),
   }) => StartingCashTableData(
     localId: localId ?? this.localId,
     serverId: serverId.present ? serverId.value : this.serverId,
@@ -21070,6 +21454,9 @@ class StartingCashTableData extends DataClass
         ? startingCashType.value
         : this.startingCashType,
     dateCreated: dateCreated.present ? dateCreated.value : this.dateCreated,
+    sessionLocalId: sessionLocalId.present
+        ? sessionLocalId.value
+        : this.sessionLocalId,
   );
   StartingCashTableData copyWithCompanion(StartingCashTableCompanion data) {
     return StartingCashTableData(
@@ -21097,6 +21484,9 @@ class StartingCashTableData extends DataClass
       dateCreated: data.dateCreated.present
           ? data.dateCreated.value
           : this.dateCreated,
+      sessionLocalId: data.sessionLocalId.present
+          ? data.sessionLocalId.value
+          : this.sessionLocalId,
     );
   }
 
@@ -21116,7 +21506,8 @@ class StartingCashTableData extends DataClass
           ..write('syncError: $syncError, ')
           ..write('description: $description, ')
           ..write('startingCashType: $startingCashType, ')
-          ..write('dateCreated: $dateCreated')
+          ..write('dateCreated: $dateCreated, ')
+          ..write('sessionLocalId: $sessionLocalId')
           ..write(')'))
         .toString();
   }
@@ -21137,6 +21528,7 @@ class StartingCashTableData extends DataClass
     description,
     startingCashType,
     dateCreated,
+    sessionLocalId,
   );
   @override
   bool operator ==(Object other) =>
@@ -21155,7 +21547,8 @@ class StartingCashTableData extends DataClass
           other.syncError == this.syncError &&
           other.description == this.description &&
           other.startingCashType == this.startingCashType &&
-          other.dateCreated == this.dateCreated);
+          other.dateCreated == this.dateCreated &&
+          other.sessionLocalId == this.sessionLocalId);
 }
 
 class StartingCashTableCompanion
@@ -21174,6 +21567,7 @@ class StartingCashTableCompanion
   final Value<String?> description;
   final Value<int?> startingCashType;
   final Value<DateTime?> dateCreated;
+  final Value<String?> sessionLocalId;
   final Value<int> rowid;
   const StartingCashTableCompanion({
     this.localId = const Value.absent(),
@@ -21190,6 +21584,7 @@ class StartingCashTableCompanion
     this.description = const Value.absent(),
     this.startingCashType = const Value.absent(),
     this.dateCreated = const Value.absent(),
+    this.sessionLocalId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   StartingCashTableCompanion.insert({
@@ -21207,6 +21602,7 @@ class StartingCashTableCompanion
     this.description = const Value.absent(),
     this.startingCashType = const Value.absent(),
     this.dateCreated = const Value.absent(),
+    this.sessionLocalId = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : localId = Value(localId),
        companyId = Value(companyId),
@@ -21229,6 +21625,7 @@ class StartingCashTableCompanion
     Expression<String>? description,
     Expression<int>? startingCashType,
     Expression<DateTime>? dateCreated,
+    Expression<String>? sessionLocalId,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -21246,6 +21643,7 @@ class StartingCashTableCompanion
       if (description != null) 'description': description,
       if (startingCashType != null) 'starting_cash_type': startingCashType,
       if (dateCreated != null) 'date_created': dateCreated,
+      if (sessionLocalId != null) 'session_local_id': sessionLocalId,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -21265,6 +21663,7 @@ class StartingCashTableCompanion
     Value<String?>? description,
     Value<int?>? startingCashType,
     Value<DateTime?>? dateCreated,
+    Value<String?>? sessionLocalId,
     Value<int>? rowid,
   }) {
     return StartingCashTableCompanion(
@@ -21282,6 +21681,7 @@ class StartingCashTableCompanion
       description: description ?? this.description,
       startingCashType: startingCashType ?? this.startingCashType,
       dateCreated: dateCreated ?? this.dateCreated,
+      sessionLocalId: sessionLocalId ?? this.sessionLocalId,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -21331,6 +21731,9 @@ class StartingCashTableCompanion
     if (dateCreated.present) {
       map['date_created'] = Variable<DateTime>(dateCreated.value);
     }
+    if (sessionLocalId.present) {
+      map['session_local_id'] = Variable<String>(sessionLocalId.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -21354,6 +21757,7 @@ class StartingCashTableCompanion
           ..write('description: $description, ')
           ..write('startingCashType: $startingCashType, ')
           ..write('dateCreated: $dateCreated, ')
+          ..write('sessionLocalId: $sessionLocalId, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -24337,6 +24741,17 @@ class $DocumentsTableTable extends DocumentsTable
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _sessionLocalIdMeta = const VerificationMeta(
+    'sessionLocalId',
+  );
+  @override
+  late final GeneratedColumn<String> sessionLocalId = GeneratedColumn<String>(
+    'session_local_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     localId,
@@ -24368,6 +24783,7 @@ class $DocumentsTableTable extends DocumentsTable
     isClockedOut,
     dateCreated,
     dateUpdated,
+    sessionLocalId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -24609,6 +25025,15 @@ class $DocumentsTableTable extends DocumentsTable
         ),
       );
     }
+    if (data.containsKey('session_local_id')) {
+      context.handle(
+        _sessionLocalIdMeta,
+        sessionLocalId.isAcceptableOrUnknown(
+          data['session_local_id']!,
+          _sessionLocalIdMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -24734,6 +25159,10 @@ class $DocumentsTableTable extends DocumentsTable
         DriftSqlType.dateTime,
         data['${effectivePrefix}date_updated'],
       ),
+      sessionLocalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}session_local_id'],
+      ),
     );
   }
 
@@ -24774,6 +25203,15 @@ class DocumentsTableData extends DataClass
   final bool? isClockedOut;
   final DateTime? dateCreated;
   final DateTime? dateUpdated;
+
+  /// The POS session this belongs to, by the session's CLIENT localId.
+  ///
+  /// 🚨 The localId, never the server id. A sale rung up offline belongs to a
+  /// session that may itself not have reached the server yet, so the only
+  /// stable handle at write time is the client UUID — exactly why
+  /// `pos_order_items.orderId` references `pos_orders.localId`. The push
+  /// resolves it to a server session id; the local row keeps the UUID.
+  final String? sessionLocalId;
   const DocumentsTableData({
     required this.localId,
     this.serverId,
@@ -24804,6 +25242,7 @@ class DocumentsTableData extends DataClass
     this.isClockedOut,
     this.dateCreated,
     this.dateUpdated,
+    this.sessionLocalId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -24865,6 +25304,9 @@ class DocumentsTableData extends DataClass
     if (!nullToAbsent || dateUpdated != null) {
       map['date_updated'] = Variable<DateTime>(dateUpdated);
     }
+    if (!nullToAbsent || sessionLocalId != null) {
+      map['session_local_id'] = Variable<String>(sessionLocalId);
+    }
     return map;
   }
 
@@ -24923,6 +25365,9 @@ class DocumentsTableData extends DataClass
       dateUpdated: dateUpdated == null && nullToAbsent
           ? const Value.absent()
           : Value(dateUpdated),
+      sessionLocalId: sessionLocalId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sessionLocalId),
     );
   }
 
@@ -24963,6 +25408,7 @@ class DocumentsTableData extends DataClass
       isClockedOut: serializer.fromJson<bool?>(json['isClockedOut']),
       dateCreated: serializer.fromJson<DateTime?>(json['dateCreated']),
       dateUpdated: serializer.fromJson<DateTime?>(json['dateUpdated']),
+      sessionLocalId: serializer.fromJson<String?>(json['sessionLocalId']),
     );
   }
   @override
@@ -25000,6 +25446,7 @@ class DocumentsTableData extends DataClass
       'isClockedOut': serializer.toJson<bool?>(isClockedOut),
       'dateCreated': serializer.toJson<DateTime?>(dateCreated),
       'dateUpdated': serializer.toJson<DateTime?>(dateUpdated),
+      'sessionLocalId': serializer.toJson<String?>(sessionLocalId),
     };
   }
 
@@ -25033,6 +25480,7 @@ class DocumentsTableData extends DataClass
     Value<bool?> isClockedOut = const Value.absent(),
     Value<DateTime?> dateCreated = const Value.absent(),
     Value<DateTime?> dateUpdated = const Value.absent(),
+    Value<String?> sessionLocalId = const Value.absent(),
   }) => DocumentsTableData(
     localId: localId ?? this.localId,
     serverId: serverId.present ? serverId.value : this.serverId,
@@ -25067,6 +25515,9 @@ class DocumentsTableData extends DataClass
     isClockedOut: isClockedOut.present ? isClockedOut.value : this.isClockedOut,
     dateCreated: dateCreated.present ? dateCreated.value : this.dateCreated,
     dateUpdated: dateUpdated.present ? dateUpdated.value : this.dateUpdated,
+    sessionLocalId: sessionLocalId.present
+        ? sessionLocalId.value
+        : this.sessionLocalId,
   );
   DocumentsTableData copyWithCompanion(DocumentsTableCompanion data) {
     return DocumentsTableData(
@@ -25133,6 +25584,9 @@ class DocumentsTableData extends DataClass
       dateUpdated: data.dateUpdated.present
           ? data.dateUpdated.value
           : this.dateUpdated,
+      sessionLocalId: data.sessionLocalId.present
+          ? data.sessionLocalId.value
+          : this.sessionLocalId,
     );
   }
 
@@ -25167,7 +25621,8 @@ class DocumentsTableData extends DataClass
           ..write('lastModified: $lastModified, ')
           ..write('isClockedOut: $isClockedOut, ')
           ..write('dateCreated: $dateCreated, ')
-          ..write('dateUpdated: $dateUpdated')
+          ..write('dateUpdated: $dateUpdated, ')
+          ..write('sessionLocalId: $sessionLocalId')
           ..write(')'))
         .toString();
   }
@@ -25203,6 +25658,7 @@ class DocumentsTableData extends DataClass
     isClockedOut,
     dateCreated,
     dateUpdated,
+    sessionLocalId,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -25236,7 +25692,8 @@ class DocumentsTableData extends DataClass
           other.lastModified == this.lastModified &&
           other.isClockedOut == this.isClockedOut &&
           other.dateCreated == this.dateCreated &&
-          other.dateUpdated == this.dateUpdated);
+          other.dateUpdated == this.dateUpdated &&
+          other.sessionLocalId == this.sessionLocalId);
 }
 
 class DocumentsTableCompanion extends UpdateCompanion<DocumentsTableData> {
@@ -25269,6 +25726,7 @@ class DocumentsTableCompanion extends UpdateCompanion<DocumentsTableData> {
   final Value<bool?> isClockedOut;
   final Value<DateTime?> dateCreated;
   final Value<DateTime?> dateUpdated;
+  final Value<String?> sessionLocalId;
   final Value<int> rowid;
   const DocumentsTableCompanion({
     this.localId = const Value.absent(),
@@ -25300,6 +25758,7 @@ class DocumentsTableCompanion extends UpdateCompanion<DocumentsTableData> {
     this.isClockedOut = const Value.absent(),
     this.dateCreated = const Value.absent(),
     this.dateUpdated = const Value.absent(),
+    this.sessionLocalId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   DocumentsTableCompanion.insert({
@@ -25332,6 +25791,7 @@ class DocumentsTableCompanion extends UpdateCompanion<DocumentsTableData> {
     this.isClockedOut = const Value.absent(),
     this.dateCreated = const Value.absent(),
     this.dateUpdated = const Value.absent(),
+    this.sessionLocalId = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : localId = Value(localId),
        companyId = Value(companyId),
@@ -25369,6 +25829,7 @@ class DocumentsTableCompanion extends UpdateCompanion<DocumentsTableData> {
     Expression<bool>? isClockedOut,
     Expression<DateTime>? dateCreated,
     Expression<DateTime>? dateUpdated,
+    Expression<String>? sessionLocalId,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -25402,6 +25863,7 @@ class DocumentsTableCompanion extends UpdateCompanion<DocumentsTableData> {
       if (isClockedOut != null) 'is_clocked_out': isClockedOut,
       if (dateCreated != null) 'date_created': dateCreated,
       if (dateUpdated != null) 'date_updated': dateUpdated,
+      if (sessionLocalId != null) 'session_local_id': sessionLocalId,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -25436,6 +25898,7 @@ class DocumentsTableCompanion extends UpdateCompanion<DocumentsTableData> {
     Value<bool?>? isClockedOut,
     Value<DateTime?>? dateCreated,
     Value<DateTime?>? dateUpdated,
+    Value<String?>? sessionLocalId,
     Value<int>? rowid,
   }) {
     return DocumentsTableCompanion(
@@ -25469,6 +25932,7 @@ class DocumentsTableCompanion extends UpdateCompanion<DocumentsTableData> {
       isClockedOut: isClockedOut ?? this.isClockedOut,
       dateCreated: dateCreated ?? this.dateCreated,
       dateUpdated: dateUpdated ?? this.dateUpdated,
+      sessionLocalId: sessionLocalId ?? this.sessionLocalId,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -25565,6 +26029,9 @@ class DocumentsTableCompanion extends UpdateCompanion<DocumentsTableData> {
     if (dateUpdated.present) {
       map['date_updated'] = Variable<DateTime>(dateUpdated.value);
     }
+    if (sessionLocalId.present) {
+      map['session_local_id'] = Variable<String>(sessionLocalId.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -25603,6 +26070,7 @@ class DocumentsTableCompanion extends UpdateCompanion<DocumentsTableData> {
           ..write('isClockedOut: $isClockedOut, ')
           ..write('dateCreated: $dateCreated, ')
           ..write('dateUpdated: $dateUpdated, ')
+          ..write('sessionLocalId: $sessionLocalId, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -27060,6 +27528,17 @@ class $PaymentsTableTable extends PaymentsTable
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _sessionLocalIdMeta = const VerificationMeta(
+    'sessionLocalId',
+  );
+  @override
+  late final GeneratedColumn<String> sessionLocalId = GeneratedColumn<String>(
+    'session_local_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     localId,
@@ -27073,6 +27552,7 @@ class $PaymentsTableTable extends PaymentsTable
     syncStatus,
     dateCreated,
     companyId,
+    sessionLocalId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -27170,6 +27650,15 @@ class $PaymentsTableTable extends PaymentsTable
         companyId.isAcceptableOrUnknown(data['company_id']!, _companyIdMeta),
       );
     }
+    if (data.containsKey('session_local_id')) {
+      context.handle(
+        _sessionLocalIdMeta,
+        sessionLocalId.isAcceptableOrUnknown(
+          data['session_local_id']!,
+          _sessionLocalIdMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -27223,6 +27712,10 @@ class $PaymentsTableTable extends PaymentsTable
         DriftSqlType.int,
         data['${effectivePrefix}company_id'],
       ),
+      sessionLocalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}session_local_id'],
+      ),
     );
   }
 
@@ -27245,6 +27738,15 @@ class PaymentsTableData extends DataClass
   final String syncStatus;
   final DateTime? dateCreated;
   final int? companyId;
+
+  /// The POS session this belongs to, by the session's CLIENT localId.
+  ///
+  /// 🚨 The localId, never the server id. A sale rung up offline belongs to a
+  /// session that may itself not have reached the server yet, so the only
+  /// stable handle at write time is the client UUID — exactly why
+  /// `pos_order_items.orderId` references `pos_orders.localId`. The push
+  /// resolves it to a server session id; the local row keeps the UUID.
+  final String? sessionLocalId;
   const PaymentsTableData({
     required this.localId,
     this.serverId,
@@ -27257,6 +27759,7 @@ class PaymentsTableData extends DataClass
     required this.syncStatus,
     this.dateCreated,
     this.companyId,
+    this.sessionLocalId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -27279,6 +27782,9 @@ class PaymentsTableData extends DataClass
     }
     if (!nullToAbsent || companyId != null) {
       map['company_id'] = Variable<int>(companyId);
+    }
+    if (!nullToAbsent || sessionLocalId != null) {
+      map['session_local_id'] = Variable<String>(sessionLocalId);
     }
     return map;
   }
@@ -27304,6 +27810,9 @@ class PaymentsTableData extends DataClass
       companyId: companyId == null && nullToAbsent
           ? const Value.absent()
           : Value(companyId),
+      sessionLocalId: sessionLocalId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sessionLocalId),
     );
   }
 
@@ -27324,6 +27833,7 @@ class PaymentsTableData extends DataClass
       syncStatus: serializer.fromJson<String>(json['syncStatus']),
       dateCreated: serializer.fromJson<DateTime?>(json['dateCreated']),
       companyId: serializer.fromJson<int?>(json['companyId']),
+      sessionLocalId: serializer.fromJson<String?>(json['sessionLocalId']),
     );
   }
   @override
@@ -27341,6 +27851,7 @@ class PaymentsTableData extends DataClass
       'syncStatus': serializer.toJson<String>(syncStatus),
       'dateCreated': serializer.toJson<DateTime?>(dateCreated),
       'companyId': serializer.toJson<int?>(companyId),
+      'sessionLocalId': serializer.toJson<String?>(sessionLocalId),
     };
   }
 
@@ -27356,6 +27867,7 @@ class PaymentsTableData extends DataClass
     String? syncStatus,
     Value<DateTime?> dateCreated = const Value.absent(),
     Value<int?> companyId = const Value.absent(),
+    Value<String?> sessionLocalId = const Value.absent(),
   }) => PaymentsTableData(
     localId: localId ?? this.localId,
     serverId: serverId.present ? serverId.value : this.serverId,
@@ -27368,6 +27880,9 @@ class PaymentsTableData extends DataClass
     syncStatus: syncStatus ?? this.syncStatus,
     dateCreated: dateCreated.present ? dateCreated.value : this.dateCreated,
     companyId: companyId.present ? companyId.value : this.companyId,
+    sessionLocalId: sessionLocalId.present
+        ? sessionLocalId.value
+        : this.sessionLocalId,
   );
   PaymentsTableData copyWithCompanion(PaymentsTableCompanion data) {
     return PaymentsTableData(
@@ -27390,6 +27905,9 @@ class PaymentsTableData extends DataClass
           ? data.dateCreated.value
           : this.dateCreated,
       companyId: data.companyId.present ? data.companyId.value : this.companyId,
+      sessionLocalId: data.sessionLocalId.present
+          ? data.sessionLocalId.value
+          : this.sessionLocalId,
     );
   }
 
@@ -27406,7 +27924,8 @@ class PaymentsTableData extends DataClass
           ..write('zReportId: $zReportId, ')
           ..write('syncStatus: $syncStatus, ')
           ..write('dateCreated: $dateCreated, ')
-          ..write('companyId: $companyId')
+          ..write('companyId: $companyId, ')
+          ..write('sessionLocalId: $sessionLocalId')
           ..write(')'))
         .toString();
   }
@@ -27424,6 +27943,7 @@ class PaymentsTableData extends DataClass
     syncStatus,
     dateCreated,
     companyId,
+    sessionLocalId,
   );
   @override
   bool operator ==(Object other) =>
@@ -27439,7 +27959,8 @@ class PaymentsTableData extends DataClass
           other.zReportId == this.zReportId &&
           other.syncStatus == this.syncStatus &&
           other.dateCreated == this.dateCreated &&
-          other.companyId == this.companyId);
+          other.companyId == this.companyId &&
+          other.sessionLocalId == this.sessionLocalId);
 }
 
 class PaymentsTableCompanion extends UpdateCompanion<PaymentsTableData> {
@@ -27454,6 +27975,7 @@ class PaymentsTableCompanion extends UpdateCompanion<PaymentsTableData> {
   final Value<String> syncStatus;
   final Value<DateTime?> dateCreated;
   final Value<int?> companyId;
+  final Value<String?> sessionLocalId;
   final Value<int> rowid;
   const PaymentsTableCompanion({
     this.localId = const Value.absent(),
@@ -27467,6 +27989,7 @@ class PaymentsTableCompanion extends UpdateCompanion<PaymentsTableData> {
     this.syncStatus = const Value.absent(),
     this.dateCreated = const Value.absent(),
     this.companyId = const Value.absent(),
+    this.sessionLocalId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   PaymentsTableCompanion.insert({
@@ -27481,6 +28004,7 @@ class PaymentsTableCompanion extends UpdateCompanion<PaymentsTableData> {
     this.syncStatus = const Value.absent(),
     this.dateCreated = const Value.absent(),
     this.companyId = const Value.absent(),
+    this.sessionLocalId = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : localId = Value(localId),
        documentId = Value(documentId),
@@ -27500,6 +28024,7 @@ class PaymentsTableCompanion extends UpdateCompanion<PaymentsTableData> {
     Expression<String>? syncStatus,
     Expression<DateTime>? dateCreated,
     Expression<int>? companyId,
+    Expression<String>? sessionLocalId,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -27514,6 +28039,7 @@ class PaymentsTableCompanion extends UpdateCompanion<PaymentsTableData> {
       if (syncStatus != null) 'sync_status': syncStatus,
       if (dateCreated != null) 'date_created': dateCreated,
       if (companyId != null) 'company_id': companyId,
+      if (sessionLocalId != null) 'session_local_id': sessionLocalId,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -27530,6 +28056,7 @@ class PaymentsTableCompanion extends UpdateCompanion<PaymentsTableData> {
     Value<String>? syncStatus,
     Value<DateTime?>? dateCreated,
     Value<int?>? companyId,
+    Value<String?>? sessionLocalId,
     Value<int>? rowid,
   }) {
     return PaymentsTableCompanion(
@@ -27544,6 +28071,7 @@ class PaymentsTableCompanion extends UpdateCompanion<PaymentsTableData> {
       syncStatus: syncStatus ?? this.syncStatus,
       dateCreated: dateCreated ?? this.dateCreated,
       companyId: companyId ?? this.companyId,
+      sessionLocalId: sessionLocalId ?? this.sessionLocalId,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -27584,6 +28112,9 @@ class PaymentsTableCompanion extends UpdateCompanion<PaymentsTableData> {
     if (companyId.present) {
       map['company_id'] = Variable<int>(companyId.value);
     }
+    if (sessionLocalId.present) {
+      map['session_local_id'] = Variable<String>(sessionLocalId.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -27604,6 +28135,7 @@ class PaymentsTableCompanion extends UpdateCompanion<PaymentsTableData> {
           ..write('syncStatus: $syncStatus, ')
           ..write('dateCreated: $dateCreated, ')
           ..write('companyId: $companyId, ')
+          ..write('sessionLocalId: $sessionLocalId, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -28020,6 +28552,509 @@ class BarcodesTableCompanion extends UpdateCompanion<BarcodesTableData> {
           ..write('value: $value, ')
           ..write('syncStatus: $syncStatus, ')
           ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $BarcodeRulesTableTable extends BarcodeRulesTable
+    with TableInfo<$BarcodeRulesTableTable, BarcodeRulesTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $BarcodeRulesTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _companyIdMeta = const VerificationMeta(
+    'companyId',
+  );
+  @override
+  late final GeneratedColumn<int> companyId = GeneratedColumn<int>(
+    'company_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sequenceMeta = const VerificationMeta(
+    'sequence',
+  );
+  @override
+  late final GeneratedColumn<int> sequence = GeneratedColumn<int>(
+    'sequence',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  @override
+  late final GeneratedColumn<String> type = GeneratedColumn<String>(
+    'type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _encodingMeta = const VerificationMeta(
+    'encoding',
+  );
+  @override
+  late final GeneratedColumn<String> encoding = GeneratedColumn<String>(
+    'encoding',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _patternMeta = const VerificationMeta(
+    'pattern',
+  );
+  @override
+  late final GeneratedColumn<String> pattern = GeneratedColumn<String>(
+    'pattern',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isEnabledMeta = const VerificationMeta(
+    'isEnabled',
+  );
+  @override
+  late final GeneratedColumn<bool> isEnabled = GeneratedColumn<bool>(
+    'is_enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    companyId,
+    name,
+    sequence,
+    type,
+    encoding,
+    pattern,
+    isEnabled,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'barcode_rules';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<BarcodeRulesTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('company_id')) {
+      context.handle(
+        _companyIdMeta,
+        companyId.isAcceptableOrUnknown(data['company_id']!, _companyIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_companyIdMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('sequence')) {
+      context.handle(
+        _sequenceMeta,
+        sequence.isAcceptableOrUnknown(data['sequence']!, _sequenceMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sequenceMeta);
+    }
+    if (data.containsKey('type')) {
+      context.handle(
+        _typeMeta,
+        type.isAcceptableOrUnknown(data['type']!, _typeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_typeMeta);
+    }
+    if (data.containsKey('encoding')) {
+      context.handle(
+        _encodingMeta,
+        encoding.isAcceptableOrUnknown(data['encoding']!, _encodingMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_encodingMeta);
+    }
+    if (data.containsKey('pattern')) {
+      context.handle(
+        _patternMeta,
+        pattern.isAcceptableOrUnknown(data['pattern']!, _patternMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_patternMeta);
+    }
+    if (data.containsKey('is_enabled')) {
+      context.handle(
+        _isEnabledMeta,
+        isEnabled.isAcceptableOrUnknown(data['is_enabled']!, _isEnabledMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  BarcodeRulesTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return BarcodeRulesTableData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      companyId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}company_id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      sequence: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sequence'],
+      )!,
+      type: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}type'],
+      )!,
+      encoding: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}encoding'],
+      )!,
+      pattern: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}pattern'],
+      )!,
+      isEnabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_enabled'],
+      )!,
+    );
+  }
+
+  @override
+  $BarcodeRulesTableTable createAlias(String alias) {
+    return $BarcodeRulesTableTable(attachedDatabase, alias);
+  }
+}
+
+class BarcodeRulesTableData extends DataClass
+    implements Insertable<BarcodeRulesTableData> {
+  final int id;
+  final int companyId;
+  final String name;
+
+  /// Ascending evaluation order — first match wins.
+  final int sequence;
+
+  /// 'Unit' | 'Weighted' | 'Priced' | 'Discounted'.
+  final String type;
+
+  /// 'Any' | 'Ean13' | 'UpcA'.
+  final String encoding;
+  final String pattern;
+  final bool isEnabled;
+  const BarcodeRulesTableData({
+    required this.id,
+    required this.companyId,
+    required this.name,
+    required this.sequence,
+    required this.type,
+    required this.encoding,
+    required this.pattern,
+    required this.isEnabled,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['company_id'] = Variable<int>(companyId);
+    map['name'] = Variable<String>(name);
+    map['sequence'] = Variable<int>(sequence);
+    map['type'] = Variable<String>(type);
+    map['encoding'] = Variable<String>(encoding);
+    map['pattern'] = Variable<String>(pattern);
+    map['is_enabled'] = Variable<bool>(isEnabled);
+    return map;
+  }
+
+  BarcodeRulesTableCompanion toCompanion(bool nullToAbsent) {
+    return BarcodeRulesTableCompanion(
+      id: Value(id),
+      companyId: Value(companyId),
+      name: Value(name),
+      sequence: Value(sequence),
+      type: Value(type),
+      encoding: Value(encoding),
+      pattern: Value(pattern),
+      isEnabled: Value(isEnabled),
+    );
+  }
+
+  factory BarcodeRulesTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return BarcodeRulesTableData(
+      id: serializer.fromJson<int>(json['id']),
+      companyId: serializer.fromJson<int>(json['companyId']),
+      name: serializer.fromJson<String>(json['name']),
+      sequence: serializer.fromJson<int>(json['sequence']),
+      type: serializer.fromJson<String>(json['type']),
+      encoding: serializer.fromJson<String>(json['encoding']),
+      pattern: serializer.fromJson<String>(json['pattern']),
+      isEnabled: serializer.fromJson<bool>(json['isEnabled']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'companyId': serializer.toJson<int>(companyId),
+      'name': serializer.toJson<String>(name),
+      'sequence': serializer.toJson<int>(sequence),
+      'type': serializer.toJson<String>(type),
+      'encoding': serializer.toJson<String>(encoding),
+      'pattern': serializer.toJson<String>(pattern),
+      'isEnabled': serializer.toJson<bool>(isEnabled),
+    };
+  }
+
+  BarcodeRulesTableData copyWith({
+    int? id,
+    int? companyId,
+    String? name,
+    int? sequence,
+    String? type,
+    String? encoding,
+    String? pattern,
+    bool? isEnabled,
+  }) => BarcodeRulesTableData(
+    id: id ?? this.id,
+    companyId: companyId ?? this.companyId,
+    name: name ?? this.name,
+    sequence: sequence ?? this.sequence,
+    type: type ?? this.type,
+    encoding: encoding ?? this.encoding,
+    pattern: pattern ?? this.pattern,
+    isEnabled: isEnabled ?? this.isEnabled,
+  );
+  BarcodeRulesTableData copyWithCompanion(BarcodeRulesTableCompanion data) {
+    return BarcodeRulesTableData(
+      id: data.id.present ? data.id.value : this.id,
+      companyId: data.companyId.present ? data.companyId.value : this.companyId,
+      name: data.name.present ? data.name.value : this.name,
+      sequence: data.sequence.present ? data.sequence.value : this.sequence,
+      type: data.type.present ? data.type.value : this.type,
+      encoding: data.encoding.present ? data.encoding.value : this.encoding,
+      pattern: data.pattern.present ? data.pattern.value : this.pattern,
+      isEnabled: data.isEnabled.present ? data.isEnabled.value : this.isEnabled,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BarcodeRulesTableData(')
+          ..write('id: $id, ')
+          ..write('companyId: $companyId, ')
+          ..write('name: $name, ')
+          ..write('sequence: $sequence, ')
+          ..write('type: $type, ')
+          ..write('encoding: $encoding, ')
+          ..write('pattern: $pattern, ')
+          ..write('isEnabled: $isEnabled')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    companyId,
+    name,
+    sequence,
+    type,
+    encoding,
+    pattern,
+    isEnabled,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is BarcodeRulesTableData &&
+          other.id == this.id &&
+          other.companyId == this.companyId &&
+          other.name == this.name &&
+          other.sequence == this.sequence &&
+          other.type == this.type &&
+          other.encoding == this.encoding &&
+          other.pattern == this.pattern &&
+          other.isEnabled == this.isEnabled);
+}
+
+class BarcodeRulesTableCompanion
+    extends UpdateCompanion<BarcodeRulesTableData> {
+  final Value<int> id;
+  final Value<int> companyId;
+  final Value<String> name;
+  final Value<int> sequence;
+  final Value<String> type;
+  final Value<String> encoding;
+  final Value<String> pattern;
+  final Value<bool> isEnabled;
+  const BarcodeRulesTableCompanion({
+    this.id = const Value.absent(),
+    this.companyId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.sequence = const Value.absent(),
+    this.type = const Value.absent(),
+    this.encoding = const Value.absent(),
+    this.pattern = const Value.absent(),
+    this.isEnabled = const Value.absent(),
+  });
+  BarcodeRulesTableCompanion.insert({
+    this.id = const Value.absent(),
+    required int companyId,
+    required String name,
+    required int sequence,
+    required String type,
+    required String encoding,
+    required String pattern,
+    this.isEnabled = const Value.absent(),
+  }) : companyId = Value(companyId),
+       name = Value(name),
+       sequence = Value(sequence),
+       type = Value(type),
+       encoding = Value(encoding),
+       pattern = Value(pattern);
+  static Insertable<BarcodeRulesTableData> custom({
+    Expression<int>? id,
+    Expression<int>? companyId,
+    Expression<String>? name,
+    Expression<int>? sequence,
+    Expression<String>? type,
+    Expression<String>? encoding,
+    Expression<String>? pattern,
+    Expression<bool>? isEnabled,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (companyId != null) 'company_id': companyId,
+      if (name != null) 'name': name,
+      if (sequence != null) 'sequence': sequence,
+      if (type != null) 'type': type,
+      if (encoding != null) 'encoding': encoding,
+      if (pattern != null) 'pattern': pattern,
+      if (isEnabled != null) 'is_enabled': isEnabled,
+    });
+  }
+
+  BarcodeRulesTableCompanion copyWith({
+    Value<int>? id,
+    Value<int>? companyId,
+    Value<String>? name,
+    Value<int>? sequence,
+    Value<String>? type,
+    Value<String>? encoding,
+    Value<String>? pattern,
+    Value<bool>? isEnabled,
+  }) {
+    return BarcodeRulesTableCompanion(
+      id: id ?? this.id,
+      companyId: companyId ?? this.companyId,
+      name: name ?? this.name,
+      sequence: sequence ?? this.sequence,
+      type: type ?? this.type,
+      encoding: encoding ?? this.encoding,
+      pattern: pattern ?? this.pattern,
+      isEnabled: isEnabled ?? this.isEnabled,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (companyId.present) {
+      map['company_id'] = Variable<int>(companyId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (sequence.present) {
+      map['sequence'] = Variable<int>(sequence.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<String>(type.value);
+    }
+    if (encoding.present) {
+      map['encoding'] = Variable<String>(encoding.value);
+    }
+    if (pattern.present) {
+      map['pattern'] = Variable<String>(pattern.value);
+    }
+    if (isEnabled.present) {
+      map['is_enabled'] = Variable<bool>(isEnabled.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BarcodeRulesTableCompanion(')
+          ..write('id: $id, ')
+          ..write('companyId: $companyId, ')
+          ..write('name: $name, ')
+          ..write('sequence: $sequence, ')
+          ..write('type: $type, ')
+          ..write('encoding: $encoding, ')
+          ..write('pattern: $pattern, ')
+          ..write('isEnabled: $isEnabled')
           ..write(')'))
         .toString();
   }
@@ -29799,6 +30834,134 @@ class $ShiftsTableTable extends ShiftsTable
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _posDeviceUidMeta = const VerificationMeta(
+    'posDeviceUid',
+  );
+  @override
+  late final GeneratedColumn<String> posDeviceUid = GeneratedColumn<String>(
+    'pos_device_uid',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _posDeviceNameMeta = const VerificationMeta(
+    'posDeviceName',
+  );
+  @override
+  late final GeneratedColumn<String> posDeviceName = GeneratedColumn<String>(
+    'pos_device_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _closedByUserIdMeta = const VerificationMeta(
+    'closedByUserId',
+  );
+  @override
+  late final GeneratedColumn<int> closedByUserId = GeneratedColumn<int>(
+    'closed_by_user_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _expectedCashMeta = const VerificationMeta(
+    'expectedCash',
+  );
+  @override
+  late final GeneratedColumn<double> expectedCash = GeneratedColumn<double>(
+    'expected_cash',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _cashDifferenceMeta = const VerificationMeta(
+    'cashDifference',
+  );
+  @override
+  late final GeneratedColumn<double> cashDifference = GeneratedColumn<double>(
+    'cash_difference',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _closingNoteMeta = const VerificationMeta(
+    'closingNote',
+  );
+  @override
+  late final GeneratedColumn<String> closingNote = GeneratedColumn<String>(
+    'closing_note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _openingNoteMeta = const VerificationMeta(
+    'openingNote',
+  );
+  @override
+  late final GeneratedColumn<String> openingNote = GeneratedColumn<String>(
+    'opening_note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _forceClosedMeta = const VerificationMeta(
+    'forceClosed',
+  );
+  @override
+  late final GeneratedColumn<bool> forceClosed = GeneratedColumn<bool>(
+    'force_closed',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("force_closed" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _forceClosedByUserIdMeta =
+      const VerificationMeta('forceClosedByUserId');
+  @override
+  late final GeneratedColumn<int> forceClosedByUserId = GeneratedColumn<int>(
+    'force_closed_by_user_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _forceCloseReasonMeta = const VerificationMeta(
+    'forceCloseReason',
+  );
+  @override
+  late final GeneratedColumn<String> forceCloseReason = GeneratedColumn<String>(
+    'force_close_reason',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _hasLateArrivalsMeta = const VerificationMeta(
+    'hasLateArrivals',
+  );
+  @override
+  late final GeneratedColumn<bool> hasLateArrivals = GeneratedColumn<bool>(
+    'has_late_arrivals',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("has_late_arrivals" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _syncStatusMeta = const VerificationMeta(
     'syncStatus',
   );
@@ -29835,6 +30998,17 @@ class $ShiftsTableTable extends ShiftsTable
     closedAt,
     lastModified,
     isDrawerShift,
+    posDeviceUid,
+    posDeviceName,
+    closedByUserId,
+    expectedCash,
+    cashDifference,
+    closingNote,
+    openingNote,
+    forceClosed,
+    forceClosedByUserId,
+    forceCloseReason,
+    hasLateArrivals,
     syncStatus,
     syncError,
   ];
@@ -29938,6 +31112,105 @@ class $ShiftsTableTable extends ShiftsTable
         ),
       );
     }
+    if (data.containsKey('pos_device_uid')) {
+      context.handle(
+        _posDeviceUidMeta,
+        posDeviceUid.isAcceptableOrUnknown(
+          data['pos_device_uid']!,
+          _posDeviceUidMeta,
+        ),
+      );
+    }
+    if (data.containsKey('pos_device_name')) {
+      context.handle(
+        _posDeviceNameMeta,
+        posDeviceName.isAcceptableOrUnknown(
+          data['pos_device_name']!,
+          _posDeviceNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('closed_by_user_id')) {
+      context.handle(
+        _closedByUserIdMeta,
+        closedByUserId.isAcceptableOrUnknown(
+          data['closed_by_user_id']!,
+          _closedByUserIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('expected_cash')) {
+      context.handle(
+        _expectedCashMeta,
+        expectedCash.isAcceptableOrUnknown(
+          data['expected_cash']!,
+          _expectedCashMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cash_difference')) {
+      context.handle(
+        _cashDifferenceMeta,
+        cashDifference.isAcceptableOrUnknown(
+          data['cash_difference']!,
+          _cashDifferenceMeta,
+        ),
+      );
+    }
+    if (data.containsKey('closing_note')) {
+      context.handle(
+        _closingNoteMeta,
+        closingNote.isAcceptableOrUnknown(
+          data['closing_note']!,
+          _closingNoteMeta,
+        ),
+      );
+    }
+    if (data.containsKey('opening_note')) {
+      context.handle(
+        _openingNoteMeta,
+        openingNote.isAcceptableOrUnknown(
+          data['opening_note']!,
+          _openingNoteMeta,
+        ),
+      );
+    }
+    if (data.containsKey('force_closed')) {
+      context.handle(
+        _forceClosedMeta,
+        forceClosed.isAcceptableOrUnknown(
+          data['force_closed']!,
+          _forceClosedMeta,
+        ),
+      );
+    }
+    if (data.containsKey('force_closed_by_user_id')) {
+      context.handle(
+        _forceClosedByUserIdMeta,
+        forceClosedByUserId.isAcceptableOrUnknown(
+          data['force_closed_by_user_id']!,
+          _forceClosedByUserIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('force_close_reason')) {
+      context.handle(
+        _forceCloseReasonMeta,
+        forceCloseReason.isAcceptableOrUnknown(
+          data['force_close_reason']!,
+          _forceCloseReasonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('has_late_arrivals')) {
+      context.handle(
+        _hasLateArrivalsMeta,
+        hasLateArrivals.isAcceptableOrUnknown(
+          data['has_late_arrivals']!,
+          _hasLateArrivalsMeta,
+        ),
+      );
+    }
     if (data.containsKey('sync_status')) {
       context.handle(
         _syncStatusMeta,
@@ -30003,6 +31276,50 @@ class $ShiftsTableTable extends ShiftsTable
         DriftSqlType.bool,
         data['${effectivePrefix}is_drawer_shift'],
       )!,
+      posDeviceUid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}pos_device_uid'],
+      ),
+      posDeviceName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}pos_device_name'],
+      ),
+      closedByUserId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}closed_by_user_id'],
+      ),
+      expectedCash: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}expected_cash'],
+      ),
+      cashDifference: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}cash_difference'],
+      ),
+      closingNote: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}closing_note'],
+      ),
+      openingNote: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}opening_note'],
+      ),
+      forceClosed: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}force_closed'],
+      )!,
+      forceClosedByUserId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}force_closed_by_user_id'],
+      ),
+      forceCloseReason: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}force_close_reason'],
+      ),
+      hasLateArrivals: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}has_late_arrivals'],
+      )!,
       syncStatus: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}sync_status'],
@@ -30037,6 +31354,25 @@ class ShiftsTableData extends DataClass implements Insertable<ShiftsTableData> {
   /// hours simultaneously on one station without colliding with the single
   /// drawer shift. Local-only differentiation flag.
   final bool isDrawerShift;
+  final String? posDeviceUid;
+
+  /// The register's display name ("POS1"). Stored on the row rather than looked
+  /// up, because the session list shows OTHER devices' sessions too and this
+  /// terminal only knows its own name.
+  final String? posDeviceName;
+  final int? closedByUserId;
+  final double? expectedCash;
+  final double? cashDifference;
+  final String? closingNote;
+
+  /// Free text from the Opening Control screen.
+  final String? openingNote;
+  final bool forceClosed;
+  final int? forceClosedByUserId;
+  final String? forceCloseReason;
+
+  /// A sale belonging to this session reached the server after it closed.
+  final bool hasLateArrivals;
   final String syncStatus;
   final String? syncError;
   const ShiftsTableData({
@@ -30051,6 +31387,17 @@ class ShiftsTableData extends DataClass implements Insertable<ShiftsTableData> {
     this.closedAt,
     required this.lastModified,
     required this.isDrawerShift,
+    this.posDeviceUid,
+    this.posDeviceName,
+    this.closedByUserId,
+    this.expectedCash,
+    this.cashDifference,
+    this.closingNote,
+    this.openingNote,
+    required this.forceClosed,
+    this.forceClosedByUserId,
+    this.forceCloseReason,
+    required this.hasLateArrivals,
     required this.syncStatus,
     this.syncError,
   });
@@ -30074,6 +31421,35 @@ class ShiftsTableData extends DataClass implements Insertable<ShiftsTableData> {
     }
     map['last_modified'] = Variable<DateTime>(lastModified);
     map['is_drawer_shift'] = Variable<bool>(isDrawerShift);
+    if (!nullToAbsent || posDeviceUid != null) {
+      map['pos_device_uid'] = Variable<String>(posDeviceUid);
+    }
+    if (!nullToAbsent || posDeviceName != null) {
+      map['pos_device_name'] = Variable<String>(posDeviceName);
+    }
+    if (!nullToAbsent || closedByUserId != null) {
+      map['closed_by_user_id'] = Variable<int>(closedByUserId);
+    }
+    if (!nullToAbsent || expectedCash != null) {
+      map['expected_cash'] = Variable<double>(expectedCash);
+    }
+    if (!nullToAbsent || cashDifference != null) {
+      map['cash_difference'] = Variable<double>(cashDifference);
+    }
+    if (!nullToAbsent || closingNote != null) {
+      map['closing_note'] = Variable<String>(closingNote);
+    }
+    if (!nullToAbsent || openingNote != null) {
+      map['opening_note'] = Variable<String>(openingNote);
+    }
+    map['force_closed'] = Variable<bool>(forceClosed);
+    if (!nullToAbsent || forceClosedByUserId != null) {
+      map['force_closed_by_user_id'] = Variable<int>(forceClosedByUserId);
+    }
+    if (!nullToAbsent || forceCloseReason != null) {
+      map['force_close_reason'] = Variable<String>(forceCloseReason);
+    }
+    map['has_late_arrivals'] = Variable<bool>(hasLateArrivals);
     map['sync_status'] = Variable<String>(syncStatus);
     if (!nullToAbsent || syncError != null) {
       map['sync_error'] = Variable<String>(syncError);
@@ -30100,6 +31476,35 @@ class ShiftsTableData extends DataClass implements Insertable<ShiftsTableData> {
           : Value(closedAt),
       lastModified: Value(lastModified),
       isDrawerShift: Value(isDrawerShift),
+      posDeviceUid: posDeviceUid == null && nullToAbsent
+          ? const Value.absent()
+          : Value(posDeviceUid),
+      posDeviceName: posDeviceName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(posDeviceName),
+      closedByUserId: closedByUserId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(closedByUserId),
+      expectedCash: expectedCash == null && nullToAbsent
+          ? const Value.absent()
+          : Value(expectedCash),
+      cashDifference: cashDifference == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cashDifference),
+      closingNote: closingNote == null && nullToAbsent
+          ? const Value.absent()
+          : Value(closingNote),
+      openingNote: openingNote == null && nullToAbsent
+          ? const Value.absent()
+          : Value(openingNote),
+      forceClosed: Value(forceClosed),
+      forceClosedByUserId: forceClosedByUserId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(forceClosedByUserId),
+      forceCloseReason: forceCloseReason == null && nullToAbsent
+          ? const Value.absent()
+          : Value(forceCloseReason),
+      hasLateArrivals: Value(hasLateArrivals),
       syncStatus: Value(syncStatus),
       syncError: syncError == null && nullToAbsent
           ? const Value.absent()
@@ -30124,6 +31529,19 @@ class ShiftsTableData extends DataClass implements Insertable<ShiftsTableData> {
       closedAt: serializer.fromJson<DateTime?>(json['closedAt']),
       lastModified: serializer.fromJson<DateTime>(json['lastModified']),
       isDrawerShift: serializer.fromJson<bool>(json['isDrawerShift']),
+      posDeviceUid: serializer.fromJson<String?>(json['posDeviceUid']),
+      posDeviceName: serializer.fromJson<String?>(json['posDeviceName']),
+      closedByUserId: serializer.fromJson<int?>(json['closedByUserId']),
+      expectedCash: serializer.fromJson<double?>(json['expectedCash']),
+      cashDifference: serializer.fromJson<double?>(json['cashDifference']),
+      closingNote: serializer.fromJson<String?>(json['closingNote']),
+      openingNote: serializer.fromJson<String?>(json['openingNote']),
+      forceClosed: serializer.fromJson<bool>(json['forceClosed']),
+      forceClosedByUserId: serializer.fromJson<int?>(
+        json['forceClosedByUserId'],
+      ),
+      forceCloseReason: serializer.fromJson<String?>(json['forceCloseReason']),
+      hasLateArrivals: serializer.fromJson<bool>(json['hasLateArrivals']),
       syncStatus: serializer.fromJson<String>(json['syncStatus']),
       syncError: serializer.fromJson<String?>(json['syncError']),
     );
@@ -30143,6 +31561,17 @@ class ShiftsTableData extends DataClass implements Insertable<ShiftsTableData> {
       'closedAt': serializer.toJson<DateTime?>(closedAt),
       'lastModified': serializer.toJson<DateTime>(lastModified),
       'isDrawerShift': serializer.toJson<bool>(isDrawerShift),
+      'posDeviceUid': serializer.toJson<String?>(posDeviceUid),
+      'posDeviceName': serializer.toJson<String?>(posDeviceName),
+      'closedByUserId': serializer.toJson<int?>(closedByUserId),
+      'expectedCash': serializer.toJson<double?>(expectedCash),
+      'cashDifference': serializer.toJson<double?>(cashDifference),
+      'closingNote': serializer.toJson<String?>(closingNote),
+      'openingNote': serializer.toJson<String?>(openingNote),
+      'forceClosed': serializer.toJson<bool>(forceClosed),
+      'forceClosedByUserId': serializer.toJson<int?>(forceClosedByUserId),
+      'forceCloseReason': serializer.toJson<String?>(forceCloseReason),
+      'hasLateArrivals': serializer.toJson<bool>(hasLateArrivals),
       'syncStatus': serializer.toJson<String>(syncStatus),
       'syncError': serializer.toJson<String?>(syncError),
     };
@@ -30160,6 +31589,17 @@ class ShiftsTableData extends DataClass implements Insertable<ShiftsTableData> {
     Value<DateTime?> closedAt = const Value.absent(),
     DateTime? lastModified,
     bool? isDrawerShift,
+    Value<String?> posDeviceUid = const Value.absent(),
+    Value<String?> posDeviceName = const Value.absent(),
+    Value<int?> closedByUserId = const Value.absent(),
+    Value<double?> expectedCash = const Value.absent(),
+    Value<double?> cashDifference = const Value.absent(),
+    Value<String?> closingNote = const Value.absent(),
+    Value<String?> openingNote = const Value.absent(),
+    bool? forceClosed,
+    Value<int?> forceClosedByUserId = const Value.absent(),
+    Value<String?> forceCloseReason = const Value.absent(),
+    bool? hasLateArrivals,
     String? syncStatus,
     Value<String?> syncError = const Value.absent(),
   }) => ShiftsTableData(
@@ -30176,6 +31616,27 @@ class ShiftsTableData extends DataClass implements Insertable<ShiftsTableData> {
     closedAt: closedAt.present ? closedAt.value : this.closedAt,
     lastModified: lastModified ?? this.lastModified,
     isDrawerShift: isDrawerShift ?? this.isDrawerShift,
+    posDeviceUid: posDeviceUid.present ? posDeviceUid.value : this.posDeviceUid,
+    posDeviceName: posDeviceName.present
+        ? posDeviceName.value
+        : this.posDeviceName,
+    closedByUserId: closedByUserId.present
+        ? closedByUserId.value
+        : this.closedByUserId,
+    expectedCash: expectedCash.present ? expectedCash.value : this.expectedCash,
+    cashDifference: cashDifference.present
+        ? cashDifference.value
+        : this.cashDifference,
+    closingNote: closingNote.present ? closingNote.value : this.closingNote,
+    openingNote: openingNote.present ? openingNote.value : this.openingNote,
+    forceClosed: forceClosed ?? this.forceClosed,
+    forceClosedByUserId: forceClosedByUserId.present
+        ? forceClosedByUserId.value
+        : this.forceClosedByUserId,
+    forceCloseReason: forceCloseReason.present
+        ? forceCloseReason.value
+        : this.forceCloseReason,
+    hasLateArrivals: hasLateArrivals ?? this.hasLateArrivals,
     syncStatus: syncStatus ?? this.syncStatus,
     syncError: syncError.present ? syncError.value : this.syncError,
   );
@@ -30200,6 +31661,39 @@ class ShiftsTableData extends DataClass implements Insertable<ShiftsTableData> {
       isDrawerShift: data.isDrawerShift.present
           ? data.isDrawerShift.value
           : this.isDrawerShift,
+      posDeviceUid: data.posDeviceUid.present
+          ? data.posDeviceUid.value
+          : this.posDeviceUid,
+      posDeviceName: data.posDeviceName.present
+          ? data.posDeviceName.value
+          : this.posDeviceName,
+      closedByUserId: data.closedByUserId.present
+          ? data.closedByUserId.value
+          : this.closedByUserId,
+      expectedCash: data.expectedCash.present
+          ? data.expectedCash.value
+          : this.expectedCash,
+      cashDifference: data.cashDifference.present
+          ? data.cashDifference.value
+          : this.cashDifference,
+      closingNote: data.closingNote.present
+          ? data.closingNote.value
+          : this.closingNote,
+      openingNote: data.openingNote.present
+          ? data.openingNote.value
+          : this.openingNote,
+      forceClosed: data.forceClosed.present
+          ? data.forceClosed.value
+          : this.forceClosed,
+      forceClosedByUserId: data.forceClosedByUserId.present
+          ? data.forceClosedByUserId.value
+          : this.forceClosedByUserId,
+      forceCloseReason: data.forceCloseReason.present
+          ? data.forceCloseReason.value
+          : this.forceCloseReason,
+      hasLateArrivals: data.hasLateArrivals.present
+          ? data.hasLateArrivals.value
+          : this.hasLateArrivals,
       syncStatus: data.syncStatus.present
           ? data.syncStatus.value
           : this.syncStatus,
@@ -30221,6 +31715,17 @@ class ShiftsTableData extends DataClass implements Insertable<ShiftsTableData> {
           ..write('closedAt: $closedAt, ')
           ..write('lastModified: $lastModified, ')
           ..write('isDrawerShift: $isDrawerShift, ')
+          ..write('posDeviceUid: $posDeviceUid, ')
+          ..write('posDeviceName: $posDeviceName, ')
+          ..write('closedByUserId: $closedByUserId, ')
+          ..write('expectedCash: $expectedCash, ')
+          ..write('cashDifference: $cashDifference, ')
+          ..write('closingNote: $closingNote, ')
+          ..write('openingNote: $openingNote, ')
+          ..write('forceClosed: $forceClosed, ')
+          ..write('forceClosedByUserId: $forceClosedByUserId, ')
+          ..write('forceCloseReason: $forceCloseReason, ')
+          ..write('hasLateArrivals: $hasLateArrivals, ')
           ..write('syncStatus: $syncStatus, ')
           ..write('syncError: $syncError')
           ..write(')'))
@@ -30228,7 +31733,7 @@ class ShiftsTableData extends DataClass implements Insertable<ShiftsTableData> {
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     localId,
     serverId,
     companyId,
@@ -30240,9 +31745,20 @@ class ShiftsTableData extends DataClass implements Insertable<ShiftsTableData> {
     closedAt,
     lastModified,
     isDrawerShift,
+    posDeviceUid,
+    posDeviceName,
+    closedByUserId,
+    expectedCash,
+    cashDifference,
+    closingNote,
+    openingNote,
+    forceClosed,
+    forceClosedByUserId,
+    forceCloseReason,
+    hasLateArrivals,
     syncStatus,
     syncError,
-  );
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -30258,6 +31774,17 @@ class ShiftsTableData extends DataClass implements Insertable<ShiftsTableData> {
           other.closedAt == this.closedAt &&
           other.lastModified == this.lastModified &&
           other.isDrawerShift == this.isDrawerShift &&
+          other.posDeviceUid == this.posDeviceUid &&
+          other.posDeviceName == this.posDeviceName &&
+          other.closedByUserId == this.closedByUserId &&
+          other.expectedCash == this.expectedCash &&
+          other.cashDifference == this.cashDifference &&
+          other.closingNote == this.closingNote &&
+          other.openingNote == this.openingNote &&
+          other.forceClosed == this.forceClosed &&
+          other.forceClosedByUserId == this.forceClosedByUserId &&
+          other.forceCloseReason == this.forceCloseReason &&
+          other.hasLateArrivals == this.hasLateArrivals &&
           other.syncStatus == this.syncStatus &&
           other.syncError == this.syncError);
 }
@@ -30274,6 +31801,17 @@ class ShiftsTableCompanion extends UpdateCompanion<ShiftsTableData> {
   final Value<DateTime?> closedAt;
   final Value<DateTime> lastModified;
   final Value<bool> isDrawerShift;
+  final Value<String?> posDeviceUid;
+  final Value<String?> posDeviceName;
+  final Value<int?> closedByUserId;
+  final Value<double?> expectedCash;
+  final Value<double?> cashDifference;
+  final Value<String?> closingNote;
+  final Value<String?> openingNote;
+  final Value<bool> forceClosed;
+  final Value<int?> forceClosedByUserId;
+  final Value<String?> forceCloseReason;
+  final Value<bool> hasLateArrivals;
   final Value<String> syncStatus;
   final Value<String?> syncError;
   final Value<int> rowid;
@@ -30289,6 +31827,17 @@ class ShiftsTableCompanion extends UpdateCompanion<ShiftsTableData> {
     this.closedAt = const Value.absent(),
     this.lastModified = const Value.absent(),
     this.isDrawerShift = const Value.absent(),
+    this.posDeviceUid = const Value.absent(),
+    this.posDeviceName = const Value.absent(),
+    this.closedByUserId = const Value.absent(),
+    this.expectedCash = const Value.absent(),
+    this.cashDifference = const Value.absent(),
+    this.closingNote = const Value.absent(),
+    this.openingNote = const Value.absent(),
+    this.forceClosed = const Value.absent(),
+    this.forceClosedByUserId = const Value.absent(),
+    this.forceCloseReason = const Value.absent(),
+    this.hasLateArrivals = const Value.absent(),
     this.syncStatus = const Value.absent(),
     this.syncError = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -30305,6 +31854,17 @@ class ShiftsTableCompanion extends UpdateCompanion<ShiftsTableData> {
     this.closedAt = const Value.absent(),
     required DateTime lastModified,
     this.isDrawerShift = const Value.absent(),
+    this.posDeviceUid = const Value.absent(),
+    this.posDeviceName = const Value.absent(),
+    this.closedByUserId = const Value.absent(),
+    this.expectedCash = const Value.absent(),
+    this.cashDifference = const Value.absent(),
+    this.closingNote = const Value.absent(),
+    this.openingNote = const Value.absent(),
+    this.forceClosed = const Value.absent(),
+    this.forceClosedByUserId = const Value.absent(),
+    this.forceCloseReason = const Value.absent(),
+    this.hasLateArrivals = const Value.absent(),
     this.syncStatus = const Value.absent(),
     this.syncError = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -30325,6 +31885,17 @@ class ShiftsTableCompanion extends UpdateCompanion<ShiftsTableData> {
     Expression<DateTime>? closedAt,
     Expression<DateTime>? lastModified,
     Expression<bool>? isDrawerShift,
+    Expression<String>? posDeviceUid,
+    Expression<String>? posDeviceName,
+    Expression<int>? closedByUserId,
+    Expression<double>? expectedCash,
+    Expression<double>? cashDifference,
+    Expression<String>? closingNote,
+    Expression<String>? openingNote,
+    Expression<bool>? forceClosed,
+    Expression<int>? forceClosedByUserId,
+    Expression<String>? forceCloseReason,
+    Expression<bool>? hasLateArrivals,
     Expression<String>? syncStatus,
     Expression<String>? syncError,
     Expression<int>? rowid,
@@ -30341,6 +31912,18 @@ class ShiftsTableCompanion extends UpdateCompanion<ShiftsTableData> {
       if (closedAt != null) 'closed_at': closedAt,
       if (lastModified != null) 'last_modified': lastModified,
       if (isDrawerShift != null) 'is_drawer_shift': isDrawerShift,
+      if (posDeviceUid != null) 'pos_device_uid': posDeviceUid,
+      if (posDeviceName != null) 'pos_device_name': posDeviceName,
+      if (closedByUserId != null) 'closed_by_user_id': closedByUserId,
+      if (expectedCash != null) 'expected_cash': expectedCash,
+      if (cashDifference != null) 'cash_difference': cashDifference,
+      if (closingNote != null) 'closing_note': closingNote,
+      if (openingNote != null) 'opening_note': openingNote,
+      if (forceClosed != null) 'force_closed': forceClosed,
+      if (forceClosedByUserId != null)
+        'force_closed_by_user_id': forceClosedByUserId,
+      if (forceCloseReason != null) 'force_close_reason': forceCloseReason,
+      if (hasLateArrivals != null) 'has_late_arrivals': hasLateArrivals,
       if (syncStatus != null) 'sync_status': syncStatus,
       if (syncError != null) 'sync_error': syncError,
       if (rowid != null) 'rowid': rowid,
@@ -30359,6 +31942,17 @@ class ShiftsTableCompanion extends UpdateCompanion<ShiftsTableData> {
     Value<DateTime?>? closedAt,
     Value<DateTime>? lastModified,
     Value<bool>? isDrawerShift,
+    Value<String?>? posDeviceUid,
+    Value<String?>? posDeviceName,
+    Value<int?>? closedByUserId,
+    Value<double?>? expectedCash,
+    Value<double?>? cashDifference,
+    Value<String?>? closingNote,
+    Value<String?>? openingNote,
+    Value<bool>? forceClosed,
+    Value<int?>? forceClosedByUserId,
+    Value<String?>? forceCloseReason,
+    Value<bool>? hasLateArrivals,
     Value<String>? syncStatus,
     Value<String?>? syncError,
     Value<int>? rowid,
@@ -30375,6 +31969,17 @@ class ShiftsTableCompanion extends UpdateCompanion<ShiftsTableData> {
       closedAt: closedAt ?? this.closedAt,
       lastModified: lastModified ?? this.lastModified,
       isDrawerShift: isDrawerShift ?? this.isDrawerShift,
+      posDeviceUid: posDeviceUid ?? this.posDeviceUid,
+      posDeviceName: posDeviceName ?? this.posDeviceName,
+      closedByUserId: closedByUserId ?? this.closedByUserId,
+      expectedCash: expectedCash ?? this.expectedCash,
+      cashDifference: cashDifference ?? this.cashDifference,
+      closingNote: closingNote ?? this.closingNote,
+      openingNote: openingNote ?? this.openingNote,
+      forceClosed: forceClosed ?? this.forceClosed,
+      forceClosedByUserId: forceClosedByUserId ?? this.forceClosedByUserId,
+      forceCloseReason: forceCloseReason ?? this.forceCloseReason,
+      hasLateArrivals: hasLateArrivals ?? this.hasLateArrivals,
       syncStatus: syncStatus ?? this.syncStatus,
       syncError: syncError ?? this.syncError,
       rowid: rowid ?? this.rowid,
@@ -30417,6 +32022,39 @@ class ShiftsTableCompanion extends UpdateCompanion<ShiftsTableData> {
     if (isDrawerShift.present) {
       map['is_drawer_shift'] = Variable<bool>(isDrawerShift.value);
     }
+    if (posDeviceUid.present) {
+      map['pos_device_uid'] = Variable<String>(posDeviceUid.value);
+    }
+    if (posDeviceName.present) {
+      map['pos_device_name'] = Variable<String>(posDeviceName.value);
+    }
+    if (closedByUserId.present) {
+      map['closed_by_user_id'] = Variable<int>(closedByUserId.value);
+    }
+    if (expectedCash.present) {
+      map['expected_cash'] = Variable<double>(expectedCash.value);
+    }
+    if (cashDifference.present) {
+      map['cash_difference'] = Variable<double>(cashDifference.value);
+    }
+    if (closingNote.present) {
+      map['closing_note'] = Variable<String>(closingNote.value);
+    }
+    if (openingNote.present) {
+      map['opening_note'] = Variable<String>(openingNote.value);
+    }
+    if (forceClosed.present) {
+      map['force_closed'] = Variable<bool>(forceClosed.value);
+    }
+    if (forceClosedByUserId.present) {
+      map['force_closed_by_user_id'] = Variable<int>(forceClosedByUserId.value);
+    }
+    if (forceCloseReason.present) {
+      map['force_close_reason'] = Variable<String>(forceCloseReason.value);
+    }
+    if (hasLateArrivals.present) {
+      map['has_late_arrivals'] = Variable<bool>(hasLateArrivals.value);
+    }
     if (syncStatus.present) {
       map['sync_status'] = Variable<String>(syncStatus.value);
     }
@@ -30443,6 +32081,17 @@ class ShiftsTableCompanion extends UpdateCompanion<ShiftsTableData> {
           ..write('closedAt: $closedAt, ')
           ..write('lastModified: $lastModified, ')
           ..write('isDrawerShift: $isDrawerShift, ')
+          ..write('posDeviceUid: $posDeviceUid, ')
+          ..write('posDeviceName: $posDeviceName, ')
+          ..write('closedByUserId: $closedByUserId, ')
+          ..write('expectedCash: $expectedCash, ')
+          ..write('cashDifference: $cashDifference, ')
+          ..write('closingNote: $closingNote, ')
+          ..write('openingNote: $openingNote, ')
+          ..write('forceClosed: $forceClosed, ')
+          ..write('forceClosedByUserId: $forceClosedByUserId, ')
+          ..write('forceCloseReason: $forceCloseReason, ')
+          ..write('hasLateArrivals: $hasLateArrivals, ')
           ..write('syncStatus: $syncStatus, ')
           ..write('syncError: $syncError, ')
           ..write('rowid: $rowid')
@@ -35635,6 +37284,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $DocumentItemsTableTable(this);
   late final $PaymentsTableTable paymentsTable = $PaymentsTableTable(this);
   late final $BarcodesTableTable barcodesTable = $BarcodesTableTable(this);
+  late final $BarcodeRulesTableTable barcodeRulesTable =
+      $BarcodeRulesTableTable(this);
   late final $CustomerDiscountsTableTable customerDiscountsTable =
       $CustomerDiscountsTableTable(this);
   late final $LoyaltyCardsTableTable loyaltyCardsTable =
@@ -35758,6 +37409,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     documentItemsTable,
     paymentsTable,
     barcodesTable,
+    barcodeRulesTable,
     customerDiscountsTable,
     loyaltyCardsTable,
     timeClockEntriesTable,
@@ -39222,6 +40874,8 @@ typedef $$ProductsTableTableCreateCompanionBuilder =
       required DateTime lastModified,
       Value<String> syncStatus,
       Value<String?> syncError,
+      Value<int> uomId,
+      Value<bool> isToWeigh,
       Value<Uint8List?> image,
       Value<String?> color,
     });
@@ -39255,6 +40909,8 @@ typedef $$ProductsTableTableUpdateCompanionBuilder =
       Value<DateTime> lastModified,
       Value<String> syncStatus,
       Value<String?> syncError,
+      Value<int> uomId,
+      Value<bool> isToWeigh,
       Value<Uint8List?> image,
       Value<String?> color,
     });
@@ -39405,6 +41061,16 @@ class $$ProductsTableTableFilterComposer
 
   ColumnFilters<String> get syncError => $composableBuilder(
     column: $table.syncError,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get uomId => $composableBuilder(
+    column: $table.uomId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isToWeigh => $composableBuilder(
+    column: $table.isToWeigh,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -39568,6 +41234,16 @@ class $$ProductsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get uomId => $composableBuilder(
+    column: $table.uomId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isToWeigh => $composableBuilder(
+    column: $table.isToWeigh,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<Uint8List> get image => $composableBuilder(
     column: $table.image,
     builder: (column) => ColumnOrderings(column),
@@ -39700,6 +41376,12 @@ class $$ProductsTableTableAnnotationComposer
   GeneratedColumn<String> get syncError =>
       $composableBuilder(column: $table.syncError, builder: (column) => column);
 
+  GeneratedColumn<int> get uomId =>
+      $composableBuilder(column: $table.uomId, builder: (column) => column);
+
+  GeneratedColumn<bool> get isToWeigh =>
+      $composableBuilder(column: $table.isToWeigh, builder: (column) => column);
+
   GeneratedColumn<Uint8List> get image =>
       $composableBuilder(column: $table.image, builder: (column) => column);
 
@@ -39770,6 +41452,8 @@ class $$ProductsTableTableTableManager
                 Value<DateTime> lastModified = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
                 Value<String?> syncError = const Value.absent(),
+                Value<int> uomId = const Value.absent(),
+                Value<bool> isToWeigh = const Value.absent(),
                 Value<Uint8List?> image = const Value.absent(),
                 Value<String?> color = const Value.absent(),
               }) => ProductsTableCompanion(
@@ -39801,6 +41485,8 @@ class $$ProductsTableTableTableManager
                 lastModified: lastModified,
                 syncStatus: syncStatus,
                 syncError: syncError,
+                uomId: uomId,
+                isToWeigh: isToWeigh,
                 image: image,
                 color: color,
               ),
@@ -39834,6 +41520,8 @@ class $$ProductsTableTableTableManager
                 required DateTime lastModified,
                 Value<String> syncStatus = const Value.absent(),
                 Value<String?> syncError = const Value.absent(),
+                Value<int> uomId = const Value.absent(),
+                Value<bool> isToWeigh = const Value.absent(),
                 Value<Uint8List?> image = const Value.absent(),
                 Value<String?> color = const Value.absent(),
               }) => ProductsTableCompanion.insert(
@@ -39865,6 +41553,8 @@ class $$ProductsTableTableTableManager
                 lastModified: lastModified,
                 syncStatus: syncStatus,
                 syncError: syncError,
+                uomId: uomId,
+                isToWeigh: isToWeigh,
                 image: image,
                 color: color,
               ),
@@ -44476,6 +46166,7 @@ typedef $$PosOrdersTableTableCreateCompanionBuilder =
       Value<int?> bookingId,
       Value<int?> bookingStaffId,
       Value<DateTime?> itemsLastChanged,
+      Value<String?> sessionLocalId,
       Value<int> rowid,
     });
 typedef $$PosOrdersTableTableUpdateCompanionBuilder =
@@ -44508,6 +46199,7 @@ typedef $$PosOrdersTableTableUpdateCompanionBuilder =
       Value<int?> bookingId,
       Value<int?> bookingStaffId,
       Value<DateTime?> itemsLastChanged,
+      Value<String?> sessionLocalId,
       Value<int> rowid,
     });
 
@@ -44729,6 +46421,11 @@ class $$PosOrdersTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get sessionLocalId => $composableBuilder(
+    column: $table.sessionLocalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
   Expression<bool> posOrderItemsTableRefs(
     Expression<bool> Function($$PosOrderItemsTableTableFilterComposer f) f,
   ) {
@@ -44929,6 +46626,11 @@ class $$PosOrdersTableTableOrderingComposer
     column: $table.itemsLastChanged,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get sessionLocalId => $composableBuilder(
+    column: $table.sessionLocalId,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$PosOrdersTableTableAnnotationComposer
@@ -45050,6 +46752,11 @@ class $$PosOrdersTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get sessionLocalId => $composableBuilder(
+    column: $table.sessionLocalId,
+    builder: (column) => column,
+  );
+
   Expression<T> posOrderItemsTableRefs<T extends Object>(
     Expression<T> Function($$PosOrderItemsTableTableAnnotationComposer a) f,
   ) {
@@ -45164,6 +46871,7 @@ class $$PosOrdersTableTableTableManager
                 Value<int?> bookingId = const Value.absent(),
                 Value<int?> bookingStaffId = const Value.absent(),
                 Value<DateTime?> itemsLastChanged = const Value.absent(),
+                Value<String?> sessionLocalId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PosOrdersTableCompanion(
                 localId: localId,
@@ -45194,6 +46902,7 @@ class $$PosOrdersTableTableTableManager
                 bookingId: bookingId,
                 bookingStaffId: bookingStaffId,
                 itemsLastChanged: itemsLastChanged,
+                sessionLocalId: sessionLocalId,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -45226,6 +46935,7 @@ class $$PosOrdersTableTableTableManager
                 Value<int?> bookingId = const Value.absent(),
                 Value<int?> bookingStaffId = const Value.absent(),
                 Value<DateTime?> itemsLastChanged = const Value.absent(),
+                Value<String?> sessionLocalId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PosOrdersTableCompanion.insert(
                 localId: localId,
@@ -45256,6 +46966,7 @@ class $$PosOrdersTableTableTableManager
                 bookingId: bookingId,
                 bookingStaffId: bookingStaffId,
                 itemsLastChanged: itemsLastChanged,
+                sessionLocalId: sessionLocalId,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -45371,6 +47082,9 @@ typedef $$PosOrderItemsTableTableCreateCompanionBuilder =
       Value<String?> bundle,
       Value<int?> discountAppliedType,
       Value<int?> companyId,
+      Value<double?> discountInputValue,
+      Value<int?> discountInputType,
+      Value<bool?> isTaxInclusive,
       Value<int> rowid,
     });
 typedef $$PosOrderItemsTableTableUpdateCompanionBuilder =
@@ -45397,6 +47111,9 @@ typedef $$PosOrderItemsTableTableUpdateCompanionBuilder =
       Value<String?> bundle,
       Value<int?> discountAppliedType,
       Value<int?> companyId,
+      Value<double?> discountInputValue,
+      Value<int?> discountInputType,
+      Value<bool?> isTaxInclusive,
       Value<int> rowid,
     });
 
@@ -45546,6 +47263,21 @@ class $$PosOrderItemsTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<double> get discountInputValue => $composableBuilder(
+    column: $table.discountInputValue,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get discountInputType => $composableBuilder(
+    column: $table.discountInputType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isTaxInclusive => $composableBuilder(
+    column: $table.isTaxInclusive,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$PosOrdersTableTableFilterComposer get orderId {
     final $$PosOrdersTableTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -45684,6 +47416,21 @@ class $$PosOrderItemsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get discountInputValue => $composableBuilder(
+    column: $table.discountInputValue,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get discountInputType => $composableBuilder(
+    column: $table.discountInputType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isTaxInclusive => $composableBuilder(
+    column: $table.isTaxInclusive,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$PosOrdersTableTableOrderingComposer get orderId {
     final $$PosOrdersTableTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -45796,6 +47543,21 @@ class $$PosOrderItemsTableTableAnnotationComposer
   GeneratedColumn<int> get companyId =>
       $composableBuilder(column: $table.companyId, builder: (column) => column);
 
+  GeneratedColumn<double> get discountInputValue => $composableBuilder(
+    column: $table.discountInputValue,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get discountInputType => $composableBuilder(
+    column: $table.discountInputType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isTaxInclusive => $composableBuilder(
+    column: $table.isTaxInclusive,
+    builder: (column) => column,
+  );
+
   $$PosOrdersTableTableAnnotationComposer get orderId {
     final $$PosOrdersTableTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -45875,6 +47637,9 @@ class $$PosOrderItemsTableTableTableManager
                 Value<String?> bundle = const Value.absent(),
                 Value<int?> discountAppliedType = const Value.absent(),
                 Value<int?> companyId = const Value.absent(),
+                Value<double?> discountInputValue = const Value.absent(),
+                Value<int?> discountInputType = const Value.absent(),
+                Value<bool?> isTaxInclusive = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PosOrderItemsTableCompanion(
                 localId: localId,
@@ -45899,6 +47664,9 @@ class $$PosOrderItemsTableTableTableManager
                 bundle: bundle,
                 discountAppliedType: discountAppliedType,
                 companyId: companyId,
+                discountInputValue: discountInputValue,
+                discountInputType: discountInputType,
+                isTaxInclusive: isTaxInclusive,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -45925,6 +47693,9 @@ class $$PosOrderItemsTableTableTableManager
                 Value<String?> bundle = const Value.absent(),
                 Value<int?> discountAppliedType = const Value.absent(),
                 Value<int?> companyId = const Value.absent(),
+                Value<double?> discountInputValue = const Value.absent(),
+                Value<int?> discountInputType = const Value.absent(),
+                Value<bool?> isTaxInclusive = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PosOrderItemsTableCompanion.insert(
                 localId: localId,
@@ -45949,6 +47720,9 @@ class $$PosOrderItemsTableTableTableManager
                 bundle: bundle,
                 discountAppliedType: discountAppliedType,
                 companyId: companyId,
+                discountInputValue: discountInputValue,
+                discountInputType: discountInputType,
+                isTaxInclusive: isTaxInclusive,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -46456,6 +48230,7 @@ typedef $$StartingCashTableTableCreateCompanionBuilder =
       Value<String?> description,
       Value<int?> startingCashType,
       Value<DateTime?> dateCreated,
+      Value<String?> sessionLocalId,
       Value<int> rowid,
     });
 typedef $$StartingCashTableTableUpdateCompanionBuilder =
@@ -46474,6 +48249,7 @@ typedef $$StartingCashTableTableUpdateCompanionBuilder =
       Value<String?> description,
       Value<int?> startingCashType,
       Value<DateTime?> dateCreated,
+      Value<String?> sessionLocalId,
       Value<int> rowid,
     });
 
@@ -46553,6 +48329,11 @@ class $$StartingCashTableTableFilterComposer
 
   ColumnFilters<DateTime> get dateCreated => $composableBuilder(
     column: $table.dateCreated,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sessionLocalId => $composableBuilder(
+    column: $table.sessionLocalId,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -46635,6 +48416,11 @@ class $$StartingCashTableTableOrderingComposer
     column: $table.dateCreated,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get sessionLocalId => $composableBuilder(
+    column: $table.sessionLocalId,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$StartingCashTableTableAnnotationComposer
@@ -46697,6 +48483,11 @@ class $$StartingCashTableTableAnnotationComposer
     column: $table.dateCreated,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get sessionLocalId => $composableBuilder(
+    column: $table.sessionLocalId,
+    builder: (column) => column,
+  );
 }
 
 class $$StartingCashTableTableTableManager
@@ -46753,6 +48544,7 @@ class $$StartingCashTableTableTableManager
                 Value<String?> description = const Value.absent(),
                 Value<int?> startingCashType = const Value.absent(),
                 Value<DateTime?> dateCreated = const Value.absent(),
+                Value<String?> sessionLocalId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => StartingCashTableCompanion(
                 localId: localId,
@@ -46769,6 +48561,7 @@ class $$StartingCashTableTableTableManager
                 description: description,
                 startingCashType: startingCashType,
                 dateCreated: dateCreated,
+                sessionLocalId: sessionLocalId,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -46787,6 +48580,7 @@ class $$StartingCashTableTableTableManager
                 Value<String?> description = const Value.absent(),
                 Value<int?> startingCashType = const Value.absent(),
                 Value<DateTime?> dateCreated = const Value.absent(),
+                Value<String?> sessionLocalId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => StartingCashTableCompanion.insert(
                 localId: localId,
@@ -46803,6 +48597,7 @@ class $$StartingCashTableTableTableManager
                 description: description,
                 startingCashType: startingCashType,
                 dateCreated: dateCreated,
+                sessionLocalId: sessionLocalId,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -48144,6 +49939,7 @@ typedef $$DocumentsTableTableCreateCompanionBuilder =
       Value<bool?> isClockedOut,
       Value<DateTime?> dateCreated,
       Value<DateTime?> dateUpdated,
+      Value<String?> sessionLocalId,
       Value<int> rowid,
     });
 typedef $$DocumentsTableTableUpdateCompanionBuilder =
@@ -48177,6 +49973,7 @@ typedef $$DocumentsTableTableUpdateCompanionBuilder =
       Value<bool?> isClockedOut,
       Value<DateTime?> dateCreated,
       Value<DateTime?> dateUpdated,
+      Value<String?> sessionLocalId,
       Value<int> rowid,
     });
 
@@ -48395,6 +50192,11 @@ class $$DocumentsTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get sessionLocalId => $composableBuilder(
+    column: $table.sessionLocalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
   Expression<bool> documentItemsTableRefs(
     Expression<bool> Function($$DocumentItemsTableTableFilterComposer f) f,
   ) {
@@ -48599,6 +50401,11 @@ class $$DocumentsTableTableOrderingComposer
     column: $table.dateUpdated,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get sessionLocalId => $composableBuilder(
+    column: $table.sessionLocalId,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$DocumentsTableTableAnnotationComposer
@@ -48731,6 +50538,11 @@ class $$DocumentsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get sessionLocalId => $composableBuilder(
+    column: $table.sessionLocalId,
+    builder: (column) => column,
+  );
+
   Expression<T> documentItemsTableRefs<T extends Object>(
     Expression<T> Function($$DocumentItemsTableTableAnnotationComposer a) f,
   ) {
@@ -48845,6 +50657,7 @@ class $$DocumentsTableTableTableManager
                 Value<bool?> isClockedOut = const Value.absent(),
                 Value<DateTime?> dateCreated = const Value.absent(),
                 Value<DateTime?> dateUpdated = const Value.absent(),
+                Value<String?> sessionLocalId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => DocumentsTableCompanion(
                 localId: localId,
@@ -48876,6 +50689,7 @@ class $$DocumentsTableTableTableManager
                 isClockedOut: isClockedOut,
                 dateCreated: dateCreated,
                 dateUpdated: dateUpdated,
+                sessionLocalId: sessionLocalId,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -48909,6 +50723,7 @@ class $$DocumentsTableTableTableManager
                 Value<bool?> isClockedOut = const Value.absent(),
                 Value<DateTime?> dateCreated = const Value.absent(),
                 Value<DateTime?> dateUpdated = const Value.absent(),
+                Value<String?> sessionLocalId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => DocumentsTableCompanion.insert(
                 localId: localId,
@@ -48940,6 +50755,7 @@ class $$DocumentsTableTableTableManager
                 isClockedOut: isClockedOut,
                 dateCreated: dateCreated,
                 dateUpdated: dateUpdated,
+                sessionLocalId: sessionLocalId,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -49741,6 +51557,7 @@ typedef $$PaymentsTableTableCreateCompanionBuilder =
       Value<String> syncStatus,
       Value<DateTime?> dateCreated,
       Value<int?> companyId,
+      Value<String?> sessionLocalId,
       Value<int> rowid,
     });
 typedef $$PaymentsTableTableUpdateCompanionBuilder =
@@ -49756,6 +51573,7 @@ typedef $$PaymentsTableTableUpdateCompanionBuilder =
       Value<String> syncStatus,
       Value<DateTime?> dateCreated,
       Value<int?> companyId,
+      Value<String?> sessionLocalId,
       Value<int> rowid,
     });
 
@@ -49846,6 +51664,11 @@ class $$PaymentsTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get sessionLocalId => $composableBuilder(
+    column: $table.sessionLocalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$DocumentsTableTableFilterComposer get documentId {
     final $$DocumentsTableTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -49929,6 +51752,11 @@ class $$PaymentsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get sessionLocalId => $composableBuilder(
+    column: $table.sessionLocalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$DocumentsTableTableOrderingComposer get documentId {
     final $$DocumentsTableTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -49998,6 +51826,11 @@ class $$PaymentsTableTableAnnotationComposer
   GeneratedColumn<int> get companyId =>
       $composableBuilder(column: $table.companyId, builder: (column) => column);
 
+  GeneratedColumn<String> get sessionLocalId => $composableBuilder(
+    column: $table.sessionLocalId,
+    builder: (column) => column,
+  );
+
   $$DocumentsTableTableAnnotationComposer get documentId {
     final $$DocumentsTableTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -50061,6 +51894,7 @@ class $$PaymentsTableTableTableManager
                 Value<String> syncStatus = const Value.absent(),
                 Value<DateTime?> dateCreated = const Value.absent(),
                 Value<int?> companyId = const Value.absent(),
+                Value<String?> sessionLocalId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PaymentsTableCompanion(
                 localId: localId,
@@ -50074,6 +51908,7 @@ class $$PaymentsTableTableTableManager
                 syncStatus: syncStatus,
                 dateCreated: dateCreated,
                 companyId: companyId,
+                sessionLocalId: sessionLocalId,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -50089,6 +51924,7 @@ class $$PaymentsTableTableTableManager
                 Value<String> syncStatus = const Value.absent(),
                 Value<DateTime?> dateCreated = const Value.absent(),
                 Value<int?> companyId = const Value.absent(),
+                Value<String?> sessionLocalId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PaymentsTableCompanion.insert(
                 localId: localId,
@@ -50102,6 +51938,7 @@ class $$PaymentsTableTableTableManager
                 syncStatus: syncStatus,
                 dateCreated: dateCreated,
                 companyId: companyId,
+                sessionLocalId: sessionLocalId,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -50394,6 +52231,270 @@ typedef $$BarcodesTableTableProcessedTableManager =
         BaseReferences<_$AppDatabase, $BarcodesTableTable, BarcodesTableData>,
       ),
       BarcodesTableData,
+      PrefetchHooks Function()
+    >;
+typedef $$BarcodeRulesTableTableCreateCompanionBuilder =
+    BarcodeRulesTableCompanion Function({
+      Value<int> id,
+      required int companyId,
+      required String name,
+      required int sequence,
+      required String type,
+      required String encoding,
+      required String pattern,
+      Value<bool> isEnabled,
+    });
+typedef $$BarcodeRulesTableTableUpdateCompanionBuilder =
+    BarcodeRulesTableCompanion Function({
+      Value<int> id,
+      Value<int> companyId,
+      Value<String> name,
+      Value<int> sequence,
+      Value<String> type,
+      Value<String> encoding,
+      Value<String> pattern,
+      Value<bool> isEnabled,
+    });
+
+class $$BarcodeRulesTableTableFilterComposer
+    extends Composer<_$AppDatabase, $BarcodeRulesTableTable> {
+  $$BarcodeRulesTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get companyId => $composableBuilder(
+    column: $table.companyId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sequence => $composableBuilder(
+    column: $table.sequence,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get encoding => $composableBuilder(
+    column: $table.encoding,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get pattern => $composableBuilder(
+    column: $table.pattern,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isEnabled => $composableBuilder(
+    column: $table.isEnabled,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$BarcodeRulesTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $BarcodeRulesTableTable> {
+  $$BarcodeRulesTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get companyId => $composableBuilder(
+    column: $table.companyId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sequence => $composableBuilder(
+    column: $table.sequence,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get encoding => $composableBuilder(
+    column: $table.encoding,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get pattern => $composableBuilder(
+    column: $table.pattern,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isEnabled => $composableBuilder(
+    column: $table.isEnabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$BarcodeRulesTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $BarcodeRulesTableTable> {
+  $$BarcodeRulesTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get companyId =>
+      $composableBuilder(column: $table.companyId, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<int> get sequence =>
+      $composableBuilder(column: $table.sequence, builder: (column) => column);
+
+  GeneratedColumn<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumn<String> get encoding =>
+      $composableBuilder(column: $table.encoding, builder: (column) => column);
+
+  GeneratedColumn<String> get pattern =>
+      $composableBuilder(column: $table.pattern, builder: (column) => column);
+
+  GeneratedColumn<bool> get isEnabled =>
+      $composableBuilder(column: $table.isEnabled, builder: (column) => column);
+}
+
+class $$BarcodeRulesTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $BarcodeRulesTableTable,
+          BarcodeRulesTableData,
+          $$BarcodeRulesTableTableFilterComposer,
+          $$BarcodeRulesTableTableOrderingComposer,
+          $$BarcodeRulesTableTableAnnotationComposer,
+          $$BarcodeRulesTableTableCreateCompanionBuilder,
+          $$BarcodeRulesTableTableUpdateCompanionBuilder,
+          (
+            BarcodeRulesTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $BarcodeRulesTableTable,
+              BarcodeRulesTableData
+            >,
+          ),
+          BarcodeRulesTableData,
+          PrefetchHooks Function()
+        > {
+  $$BarcodeRulesTableTableTableManager(
+    _$AppDatabase db,
+    $BarcodeRulesTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$BarcodeRulesTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$BarcodeRulesTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$BarcodeRulesTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> companyId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<int> sequence = const Value.absent(),
+                Value<String> type = const Value.absent(),
+                Value<String> encoding = const Value.absent(),
+                Value<String> pattern = const Value.absent(),
+                Value<bool> isEnabled = const Value.absent(),
+              }) => BarcodeRulesTableCompanion(
+                id: id,
+                companyId: companyId,
+                name: name,
+                sequence: sequence,
+                type: type,
+                encoding: encoding,
+                pattern: pattern,
+                isEnabled: isEnabled,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int companyId,
+                required String name,
+                required int sequence,
+                required String type,
+                required String encoding,
+                required String pattern,
+                Value<bool> isEnabled = const Value.absent(),
+              }) => BarcodeRulesTableCompanion.insert(
+                id: id,
+                companyId: companyId,
+                name: name,
+                sequence: sequence,
+                type: type,
+                encoding: encoding,
+                pattern: pattern,
+                isEnabled: isEnabled,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$BarcodeRulesTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $BarcodeRulesTableTable,
+      BarcodeRulesTableData,
+      $$BarcodeRulesTableTableFilterComposer,
+      $$BarcodeRulesTableTableOrderingComposer,
+      $$BarcodeRulesTableTableAnnotationComposer,
+      $$BarcodeRulesTableTableCreateCompanionBuilder,
+      $$BarcodeRulesTableTableUpdateCompanionBuilder,
+      (
+        BarcodeRulesTableData,
+        BaseReferences<
+          _$AppDatabase,
+          $BarcodeRulesTableTable,
+          BarcodeRulesTableData
+        >,
+      ),
+      BarcodeRulesTableData,
       PrefetchHooks Function()
     >;
 typedef $$CustomerDiscountsTableTableCreateCompanionBuilder =
@@ -51279,6 +53380,17 @@ typedef $$ShiftsTableTableCreateCompanionBuilder =
       Value<DateTime?> closedAt,
       required DateTime lastModified,
       Value<bool> isDrawerShift,
+      Value<String?> posDeviceUid,
+      Value<String?> posDeviceName,
+      Value<int?> closedByUserId,
+      Value<double?> expectedCash,
+      Value<double?> cashDifference,
+      Value<String?> closingNote,
+      Value<String?> openingNote,
+      Value<bool> forceClosed,
+      Value<int?> forceClosedByUserId,
+      Value<String?> forceCloseReason,
+      Value<bool> hasLateArrivals,
       Value<String> syncStatus,
       Value<String?> syncError,
       Value<int> rowid,
@@ -51296,6 +53408,17 @@ typedef $$ShiftsTableTableUpdateCompanionBuilder =
       Value<DateTime?> closedAt,
       Value<DateTime> lastModified,
       Value<bool> isDrawerShift,
+      Value<String?> posDeviceUid,
+      Value<String?> posDeviceName,
+      Value<int?> closedByUserId,
+      Value<double?> expectedCash,
+      Value<double?> cashDifference,
+      Value<String?> closingNote,
+      Value<String?> openingNote,
+      Value<bool> forceClosed,
+      Value<int?> forceClosedByUserId,
+      Value<String?> forceCloseReason,
+      Value<bool> hasLateArrivals,
       Value<String> syncStatus,
       Value<String?> syncError,
       Value<int> rowid,
@@ -51362,6 +53485,61 @@ class $$ShiftsTableTableFilterComposer
 
   ColumnFilters<bool> get isDrawerShift => $composableBuilder(
     column: $table.isDrawerShift,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get posDeviceUid => $composableBuilder(
+    column: $table.posDeviceUid,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get posDeviceName => $composableBuilder(
+    column: $table.posDeviceName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get closedByUserId => $composableBuilder(
+    column: $table.closedByUserId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get expectedCash => $composableBuilder(
+    column: $table.expectedCash,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get cashDifference => $composableBuilder(
+    column: $table.cashDifference,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get closingNote => $composableBuilder(
+    column: $table.closingNote,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get openingNote => $composableBuilder(
+    column: $table.openingNote,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get forceClosed => $composableBuilder(
+    column: $table.forceClosed,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get forceClosedByUserId => $composableBuilder(
+    column: $table.forceClosedByUserId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get forceCloseReason => $composableBuilder(
+    column: $table.forceCloseReason,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get hasLateArrivals => $composableBuilder(
+    column: $table.hasLateArrivals,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -51440,6 +53618,61 @@ class $$ShiftsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get posDeviceUid => $composableBuilder(
+    column: $table.posDeviceUid,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get posDeviceName => $composableBuilder(
+    column: $table.posDeviceName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get closedByUserId => $composableBuilder(
+    column: $table.closedByUserId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get expectedCash => $composableBuilder(
+    column: $table.expectedCash,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get cashDifference => $composableBuilder(
+    column: $table.cashDifference,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get closingNote => $composableBuilder(
+    column: $table.closingNote,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get openingNote => $composableBuilder(
+    column: $table.openingNote,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get forceClosed => $composableBuilder(
+    column: $table.forceClosed,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get forceClosedByUserId => $composableBuilder(
+    column: $table.forceClosedByUserId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get forceCloseReason => $composableBuilder(
+    column: $table.forceCloseReason,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get hasLateArrivals => $composableBuilder(
+    column: $table.hasLateArrivals,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get syncStatus => $composableBuilder(
     column: $table.syncStatus,
     builder: (column) => ColumnOrderings(column),
@@ -51501,6 +53734,61 @@ class $$ShiftsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get posDeviceUid => $composableBuilder(
+    column: $table.posDeviceUid,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get posDeviceName => $composableBuilder(
+    column: $table.posDeviceName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get closedByUserId => $composableBuilder(
+    column: $table.closedByUserId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get expectedCash => $composableBuilder(
+    column: $table.expectedCash,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get cashDifference => $composableBuilder(
+    column: $table.cashDifference,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get closingNote => $composableBuilder(
+    column: $table.closingNote,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get openingNote => $composableBuilder(
+    column: $table.openingNote,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get forceClosed => $composableBuilder(
+    column: $table.forceClosed,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get forceClosedByUserId => $composableBuilder(
+    column: $table.forceClosedByUserId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get forceCloseReason => $composableBuilder(
+    column: $table.forceCloseReason,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get hasLateArrivals => $composableBuilder(
+    column: $table.hasLateArrivals,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get syncStatus => $composableBuilder(
     column: $table.syncStatus,
     builder: (column) => column,
@@ -51552,6 +53840,17 @@ class $$ShiftsTableTableTableManager
                 Value<DateTime?> closedAt = const Value.absent(),
                 Value<DateTime> lastModified = const Value.absent(),
                 Value<bool> isDrawerShift = const Value.absent(),
+                Value<String?> posDeviceUid = const Value.absent(),
+                Value<String?> posDeviceName = const Value.absent(),
+                Value<int?> closedByUserId = const Value.absent(),
+                Value<double?> expectedCash = const Value.absent(),
+                Value<double?> cashDifference = const Value.absent(),
+                Value<String?> closingNote = const Value.absent(),
+                Value<String?> openingNote = const Value.absent(),
+                Value<bool> forceClosed = const Value.absent(),
+                Value<int?> forceClosedByUserId = const Value.absent(),
+                Value<String?> forceCloseReason = const Value.absent(),
+                Value<bool> hasLateArrivals = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
                 Value<String?> syncError = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -51567,6 +53866,17 @@ class $$ShiftsTableTableTableManager
                 closedAt: closedAt,
                 lastModified: lastModified,
                 isDrawerShift: isDrawerShift,
+                posDeviceUid: posDeviceUid,
+                posDeviceName: posDeviceName,
+                closedByUserId: closedByUserId,
+                expectedCash: expectedCash,
+                cashDifference: cashDifference,
+                closingNote: closingNote,
+                openingNote: openingNote,
+                forceClosed: forceClosed,
+                forceClosedByUserId: forceClosedByUserId,
+                forceCloseReason: forceCloseReason,
+                hasLateArrivals: hasLateArrivals,
                 syncStatus: syncStatus,
                 syncError: syncError,
                 rowid: rowid,
@@ -51584,6 +53894,17 @@ class $$ShiftsTableTableTableManager
                 Value<DateTime?> closedAt = const Value.absent(),
                 required DateTime lastModified,
                 Value<bool> isDrawerShift = const Value.absent(),
+                Value<String?> posDeviceUid = const Value.absent(),
+                Value<String?> posDeviceName = const Value.absent(),
+                Value<int?> closedByUserId = const Value.absent(),
+                Value<double?> expectedCash = const Value.absent(),
+                Value<double?> cashDifference = const Value.absent(),
+                Value<String?> closingNote = const Value.absent(),
+                Value<String?> openingNote = const Value.absent(),
+                Value<bool> forceClosed = const Value.absent(),
+                Value<int?> forceClosedByUserId = const Value.absent(),
+                Value<String?> forceCloseReason = const Value.absent(),
+                Value<bool> hasLateArrivals = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
                 Value<String?> syncError = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -51599,6 +53920,17 @@ class $$ShiftsTableTableTableManager
                 closedAt: closedAt,
                 lastModified: lastModified,
                 isDrawerShift: isDrawerShift,
+                posDeviceUid: posDeviceUid,
+                posDeviceName: posDeviceName,
+                closedByUserId: closedByUserId,
+                expectedCash: expectedCash,
+                cashDifference: cashDifference,
+                closingNote: closingNote,
+                openingNote: openingNote,
+                forceClosed: forceClosed,
+                forceClosedByUserId: forceClosedByUserId,
+                forceCloseReason: forceCloseReason,
+                hasLateArrivals: hasLateArrivals,
                 syncStatus: syncStatus,
                 syncError: syncError,
                 rowid: rowid,
@@ -54357,6 +56689,8 @@ class $AppDatabaseManager {
       $$PaymentsTableTableTableManager(_db, _db.paymentsTable);
   $$BarcodesTableTableTableManager get barcodesTable =>
       $$BarcodesTableTableTableManager(_db, _db.barcodesTable);
+  $$BarcodeRulesTableTableTableManager get barcodeRulesTable =>
+      $$BarcodeRulesTableTableTableManager(_db, _db.barcodeRulesTable);
   $$CustomerDiscountsTableTableTableManager get customerDiscountsTable =>
       $$CustomerDiscountsTableTableTableManager(
         _db,

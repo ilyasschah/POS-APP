@@ -205,7 +205,7 @@ abstract class AppLocalizations {
   /// No description provided for @developerMode.
   ///
   /// In en, this message translates to:
-  /// **'Developer Mode'**
+  /// **'Developer mode'**
   String get developerMode;
 
   /// No description provided for @unlinkDeviceConfirm.
@@ -2758,6 +2758,24 @@ abstract class AppLocalizations {
   /// **'Company Header'**
   String get companyHeader;
 
+  /// No description provided for @kitchenPrintingSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Kitchen Printing'**
+  String get kitchenPrintingSection;
+
+  /// No description provided for @autoKitchenPrintOnCheckout.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-print kitchen tickets at checkout'**
+  String get autoKitchenPrintOnCheckout;
+
+  /// No description provided for @autoKitchenPrintSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This terminal only. On sale completion, fires the same station tickets as the Kitchen button.'**
+  String get autoKitchenPrintSubtitle;
+
   /// No description provided for @companyPhoneTel.
   ///
   /// In en, this message translates to:
@@ -4186,6 +4204,42 @@ abstract class AppLocalizations {
   /// **'No tax rates defined yet. Add them under Tax Rates.'**
   String get noTaxRatesDefined;
 
+  /// No description provided for @taxDefaultRequiredTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a default tax rate'**
+  String get taxDefaultRequiredTitle;
+
+  /// No description provided for @taxDefaultRequiredBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Tax-inclusive pricing needs a default tax rate. Pick at least one — it will be applied to every new product and locked at the till.'**
+  String get taxDefaultRequiredBody;
+
+  /// No description provided for @taxDefaultRequiredNoRates.
+  ///
+  /// In en, this message translates to:
+  /// **'No tax rates defined yet. Create one under Tax Rates before turning this on.'**
+  String get taxDefaultRequiredNoRates;
+
+  /// No description provided for @defaultTaxRateDisabledHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on tax-inclusive pricing above to apply a default tax rate.'**
+  String get defaultTaxRateDisabledHint;
+
+  /// No description provided for @taxLockedBySetting.
+  ///
+  /// In en, this message translates to:
+  /// **'Set in Settings → General → Tax. It can\'t be changed here.'**
+  String get taxLockedBySetting;
+
+  /// No description provided for @taxLockedShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Locked'**
+  String get taxLockedShort;
+
   /// No description provided for @couldNotLoadWarehouses.
   ///
   /// In en, this message translates to:
@@ -5107,7 +5161,7 @@ abstract class AppLocalizations {
   /// No description provided for @setCustomerDisplay.
   ///
   /// In en, this message translates to:
-  /// **'CUSTOMER DISPLAY'**
+  /// **'Customer display'**
   String get setCustomerDisplay;
 
   /// No description provided for @setCustomerDisplayEnabled.
@@ -5173,7 +5227,7 @@ abstract class AppLocalizations {
   /// No description provided for @setDefaultSearch.
   ///
   /// In en, this message translates to:
-  /// **'Default search'**
+  /// **'Default search mode'**
   String get setDefaultSearch;
 
   /// No description provided for @setDefaultServiceType.
@@ -5869,7 +5923,7 @@ abstract class AppLocalizations {
   /// No description provided for @setShowSearchOptions.
   ///
   /// In en, this message translates to:
-  /// **'Show search options'**
+  /// **'Show search mode buttons'**
   String get setShowSearchOptions;
 
   /// No description provided for @setShowServiceStatusBadge.
@@ -6274,6 +6328,12 @@ abstract class AppLocalizations {
   /// **'No products found.'**
   String get noProductsFound;
 
+  /// No description provided for @noProductsMatchSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'No product matches \"{query}\".'**
+  String noProductsMatchSearch(String query);
+
   /// No description provided for @productNameRequired.
   ///
   /// In en, this message translates to:
@@ -6315,6 +6375,198 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'e.g. kg, pcs'**
   String get measurementUnitHint;
+
+  /// No description provided for @sellByWeight.
+  ///
+  /// In en, this message translates to:
+  /// **'Sell by weight'**
+  String get sellByWeight;
+
+  /// No description provided for @sellByWeightHint.
+  ///
+  /// In en, this message translates to:
+  /// **'When on, the POS asks for a quantity instead of adding one unit. With no scale connected, the \'Price\' button edits the quantity.'**
+  String get sellByWeightHint;
+
+  /// No description provided for @uomStockUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'stock unit'**
+  String get uomStockUnit;
+
+  /// No description provided for @uomCategoryUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit'**
+  String get uomCategoryUnit;
+
+  /// No description provided for @uomCategoryWeight.
+  ///
+  /// In en, this message translates to:
+  /// **'Weight'**
+  String get uomCategoryWeight;
+
+  /// No description provided for @uomCategoryVolume.
+  ///
+  /// In en, this message translates to:
+  /// **'Volume'**
+  String get uomCategoryVolume;
+
+  /// No description provided for @uomCategoryLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Length'**
+  String get uomCategoryLength;
+
+  /// No description provided for @uomStockHeldIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Stock is counted in {unit}.'**
+  String uomStockHeldIn(String unit);
+
+  /// No description provided for @uomStockConversionNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Priced per {unit}. Stock still moves in {stockUnit} — 1 {unit} = {factor} {stockUnit}.'**
+  String uomStockConversionNote(String unit, String factor, String stockUnit);
+
+  /// No description provided for @weighItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Weigh item'**
+  String get weighItem;
+
+  /// No description provided for @placeOnScale.
+  ///
+  /// In en, this message translates to:
+  /// **'Place the item on the scale'**
+  String get placeOnScale;
+
+  /// No description provided for @scaleNotConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'No scale connected — enter the quantity'**
+  String get scaleNotConnected;
+
+  /// No description provided for @useThisWeight.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this weight'**
+  String get useThisWeight;
+
+  /// No description provided for @enterQuantity.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Quantity'**
+  String get enterQuantity;
+
+  /// No description provided for @priceEditsQuantity.
+  ///
+  /// In en, this message translates to:
+  /// **'Price edits quantity'**
+  String get priceEditsQuantity;
+
+  /// No description provided for @barcodeRules.
+  ///
+  /// In en, this message translates to:
+  /// **'Barcode Rules'**
+  String get barcodeRules;
+
+  /// No description provided for @barcodeRulesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Barcode rules define how a scanned barcode is read. A barcode is matched against the first rule whose pattern fits, so order matters. Patterns can embed a value such as a weight or a price: {NNDD} marks where the digits sit, and D positions are decimals. A product whose barcode carries an embedded value must store those positions as zeros.'**
+  String barcodeRulesHint(Object NNDD);
+
+  /// No description provided for @ruleName.
+  ///
+  /// In en, this message translates to:
+  /// **'Rule Name'**
+  String get ruleName;
+
+  /// No description provided for @ruleType.
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get ruleType;
+
+  /// No description provided for @ruleEncoding.
+  ///
+  /// In en, this message translates to:
+  /// **'Encoding'**
+  String get ruleEncoding;
+
+  /// No description provided for @rulePattern.
+  ///
+  /// In en, this message translates to:
+  /// **'Barcode Pattern'**
+  String get rulePattern;
+
+  /// No description provided for @ruleTypeUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit Product'**
+  String get ruleTypeUnit;
+
+  /// No description provided for @ruleTypeWeighted.
+  ///
+  /// In en, this message translates to:
+  /// **'Weighted Product'**
+  String get ruleTypeWeighted;
+
+  /// No description provided for @ruleTypePriced.
+  ///
+  /// In en, this message translates to:
+  /// **'Priced Product'**
+  String get ruleTypePriced;
+
+  /// No description provided for @ruleTypeDiscounted.
+  ///
+  /// In en, this message translates to:
+  /// **'Discounted Product'**
+  String get ruleTypeDiscounted;
+
+  /// No description provided for @addRuleLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a line'**
+  String get addRuleLine;
+
+  /// No description provided for @barcodeRulesSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Barcode rules saved'**
+  String get barcodeRulesSaved;
+
+  /// No description provided for @testBarcode.
+  ///
+  /// In en, this message translates to:
+  /// **'Test a barcode'**
+  String get testBarcode;
+
+  /// No description provided for @testBarcodeNoMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'No rule matches this barcode'**
+  String get testBarcodeNoMatch;
+
+  /// No description provided for @testBarcodeMatched.
+  ///
+  /// In en, this message translates to:
+  /// **'Matched {rule} — value {value}'**
+  String testBarcodeMatched(String rule, String value);
+
+  /// No description provided for @weightNotAllowedForService.
+  ///
+  /// In en, this message translates to:
+  /// **'A service cannot be sold by weight.'**
+  String get weightNotAllowedForService;
+
+  /// No description provided for @scaleReadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not read the scale'**
+  String get scaleReadFailed;
 
   /// No description provided for @ageRestrictionHint.
   ///
@@ -6399,6 +6651,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Remove Image'**
   String get removeImage;
+
+  /// No description provided for @taxInclusiveNotAppliedNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Heads up: the till still adds this tax on top of the price. Tax-inclusive pricing is stored on the product but not yet applied at checkout.'**
+  String get taxInclusiveNotAppliedNote;
+
+  /// No description provided for @pricingTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Pricing'**
+  String get pricingTab;
+
+  /// No description provided for @taxBreakdownIncluded.
+  ///
+  /// In en, this message translates to:
+  /// **'{price} includes {tax} tax · net {net}'**
+  String taxBreakdownIncluded(String price, String tax, String net);
+
+  /// No description provided for @taxBreakdownAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'{price} + {tax} tax = {total}'**
+  String taxBreakdownAdded(String price, String tax, String total);
 
   /// No description provided for @applyTaxes.
   ///
@@ -6670,6 +6946,18 @@ abstract class AppLocalizations {
   /// **'Name *'**
   String get fieldNameRequired;
 
+  /// No description provided for @codeRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Code *'**
+  String get codeRequired;
+
+  /// No description provided for @taxCodeAlreadyUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Already used by another tax'**
+  String get taxCodeAlreadyUsed;
+
   /// No description provided for @fieldCode.
   ///
   /// In en, this message translates to:
@@ -6915,12 +7203,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Refresh order number'**
   String get refreshOrderNumber;
-
-  /// No description provided for @enterQuantity.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter Quantity'**
-  String get enterQuantity;
 
   /// No description provided for @setSalePrice.
   ///
@@ -9800,6 +10082,12 @@ abstract class AppLocalizations {
   /// **'Cash movements'**
   String get syncCashMovements;
 
+  /// No description provided for @syncCompletedSales.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed sales awaiting upload'**
+  String get syncCompletedSales;
+
   /// No description provided for @syncCustomerDiscounts.
   ///
   /// In en, this message translates to:
@@ -9829,12 +10117,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Product taxes'**
   String get syncProductTaxes;
-
-  /// No description provided for @syncSalesOrders.
-  ///
-  /// In en, this message translates to:
-  /// **'Sales orders'**
-  String get syncSalesOrders;
 
   /// No description provided for @syncShifts.
   ///
@@ -10639,6 +10921,1056 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Version {version} is available — open Settings › About to install it.'**
   String updateAvailableSnackbar(String version);
+
+  /// No description provided for @setDocuments.
+  ///
+  /// In en, this message translates to:
+  /// **'Documents'**
+  String get setDocuments;
+
+  /// No description provided for @resetDatabaseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'RESET DATABASE'**
+  String get resetDatabaseTitle;
+
+  /// No description provided for @resetDatabaseAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset database'**
+  String get resetDatabaseAction;
+
+  /// No description provided for @resetWarningBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'This is a destructive operation. It deletes the selected data for your WHOLE company — every terminal loses it on its next sync. This cannot be undone.'**
+  String get resetWarningBanner;
+
+  /// No description provided for @resetStepBackupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup database path'**
+  String get resetStepBackupTitle;
+
+  /// No description provided for @resetStepBackupSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Location where database backup will be saved'**
+  String get resetStepBackupSubtitle;
+
+  /// No description provided for @resetStepBackupHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A backup of this device is taken before the reset. If the backup fails, the reset is cancelled.'**
+  String get resetStepBackupHint;
+
+  /// No description provided for @resetBackupManagedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Managed app storage (this device)'**
+  String get resetBackupManagedHint;
+
+  /// No description provided for @resetStepEntitiesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select entities to reset'**
+  String get resetStepEntitiesTitle;
+
+  /// No description provided for @resetStepEntitiesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected entities will be deleted from the database'**
+  String get resetStepEntitiesSubtitle;
+
+  /// No description provided for @resetStepConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirmation'**
+  String get resetStepConfirmTitle;
+
+  /// No description provided for @resetStepConfirmSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Authorize and perform reset on selected entities'**
+  String get resetStepConfirmSubtitle;
+
+  /// No description provided for @resetAdminPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter administrator PIN'**
+  String get resetAdminPin;
+
+  /// No description provided for @resetAlsoClearsDocuments.
+  ///
+  /// In en, this message translates to:
+  /// **'Also clears Documents — sales rows reference these.'**
+  String get resetAlsoClearsDocuments;
+
+  /// No description provided for @resetDocumentsNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Sales, orders, payments, voids and Z-reports. Bookings are kept.'**
+  String get resetDocumentsNote;
+
+  /// No description provided for @resetEverything.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything'**
+  String get resetEverything;
+
+  /// No description provided for @resetEverythingNote.
+  ///
+  /// In en, this message translates to:
+  /// **'All company data. Users and your settings are kept so you can sign back in.'**
+  String get resetEverythingNote;
+
+  /// No description provided for @resetWrongPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Incorrect PIN.'**
+  String get resetWrongPin;
+
+  /// No description provided for @resetConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset the database?'**
+  String get resetConfirmTitle;
+
+  /// No description provided for @resetConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This permanently deletes the selected data for your whole company, on every terminal. Only the local backup can recover it.'**
+  String get resetConfirmBody;
+
+  /// No description provided for @resetConfirmAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes, reset'**
+  String get resetConfirmAction;
+
+  /// No description provided for @resetNoCompany.
+  ///
+  /// In en, this message translates to:
+  /// **'No company is selected on this device.'**
+  String get resetNoCompany;
+
+  /// No description provided for @resetPhaseBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Backing up this device…'**
+  String get resetPhaseBackup;
+
+  /// No description provided for @resetPhaseServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Clearing account data…'**
+  String get resetPhaseServer;
+
+  /// No description provided for @resetPhaseLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'Clearing this device…'**
+  String get resetPhaseLocal;
+
+  /// No description provided for @resetDoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset complete'**
+  String get resetDoneTitle;
+
+  /// No description provided for @resetRestartManually.
+  ///
+  /// In en, this message translates to:
+  /// **'Please close and reopen the app to finish.'**
+  String get resetRestartManually;
+
+  /// No description provided for @resetOnlyAdmins.
+  ///
+  /// In en, this message translates to:
+  /// **'Only administrators can reset the database.'**
+  String get resetOnlyAdmins;
+
+  /// No description provided for @resetRestartingIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Restarting in {seconds}…'**
+  String resetRestartingIn(int seconds);
+
+  /// No description provided for @resetBackupSavedTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup saved to {path}'**
+  String resetBackupSavedTo(String path);
+
+  /// No description provided for @restoreDatabaseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore from backup'**
+  String get restoreDatabaseTitle;
+
+  /// No description provided for @restoreDatabaseAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore backup…'**
+  String get restoreDatabaseAction;
+
+  /// No description provided for @restoreDatabaseHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Replaces everything on this terminal with a backup file. The app restarts to complete it.'**
+  String get restoreDatabaseHint;
+
+  /// No description provided for @restorePickTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a backup file (.sqlite)'**
+  String get restorePickTitle;
+
+  /// No description provided for @restoreRejectedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This file cannot be restored'**
+  String get restoreRejectedTitle;
+
+  /// No description provided for @restoreConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore this backup?'**
+  String get restoreConfirmTitle;
+
+  /// No description provided for @restoreConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything currently on this terminal is replaced by the backup. Your current database is kept as pos_app.superseded.sqlite in case you picked the wrong file.'**
+  String get restoreConfirmBody;
+
+  /// No description provided for @restoreConfirmAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore and restart'**
+  String get restoreConfirmAction;
+
+  /// No description provided for @restoreStagedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup ready to restore'**
+  String get restoreStagedTitle;
+
+  /// No description provided for @restoreStagedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The app will restart to swap the database in. Sign in again afterwards — any work in the backup that never reached the cloud is uploaded on the next sync.'**
+  String get restoreStagedBody;
+
+  /// No description provided for @restoreErrMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'The file no longer exists.'**
+  String get restoreErrMissing;
+
+  /// No description provided for @restoreErrNotSqlite.
+  ///
+  /// In en, this message translates to:
+  /// **'That is not a database file.'**
+  String get restoreErrNotSqlite;
+
+  /// No description provided for @restoreErrEncrypted.
+  ///
+  /// In en, this message translates to:
+  /// **'This backup is encrypted for a different device and cannot be opened here. Restore it on the terminal that created it, or start fresh and pull your data from the cloud.'**
+  String get restoreErrEncrypted;
+
+  /// No description provided for @restoreErrNotPosBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'That is a database, but not a POS backup.'**
+  String get restoreErrNotPosBackup;
+
+  /// No description provided for @restoreErrNewerSchema.
+  ///
+  /// In en, this message translates to:
+  /// **'This backup was made by a newer version of the app (database v{found}, this build understands v{supported}). Update the app first.'**
+  String restoreErrNewerSchema(int found, int supported);
+
+  /// No description provided for @dbMissingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Local database not found'**
+  String get dbMissingTitle;
+
+  /// No description provided for @dbMissingBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The database file for this terminal is missing — it may have been deleted, moved, or be on a drive that is not connected.\n\nStarting fresh downloads your data from the cloud, but anything that never synced from this terminal cannot be recovered that way.'**
+  String get dbMissingBody;
+
+  /// No description provided for @dbMissingRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore from a backup file'**
+  String get dbMissingRestore;
+
+  /// No description provided for @dbMissingFresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Start fresh from the cloud'**
+  String get dbMissingFresh;
+
+  /// No description provided for @dbMissingFreshConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Start fresh? Anything on this terminal that never reached the cloud will be gone.'**
+  String get dbMissingFreshConfirm;
+
+  /// No description provided for @onboardingDataTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up this terminal'**
+  String get onboardingDataTitle;
+
+  /// No description provided for @onboardingDataSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How should this terminal get its data?'**
+  String get onboardingDataSubtitle;
+
+  /// No description provided for @onboardingCloudTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync with the cloud'**
+  String get onboardingCloudTitle;
+
+  /// No description provided for @onboardingCloudBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in and download your company data. Choose this for a new terminal.'**
+  String get onboardingCloudBody;
+
+  /// No description provided for @onboardingRestoreTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore from a backup'**
+  String get onboardingRestoreTitle;
+
+  /// No description provided for @onboardingRestoreBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a .sqlite backup from another terminal — for replacing a machine, including work that never synced.'**
+  String get onboardingRestoreBody;
+
+  /// No description provided for @balanceDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance Due'**
+  String get balanceDue;
+
+  /// No description provided for @telLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Tel'**
+  String get telLabel;
+
+  /// No description provided for @itemsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Items'**
+  String get itemsLabel;
+
+  /// No description provided for @timeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get timeLabel;
+
+  /// No description provided for @unitPriceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit price'**
+  String get unitPriceLabel;
+
+  /// No description provided for @taxInvoiceUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'TAX INVOICE'**
+  String get taxInvoiceUpper;
+
+  /// No description provided for @billTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Bill to'**
+  String get billTo;
+
+  /// No description provided for @invoicesUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'INVOICES'**
+  String get invoicesUpper;
+
+  /// No description provided for @saveReceiptTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Receipt'**
+  String get saveReceiptTitle;
+
+  /// No description provided for @saveGuestCheckTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Guest Check'**
+  String get saveGuestCheckTitle;
+
+  /// No description provided for @saveInvoicePdfTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Invoice PDF'**
+  String get saveInvoicePdfTitle;
+
+  /// No description provided for @zReportUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'Z-REPORT'**
+  String get zReportUpper;
+
+  /// No description provided for @endOfReport.
+  ///
+  /// In en, this message translates to:
+  /// **'*** END OF REPORT ***'**
+  String get endOfReport;
+
+  /// No description provided for @totalQty.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Qty'**
+  String get totalQty;
+
+  /// No description provided for @pointsBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Points Balance'**
+  String get pointsBalance;
+
+  /// No description provided for @ptsShort.
+  ///
+  /// In en, this message translates to:
+  /// **'pts'**
+  String get ptsShort;
+
+  /// No description provided for @invoiceNoLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoice No.'**
+  String get invoiceNoLabel;
+
+  /// No description provided for @pointsUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Points Used'**
+  String get pointsUsed;
+
+  /// No description provided for @paymentStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment status'**
+  String get paymentStatus;
+
+  /// No description provided for @pageNumberLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Page {number}'**
+  String pageNumberLabel(String number);
+
+  /// No description provided for @createdWith.
+  ///
+  /// In en, this message translates to:
+  /// **'Created with'**
+  String get createdWith;
+
+  /// No description provided for @backupPathRequiredTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a backup folder'**
+  String get backupPathRequiredTitle;
+
+  /// No description provided for @backupPathRequiredBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic backups need a folder to write to. Pick one now — otherwise backups run to a location you did not choose.'**
+  String get backupPathRequiredBody;
+
+  /// No description provided for @backupPathNotSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic backups stay off until a backup folder is set.'**
+  String get backupPathNotSet;
+
+  /// No description provided for @posSession.
+  ///
+  /// In en, this message translates to:
+  /// **'POS Session'**
+  String get posSession;
+
+  /// No description provided for @sessionNoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No open session'**
+  String get sessionNoneTitle;
+
+  /// No description provided for @sessionNoneBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This register is not trading yet. Open a session to start the day.'**
+  String get sessionNoneBody;
+
+  /// No description provided for @openRegister.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Register'**
+  String get openRegister;
+
+  /// No description provided for @continueSelling.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue Selling'**
+  String get continueSelling;
+
+  /// No description provided for @sessionNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Session'**
+  String get sessionNumber;
+
+  /// No description provided for @sessionDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Device'**
+  String get sessionDevice;
+
+  /// No description provided for @sessionOpenedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Opened at'**
+  String get sessionOpenedAt;
+
+  /// No description provided for @sessionOpenedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Opened by'**
+  String get sessionOpenedBy;
+
+  /// No description provided for @sessionClosedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed by'**
+  String get sessionClosedBy;
+
+  /// No description provided for @sessionStatusLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get sessionStatusLabel;
+
+  /// No description provided for @sessionOpeningCash.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening cash'**
+  String get sessionOpeningCash;
+
+  /// No description provided for @sessionExpectedCash.
+  ///
+  /// In en, this message translates to:
+  /// **'Expected cash'**
+  String get sessionExpectedCash;
+
+  /// No description provided for @sessionCountedCash.
+  ///
+  /// In en, this message translates to:
+  /// **'Counted cash'**
+  String get sessionCountedCash;
+
+  /// No description provided for @sessionDifference.
+  ///
+  /// In en, this message translates to:
+  /// **'Difference'**
+  String get sessionDifference;
+
+  /// No description provided for @sessionOrders.
+  ///
+  /// In en, this message translates to:
+  /// **'Orders'**
+  String get sessionOrders;
+
+  /// No description provided for @sessionPaymentTotals.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment totals'**
+  String get sessionPaymentTotals;
+
+  /// No description provided for @sessionSyncStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Synchronisation'**
+  String get sessionSyncStatus;
+
+  /// No description provided for @sessionSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'All synced'**
+  String get sessionSynced;
+
+  /// No description provided for @sessionNotSyncedYet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not sent to the cloud yet'**
+  String get sessionNotSyncedYet;
+
+  /// No description provided for @sessionUnsyncedSales.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} sale(s) still on this device'**
+  String sessionUnsyncedSales(int count);
+
+  /// No description provided for @sessionOpenOrders.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} order(s) still parked'**
+  String sessionOpenOrders(int count);
+
+  /// No description provided for @sessionCannotClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot close yet'**
+  String get sessionCannotClose;
+
+  /// No description provided for @sessionForceClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'Force-closed'**
+  String get sessionForceClosed;
+
+  /// No description provided for @sessionLateArrivals.
+  ///
+  /// In en, this message translates to:
+  /// **'Late sales arrived after closing — needs reconciliation'**
+  String get sessionLateArrivals;
+
+  /// No description provided for @sessionCashInferred.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash methods are inferred — set which methods come out of the drawer in Settings → Order & Payment.'**
+  String get sessionCashInferred;
+
+  /// No description provided for @sessionOpeningCashPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'How much cash is in the drawer to start?'**
+  String get sessionOpeningCashPrompt;
+
+  /// No description provided for @sessionHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Session history'**
+  String get sessionHistory;
+
+  /// No description provided for @sessionNoHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'No sessions yet.'**
+  String get sessionNoHistory;
+
+  /// No description provided for @sessionConfirmOpening.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm opening'**
+  String get sessionConfirmOpening;
+
+  /// No description provided for @sessionInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'In Progress'**
+  String get sessionInProgress;
+
+  /// No description provided for @sessionClosingControl.
+  ///
+  /// In en, this message translates to:
+  /// **'Closing Control'**
+  String get sessionClosingControl;
+
+  /// No description provided for @sessionClosedPosted.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed & Posted'**
+  String get sessionClosedPosted;
+
+  /// No description provided for @openingControl.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening Control'**
+  String get openingControl;
+
+  /// No description provided for @openingNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening note'**
+  String get openingNote;
+
+  /// No description provided for @openingNoteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add an opening note…'**
+  String get openingNoteHint;
+
+  /// No description provided for @closingRegister.
+  ///
+  /// In en, this message translates to:
+  /// **'Closing Register'**
+  String get closingRegister;
+
+  /// No description provided for @closingNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Closing note'**
+  String get closingNote;
+
+  /// No description provided for @closingNoteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a closing note…'**
+  String get closingNoteHint;
+
+  /// No description provided for @sessionOrdersTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} documents: {total}'**
+  String sessionOrdersTotal(int count, String total);
+
+  /// No description provided for @sessionExpected.
+  ///
+  /// In en, this message translates to:
+  /// **'Expected'**
+  String get sessionExpected;
+
+  /// No description provided for @sessionCounted.
+  ///
+  /// In en, this message translates to:
+  /// **'Counted'**
+  String get sessionCounted;
+
+  /// No description provided for @sessionOpeningRow.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening'**
+  String get sessionOpeningRow;
+
+  /// No description provided for @sessionCashInOutRow.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash In / Out'**
+  String get sessionCashInOutRow;
+
+  /// No description provided for @sessionCashPaymentsRow.
+  ///
+  /// In en, this message translates to:
+  /// **'Payments in cash'**
+  String get sessionCashPaymentsRow;
+
+  /// No description provided for @cashCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash Count'**
+  String get cashCount;
+
+  /// No description provided for @dailySale.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily Sale'**
+  String get dailySale;
+
+  /// No description provided for @actionDiscard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get actionDiscard;
+
+  /// No description provided for @managerAuthRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Difference of {diff} exceeds the allowed {max}. Manager authorisation is required.'**
+  String managerAuthRequired(String diff, String max);
+
+  /// No description provided for @managerAuthorise.
+  ///
+  /// In en, this message translates to:
+  /// **'Manager authorisation'**
+  String get managerAuthorise;
+
+  /// No description provided for @managerPinPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an administrator\'s PIN to authorise this difference.'**
+  String get managerPinPrompt;
+
+  /// No description provided for @managerPinWrong.
+  ///
+  /// In en, this message translates to:
+  /// **'That PIN is not an administrator PIN.'**
+  String get managerPinWrong;
+
+  /// No description provided for @sessionRequiredTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the register first'**
+  String get sessionRequiredTitle;
+
+  /// No description provided for @sessionRequiredBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Sales, refunds and cash movements belong to a session. Open the register to start trading.'**
+  String get sessionRequiredBody;
+
+  /// No description provided for @sessionNotTradingBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This register is being closed. Finish the closing count, then open a new session.'**
+  String get sessionNotTradingBody;
+
+  /// No description provided for @setRequireOpenSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Require an open session to sell'**
+  String get setRequireOpenSession;
+
+  /// No description provided for @sessionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sessions'**
+  String get sessionsTitle;
+
+  /// No description provided for @sessionColId.
+  ///
+  /// In en, this message translates to:
+  /// **'Session ID'**
+  String get sessionColId;
+
+  /// No description provided for @sessionColPos.
+  ///
+  /// In en, this message translates to:
+  /// **'Point of Sale'**
+  String get sessionColPos;
+
+  /// No description provided for @sessionColOpenedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Opened By'**
+  String get sessionColOpenedBy;
+
+  /// No description provided for @sessionColOpening.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening Date'**
+  String get sessionColOpening;
+
+  /// No description provided for @sessionColClosing.
+  ///
+  /// In en, this message translates to:
+  /// **'Closing Date'**
+  String get sessionColClosing;
+
+  /// No description provided for @sessionColStarting.
+  ///
+  /// In en, this message translates to:
+  /// **'Starting Balance'**
+  String get sessionColStarting;
+
+  /// No description provided for @sessionColEnding.
+  ///
+  /// In en, this message translates to:
+  /// **'Ending Balance'**
+  String get sessionColEnding;
+
+  /// No description provided for @sessionColTheoretical.
+  ///
+  /// In en, this message translates to:
+  /// **'Theoretical Closing'**
+  String get sessionColTheoretical;
+
+  /// No description provided for @sessionColStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get sessionColStatus;
+
+  /// No description provided for @sessionSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search…'**
+  String get sessionSearchHint;
+
+  /// No description provided for @sessionCountOf.
+  ///
+  /// In en, this message translates to:
+  /// **'{shown} / {total}'**
+  String sessionCountOf(int shown, int total);
+
+  /// No description provided for @sessionDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Session details'**
+  String get sessionDetails;
+
+  /// No description provided for @sessionCurrentOnThisDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Current session on this device'**
+  String get sessionCurrentOnThisDevice;
+
+  /// No description provided for @sessionClosedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed at'**
+  String get sessionClosedAt;
+
+  /// No description provided for @sessionDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration'**
+  String get sessionDuration;
+
+  /// No description provided for @sessionTotalTaken.
+  ///
+  /// In en, this message translates to:
+  /// **'Total taken'**
+  String get sessionTotalTaken;
+
+  /// No description provided for @sessionCashMovements.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash movements'**
+  String get sessionCashMovements;
+
+  /// No description provided for @sessionNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get sessionNotes;
+
+  /// No description provided for @cashDrawer.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash drawer'**
+  String get cashDrawer;
+
+  /// No description provided for @sessionRemoteFiguresOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'This session belongs to another register — its takings load from the server.'**
+  String get sessionRemoteFiguresOffline;
+
+  /// No description provided for @sessionDocuments.
+  ///
+  /// In en, this message translates to:
+  /// **'Documents'**
+  String get sessionDocuments;
+
+  /// No description provided for @sessionOverviewTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get sessionOverviewTab;
+
+  /// No description provided for @sessionPaymentsTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Payments'**
+  String get sessionPaymentsTab;
+
+  /// No description provided for @sessionNoPayments.
+  ///
+  /// In en, this message translates to:
+  /// **'No payments taken in this session yet.'**
+  String get sessionNoPayments;
+
+  /// No description provided for @sessionOpenDocumentHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a payment to open its document'**
+  String get sessionOpenDocumentHint;
+
+  /// No description provided for @sessionDocumentUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'That document is not on this device.'**
+  String get sessionDocumentUnavailable;
+
+  /// No description provided for @developerModeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Shows a floating debug button on this terminal, with a barcode simulator for price and weight labels.'**
+  String get developerModeHint;
+
+  /// No description provided for @generateScaleBarcode.
+  ///
+  /// In en, this message translates to:
+  /// **'Scale label'**
+  String get generateScaleBarcode;
+
+  /// No description provided for @scaleBarcodeRuleUnusable.
+  ///
+  /// In en, this message translates to:
+  /// **'The rule {pattern} cannot generate a product barcode.'**
+  String scaleBarcodeRuleUnusable(String pattern);
+
+  /// No description provided for @barcodeAlreadyUsedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'{code} already belongs to {product}.'**
+  String barcodeAlreadyUsedBy(String code, String product);
+
+  /// No description provided for @setPosSession.
+  ///
+  /// In en, this message translates to:
+  /// **'POS session'**
+  String get setPosSession;
+
+  /// No description provided for @setCashMethods.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash methods'**
+  String get setCashMethods;
+
+  /// No description provided for @cashMethodsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Which payment methods come out of the cash drawer and get physically counted at closing. Clearing all of them goes back to guessing.'**
+  String get cashMethodsHint;
+
+  /// No description provided for @cashMethodsInferredHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Not set yet — these are guessed from \"change allowed\".'**
+  String get cashMethodsInferredHint;
+
+  /// No description provided for @cashMethodsConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Use these'**
+  String get cashMethodsConfirm;
+
+  /// No description provided for @noPaymentMethodsDefined.
+  ///
+  /// In en, this message translates to:
+  /// **'No payment methods defined.'**
+  String get noPaymentMethodsDefined;
+
+  /// No description provided for @setMaxCashDifference.
+  ///
+  /// In en, this message translates to:
+  /// **'Allowed cash difference'**
+  String get setMaxCashDifference;
+
+  /// No description provided for @maxCashDifferenceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Beyond this, closing the drawer needs an administrator PIN.'**
+  String get maxCashDifferenceHint;
 }
 
 class _AppLocalizationsDelegate

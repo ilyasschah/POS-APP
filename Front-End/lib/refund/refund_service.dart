@@ -10,6 +10,7 @@ import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/document/document_type_constants.dart';
+import 'package:pos_app/session/session_provider.dart';
 import 'package:pos_app/settings/device_identity.dart';
 
 /// Server `DocumentTypeConstants.Refund`. Refund documents written locally must
@@ -310,6 +311,10 @@ class RefundService {
   }) async {
     final db = _ref.read(appDatabaseProvider);
     final now = DateTime.now().toUtc();
+    // Money out of the drawer belongs to the session that handed it over, the
+    // same as money in — a refund the session does not own is a hole in the
+    // closing count.
+    final sessionLocalId = _ref.read(activeSessionProvider).value?.localId;
     // `'pending'` (NOT `'pending_create'`): the refund document/items/payment are
     // created server-side by the /Document/Refund push, so the generic
     // pushPendingDocuments/Payments must skip them. See `lib/sync/sync_status.dart`.
@@ -359,6 +364,7 @@ class RefundService {
         approvedByUserId:        Value(payload.approvedByUserId),
         paidStatus:              const Value(1),
         date:                    Value(now),
+        sessionLocalId:          Value(sessionLocalId),
         syncStatus:              Value(status),
         lastModified:            Value(now),
       ),
@@ -372,6 +378,7 @@ class RefundService {
         date:          Value(now),
         companyId:     Value(_companyId),
         dateCreated:   Value(now),
+        sessionLocalId: Value(sessionLocalId),
         syncStatus:    Value(status),
       ),
     );

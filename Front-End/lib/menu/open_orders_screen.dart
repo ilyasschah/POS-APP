@@ -174,6 +174,14 @@ Future<void> _pullOrderItems(
                   Value(((it['discount'] ?? it['Discount']) as num?)?.toDouble() ?? 0),
               discountType:
                   Value((it['discountType'] ?? it['DiscountType']) as int? ?? 0),
+              // Input form (10% vs fixed) so a reopened pulled order shows what
+              // the originating till typed. Null = not recorded → falls back to
+              // the resolved money.
+              discountInputValue: Value(
+                  ((it['discountInputValue'] ?? it['DiscountInputValue']) as num?)
+                      ?.toDouble()),
+              discountInputType: Value(
+                  (it['discountInputType'] ?? it['DiscountInputType']) as int?),
               taxesJson: Value(taxesJson),
               comment: Value((it['comment'] ?? it['Comment']) as String?),
               warehouseId: Value(warehouseId),

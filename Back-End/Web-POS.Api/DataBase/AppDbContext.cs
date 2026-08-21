@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using System.Reflection.Emit;
 using Api.Domain;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -16,6 +16,7 @@ namespace Api.DataBase
         public DbSet<ProductGroup> ProductGroups { get; set; }
         public DbSet<Product> Products { get; set; } 
         public DbSet<Barcode> Barcodes { get; set; }
+        public DbSet<BarcodeRule> BarcodeRules { get; set; }
         public DbSet<SecurityKey> SecurityKeys { get; set; }
         public DbSet<ProductComment> ProductComments { get; set; }
         public DbSet<Tax> Taxes { get; set; }
@@ -31,6 +32,13 @@ namespace Api.DataBase
         public DbSet<StockControl> StockControls { get; set; }
         public DbSet<LoyaltyCard> LoyaltyCards { get; set; }
         public DbSet<Shift> Shifts { get; set; }
+
+        // ── POS sessions (see Domain/PosSessionStatus.cs) ───────────────────
+        // `Shifts` above holds BOTH attendance shifts and POS sessions, told
+        // apart by PosDeviceId — extended rather than duplicated.
+        public DbSet<PosDevice> PosDevices { get; set; }
+        public DbSet<PosSessionPaymentCount> PosSessionPaymentCounts { get; set; }
+        public DbSet<ZReportCorrection> ZReportCorrections { get; set; }
         public DbSet<TimeClockEntry> TimeClockEntries { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<PosOrder> PosOrders { get; set; }
@@ -118,6 +126,102 @@ namespace Api.DataBase
         {
 
             base.OnModelCreating(b);
+
+            // ── POS session model ───────────────────────────────────────────
+            b.Entity<PosDevice>(e =>
+            {
+                // One register per (company, device GUID). The unique index is
+                // the whole safety property: the client upserts by this pair on
+                // every session open, so two rows for one terminal — and with
+                // them two parallel "current" sessions — cannot exist.
+                e.HasIndex(x => new { x.CompanyId, x.DeviceUid }).IsUnique();
+            });
+
+            b.Entity<Shift>(e =>
+            {
+                e.HasOne(x => x.PosDevice)
+                 .WithMany()
+                 .HasForeignKey(x => x.PosDeviceId)
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                // A session opened offline is re-pushed until it lands; matching
+                // on the client UUID is what makes that retry idempotent. Unique
+                // per company, and FILTERED so the many attendance-shift rows
+                // with a NULL LocalId do not collide with each other.
+                e.HasIndex(x => new { x.CompanyId, x.LocalId })
+                 .IsUnique()
+                 .HasFilter("[LocalId] IS NOT NULL");
+
+                // Drives "is this register already trading?" on every open.
+                e.HasIndex(x => new { x.PosDeviceId, x.Status });
+            });
+
+            b.Entity<PosSessionPaymentCount>(e =>
+            {
+                e.HasOne(x => x.Session)
+                 .WithMany()
+                 .HasForeignKey(x => x.SessionId)
+                 .OnDelete(DeleteBehavior.Cascade);
+
+                e.HasOne(x => x.PaymentType)
+                 .WithMany()
+                 .HasForeignKey(x => x.PaymentTypeId)
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                // One count per method per session.
+                e.HasIndex(x => new { x.SessionId, x.PaymentTypeId }).IsUnique();
+            });
+
+            b.Entity<ZReportCorrection>(e =>
+            {
+                e.HasOne(x => x.Session)
+                 .WithMany()
+                 .HasForeignKey(x => x.SessionId)
+                 .OnDelete(DeleteBehavior.Cascade);
+
+                // One accumulating correction per (session, original report), so
+                // a device reconnecting in batches updates counters instead of
+                // emitting a row per push.
+                e.HasIndex(x => new { x.SessionId, x.OriginalZReportId }).IsUnique();
+            });
+
+            // Session links on the transactional tables. All NULLABLE and all
+            // Restrict: a session must never cascade-delete banked sales.
+            b.Entity<PosOrder>()
+             .HasOne<Shift>().WithMany()
+             .HasForeignKey(x => x.SessionId)
+             .OnDelete(DeleteBehavior.Restrict);
+
+            b.Entity<Document>()
+             .HasOne<Shift>().WithMany()
+             .HasForeignKey(x => x.SessionId)
+             .OnDelete(DeleteBehavior.Restrict);
+
+            b.Entity<Payment>()
+             .HasOne<Shift>().WithMany()
+             .HasForeignKey(x => x.SessionId)
+             .OnDelete(DeleteBehavior.Restrict);
+
+            b.Entity<StartingCash>()
+             .HasOne<Shift>().WithMany()
+             .HasForeignKey(x => x.SessionId)
+             .OnDelete(DeleteBehavior.Restrict);
+
+            // The Z-report's boundary. Restrict for the same reason as the
+            // others: a session must never cascade-delete a fiscal document.
+            b.Entity<ZReport>()
+             .HasOne<Shift>().WithMany()
+             .HasForeignKey(x => x.SessionId)
+             .OnDelete(DeleteBehavior.Restrict);
+
+            b.Entity<ZReport>()
+             .HasOne<PosDevice>().WithMany()
+             .HasForeignKey(x => x.PosDeviceId)
+             .OnDelete(DeleteBehavior.Restrict);
+
+            // Drives the per-device number lookup on every close.
+            b.Entity<ZReport>()
+             .HasIndex(x => new { x.CompanyId, x.PosDeviceId });
 
             b.Entity<DashboardSalesDataView>(entity =>
             {
@@ -349,6 +453,17 @@ namespace Api.DataBase
             b.Entity<Barcode>(e =>
             {
                 e.ToTable(tb => tb.HasTrigger("trg_Barcode_CompanyMatch"));
+            });
+            b.Entity<BarcodeRule>(e =>
+            {
+                // Stored as text, not the enum's int, so a nomenclature dumped
+                // from the database is readable and so inserting a new member in
+                // the middle of the enum can never re-point existing rows.
+                e.Property(x => x.Type).HasConversion<string>().HasMaxLength(30);
+                e.Property(x => x.Encoding).HasConversion<string>().HasMaxLength(10);
+
+                // Every lookup is "all rules for this company, in order".
+                e.HasIndex(x => new { x.CompanyId, x.Sequence });
             });
             b.Entity<PosOrder>(e => 
             { 

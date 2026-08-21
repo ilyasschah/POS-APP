@@ -7,6 +7,7 @@ import 'package:pos_app/cart/checkout_models.dart';
 import 'package:pos_app/api/api_client.dart';
 import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/database/database_provider.dart';
+import 'package:pos_app/session/session_provider.dart';
 import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/app_settings/app_settings_provider.dart';
 import 'package:pos_app/company/company_provider.dart';
@@ -178,15 +179,18 @@ class CartNotifier extends Notifier<CartState> {
   /// objects. Applied to a freshly-added item that carries no taxes of its own,
   /// mirroring what selecting taxes manually in the menu would produce.
   List<MenuTax> _resolveDefaultTaxes() {
-    final raw =
-        ref.read(appSettingsProvider)[SettingKeys.defaultTaxRateIds] ?? '';
-    if (raw.trim().isEmpty) return const [];
+    final settings = ref.read(appSettingsProvider);
 
-    final ids = raw
-        .split(',')
-        .map((e) => int.tryParse(e.trim()))
-        .whereType<int>()
-        .toSet();
+    // The switch gates the fallback. With it off, the picker is greyed out in
+    // Settings but its selection is deliberately KEPT (so turning the feature
+    // back on restores it) — auto-applying that retained selection anyway
+    // would silently tax orders on a till whose operator sees the feature as
+    // disabled.
+    final on =
+        settings[SettingKeys.taxIncludedByDefault]?.toLowerCase() == 'true';
+    if (!on) return const [];
+
+    final ids = parseDefaultTaxRateIds(settings[SettingKeys.defaultTaxRateIds]);
     if (ids.isEmpty) return const [];
 
     return _taxesCache
@@ -363,18 +367,39 @@ class CartNotifier extends Notifier<CartState> {
     state = state.copyWith(serviceStatus: newStatus);
   }
 
-  double get subtotal =>
-      state.items.fold(0, (sum, item) => sum + (item.price * item.quantity));
+  bool get _discountBeforeTax =>
+      ref.read(appSettingsProvider)[SettingKeys.discountApplyRule] ==
+      'Before tax';
 
-  double get discountTotal => state.items.fold(
+  /// The ex-tax ("net") view of one cart line — the basis every total below is
+  /// built from. See [lineTaxBasis] for the actual split; it is a pure
+  /// function in `checkout_models.dart` so the receipt renderer computes the
+  /// identical figures without going through Riverpod.
+  ///
+  /// The whole totals pipeline keeps the identity
+  ///   `grandTotal = subtotal − discounts + taxTotal`
+  /// by expressing subtotal and item discounts on this net basis, so an
+  /// inclusive line reconciles back to exactly its listed price.
+  ({double unitPrice, double unitDiscount, double unitPromo}) _lineBasis(
+    CartItem item,
+  ) => lineTaxBasis(item, discountBeforeTax: _discountBeforeTax);
+
+  /// Ex-tax subtotal. For inclusive lines this is LESS than the shelf price —
+  /// the difference reappears in [taxTotal], so [grandTotal] still lands on
+  /// the price the customer was quoted.
+  double get subtotal => state.items.fold(
     0,
-    (sum, item) =>
-        sum + ((item.discount + item.promotionalDiscount) * item.quantity),
+    (sum, item) => sum + (_lineBasis(item).unitPrice * item.quantity),
   );
+
+  double get discountTotal => state.items.fold(0, (sum, item) {
+    final b = _lineBasis(item);
+    return sum + ((b.unitDiscount + b.unitPromo) * item.quantity);
+  });
 
   double get promotionalDiscountTotal => state.items.fold(
     0,
-    (sum, item) => sum + (item.promotionalDiscount * item.quantity),
+    (sum, item) => sum + (_lineBasis(item).unitPromo * item.quantity),
   );
 
   /// The share of the cart-level discounts (customer profile + manual cart)
@@ -399,17 +424,19 @@ class CartNotifier extends Notifier<CartState> {
   /// this one read the setting, so an "After tax" company banked a document
   /// whose own lines contradicted its total by (discount × rate).
   List<({int id, double amount})> taxAmountsForItem(CartItem item) {
-    final discountBeforeTax =
-        ref.read(appSettingsProvider)[SettingKeys.discountApplyRule] ==
-        'Before tax';
-    final base = discountBeforeTax
+    // Everything here works on the EX-TAX basis. For an exclusive line that is
+    // `item.price` unchanged; for an inclusive line the tax is divided out
+    // first, so the tax becomes a share OF the shelf price instead of an
+    // addition TO it.
+    final b = _lineBasis(item);
+    final base = _discountBeforeTax
         // Tax base = price minus all discounts (item + proportional cart share).
-        ? (item.price - item.discount - item.promotionalDiscount) *
+        ? (b.unitPrice - b.unitDiscount - b.unitPromo) *
               item.quantity *
               _cartDiscountFactor
         // "After tax": tax is computed on the full item price; discounts only
         // reduce the final payable amount, not the taxable base.
-        : item.price * item.quantity;
+        : b.unitPrice * item.quantity;
 
     return [
       for (final tax in item.appliedTaxes)
@@ -419,6 +446,34 @@ class CartNotifier extends Notifier<CartState> {
               tax.isFixed ? tax.rate * item.quantity : base * (tax.rate / 100),
         ),
     ];
+  }
+
+  /// The ex-tax unit price of a line — what `document_items.priceBeforeTax`
+  /// must store. Public because the checkout dialog banks that column and used
+  /// to write the raw, tax-inclusive `item.price` into it.
+  double netUnitPriceFor(CartItem item) => _lineBasis(item).unitPrice;
+
+  /// What this line actually adds to the bill: ex-tax base after its own
+  /// discounts, plus its tax. For an inclusive line with no discount this
+  /// comes back to exactly `price × quantity` — the shelf price.
+  ///
+  /// Centralised here because the POS line rows used to re-derive it as
+  /// `net + net × rate`, which double-taxed every inclusive product on screen
+  /// even once the totals below it were right.
+  double grossLineTotal(CartItem item) {
+    final b = _lineBasis(item);
+    final net = (b.unitPrice - b.unitDiscount - b.unitPromo) * item.quantity;
+    return net + taxForItem(item);
+  }
+
+  /// The same figure BEFORE any discount — the struck-through "was" price.
+  double grossLineFullPrice(CartItem item) {
+    final b = _lineBasis(item);
+    final net = b.unitPrice * item.quantity;
+    return item.appliedTaxes.fold<double>(net, (sum, t) {
+      if (t.isFixed) return sum + t.rate * item.quantity;
+      return sum + net * (t.rate / 100);
+    });
   }
 
   /// Total tax for one line — all taxes, fixed and percentage.
@@ -970,6 +1025,15 @@ class CartNotifier extends Notifier<CartState> {
         throw Exception("Not enough stock!");
       }
       items[existingIndex].quantity += quantity;
+      // Merge any newly-chosen comment into the existing line. Without this, a
+      // comment picked when re-adding a product that's already in the cart
+      // (separate-row OFF) is silently dropped and never reaches the kitchen
+      // ticket. Comma-joined + de-duped to match how the comment picker stores it.
+      final incoming = comment?.trim() ?? '';
+      if (incoming.isNotEmpty) {
+        items[existingIndex].comment =
+            _mergeComments(items[existingIndex].comment, incoming);
+      }
     } else {
       if (quantity > product.stockQuantity) {
         throw Exception("Not enough stock!");
@@ -991,12 +1055,33 @@ class CartNotifier extends Notifier<CartState> {
           appliedTaxes: appliedTaxes,
           comment: comment,
           measurementUnit: measurementUnit ?? product.measurementUnit,
+          uomId: product.uomId,
+          isToWeigh: product.isToWeigh,
           isService: product.isService,
+          // Decides whether the taxes above are already baked into `price` or
+          // get added on top of it.
+          isTaxInclusive: product.isTaxInclusivePrice,
         ),
       );
     }
     _applyPromotions(items);
     state = state.copyWith(items: items);
+  }
+
+  /// Combines two comma-separated comment strings, dropping blanks and
+  /// case-insensitive duplicates while preserving order (existing parts first,
+  /// then any new ones). Kept comma-joined so it renders as one line and matches
+  /// how [_ProductCommentsDialog] stores a selection.
+  String _mergeComments(String? existing, String incoming) {
+    final seen = <String>{};
+    final parts = <String>[];
+    for (final chunk in [existing ?? '', incoming]) {
+      for (final p in chunk.split(',')) {
+        final t = p.trim();
+        if (t.isNotEmpty && seen.add(t.toLowerCase())) parts.add(t);
+      }
+    }
+    return parts.join(', ');
   }
 
   void incrementItem(String cartItemId) {
@@ -1147,6 +1232,11 @@ class CartNotifier extends Notifier<CartState> {
                 [],
             comment: (item['comment'] ?? item['Comment']) as String?,
             isSaved: true,
+            // The server's PosOrderItem payload carries no tax-mode flag, so
+            // this inherits CartItem's `true` default. That matches the
+            // catalogue (Product.IsTaxInclusivePrice defaults true on both
+            // DBs), and keeps a PULLED open order priced identically to the
+            // till that parked it — which persists the flag locally.
           ),
         );
       }
@@ -1287,6 +1377,14 @@ class CartNotifier extends Notifier<CartState> {
           unitPrice: Value(item.price),
           discount: Value(item.discount),
           discountType: Value(item.discountType),
+          // Preserve the operator's input form (10% vs a fixed amount) so it
+          // survives a save→push→pull to another till (discount_lines don't cross
+          // for an open order). Null when no manual item discount was entered.
+          discountInputValue: Value(item.discountInputValue),
+          discountInputType: Value(item.discountInputType),
+          // Pinned so reopening this order prices it the same way even if the
+          // product's tax mode is edited in the meantime.
+          isTaxInclusive: Value(item.isTaxInclusive),
           taxRate: Value(summedRate),
           comment: Value(item.comment),
           warehouseId: Value(item.warehouseId ?? effectiveWarehouseId),
@@ -1317,6 +1415,11 @@ class CartNotifier extends Notifier<CartState> {
           bookingStaffId: Value(state.bookingStaffId),
           openedAt: Value(now),
           status: const Value(0),
+          // A parked order belongs to the session that took it — this is what
+          // makes "3 orders still parked" block that session's close instead of
+          // silently letting the drawer shut on unfinished tables.
+          sessionLocalId:
+              Value(ref.read(activeSessionProvider).value?.localId),
           total: Value(grandTotal),
           discount: Value(state.manualCartDiscount),
           discountType: Value(state.manualCartDiscountType),
@@ -1448,7 +1551,17 @@ class CartNotifier extends Notifier<CartState> {
           appliedTaxes: appliedTaxes,
           warehouseId: item.warehouseId,
           comment: item.comment,
+          // Cross-till fallback for the discount input form: the discount_lines
+          // restore below overrides this for the originating till, but a PULLED
+          // order carries no lines, so this is what makes it show "10%".
+          discountInputValue: item.discountInputValue,
+          discountInputType: item.discountInputType,
           isService: product?.isService ?? false,
+          // Prefer the value pinned when the order was parked. A row written
+          // before v57 has none — fall back to the product's current flag, and
+          // only then to the `true` catalogue default.
+          isTaxInclusive:
+              item.isTaxInclusive ?? product?.isTaxInclusivePrice ?? true,
         );
       }).toList();
 
@@ -1610,6 +1723,11 @@ class CartNotifier extends Notifier<CartState> {
                 [],
             comment: (item['comment'] ?? item['Comment']) as String?,
             isSaved: true,
+            // The server's PosOrderItem payload carries no tax-mode flag, so
+            // this inherits CartItem's `true` default. That matches the
+            // catalogue (Product.IsTaxInclusivePrice defaults true on both
+            // DBs), and keeps a PULLED open order priced identically to the
+            // till that parked it — which persists the flag locally.
           ),
         );
       }
@@ -1805,95 +1923,33 @@ class CartNotifier extends Notifier<CartState> {
     }
   }
 
+  /// Persists the open order and empties the till — used when the operator
+  /// leaves the POS for the floor plan via the header Tables button.
+  ///
+  /// Delegates to [saveOrderLocally] rather than writing its own copy of the
+  /// save. It used to have one, and it had drifted badly: it minted a FRESH
+  /// `localId` with `serverId: null` on every call, so suspending an order
+  /// that was already backed by a local row INSERTED A SECOND ONE — two open
+  /// orders on the same table, which is exactly what the operator hit by
+  /// reopening a table and then pressing Tables in the header. [saveOrderLocally]
+  /// resolves the existing row (by `existingLocalOrderId`, else by `serverId`)
+  /// and upserts it, which is the behaviour the normal Save button always had.
+  ///
+  /// Delegating also recovers four things the private copy silently dropped:
+  /// the order's `serverId`, its **booking link**, the per-item `taxesJson`
+  /// and the `pos_order_item_taxes` rows — the last two now being money data.
+  /// And the daily order number is no longer burned on every suspend; it
+  /// advances only on a genuinely new order.
   Future<bool> saveAndSuspend({
-    required ApiClient apiClient,
     required int companyId,
     required int userId,
-    void Function(List<String> warnings)? onWarnings,
   }) async {
     if (state.activePosOrderId == null) return false;
-    state = state.copyWith(isLoading: true);
-    try {
-      final activeTableId =
-          state.floorPlanTableId ?? ref.read(floorPlanTableProvider);
-      final num = ref.read(dailyOrderNumberProvider).toString().padLeft(3, '0');
-      final orderNumber =
-          state.orderNumber ?? '${_getPrefix(state.serviceType)} #$num';
+    if (state.items.isEmpty) return false;
 
-      final db = ref.read(appDatabaseProvider);
-      final now = DateTime.now().toUtc();
-      final orderLocalId = const Uuid().v4();
-      // Resolve in case a sync swapped this table's temp id while the cart was
-      // open — see AppDatabase.resolveFloorPlanTableId.
-      final resolvedTableId = await db.resolveFloorPlanTableId(activeTableId);
-
-      final orderCompanion = PosOrdersTableCompanion(
-        localId: Value(orderLocalId),
-        serverId: const Value(null),
-        companyId: Value(companyId),
-        userId: Value(userId),
-        tableId: Value(resolvedTableId),
-        customerId: Value(state.selectedCustomer?.id),
-        serviceType: Value(state.serviceType),
-        serviceStatus: Value(state.serviceStatus),
-        orderName: Value(orderNumber),
-        openedAt: Value(now),
-        status: const Value(0),
-        total: Value(grandTotal),
-        discount: Value(state.manualCartDiscount),
-        discountType: Value(state.manualCartDiscountType),
-        warehouseId: Value(effectiveWarehouseId),
-        syncStatus: const Value('pending'),
-        lastModified: Value(now),
-      );
-
-      // cartItemId → its pos_order_item localId, for discount_lines linkage.
-      final itemLocalIds = <String, String>{};
-
-      final itemCompanions = state.items.map((item) {
-        final itemLocalId = const Uuid().v4();
-        itemLocalIds[item.cartItemId] = itemLocalId;
-        final summedRate = item.appliedTaxes
-            .where((t) => !t.isFixed)
-            .fold<double>(0, (sum, t) => sum + t.rate);
-        return PosOrderItemsTableCompanion(
-          localId: Value(itemLocalId),
-          orderId: Value(orderLocalId),
-          productId: Value(item.productId),
-          quantity: Value(item.quantity),
-          unitPrice: Value(item.price),
-          // Store the MANUAL item discount only. The promotion portion now lives
-          // in discount_lines — folding it in here is what made the promo
-          // double-count when the parked order was reopened (loadOrderFromLocal
-          // re-applies promotions on top).
-          discount: Value(item.discount),
-          discountType: Value(item.discountType),
-          taxRate: Value(summedRate),
-          comment: Value(item.comment),
-          warehouseId: Value(item.warehouseId ?? effectiveWarehouseId),
-          syncStatus: const Value('pending'),
-        );
-      }).toList();
-
-      await db.insertOfflineOrder(orderCompanion, itemCompanions);
-      await db.replaceDiscountLines(
-        orderLocalId: orderLocalId,
-        lines: buildDiscountLines(
-          companyId: companyId,
-          orderLocalId: orderLocalId,
-          itemLocalIds: itemLocalIds,
-        ),
-      );
-      ref.read(dailyOrderNumberProvider.notifier).state =
-          ref.read(dailyOrderNumberProvider) + 1;
-
-      clearCart();
-      return true;
-    } catch (e) {
-      rethrow;
-    } finally {
-      state = state.copyWith(isLoading: false);
-    }
+    await saveOrderLocally(companyId: companyId, userId: userId);
+    clearCart();
+    return true;
   }
 }
 

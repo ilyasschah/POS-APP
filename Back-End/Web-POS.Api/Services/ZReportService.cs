@@ -19,6 +19,160 @@ namespace Api.Services
             _zReportRepo = zReportRepo;
         }
 
+        /// <summary>
+        /// Generates the report for ONE SESSION — the boundary is
+        /// <c>SessionId</c>, never a document-id range.
+        ///
+        /// 🚨 What this replaces and why. The legacy path bounded a period as
+        /// `Id >= from && Id <= to`, filtered by company only. With two
+        /// registers trading, device B's documents fall inside device A's range
+        /// and are swept into A's report, and whoever takes the second report
+        /// gets a range already consumed. Cash movements had the same flaw
+        /// (`ZReportNumber == null`, company-wide). Selecting by session makes
+        /// contamination structurally impossible rather than unlikely.
+        /// </summary>
+        public async Task<ZReportDto> GenerateForSessionAsync(
+            int companyId, int userId, int sessionId)
+        {
+            var session = await _db.Shifts
+                .FirstOrDefaultAsync(s => s.Id == sessionId && s.CompanyId == companyId)
+                ?? throw new InvalidOperationException($"Session {sessionId} was not found.");
+
+            var strategy = _db.Database.CreateExecutionStrategy();
+            return await strategy.ExecuteAsync(async () =>
+            {
+                using var transaction = await _db.Database.BeginTransactionAsync();
+                try
+                {
+                    var documents = await _db.Documents
+                        .Where(d => d.CompanyId == companyId && d.SessionId == sessionId)
+                        .ToListAsync();
+
+                    var payments = await _db.Payments
+                        .Include(p => p.PaymentType)
+                        .Where(p => p.CompanyId == companyId && p.SessionId == sessionId)
+                        .ToListAsync();
+
+                    var movements = await _db.StartingCashes
+                        .Where(sc => sc.CompanyId == companyId && sc.SessionId == sessionId)
+                        .ToListAsync();
+
+                    // Only sales and refunds are takings — a session can also
+                    // carry purchase / inventory documents, whose totals must
+                    // never land on a Z-report.
+                    var sales = documents
+                        .Where(d => d.DocumentTypeId == DocumentTypeConstants.Sales).ToList();
+                    var refunds = documents
+                        .Where(d => d.DocumentTypeId == DocumentTypeConstants.Refund).ToList();
+
+                    decimal totalSales = sales.Sum(d => d.Total);
+                    decimal totalReturns = refunds.Sum(d => Math.Abs(d.Total));
+                    decimal discounts = documents.Sum(d => d.Discount);
+                    // Tax lives on DocumentItemTax, not on the Document — same
+                    // join the legacy path uses, bounded by session instead of
+                    // an id range.
+                    decimal totalTax = await (
+                        from t in _db.DocumentItemTaxes
+                        join i in _db.DocumentItems on t.DocumentItemId equals i.Id
+                        join d in _db.Documents on i.DocumentId equals d.Id
+                        where d.CompanyId == companyId && d.SessionId == sessionId
+                           && (d.DocumentTypeId == DocumentTypeConstants.Sales
+                            || d.DocumentTypeId == DocumentTypeConstants.Refund)
+                        select (decimal?)t.Amount).SumAsync() ?? 0m;
+
+                    // Document.Total is tax-inclusive, so the taxable base is the
+                    // net takings less the tax they carry — the same identity the
+                    // legacy path holds: taxable + tax == sales − returns.
+                    decimal taxable = totalSales - totalReturns - totalTax;
+                    decimal cashIn = movements.Where(m => m.StartingCashType == 0).Sum(m => m.Amount);
+                    decimal cashOut = movements.Where(m => m.StartingCashType == 1).Sum(m => m.Amount);
+
+                    // Per-DEVICE numbering. `Number` stays a company-wide
+                    // sequence for continuity, but the human-facing number is
+                    // `POS1/00085` so two registers closing at the same moment
+                    // cannot collide on a fiscal document.
+                    var lastForDevice = await _db.ZReports
+                        .Where(z => z.CompanyId == companyId && z.PosDeviceId == session.PosDeviceId)
+                        .OrderByDescending(z => z.Id)
+                        .FirstOrDefaultAsync();
+                    int deviceSeq = 1;
+                    if (lastForDevice?.DisplayNumber != null)
+                    {
+                        var tail = lastForDevice.DisplayNumber.Split('/').Last();
+                        if (int.TryParse(tail, out var n)) deviceSeq = n + 1;
+                    }
+
+                    var device = session.PosDeviceId is null
+                        ? null
+                        : await _db.PosDevices.FirstOrDefaultAsync(d => d.Id == session.PosDeviceId);
+
+                    var lastAny = await _zReportRepo.GetLastZReportAsync(companyId);
+                    int number = (lastAny?.Number ?? 0) + 1;
+
+                    var report = ZReport.Create(
+                        companyId: companyId,
+                        number: number,
+                        fromDocumentId: documents.Count == 0 ? 0 : documents.Min(d => d.Id),
+                        toDocumentId: documents.Count == 0 ? 0 : documents.Max(d => d.Id),
+                        totalSales: totalSales,
+                        totalReturns: totalReturns,
+                        discountsGranted: discounts,
+                        taxableTotal: taxable,
+                        totalTax: totalTax,
+                        grandTotal: totalSales - totalReturns,
+                        totalCashIn: cashIn,
+                        totalCashOut: cashOut,
+                        sessionId: sessionId,
+                        posDeviceId: session.PosDeviceId,
+                        displayNumber: ZReport.FormatDisplayNumber(device?.Name, deviceSeq));
+
+                    _db.ZReports.Add(report);
+                    await _db.SaveChangesAsync();
+
+                    // Lock the payments to the report — the EXISTING reporting
+                    // binding, unchanged. SessionId is the operational link;
+                    // ZReportId remains the closing lock.
+                    foreach (var p in payments) p.LockToZReport(report.Id);
+
+                    // Cash movements bind to the SESSION now. ZReportNumber is
+                    // still stamped so anything reading the legacy column keeps
+                    // working while it is retired.
+                    foreach (var m in movements) m.ZReportNumber = report.Number;
+
+                    await _db.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    return new ZReportDto
+                    {
+                        Id = report.Id,
+                        CompanyId = companyId,
+                        Number = report.Number,
+                        DateCreated = report.DateCreated,
+                        FromDocumentId = report.FromDocumentId,
+                        ToDocumentId = report.ToDocumentId,
+                        TotalSales = totalSales,
+                        TotalReturns = totalReturns,
+                        DiscountsGranted = discounts,
+                        TaxableTotal = taxable,
+                        TotalTax = totalTax,
+                        GrandTotal = totalSales - totalReturns,
+                        TotalCashIn = cashIn,
+                        TotalCashOut = cashOut,
+                    };
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            });
+        }
+
+        /// <summary>
+        /// ⚠️ LEGACY, document-range bounded. Kept only for callers that predate
+        /// sessions; see <see cref="GenerateForSessionAsync"/> for why the range
+        /// is unsafe with more than one register.
+        /// </summary>
         public async Task<ZReportDto> GenerateZReportAsync(int companyId, int userId)
         {
             var strategy = _db.Database.CreateExecutionStrategy();

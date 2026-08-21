@@ -128,6 +128,7 @@ namespace Api.Queries.DocumentQuery
                             UserId        = p.UserId,
                             Date          = p.Date,
                             ZReportId     = p.ZReportId,
+                            SessionId     = p.SessionId,
                         }).ToList())
                     : new Dictionary<int, List<SalesHistoryPaymentDto>>();
 

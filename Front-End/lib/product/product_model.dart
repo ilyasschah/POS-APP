@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:pos_app/database/app_database.dart';
+import 'package:pos_app/uom/unit_of_measure.dart';
 
 class Product {
   final int id;
@@ -12,7 +13,17 @@ class Product {
   final String name;
   final String? code;
   final int? plu;
+  /// Legacy free-text unit, superseded by [uomId]. Still carried so receipts
+  /// and document lines written against it keep working.
   final String? measurementUnit;
+
+  /// Id into the hardcoded [kUnitsOfMeasure] catalog.
+  final int uomId;
+
+  /// Sold by weight — the POS asks for a quantity instead of adding one unit,
+  /// and the Price button edits quantity when no scale is attached.
+  final bool isToWeigh;
+
   final double price;
   final bool isTaxInclusivePrice;
   final int? currencyId;
@@ -34,6 +45,17 @@ class Product {
   final List<String> barcodes;
   final String syncStatus;
 
+  /// The unit this product is priced and sold in.
+  UnitOfMeasure get uom => uomById(uomId);
+
+  /// The unit this product's STOCK is held in — its category's reference.
+  /// Selling in grams still moves stock in kilograms.
+  UnitOfMeasure get stockUom => referenceUomOf(uom);
+
+  /// Whether a fractional quantity makes sense for this product. Drives the
+  /// decimal keypad, and whether the cart shows `1.5` or `2`.
+  bool get allowsFractionalQuantity => isToWeigh || uom.allowsFractions;
+
   bool get isPendingSync => syncStatus != 'synced';
   bool get isPendingCreate => syncStatus == 'pending_create';
 
@@ -45,6 +67,8 @@ class Product {
     this.code,
     this.plu,
     this.measurementUnit,
+    this.uomId = kUomPieces,
+    this.isToWeigh = false,
     required this.price,
     required this.isTaxInclusivePrice,
     this.currencyId,
@@ -76,6 +100,12 @@ class Product {
       code: json['code'],
       plu: json['plu'],
       measurementUnit: json['measurementUnit'],
+      // A server that predates the UoM catalog sends neither field; deriving
+      // the unit from the legacy text beats filing a kilogram product under
+      // pieces and deducting whole kilos per gram sold.
+      uomId: (json['uomId'] as num?)?.toInt() ??
+          uomFromLegacyText(json['measurementUnit'] as String?),
+      isToWeigh: json['isToWeigh'] ?? false,
       price: (json['price'] ?? 0).toDouble(),
       isTaxInclusivePrice: json['isTaxInclusivePrice'] ?? true,
       currencyId: json['currencyId'],
@@ -114,6 +144,16 @@ class Product {
       code: row.code,
       plu: row.plu,
       measurementUnit: row.measurementUnit,
+      // Self-healing: a row synced from a server that did not yet send `uomId`
+      // carries the pieces default while `measurementUnit` still says 'kg'. The
+      // two then disagree, and the disagreement is visible and wrong — stock
+      // reads "88.25 pcs" on a product the editor shows as kg. When the id is
+      // the bare default and the legacy text says otherwise, the TEXT is the
+      // one that was actually chosen, so it wins.
+      uomId: row.uomId == kUomPieces
+          ? uomFromLegacyText(row.measurementUnit)
+          : row.uomId,
+      isToWeigh: row.isToWeigh,
       price: row.price,
       isTaxInclusivePrice: row.isTaxInclusivePrice,
       currencyId: row.currencyId,

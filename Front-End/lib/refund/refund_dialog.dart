@@ -9,6 +9,7 @@ import 'package:pos_app/cart/payment_type_model.dart';
 import 'package:pos_app/cart/payment_type_provider.dart';
 import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/refund/refund_service.dart';
+import 'package:pos_app/session/session_gate.dart';
 import 'package:pos_app/stock/warehouse_provider.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
 import 'package:pos_app/company/company_provider.dart';
@@ -213,6 +214,11 @@ class _RefundDialogState extends ConsumerState<RefundDialog> {
       _showSnack(l.selectRefundPaymentType);
       return;
     }
+
+    // A refund moves cash OUT of the drawer, so it belongs to a session for
+    // exactly the same reason a sale does.
+    if (!await SessionGuard.ensureCanSell(context, ref)) return;
+    if (!mounted) return;
 
     setState(() { _submitting = true; _error = null; });
     try {

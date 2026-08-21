@@ -2,7 +2,7 @@ import 'package:flutter/widgets.dart';
 
 /// The three responsive layout tiers the whole app switches on.
 enum LayoutTier {
-  /// < 600px — phone, or the installed home-screen PWA. Bottom navigation.
+  /// < 600px — phone, or the installed home-screen PWA. App bar + drawer.
   compact,
 
   /// 600–1024px — tablet portrait / small laptop window. Navigation rail.

@@ -45,6 +45,23 @@ namespace Api.Repository
                 .Include(w => w.Company)
                 .FirstOrDefaultAsync(t => t.Name.ToLower() == name.ToLower() && t.CompanyId == companyId);
         }
+        /// <summary>
+        /// Finds a tax by Code within a company. Used to pre-empt the
+        /// UQ_Tax_Code_PerCompany unique index, which counts an EMPTY code as a
+        /// value — so a company can only ever hold one code-less tax.
+        /// Null and "" are treated as the same "no code" bucket, exactly as the
+        /// index sees them once EF stores an empty string.
+        /// </summary>
+        public async Task<Tax?> GetByCodeAsync(string? code, int companyId)
+        {
+            var normalized = (code ?? string.Empty).Trim().ToLower();
+            return await _db.Taxes
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t =>
+                    t.CompanyId == companyId &&
+                    (t.Code ?? string.Empty).Trim().ToLower() == normalized);
+        }
+
         public async Task<bool> ExistbyNameAsync (string name, int companyId)
         {
             return await _db.Taxes

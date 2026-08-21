@@ -1,4 +1,4 @@
-﻿using Api.Domain;
+using Api.Domain;
 using Api.Models;
 using Api.Repository;
 
@@ -51,7 +51,9 @@ namespace Api.Services
                 color: string.IsNullOrWhiteSpace(req.Color) ? "Transparent" : req.Color!,
                 ageRestriction: req.AgeRestriction,
                 lastPurchasePrice: req.LastPurchasePrice ?? 0m,
-                rank: req.Rank ?? 0
+                rank: req.Rank ?? 0,
+                uomId: NormaliseUom(req.UomId, req.MeasurementUnit),
+                isToWeigh: req.IsToWeigh
             );
             entity.CompanyId = companyId;
 
@@ -95,12 +97,25 @@ namespace Api.Services
                 color: req.Color,
                 ageRestriction: req.AgeRestriction,
                 lastPurchasePrice: req.LastPurchasePrice,
-                rank: req.Rank
+                rank: req.Rank,
+                uomId: NormaliseUom(req.UomId, req.MeasurementUnit),
+                isToWeigh: req.IsToWeigh
             );
 
             await _repository.UpdateAsync(entity);
             return true;
         }
+
+        /// <summary>
+        /// Resolves the unit a request means. A caller that predates the UoM
+        /// catalog sends 0 (or an id that is not in the catalog) but usually
+        /// still sends the old free-text unit, so fall back to matching that
+        /// rather than silently filing a kilogram product under pieces.
+        /// </summary>
+        private static int NormaliseUom(int uomId, string? measurementUnit)
+            => UnitOfMeasure.Get(uomId).Id == uomId
+                ? uomId
+                : UnitOfMeasure.FromLegacyText(measurementUnit);
 
         public async Task<bool> Delete(int id, int companyId)
         {

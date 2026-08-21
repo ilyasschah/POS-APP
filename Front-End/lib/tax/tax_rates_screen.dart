@@ -486,6 +486,24 @@ class _TaxFormDialogState extends ConsumerState<_TaxFormDialog> {
     super.dispose();
   }
 
+  /// Required + unique-per-company, case-insensitive.
+  ///
+  /// Compared against the local Drift cache (the same rows the list shows), so
+  /// it works offline — which matters, because the failure it prevents was
+  /// only ever raised by the server, asynchronously, after the dialog was gone.
+  String? _validateCode(String? v) {
+    final code = (v ?? '').trim();
+    if (code.isEmpty) return AppLocalizations.of(context).requiredField;
+
+    final taxes = ref.read(allTaxesProvider).value ?? const [];
+    final clash = taxes.any(
+      (t) =>
+          t.id != widget.tax?.id &&
+          (t.code ?? '').trim().toLowerCase() == code.toLowerCase(),
+    );
+    return clash ? AppLocalizations.of(context).taxCodeAlreadyUsed : null;
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() {
@@ -564,11 +582,20 @@ class _TaxFormDialogState extends ConsumerState<_TaxFormDialog> {
                     child: TextFormField(
                       controller: _codeCtrl,
                       decoration: InputDecoration(
-                        labelText: AppLocalizations.of(context).fieldCode,
+                        labelText: AppLocalizations.of(context).codeRequired,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
+                      // Required AND unique, enforced here rather than left to
+                      // the server. `UQ_Tax_Code_PerCompany` is a unique index
+                      // on (CompanyId, Code) and SQL Server counts an EMPTY
+                      // string as a value, so a blank code is only free once
+                      // per company — the second one used to blow up as a 500
+                      // deep inside a background sync, long after the dialog
+                      // had closed. Catching it on the field means the bad
+                      // value never reaches Drift, let alone the push queue.
+                      validator: _validateCode,
                     ),
                   ),
                 ],

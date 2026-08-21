@@ -73,3 +73,28 @@ public class UpdateCompanyLogoRequest
     public required int Id { get; set; }
     public required byte[] Logo { get; set; }
 }
+
+/// <summary>
+/// Body of POST /api/Company/ResetData. Every flag defaults to FALSE so an
+/// empty or malformed body resets nothing — the controller rejects a selection
+/// with no flags set rather than reading it as "all of it".
+/// </summary>
+public class ResetCompanyDataRequest
+{
+    public required int CompanyId { get; set; }
+
+    /// Also clears Documents — DocumentItem and PosOrderItem both hold a FK to
+    /// Product, so the sales rows cannot outlive the catalogue.
+    public bool Products { get; set; }
+
+    /// Also clears Documents — Document and PosOrder both reference Customer.
+    public bool Customers { get; set; }
+
+    /// Sales history and live orders: documents, payments, POS orders, voids
+    /// and Z-reports. Bookings survive with their order link detached.
+    public bool Documents { get; set; }
+
+    /// Every company-scoped table except Users, their device PINs, and the
+    /// company's saved settings.
+    public bool Everything { get; set; }
+}

@@ -7,6 +7,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:path/path.dart' as imgpath;
 import 'package:path_provider/path_provider.dart';
 import 'package:pos_app/database/app_database.dart';
+import 'package:pos_app/uom/unit_of_measure.dart';
 import 'package:pos_app/database/database_provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -25,13 +26,19 @@ import 'package:pos_app/product/product_columns_provider.dart';
 import 'package:pos_app/product/product_export_model.dart';
 import 'package:pos_app/product/product_group_model.dart';
 import 'package:pos_app/product/product_provider.dart';
+import 'package:pos_app/tax/tax_model.dart';
 import 'package:pos_app/tax/tax_provider.dart';
 import 'package:pos_app/product/product_comment_provider.dart';
 import 'package:pos_app/sync/sync_provider.dart';
 import 'package:pos_app/barcode/barcode_provider.dart';
+import 'package:pos_app/barcode/nomenclature/barcode_rules_provider.dart';
+import 'package:pos_app/barcode/nomenclature/barcode_rule.dart';
+import 'package:pos_app/barcode/nomenclature/barcode_matcher.dart';
 import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/app_settings/app_settings_provider.dart';
 import 'package:pos_app/product/product_import_screen.dart';
+import 'package:pos_app/product/product_search.dart';
+import 'package:pos_app/product/product_search_bar.dart';
 import 'package:pos_app/settings/local_ui_prefs.dart';
 import 'package:pos_app/sync/sync_notifier.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
@@ -787,7 +794,7 @@ class _TreeNodeState extends State<_TreeNode> {
 }
 
 // --- PRODUCT DATA TABLE WIDGET ---
-class _ProductListContent extends ConsumerWidget {
+class _ProductListContent extends ConsumerStatefulWidget {
   final Set<int> selectedIds;
   final ValueChanged<Set<int>> onSelectionChanged;
 
@@ -797,26 +804,105 @@ class _ProductListContent extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_ProductListContent> createState() =>
+      _ProductListContentState();
+}
+
+class _ProductListContentState extends ConsumerState<_ProductListContent> {
+  // Search state is LOCAL, not a provider: leaving the screen must clear the
+  // filter. A global provider would have the admin come back to a silently
+  // filtered catalogue and read it as missing products. It is also separate
+  // from the POS menu's `searchQueryProvider` on purpose — the two screens are
+  // used at the same time on the same terminal.
+  final _searchCtrl = TextEditingController();
+  String _query = '';
+  // Defaults to the widest scope. Unlike the POS menu this is NOT driven by
+  // `Menu.DefaultSearch`: that setting is about the cashier's till, and an admin
+  // hunting for a product should not have to guess which field it lives in.
+  String _scope = ProductSearchScope.allFields;
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  /// Selection is by id and survives filtering, so a row hidden by the search
+  /// would still be deleted by the toolbar's Delete button while showing as
+  /// unselected. Clearing on every filter change is the same rule the category
+  /// sidebar already follows.
+  void _setFilter({String? query, String? scope}) {
+    setState(() {
+      if (query != null) _query = query;
+      if (scope != null) _scope = scope;
+    });
+    if (widget.selectedIds.isNotEmpty) widget.onSelectionChanged({});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final selectedIds = widget.selectedIds;
+    final onSelectionChanged = widget.onSelectionChanged;
     final theme = Theme.of(context);
     final sym = ref.watch(currencySymbolProvider);
     final asyncProducts = ref.watch(productsByGroupProvider);
     final groups = ref.watch(allProductGroupsProvider).value ?? [];
+    // Secondary barcodes (the `barcodes` table) so a barcode added in the
+    // product editor's Barcodes tab is findable from the screen that added it.
+    final extraBarcodes =
+        ref.watch(allBarcodesByProductIdProvider).value ?? const {};
 
     // Clear selection whenever the category filter changes.
     ref.listen(selectedProductGroupIdProvider, (_, __) {
       onSelectionChanged({});
     });
 
+    // The bar is ALWAYS mounted — outside every `when` branch and above the
+    // empty state. Rendering it inside the data branch would make it vanish the
+    // moment a query matched nothing, trapping the operator with no way to
+    // clear what they just typed.
+    Widget withSearchBar(Widget child) => Column(
+          children: [
+            ProductSearchBar(
+              controller: _searchCtrl,
+              query: _query,
+              scope: _scope,
+              hintText: AppLocalizations.of(context).searchProductsHint,
+              onQueryChanged: (v) => _setFilter(query: v),
+              onScopeChanged: (s) => _setFilter(scope: s),
+            ),
+            Expanded(child: child),
+          ],
+        );
+
     return asyncProducts.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text(AppLocalizations.of(context).errorWithMessage(_parseApiError(context, e)))),
-        data: (products) {
+        loading: () => withSearchBar(
+            const Center(child: CircularProgressIndicator())),
+        error: (e, _) => withSearchBar(Center(
+            child: Text(AppLocalizations.of(context)
+                .errorWithMessage(_parseApiError(context, e))))),
+        data: (allProducts) {
+          final products = _query.trim().isEmpty
+              ? allProducts
+              : allProducts
+                  .where((p) => productMatchesSearch(
+                        p,
+                        _query,
+                        _scope,
+                        extraBarcodes: extraBarcodes[p.id] ?? const [],
+                      ))
+                  .toList();
+
           if (products.isEmpty) {
-            return Center(
-                child: Text(AppLocalizations.of(context).noProductsFound,
+            return withSearchBar(Center(
+                child: Text(
+                    _query.trim().isEmpty
+                        ? AppLocalizations.of(context).noProductsFound
+                        : AppLocalizations.of(context)
+                            .noProductsMatchSearch(_query.trim()),
+                    textAlign: TextAlign.center,
                     style: TextStyle(
-                        color: Theme.of(context).hintColor, fontSize: 18)));
+                        color: Theme.of(context).hintColor, fontSize: 18))));
           }
 
           final effectiveSelected =
@@ -988,7 +1074,7 @@ class _ProductListContent extends ConsumerWidget {
           // Horizontal scroll lets the grid grow past the viewport as more
           // columns are enabled, while ConstrainedBox keeps it filling the
           // width when only a few are shown.
-          return LayoutBuilder(builder: (context, constraints) {
+          return withSearchBar(LayoutBuilder(builder: (context, constraints) {
             return SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: ConstrainedBox(
@@ -1065,7 +1151,7 @@ class _ProductListContent extends ConsumerWidget {
                 ),
               ),
             );
-          });
+          }));
         });
   }
 }
@@ -1090,7 +1176,6 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
   final _nameCtrl = TextEditingController();
   final _codeCtrl = TextEditingController();
   final _pluCtrl = TextEditingController();
-  final _measurementUnitCtrl = TextEditingController();
   final _priceCtrl = TextEditingController(text: '');
   final _costCtrl = TextEditingController(text: '');
   final _markupCtrl = TextEditingController();
@@ -1100,8 +1185,19 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
   final _newCommentCtrl = TextEditingController();
   final _newBarcodeCtrl = TextEditingController();
   // Toggles
+  // Seeded from General.TaxIncludedByDefault in initState for NEW products —
+  // it was hardcoded `true`, which is why the setting had no observable effect.
+  // An EXISTING product always wins with its own stored value.
   bool _isTaxInclusive = true;
   bool _isService = false;
+
+  /// The unit this product is priced and sold in. Backs the Pricing tab's
+  /// dropdown; `measurementUnit` is written from it so the legacy free-text
+  /// column (receipts, document lines, exports) stays in step.
+  int _uomId = kUomPieces;
+
+  /// Sold by weight. Drives the POS scale/keypad flow.
+  bool _isToWeigh = false;
   bool _isPriceChangeAllowed = false;
   bool _isUsingDefaultQuantity = true;
   bool _isEnabled = true;
@@ -1170,7 +1266,8 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
       _nameCtrl.text = p.name;
       _codeCtrl.text = p.code ?? '';
       _pluCtrl.text = p.plu?.toString() ?? '';
-      _measurementUnitCtrl.text = p.measurementUnit ?? '';
+      _uomId = p.uomId;
+      _isToWeigh = p.isToWeigh;
       _priceCtrl.text = p.price.toString();
       _costCtrl.text = p.cost.toString();
       _markupCtrl.text = p.markup?.toString() ?? '';
@@ -1206,10 +1303,38 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
       }
       _selectedHexColor = p.color.isNotEmpty ? p.color : '#000000';
 
-      // Only fetch server-side tax assignment for real (synced) products.
-      if (p.id > 0) _fetchAssignedTax(p.id);
+      // Deliberately NOT gated on `p.id > 0` any more. The guard dated from
+      // when this hit the API; the lookup is now pure Drift, and a product in
+      // Phase 2 of creation still carries its NEGATIVE temp id — so the guard
+      // hid the tax that Phase 1 had just assigned. That mattered for more
+      // than display: with `_originalTaxId` left null, picking a different tax
+      // in Phase 2 wrote the new assignment without retiring the old one, and
+      // the product ended up carrying two taxes.
+      _fetchAssignedTax(p.id);
     } else {
       _selectedGroupId = ref.read(selectedProductGroupIdProvider);
+
+      // NEW product: follow the configured tax defaults. Both are pre-fills,
+      // not locks — the admin can still change either before saving (the lock
+      // is at the till, not here).
+      _isTaxInclusive =
+          settings[SettingKeys.taxIncludedByDefault]?.toLowerCase() == 'true';
+
+      // Only pre-select a tax when the feature is actually on; the picker is
+      // greyed out in Settings while the switch is off, so honouring a stale
+      // selection here would apply a tax the operator believes is disabled.
+      if (_isTaxInclusive) {
+        // `_selectedTaxId` is a single id while the setting holds a list — the
+        // product editor's Taxes tab has always been one-tax-per-product. Take
+        // the first configured rate; the cart still applies the full list to
+        // any product that carries no assignment of its own.
+        final defaults = parseDefaultTaxRateIds(
+          settings[SettingKeys.defaultTaxRateIds],
+        );
+        if (defaults.isNotEmpty) {
+          _selectedTaxId = (defaults.toList()..sort()).first;
+        }
+      }
     }
 
     if (_costPriceMarkupEnabled) {
@@ -1240,7 +1365,6 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
     _nameCtrl.dispose();
     _codeCtrl.dispose();
     _pluCtrl.dispose();
-    _measurementUnitCtrl.dispose();
     _priceCtrl.dispose();
     _costCtrl.dispose();
     _markupCtrl.dispose();
@@ -1321,7 +1445,9 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
           localImagePath: Value(localImgPath),
           code: Value(_codeCtrl.text.trim().isEmpty ? null : _codeCtrl.text.trim()),
           plu: Value(int.tryParse(_pluCtrl.text.trim())),
-          measurementUnit: Value(_measurementUnitCtrl.text.trim().isEmpty ? null : _measurementUnitCtrl.text.trim()),
+          measurementUnit: Value(uomById(_uomId).code),
+          uomId: Value(_uomId),
+          isToWeigh: Value(_isToWeigh),
           description: Value(_descriptionCtrl.text.trim().isEmpty ? null : _descriptionCtrl.text.trim()),
           markup: Value(double.tryParse(_markupCtrl.text.trim())),
           rank: Value(int.tryParse(_rankCtrl.text.trim()) ?? 0),
@@ -1333,6 +1459,29 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
           syncStatus: const Value('pending_create'),
           lastModified: Value(now),
         ));
+
+        // Persist the tax assignment NOW, against the temp id.
+        //
+        // This is the half that was missing: Phase 1 wrote the product but
+        // never its tax, so the configured default silently evaporated and the
+        // product reopened showing "No Tax". Only Phase 2 / Edit ever wrote a
+        // tax row, and by then `_selectedTaxId` had been re-read from a
+        // `product_taxes` table that had nothing in it.
+        //
+        // Writing against a NEGATIVE product id is safe and already the
+        // established pattern here: `remapProductId` repoints
+        // `product_taxes.productId` temp → real when the product push gets its
+        // server id, and `pushPendingProductTaxes` is deliberately ordered
+        // after `pushPendingProductOps`, so /ProductTaxes/Add never sees an id
+        // the server doesn't know.
+        if (_selectedTaxId != null) {
+          await db.setProductTaxLocal(
+            companyId: companyId,
+            productId: tempId,
+            oldTaxId: null,
+            newTaxId: _selectedTaxId,
+          );
+        }
 
         // Build a Product from the fields we just stored so Phase 2 can be
         // optionally launched by the parent. id < 0 signals "pending sync".
@@ -1348,7 +1497,9 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
           localImagePath: localImgPath,
           code: _codeCtrl.text.trim().isEmpty ? null : _codeCtrl.text.trim(),
           plu: int.tryParse(_pluCtrl.text.trim()),
-          measurementUnit: _measurementUnitCtrl.text.trim().isEmpty ? null : _measurementUnitCtrl.text.trim(),
+          measurementUnit: uomById(_uomId).code,
+          uomId: _uomId,
+          isToWeigh: _isToWeigh,
           description: _descriptionCtrl.text.trim().isEmpty ? null : _descriptionCtrl.text.trim(),
           markup: double.tryParse(_markupCtrl.text.trim()),
           rank: int.tryParse(_rankCtrl.text.trim()) ?? 0,
@@ -1391,9 +1542,9 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
           'productGroupId': _selectedGroupId,
           'code': _codeCtrl.text.trim().isEmpty ? null : _codeCtrl.text.trim(),
           'plu': int.tryParse(_pluCtrl.text.trim()),
-          'measurementUnit': _measurementUnitCtrl.text.trim().isEmpty
-              ? null
-              : _measurementUnitCtrl.text.trim(),
+          'measurementUnit': uomById(_uomId).code,
+          'uomId': _uomId,
+          'isToWeigh': _isToWeigh,
           'price': double.tryParse(_priceCtrl.text) ?? 0,
           'cost': double.tryParse(_costCtrl.text) ?? 0,
           'markup': double.tryParse(_markupCtrl.text.trim()),
@@ -1445,7 +1596,9 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
             localImagePath: Value(localImgPath),
             code: Value(_codeCtrl.text.trim().isEmpty ? null : _codeCtrl.text.trim()),
             plu: Value(int.tryParse(_pluCtrl.text.trim())),
-            measurementUnit: Value(_measurementUnitCtrl.text.trim().isEmpty ? null : _measurementUnitCtrl.text.trim()),
+            measurementUnit: Value(uomById(_uomId).code),
+            uomId: Value(_uomId),
+            isToWeigh: Value(_isToWeigh),
             description: Value(_descriptionCtrl.text.trim().isEmpty ? null : _descriptionCtrl.text.trim()),
             markup: Value(double.tryParse(_markupCtrl.text.trim())),
             rank: Value(int.tryParse(_rankCtrl.text.trim()) ?? 0),
@@ -1536,18 +1689,33 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
       dialogTabViews.add(_buildGeneralTab());
     }
 
+    // Pricing sits right after General, and — unlike the old layout — exists
+    // during Phase 1 of creation. That is the point: it is where the price is
+    // set AND where the configured default tax becomes visible, at the moment
+    // the product is being created rather than a dialog later.
+    if (!widget.isPostCreation) {
+      dialogTabs.add(Tab(text: l10n.pricingTab));
+      dialogTabViews.add(_buildPricingTab());
+    }
+
     // Add Advanced Tabs (If creating Phase 2, OR if normal editing)
     if (_isEditing || widget.isPostCreation) {
       dialogTabs.addAll([
-        Tab(text: l10n.taxesLabel),
         Tab(text: l10n.barcodesTab),
         Tab(text: l10n.commentsTab),
       ]);
       dialogTabViews.addAll([
-        _buildTaxesTab(),
         _buildBarcodesTab(),
         _buildCommentsTab(),
       ]);
+    }
+
+    // The standalone Taxes tab survives ONLY for Phase 2, which has no Pricing
+    // tab to host the picker. Showing both at once would put two dropdowns for
+    // the same field in one dialog.
+    if (widget.isPostCreation) {
+      dialogTabs.insert(0, Tab(text: l10n.taxesLabel));
+      dialogTabViews.insert(0, _buildTaxesTab());
     }
 
     // Appearance sits last (right after Comments when editing). Tied to the
@@ -1621,7 +1789,7 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
   Widget _buildGeneralTab() {
     final theme = Theme.of(context);
     final allGroupsAsync = ref.watch(allProductGroupsProvider);
-    final currencySymbol = ref.watch(currencySymbolProvider);
+    // No currency here any more — every money field moved to the Pricing tab.
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Row(
@@ -1692,18 +1860,11 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                   ],
                 ),
                 const SizedBox(height: 16),
+                // Measurement unit, price, cost and markup now live on the
+                // Pricing tab; age restriction and rank stayed behind because
+                // they are compliance/menu-ordering fields, not pricing ones.
                 Row(
                   children: [
-                    Expanded(
-                        child: TextFormField(
-                            controller: _measurementUnitCtrl,
-                            decoration: InputDecoration(
-                                labelText: AppLocalizations.of(context).measurementUnit,
-                                filled: true,
-                                fillColor: theme.colorScheme.surface,
-                                border: const OutlineInputBorder(),
-                                hintText: AppLocalizations.of(context).measurementUnitHint))),
-                    const SizedBox(width: 16),
                     Expanded(
                         child: TextFormField(
                             controller: _ageRestrictionCtrl,
@@ -1714,53 +1875,7 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                                 border: const OutlineInputBorder(),
                                 hintText: AppLocalizations.of(context).ageRestrictionHint),
                             keyboardType: TextInputType.number)),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                        child: TextFormField(
-                            controller: _priceCtrl,
-                            decoration: InputDecoration(
-                                labelText: AppLocalizations.of(context).sellingPriceRequired,
-                                filled: true,
-                                fillColor: theme.colorScheme.surface,
-                                border: const OutlineInputBorder(),
-                                prefixText: "$currencySymbol "),
-                            keyboardType: const TextInputType.numberWithOptions(
-                                decimal: true))),
                     const SizedBox(width: 16),
-                    Expanded(
-                        child: TextFormField(
-                            controller: _costCtrl,
-                            decoration: InputDecoration(
-                                labelText: AppLocalizations.of(context).purchaseCost,
-                                filled: true,
-                                fillColor: theme.colorScheme.surface,
-                                border: const OutlineInputBorder(),
-                                prefixText: "$currencySymbol "),
-                            keyboardType: const TextInputType.numberWithOptions(
-                                decimal: true))),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    if (_costPriceMarkupEnabled) ...[
-                      Expanded(
-                          child: TextFormField(
-                              controller: _markupCtrl,
-                              decoration: InputDecoration(
-                                  labelText: AppLocalizations.of(context).marginMarkup,
-                                  filled: true,
-                                  fillColor: theme.colorScheme.surface,
-                                  border: const OutlineInputBorder(),
-                                  suffixText: "%"),
-                              keyboardType: const TextInputType.numberWithOptions(
-                                  decimal: true))),
-                      const SizedBox(width: 16),
-                    ],
                     Expanded(
                         child: TextFormField(
                             controller: _rankCtrl,
@@ -1797,11 +1912,8 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                       borderRadius: BorderRadius.circular(8)),
                   child: Column(
                     children: [
-                      SwitchListTile(
-                          title: Text(AppLocalizations.of(context).priceIsTaxInclusive),
-                          value: _isTaxInclusive,
-                          onChanged: (v) => setState(() => _isTaxInclusive = v),
-                          visualDensity: VisualDensity.compact),
+                      // "Price is tax inclusive" moved to the Pricing tab — it
+                      // qualifies the price, so it belongs next to it.
                       SwitchListTile(
                           title: Text(AppLocalizations.of(context).isServiceNotPhysical),
                           value: _isService,
@@ -1813,6 +1925,20 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                           onChanged: (v) =>
                               setState(() => _isPriceChangeAllowed = v),
                           visualDensity: VisualDensity.compact),
+                      // Sell by weight. A service has no stock to weigh, so the
+                      // switch is disabled there rather than silently ignored
+                      // at the till.
+                      SwitchListTile(
+                          title: Text(AppLocalizations.of(context).sellByWeight),
+                          subtitle: Text(
+                              AppLocalizations.of(context).sellByWeightHint,
+                              style: Theme.of(context).textTheme.bodySmall),
+                          value: _isToWeigh && !_isService,
+                          onChanged: _isService
+                              ? null
+                              : (v) => setState(() => _isToWeigh = v),
+                          isThreeLine: true,
+                          visualDensity: VisualDensity.compact),
                       SwitchListTile(
                           title: Text(AppLocalizations.of(context).isEnabledVisible),
                           value: _isEnabled,
@@ -1822,6 +1948,322 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                   ),
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Everything that decides what the product COSTS: unit, cost, selling
+  /// price, markup, the tax-inclusive flag, and the tax itself.
+  ///
+  /// The tax picker is here — not only on the Taxes tab — because the Taxes
+  /// tab does not exist during Phase 1 of creation, which is exactly when the
+  /// configured default gets applied and is worth seeing. Both controls bind
+  /// to the same `_selectedTaxId`, so they can never disagree.
+  /// Grouped unit picker, replacing the free-text field this screen used to
+  /// carry. Grouping by category is what makes the "you cannot sell kg from a
+  /// litre product" rule visible before it can be broken.
+  Widget _buildUomDropdown(
+      InputDecoration Function(String, {String? hint, String? prefix, String? suffix}) deco) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
+    final grouped = uomsByCategory();
+
+    final items = <DropdownMenuItem<int>>[];
+    for (final entry in grouped.entries) {
+      items.add(DropdownMenuItem<int>(
+        // A header is not selectable — `enabled: false` keeps a tap from
+        // assigning a category id that is not in the catalog.
+        enabled: false,
+        value: -entry.key.index - 1,
+        child: Text(
+          _uomCategoryLabel(entry.key, l10n).toUpperCase(),
+          style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.8),
+        ),
+      ));
+
+      for (final u in entry.value) {
+        items.add(DropdownMenuItem<int>(
+          value: u.id,
+          child: Padding(
+            padding: const EdgeInsetsDirectional.only(start: 12),
+            child: Text(u.isReference ? '${u.code}  ·  ${l10n.uomStockUnit}' : u.code),
+          ),
+        ));
+      }
+    }
+
+    return DropdownButtonFormField<int>(
+      initialValue: uomById(_uomId).id,
+      decoration: deco(l10n.measurementUnit),
+      isExpanded: true,
+      items: items,
+      onChanged: (v) {
+        if (v == null || v < 0) return;
+        setState(() {
+          _uomId = v;
+          // Picking a weight or volume unit is the whole reason to weigh, so
+          // offer it rather than making the switch a second thing to remember.
+          // Never turned OFF here: an admin who deliberately weighs a piece
+          // product would lose that on one unrelated unit change.
+          final category = uomById(v).category;
+          if (category == UomCategory.weight || category == UomCategory.volume) {
+            _isToWeigh = true;
+          }
+        });
+      },
+    );
+  }
+
+  /// Spells out the unit stock actually moves in, which is the part of the Odoo
+  /// model that surprises people: a product priced per gram still has its stock
+  /// counted in kilograms.
+  Widget _buildStockUnitNote() {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
+    final unit = uomById(_uomId);
+    final stockUnit = referenceUomOf(unit);
+
+    if (unit.isReference) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Text(
+          l10n.uomStockHeldIn(stockUnit.code),
+          style: theme.textTheme.bodySmall
+              ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.info_outline,
+              size: 18, color: theme.colorScheme.onSurfaceVariant),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              l10n.uomStockConversionNote(
+                  unit.code,
+                  formatQuantityValue(uomToReference(1, unit.id), stockUnit.id),
+                  stockUnit.code),
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _uomCategoryLabel(UomCategory category, AppLocalizations l10n) =>
+      switch (category) {
+        UomCategory.unit => l10n.uomCategoryUnit,
+        UomCategory.weight => l10n.uomCategoryWeight,
+        UomCategory.volume => l10n.uomCategoryVolume,
+        UomCategory.length => l10n.uomCategoryLength,
+      };
+
+  Widget _buildPricingTab() {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
+    final currencySymbol = ref.watch(currencySymbolProvider);
+    final allTaxesAsync = ref.watch(allTaxesProvider);
+
+    InputDecoration deco(String label, {String? hint, String? prefix, String? suffix}) =>
+        InputDecoration(
+            labelText: label,
+            filled: true,
+            fillColor: theme.colorScheme.surface,
+            border: const OutlineInputBorder(),
+            hintText: hint,
+            prefixText: prefix,
+            suffixText: suffix);
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Unit + the stock note. Backed by catalog ids rather than free text
+          // so the POS can convert a sale into a stock movement — see
+          // lib/uom/unit_of_measure.dart.
+          Row(
+            children: [
+              Expanded(child: _buildUomDropdown(deco)),
+              const SizedBox(width: 16),
+              Expanded(child: _buildStockUnitNote()),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                  child: TextFormField(
+                      controller: _priceCtrl,
+                      // Rebuilds the breakdown below as the price is typed.
+                      onChanged: (_) => setState(() {}),
+                      decoration: deco(l10n.sellingPriceRequired,
+                          prefix: "$currencySymbol "),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true))),
+              const SizedBox(width: 16),
+              Expanded(
+                  child: TextFormField(
+                      controller: _costCtrl,
+                      decoration:
+                          deco(l10n.purchaseCost, prefix: "$currencySymbol "),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true))),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Directly under the price, per the request: you can see WHICH tax
+          // applies while creating the product, not two dialogs later.
+          allTaxesAsync.when(
+            loading: () => const LinearProgressIndicator(),
+            error: (_, __) => Text(l10n.failedToLoadTaxes),
+            data: (taxes) {
+              final enabled = taxes.where((t) => t.isEnabled).toList();
+              // A stale id (tax disabled or deleted since) must not be handed
+              // to the dropdown — Material asserts on a value with no item.
+              final safeValue =
+                  enabled.any((t) => t.id == _selectedTaxId) ? _selectedTaxId : null;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<int?>(
+                          initialValue: safeValue,
+                          decoration: deco(l10n.primaryTaxRate),
+                          items: [
+                            DropdownMenuItem(value: null, child: Text(l10n.noTax)),
+                            ...enabled.map((t) => DropdownMenuItem(
+                                value: t.id,
+                                child: Text(
+                                    "${t.name} (${t.rate}${t.isFixed ? '' : '%'})"))),
+                          ],
+                          onChanged: (v) => setState(() => _selectedTaxId = v),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: SwitchListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(l10n.priceIsTaxInclusive,
+                              style: const TextStyle(fontSize: 13)),
+                          value: _isTaxInclusive,
+                          onChanged: (v) => setState(() => _isTaxInclusive = v),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      ),
+                    ],
+                  ),
+                  _buildTaxBreakdown(enabled, currencySymbol),
+                ],
+              );
+            },
+          ),
+          if (_costPriceMarkupEnabled) ...[
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                    child: TextFormField(
+                        controller: _markupCtrl,
+                        decoration: deco(l10n.marginMarkup, suffix: "%"),
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true))),
+                const SizedBox(width: 16),
+                const Expanded(child: SizedBox()),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// Live "the tax IS being applied" confirmation under the price.
+  ///
+  /// ⚠️ Deliberately shows the tax being ADDED to the price, even when the
+  /// "Price is tax inclusive" switch is on — because that is what the till
+  /// actually charges. `Product.isTaxInclusivePrice` is stored, synced,
+  /// exported and served in the menu payload, but NO pricing code reads it on
+  /// either side: the cart does `taxableBase * (rate / 100)` unconditionally
+  /// (`cart_provider` line ~1292, mirrored in `_grossLineTotal` and the
+  /// receipt service), and the backend only ever persists the column. The one
+  /// consumer, `stock_screen`, divides by a hardcoded 1.15.
+  ///
+  /// So backing the tax out here would print a split the POS does not honour —
+  /// a 120 "inclusive" product rings up at 144, not 120. Until the inclusive
+  /// math is actually implemented, this shows the real number and
+  /// [_buildTaxInclusiveWarning] says so out loud.
+  Widget _buildTaxBreakdown(List<Tax> enabledTaxes, String currencySymbol) {
+    if (_selectedTaxId == null) return const SizedBox.shrink();
+    final tax = enabledTaxes.where((t) => t.id == _selectedTaxId).firstOrNull;
+    if (tax == null) return const SizedBox.shrink();
+
+    final price = double.tryParse(_priceCtrl.text) ?? 0;
+    if (price <= 0) return const SizedBox.shrink();
+
+    // A fixed tax is a flat amount, not a percentage of anything.
+    final amount = tax.isFixed ? tax.rate : price * tax.rate / 100;
+
+    String money(double v) => '$currencySymbol ${v.toStringAsFixed(2)}';
+    final l10n = AppLocalizations.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.taxBreakdownAdded(
+                money(price), money(amount), money(price + amount)),
+            style: TextStyle(
+              fontSize: 12,
+              color:
+                  Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.65),
+            ),
+          ),
+          _buildTaxInclusiveWarning(),
+        ],
+      ),
+    );
+  }
+
+  /// Surfaces the gap above where it can actually mislead someone into
+  /// mispricing stock: the switch is on, so the operator believes the price
+  /// already contains the tax, but the till will add it again.
+  Widget _buildTaxInclusiveWarning() {
+    if (!_isTaxInclusive || _selectedTaxId == null) {
+      return const SizedBox.shrink();
+    }
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.info_outline, size: 14, color: cs.tertiary),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              AppLocalizations.of(context).taxInclusiveNotAppliedNote,
+              style: TextStyle(fontSize: 11, color: cs.tertiary),
             ),
           ),
         ],
@@ -2143,6 +2585,33 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
     );
   }
 
+  /// Puts a generated code in the field, and says so when another product
+  /// already owns it — nothing in either database rejects a duplicate barcode,
+  /// it simply makes one of the two products unscannable.
+  void _fillGeneratedBarcode(String code) {
+    final owner = ref
+        .read(allProductsListProvider)
+        .value
+        ?.where((p) =>
+            p.id != widget.existingProduct?.id &&
+            p.barcodes.any((b) => b.trim() == code))
+        .firstOrNull;
+
+    setState(() {
+      _newBarcodeCtrl.text = code;
+      _isBarcodeChipActive = true;
+    });
+
+    if (owner != null) {
+      showAppSnackbar(
+        context,
+        ref,
+        AppLocalizations.of(context).barcodeAlreadyUsedBy(code, owner.name),
+        isError: true,
+      );
+    }
+  }
+
   Widget _buildBarcodesTab() {
     final theme = Theme.of(context);
     if (widget.existingProduct == null) return const SizedBox();
@@ -2201,7 +2670,10 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 10, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFD81B60),
+                                    // Was a hardcoded pink — unreadable in the
+                                    // dark theme, and against the project rule
+                                    // on sourcing colours from the theme.
+                                    color: theme.colorScheme.primary,
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Row(
@@ -2209,8 +2681,8 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                                     children: [
                                       Text(
                                         _newBarcodeCtrl.text,
-                                        style: const TextStyle(
-                                            color: Colors.white,
+                                        style: TextStyle(
+                                            color: theme.colorScheme.onPrimary,
                                             fontWeight: FontWeight.bold),
                                       ),
                                       const SizedBox(width: 8),
@@ -2219,8 +2691,9 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                                           _newBarcodeCtrl.clear();
                                           _isBarcodeChipActive = false;
                                         }),
-                                        child: const Icon(Icons.close,
-                                            color: Colors.white, size: 16),
+                                        child: Icon(Icons.close,
+                                            color: theme.colorScheme.onPrimary,
+                                            size: 16),
                                       ),
                                     ],
                                   ),
@@ -2235,19 +2708,83 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    TextButton(
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        minimumSize: const Size(50, 30),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      onPressed: () => setState(() {
-                        _newBarcodeCtrl.text =
-                            DateTime.now().millisecondsSinceEpoch.toString();
-                        _isBarcodeChipActive = true;
-                      }),
-                      child: Text(AppLocalizations.of(context).generateBarcode,
-                          style: TextStyle(color: context.infoColor)),
+                    // 🚨 Generators, not a timestamp. The old button emitted
+                    // `millisecondsSinceEpoch`, which is 13 digits and so LOOKS
+                    // like an EAN-13 while passing its check digit only by
+                    // luck — unprintable as a real barcode, and never matching
+                    // a scale rule. These two produce codes the company's own
+                    // nomenclature defines.
+                    Wrap(
+                      spacing: 12,
+                      children: [
+                        TextButton.icon(
+                          style: TextButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                            minimumSize: const Size(50, 30),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          icon: Icon(Icons.qr_code_2,
+                              size: 16, color: context.infoColor),
+                          label: Text('EAN-13',
+                              style: TextStyle(color: context.infoColor)),
+                          onPressed: () => _fillGeneratedBarcode(
+                              buildInternalEan13(productId)),
+                        ),
+                        // One entry per priced/weighted rule the company
+                        // actually has. Hidden entirely when it has none —
+                        // there would be nothing to encode.
+                        Builder(builder: (context) {
+                          final scaleRules =
+                              (ref.watch(barcodeRulesProvider).value ??
+                                      kDefaultBarcodeRules)
+                                  .where((r) =>
+                                      r.isEnabled &&
+                                      (r.type == BarcodeRuleType.weighted ||
+                                          r.type == BarcodeRuleType.priced))
+                                  .toList();
+                          if (scaleRules.isEmpty) {
+                            return const SizedBox.shrink();
+                          }
+
+                          return PopupMenuButton<BarcodeRule>(
+                            tooltip: AppLocalizations.of(context)
+                                .generateScaleBarcode,
+                            onSelected: (rule) {
+                              final key =
+                                  buildProductKeyForRule(rule, productId);
+                              if (key == null) {
+                                showAppSnackbar(
+                                    context,
+                                    ref,
+                                    AppLocalizations.of(context)
+                                        .scaleBarcodeRuleUnusable(rule.pattern),
+                                    isError: true);
+                                return;
+                              }
+                              _fillGeneratedBarcode(key);
+                            },
+                            itemBuilder: (context) => [
+                              for (final r in scaleRules)
+                                PopupMenuItem(
+                                  value: r,
+                                  child: Text('${r.name}  ·  ${r.pattern}'),
+                                ),
+                            ],
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.scale,
+                                    size: 16, color: context.infoColor),
+                                const SizedBox(width: 6),
+                                Text(
+                                    AppLocalizations.of(context)
+                                        .generateScaleBarcode,
+                                    style: TextStyle(color: context.infoColor)),
+                              ],
+                            ),
+                          );
+                        }),
+                      ],
                     ),
                   ],
                 ),

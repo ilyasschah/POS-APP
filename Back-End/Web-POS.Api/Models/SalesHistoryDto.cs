@@ -93,6 +93,14 @@ namespace Api.Models
         public int UserId { get; set; }
         public DateTime? Date { get; set; }
 
+        /// The session (Shift) this payment was taken in.
+        ///
+        /// Without it a pulled payment lands with no session at all, so the
+        /// register's Payments tab shows nothing and its "Total taken" reads
+        /// 0.00 — the figure the drawer is counted against. The client maps this
+        /// server id back to its own session localId.
+        public int? SessionId { get; set; }
+
         /// Non-null once the payment belongs to a closed Z-report. The client
         /// locks such payments against edit/delete, so it must cross too.
         public int? ZReportId { get; set; }

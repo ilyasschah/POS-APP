@@ -63,8 +63,16 @@ class _DiscountDialogState extends ConsumerState<DiscountDialog>
             .where((i) => i.cartItemId == cartState.selectedCartItemId)
             .firstOrNull;
         if (item != null) {
-          _itemInput = _fmt(item.discount);
-          if (item.discount > 0) _itemDiscountType = item.discountType;
+          // Prefer the operator's ORIGINAL input form (e.g. "10" + %) over the
+          // flattened per-unit money, so reopening a discounted line — on this
+          // till or one it was pulled to — shows "10%" instead of a fixed amount.
+          if (item.discountInputValue != null && item.discountInputType != null) {
+            _itemInput = _fmt(item.discountInputValue!);
+            _itemDiscountType = item.discountInputType!;
+          } else if (item.discount > 0) {
+            _itemInput = _fmt(item.discount);
+            _itemDiscountType = item.discountType;
+          }
         }
       }
       setState(() {});

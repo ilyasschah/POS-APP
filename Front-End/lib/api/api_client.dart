@@ -7,6 +7,7 @@ import 'package:pos_app/core/config.dart';
 import 'package:pos_app/auth/session_expiry.dart';
 import 'package:pos_app/cart/checkout_models.dart';
 import 'package:pos_app/api/promotion_models.dart';
+import 'package:pos_app/barcode/nomenclature/barcode_rule.dart';
 import 'package:pos_app/api/customer_discount_models.dart';
 import 'package:pos_app/company/company_model.dart';
 import 'package:pos_app/document/document_type_constants.dart';
@@ -356,6 +357,41 @@ class ApiClient {
     }
   }
 
+  /// Clears the selected data for this company **across the whole account** —
+  /// it runs on the shared database, so every other terminal sees it on its
+  /// next sync. Irreversible; the caller is expected to have taken a local
+  /// backup and re-authenticated the admin first.
+  ///
+  /// Returns the server's summary (`rowsDeleted`, `tablesCleared`). Throws with
+  /// the server's own message on a 400 so the UI can show why it refused —
+  /// nothing here should ever be reported as a bare "failed".
+  Future<Map<String, dynamic>> resetCompanyData(
+    int companyId, {
+    bool products = false,
+    bool customers = false,
+    bool documents = false,
+    bool everything = false,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/Company/ResetData',
+        data: {
+          'companyId': companyId,
+          'products': products,
+          'customers': customers,
+          'documents': documents,
+          'everything': everything,
+        },
+      );
+      final data = response.data;
+      return data is Map<String, dynamic> ? data : <String, dynamic>{};
+    } on DioException catch (e) {
+      final body = e.response?.data;
+      final msg = body is Map ? (body['message'] ?? body['Message']) : null;
+      throw Exception(msg ?? 'Reset failed: ${e.message}');
+    }
+  }
+
   Future<bool> voidPosOrder(
     int companyId,
     int posOrderId,
@@ -601,6 +637,49 @@ class ApiClient {
   }
 
   // --- Promotions ---
+  /// The company's barcode nomenclature, in evaluation order.
+  ///
+  /// Returns an empty list rather than throwing when the endpoint is missing —
+  /// an older server has no nomenclature, and the caller falls back to the
+  /// shipped defaults instead of leaving the till unable to scan anything.
+  Future<List<BarcodeRule>> getBarcodeRules(int companyId) async {
+    try {
+      final response = await _dio.get(
+        '/BarcodeRules/GetAll',
+        queryParameters: {'companyId': companyId},
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data;
+        return data
+            .map((json) => BarcodeRule.fromJson(json as Map<String, dynamic>))
+            .toList();
+      }
+      return const [];
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return const [];
+      rethrow;
+    }
+  }
+
+  /// Replaces the whole rule set. List order IS the evaluation order.
+  ///
+  /// A 400 carries the offending rule's name in its message, so the settings
+  /// screen can show which line was rejected — surfaced as the response data
+  /// rather than a fatal exception, per the project's Dio convention.
+  Future<List<BarcodeRule>> replaceBarcodeRules(
+      int companyId, List<BarcodeRule> rules) async {
+    final response = await _dio.put(
+      '/BarcodeRules/ReplaceAll',
+      queryParameters: {'companyId': companyId},
+      data: {'rules': rules.map((r) => r.toJson()).toList()},
+    );
+
+    final List<dynamic> data = response.data ?? const [];
+    return data
+        .map((json) => BarcodeRule.fromJson(json as Map<String, dynamic>))
+        .toList();
+  }
+
   Future<List<PromotionDto>> getActivePromotions(int companyId) async {
     try {
       final response = await _dio.get(

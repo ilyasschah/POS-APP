@@ -87,7 +87,11 @@ namespace Api.Services
 
                             if (stock != null)
                             {
-                                stock.UpdateDetails(stock.Quantity + item.Quantity, stock.WarehouseId, stock.ProductId);
+                                // The order line is in the product's own unit; stock
+                                // is in its category reference. Voiding 100 g must
+                                // hand back 0.100 kg.
+                                var restored = UnitOfMeasure.ToReference(item.Quantity, item.Product.UomId);
+                                stock.UpdateDetails(stock.Quantity + restored, stock.WarehouseId, stock.ProductId);
                                 _db.Stocks.Update(stock);
                             }
                         }

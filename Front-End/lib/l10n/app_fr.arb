@@ -443,6 +443,9 @@
   "change": "Monnaie",
   "collapseSidebar": "Réduire la barre latérale",
   "companyHeader": "En-tête de la société",
+  "kitchenPrintingSection": "Impression cuisine",
+  "autoKitchenPrintOnCheckout": "Imprimer automatiquement les tickets de cuisine à l'encaissement",
+  "autoKitchenPrintSubtitle": "Ce terminal uniquement. À la finalisation d'une vente, imprime les mêmes tickets de station que le bouton Cuisine.",
   "companyPhoneTel": "Téléphone de la société (Tél)",
   "companyTaxNumber": "Numéro fiscal de la société",
   "customLabels": "Libellés personnalisés",
@@ -681,6 +684,12 @@
   "posButtonsHint": "Choisissez les boutons d'action affichés sur l'écran principal.",
   "couldNotLoadTaxRates": "Impossible de charger les taux de taxe",
   "noTaxRatesDefined": "Aucun taux de taxe défini. Ajoutez-les sous Taux de taxe.",
+  "taxDefaultRequiredTitle": "Choisissez un taux de taxe par défaut",
+  "taxDefaultRequiredBody": "Le prix TTC nécessite un taux de taxe par défaut. Choisissez-en au moins un — il sera appliqué à chaque nouveau produit et verrouillé en caisse.",
+  "taxDefaultRequiredNoRates": "Aucun taux de taxe défini. Créez-en un sous Taux de taxe avant d'activer cette option.",
+  "defaultTaxRateDisabledHint": "Activez le prix TTC ci-dessus pour appliquer un taux de taxe par défaut.",
+  "taxLockedBySetting": "Défini dans Paramètres → Général → Taxe. Non modifiable ici.",
+  "taxLockedShort": "Verrouillé",
   "couldNotLoadWarehouses": "Impossible de charger les entrepôts",
   "defaultWarehouseHint": "Utilisé pour vérifier la disponibilité du stock dans le menu POS.",
   "waitingForScale": "En attente d'un poids de la balance…",
@@ -845,7 +854,7 @@
   "setDefaultDueDays": "Échéance par défaut (jours)",
   "setDefaultMeasurementUnit": "Unité de mesure par défaut",
   "setDefaultScreen": "Écran par défaut",
-  "setDefaultSearch": "Recherche par défaut",
+  "setDefaultSearch": "Mode de recherche par défaut",
   "setDefaultServiceType": "Type de service par défaut",
   "setDefaultTaxRate": "Taux de taxe par défaut",
   "setDefaultWarehouse": "Entrepôt par défaut",
@@ -961,7 +970,7 @@
   "setShowOrderTotalOnPole": "Afficher le total sur un afficheur VFD / LCD série",
   "setShowOrderTypeButtons": "Afficher les boutons de type de commande",
   "setShowProductImages": "Afficher les images produits dans la grille",
-  "setShowSearchOptions": "Afficher les options de recherche",
+  "setShowSearchOptions": "Afficher les boutons de mode de recherche",
   "setShowServiceStatusBadge": "Afficher le badge de statut sur les cartes",
   "setShowSyncNotification": "Afficher la notification de synchronisation",
   "setShowTablesButton": "Afficher le bouton Tables dans le POS",
@@ -1029,6 +1038,7 @@
   "errorLoadingGroups": "Erreur lors du chargement des catégories",
   "allProducts": "Tous les produits",
   "noProductsFound": "Aucun produit trouvé.",
+  "noProductsMatchSearch": "Aucun produit ne correspond à \"{query}\".",
   "productNameRequired": "Nom du produit *",
   "categoryGroup": "Catégorie / Groupe",
   "noneUncategorized": "Aucune (non catégorisé)",
@@ -1036,6 +1046,68 @@
   "plu": "PLU",
   "measurementUnit": "Unité de mesure",
   "measurementUnitHint": "ex. kg, pcs",
+  "sellByWeight": "Vendre au poids",
+  "sellByWeightHint": "Activé, le point de vente demande une quantité au lieu d'ajouter une unité. Sans balance connectée, le bouton « Prix » modifie la quantité.",
+  "uomStockUnit": "unité de stock",
+  "uomCategoryUnit": "Unité",
+  "uomCategoryWeight": "Poids",
+  "uomCategoryVolume": "Volume",
+  "uomCategoryLength": "Longueur",
+  "uomStockHeldIn": "Le stock est compté en {unit}.",
+  "@uomStockHeldIn": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "uomStockConversionNote": "Prix par {unit}. Le stock bouge en {stockUnit} — 1 {unit} = {factor} {stockUnit}.",
+  "@uomStockConversionNote": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      },
+      "factor": {
+        "type": "String"
+      },
+      "stockUnit": {
+        "type": "String"
+      }
+    }
+  },
+  "weighItem": "Peser l’article",
+  "placeOnScale": "Placez l’article sur la balance",
+  "scaleNotConnected": "Aucune balance connectée — saisissez la quantité",
+  "useThisWeight": "Utiliser ce poids",
+  "enterQuantity": "Saisir la quantité",
+  "priceEditsQuantity": "Prix modifie la quantité",
+  "barcodeRules": "Règles de code-barres",
+  "barcodeRulesHint": "Les règles définissent comment un code-barres scanné est lu. Un code-barres correspond à la première règle dont le motif convient, donc l'ordre compte. Un motif peut encoder une valeur telle qu'un poids ou un prix : {NNDD} indique où se trouvent les chiffres, et les positions D sont des décimales. Un produit dont le code-barres encode une valeur doit stocker ces positions à zéro.",
+  "ruleName": "Nom de la règle",
+  "ruleType": "Type",
+  "ruleEncoding": "Encodage",
+  "rulePattern": "Motif du code-barres",
+  "ruleTypeUnit": "Produit à l’unité",
+  "ruleTypeWeighted": "Produit pesé",
+  "ruleTypePriced": "Produit avec prix",
+  "ruleTypeDiscounted": "Produit remisé",
+  "addRuleLine": "Ajouter une ligne",
+  "barcodeRulesSaved": "Règles de code-barres enregistrées",
+  "testBarcode": "Tester un code-barres",
+  "testBarcodeNoMatch": "Aucune règle ne correspond à ce code-barres",
+  "testBarcodeMatched": "Règle {rule} — valeur {value}",
+  "@testBarcodeMatched": {
+    "placeholders": {
+      "rule": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "weightNotAllowedForService": "Un service ne peut pas être vendu au poids.",
+  "scaleReadFailed": "Impossible de lire la balance",
   "ageRestrictionHint": "ex. 18",
   "sellingPriceRequired": "Prix de vente *",
   "purchaseCost": "Coût d'achat",
@@ -1050,6 +1122,36 @@
   "productImage": "Image du produit",
   "productImageHint": "Remplace l'icône par défaut sur la tuile du menu.",
   "removeImage": "Supprimer l'image",
+  "taxInclusiveNotAppliedNote": "Attention : la caisse ajoute encore cette taxe au prix. Le prix TTC est enregistré sur le produit mais pas encore appliqué à l'encaissement.",
+  "pricingTab": "Tarification",
+  "taxBreakdownIncluded": "{price} inclut {tax} de taxe · net {net}",
+  "@taxBreakdownIncluded": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      },
+      "tax": {
+        "type": "String"
+      },
+      "net": {
+        "type": "String"
+      }
+    }
+  },
+  "taxBreakdownAdded": "{price} + {tax} de taxe = {total}",
+  "@taxBreakdownAdded": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      },
+      "tax": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
   "applyTaxes": "Appliquer les taxes",
   "failedToLoadTaxes": "Échec du chargement des taxes",
   "primaryTaxRate": "Taux de taxe principal",
@@ -1095,6 +1197,8 @@
   "addFirstPaymentType": "Ajouter un premier type de paiement",
   "deletePaymentTypeConfirm": "Supprimer le type de paiement « {name} » ?",
   "fieldNameRequired": "Nom *",
+  "codeRequired": "Code *",
+  "taxCodeAlreadyUsed": "Déjà utilisé par une autre taxe",
   "fieldCode": "Code",
   "fieldPosition": "Position",
   "fieldShortcut": "Raccourci",
@@ -1621,7 +1725,7 @@
   "syncNow": "Synchroniser maintenant",
   "syncProductComments": "Commentaires produit",
   "syncProductTaxes": "Taxes produit",
-  "syncSalesOrders": "Commandes de vente",
+  "syncCompletedSales": "Ventes terminées en attente d'envoi",
   "syncShifts": "Services",
   "syncStatusTitle": "État de synchronisation",
   "syncStockCounts": "Inventaires",
@@ -1755,5 +1859,205 @@
   "updatePendingWarning": "{count} élément(s) en attente de synchronisation. Synchronisez d’abord si possible.",
   "updateRestartNotice": "L'application se fermera pour installer la mise à jour.",
   "updateUnsupportedPlatform": "Les mises à jour intégrées sont disponibles uniquement sous Windows.",
-  "updateAvailableSnackbar": "La version {version} est disponible — ouvrez Réglages › À propos pour l’installer."
+  "updateAvailableSnackbar": "La version {version} est disponible — ouvrez Réglages › À propos pour l’installer.",
+  "setDocuments": "Documents",
+  "resetDatabaseTitle": "RÉINITIALISER LA BASE",
+  "resetDatabaseAction": "Réinitialiser la base",
+  "resetWarningBanner": "Opération destructive. Elle supprime les données sélectionnées pour TOUTE votre société — chaque terminal les perdra à sa prochaine synchronisation. Irréversible.",
+  "resetStepBackupTitle": "Chemin de sauvegarde",
+  "resetStepBackupSubtitle": "Emplacement où la sauvegarde sera enregistrée",
+  "resetStepBackupHint": "Une sauvegarde de cet appareil est effectuée avant la réinitialisation. Si elle échoue, la réinitialisation est annulée.",
+  "resetBackupManagedHint": "Stockage géré de l’application (cet appareil)",
+  "resetStepEntitiesTitle": "Sélectionner les entités",
+  "resetStepEntitiesSubtitle": "Les entités sélectionnées seront supprimées de la base",
+  "resetStepConfirmTitle": "Confirmation",
+  "resetStepConfirmSubtitle": "Autoriser et exécuter la réinitialisation",
+  "resetAdminPin": "Saisir le code administrateur",
+  "resetAlsoClearsDocuments": "Efface aussi les Documents — les ventes y font référence.",
+  "resetDocumentsNote": "Ventes, commandes, paiements, annulations et rapports Z. Les réservations sont conservées.",
+  "resetEverything": "Tout",
+  "resetEverythingNote": "Toutes les données. Les utilisateurs et vos paramètres sont conservés.",
+  "resetWrongPin": "Code incorrect.",
+  "resetConfirmTitle": "Réinitialiser la base ?",
+  "resetConfirmBody": "Ceci supprime définitivement les données sélectionnées pour toute la société, sur tous les terminaux. Seule la sauvegarde locale permet de les récupérer.",
+  "resetConfirmAction": "Oui, réinitialiser",
+  "resetNoCompany": "Aucune société sélectionnée sur cet appareil.",
+  "resetPhaseBackup": "Sauvegarde de cet appareil…",
+  "resetPhaseServer": "Effacement des données du compte…",
+  "resetPhaseLocal": "Effacement de cet appareil…",
+  "resetDoneTitle": "Réinitialisation terminée",
+  "resetRestartManually": "Veuillez fermer et rouvrir l’application.",
+  "resetOnlyAdmins": "Seuls les administrateurs peuvent réinitialiser la base.",
+  "resetRestartingIn": "Redémarrage dans {seconds}…",
+  "@resetRestartingIn": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "resetBackupSavedTo": "Sauvegarde enregistrée dans {path}",
+  "@resetBackupSavedTo": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "restoreDatabaseTitle": "Restaurer depuis une sauvegarde",
+  "restoreDatabaseAction": "Restaurer une sauvegarde…",
+  "restoreDatabaseHint": "Remplace tout sur ce terminal par un fichier de sauvegarde. L’application redémarre pour terminer.",
+  "restorePickTitle": "Sélectionner une sauvegarde (.sqlite)",
+  "restoreRejectedTitle": "Ce fichier ne peut pas être restauré",
+  "restoreConfirmTitle": "Restaurer cette sauvegarde ?",
+  "restoreConfirmBody": "Tout ce qui se trouve sur ce terminal sera remplacé par la sauvegarde. Votre base actuelle est conservée sous pos_app.superseded.sqlite au cas où.",
+  "restoreConfirmAction": "Restaurer et redémarrer",
+  "restoreStagedTitle": "Sauvegarde prête",
+  "restoreStagedBody": "L’application va redémarrer pour installer la base. Reconnectez-vous ensuite — le travail de la sauvegarde qui n’a jamais atteint le cloud sera envoyé à la prochaine synchronisation.",
+  "restoreErrMissing": "Le fichier n’existe plus.",
+  "restoreErrNotSqlite": "Ce n’est pas un fichier de base de données.",
+  "restoreErrEncrypted": "Cette sauvegarde est chiffrée pour un autre appareil et ne peut pas être ouverte ici. Restaurez-la sur le terminal qui l’a créée, ou repartez de zéro depuis le cloud.",
+  "restoreErrNotPosBackup": "C’est une base de données, mais pas une sauvegarde POS.",
+  "restoreErrNewerSchema": "Sauvegarde créée par une version plus récente (base v{found}, cette version comprend v{supported}). Mettez d’abord l’application à jour.",
+  "@restoreErrNewerSchema": {
+    "placeholders": {
+      "found": {
+        "type": "int"
+      },
+      "supported": {
+        "type": "int"
+      }
+    }
+  },
+  "dbMissingTitle": "Base de données locale introuvable",
+  "dbMissingBody": "Le fichier de base de ce terminal est manquant — supprimé, déplacé, ou sur un disque non connecté.\n\nRepartir de zéro télécharge vos données du cloud, mais rien de ce qui n’a jamais été synchronisé ne pourra être récupéré ainsi.",
+  "dbMissingRestore": "Restaurer depuis une sauvegarde",
+  "dbMissingFresh": "Repartir de zéro depuis le cloud",
+  "dbMissingFreshConfirm": "Repartir de zéro ? Tout ce qui n’a pas atteint le cloud sera perdu.",
+  "onboardingDataTitle": "Configurer ce terminal",
+  "onboardingDataSubtitle": "Comment ce terminal doit-il obtenir ses données ?",
+  "onboardingCloudTitle": "Synchroniser avec le cloud",
+  "onboardingCloudBody": "Connectez-vous et téléchargez les données. À choisir pour un nouveau terminal.",
+  "onboardingRestoreTitle": "Restaurer une sauvegarde",
+  "onboardingRestoreBody": "Utiliser une sauvegarde .sqlite d’un autre terminal — pour remplacer une machine, y compris le travail non synchronisé.",
+  "balanceDue": "Solde dû",
+  "telLabel": "Tél",
+  "itemsLabel": "Articles",
+  "timeLabel": "Heure",
+  "unitPriceLabel": "Prix unitaire",
+  "taxInvoiceUpper": "FACTURE",
+  "billTo": "Facturé à",
+  "invoicesUpper": "FACTURES",
+  "saveReceiptTitle": "Enregistrer le reçu",
+  "saveGuestCheckTitle": "Enregistrer l’addition",
+  "saveInvoicePdfTitle": "Enregistrer la facture PDF",
+  "zReportUpper": "RAPPORT Z",
+  "endOfReport": "*** FIN DU RAPPORT ***",
+  "totalQty": "Qté totale",
+  "pointsBalance": "Solde de points",
+  "ptsShort": "pts",
+  "invoiceNoLabel": "Facture n°",
+  "pointsUsed": "Points utilisés",
+  "paymentStatus": "Statut du paiement",
+  "pageNumberLabel": "Page {number}",
+  "createdWith": "Créé avec",
+  "backupPathRequiredTitle": "Choisissez un dossier de sauvegarde",
+  "backupPathRequiredBody": "Les sauvegardes automatiques ont besoin d'un dossier. Choisissez-en un maintenant, sinon elles seront écrites dans un emplacement que vous n'avez pas choisi.",
+  "backupPathNotSet": "Les sauvegardes automatiques restent désactivées tant qu'aucun dossier n'est défini.",
+  "posSession": "Session POS",
+  "sessionNoneTitle": "Aucune session ouverte",
+  "sessionNoneBody": "Cette caisse n'est pas encore ouverte. Ouvrez une session pour commencer la journée.",
+  "openRegister": "Ouvrir la caisse",
+  "continueSelling": "Continuer la vente",
+  "sessionNumber": "Session",
+  "sessionDevice": "Appareil",
+  "sessionOpenedAt": "Ouverte à",
+  "sessionOpenedBy": "Ouverte par",
+  "sessionClosedBy": "Fermée par",
+  "sessionStatusLabel": "Statut",
+  "sessionOpeningCash": "Fonds de caisse",
+  "sessionExpectedCash": "Espèces attendues",
+  "sessionCountedCash": "Espèces comptées",
+  "sessionDifference": "Différence",
+  "sessionOrders": "Commandes",
+  "sessionPaymentTotals": "Totaux par paiement",
+  "sessionSyncStatus": "Synchronisation",
+  "sessionSynced": "Tout est synchronisé",
+  "sessionNotSyncedYet": "Pas encore envoyée au cloud",
+  "sessionUnsyncedSales": "{count} vente(s) encore sur cet appareil",
+  "sessionOpenOrders": "{count} commande(s) encore en attente",
+  "sessionCannotClose": "Fermeture impossible",
+  "sessionForceClosed": "Fermée de force",
+  "sessionLateArrivals": "Des ventes tardives sont arrivées après la fermeture — à réconcilier",
+  "sessionCashInferred": "Modes espèces déduits — définissez-les dans Paramètres → Commande et paiement.",
+  "sessionOpeningCashPrompt": "Combien d'espèces au départ ?",
+  "sessionHistory": "Historique des sessions",
+  "sessionNoHistory": "Aucune session.",
+  "sessionConfirmOpening": "Confirmer l'ouverture",
+  "sessionInProgress": "En cours",
+  "sessionClosingControl": "Contrôle de fermeture",
+  "sessionClosedPosted": "Fermée et comptabilisée",
+  "openingControl": "Contrôle d'ouverture",
+  "openingNote": "Note d'ouverture",
+  "openingNoteHint": "Ajouter une note d'ouverture…",
+  "closingRegister": "Fermeture de caisse",
+  "closingNote": "Note de fermeture",
+  "closingNoteHint": "Ajouter une note de fermeture…",
+  "sessionOrdersTotal": "{count} documents : {total}",
+  "sessionExpected": "Attendu",
+  "sessionCounted": "Compté",
+  "sessionOpeningRow": "Ouverture",
+  "sessionCashInOutRow": "Entrée / Sortie",
+  "sessionCashPaymentsRow": "Paiements en espèces",
+  "cashCount": "Comptage des espèces",
+  "dailySale": "Vente du jour",
+  "actionDiscard": "Annuler",
+  "managerAuthRequired": "L'écart de {diff} dépasse la limite de {max}. Une autorisation du responsable est requise.",
+  "managerAuthorise": "Autorisation du responsable",
+  "managerPinPrompt": "Saisissez le code PIN d'un administrateur pour autoriser cet écart.",
+  "managerPinWrong": "Ce code PIN n'est pas celui d'un administrateur.",
+  "sessionRequiredTitle": "Ouvrez d'abord la caisse",
+  "sessionRequiredBody": "Les ventes, remboursements et mouvements de caisse appartiennent à une session. Ouvrez la caisse pour commencer.",
+  "sessionNotTradingBody": "Cette caisse est en cours de fermeture. Terminez le comptage, puis ouvrez une nouvelle session.",
+  "setRequireOpenSession": "Exiger une session ouverte pour vendre",
+  "sessionsTitle": "Sessions",
+  "sessionColId": "ID de session",
+  "sessionColPos": "Point de vente",
+  "sessionColOpenedBy": "Ouverte par",
+  "sessionColOpening": "Date d'ouverture",
+  "sessionColClosing": "Date de fermeture",
+  "sessionColStarting": "Solde initial",
+  "sessionColEnding": "Solde final",
+  "sessionColTheoretical": "Fermeture théorique",
+  "sessionColStatus": "Statut",
+  "sessionSearchHint": "Rechercher…",
+  "sessionCountOf": "{shown} / {total}",
+  "sessionDetails": "Détails de la session",
+  "sessionCurrentOnThisDevice": "Session en cours sur cet appareil",
+  "sessionClosedAt": "Fermée le",
+  "sessionDuration": "Durée",
+  "sessionTotalTaken": "Total encaissé",
+  "sessionCashMovements": "Mouvements de caisse",
+  "sessionNotes": "Notes",
+  "cashDrawer": "Caisse",
+  "sessionRemoteFiguresOffline": "Cette session appartient à une autre caisse — ses encaissements viennent du serveur.",
+  "sessionDocuments": "Documents",
+  "sessionOverviewTab": "Aperçu",
+  "sessionPaymentsTab": "Paiements",
+  "sessionNoPayments": "Aucun paiement encaissé dans cette session.",
+  "sessionOpenDocumentHint": "Touchez un paiement pour ouvrir son document",
+  "sessionDocumentUnavailable": "Ce document n'est pas sur cet appareil.",
+  "developerMode": "Mode développeur",
+  "developerModeHint": "Affiche un bouton de débogage flottant sur ce terminal, avec un simulateur de codes-barres prix et poids.",
+  "generateScaleBarcode": "Étiquette balance",
+  "scaleBarcodeRuleUnusable": "La règle {pattern} ne peut pas générer un code produit.",
+  "barcodeAlreadyUsedBy": "{code} appartient déjà à {product}.",
+  "setPosSession": "Session POS",
+  "setCashMethods": "Modes espèces",
+  "cashMethodsHint": "Les modes de paiement qui sortent du tiroir-caisse et sont comptés physiquement à la clôture. Tout décocher revient à les deviner.",
+  "cashMethodsInferredHint": "Non défini — déduit de « rendu de monnaie autorisé ».",
+  "cashMethodsConfirm": "Utiliser ceux-ci",
+  "noPaymentMethodsDefined": "Aucun mode de paiement défini.",
+  "setMaxCashDifference": "Écart de caisse autorisé",
+  "maxCashDifferenceHint": "Au-delà, la clôture exige le code PIN d’un administrateur."
 }

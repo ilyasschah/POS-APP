@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
+import 'package:pos_app/uom/unit_of_measure.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:gap/gap.dart';
@@ -723,6 +724,12 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
               : const [],
           measurementUnit: item.measurementUnit,
           isService: false,
+          // A reprint REPLAYS banked figures, it does not re-price. The line
+          // above rebuilds the tax as a fixed per-unit amount to be added to
+          // `price`, so this must stay exclusive — inheriting the `true`
+          // default would divide the tax back out of a price that never
+          // contained it and under-report an already-closed sale.
+          isTaxInclusive: false,
         ),
       );
     }
@@ -1498,7 +1505,13 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
         overflow: TextOverflow.ellipsis,
       ),
       'unit': (item) => Text(item.measurementUnit ?? '-', style: ts),
-      'qty': (item) => Text(_numFmt.format(item.quantity), style: ts),
+      // The line carries its unit as text, so the quantity can be shown at
+      // that unit's real precision — 0.002 kg reads 0.002, not 0.00.
+      'qty': (item) => Text(
+        formatQuantityValue(
+            item.quantity, uomFromLegacyText(item.measurementUnit)),
+        style: ts,
+      ),
       'priceBeforeTax': (item) =>
           Text(_numFmt.format(item.priceBeforeTax), style: ts),
       'tax': (item) => Text(

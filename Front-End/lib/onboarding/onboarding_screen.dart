@@ -9,6 +9,7 @@ import 'package:pos_app/onboarding/widgets/layout_slide.dart';
 import 'package:pos_app/onboarding/widgets/onboarding_controls.dart';
 import 'package:pos_app/onboarding/widgets/quick_start_slide.dart';
 import 'package:pos_app/onboarding/widgets/setup_slide.dart';
+import 'package:pos_app/onboarding/widgets/data_source_slide.dart';
 import 'package:pos_app/onboarding/widgets/welcome_slide.dart';
 
 /// First-run flow: welcome → feature tour → theme setup → Get Started.
@@ -38,14 +39,22 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _controller = PageController();
   int _page = 0;
 
-  static const _pages = <Widget>[
-    WelcomeSlide(),
-    FeaturesSlide(),
-    QuickStartSlide(),
-    SetupSlide(),
-    LayoutSlide(),
-    ActivitySlide(),
-  ];
+  /// Built rather than `const`, because the data-source slide needs a callback
+  /// into this state to advance past itself.
+  ///
+  /// It sits second, immediately after the welcome: choosing "restore" makes
+  /// every slide after it moot (the restored database carries its own settings,
+  /// layout and theme) and restarts the app, so asking first is the only
+  /// ordering that does not waste the operator's time.
+  List<Widget> get _pages => [
+        const WelcomeSlide(),
+        DataSourceSlide(onUseCloud: _next),
+        const FeaturesSlide(),
+        const QuickStartSlide(),
+        const SetupSlide(),
+        const LayoutSlide(),
+        const ActivitySlide(),
+      ];
 
   bool get _isLast => _page == _pages.length - 1;
 

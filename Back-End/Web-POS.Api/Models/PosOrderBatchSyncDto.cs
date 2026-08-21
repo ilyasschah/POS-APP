@@ -39,6 +39,11 @@ namespace Api.Models
         /// instead of generating a server-side YY-CCC-NNNNNN number, so the
         /// printed/scanned receipt number never changes after sync.
         public string? ClientDocumentNumber { get; set; }
+
+        /// The POS session's client localId, sent by the device with every
+        /// order. Without this property the field arrived on the wire and was
+        /// silently dropped, which is why sessions banked no takings at all.
+        public string? SessionLocalId { get; set; }
     }
 
     public class BatchSyncPosOrdersResponse

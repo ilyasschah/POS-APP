@@ -42,6 +42,29 @@ class SettingKeys {
   static const dateFormat = 'Application.DateFormat';
   static const taxIncludedByDefault = 'General.TaxIncludedByDefault';
 
+  /// Comma-separated tax-rate IDs auto-applied to a product when it is added to
+  /// the cart without its own tax assignments. Empty = no default tax.
+  ///
+  /// Lives under `General` because it is the companion of
+  /// [taxIncludedByDefault] — the switch is meaningless without it, so the two
+  /// are configured side by side in Settings → General → Tax. It was
+  /// [legacyDefaultTaxRateIds] until 2026-08-15; see that field for the
+  /// migration.
+  static const defaultTaxRateIds = 'General.DefaultTaxRateIds';
+
+  /// Pre-2026-08-15 home of [defaultTaxRateIds], back when the picker sat in
+  /// the Products tab. Never written any more — only read, once, to carry an
+  /// existing configuration over to the new key. Two things perform that
+  /// migration, deliberately:
+  ///   • `AppSettingsNotifier.build()` aliases it at READ time, so a till that
+  ///     is offline (or never syncs again) keeps its default tax immediately;
+  ///   • `SyncManager._migrateRenamedSettingKeys` persists it under the new key
+  ///     on the next AppProperties pull, which is what eventually makes the
+  ///     alias moot.
+  /// The legacy row itself is left in place — harmless, and deleting it would
+  /// make the migration irreversible if we ever need to roll back.
+  static const legacyDefaultTaxRateIds = 'Products.DefaultTaxRateIds';
+
   // Order & Payment
   static const defaultPaymentType = 'Order.DefaultPaymentType';
   static const allowNegativeStock = 'Order.AllowNegativeStock';
@@ -63,10 +86,6 @@ class SettingKeys {
   static const autoUpdateCostPrice = 'Products.AutoUpdateCostPrice';
   static const updateSalePriceOnMarkup = 'Products.UpdateSalePriceOnMarkup';
   static const enableMovingAveragePrice = 'Products.EnableMovingAveragePrice';
-
-  /// Comma-separated tax-rate IDs auto-applied to a product when it is added to
-  /// the cart without its own tax assignments. Empty = no default tax.
-  static const defaultTaxRateIds = 'Products.DefaultTaxRateIds';
 
   // Documents
   static const defaultDocumentType = 'Documents.DefaultDocumentType';
@@ -116,6 +135,21 @@ class SettingKeys {
   static const dbBackupVersion = 'Database.Backup.Version';
   static const dbBackupPath = 'Database.BackupPath';
   static const dbAutoBackup = 'Database.AutoBackup';
+
+  // ── POS session ───────────────────────────────────────────────────────────
+  /// Master switch for "no sale without an open session".
+  ///
+  /// 🚨 This is the recovery path, not a preference. The gate stops a till
+  /// selling, so if session state is ever wrong on a real register the shop
+  /// must have a way back — turning this off in Settings restores trading
+  /// immediately. Without it a bad session row could close a shop for the day.
+  static const requireOpenSession = 'PosSession.RequireOpenSession';
+
+  /// Cash difference a cashier may close through without a manager.
+  static const maxCashDifference = 'PosSession.MaxCashDifference';
+
+  /// Authoritative list of PaymentType ids that come out of the cash drawer.
+  static const cashPaymentTypeIds = 'PosSession.CashPaymentTypeIds';
   static const dbBackupOnStart = 'Database.Backup.OnStart';
   static const dbBackupOnClose = 'Database.Backup.OnClose';
   static const dbBackupIntervalHours = 'Database.Backup.IntervalHours';
@@ -185,6 +219,10 @@ class SettingKeys {
   static const cashDrawerCommand = 'Print.CashDrawer.Command';
   static const printBarcode = 'Print.Branding.PrintBarcode';
   static const printLogoFullWidth = 'Print.Branding.LogoFullWidth';
+  // When true, completing a sale also fires the station kitchen tickets (the same
+  // routing the menu Kitchen button uses). DEVICE-SCOPED — stored in local
+  // SharedPreferences per terminal, never cloud-synced (see device_scoped_settings).
+  static const autoKitchenPrintOnCheckout = 'Print.AutoKitchenOnCheckout';
 
   // ── Receipt Toggles ──────────────────────────────────────────────────────
   static const receiptPrintTaxTotals = 'Receipt.PrintTaxTotals';
@@ -247,6 +285,7 @@ class SettingKeys {
   static const invoiceGlobalHeader = 'Invoice.GlobalHeader';
   static const invoiceGlobalFooter = 'Invoice.GlobalFooter';
   static const invoiceFontFamily = 'Invoice.FontFamily';
+  static const invoiceRightToLeft = 'Invoice.RightToLeft';
   static const invoiceShowPaymentMethods = 'Invoice.ShowPaymentMethods';
   static const invoiceShowOutstandingBalance = 'Invoice.ShowOutstandingBalance';
 
@@ -379,6 +418,20 @@ class SettingKeys {
   static const loyaltyPointValue = 'Loyalty.PointValue';
 }
 
+/// Parses the comma-separated [SettingKeys.defaultTaxRateIds] payload into
+/// concrete tax-rate IDs.
+///
+/// Lives here rather than in any one consumer because four places must agree
+/// on what "a default tax is configured" means: the Settings picker, the gate
+/// on the tax-inclusive switch, the product editor's pre-fill, and the cart's
+/// auto-apply. Tolerant of blanks and junk — a malformed entry is skipped, not
+/// thrown on, so a hand-edited property row can never brick the till.
+Set<int> parseDefaultTaxRateIds(String? raw) => (raw ?? '')
+    .split(',')
+    .map((e) => int.tryParse(e.trim()))
+    .whereType<int>()
+    .toSet();
+
 const Map<String, String> kSettingDefaults = {
   SettingKeys.currencySymbol: '\$',
   SettingKeys.language: 'en',
@@ -388,6 +441,7 @@ const Map<String, String> kSettingDefaults = {
   SettingKeys.timezoneMode: 'Auto',
   SettingKeys.dateFormat: 'dd-MM-yyyy',
   SettingKeys.taxIncludedByDefault: 'true',
+  SettingKeys.defaultTaxRateIds: '',
   SettingKeys.defaultPaymentType: 'Cash',
   SettingKeys.allowNegativeStock: 'false',
   SettingKeys.allowPriceChange: 'true',
@@ -405,7 +459,6 @@ const Map<String, String> kSettingDefaults = {
   SettingKeys.autoUpdateCostPrice: 'true',
   SettingKeys.updateSalePriceOnMarkup: 'false',
   SettingKeys.enableMovingAveragePrice: 'false',
-  SettingKeys.defaultTaxRateIds: '',
   SettingKeys.defaultDocumentType: 'Sales',
   SettingKeys.invoicePrefix: 'INV',
   SettingKeys.autoGenerateNumber: 'true',
@@ -439,6 +492,9 @@ const Map<String, String> kSettingDefaults = {
   SettingKeys.dbBackupVersion: 'v2',
   SettingKeys.dbBackupPath: '',
   SettingKeys.dbAutoBackup: 'false',
+  SettingKeys.requireOpenSession: 'true',
+  SettingKeys.maxCashDifference: '10',
+  SettingKeys.cashPaymentTypeIds: '',
   SettingKeys.dbBackupOnStart: 'false',
   SettingKeys.dbBackupOnClose: 'false',
   SettingKeys.dbBackupIntervalHours: '0',
@@ -494,6 +550,7 @@ const Map<String, String> kSettingDefaults = {
   SettingKeys.cashDrawerCommand: r'\x1B\x70\x00\x19\xFA',
   SettingKeys.printBarcode: 'false',
   SettingKeys.printLogoFullWidth: 'false',
+  SettingKeys.autoKitchenPrintOnCheckout: 'false',
 
   // Receipt Toggles
   SettingKeys.receiptPrintTaxTotals: 'true',
@@ -546,6 +603,7 @@ const Map<String, String> kSettingDefaults = {
   // Invoice / Templates
   SettingKeys.invoiceTitle: 'TAX INVOICE',
   SettingKeys.invoicePrintA5: 'false',
+  SettingKeys.invoiceRightToLeft: 'false',
   SettingKeys.invoiceColumnTax: 'true',
   SettingKeys.invoiceColumnDiscount: 'false',
   SettingKeys.invoiceGlobalHeader: '',

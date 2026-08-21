@@ -7,7 +7,11 @@ import 'package:printing/printing.dart';
 import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/company/company_model.dart';
 import 'package:pos_app/document/document_model.dart';
+import 'package:pos_app/l10n/app_locale.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:pos_app/printer/pdf_file_name.dart';
+import 'package:pos_app/printer/printed_text.dart';
+import 'package:pos_app/printer/receipt_printer_service.dart';
 import 'package:pos_app/printer/pdf_save_service.dart';
 import 'package:pos_app/cart/discount_display.dart';
 
@@ -105,9 +109,13 @@ class InvoicePdfService {
     await savePdfAs(
       bytes: bytes,
       suggestedName: documentPdfName(invoiceNumber),
-      dialogTitle: 'Save Invoice PDF',
+      dialogTitle: _l10n(settings).saveInvoicePdfTitle,
     );
   }
+
+  /// Strings for the generated PDF, in the company's selected language.
+  static AppLocalizations _l10n(Map<String, String> s) =>
+      lookupAppLocalizations(resolveAppLocale(s[SettingKeys.language]));
 
   // ── PDF generation ──────────────────────────────────────────────────────────
 
@@ -133,8 +141,27 @@ class InvoicePdfService {
     // Read defensively: an empty map (a caller that passes nothing) falls back to
     // the same kSettingDefaults the AppSettingsNotifier merges in-memory, so the
     // rendered invoice matches what the settings screen shows.
-    final titleRaw = (settings[SettingKeys.invoiceTitle] ?? '').trim();
-    final title = titleRaw.isEmpty ? 'TAX INVOICE' : titleRaw;
+    // Strings follow the company's selected language. Resolved from the same
+    // settings map the caller already passes — see ReceiptPrinterService._l10n.
+    final l = lookupAppLocalizations(
+        resolveAppLocale(settings[SettingKeys.language]));
+    // Same rule as the receipt labels: `Invoice.Title` is SEEDED with the
+    // English 'TAX INVOICE', so "use the stored value unless empty" would have
+    // left every invoice headed in English forever. A title still equal to the
+    // shipped default follows the app language; one the operator typed is
+    // theirs verbatim. See `resolveReceiptLabel`.
+    final title = resolveReceiptLabel(
+      stored: settings[SettingKeys.invoiceTitle],
+      shippedDefault: kSettingDefaults[SettingKeys.invoiceTitle],
+      localized: l.taxInvoiceUpper,
+      useCustomLabels: true,
+    );
+    // Mirrors the whole document. Opt-in per company (`Invoice.RightToLeft`,
+    // Printer Settings → Invoice), never implied by the language — same rule the
+    // receipt follows and the same decision the user took in item 7.
+    final rtl =
+        (settings[SettingKeys.invoiceRightToLeft] ?? 'false').trim().toLowerCase() ==
+            'true';
     final printA5 =
         (settings[SettingKeys.invoicePrintA5] ?? 'false').trim().toLowerCase() ==
             'true';
@@ -230,7 +257,7 @@ class InvoicePdfService {
     // Item table columns — the Tax and Discount columns are toggleable, so build
     // the column set first, then derive the widths, header and body rows from it
     // (dropping a column has to re-index every row, hence the shared model).
-    final columns = <_InvColumn>[
+    final baseColumns = <_InvColumn>[
       _InvColumn(
         '#',
         const pw.FixedColumnWidth(26),
@@ -238,13 +265,13 @@ class InvoicePdfService {
         (item, idx) => '${idx + 1}',
       ),
       _InvColumn(
-        'Item',
+        l.itemTab,
         const pw.FlexColumnWidth(3.5),
         pw.Alignment.centerLeft,
         (item, idx) => item.productName ?? '-',
       ),
       _InvColumn(
-        'Quantity',
+        l.fieldQuantity,
         const pw.FixedColumnWidth(58),
         pw.Alignment.centerRight,
         (item, idx) =>
@@ -254,14 +281,14 @@ class InvoicePdfService {
                 : _numFmt.format(item.quantity),
       ),
       _InvColumn(
-        'Unit price',
+        l.unitPriceLabel,
         const pw.FixedColumnWidth(62),
         pw.Alignment.centerRight,
         (item, idx) => _numFmt.format(item.price),
       ),
       if (showTaxColumn)
         _InvColumn(
-          'Tax',
+          l.fieldTax,
           const pw.FixedColumnWidth(50),
           pw.Alignment.centerRight,
           // The line's own rate. Deriving it from (price - priceBeforeTax) read
@@ -273,7 +300,7 @@ class InvoicePdfService {
         ),
       if (showDiscountColumn)
         _InvColumn(
-          'Discount',
+          l.discountLabel,
           const pw.FixedColumnWidth(55),
           pw.Alignment.centerRight,
           // Type-aware: 0 = percent, 1 = fixed money. This printed a "%" sign on
@@ -285,7 +312,7 @@ class InvoicePdfService {
                   : _numFmt.format(item.discount * item.quantity),
         ),
       _InvColumn(
-        'Total',
+        l.totalLabel,
         const pw.FixedColumnWidth(65),
         pw.Alignment.centerRight,
         // Tax-inclusive, so the column reconciles with the invoice Total.
@@ -294,6 +321,15 @@ class InvoicePdfService {
         (item, idx) => _numFmt.format(item.totalWithTax),
       ),
     ];
+    // 🚨 `pw.Table` does NOT mirror with the page's text direction — the column
+    // ORDER is positional. Without this an RTL invoice kept '#' on the far left
+    // and the total on the far right, reading backwards against everything
+    // around it. Reversing the list flips the header, every row and the width
+    // map together, because all three are derived from it; each column's
+    // alignment is mirrored with it so figures still hug the outer edge.
+    final columns = rtl
+        ? [for (final c in baseColumns.reversed) c.mirrored]
+        : baseColumns;
     final columnWidths = {
       for (var i = 0; i < columns.length; i++) i: columns[i].width,
     };
@@ -302,6 +338,10 @@ class InvoicePdfService {
 
     pdf.addPage(
       pw.MultiPage(
+        // 🚨 Mirrors LAYOUT only — rows, alignment, the table's column order.
+        // Each text run still picks its own direction for shaping/bidi, so a
+        // Latin address inside an RTL invoice keeps reading left to right.
+        textDirection: rtl ? pw.TextDirection.rtl : pw.TextDirection.ltr,
         pageFormat: printA5 ? PdfPageFormat.a5 : PdfPageFormat.a4,
         margin: const pw.EdgeInsets.symmetric(horizontal: 36, vertical: 36),
         footer: (ctx) => pw.Padding(
@@ -309,13 +349,16 @@ class InvoicePdfService {
           child: pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
-              pw.Text(
-                'Created with ${company.name}'
+              // Two runs: the company name and email are Latin and must not be
+              // pulled into the label's RTL run. See printedPair.
+              printedPair(
+                l.createdWith,
+                '${company.name}'
                 '${company.email != null ? ' - ${company.email}' : ''}',
                 style: ts(7, color: _kTextMuted),
               ),
-              pw.Text(
-                'Page ${ctx.pageNumber}',
+              printedText(
+                l.pageNumberLabel('${ctx.pageNumber}'),
                 style: ts(7, color: _kTextMuted),
               ),
             ],
@@ -324,7 +367,7 @@ class InvoicePdfService {
         build: (ctx) => [
           // ── GLOBAL HEADER (user-defined banner, e.g. letterhead note) ─────────
           if (globalHeader.isNotEmpty) ...[
-            pw.Text(globalHeader, style: ts(9, color: _kTextMuted)),
+            printedText(globalHeader, style: ts(9, color: _kTextMuted)),
             pw.SizedBox(height: 10),
           ],
 
@@ -337,18 +380,18 @@ class InvoicePdfService {
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    pw.Text(title, style: ts(22, bold: true)),
+                    printedText(title, style: ts(22, bold: true)),
                     pw.SizedBox(height: 8),
-                    pw.Text(company.name, style: ts(12, bold: true)),
+                    printedText(company.name, style: ts(12, bold: true)),
                     if (_companyAddress(company).isNotEmpty)
-                      pw.Text(
+                      printedText(
                         _companyAddress(company),
                         style: ts(9, color: _kTextMuted),
                       ),
                     if (company.email != null)
-                      pw.Text(company.email!, style: ts(9, color: _kTextMuted)),
+                      printedText(company.email!, style: ts(9, color: _kTextMuted)),
                     if (company.phoneNumber != null)
-                      pw.Text(
+                      printedText(
                         company.phoneNumber!,
                         style: ts(9, color: _kTextMuted),
                       ),
@@ -356,8 +399,9 @@ class InvoicePdfService {
                       pw.SizedBox(height: 4),
                       pw.Row(
                         children: [
-                          pw.Text('Tax No.:  ', style: ts(9, bold: true)),
-                          pw.Text(company.taxNumber!, style: ts(9)),
+                          printedText('${l.setTaxNo}:', style: ts(9, bold: true)),
+                          pw.SizedBox(width: 6),
+                          printedText(company.taxNumber!, style: ts(9)),
                         ],
                       ),
                     ],
@@ -387,12 +431,12 @@ class InvoicePdfService {
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    pw.Text(
-                      'Bill to',
+                    printedText(
+                      l.billTo,
                       style: ts(10, bold: true, color: _kOrange),
                     ),
                     pw.SizedBox(height: 4),
-                    pw.Text(customerName ?? 'Unknown', style: ts(11)),
+                    printedText(customerName ?? l.unknownLabel, style: ts(11)),
                   ],
                 ),
               ),
@@ -401,9 +445,9 @@ class InvoicePdfService {
               pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  _metaRow('Invoice No.:', invoiceNumber, ts: ts),
-                  _metaRow('Date:', fmtDate(date), ts: ts),
-                  _metaRow('Due date:', fmtDate(date), ts: ts),
+                  _metaRow('${l.invoiceNoLabel}:', invoiceNumber, ts: ts),
+                  _metaRow('${l.dateLabel}:', fmtDate(date), ts: ts),
+                  _metaRow('${l.dueDate}:', fmtDate(date), ts: ts),
                   // Payment status row
                   pw.Padding(
                     padding: const pw.EdgeInsets.only(bottom: 3),
@@ -411,13 +455,13 @@ class InvoicePdfService {
                       children: [
                         pw.SizedBox(
                           width: 95,
-                          child: pw.Text(
-                            'Payment status:',
+                          child: printedText(
+                            '${l.paymentStatus}:',
                             style: ts(10, color: _kOrange),
                           ),
                         ),
-                        pw.Text(
-                          isPaid ? 'Paid' : 'Unpaid',
+                        printedText(
+                          isPaid ? l.paid : l.unpaid,
                           style: ts(
                             10,
                             bold: true,
@@ -493,12 +537,12 @@ class InvoicePdfService {
                   // subtotal + tax == total on both discountApplyRule settings.
                   if (showTaxColumn) ...[
                     _summaryRow(
-                      'Subtotal',
+                      l.subtotal,
                       '$currencySymbol${_numFmt.format(totalBeforeTax)}',
                       ts: ts,
                     ),
                     _summaryRow(
-                      'Tax',
+                      l.fieldTax,
                       '$currencySymbol${_numFmt.format(taxTotal)}',
                       ts: ts,
                     ),
@@ -519,8 +563,8 @@ class InvoicePdfService {
                     child: pw.Row(
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       children: [
-                        pw.Text('Total', style: ts(11, bold: true)),
-                        pw.Text(
+                        printedText(l.totalLabel, style: ts(11, bold: true)),
+                        printedText(
                           '$currencySymbol${_numFmt.format(total)}',
                           style: ts(11, bold: true),
                         ),
@@ -532,7 +576,7 @@ class InvoicePdfService {
                   if (showPaymentMethods &&
                       paymentSummary != null &&
                       paymentSummary.isNotEmpty) ...[
-                    pw.Text('Payment method:', style: ts(9, bold: true)),
+                    printedText('${l.paymentMethod}:', style: ts(9, bold: true)),
                     pw.SizedBox(height: 3),
                     _summaryRow(
                       paymentSummary,
@@ -541,14 +585,14 @@ class InvoicePdfService {
                     ),
                   ],
                   _summaryRow(
-                    'Paid amount:',
+                    '${l.paidAmount}:',
                     '$currencySymbol${_numFmt.format(paidAmount)}',
                     ts: ts,
                     bold: true,
                   ),
                   if (showOutstanding)
                     _summaryRow(
-                      'Amount due:',
+                      '${l.amountDue}:',
                       '$currencySymbol${_numFmt.format(amountDue)}',
                       ts: ts,
                       bold: true,
@@ -563,7 +607,7 @@ class InvoicePdfService {
             pw.SizedBox(height: 18),
             pw.Divider(color: _kBorder, thickness: 0.5),
             pw.SizedBox(height: 6),
-            pw.Text(globalFooter, style: ts(9, color: _kTextMuted)),
+            printedText(globalFooter, style: ts(9, color: _kTextMuted)),
           ],
         ],
       ),
@@ -593,9 +637,12 @@ class InvoicePdfService {
       children: [
         pw.SizedBox(
           width: 95,
-          child: pw.Text(label, style: ts(10, color: _kOrange)),
+          child: printedText(label, style: ts(10, color: _kOrange)),
         ),
-        pw.Text(value, style: ts(10)),
+        // An Arabic label draws right-aligned inside its fixed box, so without
+        // this it ends flush against the value with no gap at all.
+        pw.SizedBox(width: 6),
+        printedText(value, style: ts(10)),
       ],
     ),
   );
@@ -608,7 +655,7 @@ class InvoicePdfService {
   }) => pw.Container(
     padding: const pw.EdgeInsets.symmetric(horizontal: 5, vertical: 5),
     alignment: align,
-    child: pw.Text(
+    child: printedText(
       text,
       style: ts(9, bold: header),
       overflow: pw.TextOverflow.clip,
@@ -625,8 +672,8 @@ class InvoicePdfService {
     child: pw.Row(
       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
       children: [
-        pw.Text(label, style: ts(9, bold: bold)),
-        pw.Text(value, style: ts(9, bold: bold)),
+        printedText(label, style: ts(9, bold: bold)),
+        printedText(value, style: ts(9, bold: bold)),
       ],
     ),
   );
@@ -642,4 +689,18 @@ class _InvColumn {
   final String Function(DocumentItem item, int idx) value;
 
   const _InvColumn(this.header, this.width, this.align, this.value);
+
+  /// The same column laid out for a right-to-left page: left-aligned content
+  /// becomes right-aligned and vice versa, so a figure keeps hugging the edge
+  /// it belongs to. Centre stays centred.
+  _InvColumn get mirrored => _InvColumn(
+        header,
+        width,
+        align == pw.Alignment.centerLeft
+            ? pw.Alignment.centerRight
+            : align == pw.Alignment.centerRight
+                ? pw.Alignment.centerLeft
+                : align,
+        value,
+      );
 }

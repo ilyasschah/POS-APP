@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:pos_app/barcode/barcode_debug_widget.dart';
+import 'package:pos_app/barcode/global_scan_listener.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
@@ -25,9 +27,13 @@ import 'package:pos_app/auth/login_screen.dart';
 import 'package:pos_app/auth/master_login_screen.dart';
 import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/sync/account_status_provider.dart';
+import 'package:pos_app/license/license_watcher.dart';
+import 'package:pos_app/license/license_service.dart';
+import 'package:pos_app/license/subscription_blocked_screen.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
 import 'package:pos_app/database/backup_scheduler.dart';
 import 'package:pos_app/cash/cash_movement_screen.dart';
+import 'package:pos_app/session/session_list_screen.dart';
 import 'package:pos_app/time_clock/time_clock_screen.dart';
 import 'package:pos_app/reports/sales_history_screen.dart';
 import 'package:pos_app/credit/credit_payment_screen.dart';
@@ -267,6 +273,22 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
       );
     });
 
+    // Runtime subscription guard: block a RUNNING terminal the moment its lease
+    // turns expired/tampered — the provider paused it, its validUntil passed
+    // while the app stayed open, or (offline) the anti-rollback clock reached it.
+    // Enforcement used to be boot-only; this watcher (license_watcher.dart) closes
+    // that gap. The block screen's own RETRY drives recovery once it's resolved.
+    ref.listen<LicenseEvaluation?>(licenseWatcherProvider, (prev, next) {
+      if (next == null || !next.blocked) return;
+      if (!context.mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => SubscriptionBlockedScreen(evaluation: next),
+        ),
+        (_) => false,
+      );
+    });
+
     // Revoked-terminal guard: an admin removed this device from the account
     // (User info → Active devices). Sign out and return to master login so the
     // operator can re-enrol it — a fresh master login clears the revoke.
@@ -472,6 +494,14 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
                       ),
                     ),
                     NavItem(
+                      icon: Icons.point_of_sale_outlined,
+                      label: AppLocalizations.of(context).posSession,
+                      onTap: () {
+                        _closeSidebar();
+                        SessionListScreen.show(context);
+                      },
+                    ),
+                    NavItem(
                       icon: Icons.download,
                       label: AppLocalizations.of(context).cashInOut,
                       onTap: () => ref.read(securityGuardProvider).guard(
@@ -627,7 +657,20 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
       drawer: Drawer(backgroundColor: context.navSidebarBg, child: sidebar),
       // The body is just the content — no permanent rail, no edge toggle.
       // Cached, instant tab switching (LazyIndexedStack keeps state).
-      body: LazyIndexedStack(index: renderIndex, children: screens),
+      //
+      // The debug button rides on top of every screen rather than living in
+      // one: developer mode is a property of the terminal, and a tool you have
+      // to navigate to is a tool you cannot use to diagnose the screen you are
+      // already on. It renders nothing at all while developer mode is off.
+      body: Stack(
+        children: [
+          LazyIndexedStack(index: renderIndex, children: screens),
+          // Wedge scans, wherever the operator happens to be. Renders nothing;
+          // it only watches the keyboard.
+          const GlobalScanListener(),
+          const Positioned.fill(child: BarcodeDebugOverlay()),
+        ],
+      ),
     );
   }
 }

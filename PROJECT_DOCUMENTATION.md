@@ -4,7 +4,24 @@
 > This file consolidates what were previously six separate documents. For active, harness-loaded
 > engineering rules see `CLAUDE.md` (kept separate on purpose — it is auto-loaded each session).
 >
-> **Last consolidated:** 2026-07-04 · **Last updated:** 2026-07-13
+> **Last consolidated:** 2026-07-04 · **Last updated:** 2026-08-20
+>
+> **2026-08-20 update:** The **POS Session system** landed (2026-08-17) — the largest architectural addition since the offline pivot, documented in full at **§4.7**. Plus five backlog items; per-item detail lives in `handoff.md` (the numbered backlog). Architecturally notable:
+> **(1) §4.7 POS Sessions — Device → Session → Orders/Payments/Cash**, Odoo-19 as the reference. `Shift` was **extended, not replaced**, so attendance shifts (status 0/1) and POS sessions (status **10–13**) share one table and *every* reader must discriminate on `PosDeviceId`/`posDeviceUid`. New `PosDevice`, `PosSessionPaymentCount`, `ZReportCorrection`; `SessionId` on `PosOrder`/`Document`/`Payment`/`StartingCash`/`ZReport`; Drift **v57 → v60**. Two additive EF migrations (`AddPosSession`, `AddZReportSessionAndOpeningNote`), both applied.
+> **(2) It fixed a live money bug.** `ZReportService` bounded its reporting period as a **document-id range filtered by company only** — with two devices selling concurrently, device B's documents fall inside device A's range and the second Z-report consumes a range already reported. The boundary is now `WHERE SessionId = @id`; cash movements moved off their equivalent company-wide `ZReportNumber == null` filter with it. This closes the "verify the Z-report engine" risk noted in §5 for the multi-device case, though the engine itself still wants a real-data check.
+> **(3) The selling gates FAIL OPEN by design.** "No sale without an open session" blocks only on a positive *"there is no open session on this register"*; an unresolved device id, unloaded company or Drift error all resolve to `unknown` → sell. `PosSession.RequireOpenSession` (Settings → Sync) is the operator-level off switch. See §4.7 for why.
+> **(4) Printed documents are now localized** (fr/ar) — receipt, addition/guest check, kitchen ticket, Z-report and invoice PDF, resolved **BuildContext-free** from the settings map. The Arabic work exposed four separate `pdf`-package traps (shaping only happens on an `rtl` run; presentation forms resolve only when the Arabic face is the style **base**, not a `fontFallback`; `TextStyle.copyWith(font:)` is silently discarded because `font` is a getter over four weight slots; a mixed `'label: value'` string reverses the Latin half) — all captured in §4.3 and `lib/printer/printed_text.dart`. **The reports module (≈36 `_build*Pdf` in `reports_screen.dart`) is still English-only** and is tracked as backlog 35.
+> **(5) Product search is one shared implementation** (`lib/product/product_search.dart` + `product_search_bar.dart`), used by both the POS menu and the Products screen, and it now matches **alternate barcodes** — a product's barcodes live in *two* stores (`products.barcode` and the `barcodes` table the editor's Barcodes tab writes to) and the POS only ever read the first.
+> **(6) A paid offline sale can no longer be stranded.** If a checkout's `pos_orders` carrier row goes missing the sale was permanently unsyncable; `SyncManager.repairStrandedCheckouts` now rebuilds the carrier from the document before every order push, unrecoverable ones park at `failed`, delete paths refuse an unbanked carrier, and the Sync Status line splits "Completed sales awaiting upload" from "Open orders".
+>
+> **2026-08-15 update:** Commercialization + printer polish (full details in `handoff.md`, "Session 2026-08-15" block and the ⭐ NUMBERED BACKLOG). Architecturally notable:
+> **(1) Subscription enforcement is now runtime, not boot-only.** `lib/license/license_watcher.dart` re-evaluates the offline lease on a 2-min timer while the POS is open and routes a *running* terminal to `SubscriptionBlockedScreen` the moment it turns blocked (mirrors the deleted-account guard). Offline expiry + the anti-rollback clock (`AuthStorage.trustedNow` = max(device clock, highest server time seen)) still hold, so winding the clock back can't un-expire a lease.
+> **(2) Admin → Subscriptions page** (`Pages/Admin/Subscriptions/`) — pause/resume billing, adjust seats/days, **without deleting company data**. "Stop" sets `Subscription.BillingStatus` to a stopped state; `LeaseService` then issues an already-expired lease (fully reversible). Admin portal also got a **top-nav redesign** (sidebar removed) — nav trimmed to what exists (Companies, Subscriptions).
+> **(3) Seat cap is enforced at master login** (`LoginQuery`): a new device over the paid allowance (or an admin-blocked one) is refused, fail-OPEN only on a control-plane error. Seat is released on every device sign-out. A **deleted company** kicks the terminal to master login (boot + sync); an **empty/wiped local DB** now self-recovers on the login picker.
+> **(4) `Print.AutoKitchenOnCheckout`** (device-scoped, local SharedPreferences) auto-fires the station kitchen tickets at checkout via `PrinterRoutingService.printStationTicketsForCart`.
+> **(5) Receipt company header** (tax/address/phone) is now toggle-gated and the **footer is no longer hardcoded** ("thank you" default removed) — configured in Printer Settings → Customize receipt.
+> **(6) The legacy `PosPrinterSelection` subsystem is GONE** — not just the model (§4.3 already noted that) but the physical tables too, dropped on **SQL Server** (EF migration `DropPosPrinterSelectionTables`) and **SQLite** (Drift v50). `PosPrinterSettings` (no "Selection") is unrelated and kept.
+> **(7) Product groups** are fully offline-first now: reassigning a product's group, unassigning it, and **group deletions all cross devices** (`applyGroupMembershipLocally` + `retireDeletedProductGroups`, reconcile on manual sync). Item-discount **input form ("10%") also crosses tills**.
 >
 > **2026-07-13 update:** UI/UX pass + two data-integrity fixes — see `handoff.md` (2026-07-13 block) for the full list. Reusable pieces worth knowing: a **unified date/time picker** at `Front-End/lib/core/app_date_picker.dart` — use `showAppDateRangePicker` / `showAppDatePicker` for **date-only** and `showAppDateTimePicker` for **date+time**; **never** call raw `showDatePicker` / `showDateRangePicker` in new UI. **Credit payments** is now offline-first (reads Drift, not the backend). Document **paid-status now recomputes** to Partial/Paid via `AppDatabase.recomputePaidStatus` after any payment change. A **percentage item discount** is preserved end-to-end as `(discountType 0, the % value)` — checkout stores it and `BatchSyncPosOrdersCommand` computes line totals type-aware (`0 → price*disc/100`); **restart the API** after deploying that change. **Dev tooling:** a project `.mcp.json` now wires MCP servers into Claude Code — `pos-sqlite` (local Drift DB), `pos-mssql` (backend SQL Server), `context7` (live library docs), `dart` (Flutter/Dart tooling), `github` — secrets via `${ENV_VAR}`; see `handoff.md` §8 for activation.
 >
@@ -321,6 +338,12 @@ Request → Controller (validation, [FromQuery]/[FromBody])
 | `PaymentType` | Configured payment methods |
 | `CashMovement` | Cash-in / cash-out records for business day |
 | `Promotion` | Promotional pricing rules |
+| `Shift` | 🚨 **TWO concepts in one table** — attendance shifts (`Status` 0/1) *and* POS sessions (`Status` 10–13). Discriminate on `PosDeviceId`. See §4.7 |
+| `PosDevice` | Company-DB projection of the device GUID — one row per register. Unique on `(CompanyId, DeviceUid)` |
+| `PosSessionPaymentCount` | Per-payment-method counted figure recorded when a session closes |
+| `ZReport` | Z-report header. Carries `SessionId`, `PosDeviceId` and a per-device `DisplayNumber` (`POS1/00085`) |
+| `ZReportCorrection` | Correction issued when a sale arrives after its session was already reported |
+| `Barcode` | Alternate barcodes per product — **separate from `Product.Barcode`**; both must be searched (§4.8) |
 
 ### Critical SQL Gotchas
 
@@ -333,6 +356,12 @@ This trigger on the `Document` table validates warehouse/company consistency. It
 
 **`Warehouse` has no join table with `Company`:**  
 `Warehouse.CompanyId` is a direct FK. There is no `WarehouseCompany` table. Never create one.
+
+**`Shift.Status` is a shared, split namespace:**
+`0–1` are attendance shifts; `10–13` are POS sessions. A bare `WHERE Status = 1` written before 2026-08-17 means "closed attendance shift" and must never be widened. Always add `PosDeviceId IS NULL` / `IS NOT NULL` to say which concept you mean.
+
+**Z-report periods are bounded by `SessionId`, never by a document-id range:**
+The old `d.Id >= @from AND d.Id <= @to` filtered by company only, so on a two-device shop the second report consumed a range already reported. Do not reintroduce an id-range boundary.
 
 ### EF Core Patterns Used
 - **Correlated subqueries** for AssignedUserId on floor plan tables (gets the user currently occupying a table via the latest open `PosOrder`)
@@ -395,13 +424,63 @@ Receipt.RightToLeft     Kitchen.RightToLeft
 
 ⚠️ **Never reintroduce `PdfGoogleFonts`.** It downloads the face over the network on first use — on an offline-first POS that means the first print after a fresh install can fail to render at all. All 76 call sites were removed.
 
-⚠️ **Arabic fails invisibly without a fallback.** No Latin face carries Arabic glyphs (PDF standard-14 are Latin-1; Noto Sans is the Latin subset), and `{Role}.RightToLeft` already flips the *layout* — so an Arabic ticket prints perfectly shaped with every word rendered as an empty box. Noto Naskh Arabic is attached as **`fontFallback`**, not the base font, so the operator's chosen face still drives Latin text and a mixed-script receipt needs no language detection. For `MultiPage` report/stock PDFs the fallback must go on **`pw.ThemeData.withFont(fontFallback: …)`** — a per-`TextStyle` `font:` sets only the base face. Pinned by `test/receipt_arabic_font_test.dart`, which reproduces the bug by measuring that a no-fallback render embeds nothing.
+⚠️ **Arabic fails invisibly without a fallback.** No Latin face carries Arabic glyphs (PDF standard-14 are Latin-1; Noto Sans is the Latin subset), and `{Role}.RightToLeft` already flips the *layout* — so an Arabic ticket prints perfectly shaped with every word rendered as an empty box. Noto Naskh Arabic is attached as **`fontFallback`**, so the operator's chosen face still drives Latin text and a mixed-script receipt needs no language detection. ⚠️ **The fallback alone is necessary but not sufficient** — a run that actually contains Arabic must additionally have that face promoted to the style *base*, or shaping produces garbage glyphs; see "Four `pdf`-package traps" below. For `MultiPage` report/stock PDFs the fallback must go on **`pw.ThemeData.withFont(fontFallback: …)`** — a per-`TextStyle` `font:` sets only the base face. Pinned by `test/receipt_arabic_font_test.dart`, which reproduces the bug by measuring that a no-fallback render embeds nothing.
 
 **Dual currency:** when `DualCurrency.Enabled` is true the receipt prints `≈ <amount> <DualCurrency.Symbol>` under the totals, using `DualCurrency.ExchangeRate` — the same three keys the cart totals panel reads, so screen and paper agree. It converts **`owedAmount`** (loyalty points already deducted), not `grandTotal`, so the conversion matches what is actually collected.
 
 **Dispatch:** `Printing.listPrinters()` finds the named Windows printer. Falls back to system default if not found. Loops `copies` times calling `Printing.directPrintPdf(...)`.
 
 **All print calls are fire-and-forget:** `.catchError((_) {})` swallows print failures so a dead printer never crashes a checkout.
+
+#### Localized printed documents (added 2026-08-16)
+
+Every customer-facing document the POS produces — **receipt, addition/guest check, kitchen ticket, Z-report,
+invoice PDF** — follows `Application.Language`. (The back-office **reports module** is still English-only;
+tracked as backlog 35.)
+
+**Plumbing: zero call-site changes.** All six print call sites already pass the whole `appSettingsProvider` map
+as `roleSettings`, so each service resolves its own strings from it via
+`lookupAppLocalizations(resolveAppLocale(s[SettingKeys.language]))` — synchronous and **BuildContext-free**,
+which matters because printing runs from services and fire-and-forget callbacks with no widget tree.
+
+🚨 **`resolveReceiptLabel` — why "stored value wins" would have been wrong.** The receipt's labels are
+operator-customisable *settings* whose English defaults (`'Cashier'`, `'Items'`, `'Balance Due'`…) are seeded
+into `app_properties` on **every install**. So `roleSettings[key]` is almost never empty, and the obvious rule
+("use the stored label, else the translation") leaves every receipt in English forever on every terminal in
+the field. A value **still equal to its shipped `kSettingDefaults` value** is treated as "not a choice anybody
+made" → the translation wins; a value the operator actually typed prints **verbatim**, including English
+wording on an Arabic till.
+
+**Four `pdf`-package traps, all invisible to the type checker and to unit tests** — each was found only by
+rendering a PDF and looking at it. They are encapsulated in `lib/printer/printed_text.dart`:
+
+1. **Shaping only happens on an `rtl` run.** The package applies Arabic shaping and the bidi reorder only when
+   a `Text`'s direction is `rtl`, so Arabic on an LTR receipt prints **disconnected and backwards**.
+   `scriptDirection` marks a run `rtl` when it *contains* RTL script, independently of the page's layout —
+   shaping is a property of the script; layout is a property of the operator's `{Role}.RightToLeft` toggle.
+   The converse matters too: a Latin run must always be `ltr`, or a wrapped Latin address comes out with its
+   lines swapped.
+2. **Presentation forms resolve only when the Arabic face is the style BASE.** Shaping rewrites text into
+   U+FE70–FEFF; those resolve correctly when the Arabic font is the base and mis-resolve when it is merely a
+   `fontFallback` — so the fallback described above is necessary but *not sufficient*. `styleForScript`
+   promotes the Arabic face to base and demotes Latin to the fallback for RTL runs, which also keeps a mixed
+   line (`الرقم الضريبي: 27272727`) drawing its digits.
+3. **`TextStyle.copyWith(font:)` is silently discarded.** `font` is a *getter* over four weight slots
+   (`fontNormal` / `fontBold` / `fontItalic` / `fontBoldItalic`) and loses to any slot the original style
+   already filled. All four must be set. Bold matters separately: without `arabicBold` the GRAND TOTAL line
+   alone prints as boxes while the rows look fine.
+4. **`'${l.label}: $value'` reverses Latin values.** One run holding Arabic *and* Latin letters comes out with
+   the Latin backwards (`ilyasschah18@gmail.com` → `moc.liamg@81hahcssayli`); digits survive, which is why a
+   tax number looked fine and the invoice footer did not. `printedPair(label, value)` renders them as two runs.
+
+⚠️ **`pw.Table` does NOT mirror with `textDirection`** — column order is positional. The invoice's RTL mode
+(`Invoice.RightToLeft`) therefore reverses the column list and mirrors each column's alignment with it, which
+flips header, rows and the width map together because all three derive from that list.
+
+**Testability:** `buildCartReceipt` and `buildZReport` are split out of their `print*` counterparts so a
+document can be produced without a printer. `test/receipt_render_test.dart` builds real receipts in
+en/fr/ar × LTR/RTL and pins that 58mm ≠ 80mm, RTL ≠ LTR and font scale actually change the Z-report — the three
+settings it silently ignored before it was rebuilt on the shared row helper.
 
 ### 4.4 Floor Plan & Table Locking
 
@@ -444,6 +523,131 @@ There are **two independent, unrelated** scale integrations. Don't conflate them
 - **UI.** Settings → Weighing Scale → `SERIAL CONNECTION`: enable switch, a port dropdown over *detected* ports with a rescan button, a baud dropdown, and a live read-out so wiring and baud can be proven there rather than mid-sale. `menu/quantity_keypad_dialog.dart` shows the live weight with a **"Use weight"** button that is **disabled until the reading is stable**, so a swinging pan can't be banked. The manual keypad always remains — an offline scale never blocks a sale.
 - **No unit conversion is ever applied.** The parser returns the scale's own number and unit. If the scale reads `g` on a line priced per `kg`, the keypad shows an explicit mismatch warning rather than guessing; silently converting would be a **1000× pricing bug**.
 
+### 4.7 POS Sessions (added 2026-08-17)
+
+The money model of the POS. **Device → Session → Orders / Payments / Cash.** Odoo 19's POS session
+lifecycle is the reference; the design inventory that preceded the code is `docs/pos-session-architecture.md`
+and the phase-by-phase record is backlog item **37** in `handoff.md`.
+
+**Why it exists.** Before this, a day's takings had no boundary object. The Z-report bounded its period by a
+**document-id range filtered by company only**, so with two devices selling concurrently device B's documents
+fall inside device A's range and the second report consumes a range already reported — a live money bug, not a
+theoretical one. Cash movements had the same shape (`ZReportNumber == null`, company-wide). A session gives
+every sale, payment, cash movement and Z-report one owner.
+
+#### Lifecycle
+
+| Status | Name | Trading? | Meaning |
+|---|---|---|---|
+| 10 | `OPENING_CONTROL` | no | Register claimed; opening float **not yet confirmed** |
+| 11 | `OPENED` | **yes** | Sales, refunds and cash movements allowed |
+| 12 | `CLOSING_CONTROL` | no | Totals frozen, drawer being counted |
+| 13 | `CLOSED` | no | Finalised, cannot reopen |
+
+The two control states are load-bearing, not decoration: selling stops at **`CLOSING_CONTROL`**, not at
+`CLOSED`, so a sale cannot land between "expected cash was calculated" and "the drawer was counted".
+
+> 🚨 **The values start at 10 and that is deliberate.** POS sessions live in the **same `Shift` table**
+> as attendance shifts, which ship as `0 = Open, 1 = Closed`. Numbering sessions 0–3 would have made
+> `Status = 1` mean "closed" for one shape and "trading right now" for the other, and every existing
+> `WHERE Status = 1` would silently start matching live sessions. **Any query against `Shift`/`shifts` must
+> discriminate**: a POS session has a `PosDeviceId` (backend) or a `posDeviceUid` / `posDeviceName` (client).
+> Legacy `Shift.Create` / `Close` / `SyncFrom` belong to attendance and are untouched.
+
+#### Backend
+
+- **`Domain/PosDevice.cs`** — the company-DB projection of the device GUID; unique on `(CompanyId, DeviceUid)`.
+  One device *is* one register, which is what removes most of the concurrency risk: only that device opens
+  sessions for it, so two devices cannot race for one register.
+- **`Domain/Shift.cs`** — **extended, not replaced**: `PosDeviceId?`, `LocalId`, `ClosedByUserId`, `ExpectedCash`,
+  `CashDifference`, `OpeningNote`, `ClosingNote`, `ForceClosed/By/Reason`, `HasLateArrivals`, plus
+  `OpenSession` / `ConfirmOpening` / `EnterClosingControl` / `CloseSession` / `ForceClose` / `MarkLateArrival`.
+- **`Domain/PosSessionPaymentCount.cs`** — the per-method counted figure. Reconciliation is per **payment
+  method**, not cash-only: only cash is physically counted, but "card confirmed at 4,137.70" is a different
+  statement from "never looked at".
+- **`Domain/ZReportCorrection.cs`** — for a sale that arrives after its session was reported (see *late arrivals*).
+- **`Services/PosSessionService.cs`** — `OpenAsync` (idempotent on `LocalId`), `SyncFromDeviceAsync` (reconciles
+  state, advances only when the server is behind), `BuildSummaryAsync`, `CloseAsync` (tolerance check, then
+  generates the Z-report best-effort), `ForceCloseAsync`, `AttachSaleAsync`, `ResolveOpenSessionAsync`.
+- **`Controllers/PosSessionController.cs`** — `Open`, `ConfirmOpening`, `Current`, `Summary`, `CloseBlockers`,
+  `EnterClosingControl`, `Close`, `ForceClose`, `Sync`, `History`.
+- **`Services/ZReportService.GenerateForSessionAsync`** — bounded `WHERE SessionId = @id`. Z-report display
+  numbers are **per device**: `FormatDisplayNumber(deviceName, seq)` → `POS1/00085`.
+- Migrations `20260817121538_AddPosSession` and `20260817132428_AddZReportSessionAndOpeningNote` — both
+  **additive only**, both applied.
+
+#### Frontend (`lib/session/`)
+
+`pos_session_status.dart` · `session_provider.dart` · `session_summary_provider.dart` ·
+`session_reconciliation.dart` (pure, unit-tested arithmetic) · `session_gate.dart` ·
+`opening_control_dialog.dart` · `closing_register_dialog.dart` · `session_screen.dart` ·
+`session_list_screen.dart` · `manager_authorisation.dart`.
+
+The **POS Session** sidebar entry lands on the **list** (Odoo's Sessions table: Session ID, Point of Sale,
+Opened By, Opening/Closing Date, Starting Balance, Ending Balance, Theoretical Closing, Status); tapping a row
+opens the detail, **read-only** when the session is closed or belongs to another register — a terminal has no
+business closing a drawer it cannot count.
+
+#### Offline model
+
+A session opened offline gets a UUID `localId` and `serverId = null`. Every order, document, payment and
+starting-cash row written while it is open stores that **`sessionLocalId`** — the same pattern
+`pos_order_items` use against `pos_orders.localId`.
+
+- **The client `localId` is the idempotency key.** `OpenAsync` is idempotent on it, so if the server creates
+  the session and the response is lost, the retry *finds* it rather than creating a second one.
+- **Sessions push before orders** (`pushPendingSessions` ahead of `push:openOrders` / `push:orders` in
+  `_pushAllInner`) — parent-first, exactly as products are.
+- **`pullSessions`** reads `/PosSession/History` so a two-till shop sees both registers. Rows from another
+  device land as `srvs_<id>` and are **never pushed back**; a locally-owned row is refreshed **only while
+  `synced`**, so a pull can never clobber a close that has not been pushed yet.
+- **Late arrivals.** A session force-closed server-side while its device is offline and still selling will
+  receive sales for an already-reported session. The sale is never discarded (the item-33 rule) — it is
+  attached, flagged via `HasLateArrivals`, and a Z-report **correction** is issued rather than silently
+  rewriting a report that has already been printed and filed.
+
+#### Rules and safety valves
+
+- **Closing requires an empty push queue.** Otherwise the Z-report is taken without sales that exist only on
+  the device. `CloseBlockers` returns the reasons; Sync Status already exposes the count.
+- **Cash-difference tolerance** (`PosSession.MaxCashDifference`, default 10 DH). Beyond it the cashier cannot
+  sign off their own shortfall — `ManagerAuthorisation` demands an **admin** (`accessLevel == 0`) PIN, verified
+  with the existing offline `sha256`→base64 scheme. Checked client-side *and* server-side.
+- 🚨 **The selling gate FAILS OPEN.** `sessionGateProvider` yields
+  `{ allowed, blockedNoSession, blockedNotTrading, unknown }` and only a **positive** "there is no open session
+  on this register" blocks. Device id still resolving, company not loaded, a Drift error → `unknown` → **sell**.
+  A gate on the money path that said "no" whenever unsure would let a transient fault close a shop for the day,
+  which is far worse than the bookkeeping gap it closes. Enforced at four points — the POS menu, checkout
+  (re-checked at the last moment), refunds, and cash movements.
+- 🚨 **Second valve: `PosSession.RequireOpenSession`** (default `true`, Settings → Sync). Turning it off
+  restores trading instantly without a developer, and Settings stays reachable when the POS does not.
+- ⚠️ **`PosSession.CashPaymentTypeIds` is authoritative.** `PaymentType.OpenCashDrawer` is true for both
+  Espèces *and* Credit, so it cannot classify drawer cash; the old `IsChangeAllowed` inference survives as a
+  dev/legacy fallback that logs a warning and reports `CashMethodsConfigured = false` so the closing screen can
+  say the classification was guessed.
+
+---
+
+### 4.8 Product search & barcodes (added 2026-08-16)
+
+There is **one** search implementation, shared by the POS menu and the Products management screen:
+`lib/product/product_search.dart` (`ProductSearchScope`, `productMatchesSearch`, `productHasBarcode`,
+`findProductByBarcode`) behind `lib/product/product_search_bar.dart`. It was built by *extracting* the POS bar
+rather than copying it — the two had already diverged once, which is how the bug below shipped.
+
+> ⚠️ **A product's barcodes live in TWO stores.** The single `products.barcode` column (all that
+> `Product.fromDrift` maps into `Product.barcodes`) **and** the `barcodes` table that the product editor's
+> Barcodes tab writes to. Anything that resolves a barcode must consult both: the typed filter takes
+> `extraBarcodes` (watched, so a barcode added on another terminal appears after a sync), and the scan/Enter
+> path goes through `findProductByBarcode`, which covers the plain scan *and* the scale-barcode branch.
+> Fixing only the filter leaves a scanner silently doing nothing.
+
+`ProductSearchScope` values are stored as **English strings** (`'All fields'`, `'Barcode'`, `'Code'`, `'Name'`)
+even when the UI is French or Arabic — stored setting *values* stay English, only labels are localized.
+Exact match wins on a scan, and the primary barcode beats an alternate.
+
+---
+
 ---
 
 ## 5. Current State & Immediate Next Steps
@@ -467,6 +671,17 @@ There are **two independent, unrelated** scale integrations. Don't conflate them
 8. **ListTile ink effect fix:** `_PCard` in `printer_settings_screen.dart` was using `Container(color:)` (→ `ColoredBox`, blocks ink). Changed to `Card` widget backed by `Material`.
 
 ### Pending / Next Tasks
+
+> ⚠️ **This list is from 2026-05-27 and is largely historical.** The live, actionable list is the
+> ⭐ NUMBERED BACKLOG in `handoff.md`, where the user picks items by number. Since this section was written:
+> **(1)** default tax rate is wired end-to-end and moved to General · Tax; **(2)** the end-of-day close is now
+> the POS Session **Closing Register** dialog (§4.7), not a standalone Z-report dialog; **(3)** several of the
+> Products keys below are consumed (`productSorting`, `discountApplyRule`, `displayAndPrintTaxIncluded`), while
+> the cost/markup ones remain future work; **(4)** settings live-reactivity was audited. Still genuinely open,
+> per `handoff.md`: cash-drawer kick, Android silent printing, sounds, sell-by-weight (backlog 18, planned in
+> `SELL_BY_WEIGHT_PLAN.md`), the English-only reports module, and the five production prerequisites
+> (Pillar-3 encryption, control-plane lockdown, production API URL, the JDK-21 APK build, Z-report verification).
+
 
 #### HIGH PRIORITY
 
@@ -1032,7 +1247,25 @@ lib/
 │   └── menu_screen.dart            ← Product grid + cart sidebar (main POS screen)
 ├── printer/
 │   ├── receipt_printer_service.dart ← PDF gen + dispatch (Receipt, Kitchen, Z-Report)
-│   └── invoice_pdf_service.dart    ← A4/A5 invoice PDF generation
+│   ├── invoice_pdf_service.dart    ← A4/A5 invoice PDF generation
+│   └── printed_text.dart           ← scriptDirection / styleForScript / printedPair (Arabic on paper)
+├── product/
+│   ├── product_search.dart          ← productMatchesSearch + findProductByBarcode (shared by POS + Products)
+│   └── product_search_bar.dart      ← the one search bar both screens use
+├── session/                        ← POS Sessions (§4.7) — Device → Session → Orders/Payments/Cash
+│   ├── session_provider.dart        ← activeSessionProvider + open/close mutations
+│   ├── session_gate.dart            ← sessionGateProvider + SessionGuard (FAILS OPEN by design)
+│   ├── session_reconciliation.dart  ← pure expected-vs-counted arithmetic
+│   ├── session_list_screen.dart     ← the landing screen (all registers)
+│   ├── session_screen.dart          ← one session's detail; read-only when closed/foreign
+│   ├── opening_control_dialog.dart  ← confirm the opening float
+│   ├── closing_register_dialog.dart ← per-method reconciliation matrix
+│   └── manager_authorisation.dart   ← admin-PIN gate for an over-tolerance difference
+├── sync/
+│   ├── sync_manager.dart            ← the push/pull engine (parent-first ordering lives here)
+│   └── sync_status_provider.dart    ← per-entity pending counts shown in the AppBar
+├── license/
+│   └── license_watcher.dart         ← runtime subscription enforcement (2-min re-evaluation)
 ├── reports/
 │   ├── z_report_provider.dart      ← Z-report data fetching
 │   └── z_report_model.dart         ← ZReport model
