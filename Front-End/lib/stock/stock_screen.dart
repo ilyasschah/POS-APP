@@ -2,15 +2,19 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
+import 'package:pos_app/uom/unit_of_measure.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pos_app/printer/pdf_fonts.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:pos_app/app_settings/app_settings_model.dart';
+import 'package:pos_app/app_settings/app_settings_provider.dart';
 import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/database/database_provider.dart';
+import 'package:pos_app/tax/tax_provider.dart';
 import 'package:pos_app/printer/pdf_file_name.dart';
 import 'package:pos_app/printer/pdf_save_service.dart';
 import 'package:pos_app/product/product_group_provider.dart';
@@ -211,8 +215,46 @@ class _StockScreenState extends ConsumerState<StockScreen> {
     final font      = await PdfFonts.latin();
     final bold      = await PdfFonts.latin(bold: true);
     final moneyFmt  = NumberFormat('#,##0.00');
-    final qtyFmt    = NumberFormat('#,##0.##');
     final now       = DateTime.now();
+
+    // ── Tax rates ────────────────────────────────────────────────────────────
+    // This valuation used to split before/after tax with a HARDCODED 1.15 — a
+    // 15% assumption that is simply wrong for a company on TVA 20%, silently
+    // mis-stating the value of the whole stock. Resolve each product's real
+    // rate the same way the cart does: its own assignment first, then the
+    // configured default (only while the tax-inclusive feature is on).
+    final ratesByProduct = <int, double>{};
+    double defaultPctRate = 0;
+    try {
+      final db = ref.read(appDatabaseProvider);
+      final companyId = ref.read(selectedCompanyProvider)?.id;
+      final taxes = await ref.read(allTaxesProvider.future);
+      final rateById = {
+        for (final t in taxes)
+          if (t.isEnabled && !t.isFixed) t.id: t.rate,
+      };
+
+      final settings = ref.read(appSettingsProvider);
+      if (settings[SettingKeys.taxIncludedByDefault]?.toLowerCase() == 'true') {
+        for (final id
+            in parseDefaultTaxRateIds(settings[SettingKeys.defaultTaxRateIds])) {
+          defaultPctRate += rateById[id] ?? 0;
+        }
+      }
+
+      if (companyId != null) {
+        final assignments = await (db.select(db.productTaxesTable)
+              ..where((t) => t.companyId.equals(companyId))
+              ..where((t) => t.syncStatus.isNotValue('pending_delete')))
+            .get();
+        for (final a in assignments) {
+          ratesByProduct[a.productId] =
+              (ratesByProduct[a.productId] ?? 0) + (rateById[a.taxId] ?? 0);
+        }
+      }
+    } catch (_) {
+      // Offline/edge failure: fall through with 0% rather than a wrong 15%.
+    }
 
     // ── Data rows ────────────────────────────────────────────────────────────
     double totalCostBT = 0, totalCostIT = 0, totalSaleBT = 0, totalSaleIT = 0;
@@ -223,8 +265,12 @@ class _StockScreenState extends ConsumerState<StockScreen> {
       final p    = item.product;
       final qty  = item.totalQuantity;
       final costBT  = qty * p.cost;
-      final saleBT  = p.isTaxInclusivePrice ? qty * p.price / 1.15 : qty * p.price;
-      final saleIT  = p.isTaxInclusivePrice ? qty * p.price : qty * p.price * 1.15;
+      // A product with no assignment of its own inherits the configured
+      // default, exactly like the cart's fallback.
+      final pct     = ratesByProduct[p.id] ?? defaultPctRate;
+      final divisor = 1 + pct / 100;
+      final saleBT  = p.isTaxInclusivePrice ? qty * p.price / divisor : qty * p.price;
+      final saleIT  = p.isTaxInclusivePrice ? qty * p.price : qty * p.price * divisor;
 
       totalCostBT  += costBT;
       totalCostIT  += costBT; // cost incl tax == cost bef tax (no cost tax rate)
@@ -236,8 +282,8 @@ class _StockScreenState extends ConsumerState<StockScreen> {
         p.code ?? '',
         p.productGroupId != null ? (groupMap[p.productGroupId!] ?? '(none)') : '(none)',
         p.name,
-        qtyFmt.format(qty),
-        p.measurementUnit ?? '',
+        formatQuantityValue(qty, referenceUomOf(uomById(p.uomId)).id),
+        referenceUomOf(uomById(p.uomId)).code,
         moneyFmt.format(p.cost),
         moneyFmt.format(costBT),
         moneyFmt.format(costBT),
@@ -921,7 +967,7 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      totalQty.toStringAsFixed(totalQty % 1 == 0 ? 0 : 2),
+                      '${formatQuantityValue(totalQty, product.stockUom.id)} ${product.stockUom.code}',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: isLow
@@ -1083,9 +1129,13 @@ class _AssignStockDialogState
           const SizedBox(height: 16),
           TextField(
             controller: _qtyCtrl,
-            decoration:
-                InputDecoration(labelText: AppLocalizations.of(context).initialQuantity),
-            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context).initialQuantity,
+              // Stock is counted in the category's reference unit, so a
+              // gram-priced product still takes kilograms here.
+              suffixText: referenceUomOf(uomById(widget.product.uomId)).code,
+            ),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
           ),
         ],
       ),
@@ -1575,11 +1625,18 @@ class _ProductDetailPanelState
                     if (product.isService)
                       _tag(AppLocalizations.of(context).serviceTag,
                           context.infoColor),
-                    if (product.measurementUnit != null)
+                    _tag(
+                        AppLocalizations.of(context)
+                            .uomWithValue(product.uom.code),
+                        Colors.teal),
+                    // Only worth saying when the two differ: a gram-priced
+                    // product is counted in kilograms, and the number in this
+                    // panel is the kilogram one.
+                    if (product.uom.id != product.stockUom.id)
                       _tag(
                           AppLocalizations.of(context)
-                              .uomWithValue(product.measurementUnit!),
-                          Colors.teal),
+                              .uomStockHeldIn(product.stockUom.code),
+                          Colors.blueGrey),
                   ]),
                   const SizedBox(height: 10),
                   _infoRow(AppLocalizations.of(context).sellingPrice,
@@ -1620,9 +1677,8 @@ class _ProductDetailPanelState
                         editCtrl: _editQtyCtrl,
                         onEditTap: () => setState(() {
                           _editingStockId = stock.id;
-                          _editQtyCtrl.text = stock.quantity
-                              .toStringAsFixed(
-                                  stock.quantity % 1 == 0 ? 0 : 2);
+                          _editQtyCtrl.text = formatQuantityValue(
+                              stock.quantity, product.stockUom.id);
                         }),
                         onSave: () => _saveEdit(stock),
                         onCancel: () =>
@@ -1741,8 +1797,8 @@ class _ProductDetailPanelState
                             _infoRow(
                               AppLocalizations.of(context).suggestedOrder,
                               AppLocalizations.of(context).suggestedOrderValue(
-                                  suggest.toStringAsFixed(
-                                      suggest % 1 == 0 ? 0 : 2),
+                                  '${formatQuantityValue(suggest, product.stockUom.id)}'
+                                      ' ${product.stockUom.code}',
                                   control.preferredQuantity),
                             ),
                         ]),
@@ -1915,11 +1971,15 @@ class _StockEntry extends StatelessWidget {
                 child: TextField(
                   controller: editCtrl,
                   autofocus: true,
-                  keyboardType: TextInputType.number,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(
                     labelText: AppLocalizations.of(context).newQuantity,
                     isDense: true,
                     border: const OutlineInputBorder(),
+                    // Stock is counted in the category's reference unit, so a
+                    // gram-priced product still takes kilograms here.
+                    suffixText: referenceUomOf(uomById(product.uomId)).code,
                   ),
                 ),
               ),
@@ -1942,8 +2002,7 @@ class _StockEntry extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  stock.quantity
-                      .toStringAsFixed(stock.quantity % 1 == 0 ? 0 : 2),
+                  '${formatQuantityValue(stock.quantity, product.stockUom.id)} ${product.stockUom.code}',
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: stock.quantity < 5

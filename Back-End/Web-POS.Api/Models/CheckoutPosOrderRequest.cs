@@ -20,6 +20,14 @@
         /// checkout uses it verbatim instead of generating a YY-CCC-NNNNNN
         /// number — so the offline receipt number survives sync unchanged.
         public string? ClientDocumentNumber { get; set; }
+
+        /// The POS session's CLIENT localId — never a server id.
+        ///
+        /// A sale rung up offline belongs to a session that may itself have been
+        /// opened offline, so the UUID is the only handle both sides share at
+        /// write time. Null means "no session": the sale is banked unattached
+        /// rather than refused, because the money has already changed hands.
+        public string? SessionLocalId { get; set; }
     }
 
     public class CheckoutItemDto

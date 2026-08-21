@@ -18,6 +18,7 @@ import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/auth/user_model.dart';
 import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/customer/customer_model.dart';
+import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/customer/customer_provider.dart';
 import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/document/document_model.dart';
@@ -54,41 +55,65 @@ final allDocumentsProvider = FutureProvider.autoDispose<List<Document>>((
 
   final rows = await db.getDocuments(companyId: company.id);
 
-  return rows.map((row) {
-    // `number` carries the real value only — the editor seeds its Number field
-    // from it and writes it straight back, so a "—" / "(Pending sync)" baked in
-    // here would be saved AS the document number. The list renders those two
-    // placeholders itself, off isPendingSync (see _displayNumber).
-    return Document(
-      id: row.serverId ?? 0,
-      localId: row.localId,
-      number: row.number ?? '',
-      isPendingSync:
-          row.syncStatus == 'pending' || row.syncStatus == 'pending_create',
-      userId: row.userId,
-      userName: userMap[row.userId],
-      customerId: row.customerId ?? 0,
-      customerName: row.customerId != null ? customerMap[row.customerId] : null,
-      companyId: row.companyId,
-      documentTypeId: row.documentTypeId,
-      documentTypeName: typeMap[row.documentTypeId],
-      warehouseId: row.warehouseId,
-      orderNumber: row.orderNumber,
-      date: row.date.toIso8601String(),
-      stockDate: row.stockDate?.toIso8601String(),
-      dueDate: row.dueDate?.toIso8601String(),
-      total: row.total,
-      discount: row.discount,
-      discountType: row.discountType,
-      paidStatus: row.paidStatus,
-      discountApplyRule: row.discountApplyRule,
-      serviceType: row.serviceType,
-      internalNote: row.internalNote,
-      note: row.note,
-      referenceDocumentNumber: row.referenceDocumentNumber,
-    );
-  }).toList();
+  return rows
+      .map((row) => documentFromRow(
+            row,
+            userName: userMap[row.userId],
+            customerName:
+                row.customerId != null ? customerMap[row.customerId] : null,
+            documentTypeName: typeMap[row.documentTypeId],
+          ))
+      .toList();
 });
+
+/// One local Drift row → the [Document] the editor takes.
+///
+/// Shared rather than inlined in the list: anything holding a local row — the
+/// documents list, a session's payment list — must open the editor with the
+/// same object, or the two paths drift apart in exactly the fields that decide
+/// whether a save is an update or a duplicate.
+///
+/// The display names are optional because they are cosmetic: the editor
+/// resolves customer / user / type from their ids either way.
+Document documentFromRow(
+  DocumentsTableData row, {
+  String? userName,
+  String? customerName,
+  String? documentTypeName,
+}) {
+  // `number` carries the real value only — the editor seeds its Number field
+  // from it and writes it straight back, so a "—" / "(Pending sync)" baked in
+  // here would be saved AS the document number. The list renders those two
+  // placeholders itself, off isPendingSync (see _displayNumber).
+  return Document(
+    id: row.serverId ?? 0,
+    localId: row.localId,
+    number: row.number ?? '',
+    isPendingSync:
+        row.syncStatus == 'pending' || row.syncStatus == 'pending_create',
+    userId: row.userId,
+    userName: userName,
+    customerId: row.customerId ?? 0,
+    customerName: customerName,
+    companyId: row.companyId,
+    documentTypeId: row.documentTypeId,
+    documentTypeName: documentTypeName,
+    warehouseId: row.warehouseId,
+    orderNumber: row.orderNumber,
+    date: row.date.toIso8601String(),
+    stockDate: row.stockDate?.toIso8601String(),
+    dueDate: row.dueDate?.toIso8601String(),
+    total: row.total,
+    discount: row.discount,
+    discountType: row.discountType,
+    paidStatus: row.paidStatus,
+    discountApplyRule: row.discountApplyRule,
+    serviceType: row.serviceType,
+    internalNote: row.internalNote,
+    note: row.note,
+    referenceDocumentNumber: row.referenceDocumentNumber,
+  );
+}
 
 /// Document types, streamed from the local Drift cache so the editor's type
 /// picker (and offline document creation) work without a network connection.

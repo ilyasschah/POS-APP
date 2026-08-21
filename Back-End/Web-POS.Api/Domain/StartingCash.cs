@@ -27,6 +27,12 @@ namespace Api.Domain
         [Required]
         public DateTime DateCreated { get; set; }
 
+        /// <summary>
+        /// The POS session this belongs to. Nullable — every existing write
+        /// path leaves it null, so nothing that works today changes.
+        /// </summary>
+        public int? SessionId { get; set; }
+
         // Navigation
         public User? User { get; set; }
 

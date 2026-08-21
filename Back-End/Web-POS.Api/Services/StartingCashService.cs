@@ -7,10 +7,13 @@ namespace Api.Services
     public class StartingCashService
     {
         private readonly StartingCashRepository _repository;
+        private readonly PosSessionRepository _sessions;
 
-        public StartingCashService(StartingCashRepository repository)
+        public StartingCashService(
+            StartingCashRepository repository, PosSessionRepository sessions)
         {
             _repository = repository;
+            _sessions = sessions;
         }
 
         public async Task<StartingCash> Create(CreateStartingCashRequest req)
@@ -30,6 +33,18 @@ namespace Api.Services
                 dateCreated: req.DateCreated ?? DateTime.UtcNow
             );
             entity.CompanyId = req.CompanyId;
+
+            // Bind to the session that was trading. Resolved from the client's
+            // localId because a movement recorded offline belongs to a session
+            // that may not have reached the server yet. Unresolvable → left
+            // null rather than refused: a cash movement is a record of money
+            // that already moved, and losing it is worse than losing its link.
+            if (!string.IsNullOrWhiteSpace(req.SessionLocalId))
+            {
+                var session = await _sessions.ResolveSessionAsync(
+                    req.CompanyId, req.SessionLocalId);
+                entity.SessionId = session?.Id;
+            }
 
             await _repository.AddAsync(entity);
             return entity;

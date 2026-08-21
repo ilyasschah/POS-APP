@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Api.Domain;
 using Api.Models;
 using Api.DataBase;
@@ -113,18 +113,25 @@ namespace Api.Commands.PosOrderItemCommands.Add
                                 decimal delta = incoming - current;
                                 if (delta <= 0) continue;
 
-                                if (!stocks.TryGetValue(group.Key, out var stock) || stock.Quantity < delta)
+                                // Order lines are in the product's OWN unit (100 g),
+                                // Stock is always in its category's reference unit
+                                // (0.100 kg). Comparing the two unconverted would let a
+                                // 100 g sale claim 100 kg of stock.
+                                decimal deltaInStockUnit = UnitOfMeasure.ToReference(delta, product.UomId);
+
+                                if (!stocks.TryGetValue(group.Key, out var stock) || stock.Quantity < deltaInStockUnit)
                                 {
                                     // Fallback Check
                                     var otherWarehouses = await _db.Stocks
                                         .Include(s => s.Warehouse)
-                                        .Where(s => s.ProductId == group.Key && s.WarehouseId != command.WarehouseId && s.Quantity >= delta && s.CompanyId == command.CompanyId)
+                                        .Where(s => s.ProductId == group.Key && s.WarehouseId != command.WarehouseId && s.Quantity >= deltaInStockUnit && s.CompanyId == command.CompanyId)
                                         .Select(s => s.Warehouse.Name)
                                         .ToListAsync(cancellationToken);
 
                                     string whList = otherWarehouses.Any() ? string.Join(", ", otherWarehouses) : "None";
                                     response.Success = false;
-                                    response.Message = $"Product {product.Name} is out of stock in this warehouse (needed {delta} more). It is available in Warehouse(s): {whList}.";
+                                    var unit = UnitOfMeasure.Get(product.UomId);
+                                    response.Message = $"Product {product.Name} is out of stock in this warehouse (needed {decimal.Round(delta, unit.Digits)} {unit.Code} more). It is available in Warehouse(s): {whList}.";
                                     return response;
                                 }
                             }
@@ -180,7 +187,10 @@ namespace Api.Commands.PosOrderItemCommands.Add
                             {
                                 if (stocks.TryGetValue(item.ProductId, out var stock))
                                 {
-                                    stock.UpdateDetails(stock.Quantity + item.Quantity, stock.WarehouseId, stock.ProductId);
+                                    // Converted for the same reason as the check above:
+                                    // the line is in the product's unit, stock is not.
+                                    var restored = UnitOfMeasure.ToReference(item.Quantity, item.Product.UomId);
+                                    stock.UpdateDetails(stock.Quantity + restored, stock.WarehouseId, stock.ProductId);
                                     _db.Stocks.Update(stock);
                                 }
                             }
@@ -248,7 +258,7 @@ namespace Api.Commands.PosOrderItemCommands.Add
                             {
                                 if (stocks.TryGetValue(req.ProductId, out var stock))
                                 {
-                                    decimal newStockQty = stock.Quantity - delta;
+                                    decimal newStockQty = stock.Quantity - UnitOfMeasure.ToReference(delta, product.UomId);
                                     stock.UpdateDetails(newStockQty, stock.WarehouseId, req.ProductId);
                                     _db.Stocks.Update(stock);
 
@@ -262,7 +272,8 @@ namespace Api.Commands.PosOrderItemCommands.Add
                                         {
                                             if (stockControl.IsLowStockWarningEnabled && newStockQty <= stockControl.LowStockWarningQuantity)
                                             {
-                                                warnings.Add($"Low stock warning: {product.Name} (Only {newStockQty} left)");
+                                                var stockUnit = UnitOfMeasure.ReferenceOf(UnitOfMeasure.Get(product.UomId));
+                                                warnings.Add($"Low stock warning: {product.Name} (Only {decimal.Round(newStockQty, stockUnit.Digits)} {stockUnit.Code} left)");
                                             }
                                             else if (newStockQty <= stockControl.ReorderPoint)
                                             {

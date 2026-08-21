@@ -542,6 +542,9 @@
   "change": "Change",
   "collapseSidebar": "Collapse Sidebar",
   "companyHeader": "Company Header",
+  "kitchenPrintingSection": "Kitchen Printing",
+  "autoKitchenPrintOnCheckout": "Auto-print kitchen tickets at checkout",
+  "autoKitchenPrintSubtitle": "This terminal only. On sale completion, fires the same station tickets as the Kitchen button.",
   "companyPhoneTel": "Company phone (Tel)",
   "companyTaxNumber": "Company tax number",
   "customLabels": "Custom Labels",
@@ -881,6 +884,12 @@
   "posButtonsHint": "Select which action buttons appear on the main POS screen.",
   "couldNotLoadTaxRates": "Could not load tax rates",
   "noTaxRatesDefined": "No tax rates defined yet. Add them under Tax Rates.",
+  "taxDefaultRequiredTitle": "Choose a default tax rate",
+  "taxDefaultRequiredBody": "Tax-inclusive pricing needs a default tax rate. Pick at least one — it will be applied to every new product and locked at the till.",
+  "taxDefaultRequiredNoRates": "No tax rates defined yet. Create one under Tax Rates before turning this on.",
+  "defaultTaxRateDisabledHint": "Turn on tax-inclusive pricing above to apply a default tax rate.",
+  "taxLockedBySetting": "Set in Settings → General → Tax. It can't be changed here.",
+  "taxLockedShort": "Locked",
   "couldNotLoadWarehouses": "Could not load warehouses",
   "defaultWarehouseHint": "Used to check product stock availability in the POS menu.",
   "waitingForScale": "Waiting for the scale to send a weight…",
@@ -1078,7 +1087,7 @@
   "setCostPriceMarkup": "Cost price based markup",
   "setCurrency": "Currency",
   "setCustomerButton": "Customer button",
-  "setCustomerDisplay": "CUSTOMER DISPLAY",
+  "setCustomerDisplay": "Customer display",
   "setCustomerDisplayEnabled": "Customer display enabled",
   "setDataBits": "Data bits",
   "setDatabase": "DATABASE",
@@ -1089,7 +1098,7 @@
   "setDefaultDueDays": "Default due date (days)",
   "setDefaultMeasurementUnit": "Default Measurement Unit",
   "setDefaultScreen": "Default screen",
-  "setDefaultSearch": "Default search",
+  "setDefaultSearch": "Default search mode",
   "setDefaultServiceType": "Default service type",
   "setDefaultTaxRate": "Default tax rate",
   "setDefaultWarehouse": "Default warehouse",
@@ -1205,7 +1214,7 @@
   "setShowOrderTotalOnPole": "Show order total on a serial VFD / LCD pole display",
   "setShowOrderTypeButtons": "Show order type buttons on the POS",
   "setShowProductImages": "Show Product Images in POS Grid",
-  "setShowSearchOptions": "Show search options",
+  "setShowSearchOptions": "Show search mode buttons",
   "setShowServiceStatusBadge": "Show service status badge on table/booking cards",
   "setShowSyncNotification": "Show sync notification",
   "setShowTablesButton": "Show the Tables button in the POS",
@@ -1273,6 +1282,14 @@
   "errorLoadingGroups": "Error loading groups",
   "allProducts": "All Products",
   "noProductsFound": "No products found.",
+  "noProductsMatchSearch": "No product matches \"{query}\".",
+  "@noProductsMatchSearch": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
   "productNameRequired": "Product Name *",
   "categoryGroup": "Category / Group",
   "noneUncategorized": "None (Uncategorized)",
@@ -1280,6 +1297,68 @@
   "plu": "PLU",
   "measurementUnit": "Measurement Unit",
   "measurementUnitHint": "e.g. kg, pcs",
+  "sellByWeight": "Sell by weight",
+  "sellByWeightHint": "When on, the POS asks for a quantity instead of adding one unit. With no scale connected, the 'Price' button edits the quantity.",
+  "uomStockUnit": "stock unit",
+  "uomCategoryUnit": "Unit",
+  "uomCategoryWeight": "Weight",
+  "uomCategoryVolume": "Volume",
+  "uomCategoryLength": "Length",
+  "uomStockHeldIn": "Stock is counted in {unit}.",
+  "@uomStockHeldIn": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "uomStockConversionNote": "Priced per {unit}. Stock still moves in {stockUnit} — 1 {unit} = {factor} {stockUnit}.",
+  "@uomStockConversionNote": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      },
+      "factor": {
+        "type": "String"
+      },
+      "stockUnit": {
+        "type": "String"
+      }
+    }
+  },
+  "weighItem": "Weigh item",
+  "placeOnScale": "Place the item on the scale",
+  "scaleNotConnected": "No scale connected — enter the quantity",
+  "useThisWeight": "Use this weight",
+  "enterQuantity": "Enter quantity",
+  "priceEditsQuantity": "Price edits quantity",
+  "barcodeRules": "Barcode Rules",
+  "barcodeRulesHint": "Barcode rules define how a scanned barcode is read. A barcode is matched against the first rule whose pattern fits, so order matters. Patterns can embed a value such as a weight or a price: {NNDD} marks where the digits sit, and D positions are decimals. A product whose barcode carries an embedded value must store those positions as zeros.",
+  "ruleName": "Rule Name",
+  "ruleType": "Type",
+  "ruleEncoding": "Encoding",
+  "rulePattern": "Barcode Pattern",
+  "ruleTypeUnit": "Unit Product",
+  "ruleTypeWeighted": "Weighted Product",
+  "ruleTypePriced": "Priced Product",
+  "ruleTypeDiscounted": "Discounted Product",
+  "addRuleLine": "Add a line",
+  "barcodeRulesSaved": "Barcode rules saved",
+  "testBarcode": "Test a barcode",
+  "testBarcodeNoMatch": "No rule matches this barcode",
+  "testBarcodeMatched": "Matched {rule} — value {value}",
+  "@testBarcodeMatched": {
+    "placeholders": {
+      "rule": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "weightNotAllowedForService": "A service cannot be sold by weight.",
+  "scaleReadFailed": "Could not read the scale",
   "ageRestrictionHint": "e.g. 18",
   "sellingPriceRequired": "Selling Price *",
   "purchaseCost": "Purchase Cost",
@@ -1294,6 +1373,36 @@
   "productImage": "Product Image",
   "productImageHint": "Replaces the placeholder icon on the POS menu tile.",
   "removeImage": "Remove Image",
+  "taxInclusiveNotAppliedNote": "Heads up: the till still adds this tax on top of the price. Tax-inclusive pricing is stored on the product but not yet applied at checkout.",
+  "pricingTab": "Pricing",
+  "taxBreakdownIncluded": "{price} includes {tax} tax · net {net}",
+  "@taxBreakdownIncluded": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      },
+      "tax": {
+        "type": "String"
+      },
+      "net": {
+        "type": "String"
+      }
+    }
+  },
+  "taxBreakdownAdded": "{price} + {tax} tax = {total}",
+  "@taxBreakdownAdded": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      },
+      "tax": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
   "applyTaxes": "Apply Taxes",
   "failedToLoadTaxes": "Failed to load taxes",
   "primaryTaxRate": "Primary Tax Rate",
@@ -1360,6 +1469,8 @@
     }
   },
   "fieldNameRequired": "Name *",
+  "codeRequired": "Code *",
+  "taxCodeAlreadyUsed": "Already used by another tax",
   "fieldCode": "Code",
   "fieldPosition": "Position",
   "fieldShortcut": "Shortcut",
@@ -2684,6 +2795,7 @@
     "description": "Display label for the persisted App autoSyncMode VALUE 'After every save'. The stored value stays English — only this label is translated."
   },
   "syncCashMovements": "Cash movements",
+  "syncCompletedSales": "Completed sales awaiting upload",
   "syncCustomerDiscounts": "Customer discounts",
   "syncEveryHour": "Every 1 hour",
   "@syncEveryHour": {
@@ -2692,7 +2804,6 @@
   "syncNow": "Sync now",
   "syncProductComments": "Product comments",
   "syncProductTaxes": "Product taxes",
-  "syncSalesOrders": "Sales orders",
   "syncShifts": "Shifts",
   "syncStatusTitle": "Sync Status",
   "syncStockCounts": "Stock counts",
@@ -3083,5 +3194,262 @@
         "type": "String"
       }
     }
-  }
+  },
+  "setDocuments": "Documents",
+  "resetDatabaseTitle": "RESET DATABASE",
+  "resetDatabaseAction": "Reset database",
+  "resetWarningBanner": "This is a destructive operation. It deletes the selected data for your WHOLE company — every terminal loses it on its next sync. This cannot be undone.",
+  "resetStepBackupTitle": "Backup database path",
+  "resetStepBackupSubtitle": "Location where database backup will be saved",
+  "resetStepBackupHint": "A backup of this device is taken before the reset. If the backup fails, the reset is cancelled.",
+  "resetBackupManagedHint": "Managed app storage (this device)",
+  "resetStepEntitiesTitle": "Select entities to reset",
+  "resetStepEntitiesSubtitle": "Selected entities will be deleted from the database",
+  "resetStepConfirmTitle": "Confirmation",
+  "resetStepConfirmSubtitle": "Authorize and perform reset on selected entities",
+  "resetAdminPin": "Enter administrator PIN",
+  "resetAlsoClearsDocuments": "Also clears Documents — sales rows reference these.",
+  "resetDocumentsNote": "Sales, orders, payments, voids and Z-reports. Bookings are kept.",
+  "resetEverything": "Everything",
+  "resetEverythingNote": "All company data. Users and your settings are kept so you can sign back in.",
+  "resetWrongPin": "Incorrect PIN.",
+  "resetConfirmTitle": "Reset the database?",
+  "resetConfirmBody": "This permanently deletes the selected data for your whole company, on every terminal. Only the local backup can recover it.",
+  "resetConfirmAction": "Yes, reset",
+  "resetNoCompany": "No company is selected on this device.",
+  "resetPhaseBackup": "Backing up this device…",
+  "resetPhaseServer": "Clearing account data…",
+  "resetPhaseLocal": "Clearing this device…",
+  "resetDoneTitle": "Reset complete",
+  "resetRestartManually": "Please close and reopen the app to finish.",
+  "resetOnlyAdmins": "Only administrators can reset the database.",
+  "resetRestartingIn": "Restarting in {seconds}…",
+  "@resetRestartingIn": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "resetBackupSavedTo": "Backup saved to {path}",
+  "@resetBackupSavedTo": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "restoreDatabaseTitle": "Restore from backup",
+  "restoreDatabaseAction": "Restore backup…",
+  "restoreDatabaseHint": "Replaces everything on this terminal with a backup file. The app restarts to complete it.",
+  "restorePickTitle": "Select a backup file (.sqlite)",
+  "restoreRejectedTitle": "This file cannot be restored",
+  "restoreConfirmTitle": "Restore this backup?",
+  "restoreConfirmBody": "Everything currently on this terminal is replaced by the backup. Your current database is kept as pos_app.superseded.sqlite in case you picked the wrong file.",
+  "restoreConfirmAction": "Restore and restart",
+  "restoreStagedTitle": "Backup ready to restore",
+  "restoreStagedBody": "The app will restart to swap the database in. Sign in again afterwards — any work in the backup that never reached the cloud is uploaded on the next sync.",
+  "restoreErrMissing": "The file no longer exists.",
+  "restoreErrNotSqlite": "That is not a database file.",
+  "restoreErrEncrypted": "This backup is encrypted for a different device and cannot be opened here. Restore it on the terminal that created it, or start fresh and pull your data from the cloud.",
+  "restoreErrNotPosBackup": "That is a database, but not a POS backup.",
+  "restoreErrNewerSchema": "This backup was made by a newer version of the app (database v{found}, this build understands v{supported}). Update the app first.",
+  "@restoreErrNewerSchema": {
+    "placeholders": {
+      "found": {
+        "type": "int"
+      },
+      "supported": {
+        "type": "int"
+      }
+    }
+  },
+  "dbMissingTitle": "Local database not found",
+  "dbMissingBody": "The database file for this terminal is missing — it may have been deleted, moved, or be on a drive that is not connected.\n\nStarting fresh downloads your data from the cloud, but anything that never synced from this terminal cannot be recovered that way.",
+  "dbMissingRestore": "Restore from a backup file",
+  "dbMissingFresh": "Start fresh from the cloud",
+  "dbMissingFreshConfirm": "Start fresh? Anything on this terminal that never reached the cloud will be gone.",
+  "onboardingDataTitle": "Set up this terminal",
+  "onboardingDataSubtitle": "How should this terminal get its data?",
+  "onboardingCloudTitle": "Sync with the cloud",
+  "onboardingCloudBody": "Sign in and download your company data. Choose this for a new terminal.",
+  "onboardingRestoreTitle": "Restore from a backup",
+  "onboardingRestoreBody": "Use a .sqlite backup from another terminal — for replacing a machine, including work that never synced.",
+  "balanceDue": "Balance Due",
+  "telLabel": "Tel",
+  "itemsLabel": "Items",
+  "timeLabel": "Time",
+  "unitPriceLabel": "Unit price",
+  "taxInvoiceUpper": "TAX INVOICE",
+  "billTo": "Bill to",
+  "invoicesUpper": "INVOICES",
+  "saveReceiptTitle": "Save Receipt",
+  "saveGuestCheckTitle": "Save Guest Check",
+  "saveInvoicePdfTitle": "Save Invoice PDF",
+  "zReportUpper": "Z-REPORT",
+  "endOfReport": "*** END OF REPORT ***",
+  "totalQty": "Total Qty",
+  "pointsBalance": "Points Balance",
+  "ptsShort": "pts",
+  "invoiceNoLabel": "Invoice No.",
+  "pointsUsed": "Points Used",
+  "paymentStatus": "Payment status",
+  "pageNumberLabel": "Page {number}",
+  "@pageNumberLabel": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "createdWith": "Created with",
+  "backupPathRequiredTitle": "Choose a backup folder",
+  "backupPathRequiredBody": "Automatic backups need a folder to write to. Pick one now — otherwise backups run to a location you did not choose.",
+  "backupPathNotSet": "Automatic backups stay off until a backup folder is set.",
+  "posSession": "POS Session",
+  "sessionNoneTitle": "No open session",
+  "sessionNoneBody": "This register is not trading yet. Open a session to start the day.",
+  "openRegister": "Open Register",
+  "continueSelling": "Continue Selling",
+  "sessionNumber": "Session",
+  "sessionDevice": "Device",
+  "sessionOpenedAt": "Opened at",
+  "sessionOpenedBy": "Opened by",
+  "sessionClosedBy": "Closed by",
+  "sessionStatusLabel": "Status",
+  "sessionOpeningCash": "Opening cash",
+  "sessionExpectedCash": "Expected cash",
+  "sessionCountedCash": "Counted cash",
+  "sessionDifference": "Difference",
+  "sessionOrders": "Orders",
+  "sessionPaymentTotals": "Payment totals",
+  "sessionSyncStatus": "Synchronisation",
+  "sessionSynced": "All synced",
+  "sessionNotSyncedYet": "Not sent to the cloud yet",
+  "sessionUnsyncedSales": "{count} sale(s) still on this device",
+  "@sessionUnsyncedSales": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sessionOpenOrders": "{count} order(s) still parked",
+  "@sessionOpenOrders": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sessionCannotClose": "Cannot close yet",
+  "sessionForceClosed": "Force-closed",
+  "sessionLateArrivals": "Late sales arrived after closing — needs reconciliation",
+  "sessionCashInferred": "Cash methods are inferred — set which methods come out of the drawer in Settings → Order & Payment.",
+  "sessionOpeningCashPrompt": "How much cash is in the drawer to start?",
+  "sessionHistory": "Session history",
+  "sessionNoHistory": "No sessions yet.",
+  "sessionConfirmOpening": "Confirm opening",
+  "sessionInProgress": "In Progress",
+  "sessionClosingControl": "Closing Control",
+  "sessionClosedPosted": "Closed & Posted",
+  "openingControl": "Opening Control",
+  "openingNote": "Opening note",
+  "openingNoteHint": "Add an opening note…",
+  "closingRegister": "Closing Register",
+  "closingNote": "Closing note",
+  "closingNoteHint": "Add a closing note…",
+  "sessionOrdersTotal": "{count} documents: {total}",
+  "@sessionOrdersTotal": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "sessionExpected": "Expected",
+  "sessionCounted": "Counted",
+  "sessionOpeningRow": "Opening",
+  "sessionCashInOutRow": "Cash In / Out",
+  "sessionCashPaymentsRow": "Payments in cash",
+  "cashCount": "Cash Count",
+  "dailySale": "Daily Sale",
+  "actionDiscard": "Discard",
+  "managerAuthRequired": "Difference of {diff} exceeds the allowed {max}. Manager authorisation is required.",
+  "@managerAuthRequired": {
+    "placeholders": {
+      "diff": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "managerAuthorise": "Manager authorisation",
+  "managerPinPrompt": "Enter an administrator's PIN to authorise this difference.",
+  "managerPinWrong": "That PIN is not an administrator PIN.",
+  "sessionRequiredTitle": "Open the register first",
+  "sessionRequiredBody": "Sales, refunds and cash movements belong to a session. Open the register to start trading.",
+  "sessionNotTradingBody": "This register is being closed. Finish the closing count, then open a new session.",
+  "setRequireOpenSession": "Require an open session to sell",
+  "sessionsTitle": "Sessions",
+  "sessionColId": "Session ID",
+  "sessionColPos": "Point of Sale",
+  "sessionColOpenedBy": "Opened By",
+  "sessionColOpening": "Opening Date",
+  "sessionColClosing": "Closing Date",
+  "sessionColStarting": "Starting Balance",
+  "sessionColEnding": "Ending Balance",
+  "sessionColTheoretical": "Theoretical Closing",
+  "sessionColStatus": "Status",
+  "sessionSearchHint": "Search…",
+  "sessionCountOf": "{shown} / {total}",
+  "@sessionCountOf": {
+    "placeholders": {
+      "shown": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "sessionDetails": "Session details",
+  "sessionCurrentOnThisDevice": "Current session on this device",
+  "sessionClosedAt": "Closed at",
+  "sessionDuration": "Duration",
+  "sessionTotalTaken": "Total taken",
+  "sessionCashMovements": "Cash movements",
+  "sessionNotes": "Notes",
+  "cashDrawer": "Cash drawer",
+  "sessionRemoteFiguresOffline": "This session belongs to another register — its takings load from the server.",
+  "sessionDocuments": "Documents",
+  "sessionOverviewTab": "Overview",
+  "sessionPaymentsTab": "Payments",
+  "sessionNoPayments": "No payments taken in this session yet.",
+  "sessionOpenDocumentHint": "Tap a payment to open its document",
+  "sessionDocumentUnavailable": "That document is not on this device.",
+  "developerMode": "Developer mode",
+  "developerModeHint": "Shows a floating debug button on this terminal, with a barcode simulator for price and weight labels.",
+  "generateScaleBarcode": "Scale label",
+  "scaleBarcodeRuleUnusable": "The rule {pattern} cannot generate a product barcode.",
+  "@scaleBarcodeRuleUnusable": {
+    "placeholders": { "pattern": { "type": "String" } }
+  },
+  "barcodeAlreadyUsedBy": "{code} already belongs to {product}.",
+  "@barcodeAlreadyUsedBy": {
+    "placeholders": { "code": { "type": "String" }, "product": { "type": "String" } }
+  },
+  "setPosSession": "POS session",
+  "setCashMethods": "Cash methods",
+  "cashMethodsHint": "Which payment methods come out of the cash drawer and get physically counted at closing. Clearing all of them goes back to guessing.",
+  "cashMethodsInferredHint": "Not set yet — these are guessed from \"change allowed\".",
+  "cashMethodsConfirm": "Use these",
+  "noPaymentMethodsDefined": "No payment methods defined.",
+  "setMaxCashDifference": "Allowed cash difference",
+  "maxCashDifferenceHint": "Beyond this, closing the drawer needs an administrator PIN."
 }

@@ -2,10 +2,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/app_settings/app_settings_provider.dart';
+import 'package:pos_app/bookings/bookings_provider.dart';
 import 'package:pos_app/cart/checkout_models.dart';
 import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/kitchen/printer_group_model.dart';
+import 'package:pos_app/printer/kitchen_ticket_data.dart';
 import 'package:pos_app/printer/printer_config_model.dart';
 import 'package:pos_app/printer/receipt_printer_service.dart';
 
@@ -118,6 +120,39 @@ class PrinterRoutingService {
       printed++;
     }
     return printed;
+  }
+
+  /// Convenience for callers that only hold the raw cart context (the checkout
+  /// flow): resolves the venue's localized service label + the table's name the
+  /// same way the menu Kitchen button does, then fires [printStationTickets].
+  /// Returns tickets printed (0 = no station configured, or none matched this
+  /// cart). [serviceFallback] is passed in because localization needs a
+  /// BuildContext this service doesn't have.
+  Future<int> printStationTicketsForCart({
+    required List<CartItem> items,
+    required int serviceType,
+    int? floorPlanTableId,
+    required String orderNumber,
+    required String cashierName,
+    required String serviceFallback,
+  }) async {
+    final serviceLabel = KitchenTicketData.serviceLabel(
+      ref.read(appSettingsProvider.notifier).customServiceTypes,
+      serviceType,
+      fallback: serviceFallback,
+    );
+    final tableName = KitchenTicketData.tableName(
+      ref.read(allRoomsProvider).value ?? const [],
+      floorPlanTableId,
+    );
+    return printStationTickets(
+      items: items,
+      orderNumber: orderNumber,
+      cashierName: cashierName,
+      serviceType: serviceLabel,
+      tableName: tableName,
+      printTime: DateTime.now(),
+    );
   }
 }
 

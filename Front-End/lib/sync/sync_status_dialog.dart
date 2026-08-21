@@ -17,8 +17,10 @@ import 'package:pos_app/sync/sync_status_provider.dart';
 String _syncEntityLabel(BuildContext context, String id) {
   final l10n = AppLocalizations.of(context);
   switch (id) {
-    case 'Sales orders':
-      return l10n.syncSalesOrders;
+    case 'Completed sales':
+      return l10n.syncCompletedSales;
+    case 'Open orders':
+      return l10n.openOrders;
     case 'Documents':
       return l10n.documents;
     case 'Payments':

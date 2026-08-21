@@ -72,6 +72,11 @@ class DeviceScopedSettings {
     // the Android tablets that they can never act on, and would let one till
     // silently turn off updating for the whole venue.
     'App.Update.AutoCheck',
+    // Whether completing a sale auto-fires the station kitchen tickets. Per
+    // terminal on purpose: the front till may auto-print to the kitchen while a
+    // manager's tablet, sharing the same account, should not — a cloud-synced
+    // value would force one choice on every device in the venue.
+    'Print.AutoKitchenOnCheckout',
   };
 
   /// Suffixes that make a key per-terminal whatever its role prefix.
@@ -137,8 +142,22 @@ class DeviceScopedSettings {
 
     final isMobile = Platform.isAndroid || Platform.isIOS;
 
-    if (key == 'Database.BackupPath' && isMobile && _isDesktopPath(value)) {
-      return null;
+    if (key == 'Database.BackupPath') {
+      if (isMobile && _isDesktopPath(value)) return null;
+      // 🚨 The mirror image, which was missing: a tablet's backup folder
+      // inherited onto a fresh WINDOWS install. The operator opened Settings →
+      // Database and found `/storage/emulated/0/Android/data/…` sitting in the
+      // box on a machine that had never seen an Android device — and Windows
+      // cannot write there. Reported 2026-08-16.
+      //
+      // Split by shape, not by "not mobile": a SAF `content://` URI is useless
+      // on ANY desktop, while a POSIX-absolute path is only wrong on Windows —
+      // macOS and Linux write `/Users/…` and `/home/…` and must be left alone.
+      //
+      // Dropping it falls through to `kSettingDefaults`, which is `''` — the
+      // empty box the operator expected on a new install.
+      if (!isMobile && value.contains('://')) return null;
+      if (Platform.isWindows && value.startsWith('/')) return null;
     }
     if (key.endsWith('.PrinterName') && isMobile) return null;
     if ((key == 'Scale.Port' || key == 'CustomerDisplay.Port') &&

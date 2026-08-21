@@ -21,6 +21,12 @@ namespace Api.Models
         public string? Code { get; set; }
         public int? PLU { get; set; }
         public string? MeasurementUnit { get; set; }
+
+        /// <summary>Id into the hardcoded UnitOfMeasure catalog. 1 = pieces.</summary>
+        public int UomId { get; set; } = Api.Domain.UnitOfMeasure.PiecesId;
+
+        /// <summary>Sold by weight — the POS asks for a quantity instead of adding one unit.</summary>
+        public bool IsToWeigh { get; set; }
         public decimal Cost { get; set; }
         public decimal? Markup { get; set; }
         public decimal Price { get; set; }
@@ -58,6 +64,12 @@ namespace Api.Models
         public string? Code { get; set; }
         public int? PLU { get; set; }
         public string? MeasurementUnit { get; set; }
+
+        /// <summary>Id into the hardcoded UnitOfMeasure catalog. 1 = pieces.</summary>
+        public int UomId { get; set; } = Api.Domain.UnitOfMeasure.PiecesId;
+
+        /// <summary>Sold by weight — the POS asks for a quantity instead of adding one unit.</summary>
+        public bool IsToWeigh { get; set; }
         public decimal Price { get; set; }
         public bool IsTaxInclusivePrice { get; set; }
         public int? CurrencyId { get; set; }
@@ -86,6 +98,12 @@ namespace Api.Models
         public string? Code { get; set; }
         public string? Barcode { get; set; }
         public string? MeasurementUnit { get; set; }
+
+        /// <summary>Id into the hardcoded UnitOfMeasure catalog. 1 = pieces.</summary>
+        public int UomId { get; set; } = Api.Domain.UnitOfMeasure.PiecesId;
+
+        /// <summary>Sold by weight — the POS asks for a quantity instead of adding one unit.</summary>
+        public bool IsToWeigh { get; set; }
         public decimal? Cost { get; set; }
         public decimal? Markup { get; set; }
         public decimal? Price { get; set; }
@@ -131,6 +149,12 @@ namespace Api.Models
         public string? Code { get; set; }
         public int? PLU { get; set; }
         public string? MeasurementUnit { get; set; }
+
+        /// <summary>Id into the hardcoded UnitOfMeasure catalog. 1 = pieces.</summary>
+        public int UomId { get; set; } = Api.Domain.UnitOfMeasure.PiecesId;
+
+        /// <summary>Sold by weight — the POS asks for a quantity instead of adding one unit.</summary>
+        public bool IsToWeigh { get; set; }
         public required decimal Price { get; set; }
         public bool? IsTaxInclusivePrice { get; set; }    
         public int? CurrencyId { get; set; }
@@ -158,6 +182,12 @@ namespace Api.Models
         public string? Code { get; set; }
         public int? PLU { get; set; }
         public string? MeasurementUnit { get; set; }
+
+        /// <summary>Id into the hardcoded UnitOfMeasure catalog. 1 = pieces.</summary>
+        public int UomId { get; set; } = Api.Domain.UnitOfMeasure.PiecesId;
+
+        /// <summary>Sold by weight — the POS asks for a quantity instead of adding one unit.</summary>
+        public bool IsToWeigh { get; set; }
         public required decimal Price { get; set; }
         public required bool IsTaxInclusivePrice { get; set; }
         public int? CurrencyId { get; set; }

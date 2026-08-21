@@ -12,6 +12,7 @@ namespace Api.Models
         public string? Description { get; set; }
         public int StartingCashType { get; set; }
         public int? ZReportNumber { get; set; }
+        public int? SessionId { get; set; }
         public DateTime DateCreated { get; set; }
     }
 
@@ -24,6 +25,14 @@ namespace Api.Models
         public int? StartingCashType { get; set; }   // default to 0 in service if null
         public int? ZReportNumber { get; set; }
         public DateTime? DateCreated { get; set; }   // default to UtcNow in service if null
+
+        /// <summary>
+        /// The session's CLIENT localId. A cash movement belongs to the session
+        /// that was trading when it happened — binding it to a Z-report NUMBER
+        /// (the legacy `ZReportNumber`) could not tell two registers apart,
+        /// because that lookup was company-wide.
+        /// </summary>
+        public string? SessionLocalId { get; set; }
     }
 
     public class GetStartingCashByDateRangeRequest

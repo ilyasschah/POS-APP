@@ -1,5 +1,306 @@
-POS NOTES 
+POS NOTES
 =======================================================
-change pubspec to 1.0.3+5, 
-commit, push, 
+change pubspec to 1.0.3+5,
+commit, push,
 git tag v1.0.3 && git push origin v1.0.3
+
+=======================================================
+BACKLOG — TEST GUIDE   (tell me "do 1" / "do 3", etc.)
+=======================================================
+Numbers match the ⭐ NUMBERED BACKLOG in handoff.md 1-for-1.
+Items 5/7 need a DECISION from you. Items 8/9/10 need a
+HARDWARE/DEP answer. Items 11-15 are dev/build tasks, not
+screen tests. The rest you can test on the POS.
+
+--- NEWLY REPORTED (to do next) ---
+
+[35] NEW - the REPORTS are still English. Not a bug, a scope line.
+     Item 7 translated everything a CUSTOMER is handed: receipt,
+     addition, kitchen ticket, Z-report, invoice PDF. The reports
+     module (36 different report PDFs + the Stock Report) still has
+     English column headers - that is ~300 strings and a job of its
+     own. Say the word and I will do it in one pass; doing half of
+     them would look worse than leaving them all English.
+
+
+--- READY TO TEST ---
+
+[18] DONE - SELL BY WEIGHT (Odoo-parity UoM + Barcode Nomenclature).
+
+     BEFORE YOU START - RUN THE MIGRATION:
+         cd Back-End/Web-POS.Api
+         dotnet ef database update --context AppDbContext
+     Then restart the API. Nothing below works until you do.
+
+     WHAT CHANGED:
+     Products now carry a real UNIT (kg, g, L, mL, pcs, dozen, box,
+     pack, m, cm) instead of free text, plus a "Sell by weight"
+     switch. Stock is always counted in the category's REFERENCE
+     unit - weight in kg, volume in L - so a product priced per GRAM
+     still moves stock in KILOGRAMS. The six Scale.Barcode.* settings
+     are gone, replaced by an ordered rule table (Settings ->
+     Weighing Scale).
+
+     IF SOMETHING GOES WRONG - READ THIS FIRST:
+     Settings -> Weighing Scale -> Barcode Rules. Drag "Product
+     Barcodes" (the .* catch-all) to the BOTTOM and Save. If it sits
+     anywhere else it swallows every scale label and rings items up
+     as a single unit. That one row is the usual cause of "my scale
+     labels stopped working".
+
+     -----------------------------------------------------------
+     A. THE MIGRATION DID THE RIGHT THING  (do this first)
+     -----------------------------------------------------------
+     (a) Open any product that used to have "kg" typed in its unit
+         field -> Pricing tab now shows the kg dropdown selected,
+         and General tab shows "Sell by weight" already ON.
+     (b) Open a product that had "pcs" or nothing -> unit is pcs,
+         Sell by weight OFF. Its stock number is UNCHANGED.
+     (c) Look at a product whose old unit was something odd
+         ("carton", "unit", a typo) -> it landed on pcs. That is
+         deliberate: pcs converts 1:1 and cannot move your numbers.
+         Fix any of those by hand now.
+     (d) CHECK YOUR STOCK TOTALS did not move anywhere. If a number
+         changed, stop and tell me - that is the one thing this
+         migration must never do.
+
+     -----------------------------------------------------------
+     B. THE STOCK MATH  (the part that costs money if wrong)
+     -----------------------------------------------------------
+     Set up a product: Sugar, unit kg, 20.00 / kg, stock 258.
+     (e) Sell 0.500 -> stock reads 257.500. Line total 10.00.
+     (f) Sell 0.250 -> stock reads 257.250. Line total 5.00.
+     (g) Now the important one. Make a second product: Saffron,
+         unit GRAM, 30.00 / g. Give it 0.5 in stock (that is 0.5 KG
+         = 500 g - the stock field is in kilograms, and the field
+         now shows "kg" next to it to say so).
+         Sell 100 -> the line reads 100 g, charges 3000.00, and
+         stock drops to 0.400 (NOT to -99.5). This is the single
+         most expensive thing to get wrong; check it carefully.
+     (h) VOID that Saffron sale -> stock goes back to 0.500 exactly.
+     (i) Refund it instead -> same, back to 0.500.
+     (j) Receive stock: make a PURCHASE document for 200 g of
+         Saffron -> stock goes UP by 0.200, not by 200.
+
+     -----------------------------------------------------------
+     C. SELLING A WEIGHED ITEM AT THE TILL
+     -----------------------------------------------------------
+     (k) NO SCALE (or on the Android tablet): tap Sugar -> the
+         decimal keypad opens straight away asking for quantity.
+         Type 0.750 -> line is 0.750 kg at 15.00.
+     (l) WITH A SCALE (Windows, Settings -> Weighing Scale ->
+         serial connection on): tap Sugar -> a weigh dialog shows
+         the LIVE weight and the running total. "Use this weight"
+         is greyed out until the reading settles - put something on
+         and wait for it to go from orange to green.
+     (m) With the scale connected, press "Enter quantity" in that
+         dialog -> the keypad still opens. A jammed scale must
+         never stop you selling.
+     (n) Select a weighed line in the cart, press QUANTITY in the
+         toolbar -> the weigh dialog reopens so you can re-weigh.
+         Press QUANTITY on a normal pcs line -> plain keypad.
+     (o) Empty pan / zero weight -> confirm stays disabled. You
+         cannot add a free line by mis-tapping.
+     (p) Set your scale to grams while Sugar is priced per kg -> an
+         orange warning appears saying no conversion is applied.
+
+     -----------------------------------------------------------
+     D. SCANNING - BARCODE NOMENCLATURE
+     -----------------------------------------------------------
+     Put the ZEROED barcode on the product, then type the label
+     barcodes into the POS search box and press Enter.
+
+     Sugar, product code 10001 -> store barcode  2210001000000
+     (q) Scan  2210001003506  -> Sugar, 0.350 kg
+     (r) Scan  2210001027502  -> Sugar, 2.750 kg  (SAME product -
+         this is what proves the weight digits are ignored on lookup)
+     (s) Scan  2210001001250  -> Sugar, 0.125 kg. Check the RECEIPT
+         prints 0.125 and not 0.13.
+
+     Priced label - store barcode 2510001000001 on a product
+     (t) Scan  2510001012509  -> quantity = 12.50 / unit price.
+
+     YOUR OLD SCALE FORMAT (prefix 21) was imported automatically
+     as a rule called "Scale Barcodes (imported)".
+     (u) Store barcode 2110001000003, scan 2110001005008 ->
+         0.500 kg. Your existing printed shelf labels must still
+         work. If they do not, this is the important failure.
+
+     (v) Scan a normal retail barcode (any real 13-digit product)
+         -> behaves exactly as before, quantity 1.
+     (w) Scan a weight label for a product that does NOT exist ->
+         you get a "product not found" message naming the key.
+         Scan random text -> nothing happens, the text stays in the
+         box for you to search with. (Silent on purpose.)
+
+     -----------------------------------------------------------
+     E. THE RULES EDITOR   (Settings -> Weighing Scale)
+     -----------------------------------------------------------
+     (x) It lists 4 default rules + your imported one. Drag rows by
+         the handle -> Save -> reopen -> the order stuck.
+     (y) Use the "Test a barcode" box at the bottom: paste
+         2210001003506 -> it names the matching rule, the decoded
+         value, and the product key it will look up. Use this
+         whenever a label misbehaves.
+     (z) Try to save a Weighted rule with no {NNDDD} in it -> the
+         server refuses and names the rule. That is deliberate: it
+         would otherwise match and ring the item up at zero.
+     (aa) Add a line, delete a line, Cancel -> your edits vanish and
+          the saved rules come back untouched.
+
+     -----------------------------------------------------------
+     F. OFFLINE + THE USUAL PROJECT RULES
+     -----------------------------------------------------------
+     (bb) Pull the network. Scan a weight label -> it STILL decodes.
+          The rules are cached locally on purpose.
+     (cc) Sell 0.5 kg offline, reconnect, sync -> the server's stock
+          matches the till's.
+     (dd) Dark mode: product editor Pricing tab, the weigh dialog,
+          and the rules editor - no white boxes, no black text on
+          black.
+     (ee) On the 10-inch tablet in landscape: the rules editor row
+          (name / type / encoding / pattern) must not overflow, and
+          the weigh dialog buttons must be finger-sized.
+
+     -----------------------------------------------------------
+     G. EDGE CASES WORTH ONE MINUTE EACH
+     -----------------------------------------------------------
+     (ff) Mark a product "Is a service" -> the Sell by weight switch
+          greys out. A service has no stock to weigh.
+     (gg) In the product editor pick unit "g" -> a grey note appears
+          saying stock is still held in kg and 1 g = 0.001 kg.
+     (hh) Import products from a spreadsheet with "kg" in the unit
+          column -> they come in as kg AND weighed. Re-import the
+          same file with the unit column blank -> the units you
+          already set are NOT reset to pcs.
+
+     KNOWN LIMIT: "box" and "pack" use a nominal factor, not a real
+     per-product pack size. If you sell by the box, tell me.
+
+
+[37] DONE - POS SESSIONS ARE LIVE. Sales now require an open session.
+
+     WHAT CHANGED FOR THE CASHIER:
+     Opening the POS with no session shows a screen with one button:
+     OPEN REGISTER. Enter the starting cash, and selling begins.
+     At the end: CLOSE REGISTER -> count the drawer -> the Z-report
+     is generated for that session only.
+
+     IF SOMETHING GOES WRONG - READ THIS FIRST:
+     Settings -> Sync -> "Require an open session to sell".
+     Turn it OFF and the till sells again immediately. That switch
+     exists precisely so a bad session can never close your shop.
+     Send me the session and I will fix it properly afterwards.
+
+     The block is also DELIBERATELY forgiving: if the app cannot work
+     out the session state (still loading, a database hiccup), it
+     LETS THE SALE THROUGH rather than stopping you. It only blocks
+     when it is certain there is no open session.
+
+     HOW TO TEST:
+     (a) Close the session, then open the POS -> the block screen
+         appears with Open Register. Not an error, not an empty grid.
+     (b) Open a register -> selling works normally.
+     (c) Start closing (Close Register), then try to sell from
+         another screen -> refused, because the drawer is being
+         counted and a sale would change the number you are signing.
+     (d) With no session: try a REFUND and a CASH IN/OUT -> both
+         refused with the same offer to open the register.
+     (e) Turn the setting off -> everything sells with no session.
+         Turn it back on -> blocked again.
+
+
+[7] DONE - Arabic numbers, RTL, and the printed documents.
+
+    YOUR 3 ANSWERS, ALL HANDLED:
+    1) Western digits (0123) in Arabic - this already worked, and
+       nothing needed changing. I added a test that locks it, because
+       one line of code at startup could have flipped every price in
+       the app to ٠١٢٣ and nothing would have caught it.
+    2) Language does NOT flip the layout to RTL - already true, also
+       now locked by a test. RTL stays its own separate setting.
+    3) Kitchen ticket / addition / receipt / Z-report / invoice PDF
+       now print in the language you selected, not English.
+
+    ONE THING TO KNOW ABOUT THE RECEIPT LABELS:
+    The receipt labels (Cashier, Items, Balance Due...) are editable
+    fields in Printer Settings, and they came pre-filled in English.
+    The rule now is: if you NEVER changed a label, it follows the app
+    language. If you DID type your own wording, yours is printed
+    exactly as typed - even if it is English on an Arabic till,
+    because that may well be what you want.
+    So if a label still prints English after switching to Arabic,
+    check whether that field was edited; clearing it back to empty
+    makes it follow the language again.
+
+    HOW TO TEST:
+    (a) Settings -> language = Arabic (or French).
+    (b) Ring up a sale and print the RECEIPT -> labels are translated
+        AND the Arabic renders as letters, not black boxes. (Your first
+        test PDF showed boxes on every label row - fixed: the label
+        rows were built with a text style that had no Arabic font
+        attached, while the company header had one. Check the BOLD
+        GRAND TOTAL line too, it uses a separate bold font.)
+    (c) Prices, totals and dates must still be 0123, NOT ٠١٢٣.
+    (d) The layout must NOT flip to right-to-left just from the
+        language. Only the Writing direction setting does that.
+    (e) Print the ADDITION (guest check) and a KITCHEN ticket -> the
+        User / Order / Time lines are translated.
+    (f) Sales history -> print/save an INVOICE PDF -> Bill to,
+        Quantity, Unit price, Subtotal, Total, Paid/Unpaid translated.
+    (g) Z-report -> print it. Two things changed: it is translated,
+        AND it now obeys your printer settings. Before, it always used
+        80mm paper, a fixed margin and the default printer no matter
+        what you configured - a 58mm till printed an 80mm layout.
+        Check: set the receipt printer to 58mm, or change the font
+        size / copies / right-to-left, and the Z-report follows.
+    (g2) INVOICE: Printer Settings -> Invoice has a new "Right to left"
+        switch (off by default). With it on, the whole invoice mirrors
+        INCLUDING the table columns (# moves to the right). Also fixed:
+        the "TAX INVOICE" title, Payment status, Paid amount and
+        Amount due were still English, and the page footer.
+    (h) Switch back to English -> everything reads as before.
+    (i) RIGHT-TO-LEFT receipt (new): Printer Settings -> your receipt
+        printer -> turn ON "Right to left". Print again. Labels move
+        to the RIGHT, amounts to the LEFT - a mirror of the normal
+        one. The company address (Latin) must still read normally,
+        and long values like POS1-200-000014 must NOT wrap.
+        This is per-printer and OFF by default; the app language
+        does not turn it on for you, exactly as you asked.
+
+    I rendered both versions here and checked them. Sample PDFs are
+    on this PC if you want to look before printing - open these:
+      C:\Users\ILYASS\AppData\Local\Temp\claude\d--POS-APP\
+        38a5b0c1-2fd7-489f-8568-ec1008308031\scratchpad\
+          receipt_ltr.pdf   (normal)
+          receipt_rtl.pdf   (right-to-left)
+
+--- NEED A HARDWARE / DEPENDENCY ANSWER ---
+
+[8] Cash drawer pops open
+    QUESTION: how is the drawer wired? (a) into the receipt printer's
+    RJ11 port, (b) a COM port, or (c) network/LAN?
+    Now: the settings all exist but no "kick" is ever sent.
+
+[9] Silent printing on the Android tablets
+    Now: tablets show the system print dialog instead of printing silently.
+    This needs an ESC/POS network transport (LAN port 9100 first). Biggest item.
+    QUESTION: are the tablet's printers reachable over Wi-Fi/LAN (IP + port 9100)?
+
+[10] Sounds on scan / checkout / error
+    QUESTION: which events should make a sound, and do you have the sound files?
+    Now: only a single system click at checkout.
+
+--- DEV / BUILD / PRODUCTION (not a screen test) ---
+
+[11] Turn local database encryption back ON before production.
+[12] Lock down /api/Master/*, move the DB password out of the connection string,
+     put JWT + admin-portal secrets in the deploy server.
+[13] Switch the API address from the dev box (100.114.12.38) to the real host.
+[14] Fix Android build (needs Java/JDK 21 on this machine) — until then the
+     tablets run an OLD apk, so re-check the apk date before reporting Android bugs.
+     SAME TRAP ON WINDOWS (hit 2026-08-16): the installed
+     C:\Program Files (x86)\Octopus POS\pos_app.exe was 2 days old while
+     the code was current, so a fix looked "still not working". Before
+     reporting a Windows bug, check that exe's date against your last build.
+[15] Confirm the Z-report totals are correct (verify in SQL after an API restart).

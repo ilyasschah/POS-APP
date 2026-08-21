@@ -22,6 +22,27 @@ namespace Api.Domain
         public string? ReferenceDocumentNumber { get; private set; }
         public DateTime DateCreated { get; private set; }
         public DateTime DateUpdated { get; private set; }
+
+        /// <summary>
+        /// The POS session this belongs to. Nullable — every existing write
+        /// path leaves it null, so nothing that works today changes.
+        /// </summary>
+        public int? SessionId { get; private set; }
+
+        /// <summary>
+        /// True when this document reached the server after its session had
+        /// already been closed and reported — an offline register reconnecting.
+        /// The sale is kept and keeps its session; this is what makes the late
+        /// arrival visible rather than silently absorbed.
+        /// </summary>
+        public bool ArrivedAfterClose { get; private set; }
+
+        /// <summary>Sets the session at creation/sync time.</summary>
+        public void AttachToSession(int? sessionId, bool arrivedAfterClose = false)
+        {
+            SessionId = sessionId;
+            if (arrivedAfterClose) ArrivedAfterClose = true;
+        }
         public string? InternalNote { get; private set; }
         public string? Note { get; private set; }
         public DateTime? DueDate { get; private set; }

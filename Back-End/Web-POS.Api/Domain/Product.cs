@@ -24,8 +24,28 @@ namespace Api.Domain
 
         public int? PLU { get; set; }
 
+        /// <summary>
+        /// Legacy free-text unit. Superseded by <see cref="UomId"/> and kept only
+        /// so receipts, document lines and exports written against it keep
+        /// working; new code must read the unit through
+        /// <c>UnitOfMeasure.Get(UomId)</c>.
+        /// </summary>
         [MaxLength(50)]
         public string? MeasurementUnit { get; set; }
+
+        /// <summary>
+        /// Id into the hardcoded <see cref="UnitOfMeasure"/> catalog. Defaults to
+        /// pieces, which converts 1:1 and therefore cannot disturb existing stock.
+        /// </summary>
+        public int UomId { get; set; } = UnitOfMeasure.PiecesId;
+
+        /// <summary>
+        /// Sold by weight. At the POS this makes the product ask for a quantity
+        /// (from the scale, or from the keypad when no scale is attached) instead
+        /// of adding a single unit, and turns the Price button into a quantity
+        /// editor. Stock is still deducted in the category's reference unit.
+        /// </summary>
+        public bool IsToWeigh { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]
         public decimal Price { get; set; }  // default 0
@@ -91,7 +111,9 @@ namespace Api.Domain
             string color,
             int? ageRestriction,
             decimal? lastPurchasePrice,
-            int? rank)
+            int? rank,
+            int uomId,
+            bool isToWeigh)
         {
             ProductGroupId = productGroupId;
             Name = name;
@@ -115,6 +137,8 @@ namespace Api.Domain
             AgeRestriction = ageRestriction;
             LastPurchasePrice = lastPurchasePrice;
             Rank = rank;
+            UomId = uomId;
+            IsToWeigh = isToWeigh;
         }
 
         public static Product Create(
@@ -139,11 +163,14 @@ namespace Api.Domain
             string color,
             int? ageRestriction,
             decimal? lastPurchasePrice,
-            int? rank)
+            int? rank,
+            int uomId,
+            bool isToWeigh)
             => new(
                 productGroupId, name, code, plu, measurementUnit, price, isTaxInclusivePrice, currencyId,
                 isPriceChangeAllowed, isService, isUsingDefaultQuantity, isEnabled, description, dateCreated,
-                dateUpdated, cost, markup, image, color, ageRestriction, lastPurchasePrice, rank
+                dateUpdated, cost, markup, image, color, ageRestriction, lastPurchasePrice, rank,
+                uomId, isToWeigh
             );
 
         public void Update(
@@ -167,7 +194,9 @@ namespace Api.Domain
             string color,
             int? ageRestriction,
             decimal? lastPurchasePrice,
-            int? rank)
+            int? rank,
+            int uomId,
+            bool isToWeigh)
         {
             ProductGroupId = productGroupId;
             Name = name;
@@ -190,6 +219,8 @@ namespace Api.Domain
             AgeRestriction = ageRestriction;
             LastPurchasePrice = lastPurchasePrice;
             Rank = rank;
+            UomId = uomId;
+            IsToWeigh = isToWeigh;
         }
     }
 }

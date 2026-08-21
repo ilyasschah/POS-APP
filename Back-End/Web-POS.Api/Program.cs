@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
@@ -173,11 +173,14 @@ builder.Services.AddScoped<TemplateRepository>();
 builder.Services.AddScoped<BookingRepository>();
 builder.Services.AddScoped<UserDevicePinRepository>();
 builder.Services.AddScoped<ShiftRepository>();
+builder.Services.AddScoped<PosSessionRepository>();
+builder.Services.AddScoped<PosSessionService>();
 builder.Services.AddScoped<TimeClockRepository>();
 
 // ================== SERVICES ==================
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<BarcodeService>();
+builder.Services.AddScoped<BarcodeRuleService>();
 builder.Services.AddScoped<CurrencyService>();
 builder.Services.AddScoped<FiscalItemService>();
 builder.Services.AddScoped<ProductCommentService>();
@@ -192,6 +195,7 @@ builder.Services.AddScoped<VoidReasonService>();
 builder.Services.AddScoped<CustomerService>();
 builder.Services.AddScoped<CustomerDiscountService>();
 builder.Services.AddScoped<CompanyService>();
+builder.Services.AddScoped<CompanyDataResetService>();
 builder.Services.AddScoped<StockControlService>();
 builder.Services.AddScoped<LoyaltyCardService>();
 builder.Services.AddScoped<UserService>();

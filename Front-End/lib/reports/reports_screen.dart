@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
+import 'package:pos_app/uom/unit_of_measure.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:intl/intl.dart';
@@ -2569,7 +2570,7 @@ Future<Uint8List> _buildProductsPdf({
               (r) => [
                 r.code ?? '',
                 r.product,
-                fmt.format(r.quantity),
+                formatReportQuantity(r.quantity),
                 r.uom,
                 fmt.format(r.totalBeforeTax),
                 fmt.format(r.total),
@@ -2578,7 +2579,7 @@ Future<Uint8List> _buildProductsPdf({
             [
               '',
               'Total',
-              fmt.format(rows.fold(0.0, (s, r) => s + r.quantity)),
+              formatReportQuantity(rows.fold(0.0, (s, r) => s + r.quantity)),
               '',
               fmt.format(rows.fold(0.0, (s, r) => s + r.totalBeforeTax)),
               fmt.format(rows.fold(0.0, (s, r) => s + r.total)),
@@ -2654,14 +2655,14 @@ Future<Uint8List> _buildProductGroupsPdf({
             ...rows.map(
               (r) => [
                 r.productGroup,
-                fmt.format(r.quantity),
+                formatReportQuantity(r.quantity),
                 fmt.format(r.totalBeforeTax),
                 fmt.format(r.total),
               ],
             ),
             [
               'Total',
-              fmt.format(rows.fold(0.0, (s, r) => s + r.quantity)),
+              formatReportQuantity(rows.fold(0.0, (s, r) => s + r.quantity)),
               fmt.format(rows.fold(0.0, (s, r) => s + r.totalBeforeTax)),
               fmt.format(rows.fold(0.0, (s, r) => s + r.total)),
             ],
@@ -3199,7 +3200,7 @@ Future<Uint8List> _buildItemListPdf({
                 r.orderNumber ?? '',
                 r.productCode ?? '',
                 r.productName,
-                fmt.format(r.quantity),
+                formatReportQuantity(r.quantity),
                 r.uom,
                 fmt.format(r.totalBeforeTax),
                 fmt.format(r.totalTax),
@@ -3217,7 +3218,7 @@ Future<Uint8List> _buildItemListPdf({
               '',
               '',
               'Total',
-              fmt.format(rows.fold(0.0, (s, r) => s + r.quantity)),
+              formatReportQuantity(rows.fold(0.0, (s, r) => s + r.quantity)),
               '',
               fmt.format(rows.fold(0.0, (s, r) => s + r.totalBeforeTax)),
               fmt.format(rows.fold(0.0, (s, r) => s + r.totalTax)),
@@ -3434,7 +3435,7 @@ Future<Uint8List> _buildProfitPdf({
               (r) => [
                 r.productCode ?? '',
                 r.productName,
-                fmt.format(r.quantity),
+                formatReportQuantity(r.quantity),
                 fmt.format(r.cost),
                 fmt.format(r.total),
                 fmt.format(r.profit),
@@ -5643,7 +5644,7 @@ Future<Uint8List> _buildRefundsPdf({
                 r.customerName,
                 r.productCode ?? '',
                 r.productName,
-                fmt.format(r.quantity),
+                formatReportQuantity(r.quantity),
                 r.uom,
                 fmt.format(r.totalBeforeTax),
                 fmt.format(r.totalTax),
@@ -5658,7 +5659,7 @@ Future<Uint8List> _buildRefundsPdf({
               '',
               '',
               'Total',
-              fmt.format(rows.fold(0.0, (s, r) => s + r.quantity)),
+              formatReportQuantity(rows.fold(0.0, (s, r) => s + r.quantity)),
               '',
               fmt.format(rows.fold(0.0, (s, r) => s + r.totalBeforeTax)),
               fmt.format(rows.fold(0.0, (s, r) => s + r.totalTax)),
@@ -6192,7 +6193,7 @@ Future<Uint8List> _buildPurchaseByProductPdf({
               (r) => [
                 r.code ?? '',
                 r.product,
-                fmt.format(r.quantity),
+                formatReportQuantity(r.quantity),
                 r.uom,
                 fmt.format(r.totalBeforeTax),
                 fmt.format(r.total),
@@ -6201,7 +6202,7 @@ Future<Uint8List> _buildPurchaseByProductPdf({
             [
               '',
               'Total',
-              fmt.format(rows.fold(0.0, (s, r) => s + r.quantity)),
+              formatReportQuantity(rows.fold(0.0, (s, r) => s + r.quantity)),
               '',
               fmt.format(rows.fold(0.0, (s, r) => s + r.totalBeforeTax)),
               fmt.format(rows.fold(0.0, (s, r) => s + r.total)),
@@ -6233,7 +6234,6 @@ Future<Uint8List> _buildPurchaseExpirationDatePdf({
   required String productLabel,
 }) async {
   final doc = pw.Document();
-  final fmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
   final regular = await PdfFonts.latin();
@@ -6308,7 +6308,7 @@ Future<Uint8List> _buildPurchaseExpirationDatePdf({
                   '${e.key + 1}',
                   e.value.productCode ?? '',
                   e.value.productName,
-                  fmt.format(e.value.quantity),
+                  formatReportQuantity(e.value.quantity),
                   e.value.uom,
                   dateFmt.format(e.value.expirationDate),
                 ],
@@ -6684,7 +6684,7 @@ Future<Uint8List> _buildPurchaseItemsDiscountsPdf({
                     '${rowIndex++}',
                     r.productCode ?? '',
                     r.productName,
-                    fmt.format(r.quantity),
+                    formatReportQuantity(r.quantity),
                     fmt.format(r.cost),
                     fmt.format(r.totalBeforeDiscount),
                     fmt.format(r.totalAfterDiscount),
@@ -7049,7 +7049,7 @@ Future<Uint8List> _buildStockReturnByProductPdf({
                 dateFmt.format(r.date),
                 r.code ?? '',
                 r.product,
-                fmt.format(r.quantity),
+                formatReportQuantity(r.quantity),
                 r.uom,
                 fmt.format(r.totalBeforeTax),
                 fmt.format(r.total),
@@ -7059,7 +7059,7 @@ Future<Uint8List> _buildStockReturnByProductPdf({
               '',
               '',
               'Total',
-              fmt.format(rows.fold(0.0, (s, r) => s + r.quantity)),
+              formatReportQuantity(rows.fold(0.0, (s, r) => s + r.quantity)),
               '',
               fmt.format(rows.fold(0.0, (s, r) => s + r.totalBeforeTax)),
               fmt.format(rows.fold(0.0, (s, r) => s + r.total)),
@@ -7158,7 +7158,7 @@ Future<Uint8List> _buildLossAndDamageByProductPdf({
                 dateFmt.format(r.date),
                 r.code ?? '',
                 r.product,
-                fmt.format(r.quantity),
+                formatReportQuantity(r.quantity),
                 r.uom,
                 fmt.format(r.totalBeforeTax),
                 fmt.format(r.total),
@@ -7168,7 +7168,7 @@ Future<Uint8List> _buildLossAndDamageByProductPdf({
               '',
               '',
               'Total',
-              fmt.format(rows.fold(0.0, (s, r) => s + r.quantity)),
+              formatReportQuantity(rows.fold(0.0, (s, r) => s + r.quantity)),
               '',
               fmt.format(rows.fold(0.0, (s, r) => s + r.totalBeforeTax)),
               fmt.format(rows.fold(0.0, (s, r) => s + r.total)),

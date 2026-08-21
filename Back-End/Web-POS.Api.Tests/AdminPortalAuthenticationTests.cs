@@ -272,7 +272,7 @@ public class AdminPortalAuthenticationTests : IClassFixture<AdminPortalFactory>
     /// <summary>Pulls the rendered error banner out of the login page.</summary>
     private static string ErrorText(string html)
     {
-        var match = Regex.Match(html, @"role=""alert""[\s\S]*?<div class=""small"">([\s\S]*?)</div>");
+        var match = Regex.Match(html, @"class=""alert alert-danger"" role=""alert"">([\s\S]*?)</div>");
         Assert.True(match.Success, "The login page rendered no error banner.");
         return match.Groups[1].Value.Trim();
     }

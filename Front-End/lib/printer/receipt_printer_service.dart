@@ -4,18 +4,66 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:pos_app/auth/user_model.dart';
 import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/cart/checkout_models.dart';
+import 'package:pos_app/uom/unit_of_measure.dart';
 import 'package:pos_app/cart/discount_display.dart';
 import 'package:pos_app/company/company_model.dart';
 import 'package:pos_app/customer/customer_model.dart';
+import 'package:pos_app/l10n/app_locale.dart';
+import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:pos_app/printer/pdf_fonts.dart';
 import 'package:pos_app/printer/pdf_file_name.dart';
+import 'package:pos_app/printer/printed_text.dart';
 import 'package:pos_app/printer/pdf_save_service.dart';
 import 'package:pos_app/printer/printer_platform.dart';
 import 'package:pos_app/reports/z_report_model.dart';
 import 'package:printing/printing.dart';
 
+/// Which wording a receipt label prints in: the operator's own, or the app's
+/// translation of the shipped default.
+///
+/// 🚨 The `== shippedDefault` test is the whole point, and without it the
+/// feature does nothing. Receipt labels are SETTINGS with English values in
+/// `kSettingDefaults` ('Cashier', 'Items', 'Balance Due'…), and those defaults
+/// are seeded into `app_properties` on every install — so [stored] is almost
+/// never empty. A plain "use the stored value, else the translation" rule would
+/// therefore leave every receipt in English forever, on every terminal.
+///
+/// A value still equal to the shipped default is not a choice anybody made; it
+/// is what seeding put there, so the translation wins. A value the operator
+/// actually typed is theirs and is printed verbatim — including when it happens
+/// to be English on an Arabic till, which is a legitimate thing to want.
+///
+/// [useCustomLabels] is the master toggle (`Receipt.UseCustomLabels`, default
+/// on): off means "ignore my wording", which now yields the TRANSLATED built-in
+/// wording rather than the English one.
+String resolveReceiptLabel({
+  required String? stored,
+  required String? shippedDefault,
+  required String localized,
+  required bool useCustomLabels,
+}) {
+  if (!useCustomLabels) return localized;
+  final v = stored?.trim();
+  if (v == null || v.isEmpty) return localized;
+  if (v == shippedDefault?.trim()) return localized;
+  return v;
+}
+
 class ReceiptPrinterService {
   // ── Settings helpers ──────────────────────────────────────────────────────
+
+  /// Strings for the printed document, in the company's selected language.
+  ///
+  /// Resolved from the settings map every caller already passes (they all hand
+  /// over the whole `appSettingsProvider` map), so nothing has to be threaded
+  /// through six call sites — and a caller that forgets cannot silently fall
+  /// back to English for everything.
+  ///
+  /// `lookupAppLocalizations` is synchronous and needs no BuildContext, which
+  /// matters: printing happens from services and fire-and-forget callbacks that
+  /// have no widget tree to read from.
+  static AppLocalizations _l10n(Map<String, String> s) =>
+      lookupAppLocalizations(resolveAppLocale(s[SettingKeys.language]));
 
   static PdfPageFormat _paperFmt(String? size) =>
       size == '58mm' ? PdfPageFormat.roll57 : PdfPageFormat.roll80;
@@ -93,6 +141,8 @@ class ReceiptPrinterService {
           productId: it.productId,
           roundNumber: it.roundNumber,
           quantity: it.quantity,
+          uomId: it.uomId,
+          isToWeigh: it.isToWeigh,
           price: it.price,
           cost: it.cost,
           discount: it.discount,
@@ -109,6 +159,9 @@ class ReceiptPrinterService {
           warehouseId: it.warehouseId,
           measurementUnit: it.measurementUnit,
           isService: it.isService,
+          // Merged rows must keep the tax mode, or the printed line reverts to
+          // the `true` default and an exclusive product prints the wrong total.
+          isTaxInclusive: it.isTaxInclusive,
         );
         order.add(key);
       } else {
@@ -183,6 +236,35 @@ class ReceiptPrinterService {
 
   // ── Shared row builder ────────────────────────────────────────────────────
 
+  /// Every text style on a printed document, built in ONE place.
+  ///
+  /// 🚨 `fontFallback` is the whole reason this exists. None of the Latin faces
+  /// carry Arabic glyphs, so a style that omits the fallback prints Arabic as
+  /// **solid black boxes** — and only on paper, which is where it was found
+  /// (2026-08-16, first Arabic receipt): the company header rendered correctly
+  /// because it went through the page's `ts()`, while every label row went
+  /// through a second, hand-rolled `TextStyle` that had no fallback. Two ways to
+  /// build a style is what let one of them rot. Build styles here, or the next
+  /// widget added to a receipt reintroduces the same invisible bug.
+  static pw.TextStyle printedTextStyle({
+    required pw.Font? font,
+    required pw.Font? arabic,
+    pw.Font? boldFont,
+    pw.Font? arabicBold,
+    bool bold = false,
+    bool italic = false,
+    double size = 10,
+  }) {
+    final fallback = bold ? (arabicBold ?? arabic) : arabic;
+    return pw.TextStyle(
+      font: bold ? (boldFont ?? font) : font,
+      fontFallback: [if (fallback != null) fallback],
+      fontWeight: bold ? pw.FontWeight.bold : null,
+      fontStyle: italic ? pw.FontStyle.italic : null,
+      fontSize: size,
+    );
+  }
+
   static pw.Widget _row(
     String label,
     String value, {
@@ -191,18 +273,39 @@ class ReceiptPrinterService {
     double fontScale = 1.0,
     pw.Font? font,
     pw.Font? boldFont,
+    pw.Font? arabic,
+    pw.Font? arabicBold,
     bool rtl = false,
   }) {
     final size = fontSize * fontScale;
-    final activeFont = bold ? (boldFont ?? font) : font;
-    final style = pw.TextStyle(
-      font: activeFont,
-      fontWeight: bold ? pw.FontWeight.bold : null,
-      fontSize: size,
+    final style = printedTextStyle(
+      font: font,
+      boldFont: boldFont,
+      arabic: arabic,
+      arabicBold: arabicBold,
+      bold: bold,
+      size: size,
     );
     final dir = rtl ? pw.TextDirection.rtl : pw.TextDirection.ltr;
-    final labelW = pw.Text(label, style: style, textDirection: dir);
-    final valueW = pw.Text(value, style: style, textDirection: dir);
+    // 🚨 FLEXIBLE, not Expanded, and not bare. Bare, each side sizes to its own
+    // text and a long pair can overrun the paper — which only shows up on an
+    // RTL receipt, where the label sits flush against the edge instead of
+    // spilling into empty space. Expanded fixes that but caps each side at half
+    // the width, so `POS1-200-000014` wraps mid-number next to a short label.
+    // Flexible caps without reserving: each side takes what it needs and only
+    // shrinks when the pair genuinely does not fit.
+    final labelW = pw.Flexible(
+      child: printedText(label,
+          style: style,
+          layout: dir,
+          textAlign: rtl ? pw.TextAlign.right : pw.TextAlign.left),
+    );
+    final valueW = pw.Flexible(
+      child: printedText(value,
+          style: style,
+          layout: dir,
+          textAlign: rtl ? pw.TextAlign.left : pw.TextAlign.right),
+    );
     return pw.Padding(
       padding: const pw.EdgeInsets.symmetric(vertical: 1),
       child: pw.Row(
@@ -220,7 +323,14 @@ class ReceiptPrinterService {
 
   // ── Receipt / Guest Check ─────────────────────────────────────────────────
 
-  Future<void> printCartReceipt({
+  /// Builds the receipt / guest-check document WITHOUT printing it.
+  ///
+  /// Split out from [printCartReceipt] so the rendered page can be produced in
+  /// a test and looked at. Four consecutive Arabic bugs on this document were
+  /// invisible to the analyzer and to every unit test and only showed up on
+  /// paper (boxes → unshaped letters → wrong glyphs → a silent no-op fix), so
+  /// being able to render a real receipt headless is worth the seam.
+  Future<pw.Document> buildCartReceipt({
     required Company company,
     required User? cashier,
     Customer? customer,
@@ -253,9 +363,6 @@ class ReceiptPrinterService {
     // stay global.
     String role = 'Receipt',
     bool isGuestCheck = false,
-    /// Write the receipt to a file the operator picks (with the name pre-filled)
-    /// instead of sending it to a printer. Same bytes either way.
-    bool saveToFile = false,
     // Loyalty
     double pointsUsed = 0,
     double pointsEarned = 0,
@@ -271,7 +378,6 @@ class ReceiptPrinterService {
         roleSettings[SettingKeys.discountApplyRule] == 'Before tax';
     final fmt = _paperFmt(roleSettings['$role.PaperSize']);
     final margins = _margins(roleSettings, role);
-    final copies = _copies(roleSettings, role);
     final fontScale = _fontScale(roleSettings, role);
     final font = await _font(roleSettings, role);
     final boldFont = await _fontBold(roleSettings, role);
@@ -280,7 +386,6 @@ class ReceiptPrinterService {
     final rtl = _flag(roleSettings, '$role.RightToLeft');
     final logoFull = _flag(roleSettings, '$role.LogoFullWidth');
     final showBarcode = _flag(roleSettings, '$role.PrintBarcode');
-    final printerName = roleSettings['$role.PrinterName'];
 
     // Receipt content toggles. The default-ON ones treat a missing key as 'show'
     // (so an un-synced install isn't unexpectedly blanked); the measurement-unit
@@ -318,9 +423,13 @@ class ReceiptPrinterService {
     final taxByName = <String, double>{};
     if (printTaxName) {
       for (final item in items) {
-        final unitNet = item.price - item.discount - item.promotionalDiscount;
+        // Via the shared basis so a tax-inclusive line reports the tax carved
+        // OUT of its price rather than a second one added on top — the receipt
+        // has to agree with the cart totals to the cent.
+        final b = lineTaxBasis(item, discountBeforeTax: discountBeforeTax);
+        final unitNet = b.unitPrice - b.unitDiscount - b.unitPromo;
         final taxBase =
-            (discountBeforeTax ? unitNet : item.price) * item.quantity;
+            (discountBeforeTax ? unitNet : b.unitPrice) * item.quantity;
         for (final t in item.appliedTaxes) {
           final amt =
               t.isFixed ? t.rate * item.quantity : taxBase * (t.rate / 100);
@@ -356,22 +465,24 @@ class ReceiptPrinterService {
     // No hardcoded default — an empty footer simply prints nothing.
     final footerText = roleSettings['$role.Footer'] ?? '';
 
-    pw.TextStyle ts(double size, {bool bold = false}) => pw.TextStyle(
-      font: bold ? boldFont : font,
-      fontFallback: [bold ? arabicBold : arabicRegular],
-      fontWeight: bold ? pw.FontWeight.bold : null,
-      fontSize: size * fontScale,
-    );
+    pw.TextStyle ts(double size, {bool bold = false}) => printedTextStyle(
+          font: font,
+          boldFont: boldFont,
+          arabic: arabicRegular,
+          arabicBold: arabicBold,
+          bold: bold,
+          size: size * fontScale,
+        );
 
     final dir = rtl ? pw.TextDirection.rtl : pw.TextDirection.ltr;
 
     pw.Widget center(String text, {double size = 10, bool bold = false}) =>
         pw.Center(
-          child: pw.Text(
+          child: printedText(
             text,
             style: ts(size, bold: bold),
             textAlign: pw.TextAlign.center,
-            textDirection: dir,
+            layout: dir,
           ),
         );
 
@@ -380,19 +491,18 @@ class ReceiptPrinterService {
         ? itemCount.toInt().toString()
         : itemCount.toStringAsFixed(2);
 
-    // Localize Text: each label falls back to its current wording, so any label
-    // the operator hasn't customised keeps the receipt exactly as before. The
-    // master toggle (default ON) lets the operator switch back to the built-in
-    // wording without clearing every field.
+    final l = _l10n(roleSettings);
+
     final useCustomLabels =
         (roleSettings[SettingKeys.receiptUseCustomLabels] ?? 'true')
                 .toLowerCase() !=
             'false';
-    String lbl(String key, String fallback) {
-      if (!useCustomLabels) return fallback;
-      final v = roleSettings[key]?.trim();
-      return (v != null && v.isNotEmpty) ? v : fallback;
-    }
+    String lbl(String key, String localized) => resolveReceiptLabel(
+          stored: roleSettings[key],
+          shippedDefault: kSettingDefaults[key],
+          localized: localized,
+          useCustomLabels: useCustomLabels,
+        );
 
     // Short receipt number: print only the trailing counter segment.
     final shortNumber = _flag(roleSettings, SettingKeys.receiptShortNumber);
@@ -422,6 +532,8 @@ class ReceiptPrinterService {
       fontScale: fontScale,
       font: font,
       boldFont: boldFont,
+      arabic: arabicRegular,
+      arabicBold: arabicBold,
       rtl: rtl,
     );
 
@@ -437,15 +549,15 @@ class ReceiptPrinterService {
         }
       }
 
-      add(showCustName, lbl(SettingKeys.labelCustomer, 'Customer'), c.name);
-      add(showCustCode, lbl(SettingKeys.labelCustomerCode, 'Code'), c.code);
-      add(showCustTax, lbl(SettingKeys.labelCompanyTaxNumber, 'Tax No'),
+      add(showCustName, lbl(SettingKeys.labelCustomer, l.customerLabel), c.name);
+      add(showCustCode, lbl(SettingKeys.labelCustomerCode, l.fieldCode), c.code);
+      add(showCustTax, lbl(SettingKeys.labelCompanyTaxNumber, l.setTaxNo),
           c.taxNumber);
-      add(showCustPhone, lbl(SettingKeys.labelCustomerPhone, 'Phone'),
+      add(showCustPhone, lbl(SettingKeys.labelCustomerPhone, l.setPhone),
           c.phoneNumber);
-      add(showCustEmail, lbl(SettingKeys.labelCustomerEmail, 'Email'), c.email);
+      add(showCustEmail, lbl(SettingKeys.labelCustomerEmail, l.fieldEmail), c.email);
       if (showCustAddr) {
-        add(true, lbl(SettingKeys.labelCustomerAddress, 'Address'),
+        add(true, lbl(SettingKeys.labelCustomerAddress, l.setAddress),
             _formatCustomerAddress(c, roleSettings[SettingKeys.receiptAddressFormat]));
       }
       if (rows.isEmpty) return const [];
@@ -462,6 +574,11 @@ class ReceiptPrinterService {
       pw.Page(
         pageFormat: fmt,
         margin: margins,
+        theme: pw.ThemeData.withFont(
+          base: font,
+          bold: boldFont,
+          fontFallback: [arabicRegular, arabicBold],
+        ),
         build: (_) => pw.Column(
           crossAxisAlignment: rtl
               ? pw.CrossAxisAlignment.end
@@ -484,11 +601,11 @@ class ReceiptPrinterService {
             // ── Header ─────────────────────────────────────────────────────
             center(headerText, size: 16, bold: true),
             if (showCompanyTax && company.taxNumber?.isNotEmpty == true)
-              center('${lbl(SettingKeys.labelCompanyTaxNumber, 'Tax No')}: ${company.taxNumber}', size: 9),
+              center('${lbl(SettingKeys.labelCompanyTaxNumber, l.setTaxNo)}: ${company.taxNumber}', size: 9),
             if (showCompanyAddress && company.address?.isNotEmpty == true)
               center(company.address!, size: 9),
             if (showCompanyPhone && company.phoneNumber?.isNotEmpty == true)
-              center('${lbl(SettingKeys.labelCompanyPhone, 'Tel')}: ${company.phoneNumber}', size: 9),
+              center('${lbl(SettingKeys.labelCompanyPhone, l.telLabel)}: ${company.phoneNumber}', size: 9),
             pw.SizedBox(height: 6),
             pw.Divider(borderStyle: pw.BorderStyle.dashed),
             pw.SizedBox(height: 4),
@@ -504,7 +621,7 @@ class ReceiptPrinterService {
             // ── Large order number (optional) ──────────────────────────────
             if (printLargeOrderNo) ...[
               pw.Center(
-                child: pw.Text(
+                child: printedText(
                   orderNumber.contains('#')
                       ? orderNumber.split('#').last.trim()
                       : orderNumber,
@@ -518,11 +635,11 @@ class ReceiptPrinterService {
 
             // ── Transaction info ───────────────────────────────────────────
             if (printOrderNumber)
-              rowW('${lbl(SettingKeys.labelReceiptNumber, 'Receipt')}:',
+              rowW('${lbl(SettingKeys.labelReceiptNumber, l.receiptLabel)}:',
                   shortNo(orderNumber)),
-            rowW('Date:', _fmtDateTime(printTime)),
+            rowW('${l.dateLabel}:', _fmtDateTime(printTime)),
             if (cashier != null)
-              rowW('${lbl(SettingKeys.labelUser, 'Cashier')}:',
+              rowW('${lbl(SettingKeys.labelUser, l.roleCashier)}:',
                   cashier.displayName),
             pw.SizedBox(height: 4),
             pw.Divider(borderStyle: pw.BorderStyle.dashed),
@@ -532,13 +649,15 @@ class ReceiptPrinterService {
 
             // ── Items ──────────────────────────────────────────────────────
             ...renderItems.map((item) {
-              final qty = item.quantity % 1 == 0
-                  ? item.quantity.toInt().toString()
-                  : item.quantity.toStringAsFixed(2);
-              final unitNet =
-                  item.price - item.discount - item.promotionalDiscount;
+              final qty = formatQuantityValue(item.quantity, item.uomId);
+              // Shared ex-tax basis: for a tax-inclusive product the printed
+              // unit price and line total must come back to the shelf price,
+              // not the shelf price plus tax again.
+              final b =
+                  lineTaxBasis(item, discountBeforeTax: discountBeforeTax);
+              final unitNet = b.unitPrice - b.unitDiscount - b.unitPromo;
               final taxBase =
-                  (discountBeforeTax ? unitNet : item.price) * item.quantity;
+                  (discountBeforeTax ? unitNet : b.unitPrice) * item.quantity;
               final lineTax = item.appliedTaxes.fold<double>(
                 0,
                 (s, t) =>
@@ -554,10 +673,10 @@ class ReceiptPrinterService {
               final lineTotal = taxIncluded
                   ? unitNet * item.quantity + lineTax
                   : unitNet * item.quantity;
-              final nameW = pw.Text(
+              final nameW = printedText(
                 item.productName,
                 style: ts(11, bold: true),
-                textDirection: dir,
+                layout: dir,
               );
 
               // 1. Safely grab the unit (when the toggle is on). If it exists,
@@ -570,15 +689,15 @@ class ReceiptPrinterService {
                   : '';
 
               // 2. Inject $unit right after $qty. The currency remains dynamic!
-              final qtyPriceW = pw.Text(
+              final qtyPriceW = printedText(
                 '${rtl ? '' : '  '}$qty$unit x ${money(unitPrice)} $currencySymbol',
                 style: ts(10),
-                textDirection: dir,
+                layout: dir,
               );
-              final lineTotalW = pw.Text(
+              final lineTotalW = printedText(
                 '${money(lineTotal)} $currencySymbol',
                 style: ts(10),
-                textDirection: dir,
+                layout: dir,
               );
               return pw.Column(
                 crossAxisAlignment: rtl
@@ -601,7 +720,7 @@ class ReceiptPrinterService {
             pw.SizedBox(height: 4),
 
             // ── Totals ─────────────────────────────────────────────────────
-            rowW('${lbl(SettingKeys.labelSubtotal, 'Subtotal')}:',
+            rowW('${lbl(SettingKeys.labelSubtotal, l.subtotal)}:',
                 '${money(subtotal)} $currencySymbol'),
             // Itemized discounts when available; otherwise the single merged row.
             if (discountLines.isNotEmpty)
@@ -613,7 +732,7 @@ class ReceiptPrinterService {
               )
             else if (totalDiscount > 0)
               rowW(
-                '${lbl(SettingKeys.labelDiscount, 'Discount')}:',
+                '${lbl(SettingKeys.labelDiscount, l.discountLabel)}:',
                 '-${money(totalDiscount)} $currencySymbol',
               ),
             if (totalTax > 0 && printTaxTotals)
@@ -622,13 +741,13 @@ class ReceiptPrinterService {
                   (e) => rowW('${e.key}:', '${money(e.value)} $currencySymbol'),
                 )
               else
-                rowW('${lbl(SettingKeys.labelTaxRate, 'Tax')}:',
+                rowW('${lbl(SettingKeys.labelTaxRate, l.fieldTax)}:',
                     '${money(totalTax)} $currencySymbol'),
             pw.SizedBox(height: 4),
             pw.Divider(),
             pw.SizedBox(height: 4),
             rowW(
-              '${lbl(SettingKeys.labelTotal, 'GRAND TOTAL')}:',
+              '${lbl(SettingKeys.labelTotal, l.grandTotalUpper)}:',
               '${money(grandTotal)} $currencySymbol',
               bold: true,
               fontSize: 13,
@@ -636,14 +755,14 @@ class ReceiptPrinterService {
             if (pointsUsed > 0) ...[
               pw.SizedBox(height: 2),
               rowW(
-                'Points Used:',
+                '${l.pointsUsed}:',
                 '-${money(pointsUsed * pointValue)} $currencySymbol'
                     ' (${pointsUsed.toInt()} pts)',
               ),
               // The actual amount owed once points are applied — otherwise the
               // receipt printed GRAND TOTAL but the cashier collected less.
               rowW(
-                '${lbl(SettingKeys.labelAmountDue, 'To Pay')}:',
+                '${lbl(SettingKeys.labelAmountDue, l.amountDue)}:',
                 '${money((grandTotal - pointsUsed * pointValue).clamp(0.0, double.infinity))} $currencySymbol',
                 bold: true,
               ),
@@ -651,10 +770,16 @@ class ReceiptPrinterService {
             // Dual currency — mirrors the cart's "≈ 12.34 €" line. Converts the
             // amount actually owed (points already deducted), not grandTotal,
             // so the printed conversion matches what the customer pays.
+            //
+            // Prints "~" rather than the on-screen "≈": the bundled PDF font
+            // has no glyph for U+2248, so every receipt with dual currency on
+            // logged `Unable to find a font to draw "≈"`. Plain ASCII "~" is
+            // in every Latin font and reads the same. The SCREEN keeps "≈" —
+            // Flutter's system font renders it fine there.
             if (dualEnabled)
               rowW(
                 '',
-                '≈ ${money(owedAmount * dualRate)} $dualSym',
+                '~ ${money(owedAmount * dualRate)} $dualSym',
               ),
             pw.Divider(),
             pw.SizedBox(height: 6),
@@ -673,7 +798,7 @@ class ReceiptPrinterService {
                         double.infinity,
                       ))
                 rowW(
-                  '${lbl(SettingKeys.labelChange, 'Change')}:',
+                  '${lbl(SettingKeys.labelChange, l.change)}:',
                   '${money(amountPaid - (grandTotal - pointsUsed * pointValue).clamp(0.0, double.infinity))} $currencySymbol',
                 ),
             ],
@@ -683,17 +808,17 @@ class ReceiptPrinterService {
             // forces the row even when the sale is fully settled (balance 0).
             if (balanceDue > 0.005 || printBalance)
               rowW(
-                  '${lbl(SettingKeys.labelOutstandingBalance, 'Balance Due')}:',
+                  '${lbl(SettingKeys.labelOutstandingBalance, l.balanceDue)}:',
                   '${money(balanceDue)} $currencySymbol',
                   bold: true),
             if (printItemsCount)
-              rowW('${lbl(SettingKeys.labelItemsCount, 'Items')}:',
+              rowW('${lbl(SettingKeys.labelItemsCount, l.itemsLabel)}:',
                   renderItems.length.toString()),
-            if (printTotalQty) rowW('Total Qty:', itemCountStr),
+            if (printTotalQty) rowW('${l.totalQty}:', itemCountStr),
             if (!isGuestCheck && pointsEarned > 0)
-              rowW('Points Earned:', '+${pointsEarned.toInt()} pts'),
+              rowW('${l.pointsEarned}:', '+${pointsEarned.toInt()} ${l.ptsShort}'),
             if (!isGuestCheck && (pointsEarned > 0 || pointsUsed > 0))
-              rowW('Points Balance:', '${pointsBalance.toInt()} pts'),
+              rowW('${l.pointsBalance}:', '${pointsBalance.toInt()} ${l.ptsShort}'),
             pw.SizedBox(height: 10),
             pw.Divider(borderStyle: pw.BorderStyle.dashed),
             pw.SizedBox(height: 6),
@@ -718,6 +843,65 @@ class ReceiptPrinterService {
       ),
     );
 
+    return pdf;
+  }
+
+
+
+  /// Prints (or saves) the receipt / guest check built by [buildCartReceipt].
+  Future<void> printCartReceipt({
+    required Company company,
+    required User? cashier,
+    Customer? customer,
+    required String orderNumber,
+    String? documentNumber,
+    required DateTime printTime,
+    required List<CartItem> items,
+    required double subtotal,
+    required double totalDiscount,
+    required double totalTax,
+    required double grandTotal,
+    required String currencySymbol,
+    List<ReceiptDiscountLine> discountLines = const [],
+    String? paymentTypeName,
+    double? amountPaid,
+    Uint8List? logoBytes,
+    Map<String, String> roleSettings = const {},
+    String role = 'Receipt',
+    bool isGuestCheck = false,
+    bool saveToFile = false,
+    double pointsUsed = 0,
+    double pointsEarned = 0,
+    double pointsBalance = 0,
+    double pointValue = 1.0,
+  }) async {
+    final pdf = await buildCartReceipt(
+      company: company,
+      cashier: cashier,
+      customer: customer,
+      orderNumber: orderNumber,
+      documentNumber: documentNumber,
+      printTime: printTime,
+      items: items,
+      subtotal: subtotal,
+      totalDiscount: totalDiscount,
+      totalTax: totalTax,
+      grandTotal: grandTotal,
+      currencySymbol: currencySymbol,
+      discountLines: discountLines,
+      paymentTypeName: paymentTypeName,
+      amountPaid: amountPaid,
+      logoBytes: logoBytes,
+      roleSettings: roleSettings,
+      role: role,
+      isGuestCheck: isGuestCheck,
+      pointsUsed: pointsUsed,
+      pointsEarned: pointsEarned,
+      pointsBalance: pointsBalance,
+      pointValue: pointValue,
+    );
+
+    final l = _l10n(roleSettings);
     // A guest check is always an order — it prints before the sale is banked,
     // so it never has a document number even when the caller knows one.
     final name = (!isGuestCheck && (documentNumber?.trim().isNotEmpty ?? false))
@@ -728,11 +912,12 @@ class ReceiptPrinterService {
       await savePdfAs(
         bytes: await pdf.save(),
         suggestedName: name,
-        dialogTitle: isGuestCheck ? 'Save Guest Check' : 'Save Receipt',
+        dialogTitle: isGuestCheck ? l.saveGuestCheckTitle : l.saveReceiptTitle,
       );
       return;
     }
-    await _dispatch(pdf, name, copies, printerName);
+    await _dispatch(pdf, name, _copies(roleSettings, role),
+        roleSettings['$role.PrinterName']);
   }
 
   // ── Kitchen Ticket ────────────────────────────────────────────────────────
@@ -758,21 +943,22 @@ class ReceiptPrinterService {
   }) async {
     final fmt = _paperFmt(roleSettings['$role.PaperSize']);
     final margins = _margins(roleSettings, role);
-    final copies = _copies(roleSettings, role);
     final fontScale = _fontScale(roleSettings, role);
     final font = await _font(roleSettings, role);
     final boldFont = await _fontBold(roleSettings, role);
     final arabicRegular = await PdfFonts.arabic();
     final arabicBold = await PdfFonts.arabic(bold: true);
-    final printerName = roleSettings['$role.PrinterName'];
+    final l = _l10n(roleSettings);
 
     pw.TextStyle ts(double size, {bool bold = false, bool italic = false}) =>
-        pw.TextStyle(
-          font: bold ? boldFont : font,
-          fontFallback: [bold ? arabicBold : arabicRegular],
-          fontWeight: bold ? pw.FontWeight.bold : null,
-          fontStyle: italic ? pw.FontStyle.italic : null,
-          fontSize: size * fontScale,
+        printedTextStyle(
+          font: font,
+          boldFont: boldFont,
+          arabic: arabicRegular,
+          arabicBold: arabicBold,
+          bold: bold,
+          italic: italic,
+          size: size * fontScale,
         );
 
     // Show just the counter portion (e.g. "005") large at the top.
@@ -785,12 +971,17 @@ class ReceiptPrinterService {
       pw.Page(
         pageFormat: fmt,
         margin: margins,
+        theme: pw.ThemeData.withFont(
+          base: font,
+          bold: boldFont,
+          fontFallback: [arabicRegular, arabicBold],
+        ),
         build: (_) => pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           mainAxisSize: pw.MainAxisSize.min,
           children: [
             // ── Big order number ──────────────────────────────────────
-            pw.Center(child: pw.Text(ticketNum, style: ts(40, bold: true))),
+            pw.Center(child: printedText(ticketNum, style: ts(40, bold: true))),
             pw.SizedBox(height: 4),
             pw.Divider(borderStyle: pw.BorderStyle.dashed),
             pw.SizedBox(height: 4),
@@ -800,9 +991,9 @@ class ReceiptPrinterService {
             // CartItem.roundNumber, so it printed a constant "1" on every
             // ticket and told the kitchen nothing. Reinstate it only alongside
             // real course tracking.
-            pw.Text('User: $cashierName', style: ts(10)),
-            pw.Text('Order: $orderNumber', style: ts(10)),
-            pw.Text('Time: ${_fmtDateTime(printTime)}', style: ts(10)),
+            printedPair('${l.userLabel}:', cashierName, style: ts(10)),
+            printedPair('${l.posOrder}:', orderNumber, style: ts(10)),
+            printedPair('${l.timeLabel}:', _fmtDateTime(printTime), style: ts(10)),
             pw.SizedBox(height: 6),
 
             // ── Table + service type ──────────────────────────────────
@@ -812,11 +1003,11 @@ class ReceiptPrinterService {
             // an empty label.
             if (tableName != null && tableName.trim().isNotEmpty) ...[
               pw.Center(
-                child: pw.Text(tableName.trim(), style: ts(18, bold: true)),
+                child: printedText(tableName.trim(), style: ts(18, bold: true)),
               ),
               pw.SizedBox(height: 2),
             ],
-            pw.Center(child: pw.Text(serviceType, style: ts(13, bold: true))),
+            pw.Center(child: printedText(serviceType, style: ts(13, bold: true))),
             pw.SizedBox(height: 6),
             pw.Divider(borderStyle: pw.BorderStyle.dashed),
             pw.SizedBox(height: 8),
@@ -824,9 +1015,7 @@ class ReceiptPrinterService {
             // ── Items ─────────────────────────────────────────────────
             ...List.generate(items.length, (i) {
               final item = items[i];
-              final qty = item.quantity % 1 == 0
-                  ? item.quantity.toInt().toString()
-                  : item.quantity.toStringAsFixed(2);
+              final qty = formatQuantityValue(item.quantity, item.uomId);
 
               // Gather all comment lines for this item:
               // 1. CartItem.comment split by newline (supports multi-line selections)
@@ -844,14 +1033,14 @@ class ReceiptPrinterService {
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    pw.Text(
+                    printedText(
                       '$qty x ${item.productName}',
                       style: ts(16, bold: true),
                     ),
                     ...commentLines.map(
                       (c) => pw.Padding(
                         padding: const pw.EdgeInsets.only(left: 12, top: 2),
-                        child: pw.Text(c, style: ts(10, italic: true)),
+                        child: printedText(c, style: ts(10, italic: true)),
                       ),
                     ),
                   ],
@@ -864,56 +1053,93 @@ class ReceiptPrinterService {
     );
 
     // Always an order — a kitchen ticket prints long before the sale is banked.
-    await _dispatch(
-        pdf, orderPdfName(orderNumber, printTime), copies, printerName);
+    await _dispatch(pdf, orderPdfName(orderNumber, printTime),
+        _copies(roleSettings, role), roleSettings['$role.PrinterName']);
   }
 
   // ── Z-Report ──────────────────────────────────────────────────────────────
 
-  Future<void> printZReport(
+  /// Builds the Z-report document without printing it — same testing seam as
+  /// [buildCartReceipt].
+  Future<pw.Document> buildZReport(
     ZReportModel report,
     String currencySymbol, {
     required Map<String, String> roleSettings,
+    // Which configured printer this goes to. Defaults to the receipt printer —
+    // a Z-report is an end-of-shift till roll, not a document.
+    String role = 'Receipt',
   }) async {
-    final font = await PdfFonts.latin();
-    final boldFont = await PdfFonts.latin(bold: true);
+    // 🚨 This used to hardcode roll80, a 10pt margin and the bundled Latin face,
+    // ignoring the printer configuration entirely: a 58mm till printed a report
+    // laid out for 80mm, the margin and font-size settings did nothing, Copies
+    // was ignored and it always went to the default printer instead of the one
+    // the operator chose. Everything below now comes from the same helpers the
+    // receipt uses, so one printer setup covers both.
+    final format = _paperFmt(roleSettings['$role.PaperSize']);
+    final margins = _margins(roleSettings, role);
+    final fontScale = _fontScale(roleSettings, role);
+    final font = await _font(roleSettings, role);
+    final boldFont = await _fontBold(roleSettings, role);
+    final rtl = _flag(roleSettings, SettingKeys.roleRightToLeft(role));
     final arabicRegular = await PdfFonts.arabic();
     final arabicBold = await PdfFonts.arabic(bold: true);
+    final l = _l10n(roleSettings);
     final pdf = pw.Document();
 
-    // Standard 80mm thermal receipt format
-    const format = PdfPageFormat.roll80;
+    pw.TextStyle ts(double size, {bool bold = false}) => printedTextStyle(
+          font: font,
+          boldFont: boldFont,
+          arabic: arabicRegular,
+          arabicBold: arabicBold,
+          bold: bold,
+          size: size * fontScale,
+        );
 
-    pw.TextStyle ts(double size, {bool bold = false}) => pw.TextStyle(
-      font: bold ? boldFont : font,
-      fontFallback: [bold ? arabicBold : arabicRegular],
-      fontWeight: bold ? pw.FontWeight.bold : pw.FontWeight.normal,
-      fontSize: size,
-    );
+    // Same label/value row the receipt uses, so the two cannot drift — and so
+    // the Z-report inherits its RTL handling and overflow protection.
+    pw.Widget zRow(String label, String value,
+            {bool bold = false, double fontSize = 10}) =>
+        _row(
+          label,
+          value,
+          bold: bold,
+          fontSize: fontSize,
+          fontScale: fontScale,
+          font: font,
+          boldFont: boldFont,
+          arabic: arabicRegular,
+          arabicBold: arabicBold,
+          rtl: rtl,
+        );
 
     pdf.addPage(
       pw.Page(
         pageFormat: format,
-        margin: const pw.EdgeInsets.all(10),
+        margin: margins,
+        theme: pw.ThemeData.withFont(
+          base: font,
+          bold: boldFont,
+          fontFallback: [arabicRegular, arabicBold],
+        ),
         build: (pw.Context context) {
           return pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.stretch,
             mainAxisSize: pw.MainAxisSize.min,
             children: [
-              pw.Text(
-                'Z-REPORT',
+              printedText(
+                l.zReportUpper,
                 textAlign: pw.TextAlign.center,
                 style: ts(16, bold: true),
               ),
               pw.SizedBox(height: 8),
-              pw.Text(
-                'Report #${report.number}',
+              printedText(
+                l.zReportNumber('${report.number}'),
                 textAlign: pw.TextAlign.center,
                 style: ts(12),
               ),
-              pw.Text(
-                'Date: ${report.dateCreated.toIso8601String().split('T').first}'
-                '  Time: ${report.dateCreated.toIso8601String().split('T').last.split('.').first}',
+              printedText(
+                '${l.dateLabel}: ${report.dateCreated.toIso8601String().split('T').first}'
+                '  ${l.timeLabel}: ${report.dateCreated.toIso8601String().split('T').last.split('.').first}',
                 textAlign: pw.TextAlign.center,
                 style: ts(10),
               ),
@@ -921,98 +1147,79 @@ class ReceiptPrinterService {
               pw.Divider(borderStyle: pw.BorderStyle.dashed),
               pw.SizedBox(height: 8),
 
-              pw.Text(
-                'SHIFT SUMMARY',
+              printedText(
+                l.shiftSummaryUpper,
                 textAlign: pw.TextAlign.center,
                 style: ts(12, bold: true),
               ),
               pw.SizedBox(height: 8),
-              _buildReceiptRow(
-                'Documents:',
+              zRow(
+                '${l.documents}:',
                 report.documentCount?.toString() ?? '-',
-                font: font,
-                boldFont: boldFont,
               ),
               if (report.fromDocumentNumber != null)
-                _buildReceiptRow(
-                  'Range:',
+                zRow(
+                  '${l.rangeLabel}:',
                   report.fromDocumentNumber == report.toDocumentNumber
                       ? report.fromDocumentNumber!
                       : '${report.fromDocumentNumber} - ${report.toDocumentNumber}',
-                  font: font,
-                  boldFont: boldFont,
                 ),
-              _buildReceiptRow(
-                'Cash in:',
+              zRow(
+                '${l.cashIn}:',
                 '${report.totalCashIn.toStringAsFixed(2)} $currencySymbol',
-                font: font,
-                boldFont: boldFont,
               ),
-              _buildReceiptRow(
-                'Cash out:',
+              zRow(
+                '${l.cashOut}:',
                 '-${report.totalCashOut.toStringAsFixed(2)} $currencySymbol',
-                font: font,
-                boldFont: boldFont,
               ),
               pw.SizedBox(height: 4),
-              _buildReceiptRow(
-                'Total Sales:',
+              zRow(
+                '${l.totalSales}:',
                 '${report.totalSales.toStringAsFixed(2)} $currencySymbol',
-                font: font,
-                boldFont: boldFont,
               ),
-              _buildReceiptRow(
-                'Total Returns:',
+              zRow(
+                '${l.totalReturns}:',
                 '${report.totalReturns.toStringAsFixed(2)} $currencySymbol',
-                font: font,
-                boldFont: boldFont,
               ),
-              _buildReceiptRow(
-                'Discounts:',
+              zRow(
+                '${l.discountsLabel}:',
                 '${report.discountsGranted.toStringAsFixed(2)} $currencySymbol',
-                font: font,
-                boldFont: boldFont,
               ),
-              _buildReceiptRow(
-                'Taxable Total:',
+              zRow(
+                '${l.taxableTotal}:',
                 '${report.taxableTotal.toStringAsFixed(2)} $currencySymbol',
-                font: font,
-                boldFont: boldFont,
               ),
-              _buildReceiptRow(
-                'Total Tax:',
+              zRow(
+                '${l.totalTax}:',
                 '${report.totalTax.toStringAsFixed(2)} $currencySymbol',
-                font: font,
-                boldFont: boldFont,
               ),
 
               pw.SizedBox(height: 8),
               pw.Divider(borderStyle: pw.BorderStyle.dashed),
               pw.SizedBox(height: 8),
 
-              pw.Text(
-                'TENDER TYPES',
+              printedText(
+                l.tenderTypesUpper,
                 textAlign: pw.TextAlign.center,
                 style: ts(12, bold: true),
               ),
               pw.SizedBox(height: 8),
               if (report.paymentSummaries.isEmpty)
-                pw.Text(
-                  'No payments recorded.',
+                printedText(
+                  l.noPaymentsRecorded,
                   textAlign: pw.TextAlign.center,
-                  style: pw.TextStyle(
+                  style: printedTextStyle(
                     font: font,
-                    fontStyle: pw.FontStyle.italic,
-                    fontSize: 10,
+                    arabic: arabicRegular,
+                    italic: true,
+                    size: 10,
                   ),
                 )
               else
                 ...report.paymentSummaries.map(
-                  (p) => _buildReceiptRow(
-                    p.paymentTypeName ?? 'Unknown',
+                  (p) => zRow(
+                    p.paymentTypeName ?? l.unknownLabel,
                     '${p.totalAmount.toStringAsFixed(2)} $currencySymbol',
-                    font: font,
-                    boldFont: boldFont,
                   ),
                 ),
 
@@ -1020,18 +1227,16 @@ class ReceiptPrinterService {
               pw.Divider(borderStyle: pw.BorderStyle.dashed),
               pw.SizedBox(height: 8),
 
-              _buildReceiptRow(
-                'GRAND TOTAL:',
+              zRow(
+                '${l.grandTotalUpper}:',
                 '${report.grandTotal.toStringAsFixed(2)} $currencySymbol',
-                isBold: true,
-                size: 14,
-                font: font,
-                boldFont: boldFont,
+                bold: true,
+                fontSize: 14,
               ),
 
               pw.SizedBox(height: 24),
-              pw.Text(
-                '*** END OF REPORT ***',
+              printedText(
+                l.endOfReport,
                 textAlign: pw.TextAlign.center,
                 style: ts(10),
               ),
@@ -1041,34 +1246,24 @@ class ReceiptPrinterService {
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Z_Report_${report.number}',
-    );
+    return pdf;
   }
 
-  pw.Widget _buildReceiptRow(
-    String label,
-    String value, {
-    bool isBold = false,
-    double size = 10,
-    required pw.Font font,
-    required pw.Font boldFont,
-  }) {
-    final style = pw.TextStyle(
-      font: isBold ? boldFont : font,
-      fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal,
-      fontSize: size,
-    );
-    return pw.Padding(
-      padding: const pw.EdgeInsets.symmetric(vertical: 2),
-      child: pw.Row(
-        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-        children: [
-          pw.Text(label, style: style),
-          pw.Text(value, style: style),
-        ],
-      ),
-    );
+  /// Prints the Z-report on the configured printer.
+  ///
+  /// Was `Printing.layoutPdf`, which always opens the system print dialog on the
+  /// default printer — so the chosen printer and Copies were both ignored.
+  /// `_dispatch` is what every other document uses.
+  Future<void> printZReport(
+    ZReportModel report,
+    String currencySymbol, {
+    required Map<String, String> roleSettings,
+    String role = 'Receipt',
+  }) async {
+    final pdf = await buildZReport(report, currencySymbol,
+        roleSettings: roleSettings, role: role);
+    await _dispatch(pdf, 'Z_Report_${report.number}',
+        _copies(roleSettings, role), roleSettings['$role.PrinterName']);
   }
+
 }

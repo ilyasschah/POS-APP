@@ -83,6 +83,7 @@ namespace Api.Commands.PosOrderCommands.BatchSync
                                 WarehouseId   = item.Order.WarehouseId,
                                 OrderNumber   = item.Order.Number,
                                 ClientDocumentNumber = item.ClientDocumentNumber,
+                                SessionLocalId = item.SessionLocalId,
                                 Discounts = item.Discounts,
                                 Items = BuildCheckoutItems(item),
                             };
@@ -189,6 +190,7 @@ namespace Api.Commands.PosOrderCommands.BatchSync
                                 WarehouseId    = item.Order.WarehouseId,
                                 OrderNumber    = item.Order.Number,
                                 ClientDocumentNumber = item.ClientDocumentNumber,
+                                SessionLocalId = item.SessionLocalId,
                                 Discounts = item.Discounts,
                                 Items = BuildCheckoutItems(item),
                             };

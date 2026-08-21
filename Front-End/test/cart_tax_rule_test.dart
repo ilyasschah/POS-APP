@@ -11,7 +11,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/app_settings/app_settings_provider.dart';
 import 'package:pos_app/cart/cart_provider.dart';
+import 'package:pos_app/api/promotion_models.dart';
 import 'package:pos_app/cart/checkout_models.dart';
+import 'package:pos_app/promotions/promotion_provider.dart';
 import 'package:pos_app/tax/tax_model.dart';
 import 'package:pos_app/tax/tax_provider.dart';
 
@@ -33,6 +35,13 @@ ProviderContainer _containerFor(String discountApplyRule) {
       // The cart only listens to this to warm its tax cache; the test builds
       // lines with explicit taxes, so an empty stream is enough.
       allTaxesProvider.overrideWith((ref) => Stream.value(const <Tax>[])),
+      // Without this the cart's promotion listener reaches appDatabaseProvider
+      // and builds a real, on-disk AppDatabase for every container this file
+      // creates — which is what drift warns about. No promotions are involved
+      // in a tax rule, so an empty stream keeps the DB out of the test.
+      allPromotionsProvider.overrideWith(
+        (ref) => Stream.value(const <PromotionDto>[]),
+      ),
     ],
   );
   addTearDown(container.dispose);
@@ -41,7 +50,14 @@ ProviderContainer _containerFor(String discountApplyRule) {
 
 /// The real sale that exposed the bug: 35.00 with TVA 20% and a 5.00 fixed
 /// item discount.
+///
+/// Explicitly tax-EXCLUSIVE. The figures below (35 + 7 = 42 gross) are
+/// exclusive ones, and this file is about `discountApplyRule`, not about the
+/// inclusive/exclusive split — that lives in `tax_inclusive_pricing_test.dart`,
+/// which covers both rules again on an inclusive line. Stated outright so the
+/// constructor's default can never silently redefine what this fixture means.
 CartItem _shwarma() => CartItem(
+      isTaxInclusive: false,
       cartItemId: 'line-1',
       posOrderId: 0,
       productId: 8,

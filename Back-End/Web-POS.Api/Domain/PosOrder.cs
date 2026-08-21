@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -21,6 +21,14 @@ namespace Api.Domain
         public int? FloorPlanTableId { get; set; }
         public DateTime? DueDate { get; set; }
         public DateTime DateCreated { get; set; } = DateTime.UtcNow;
+
+        /// <summary>
+        /// The POS session (a <c>Shift</c> row carrying a PosDeviceId) this
+        /// belonged to. NULLABLE and left null by every existing code path, so
+        /// nothing that works today changes shape; it is populated once the
+        /// client starts sending a session with its pushes.
+        /// </summary>
+        public int? SessionId { get; set; }
 
         [ForeignKey(nameof(UserId))]
         public virtual User? User { get; set; }

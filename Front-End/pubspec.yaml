@@ -1,10 +1,10 @@
-name: pos_app
+﻿name: pos_app
 description: "A new Flutter project."
 publish_to: 'none'
 # 1.0.1 is the release being cut (matches tag v1.0.1); +3 keeps the build number
-# moving forward from 1.0.0+2 — Android's versionCode is derived from it and must
+# moving forward from 1.0.0+2 â€” Android's versionCode is derived from it and must
 # never decrease, and `1.0.1` with no build number would silently reset it to 1.
-version: 1.0.3+5
+version: 1.0.4+6
 
 environment:
   sdk: '>=3.0.0 >3.8.0 <4.0.0'
@@ -12,7 +12,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  # Localization — supplies GlobalMaterialLocalizations/WidgetsLocalizations
+  # Localization â€” supplies GlobalMaterialLocalizations/WidgetsLocalizations
   # (Material widgets + the shared date picker render non-English through these)
   # and the Directionality defaults the RTL layout relies on.
   flutter_localizations:
@@ -52,29 +52,29 @@ dependencies:
 
   # Offline-first / Drift
   drift: ^2.22.0
-  # Pillar 3 — sqlite3 3.3.3+ ships SQLCipher as a native-assets build hook.
+  # Pillar 3 â€” sqlite3 3.3.3+ ships SQLCipher as a native-assets build hook.
   # The `hooks.user_defines.sqlite3.source: sqlcipher` block below makes the
   # hook download a prebuilt SQLCipher library (encryption-at-rest), so NO
   # `sqlcipher_flutter_libs` / OpenSSL build is needed.
   sqlite3: ^3.3.3
-  # Pillar 3 — stable per-device fingerprint used as HKDF salt for the DB key.
+  # Pillar 3 â€” stable per-device fingerprint used as HKDF salt for the DB key.
   device_info_plus: ^11.1.0
   # Reads the version the app was BUILT with, so `version:` above is the single
   # source of truth. It was previously a string literal in the About tab, which
-  # meant the number on screen could not disagree with the shipped build — it
+  # meant the number on screen could not disagree with the shipped build â€” it
   # simply never changed. An updater that compares versions needs this to be real.
   package_info_plus: ^8.1.2
-  # Pillar 3 — HMAC/SHA-256 for HKDF key derivation (never a hardcoded key).
+  # Pillar 3 â€” HMAC/SHA-256 for HKDF key derivation (never a hardcoded key).
   crypto: ^3.0.6
   path_provider: ^2.1.5
   path: ^1.9.0
   connectivity_plus: ^6.0.5
   qr_flutter: ^4.1.0
   lottie: ^3.1.2
-  # Pillar 2 — verify the RS256 offline subscription lease signature on-device.
+  # Pillar 2 â€” verify the RS256 offline subscription lease signature on-device.
   dart_jsonwebtoken: ^2.14.0
   # Serial weighing scale. The plugin declares an Android class so the APK still
-  # builds, but a COM/tty scale is only reachable on Windows in practice — the
+  # builds, but a COM/tty scale is only reachable on Windows in practice â€” the
   # scale UI and ScaleService are capability-gated to Windows (see lib/scale/).
   flutter_libserialport: ^0.6.0
 
@@ -96,7 +96,7 @@ dev_dependencies:
   # not declared breaks the day that transitive path changes.
   fake_async: ^1.3.1
   # App-icon generator. Config lives in the top-level `flutter_icons:` block
-  # below — both must be OUTSIDE `dependencies:`, or pub rejects the file with
+  # below â€” both must be OUTSIDE `dependencies:`, or pub rejects the file with
   # "A dependency may only have one source".
   flutter_launcher_icons: ^0.13.1
 
@@ -133,11 +133,11 @@ flutter:
     - assets/animations/success_animation.json
     # Bundled (NOT fetched at runtime) so Arabic receipts still print on an
     # offline terminal. The PDF standard-14 faces and PdfGoogleFonts.notoSans*
-    # carry no Arabic glyphs at all — without this, Arabic text lays out
+    # carry no Arabic glyphs at all â€” without this, Arabic text lays out
     # correctly and renders as empty boxes.
     - assets/fonts/
 
-# Pillar 3 — tell the sqlite3 native-assets build hook to provide SQLCipher
+# Pillar 3 â€” tell the sqlite3 native-assets build hook to provide SQLCipher
 # (encryption-at-rest) instead of the default plaintext SQLite. The hook
 # downloads a prebuilt, ABI-compatible SQLCipher library for each target.
 hooks:

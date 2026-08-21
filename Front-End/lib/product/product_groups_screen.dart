@@ -14,6 +14,7 @@ import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/database/database_provider.dart';
+import 'package:pos_app/product/product_group_assignment.dart';
 import 'package:pos_app/product/product_group_model.dart';
 import 'package:pos_app/product/product_group_provider.dart';
 import 'package:pos_app/product/product_group_service.dart';
@@ -896,11 +897,28 @@ class _GroupEditorPanelState extends ConsumerState<_GroupEditorPanel>
     final company = ref.read(selectedCompanyProvider);
     if (company == null || !_isEditing) return;
     setState(() => _assignLoading = true);
+
+    final db = ref.read(appDatabaseProvider);
+    final groupId = widget.existingGroup!.id;
+    final ids = _assignedProductIds.toList();
+
     try {
-      final service = ref.read(productGroupServiceProvider);
-      await service.assignProducts(
-          company.id, widget.existingGroup!.id, _assignedProductIds.toList());
-      ref.invalidate(productsByGroupProvider);
+      // THE FIX (offline-first): stamp the new group onto the LOCAL product rows
+      // and queue them for push. Every screen — the menu grid, this editor, the
+      // reports — streams products from Drift, so writing Drift is what actually
+      // makes a reassignment show up. The old code only POSTed
+      // /ProductGroups/AssignProducts and never touched Drift, so the local cache
+      // (and thus every screen) stayed stale until a full product pull: the
+      // reported "changing a product's group doesn't take effect". The Drift +
+      // pending_update logic lives in applyGroupMembershipLocally so it can be
+      // unit-tested end-to-end (test/product_group_assignment_test.dart).
+      await applyGroupMembershipLocally(
+        db,
+        companyId: company.id,
+        groupId: groupId,
+        checkedIds: ids,
+      );
+
       if (mounted) {
         showAppSnackbar(
             context, ref, AppLocalizations.of(context).productsAssigned);

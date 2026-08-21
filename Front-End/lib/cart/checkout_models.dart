@@ -1,3 +1,4 @@
+import 'package:pos_app/uom/unit_of_measure.dart';
 class MenuTax {
   final int id;
   final String name;
@@ -38,6 +39,14 @@ class MenuProduct {
   final bool isPriceChangeAllowed;
   final bool isUsingDefaultQuantity;
   final String? measurementUnit;
+
+  /// Id into the hardcoded UnitOfMeasure catalog. Decides the decimal precision
+  /// of the quantity and, on the server, how a sale converts into a stock move.
+  final int uomId;
+
+  /// Sold by weight — the POS asks for a quantity instead of adding one unit.
+  final bool isToWeigh;
+
   final bool isService;
 
   MenuProduct({
@@ -54,6 +63,8 @@ class MenuProduct {
     this.isPriceChangeAllowed = false,
     this.isUsingDefaultQuantity = true,
     this.measurementUnit,
+    this.uomId = kUomPieces,
+    this.isToWeigh = false,
     this.isService = false,
   });
 
@@ -74,6 +85,11 @@ class MenuProduct {
       isPriceChangeAllowed: json['isPriceChangeAllowed'] ?? false,
       isUsingDefaultQuantity: json['isUsingDefaultQuantity'] ?? true,
       measurementUnit: json['measurementUnit'],
+      // A server that predates the UoM catalog sends neither field; the legacy
+      // text is the only hint left about what the product is actually sold in.
+      uomId: (json['uomId'] as num?)?.toInt() ??
+          uomFromLegacyText(json['measurementUnit'] as String?),
+      isToWeigh: json['isToWeigh'] ?? false,
       isService: json['isService'] ?? false,
     );
   }
@@ -137,7 +153,28 @@ class CartItem {
   List<MenuTax> appliedTaxes;
   int? warehouseId;
   String? measurementUnit;
+
+  /// Id into the hardcoded UnitOfMeasure catalog, copied from the product so the
+  /// cart can format `0.5 kg` vs `2 pcs` without re-reading the catalogue.
+  int uomId;
+
+  /// Whether this line was added as a weighed item. Drives the Price button's
+  /// quantity-editing behaviour.
+  bool isToWeigh;
   final bool isService;
+
+  /// Whether [price] already CONTAINS the applied taxes.
+  ///
+  /// Copied from `Product.isTaxInclusivePrice` when the line is created, and
+  /// persisted on the order row so a parked order reprices identically when it
+  /// is reopened. Without it on the line, the cart had no way to know — which
+  /// is why the flag sat unused and every inclusive product was taxed a second
+  /// time on top of its shelf price.
+  ///
+  /// Defaults to `true` to match the column default on BOTH databases
+  /// (`Product.IsTaxInclusivePrice`), so a legacy row that predates the column
+  /// prices the same way the catalogue is actually configured.
+  final bool isTaxInclusive;
 
   CartItem({
     required this.cartItemId,
@@ -160,7 +197,10 @@ class CartItem {
     required this.appliedTaxes,
     this.warehouseId,
     this.measurementUnit,
+    this.uomId = kUomPieces,
+    this.isToWeigh = false,
     this.isService = false,
+    this.isTaxInclusive = true,
   });
 
   Map<String, dynamic> toJson() {
@@ -199,6 +239,72 @@ class CartItem {
       'WarehouseId': warehouseId,
     };
   }
+}
+
+/// The ex-tax ("net") view of a cart line — **the** definition of how a
+/// tax-inclusive price is split, shared by the cart totals, the POS line rows
+/// and the receipt renderer.
+///
+/// It lives here, next to [CartItem] and free of Riverpod, precisely because
+/// this file's other tax comment already records what happens when the same
+/// formula is re-typed in several places: they drift, and a document gets
+/// banked whose line contradicts its own total.
+///
+/// For a tax-EXCLUSIVE line this is the identity — `price` is the taxable base
+/// and the tax is added on top. For a tax-INCLUSIVE line the shelf price
+/// already contains the tax, so it is divided back out; otherwise the tax is
+/// charged twice and a 90 MAD product at TVA 20% rings up 108.
+///
+/// [discountBeforeTax] mirrors `Products.DiscountApplyRule` and changes only
+/// the discount arm:
+///  • **Before tax** — the discount shrinks the taxable base, so its own tax
+///    component leaves with it: 12 MAD off a 20% line is 10 net.
+///    (75 − 10) × 1.2 = 78 = 90 − 12 ✓
+///  • **After tax** — tax is charged on the undiscounted base and the discount
+///    then comes off the taxed total at face value, so it stays GROSS:
+///    75 − 12 + 15 = 78 = 90 − 12 ✓
+/// Both rules therefore honour "12 off means 12 off"; they differ only in how
+/// much of the price is *reported* as tax.
+({double unitPrice, double unitDiscount, double unitPromo}) lineTaxBasis(
+  CartItem item, {
+  required bool discountBeforeTax,
+}) {
+  if (!item.isTaxInclusive) {
+    return (
+      unitPrice: item.price,
+      unitDiscount: item.discount,
+      unitPromo: item.promotionalDiscount,
+    );
+  }
+
+  // A fixed tax is a flat per-unit amount, not a share of the price, so it
+  // comes off the top before the percentage taxes are divided out.
+  final fixedPerUnit =
+      item.appliedTaxes.where((t) => t.isFixed).fold<double>(0, (s, t) => s + t.rate);
+  final pctRate = item.appliedTaxes
+      .where((t) => !t.isFixed)
+      .fold<double>(0, (s, t) => s + t.rate);
+  final divisor = 1 + pctRate / 100;
+
+  // Guards a nonsensical configuration (a −100% rate) from dividing by zero.
+  if (divisor <= 0) {
+    return (
+      unitPrice: item.price,
+      unitDiscount: item.discount,
+      unitPromo: item.promotionalDiscount,
+    );
+  }
+
+  final net =
+      ((item.price - fixedPerUnit) / divisor).clamp(0.0, double.infinity);
+  return (
+    unitPrice: net,
+    unitDiscount:
+        discountBeforeTax ? item.discount / divisor : item.discount,
+    unitPromo: discountBeforeTax
+        ? item.promotionalDiscount / divisor
+        : item.promotionalDiscount,
+  );
 }
 
 class CheckoutItemTaxDto {

@@ -26,6 +26,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:uuid/uuid.dart';
 import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/database/database_provider.dart';
+import 'package:pos_app/session/session_provider.dart';
 import 'package:pos_app/sync/sync_notifier.dart';
 import 'package:pos_app/stock/stock_provider.dart';
 
@@ -113,11 +114,18 @@ final documentItemTaxesProvider = FutureProvider.autoDispose
       }
     });
 
+/// The Payments tab's index in the editor's tab bar. Named because callers
+/// that arrive from the money side — a session's payment list, a receipt —
+/// want that tab, and a bare `5` in their code would silently point at the
+/// wrong tab the day one is inserted.
+const int kDocumentEditorPaymentsTab = 5;
+
 // --- ENTRY POINT ---
 Future<void> showDocumentEditor(
   BuildContext context,
   WidgetRef ref, {
   Document? existingDocument,
+  int initialTabIndex = 0,
 }) async {
   // Grab the container while the context is still valid. After the dialog
   // closes the caller's widget may already be deactivated, which makes the
@@ -129,7 +137,10 @@ Future<void> showDocumentEditor(
     context: context,
     useRootNavigator: true,
     barrierDismissible: false,
-    builder: (_) => _DocumentEditorDialog(existingDocument: existingDocument),
+    builder: (_) => _DocumentEditorDialog(
+      existingDocument: existingDocument,
+      initialTabIndex: initialTabIndex,
+    ),
   );
   container.invalidate(allDocumentsProvider);
 }
@@ -137,7 +148,15 @@ Future<void> showDocumentEditor(
 // --- MAIN EDITOR DIALOG ---
 class _DocumentEditorDialog extends ConsumerStatefulWidget {
   final Document? existingDocument;
-  const _DocumentEditorDialog({this.existingDocument});
+
+  /// Which tab to land on. Defaults to the header — a caller opening the
+  /// editor to settle money passes [kDocumentEditorPaymentsTab] instead.
+  final int initialTabIndex;
+
+  const _DocumentEditorDialog({
+    this.existingDocument,
+    this.initialTabIndex = 0,
+  });
 
   @override
   ConsumerState<_DocumentEditorDialog> createState() =>
@@ -739,6 +758,10 @@ class _DocumentEditorDialogState extends ConsumerState<_DocumentEditorDialog> {
 
     return DefaultTabController(
       length: dialogTabs.length,
+      // Clamped: a caller asking for a tab that no longer exists lands on the
+      // header rather than throwing.
+      initialIndex:
+          widget.initialTabIndex.clamp(0, dialogTabs.length - 1),
       child: AlertDialog(
         contentPadding: EdgeInsets.zero,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -3157,6 +3180,11 @@ class _AddPaymentDialogState extends ConsumerState<_AddPaymentDialog> {
       date: Value(now),
       companyId: Value(widget.companyId),
       dateCreated: Value(now),
+      // The session TAKING the money, which is not necessarily the one that
+      // raised the document: settling last night's unpaid invoice puts cash in
+      // today's drawer, and today's drawer is what gets counted.
+      sessionLocalId:
+          Value(ref.read(activeSessionProvider).value?.localId),
       syncStatus: const Value('pending_create'),
     ));
 

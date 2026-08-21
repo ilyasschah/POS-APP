@@ -4,6 +4,7 @@ using Api.Domain;
 using Api.Models;
 using Api.Repository;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Api.Services
 {
@@ -11,11 +12,16 @@ namespace Api.Services
     {
         private readonly AppDbContext _db;
         private readonly DocumentsCounterRepository _counterRepo;
+        private readonly ILogger<PosOrderCheckoutService> _logger;
 
-        public PosOrderCheckoutService(AppDbContext db, DocumentsCounterRepository counterRepo)
+        public PosOrderCheckoutService(
+            AppDbContext db,
+            DocumentsCounterRepository counterRepo,
+            ILogger<PosOrderCheckoutService> logger)
         {
             _db = db;
             _counterRepo = counterRepo;
+            _logger = logger;
         }
 
         /// <summary>
@@ -131,7 +137,21 @@ namespace Api.Services
                         // checkout (e.g. CAISSE1-200-000045). Keep it verbatim so the
                         // printed/scanned receipt never changes after sync — and no
                         // server counter is consumed (the device owns its sequence).
-                        documentNumber = req.ClientDocumentNumber.Trim();
+                        //
+                        // …unless the company already holds that number, in which
+                        // case the client's choice CANNOT be honoured:
+                        // UQ_Document_Number_PerCompany rejects the insert and the
+                        // sale is stuck as "failed" forever, which is how a real
+                        // terminal ended up unable to bank two offline sales.
+                        //
+                        // The client's number is a PREFERENCE; the server owns
+                        // uniqueness, because only the server can see every
+                        // terminal's numbers. A collision is not hypothetical — a
+                        // restored backup rolls the device's counter back, and the
+                        // sales rung up afterwards re-issue numbers the cloud has
+                        // already consumed for DIFFERENT sales.
+                        documentNumber = await ResolveFreeDocumentNumberAsync(
+                            companyId, req.ClientDocumentNumber.Trim());
                     }
                     else
                     {
@@ -308,6 +328,40 @@ namespace Api.Services
                     );
                     _db.Payments.Add(payment);
 
+                    // ── POS SESSION ────────────────────────────────────────
+                    // The sale belongs to the drawer that took it, and the link
+                    // is resolved from the CLIENT's localId: a sale rung up
+                    // offline may belong to a session that was itself opened
+                    // offline and has no server id the device could have sent.
+                    //
+                    // 🚨 Fails OPEN. An unknown, missing, or malformed session
+                    // banks the sale unattached instead of rejecting money that
+                    // has already changed hands — the same rule the client's
+                    // session gate follows. Without this the session's own
+                    // reconciliation saw no payments at all and every register
+                    // closed against its opening float alone.
+                    if (!string.IsNullOrWhiteSpace(req.SessionLocalId))
+                    {
+                        var session = await _db.Shifts.FirstOrDefaultAsync(s =>
+                            s.LocalId == req.SessionLocalId &&
+                            s.CompanyId == companyId);
+
+                        if (session != null)
+                        {
+                            // A sale that lands after its session was reported
+                            // keeps the session it belongs to — hiding it would
+                            // lose the sale, moving it would corrupt two
+                            // reports. It is flagged instead, so the difference
+                            // is visible and can be reconciled.
+                            var arrivedAfterClose =
+                                session.Status == PosSessionStatus.Closed;
+
+                            document.AttachToSession(session.Id, arrivedAfterClose);
+                            payment.AttachToSession(session.Id);
+                            if (arrivedAfterClose) session.MarkLateArrival();
+                        }
+                    }
+
                     if (cartTaxes.Any())
                         _db.PosOrderItemTaxes.RemoveRange(cartTaxes);
 
@@ -347,6 +401,89 @@ namespace Api.Services
                     throw;
                 }
             });
+        }
+
+        /// <summary>
+        /// Returns <paramref name="requested"/> when the company does not already
+        /// hold that document number, otherwise the next free number in the same
+        /// series.
+        /// </summary>
+        /// <remarks>
+        /// Guards <c>UQ_Document_Number_PerCompany</c>. Without it a colliding
+        /// number makes the whole checkout throw, and an offline sale can never be
+        /// banked — it just retries and fails forever.
+        /// <para>
+        /// ⚠️ It deliberately does NOT try to detect "this is the same sale being
+        /// re-sent" and dedupe. It cannot: the schema carries no client-side id on
+        /// Document, so same-sale and different-sale look identical here, and
+        /// guessing wrong either double-banks takings or discards them. Issuing a
+        /// new number is the only choice that can never LOSE a sale — the worst
+        /// case is a duplicate an operator can see and void, rather than money
+        /// that quietly disappeared. (A `ClientLocalId` column on Document would
+        /// make this exact; that is a schema change and needs sign-off.)
+        /// </para>
+        /// <para>
+        /// The receipt already printed keeps the old number. That is unavoidable
+        /// once the number is taken, and is why the reassignment is logged.
+        /// </para>
+        /// </remarks>
+        private async Task<string> ResolveFreeDocumentNumberAsync(
+            int companyId, string requested)
+        {
+            var taken = await _db.Documents
+                .AsNoTracking()
+                .AnyAsync(d => d.CompanyId == companyId && d.Number == requested);
+            if (!taken) return requested;
+
+            // Split a trailing numeric run so PREFIX-000004 → ("PREFIX-", 4, 6).
+            // Anything without one (a hand-typed number) just gets "-2", "-3"…
+            var match = System.Text.RegularExpressions.Regex.Match(
+                requested, @"^(?<prefix>.*?)(?<digits>\d+)$");
+
+            var existing = await _db.Documents
+                .AsNoTracking()
+                .Where(d => d.CompanyId == companyId)
+                .Select(d => d.Number)
+                .ToListAsync();
+            var used = new HashSet<string>(existing, StringComparer.OrdinalIgnoreCase);
+
+            string candidate;
+            if (match.Success)
+            {
+                var prefix = match.Groups["prefix"].Value;
+                var digits = match.Groups["digits"].Value;
+                var width = digits.Length;
+                var n = long.Parse(digits);
+                do
+                {
+                    n++;
+                    candidate = prefix + n.ToString().PadLeft(width, '0');
+                } while (used.Contains(candidate));
+            }
+            else
+            {
+                var suffix = 1;
+                do
+                {
+                    suffix++;
+                    candidate = $"{requested}-{suffix}";
+                } while (used.Contains(candidate));
+            }
+
+            // ⚠️ Each placeholder EXACTLY once, and the count must match the
+            // argument list. Microsoft.Extensions.Logging templates are
+            // positional, not named: repeating {Requested} adds a fourth slot,
+            // and with three arguments the formatter throws FormatException.
+            // That is not a cosmetic bug here — the throw propagated out of
+            // this method and aborted the checkout, so the very sale this
+            // routine exists to rescue failed to bank.
+            _logger.LogWarning(
+                "Document number {Requested} already exists for company {CompanyId}; " +
+                "the incoming sale was banked as {Assigned} instead (the printed " +
+                "receipt still shows the original number).",
+                requested, companyId, candidate);
+
+            return candidate;
         }
     }
 }

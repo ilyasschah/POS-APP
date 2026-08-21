@@ -137,7 +137,15 @@ namespace Api.Commands.ProductCommands.Import
                             color:                 existing.Color,
                             ageRestriction:        existing.AgeRestriction,
                             lastPurchasePrice:     existing.LastPurchasePrice,
-                            rank:                  existing.Rank);
+                            rank:                  existing.Rank,
+                            // A spreadsheet has no UoM id column, so the unit is
+                            // derived from the text the row carries. A row that
+                            // names no unit must leave the product's unit alone —
+                            // re-deriving it would file every re-import under pieces.
+                            uomId:                 row.MeasurementUnit != null
+                                                       ? UnitOfMeasure.FromLegacyText(row.MeasurementUnit)
+                                                       : existing.UomId,
+                            isToWeigh:             row.IsToWeigh || existing.IsToWeigh);
                         product = existing;
                         result.Updated++;
                     }
@@ -165,7 +173,9 @@ namespace Api.Commands.ProductCommands.Import
                             color:                 "Transparent",
                             ageRestriction:        null,
                             lastPurchasePrice:     null,
-                            rank:                  0);
+                            rank:                  0,
+                            uomId:                 UnitOfMeasure.FromLegacyText(row.MeasurementUnit),
+                            isToWeigh:             row.IsToWeigh);
                         product.CompanyId = companyId;
                         _db.Products.Add(product);
                         await _db.SaveChangesAsync(ct);

@@ -25,6 +25,21 @@ namespace Api.Domain
 
         public DateTime DateCreated { get; private set; }
 
+        /// <summary>
+        /// The POS session this belongs to. Nullable — every existing write
+        /// path leaves it null, so nothing that works today changes.
+        /// </summary>
+        public int? SessionId { get; private set; }
+
+        /// <summary>
+        /// Operational binding to the session. Deliberately SEPARATE from
+        /// <see cref="ZReportId"/>: that one is the reporting/closing lock
+        /// stamped when the Z-report is taken, and it keeps working exactly as
+        /// it does today. A payment can belong to a session long before any
+        /// report exists.
+        /// </summary>
+        public void AttachToSession(int? sessionId) => SessionId = sessionId;
+
         [ForeignKey(nameof(DocumentId))]
         public virtual Document Document { get; private set; }
 

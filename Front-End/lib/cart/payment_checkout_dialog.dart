@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
@@ -12,6 +13,8 @@ import 'package:pos_app/cart/cart_provider.dart';
 import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:pos_app/cart/checkout_models.dart';
+import 'package:pos_app/session/session_gate.dart';
+import 'package:pos_app/session/session_provider.dart';
 import 'package:pos_app/cart/payment_type_model.dart';
 import 'package:pos_app/cart/payment_type_provider.dart';
 import 'package:pos_app/company/company_provider.dart';
@@ -24,6 +27,7 @@ import 'package:pos_app/document/document_type_constants.dart';
 import 'package:pos_app/settings/device_identity.dart';
 import 'package:pos_app/navigation/main_layout.dart';
 import 'package:pos_app/printer/receipt_printer_service.dart';
+import 'package:pos_app/printer/printer_routing_service.dart';
 import 'package:pos_app/cart/discount_display.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
 import 'package:pos_app/utils/customer_display_service.dart';
@@ -232,6 +236,13 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
   Future<void> _complete(BuildContext ctx) async {
     if (_selectedPaymentTypeId == null) return;
 
+    // 🚨 No sale without an open session. Checked at the LAST moment before the
+    // money is banked rather than when the dialog opened, so a session closing
+    // mid-checkout is caught. Fails OPEN when the state cannot be determined —
+    // see `sessionGateProvider`.
+    if (!await SessionGuard.ensureCanSell(ctx, ref)) return;
+    if (!ctx.mounted || !mounted) return;
+
     // Loyalty step runs once before processing, while UI is still interactive.
     await _handleLoyaltyStep(ctx);
     if (!mounted) return;
@@ -307,6 +318,15 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
       final cartNotifier = ref.read(cartProvider.notifier);
       final db = ref.read(appDatabaseProvider);
       final now = DateTime.now().toUtc();
+
+      // 🚨 The session this sale belongs to, stamped on EVERY row it creates —
+      // order, document, payment. Without it the drawer owns nothing: the
+      // session screen reports "0 documents / 0.00 taken" for a till that sold
+      // all day, and the closing count is measured against the opening float
+      // alone. Null is legitimate (the gate fails open, and a pre-session sale
+      // predates all of this) and banks the sale unattached rather than
+      // refusing it.
+      final sessionLocalId = ref.read(activeSessionProvider).value?.localId;
 
       // Offline document number — issued LOCALLY (device-local counter) so the
       // sale is numbered + scannable the instant it completes: refunds work
@@ -394,6 +414,7 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
             number: Value(docNumber),
             closedAt: Value(now),
             status: const Value(1),
+            sessionLocalId: Value(sessionLocalId),
             total: Value(_effectiveTotal),
             discount: Value(cartState.manualCartDiscount),
             warehouseId: Value(cartNotifier.effectiveWarehouseId),
@@ -423,6 +444,7 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
             openedAt: Value(now),
             closedAt: Value(now),
             status: const Value(1),
+            sessionLocalId: Value(sessionLocalId),
             total: Value(_effectiveTotal),
             discount: Value(cartState.manualCartDiscount),
             warehouseId: Value(cartNotifier.effectiveWarehouseId),
@@ -498,7 +520,12 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
           productId:    Value(item.productId),
           quantity:     Value(item.quantity),
           unitPrice:    Value(item.price),
-          priceBeforeTax: Value(item.price),
+          // The EX-TAX price, which for a tax-inclusive product is NOT
+          // `item.price` — that already contains the tax. Writing the gross
+          // figure here made the banked document claim a 90 MAD inclusive line
+          // had a 90 MAD taxable base, and the backend recomputes
+          // DocumentItemTax straight off this column.
+          priceBeforeTax: Value(cartNotifier.netUnitPriceFor(item)),
           // Store ONLY the manual item discount here — exactly what the server's
           // CheckoutAsync persists (from pos_order_items.discount), so the column
           // is identical on the originating device and on devices that pull the
@@ -541,6 +568,7 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
           serviceType:    Value(cartState.serviceType),
           paidStatus:     Value(markAsPaidFlag),
           date:           Value(now),
+          sessionLocalId: Value(sessionLocalId),
           syncStatus:     const Value('pending'),
           lastModified:   Value(now),
         ),
@@ -554,6 +582,7 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
           date:          Value(now),
           companyId:     Value(company.id),
           dateCreated:   Value(now),
+          sessionLocalId: Value(sessionLocalId),
         ),
       );
 
@@ -698,6 +727,31 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
             pointValue: _pointValue,
           )
           .catchError((_) {});
+
+      // Auto-fire the station kitchen tickets on sale completion, if THIS
+      // terminal opted in (device-local toggle) and any printer is a kitchen
+      // station. Fire-and-forget off the pre-clear snapshot, independent of the
+      // receipt print choice — a dead kitchen printer must never disturb an
+      // already-banked sale.
+      if ((appSettings[SettingKeys.autoKitchenPrintOnCheckout] ?? 'false')
+              .toLowerCase() ==
+          'true') {
+        final routing = ref.read(printerRoutingProvider);
+        if (routing.hasKitchenStations) {
+          unawaited(
+            routing
+                .printStationTicketsForCart(
+                  items: _cartItems,
+                  serviceType: cartState.serviceType,
+                  floorPlanTableId: cartState.floorPlanTableId,
+                  orderNumber: orderNum ?? 'WALK-IN',
+                  cashierName: user.displayName,
+                  serviceFallback: AppLocalizations.of(context).posOrder,
+                )
+                .catchError((_) => 0),
+          );
+        }
+      }
 
       if (autoprint) {
         doPrint();

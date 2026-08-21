@@ -1,6 +1,9 @@
 import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:pos_app/database/app_database.dart' show kPillar3Encryption;
+import 'package:pos_app/database/device_key_service.dart';
+import 'package:pos_app/database/restore_service.dart';
 
 /// Static helpers for backing up and pruning the local SQLite database.
 class BackupService {
@@ -105,6 +108,28 @@ class BackupService {
     final filename =
         '${safeName.isNotEmpty ? safeName : 'POS'}_$ts.sqlite';
     final destPath = p.join(destDir, filename);
+
+    // A backup MUST be portable, because the case it exists for is "this
+    // machine died, restore onto a new one". The SQLCipher key is derived per
+    // device (DeviceKeyService: "different on any other device"), so a straight
+    // byte copy of an encrypted database would only ever restore onto the
+    // terminal that is no longer working — i.e. never.
+    //
+    // While kPillar3Encryption is false the live file is already plaintext and
+    // the copy below is the whole job. When it is turned on (production
+    // prerequisite, backlog item 11) the copy is re-keyed to plaintext instead.
+    //
+    // ⚠️ Explicit trade-off: the backup file is readable by anyone who gets
+    // hold of it. It holds the customer list, prices and full sales history.
+    if (kPillar3Encryption) {
+      final key = await DeviceKeyService().getDatabaseKey();
+      RestoreService.exportPlaintext(
+        encryptedPath: src.path,
+        destPath: destPath,
+        hexKey: key,
+      );
+      return destPath;
+    }
 
     await src.copy(destPath);
     return destPath;

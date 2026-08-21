@@ -1,4 +1,4 @@
-﻿using Api.DataBase;
+using Api.DataBase;
 using Microsoft.EntityFrameworkCore;
 
 namespace Api.Startup;
@@ -61,6 +61,12 @@ public static class DatabaseBootstrapper
             // Only adds what is missing — never touches admin-customised levels.
             await Api.Services.CompanyDefaultsSeeder.BackfillSecurityKeysAsync(db);
             logger.LogDebug("Security keys verified/backfilled for existing companies.");
+
+            // Gives companies that predate the nomenclature a rule set, translating
+            // their old Scale.Barcode.* settings so labels already on the shelf
+            // keep decoding. Skips any company that already has rules.
+            await Api.Services.BarcodeRuleSeeder.BackfillAsync(db);
+            logger.LogDebug("Barcode rules verified/backfilled for existing companies.");
         }
         catch (Exception ex)
         {

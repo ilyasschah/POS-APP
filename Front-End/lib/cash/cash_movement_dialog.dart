@@ -8,6 +8,8 @@ import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/database/database_provider.dart';
+import 'package:pos_app/session/session_gate.dart';
+import 'package:pos_app/session/session_summary_provider.dart';
 
 Future<void> showCashMovementDialog(BuildContext context, WidgetRef ref) {
   return showDialog(
@@ -64,6 +66,14 @@ class _CashMovementDialogState extends ConsumerState<_CashMovementDialog> {
       // OFFLINE WRITE (Phase 7): persist locally as `pending`, then close
       // the dialog. The connectivity watcher / manual sync button will push
       // this to /StartingCash/Add when the network is available.
+      // Cash in/out moves the drawer, so it belongs to a session — same rule
+      // as a sale, and what makes the movement reconcilable at closing.
+      if (!await SessionGuard.ensureCanSell(context, ref)) {
+        if (mounted) setState(() => _saving = false);
+        return;
+      }
+      if (!mounted) return;
+
       final db = ref.read(appDatabaseProvider);
       await db.insertOfflineCashMovement(
         StartingCashTableCompanion.insert(
@@ -76,6 +86,12 @@ class _CashMovementDialogState extends ConsumerState<_CashMovementDialog> {
               ? null
               : _descCtrl.text.trim()),
           createdAt: DateTime.now().toUtc(),
+          // Bind the movement to the session that was trading. The drawer only
+          // moves during a session, so this is what makes it reconcilable —
+          // and it replaces the legacy `ZReportNumber`, which was company-wide
+          // and could not tell two registers apart.
+          sessionLocalId: Value(
+              ref.read(activeSessionRowProvider).value?.localId),
         ),
       );
       if (mounted) Navigator.of(context).pop();

@@ -64,5 +64,46 @@ namespace Api.Controllers
                 message = "Company deleted successfully.",
             });
         }
+
+        /// <summary>
+        /// Clears the selected data for a company across the WHOLE account —
+        /// every terminal sees it on the next sync. Irreversible.
+        ///
+        /// The client authorises this against the signed-in admin's device PIN
+        /// before calling, and takes a local .sqlite backup first; neither is
+        /// something the server can verify, so this endpoint is deliberately
+        /// explicit about what it is (POST ResetData, not a DELETE that could be
+        /// stumbled into) and refuses an empty selection rather than treating it
+        /// as "reset everything".
+        /// </summary>
+        [HttpPost("[action]")]
+        public async Task<ActionResult> ResetData(
+            [FromServices] Api.Services.CompanyDataResetService resetService,
+            [FromBody] ResetCompanyDataRequest request,
+            CancellationToken ct = default)
+        {
+            if (request.CompanyId <= 0)
+                return BadRequest(new { success = false, message = "Company ID is required." });
+
+            var options = new Api.Services.ResetCompanyDataOptions
+            {
+                Products = request.Products,
+                Customers = request.Customers,
+                Documents = request.Documents,
+                Everything = request.Everything,
+            };
+
+            if (!options.Any)
+                return BadRequest(new { success = false, message = "Select at least one thing to reset." });
+
+            var result = await resetService.ResetAsync(request.CompanyId, options);
+            return Ok(new
+            {
+                success = true,
+                message = $"Reset {result.RowsDeleted} row(s) across {result.TablesCleared.Count} table(s).",
+                tablesCleared = result.TablesCleared,
+                rowsDeleted = result.RowsDeleted,
+            });
+        }
     }
 }

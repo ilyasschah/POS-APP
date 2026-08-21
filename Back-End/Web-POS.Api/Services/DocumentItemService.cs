@@ -1,4 +1,4 @@
-﻿using Api.Constants;
+using Api.Constants;
 using Api.DataBase;
 using Api.Domain;
 using Api.Helpers;
@@ -147,20 +147,36 @@ namespace Api.Services
             return await _itemRepository.DeleteAsync(entity);
         }
 
+        /// <summary>
+        /// Applies <paramref name="delta"/>, expressed in the PRODUCT's unit, to
+        /// the warehouse's stock, which is held in that unit's category reference.
+        /// </summary>
+        /// <remarks>
+        /// Every stock movement a document can make funnels through here, so this
+        /// is the one place the conversion has to happen — receiving 500 g must
+        /// add 0.500 kg, not 500.
+        /// </remarks>
         private async Task AdjustStockAsync(int warehouseId, int productId, int companyId, decimal delta)
         {
+            var uomId = await _db.Products
+                .Where(p => p.Id == productId && p.CompanyId == companyId)
+                .Select(p => (int?)p.UomId)
+                .FirstOrDefaultAsync();
+
+            var deltaInStockUnit = UnitOfMeasure.ToReference(delta, uomId);
+
             var stock = await _db.Stocks.FirstOrDefaultAsync(
                 s => s.ProductId == productId && s.WarehouseId == warehouseId && s.CompanyId == companyId);
 
             if (stock != null)
             {
-                stock.UpdateDetails(stock.Quantity + delta, warehouseId, productId);
+                stock.UpdateDetails(stock.Quantity + deltaInStockUnit, warehouseId, productId);
                 _db.Stocks.Update(stock);
             }
             else
             {
                 // Create a new stock record if none exists yet for this product/warehouse
-                _db.Stocks.Add(Stock.Create(delta, warehouseId, productId, companyId));
+                _db.Stocks.Add(Stock.Create(deltaInStockUnit, warehouseId, productId, companyId));
             }
             await _db.SaveChangesAsync();
         }

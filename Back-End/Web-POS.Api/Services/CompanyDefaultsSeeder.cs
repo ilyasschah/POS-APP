@@ -125,6 +125,9 @@ namespace Api.Services
                 db.PosPrinterSettings.Add(ps);
             }
 
+            // Barcode nomenclature (the four default rules).
+            await BarcodeRuleSeeder.SeedAsync(db, companyId);
+
             await db.SaveChangesAsync();
         }
 
@@ -187,6 +190,19 @@ namespace Api.Services
         public static readonly (string Name, string Value)[] DefaultProperties =
         {
             ("CurrencySymbol", "DH"),
+            // POS session — the cash difference a cashier may close through on
+            // their own. Above it, closing needs manager authorisation. Per
+            // company and editable, so a busy shop can loosen it without a
+            // code change; "0" means every discrepancy needs a manager.
+            ("PosSession.MaxCashDifference", "10"),
+            // Optional override: comma-separated PaymentType ids that come out
+            // of the cash drawer. Empty = infer from IsChangeAllowed, because
+            // there is no IsCash flag and OpenCashDrawer is true for Credit too.
+            ("PosSession.CashPaymentTypeIds", ""),
+            // Master switch for the no-sale-without-a-session rule. Also the
+            // recovery path: if session state is ever wrong on a real till,
+            // turning this off restores trading immediately.
+            ("PosSession.RequireOpenSession", "true"),
             ("Application.Api.BaseUrl", "https://api.futur3.com/api"),
             ("Application.User.Email", ""),
             ("Database.Backup.Version", "v2"),
@@ -202,7 +218,15 @@ namespace Api.Services
             ("Application.TimezoneMode", "Auto"),
             ("Application.Timezone", "Africa/Casablanca"),
             ("Application.DateFormat", "dd/MM/yyyy"),
-            ("General.TaxIncludedByDefault", "false"),
+            // "true" to match kSettingDefaults on the client. Every product
+            // ever created in this app has been tax-inclusive (the editor
+            // hardcoded it), so seeding "false" would silently flip pricing to
+            // tax-exclusive for existing installs the first time they synced.
+            ("General.TaxIncludedByDefault", "true"),
+            // Companion of the switch above — the tax-inclusive setting cannot
+            // be turned on without at least one rate. Seeded empty because tax
+            // rate IDs are per-company; the client's picker fills it in.
+            ("General.DefaultTaxRateIds", ""),
             ("Pos.CustomServiceTypes", @"[{""id"":0,""name"":""Dine-In"",""prefix"":""TALABIA""},{""id"":1,""name"":""Takeaway"",""prefix"":""TAKEAWAY""},{""id"":2,""name"":""Delivery"",""prefix"":""DELIVERY""}]"),
             ("Pos.CustomServiceStatuses", @"[{""id"":1,""name"":""standby"",""colorValue"":4280391411},{""id"":2,""name"":""IN-Kitchen"",""colorValue"":4294940672},{""id"":3,""name"":""COOKED"",""colorValue"":4283215696}]"),
             ("Feature.TablesButtonLabel", "TABLES"),
@@ -272,6 +296,9 @@ namespace Api.Services
             ("Products.CostPriceBasedMarkup", "true"),
             ("Products.AutoUpdateCostPrice", "false"),
             ("Products.EnableMovingAveragePrice", "true"),
+            // DEPRECATED — superseded by the BarcodeRule table. Kept so
+            // BarcodeRuleSeeder.BackfillAsync can still translate an existing
+            // company's scale format into a rule. Nothing reads them at runtime.
             ("Scale.Barcode.Enabled", "true"),
             ("Scale.Barcode.Prefix", "21"),
             ("Scale.Barcode.CodeLength", "5"),

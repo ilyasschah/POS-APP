@@ -1,4 +1,4 @@
-﻿using Api.Domain;
+using Api.Domain;
 using Api.Models;
 
 namespace Api.Helpers
@@ -17,6 +17,8 @@ namespace Api.Helpers
                 Code = entity.Code,
                 PLU = entity.PLU,
                 MeasurementUnit = entity.MeasurementUnit,
+                UomId = entity.UomId,
+                IsToWeigh = entity.IsToWeigh,
                 Price = entity.Price,
                 IsTaxInclusivePrice = entity.IsTaxInclusivePrice,
                 CurrencyId = entity.CurrencyId,
@@ -50,6 +52,8 @@ namespace Api.Helpers
                 Code = entity.Code,
                 PLU = entity.PLU,
                 MeasurementUnit = entity.MeasurementUnit,
+                UomId = entity.UomId,
+                IsToWeigh = entity.IsToWeigh,
                 Price = entity.Price,
                 IsTaxInclusivePrice = entity.IsTaxInclusivePrice,
                 CurrencyId = entity.CurrencyId,

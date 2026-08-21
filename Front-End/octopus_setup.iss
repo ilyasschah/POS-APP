@@ -19,7 +19,7 @@
 ; because it is obviously not a release — a hardcoded "1.0.0" here is exactly how
 ; the installer's number stopped matching the app's in the first place.
 #ifndef AppVersion
-  #define AppVersion "0.0.0"
+  #define AppVersion "1.0.4"
 #endif
 
 [Setup]
@@ -93,11 +93,11 @@ Filename: "{tmp}\VC_redist.x64.exe"; Parameters: "/install /passive /norestart";
 ; Launch the app automatically after installation finishes
 Filename: "{app}\{#AppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(AppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 
-; ── Uninstall deliberately leaves local data behind ──────────────────────────
+; ── Uninstall keeps local data unless the operator explicitly opts in ────────
 ;
-; There is no [UninstallDelete] section, and that is a decision, not an omission.
-; The three entries that used to be here were removed because every one of them
-; was either wrong or dangerous:
+; There is still NO [UninstallDelete] section. The removal lives in [Code]
+; (CurUninstallStepChanged), opt-in and interactive, because every declarative
+; version of it was either wrong or dangerous:
 ;
 ;  1. THE PATHS WERE MOSTLY DEAD. Measured on a real install: only
 ;     {userappdata}\com.example\pos_app exists. {localappdata}\com.example\pos_app
@@ -107,22 +107,37 @@ Filename: "{app}\{#AppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(
 ;  2. THE DATABASE WAS NEVER COVERED ANYWAY. Drift opens
 ;     getApplicationDocumentsDirectory()/pos_app.sqlite — i.e. Documents\pos_app.sqlite,
 ;     NOT a com.example\pos_app subfolder. The one file that matters was the one
-;     file no entry matched.
+;     file no entry matched. {userdocs} is what resolves it, and it follows a
+;     redirected Documents folder (OneDrive), which is where it actually sits on
+;     the machines in the field.
 ;
 ;  3. PER-USER PATHS ARE UNRELIABLE HERE. This installer runs elevated
 ;     (DefaultDirName is under Program Files), so {userappdata} / {localappdata} /
 ;     {userdocs} resolve to the profile of whoever ran the uninstaller — typically
-;     an admin, not the cashier whose data it was meant to remove. Inno warns about
-;     exactly this at compile time ("UsedUserAreasWarning").
+;     an admin, not the cashier whose data it was meant to remove. Unsolvable in a
+;     declarative section; handled below by PRINTING the resolved paths in the
+;     prompt, so a wrong profile is visible before anything is deleted.
 ;
 ;  4. IT WOULD DESTROY MONEY. pos_app.sqlite holds sales that have not yet synced
 ;     to the server. Uninstall-to-reinstall is a routine troubleshooting step, and
 ;     silently wiping unpushed transactions during one is unacceptable for a POS.
+;     Hence: two prompts, both defaulting to No, the second naming the file.
 ;
-; To remove a terminal's data on purpose, delete these by hand while signed in as
-; that Windows user — after confirming the Sync panel shows nothing pending:
-;     %APPDATA%\com.example\pos_app     (settings, credentials)
-;     %USERPROFILE%\Documents\pos_app.sqlite   (the local database)
+; What the opt-in step removes:
+;     %APPDATA%\com.example\pos_app          settings + credentials (secure storage)
+;     {userdocs}\pos_app.sqlite              the local database
+;     {userdocs}\pos_app.restore.sqlite      restore staging leftovers
+;     {userdocs}\pos_app.superseded.sqlite   (see lib/database/restore_service.dart)
+;
+; What it NEVER removes: the backup folder (POS_Backups). Backups are the only
+; way back from this action — deleting them alongside the data would turn a
+; recoverable mistake into a permanent one.
+;
+; Skipped entirely on a silent uninstall: data is never deleted without a human
+; reading the prompt.
+;
+; To do it by hand instead, while signed in as that Windows user and after the
+; Sync panel shows nothing pending, delete the four paths listed above.
 
 [Code]
 // Pascal Script to check if the Visual C++ Redistributable is already installed
@@ -141,4 +156,92 @@ begin
     // If it doesn't exist, tell the installer to run it
     Result := True;
   end;
+end;
+
+// ── Optional removal of this terminal's local data (uninstall only) ──────────
+// Opt-in, interactive, default No. See the rationale above [Code].
+
+function LocalDataDir: String;
+begin
+  Result := ExpandConstant('{userappdata}\com.example\pos_app');
+end;
+
+function LocalDatabaseFile: String;
+begin
+  Result := ExpandConstant('{userdocs}\pos_app.sqlite');
+end;
+
+procedure RemoveLocalData;
+var
+  Docs: String;
+  Failed: String;
+begin
+  Docs := ExpandConstant('{userdocs}');
+  Failed := '';
+
+  if DirExists(LocalDataDir) then
+    if not DelTree(LocalDataDir, True, True, True) then
+      Failed := Failed + '    ' + LocalDataDir + #13#10;
+
+  if FileExists(LocalDatabaseFile) then
+    if not DeleteFile(LocalDatabaseFile) then
+      Failed := Failed + '    ' + LocalDatabaseFile + #13#10;
+
+  // Restore leftovers share the database's folder and lifecycle. Absent on a
+  // terminal that never restored, so their removal is not reported.
+  DeleteFile(Docs + '\pos_app.restore.sqlite');
+  DeleteFile(Docs + '\pos_app.superseded.sqlite');
+
+  if Failed <> '' then
+  MsgBox('Some local data could not be removed - it may still be in use:' + #13#10#13#10 +
+         Failed + #13#10 +
+         'Close anything using these files and delete them by hand.',
+         mbError, MB_OK)
+  else
+  MsgBox('This terminal''s local data has been removed.' + #13#10#13#10 +
+         'Your backup folder was NOT touched.', mbInformation, MB_OK);
+end;
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+var
+  Prompt: String;
+begin
+  if CurUninstallStep <> usPostUninstall then Exit;
+  // Never delete data without someone reading the prompt.
+  if UninstallSilent then Exit;
+  // Nothing of ours in this profile - stay quiet rather than ask about files
+  // that do not exist (which is also the signal that the wrong user is running
+  // the uninstaller).
+  if (not DirExists(LocalDataDir)) and (not FileExists(LocalDatabaseFile)) then Exit;
+
+  Prompt :=
+    'Octopus POS has been uninstalled.' + #13#10#13#10 +
+    'Also remove this terminal''s local data?' + #13#10#13#10 +
+    'Settings and credentials:' + #13#10 +
+    '    ' + LocalDataDir + #13#10 +
+    'Local database:' + #13#10 +
+    '    ' + LocalDatabaseFile + #13#10#13#10 +
+    'Backups are NOT removed.' + #13#10#13#10 +
+    'Answer No if you are reinstalling or troubleshooting - the app picks this ' +
+    'data back up and nothing is lost.' + #13#10#13#10 +
+    'Check the paths above name the right Windows user: they belong to the ' +
+    'account running this uninstaller, which may not be the cashier''s.';
+
+  if MsgBox(Prompt, mbConfirmation, MB_YESNO or MB_DEFBUTTON2) <> IDYES then Exit;
+
+  if FileExists(LocalDatabaseFile) then
+  begin
+    Prompt :=
+  'LAST CHECK' + #13#10#13#10 +
+  LocalDatabaseFile + #13#10#13#10 +
+  'This file holds every sale made on this terminal, INCLUDING any that ' +
+  'have not reached the cloud yet. Once deleted, only a backup can bring ' +
+  'them back.' + #13#10#13#10 +
+  'If you are not certain the Sync panel showed 0 pending, answer No.' + #13#10#13#10 +
+  'Answering No leaves ALL local data in place.' + #13#10#13#10 +
+  'Delete it now?';
+    if MsgBox(Prompt, mbError, MB_YESNO or MB_DEFBUTTON2) <> IDYES then Exit;
+  end;
+
+  RemoveLocalData;
 end;
