@@ -192,13 +192,13 @@ width in between these tiers — no fixed pixel widths on cards; use
 
 ## 5. Navigation Structure
 
-Same 6 destinations as the native spec, same order, same icons — just
-re-hosted in the responsive shell from §4 instead of a native
-`NavigationSplitView`:
+Seven destinations, in this order and with these icons, re-hosted in the
+responsive shell from §4 instead of a native `NavigationSplitView`:
 
 | Icon | Title | Screen |
 |---|---|---|
 | `show_chart` | Dashboard | Sales analytics |
+| `point_of_sale` | POS Sessions | Register session history (read-only) |
 | `sell` | Products & Prices | Product list + price editor |
 | `inventory_2` | Stock | Per-product stock quantities |
 | `description` | Documents | Sales documents list + detail |
@@ -335,7 +335,59 @@ data" before the fetch has started.
 - Admin-triggered forced reset only — no self-service flow, and it requires
   the logged-in user to hold the Admin role server-side (§7).
 
-### 6.7 Settings
+### 6.7 POS Sessions (read-only)
+
+Sits **second in the nav**, right after Dashboard. Renders the register
+sessions the backend gained in `PosSessionController`; it is numbered last here
+only because the earlier sections predate it.
+
+**It must offer no way to open, confirm, close or force-close a session.** A
+session is opened, counted and closed on the register that owns the drawer;
+closing one from a browser would strand a till mid-count. This screen reads
+`/PosSession/History` and `/PosSession/Summary` and nothing else.
+
+List screen:
+- Page header eyebrow "REGISTERS", title "POS Sessions", refresh button, plus
+  two glass-pill menus: **register** filter (all registers, or one by name) and
+  **history depth** (`take` = 25/50/100/250, default 50).
+- **Live-now strip** — a horizontal row of tinted cards, one per session in a
+  live state (10/11/12), each showing its status pill, register name, cashier,
+  how long it has been open, takings, order count and opening float.
+- **Four headline figures** — live registers, sessions loaded, net cash
+  variance (signed, red when short), and how many need attention.
+- **Filter chips** with counts: All / Live / Closed / Attention, plus a search
+  box matching register, cashier or `#id`.
+- **Session rows** — state glyph, register + id, opened → closed with duration,
+  cashier, takings + order count, and a signed difference chip when the drawer
+  did not balance. Tapping one pushes the detail route.
+
+Detail route (`/PosSession/Summary` for the figures):
+- Tinted hero: status pill, register, what the state actually permits, and the
+  opened/closed/duration facts with who did each.
+- Flag banners for a force-close (with its reason), late arrivals, a closing
+  note, inferred cash methods, and the two non-trading states.
+- Takings: total taken, documents banked, average per order.
+- **Cash reconciliation** as running arithmetic: opening float, + cash
+  payments, + cash in, − cash out, = expected, counted, difference — with the
+  company tolerance spelled out.
+- Payment mix: a donut plus a row per method (cash physically counted vs merely
+  confirmed) with each method's share.
+- Audit trail: session id, register id, device local id, status code, who
+  opened/closed/force-closed it, last modified.
+
+Two traps this screen exists on the far side of:
+- **Timestamps are UTC without saying so.** The server writes
+  `DateTime.UtcNow`, EF reads it back as `Kind=Unspecified`, and it serializes
+  with no `Z`. Parse it as UTC and convert to local, or every session time
+  drifts by the viewer's offset.
+- **A closed session has two expected-cash figures.** The one frozen on the
+  session row is what the cashier was held to; `/Summary` recomputes live.
+  Show the frozen one, and mention the recomputed one only when they differ —
+  that difference is a late sale, and hiding either number hides it.
+
+---
+
+### 6.8 Settings
 - Sections: **Account** (email display + destructive "Sign Out"), **Appearance
   & UI** (Dark Mode toggle, Liquid Glass Effect toggle, Glass Transparency
   slider when enabled). No currency setting — deliberately removed, don't add
@@ -354,6 +406,31 @@ reverse-engineered against the live API, not guessed.
 **Auth header** on every request except login: `Authorization: Bearer {jwtToken}`.
 `Accept: application/json` on GETs, `Content-Type: application/json` on
 requests with a body.
+
+### POS Sessions
+`GET /PosSession/History?companyId=25&take=50` → array of sessions:
+`{ id, localId, companyId, posDeviceId, posDeviceName, openedByUserId,
+openedAt, closedByUserId, closedAt, openingCash, expectedCash,
+actualEndingCash, cashDifference, closingNote, status, statusName, forceClosed,
+forceClosedByUserId, forceCloseReason, hasLateArrivals, lastModified }`.
+
+`status` is **10 = OPENING_CONTROL, 11 = OPENED, 12 = CLOSING_CONTROL,
+13 = CLOSED**. The range starts at 10 because attendance shifts share the same
+server table and use 0/1 — map anything outside 10–13 to "unknown", never to a
+live state.
+
+`GET /PosSession/Summary?companyId=25&sessionId={id}` → one object:
+`{ sessionId, status, statusName, openedAt, openedByUserId, orderCount,
+openingCash, cashPayments, cashIn, cashOut, expectedCash, totalTaken,
+methods: [{ paymentTypeId, paymentTypeName, isCash, expected, counted,
+difference }], maxCashDifference, cashMethodsConfigured }`.
+
+`orderCount` counts **documents**, not POS orders — checkout consumes the order
+row. Fetch this per session, lazily, as a row scrolls into view: the history
+response carries no takings, and each summary is several queries server-side.
+
+Cashier names come from the existing `GET /Users/GetAllUsers`; a failure there
+must degrade to "User #7", never take the session list down.
 
 ### Login
 `POST /Auth/Login` — no auth. Body: `{ "Email": string, "Password": string, "DeviceId": null }`.

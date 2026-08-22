@@ -11,8 +11,8 @@ namespace Api.Domain
 
         public int CompanyId { get; private set; }
 
-        public string Name { get; private set; }
-        public string Color { get; private set; }
+        public string Name { get; private set; } = default!;
+        public string Color { get; private set; } = default!;
 
         // Public set required by ISyncableEntity — stamped by DbContext, never by call sites.
         public DateTime LastModified { get; set; } = DateTime.UtcNow;

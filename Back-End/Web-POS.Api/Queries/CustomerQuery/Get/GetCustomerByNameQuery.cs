@@ -8,7 +8,7 @@ namespace Api.Queries.CustomerQuery.Get
 {
     public class GetCustomerByNameQuery : IRequest<CustomerDto?>
     {
-        public string Name { get; set; }
+        public required string Name { get; set; }
         public int CompanyId { get; set; }
         public class GetCustomerByNameQueryHandler : IRequestHandler<GetCustomerByNameQuery, CustomerDto?>
         {

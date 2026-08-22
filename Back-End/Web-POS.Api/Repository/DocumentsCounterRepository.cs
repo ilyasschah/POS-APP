@@ -27,12 +27,12 @@ namespace Api.Repository
             {
                 query = query.AsNoTracking();
             }
-            return await query.FirstOrDefaultAsync(c => c.Name.ToLower() == name.ToLower());
+            return await query.FirstOrDefaultAsync(c => c.Name!.ToLower() == name.ToLower());
         }
 
         public async Task<bool> ExistsAsync(string name)
         {
-            return await _db.DocumentsCounter.AnyAsync(c => c.Name.ToLower() == name.ToLower());
+            return await _db.DocumentsCounter.AnyAsync(c => c.Name!.ToLower() == name.ToLower());
         }
 
         public async Task AddAsync(DocumentsCounter entity)

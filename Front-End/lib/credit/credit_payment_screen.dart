@@ -16,6 +16,7 @@ import 'package:pos_app/customer/customer_model.dart';
 import 'package:pos_app/customer/customer_provider.dart';
 import 'package:pos_app/sync/sync_notifier.dart';
 import 'package:pos_app/navigation/nav_widgets.dart';
+import 'package:pos_app/session/session_provider.dart';
 
 // ---------------------------------------------------------------------------
 // Model
@@ -293,6 +294,12 @@ class _CreditPaymentsScreenState extends ConsumerState<CreditPaymentsScreen> {
             date: Value(now),
             companyId: Value(company.id),
             dateCreated: Value(now),
+            // 🚨 The session TAKING the money, not the one that raised the
+            // invoice. Settling last night's credit puts cash in TODAY's
+            // drawer, and today's drawer is what gets counted — an unstamped
+            // payment is money the closing count can never account for.
+            sessionLocalId:
+                Value(ref.read(activeSessionProvider).value?.localId),
             syncStatus: const Value('pending_create'),
           ),
         );

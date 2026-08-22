@@ -64,10 +64,13 @@ namespace Api.Services
             {
                 return false;
             }
-            var existingByName = await _repository.GetByNameAsync(req.Name, companyId);
-            if (existingByName != null && existingByName.Id != req.Id)
+            if (req.Name != null)
             {
-                throw new InvalidOperationException($"Another payment type with the name '{req.Name}' already exists.");
+                var existingByName = await _repository.GetByNameAsync(req.Name, companyId);
+                if (existingByName != null && existingByName.Id != req.Id)
+                {
+                    throw new InvalidOperationException($"Another payment type with the name '{req.Name}' already exists.");
+                }
             }
             entity.Name = req.Name ?? entity.Name;
             entity.Code = req.Code ?? entity.Code;

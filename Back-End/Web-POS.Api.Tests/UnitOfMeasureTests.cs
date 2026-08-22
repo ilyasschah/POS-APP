@@ -138,7 +138,7 @@ public class UnitOfMeasureTests
     public void Every_category_has_exactly_one_reference_unit()
     {
         foreach (var group in System.Linq.Enumerable.GroupBy(UnitOfMeasure.All, u => u.Category))
-            Assert.Single(System.Linq.Enumerable.Where(group, u => u.IsReference));
+            Assert.Single(group, u => u.IsReference);
     }
 
     [Fact]

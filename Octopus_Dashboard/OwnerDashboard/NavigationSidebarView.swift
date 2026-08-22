@@ -3,6 +3,7 @@ import SwiftUI
 // The top-level sections available in the sidebar.
 enum SidebarItem: String, CaseIterable, Identifiable {
     case dashboard
+    case sessions
     case products
     case stock
     case documents
@@ -14,6 +15,7 @@ enum SidebarItem: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .dashboard: return "Dashboard"
+        case .sessions:  return "POS Sessions"
         case .products:  return "Products & Prices"
         case .stock:     return "Stock"
         case .documents: return "Documents"
@@ -25,6 +27,7 @@ enum SidebarItem: String, CaseIterable, Identifiable {
     var icon: String {
         switch self {
         case .dashboard: return "chart.line.uptrend.xyaxis"
+        case .sessions:  return "clock.arrow.circlepath"
         case .products:  return "tag.fill"
         case .stock:     return "shippingbox.fill"
         case .documents: return "doc.text.fill"
@@ -61,6 +64,7 @@ struct NavigationSidebarView: View {
     private var detailView: some View {
         switch selection ?? .dashboard {
         case .dashboard: DashboardView(auth: auth)
+        case .sessions:  PosSessionsView(auth: auth)
         case .products:  ProductsView(auth: auth)
         case .stock:     StockView(auth: auth)
         case .documents: DocumentsView(auth: auth)

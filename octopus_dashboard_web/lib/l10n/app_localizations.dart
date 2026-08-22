@@ -106,6 +106,12 @@ abstract class AppLocalizations {
   /// **'Dashboard'**
   String get navDashboard;
 
+  /// No description provided for @navSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'POS Sessions'**
+  String get navSessions;
+
   /// No description provided for @navProducts.
   ///
   /// In en, this message translates to:

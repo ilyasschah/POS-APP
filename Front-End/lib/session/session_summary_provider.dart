@@ -217,6 +217,65 @@ final sessionPaymentsProvider =
       }).toList());
 });
 
+/// One document banked during a session, with the customer it was rung up for.
+class SessionDocumentEntry {
+  const SessionDocumentEntry({required this.document, this.customerName});
+
+  final DocumentsTableData document;
+
+  /// Null for a walk-in sale, or when the customer row has not reached this
+  /// device — cosmetic either way, so the row still renders without it.
+  final String? customerName;
+
+  /// Refunds are their own document type. Money went back OUT, so the row must
+  /// not read as another sale.
+  bool get isRefund => document.documentTypeId == kRefundDocumentTypeId;
+
+  bool get isUnpaid => document.paidStatus == 0;
+
+  /// No server number assigned yet — the list says so rather than showing a
+  /// blank where a number belongs.
+  bool get isPendingSync =>
+      document.syncStatus == 'pending' || document.syncStatus == 'pending_create';
+}
+
+/// `document_type_id` for a refund.
+const int kRefundDocumentTypeId = 4;
+
+/// Every document a session banked, newest first.
+///
+/// 🚨 DOCUMENTS, not pos_orders — the same set the "Documents" figure on the
+/// overview counts. Checkout consumes the order row and produces the document,
+/// so counting orders counts only what is still unpaid.
+///
+/// Keyed on the DOCUMENT's session, unlike [sessionPaymentsProvider] which is
+/// keyed on the payment's: a sale belongs to the session that rang it up, while
+/// the money belongs to the session whose drawer it landed in. Settling an old
+/// invoice today puts cash in today's session and leaves the document in the
+/// one that issued it — and both statements are what their tab is there to
+/// make.
+final sessionDocumentsProvider =
+    StreamProvider.family<List<SessionDocumentEntry>, String>(
+        (ref, sessionLocalId) {
+  final db = ref.watch(appDatabaseProvider);
+
+  // Joined rather than looked up per row: a busy session is hundreds of
+  // documents, and an N+1 on every rebuild would be felt on a tablet.
+  final query = db.select(db.documentsTable).join([
+    leftOuterJoin(db.customersTable,
+        db.customersTable.id.equalsExp(db.documentsTable.customerId)),
+  ])
+    ..where(db.documentsTable.sessionLocalId.equals(sessionLocalId))
+    ..orderBy([OrderingTerm.desc(db.documentsTable.date)]);
+
+  return query.watch().map((rows) => rows
+      .map((r) => SessionDocumentEntry(
+            document: r.readTable(db.documentsTable),
+            customerName: r.readTableOrNull(db.customersTable)?.name,
+          ))
+      .toList());
+});
+
 /// Attaches sales rung up BEFORE this build to the session they belong to.
 ///
 /// 🚨 A repair, not a feature. `sessionLocalId` is stamped at checkout now, but

@@ -74,7 +74,10 @@ namespace Api.Services
                 throw new KeyNotFoundException($"Customer with ID {request.Id} not found.");
             }
 
-            string newName = request.Name ?? customer.Name;
+            // Customer.Name is nullable in the domain, but UpdateDetails below rejects a
+            // blank one anyway — hoisted here so the checks in between have a real name.
+            string newName = request.Name ?? customer.Name
+                ?? throw new ArgumentException("Name cannot be null or empty.", nameof(request));
 
             if (newName != customer.Name)
             {

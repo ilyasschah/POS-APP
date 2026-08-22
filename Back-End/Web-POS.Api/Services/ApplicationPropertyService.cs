@@ -28,8 +28,8 @@ namespace Api.Services
                 return new ApplicationPropertyDto
                 {
                     Id = existing.Id,
-                    Name = existing.Name,
-                    Value = existing.Value,
+                    Name = existing.Name ?? string.Empty,
+                    Value = existing.Value ?? string.Empty,
                     CompanyName = company?.Name
                 };
             }
@@ -45,8 +45,8 @@ namespace Api.Services
             return new ApplicationPropertyDto
             {
                 Id = newApplicationProperty.Id,
-                Name = newApplicationProperty.Name,
-                Value = newApplicationProperty.Value,
+                Name = newApplicationProperty.Name ?? string.Empty,
+                Value = newApplicationProperty.Value ?? string.Empty,
                 CompanyName = company?.Name
             };
         }

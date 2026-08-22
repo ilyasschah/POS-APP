@@ -8,7 +8,7 @@ namespace Api.Queries.PaymentTypeQuery
 {
     public class GetPaymentTypeByNameQuery : IRequest<PaymentTypeDto?>
     {
-        public string Name { get; set; }
+        public required string Name { get; set; }
         public int CompanyId { get; set; }
 
         public class GetPaymentTypeByNameQueryHandler : IRequestHandler<GetPaymentTypeByNameQuery, PaymentTypeDto?>

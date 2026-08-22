@@ -20,7 +20,7 @@ namespace Api.Domain
         public decimal QuantityLimit { get; set; }
 
         [ForeignKey(nameof(PromotionId))]
-        public virtual Promotion Promotion { get; set; }
+        public virtual Promotion? Promotion { get; set; }
 
         private PromotionItem(int promotionId, int uid, decimal value)
         {

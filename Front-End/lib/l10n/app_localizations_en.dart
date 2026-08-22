@@ -3996,6 +3996,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get periodLabel => 'Period';
 
   @override
+  String get docSearchHint => 'Search documents, or pick a filter';
+
+  @override
+  String get filterSuggestionsSection => 'Search for';
+
+  @override
+  String filterNumberContains(Object query) {
+    return 'Number contains \"$query\"';
+  }
+
+  @override
+  String filterReferenceContains(Object query) {
+    return 'Reference contains \"$query\"';
+  }
+
+  @override
+  String filterCustomerContains(Object query) {
+    return 'Customer contains \"$query\"';
+  }
+
+  @override
+  String get filterCustomRange => 'Custom range...';
+
+  @override
+  String get filterKeepTyping => 'Keep typing to narrow this list';
+
+  @override
   String get documentNumber => 'Document number';
 
   @override
@@ -6579,6 +6606,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sessionNoPayments => 'No payments taken in this session yet.';
+
+  @override
+  String get sessionNoDocuments => 'No documents banked in this session yet.';
+
+  @override
+  String get sessionDocumentsHint => 'Tap a document to open it';
 
   @override
   String get sessionOpenDocumentHint => 'Tap a payment to open its document';

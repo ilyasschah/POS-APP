@@ -103,9 +103,27 @@ class PosKitchenServer {
 
 /// Kept alive for the post-login session by a `ref.watch` in MainLayout; the
 /// listener is torn down on logout via `ref.onDispose`.
+///
+/// 🚨 The socket follows the PAIRING state, not the session. Binding :9091 on a
+/// terminal with no Kitchen Display serves nobody: nothing can call back, the
+/// port is held against whatever else wants it, and on Windows it is one more
+/// firewall prompt for a feature the shop is not using. It binds when the first
+/// display is paired and closes when the last one is unpaired.
 final posKitchenServerProvider = Provider<PosKitchenServer>((ref) {
   final server = PosKitchenServer(ref);
-  server.start();
+
+  ref.listen<bool>(
+    kitchenDisplaysEnabledProvider,
+    (_, enabled) {
+      if (enabled) {
+        server.start();
+      } else {
+        server.stop();
+      }
+    },
+    fireImmediately: true,
+  );
+
   ref.onDispose(server.stop);
   return server;
 });

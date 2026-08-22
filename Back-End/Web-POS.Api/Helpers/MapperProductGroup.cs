@@ -7,8 +7,6 @@ namespace Api.Helpers
     {
         public static ProductGroupDto MapToDto(ProductGroup entity)
         {
-            if (entity == null) return null;
-
             return new ProductGroupDto
             {
                 Id = entity.Id,

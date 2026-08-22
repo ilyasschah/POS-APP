@@ -3,7 +3,7 @@
     public class DocumentDto
     {
         public int Id { get; set; }
-        public string Number { get; set; }
+        public string Number { get; set; } = string.Empty;
         public int UserId { get; set; }
         public string? UserName { get; set; }
         public int? CustomerId { get; set; }

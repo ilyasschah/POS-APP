@@ -1,6 +1,14 @@
 import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 
+/// The widest a column of label→value rows should be allowed to get.
+///
+/// On a 2560px monitor an unconstrained row puts the label against the far
+/// left edge and its amount against the far right, and the eye stops reading
+/// them as the same line. Cap the *content*, not the window: pair this with
+/// `Center` + `ConstrainedBox`, which is a no-op on anything narrower.
+const double kMaxReadableWidth = 1200;
+
 /// Shared responsive helpers so screens adapt to smaller tablets (e.g. a 7"
 /// device) without every widget re-deriving `MediaQuery` breakpoints.
 ///

@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:octopus_dashboard_web/api/octopus_api.dart';
 import 'package:octopus_dashboard_web/models/dashboard.dart';
 import 'package:octopus_dashboard_web/models/document.dart';
+import 'package:octopus_dashboard_web/models/pos_session.dart';
 import 'package:octopus_dashboard_web/models/product.dart';
 import 'package:octopus_dashboard_web/models/stock.dart';
 import 'package:octopus_dashboard_web/models/user.dart';
@@ -158,6 +159,133 @@ class FakeApi implements OctopusApi {
       total: 35,
     ),
   ]);
+
+  /// One session per lifecycle state, plus the two flags that must never be
+  /// invisible: a force-close and a late arrival. Register names are long on
+  /// purpose — the row has to ellipsize rather than overflow.
+  static final _sessions = [
+    PosSession(
+      id: 142,
+      companyId: 25,
+      posDeviceId: 3,
+      posDeviceName: 'POS1',
+      localId: 'a4f1c0de-0000-4000-8000-000000000142',
+      openedByUserId: 9,
+      openedAt: DateTime.now().subtract(const Duration(hours: 3, minutes: 12)),
+      openingCash: 200,
+      status: 11,
+      statusName: 'OPENED',
+      forceClosed: false,
+      hasLateArrivals: false,
+      lastModified: DateTime.now(),
+    ),
+    PosSession(
+      id: 141,
+      companyId: 25,
+      posDeviceId: 3,
+      posDeviceName: 'POS1',
+      openedByUserId: 10,
+      openedAt: DateTime(2026, 7, 15, 9),
+      closedByUserId: 9,
+      closedAt: DateTime(2026, 7, 15, 18, 12),
+      openingCash: 200,
+      expectedCash: 4137.70,
+      actualEndingCash: 4097.70,
+      cashDifference: -40,
+      closingNote: 'Two 20 DH notes missing after the evening rush; '
+          'authorised by the manager on shift.',
+      status: 13,
+      statusName: 'CLOSED',
+      forceClosed: false,
+      hasLateArrivals: true,
+      lastModified: DateTime(2026, 7, 15, 18, 12),
+    ),
+    PosSession(
+      id: 140,
+      companyId: 25,
+      posDeviceId: 4,
+      posDeviceName: 'Terrace Register With A Very Long Display Name',
+      openedByUserId: 10,
+      openedAt: DateTime(2026, 7, 14, 11, 30),
+      closedByUserId: 9,
+      closedAt: DateTime(2026, 7, 14, 23, 59),
+      openingCash: 150,
+      status: 13,
+      statusName: 'CLOSED',
+      forceClosed: true,
+      forceClosedByUserId: 9,
+      forceCloseReason:
+          'Tablet fell off the terrace counter and would not boot; drawer '
+          'counted by hand the next morning.',
+      hasLateArrivals: false,
+      lastModified: DateTime(2026, 7, 14, 23, 59),
+    ),
+    PosSession(
+      id: 139,
+      companyId: 25,
+      posDeviceId: 5,
+      posDeviceName: 'POS2',
+      openedByUserId: 9,
+      openedAt: DateTime.now().subtract(const Duration(minutes: 6)),
+      openingCash: 0,
+      status: 10,
+      statusName: 'OPENING_CONTROL',
+      forceClosed: false,
+      hasLateArrivals: false,
+      lastModified: DateTime.now(),
+    ),
+  ];
+
+  @override
+  Future<List<PosSession>> fetchPosSessions({
+    int take = 50,
+    CancelToken? cancelToken,
+  }) => _respond(_sessions.take(take).toList());
+
+  @override
+  Future<PosSessionSummary> fetchPosSessionSummary({
+    required int sessionId,
+    CancelToken? cancelToken,
+  }) => _respond(
+    PosSessionSummary(
+      sessionId: sessionId,
+      status: 13,
+      statusName: 'CLOSED',
+      openedAt: DateTime(2026, 7, 15, 9),
+      openedByUserId: 9,
+      orderCount: 37,
+      openingCash: 200,
+      cashPayments: 3937.70,
+      cashIn: 100,
+      cashOut: 100,
+      expectedCash: 4137.70,
+      totalTaken: 6218.40,
+      maxCashDifference: 20,
+      // Deliberately not configured, so the "cash methods were inferred"
+      // warning is exercised by the widget tests.
+      cashMethodsConfigured: false,
+      methods: const [
+        PosSessionMethod(
+          paymentTypeId: 1,
+          paymentTypeName: 'Cash',
+          isCash: true,
+          expected: 3937.70,
+        ),
+        PosSessionMethod(
+          paymentTypeId: 2,
+          paymentTypeName: 'Bank Card (Contactless Terminal)',
+          isCash: false,
+          expected: 2100.70,
+        ),
+        PosSessionMethod(
+          paymentTypeId: 3,
+          paymentTypeName: 'Meal Voucher',
+          isCash: false,
+          expected: 180,
+        ),
+      ],
+    ),
+  );
 
   @override
   Future<List<StaffUser>> fetchUsers({CancelToken? cancelToken}) =>

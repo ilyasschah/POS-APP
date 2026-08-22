@@ -6,7 +6,7 @@ public class LoyaltyCardDto
 {
     public int Id { get; set; }
     public int CustomerId { get; set; }
-    public string CustomerName { get; set; }
+    public string CustomerName { get; set; } = string.Empty;
     public string? CardNumber { get; set; }
     public decimal Points { get; set; }
     public DateTime LastModified { get; set; }

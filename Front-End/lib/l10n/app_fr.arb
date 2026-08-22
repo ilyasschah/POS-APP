@@ -1304,6 +1304,28 @@
   "allDates": "Toutes les dates",
   "userNumbered": "Utilisateur {id}",
   "periodLabel": "Période",
+  "docSearchHint": "Rechercher un document, ou choisir un filtre",
+  "filterSuggestionsSection": "Rechercher",
+  "filterNumberContains": "Le numero contient \"{query}\"",
+  "@filterNumberContains": {
+    "placeholders": {
+      "query": {}
+    }
+  },
+  "filterReferenceContains": "La reference contient \"{query}\"",
+  "@filterReferenceContains": {
+    "placeholders": {
+      "query": {}
+    }
+  },
+  "filterCustomerContains": "Le client contient \"{query}\"",
+  "@filterCustomerContains": {
+    "placeholders": {
+      "query": {}
+    }
+  },
+  "filterCustomRange": "Periode personnalisee...",
+  "filterKeepTyping": "Continuez a taper pour affiner la liste",
   "documentNumber": "Numéro de document",
   "documentNumberHint": "ex. 26-200-000001",
   "externalDocument": "Document externe",
@@ -2045,6 +2067,8 @@
   "sessionOverviewTab": "Aperçu",
   "sessionPaymentsTab": "Paiements",
   "sessionNoPayments": "Aucun paiement encaissé dans cette session.",
+  "sessionNoDocuments": "Aucun document enregistré dans cette session.",
+  "sessionDocumentsHint": "Touchez un document pour l'ouvrir",
   "sessionOpenDocumentHint": "Touchez un paiement pour ouvrir son document",
   "sessionDocumentUnavailable": "Ce document n'est pas sur cet appareil.",
   "developerMode": "Mode développeur",

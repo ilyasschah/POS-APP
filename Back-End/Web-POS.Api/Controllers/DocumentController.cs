@@ -37,7 +37,7 @@ namespace Api.Controllers
             string counterKey = $"DOC_{yy}_{docType.Code}_{companyId}";
 
             var counter = await db.DocumentsCounter
-                .FirstOrDefaultAsync(c => c.Name.ToLower() == counterKey.ToLower());
+                .FirstOrDefaultAsync(c => c.Name!.ToLower() == counterKey.ToLower());
 
             int next;
             if (counter == null)

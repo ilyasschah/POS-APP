@@ -3988,6 +3988,33 @@ class AppLocalizationsAr extends AppLocalizations {
   String get periodLabel => 'الفترة';
 
   @override
+  String get docSearchHint => 'ابحث عن مستند أو اختر عامل تصفية';
+
+  @override
+  String get filterSuggestionsSection => 'البحث عن';
+
+  @override
+  String filterNumberContains(Object query) {
+    return 'الرقم يحتوي على \"$query\"';
+  }
+
+  @override
+  String filterReferenceContains(Object query) {
+    return 'المرجع يحتوي على \"$query\"';
+  }
+
+  @override
+  String filterCustomerContains(Object query) {
+    return 'العميل يحتوي على \"$query\"';
+  }
+
+  @override
+  String get filterCustomRange => 'فترة مخصصة...';
+
+  @override
+  String get filterKeepTyping => 'واصل الكتابة لتضييق القائمة';
+
+  @override
   String get documentNumber => 'رقم المستند';
 
   @override
@@ -6612,6 +6639,12 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get sessionNoPayments => 'لا توجد مدفوعات في هذه الجلسة بعد.';
+
+  @override
+  String get sessionNoDocuments => 'لا توجد مستندات في هذه الجلسة بعد.';
+
+  @override
+  String get sessionDocumentsHint => 'اضغط على مستند لفتحه';
 
   @override
   String get sessionOpenDocumentHint => 'اضغط على دفعة لفتح مستندها';

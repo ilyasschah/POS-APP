@@ -45,7 +45,7 @@ namespace Api.Repository
 
                             Taxes = p.ProductTaxes.Select(pt => new MenuTaxDto
                             {
-                                Id = pt.Tax.Id,
+                                Id = pt.Tax!.Id,
                                 Name = pt.Tax.Name,
                                 Rate = pt.Tax.Rate,
                                 IsFixed = pt.Tax.IsFixed,

@@ -26,7 +26,22 @@ This repository contains three main directories. **You must ensure you are in th
     * Main backgrounds: `Theme.of(context).scaffoldBackgroundColor`
     * Cards/Dialogs: `Theme.of(context).cardColor` or `Theme.of(context).colorScheme.surface`
     * Table Headers: `WidgetStateProperty.all(Theme.of(context).colorScheme.surfaceContainerHighest)`
-5.  **API Client Handling:** When using Dio, catch `400 Bad Request` errors safely and return the JSON response `e.response?.data` to the UI instead of throwing a fatal exception, so the UI can show interactive dialogs.
+5.  **"Ilyass Style" (say it and this is the contract):** the house layout
+    rules — full spec in `PROJECT_DOCUMENTATION.md` §7 and `handoff.md` §0.
+    * **No dead flex space:** never `Expanded(label) + Flexible(value)` — that
+      strands the value at the midpoint. Use loose `Flexible` on both sides with
+      `MainAxisAlignment.spaceBetween` and flex caps (3/2).
+    * **Math-based wrapping:** grids/filter rows compute their own column count
+      from `constraints.maxWidth` and a `minTileWidth`, never from
+      `context.isCompact`.
+    * **Max-width caps:** reading views are wrapped in `Center` +
+      `ConstrainedBox(maxWidth: kMaxReadableWidth)` (`lib/core/responsive.dart`).
+      Data tables are the exception — they scroll horizontally instead.
+    * **Tables:** use `IlyassTable<T>` (`lib/core/ilyass_table.dart`) — draggable
+      columns, surplus width to one `flexible` column, `numeric: true` (money,
+      counts) end-aligned, actions fixed-width and `resizable: false`.
+
+6.  **API Client Handling:** When using Dio, catch `400 Bad Request` errors safely and return the JSON response `e.response?.data` to the UI instead of throwing a fatal exception, so the UI can show interactive dialogs.
 
 ---
 

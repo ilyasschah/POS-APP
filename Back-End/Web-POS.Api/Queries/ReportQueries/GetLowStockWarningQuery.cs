@@ -32,10 +32,10 @@ namespace Api.Queries.ReportQueries
                 .Select(sc => new
                 {
                     sc.ProductId,
-                    SupplierName            = sc.CustomerId == null ? "N/A" : (sc.Customer.Name ?? "N/A"),
+                    SupplierName            = sc.CustomerId == null ? "N/A" : (sc.Customer!.Name ?? "N/A"),
                     SupplierSortKey         = sc.CustomerId == null ? 0 : 1,
                     SupplierAlpha           = sc.Customer == null ? "" : (sc.Customer.Name ?? ""),
-                    ProductName             = sc.Product.Name ?? "",
+                    ProductName             = sc.Product!.Name ?? "",
                     sc.LowStockWarningQuantity,
                     sc.PreferredQuantity,
                     UOM = sc.Product.MeasurementUnit ?? "",

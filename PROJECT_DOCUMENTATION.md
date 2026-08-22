@@ -38,6 +38,7 @@
 4. [ADR-002 — SaaS Multi-Tenancy & Hardware Security](#4--adr-002--saas-multi-tenancy--hardware-security) — 5-pillar commercialization blueprint
 5. [Offline-First Audit & Conversion Tracker](#5--offline-first-audit--conversion-tracker) — per-screen offline-first status
 6. [Project Audit (2026-07-04)](#6--project-audit-2026-07-04) — repository-wide bug/perf/architecture audit
+7. [Ilyass Style — UI/UX pattern](#7--ilyass-style--uiux-pattern) — the house layout rules for the Flutter desktop UI
 
 ---
 
@@ -2548,3 +2549,148 @@ Add a `StatusColors` `ThemeExtension` (success/warning/danger/info) and one or t
 
 
 ---
+
+---
+
+<a id="7--ilyass-style--uiux-pattern"></a>
+
+# 7 · Ilyass Style — UI/UX pattern
+
+_Defined 2026-08-22. Say **"use Ilyass Style"** and this is the contract._
+
+The house layout rules for the Flutter desktop POS. They exist because the same
+four defects kept reappearing: values stranded mid-row, layouts that jump at a
+hardcoded breakpoint, rows stretched unreadably wide on a 2560px monitor, and
+tables whose column widths nobody can change.
+
+## 1. No dead flex space
+
+Never trap data in the middle of a row.
+
+`Expanded` is a **tight** flex child — it takes its whole share of the free
+space whether its text needs it or not. `Expanded(label)` + `Flexible(value)`
+therefore gives the label exactly half the row and starts the value at the
+midpoint, which reads as centred. That is the bug, not a styling preference.
+
+```dart
+Row(
+  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  children: [
+    Flexible(flex: 3, child: Text(label)),                     // hard left
+    const SizedBox(width: 12),                                 // minimum gap
+    Flexible(flex: 2, child: Text(value, textAlign: TextAlign.end)), // hard right
+  ],
+)
+```
+
+Both sides **loose** `Flexible`, `spaceBetween`, and flex caps (3/2) so a long
+name ellipsizes instead of overflowing a 10-inch tablet. A bare `Text` as the
+trailing child is acceptable **only** when the value cannot grow (a formatted
+amount, an icon); anything user-entered gets the capped `Flexible`.
+
+Reference: `lib/session/session_screen.dart` → `_Row`.
+
+## 2. Math-based fluid wrapping
+
+Grids and filter rows compute their own column count from the width they
+actually got, not from a global screen breakpoint. `context.isCompact` describes
+the *window*; a widget inside a split pane or a sidebar layout gets neither.
+
+```dart
+LayoutBuilder(builder: (context, constraints) {
+  const gap = 12.0;
+  const minTileWidth = 230.0;                 // below this the content is unreadable
+  final fits = ((constraints.maxWidth + gap) / (minTileWidth + gap)).floor();
+  final perRow = fits.clamp(1, tiles.length); // or a design ceiling, e.g. 4
+  final width = (constraints.maxWidth - gap * (perRow - 1)) / perRow;
+
+  return Wrap(
+    spacing: gap,
+    runSpacing: gap,
+    children: [for (final t in tiles) SizedBox(width: width, child: t)],
+  );
+});
+```
+
+Collapses 4 → 3 → 2 → 1 continuously as the window is dragged, with no jump.
+
+References: `_StatGrid` in `lib/session/session_screen.dart`;
+`_buildFilterPanel` in `lib/document/documents_screen.dart`.
+
+## 3. Max-width caps
+
+Reading views — label→value rows, summary cards, forms — are capped and centred
+so an ultra-wide monitor cannot put a label against one edge and its amount
+against the other.
+
+```dart
+Center(
+  child: ConstrainedBox(
+    constraints: const BoxConstraints(maxWidth: kMaxReadableWidth), // 1200
+    child: body,
+  ),
+)
+```
+
+`kMaxReadableWidth` lives in `lib/core/responsive.dart`. It is a no-op below
+1200px, so tablets are untouched.
+
+**The one exception: data tables.** A table wants every pixel — it gets
+horizontal scrolling instead of a cap. Cap the *reading* view, never the grid.
+
+Reference: the `TabBarView` in `lib/session/session_screen.dart`.
+
+## 4. Resizable, aligned data tables
+
+Use `IlyassTable<T>` (`lib/core/ilyass_table.dart`) rather than Material's
+`DataTable`:
+
+- **Draggable columns.** Every header edge is an 8px grab strip
+  (`MouseRegion` + `GestureDetector`, RTL-aware). Widths live in
+  `ilyassColumnWidthsProvider(tableId)`.
+- **Surplus goes to ONE column**, marked `flexible: true` — never spread evenly.
+  `DataTable` spreads it, which is exactly what opens a dead zone between two
+  short columns while the name column that needed the room stays clipped.
+- **Money and counts are `numeric: true`** → end-aligned. A column of totals is
+  read by its last digits.
+- **Actions are `resizable: false`** at a fixed minimal width, icons packed with
+  `visualDensity: VisualDensity.compact`, `padding: EdgeInsets.zero` and a
+  36×36 tap target. Dragging an actions column only ever creates dead space.
+- **One list, not two.** A column carries its own cell builder, so the header
+  and the cell cannot drift out of step — the class of bug that parallel
+  `if (visible['X'])` chains invite.
+- Rows build lazily (`ListView.builder` + `itemExtent`), the header stays put
+  while they scroll, and hover highlights the full row.
+
+```dart
+IlyassTable<Document>(
+  tableId: 'documents',
+  rows: documents,
+  columns: [
+    IlyassColumn(key: 'Customer', label: l.colCustomer, width: 220,
+        flexible: true, cell: (c, d) => Text(d.customerName ?? '-')),
+    IlyassColumn(key: 'Total', label: l.totalUpper, width: 140,
+        numeric: true, cell: (c, d) => Text(money(d.total))),
+    IlyassColumn(key: 'Actions', label: l.colActions, width: 96,
+        resizable: false, cell: (c, d) => _actions(d)),
+  ],
+  emptyState: const EmptyView(...),
+)
+```
+
+Column **visibility** stays where it already is — a `StateProvider<Map<String,
+bool>>` per screen plus the existing column picker. Widths are in-memory per
+sitting; persisting them (device-scoped `shared_preferences`) is an open
+follow-up.
+
+## Where it is applied
+
+| Screen | What |
+|---|---|
+| `lib/session/session_screen.dart` | `_Row` alignment, `_StatGrid` fluid wrap, 1200px cap on both tabs |
+| `lib/document/documents_screen.dart` | `IlyassTable` with resizable columns, end-aligned TOTAL, tight ACTIONS. The 8 filters became the unified search bar (`lib/core/unified_search_bar.dart`) — its chip row and result-count header still follow rules 1–2. |
+| `lib/core/ilyass_table.dart` | The shared table + `ilyassColumnWidthsProvider` |
+| `lib/core/responsive.dart` | `kMaxReadableWidth` |
+
+Still on the old pattern, and the obvious next candidates: the products list,
+the stock screen, the session list table, and the reports tables.

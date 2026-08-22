@@ -15,7 +15,7 @@ namespace Api.Domain
         public DateTime LastModified { get; set; } = DateTime.UtcNow;
 
         [MaxLength(100)]
-        public string Name { get; private set; }
+        public string Name { get; private set; } = default!;
 
         public double PositionX { get; private set; }
         public double PositionY { get; private set; }

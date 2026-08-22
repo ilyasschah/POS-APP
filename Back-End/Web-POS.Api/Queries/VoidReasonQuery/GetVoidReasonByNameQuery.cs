@@ -9,7 +9,7 @@ namespace Api.Queries.VoidReasonQuery
 {
     public class GetVoidReasonByNameQuery : IRequest<VoidReasonDto?>
     {
-        public string Name { get; set; }
+        public required string Name { get; set; }
 
         public class GetVoidReasonByNameQueryHandler : IRequestHandler<GetVoidReasonByNameQuery, VoidReasonDto?>
         {

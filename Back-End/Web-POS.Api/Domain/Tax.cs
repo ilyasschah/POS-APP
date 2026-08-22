@@ -10,14 +10,14 @@ namespace Api.Domain
         public int Id { get;  set; }
         public int CompanyId { get;  set; }
         public DateTime LastModified { get; set; } = DateTime.UtcNow;
-        public string Name { get;  set; }
+        public string Name { get;  set; } = default!;
         public decimal Rate { get;  set; }
         public string? Code { get;  set; }
         public bool IsFixed { get;  set; }
         public bool IsTaxOnTotal { get;  set; }
         public bool IsEnabled { get;  set; }
         [ForeignKey(nameof(CompanyId))]
-        public virtual Company Company { get; private set; }
+        public virtual Company? Company { get; private set; }
         
 
         private Tax(int companyId, string name, decimal rate, string? code, bool isfixed, bool istaxontotal, bool isenabled)

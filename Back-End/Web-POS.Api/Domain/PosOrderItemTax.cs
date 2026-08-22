@@ -14,13 +14,13 @@ namespace Api.Domain
         public int CompanyId { get; set; }
 
         [ForeignKey(nameof(PosOrderItemId))]
-        public virtual PosOrderItem PosOrderItem { get; set; }
+        public virtual PosOrderItem? PosOrderItem { get; set; }
 
         [ForeignKey(nameof(TaxId))]
-        public virtual Tax Tax { get; set; }
+        public virtual Tax? Tax { get; set; }
 
         [ForeignKey(nameof(CompanyId))]
-        public virtual Company Company { get; set; }
+        public virtual Company? Company { get; set; }
 
         public PosOrderItemTax() { }
 

@@ -8,7 +8,7 @@ namespace Api.Queries.TaxesQuery.Get
 {
     public class GetByTaxebyNameQuery : IRequest<TaxDto?>
     {
-        public string Name { get; set; }
+        public required string Name { get; set; }
         public int CompanyId { get; set; }
 
         public class GetByTaxebyNameQueryHandler : IRequestHandler<GetByTaxebyNameQuery, TaxDto?>

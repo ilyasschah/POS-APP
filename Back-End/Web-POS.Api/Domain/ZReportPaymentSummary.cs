@@ -18,10 +18,10 @@ namespace Api.Domain
 
 
         [ForeignKey(nameof(ZReportId))]
-        public virtual ZReport ZReport { get; private set; }
+        public virtual ZReport? ZReport { get; private set; }
 
         [ForeignKey(nameof(PaymentTypeId))]
-        public virtual PaymentType PaymentType { get; private set; }
+        public virtual PaymentType? PaymentType { get; private set; }
 
         public ZReportPaymentSummary() { }
 

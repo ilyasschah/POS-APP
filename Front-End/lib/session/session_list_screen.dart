@@ -233,14 +233,10 @@ class _SessionListScreenState extends ConsumerState<SessionListScreen> {
                           maxWidth: constraints.maxWidth,
                         ),
             ),
-      floatingActionButton: FloatingActionButton.extended(
-        // Collapses to a plain icon button on a narrow till, where an extended
-        // FAB covers a whole row of the list it sits on.
-        isExtended: !compact,
-        onPressed: () => SessionScreen.show(context),
-        icon: const Icon(Icons.point_of_sale_outlined),
-        label: Text(l.sessionCurrentOnThisDevice),
-      ),
+      // No "current session on this device" FAB: this register's live session
+      // is already the top row of the list and carries its own marker, so the
+      // button was a second door onto the same screen — and it sat on top of
+      // the row it duplicated.
     );
   }
 }

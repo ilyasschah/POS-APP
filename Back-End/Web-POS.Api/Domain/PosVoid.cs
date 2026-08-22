@@ -11,11 +11,11 @@ namespace Api.Domain
         [Key]
         public int Id { get; set; }
         public int CompanyId { get; set; }
-        public string OrderNumber { get; set; }
+        public string OrderNumber { get; set; } = default!;
         public int? UserId { get; set; }
-        public string UserName { get; set; }
+        public string UserName { get; set; } = default!;
         public int? ProductId { get; set; }
-        public string ProductName { get; set; }
+        public string ProductName { get; set; } = default!;
         public int RoundNumber { get; set; }
         public decimal Quantity { get; set; }
         public decimal Price { get; set; }

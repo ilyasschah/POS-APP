@@ -11,16 +11,19 @@ import '../documents/documents_controller.dart';
 import '../documents/documents_screen.dart';
 import '../products/products_controller.dart';
 import '../products/products_screen.dart';
+import '../sessions/sessions_controller.dart';
+import '../sessions/sessions_screen.dart';
 import '../settings/settings_screen.dart';
 import '../stock/stock_controller.dart';
 import '../stock/stock_screen.dart';
 import '../users/users_controller.dart';
 import '../users/users_screen.dart';
 
-/// The six top-level destinations, in order. Settings is reachable *only*
+/// The seven top-level destinations, in order. Settings is reachable *only*
 /// from here — there is no second entry point anywhere in the UI.
 enum AppDestination {
   dashboard(Icons.show_chart),
+  sessions(Icons.point_of_sale),
   products(Icons.sell),
   stock(Icons.inventory_2),
   documents(Icons.description),
@@ -35,6 +38,8 @@ enum AppDestination {
     switch (this) {
       case AppDestination.dashboard:
         return loc.navDashboard;
+      case AppDestination.sessions:
+        return loc.navSessions;
       case AppDestination.products:
         return loc.navProducts;
       case AppDestination.stock:
@@ -81,6 +86,8 @@ class _AppShellState extends ConsumerState<AppShell> {
     switch (destination) {
       case AppDestination.dashboard:
         ref.read(dashboardProvider.notifier).load();
+      case AppDestination.sessions:
+        ref.read(sessionsProvider.notifier).load();
       case AppDestination.products:
         ref.read(productsProvider.notifier).load();
       case AppDestination.stock:
@@ -153,9 +160,9 @@ class _AppShellState extends ConsumerState<AppShell> {
   }
 }
 
-/// Keeps all six screens alive so each retains its scroll position and search
-/// text across navigation, while making sure only the visible one does any
-/// work.
+/// Keeps all seven screens alive so each retains its scroll position and
+/// search text across navigation, while making sure only the visible one does
+/// any work.
 ///
 /// [IndexedStack] alone keeps hidden children mounted *and ticking* — the
 /// off-screen screens' loading spinners would animate forever, burning frames
@@ -167,10 +174,11 @@ class _ScreenStack extends StatelessWidget {
   final int index;
 
   /// `const` instances: because these widgets are identical across rebuilds,
-  /// Flutter skips re-building the five off-screen subtrees when the selected
+  /// Flutter skips re-building the six off-screen subtrees when the selected
   /// tab changes, and a data refresh in one screen never rebuilds the others.
   static const List<Widget> _screens = [
     DashboardScreen(),
+    SessionsScreen(),
     ProductsScreen(),
     StockScreen(),
     DocumentsScreen(),

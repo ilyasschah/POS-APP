@@ -17,10 +17,10 @@ namespace Api.Domain
         public decimal LowStockWarningQuantity { get; private set; }
 
         [ForeignKey(nameof(ProductId))]
-        public virtual Product Product { get; private set; }
+        public virtual Product? Product { get; private set; }
 
         [ForeignKey(nameof(CustomerId))]
-        public virtual Customer Customer { get; private set; }
+        public virtual Customer? Customer { get; private set; }
 
         public StockControl() { }
 

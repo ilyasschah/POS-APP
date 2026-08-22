@@ -3,8 +3,8 @@
     public class FiscalItemDto
     {
         public int PLU { get; set; }
-        public string Name { get; set; }
-        public string VAT { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string VAT { get; set; } = string.Empty;
     }
 
     public class CreateFiscalItemRequest

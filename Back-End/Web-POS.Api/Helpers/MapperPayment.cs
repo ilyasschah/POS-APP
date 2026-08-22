@@ -5,9 +5,8 @@ namespace Api.Helpers
 {
     public static class MapperPayment
     {
-        public static PaymentDto? MapToPaymentDto(Payment? entity)
+        public static PaymentDto MapToPaymentDto(Payment entity)
         {
-            if (entity == null) return null;
             return new PaymentDto
             {
                 Id = entity.Id,

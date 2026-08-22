@@ -60,8 +60,8 @@ namespace Api.Commands.ProductCommands.Import
                 .ToDictionaryAsync(sc => sc.ProductId, ct);
 
             var suppliersByName = await _db.Customers
-                .Where(c => c.CompanyId == companyId && c.IsSupplier)
-                .ToDictionaryAsync(c => c.Name.ToLower(), ct);
+                .Where(c => c.CompanyId == companyId && c.IsSupplier && c.Name != null)
+                .ToDictionaryAsync(c => c.Name!.ToLower(), ct);
 
             var firstWarehouse = await _db.Warehouses
                 .Where(w => w.CompanyId == companyId)
