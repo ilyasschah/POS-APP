@@ -46,7 +46,7 @@ namespace Api.Services
             await _repository.UpdateAsync(entity);
             return true;
         }
-        public async Task<bool> Delete(string reason)
+        public async Task<bool> Delete(string? reason)
         {
             var entity = await _repository.GetByReasonAsync(reason);
             if (entity == null)

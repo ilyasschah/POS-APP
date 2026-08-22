@@ -10,7 +10,7 @@ namespace Api.Domain
         public int Id { get; set; }
         public int CompanyId { get; set; }
         public DateTime LastModified { get; set; } = DateTime.UtcNow;
-        public string Name { get; set; }
+        public string Name { get; set; } = default!;
         public string? Code { get; set; }
         public bool IsCustomerRequired { get; set; }
         public bool IsFiscal { get; set; }
@@ -24,7 +24,7 @@ namespace Api.Domain
         public bool MarkAsPaid { get; set; }
 
         [ForeignKey(nameof(CompanyId))]
-        public virtual Company Company { get; private set; }
+        public virtual Company? Company { get; private set; }
 
         
         private PaymentType(

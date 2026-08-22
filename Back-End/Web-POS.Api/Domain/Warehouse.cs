@@ -8,10 +8,10 @@ namespace Api.Domain
     {
         [Key]
         public int Id { get;  set; }
-        public string Name { get;  set; }
+        public string Name { get;  set; } = default!;
         public int CompanyId { get;  set; }
         [ForeignKey(nameof(CompanyId))]
-        public virtual Company Company { get; set; }
+        public virtual Company? Company { get; set; }
         private Warehouse(int companyId, string name)
         {
             CompanyId = companyId;

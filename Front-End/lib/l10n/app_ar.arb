@@ -1304,6 +1304,28 @@
   "allDates": "كل التواريخ",
   "userNumbered": "المستخدم {id}",
   "periodLabel": "الفترة",
+  "docSearchHint": "ابحث عن مستند أو اختر عامل تصفية",
+  "filterSuggestionsSection": "البحث عن",
+  "filterNumberContains": "الرقم يحتوي على \"{query}\"",
+  "@filterNumberContains": {
+    "placeholders": {
+      "query": {}
+    }
+  },
+  "filterReferenceContains": "المرجع يحتوي على \"{query}\"",
+  "@filterReferenceContains": {
+    "placeholders": {
+      "query": {}
+    }
+  },
+  "filterCustomerContains": "العميل يحتوي على \"{query}\"",
+  "@filterCustomerContains": {
+    "placeholders": {
+      "query": {}
+    }
+  },
+  "filterCustomRange": "فترة مخصصة...",
+  "filterKeepTyping": "واصل الكتابة لتضييق القائمة",
   "documentNumber": "رقم المستند",
   "documentNumberHint": "مثال: 26-200-000001",
   "externalDocument": "مستند خارجي",
@@ -2045,6 +2067,8 @@
   "sessionOverviewTab": "نظرة عامة",
   "sessionPaymentsTab": "المدفوعات",
   "sessionNoPayments": "لا توجد مدفوعات في هذه الجلسة بعد.",
+  "sessionNoDocuments": "لا توجد مستندات في هذه الجلسة بعد.",
+  "sessionDocumentsHint": "اضغط على مستند لفتحه",
   "sessionOpenDocumentHint": "اضغط على دفعة لفتح مستندها",
   "sessionDocumentUnavailable": "هذا المستند غير موجود على هذا الجهاز.",
   "developerMode": "وضع المطور",

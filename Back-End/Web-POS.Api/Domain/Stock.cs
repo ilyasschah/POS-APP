@@ -12,13 +12,13 @@ namespace Api.Domain
         public int WarehouseId { get; set; }
 
         [ForeignKey("WarehouseId")]
-        public virtual Warehouse Warehouse { get; set; }
+        public virtual Warehouse? Warehouse { get; set; }
         public int ProductId { get; set; }
         [ForeignKey("ProductId")]
-        public virtual Product Product { get; set; }
+        public virtual Product? Product { get; set; }
         public int CompanyId { get; set; }
         [ForeignKey("CompanyId")]
-        public virtual Company Company { get; set; }
+        public virtual Company? Company { get; set; }
         private Stock(
             decimal quantity, 
             int warehouseid, 

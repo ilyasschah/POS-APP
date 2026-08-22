@@ -11,7 +11,7 @@ namespace Api.Domain
         public int Id { get; set; }
         public int CompanyId { get; set; }
         public DateTime LastModified { get; set; } = DateTime.UtcNow;
-        public string Name { get; set; }
+        public string Name { get; set; } = default!;
         public DateTime? StartDate { get; set; }
         public TimeSpan? StartTime { get; set; }
         public DateTime? EndDate { get; set; }

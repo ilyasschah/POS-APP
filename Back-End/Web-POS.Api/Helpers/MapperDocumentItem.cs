@@ -7,8 +7,6 @@ namespace Api.Helpers
     {
         public static DocumentItemDto MapToDto(DocumentItem entity)
         {
-            if (entity == null) return null;
-
             return new DocumentItemDto
             {
                 Id = entity.Id,

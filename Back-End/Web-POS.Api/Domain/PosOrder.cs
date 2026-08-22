@@ -11,7 +11,7 @@ namespace Api.Domain
         public int Id { get; set; }
         public int CompanyId { get; set; }
         public int UserId { get; set; }
-        public string Number { get; set; }
+        public string Number { get; set; } = default!;
         public decimal Discount { get; set; }
         public int DiscountType { get; set; }
         public decimal? Total { get; set; }

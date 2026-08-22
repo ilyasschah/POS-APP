@@ -9,7 +9,7 @@ namespace Api.Helpers
         {
             return new DocumentsCounterDto
             {
-                Name = entity.Name,
+                Name = entity.Name ?? string.Empty,
                 Value = entity.Value,
                 CompanyId = entity.CompanyId
             };

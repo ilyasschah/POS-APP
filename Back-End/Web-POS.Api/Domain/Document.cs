@@ -8,7 +8,7 @@ namespace Api.Domain
     {
         [Key]
         public int Id { get; private set; }
-        public string Number { get; private set; }
+        public string Number { get; private set; } = default!;
         public int UserId { get; private set; }
         public int? CustomerId { get; private set; }
         public int CompanyId { get; private set; }

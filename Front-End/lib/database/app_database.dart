@@ -3061,6 +3061,21 @@ class AppDatabase extends _$AppDatabase {
       final lockedServerIds =
           pendingRows.map((r) => r.serverId).whereType<int>().toSet();
 
+      // 🚨 `sessionLocalId` is DEVICE knowledge — the server does not return it,
+      // so a snapshot rebuilt from the API carries null. Without this map, just
+      // OPENING a document (the editor refreshes its payments from the server)
+      // wiped the link between the payment and the session whose drawer took
+      // the money: the payment vanished from the session's Payments tab AND
+      // dropped out of its takings, quietly shrinking expected cash.
+      final existing = await (select(paymentsTable)
+            ..where((t) => t.documentId.equals(docLocalId)))
+          .get();
+      final sessionByServerId = <int, String>{
+        for (final row in existing)
+          if (row.serverId != null && row.sessionLocalId != null)
+            row.serverId!: row.sessionLocalId!,
+      };
+
       // Wipe everything that is server-authoritative (synced) or a legacy
       // checkout 'pending' row — the snapshot supersedes them. pending_create /
       // pending_update / pending_delete rows survive.
@@ -3075,7 +3090,15 @@ class AppDatabase extends _$AppDatabase {
             lockedServerIds.contains(row.serverId.value)) {
           continue; // a local pending edit owns this server id
         }
-        await into(paymentsTable).insert(row, mode: InsertMode.insertOrReplace);
+        // Carry the session link across the wipe unless the caller set one.
+        final preserved = row.serverId.present
+            ? sessionByServerId[row.serverId.value]
+            : null;
+        final toInsert = (row.sessionLocalId.present || preserved == null)
+            ? row
+            : row.copyWith(sessionLocalId: Value(preserved));
+        await into(paymentsTable)
+            .insert(toInsert, mode: InsertMode.insertOrReplace);
       }
     });
   }

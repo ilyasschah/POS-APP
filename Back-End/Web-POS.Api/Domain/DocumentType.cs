@@ -11,15 +11,15 @@ namespace Api.Domain
 
         [Required]
         [MaxLength(255)]
-        public string Name { get; private set; }
+        public string Name { get; private set; } = default!;
 
         [Required]
         [MaxLength(50)]
-        public string Code { get; private set; }
+        public string Code { get; private set; } = default!;
 
         [ForeignKey(nameof(DocumentCategory))]
         public int DocumentCategoryId { get; private set; }
-        public virtual DocumentCategory DocumentCategory { get; private set; }
+        public virtual DocumentCategory? DocumentCategory { get; private set; }
 
         public int StockDirection { get; private set; } = 0;
 

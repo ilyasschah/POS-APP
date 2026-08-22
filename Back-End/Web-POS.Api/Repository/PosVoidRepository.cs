@@ -44,7 +44,7 @@ public class PosVoidRepository
             .FirstOrDefaultAsync(pv => pv.Reason == reason && pv.CompanyId == companyId);
     }
 
-    public async Task<PosVoid?> GetByReasonAsync(string reason)
+    public async Task<PosVoid?> GetByReasonAsync(string? reason)
     {
         return await _db.PosVoids
             .FirstOrDefaultAsync(pv => pv.Reason == reason);

@@ -18,13 +18,13 @@ namespace Api.Domain
         [Required]
         public string? Username { get; private set; }
         [Required]
-        public string Password { get; private set; }
+        public string Password { get; private set; } = default!;
         public int AccessLevel { get; private set; }
         public bool IsEnabled { get; private set; }
         public string? Email { get; private set; }
 
         [ForeignKey(nameof(CompanyId))]
-        public virtual Company Company { get; private set; }
+        public virtual Company? Company { get; private set; }
 
         public User() { }
 

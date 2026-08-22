@@ -82,9 +82,14 @@ class SessionScreen extends ConsumerWidget {
           title: Text(l.posSession),
           backgroundColor: theme.colorScheme.surface,
         ),
-        body: ListView(
-          padding: const EdgeInsets.all(16),
-          children: const [_NoSessionCard()],
+        body: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: kMaxReadableWidth),
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: const [_NoSessionCard()],
+            ),
+          ),
         ),
       );
     }
@@ -92,12 +97,12 @@ class SessionScreen extends ConsumerWidget {
     final blockers = ref.watch(closeBlockersProvider(session.localId));
     final compact = context.isCompact;
 
-    // Two tabs, not one long scroll: the figures are what a close is signed
-    // off against, while the payment list is the evidence behind them — and
-    // wanting the evidence usually means wanting to open the document it
-    // belongs to, which is a different task from reading a total.
+    // Three tabs, not one long scroll: the figures are what a close is signed
+    // off against, while the document and payment lists are the evidence
+    // behind them — and wanting the evidence usually means wanting to open the
+    // sale it belongs to, which is a different task from reading a total.
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
         appBar: AppBar(
@@ -149,17 +154,29 @@ class SessionScreen extends ConsumerWidget {
             const SizedBox(width: 8),
           ],
           bottom: TabBar(
+            // Documents before Payments: it is the order the overview states
+            // them in, and "what was sold" is the coarser question.
             tabs: [
               Tab(text: l.sessionOverviewTab),
+              Tab(text: l.sessionDocuments),
               Tab(text: l.sessionPaymentsTab),
             ],
           ),
         ),
-        body: TabBarView(
-          children: [
-            _SessionDetail(session: session, isLive: isLive),
-            _SessionPaymentsTab(session: session),
-          ],
+        // Capped and centred so an ultra-wide monitor does not stretch a
+        // label to one edge and its amount to the other. Both tabs share the
+        // cap, so switching between them does not shift the column width.
+        body: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: kMaxReadableWidth),
+            child: TabBarView(
+              children: [
+                _SessionDetail(session: session, isLive: isLive),
+                _SessionDocumentsTab(session: session),
+                _SessionPaymentsTab(session: session),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -722,8 +739,18 @@ class _StatGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final perRow = context.isCompact ? 2 : tiles.length.clamp(1, 4);
         const gap = 12.0;
+
+        // How many tiles fit at a readable width, measured against the space
+        // this grid actually got rather than the window size. A desktop window
+        // dragged narrower — or the same grid inside a split pane — collapses
+        // 4 → 3 → 2 → 1 on its own, instead of staying on one breakpoint until
+        // the figures are squeezed into ellipses.
+        const minTileWidth = 230.0;
+        final fits = ((constraints.maxWidth + gap) / (minTileWidth + gap))
+            .floor();
+        final perRow = fits.clamp(1, tiles.length);
+
         final width = (constraints.maxWidth - gap * (perRow - 1)) / perRow;
 
         return Wrap(
@@ -1108,6 +1135,200 @@ class _SessionPaymentsTab extends ConsumerWidget {
   }
 }
 
+/// Every document the session banked, newest first.
+///
+/// 🚨 Not a duplicate of the Payments tab. One sale can be settled in several
+/// tenders and a document can be topped up later, so "what was sold" and "what
+/// went into the drawer" are different lists with different totals. These rows
+/// are exactly what the Documents figure on the overview counts.
+class _SessionDocumentsTab extends ConsumerWidget {
+  const _SessionDocumentsTab({required this.session});
+
+  final ShiftsTableData session;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final entries =
+        ref.watch(sessionDocumentsProvider(session.localId)).value ??
+            const <SessionDocumentEntry>[];
+    final users = ref.watch(allUsersProvider).value ?? const <User>[];
+    final sym = ref.watch(currencySymbolProvider);
+
+    String money(double v) => '${v.toStringAsFixed(2)} $sym';
+
+    if (entries.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.description_outlined,
+                  size: 40, color: theme.disabledColor),
+              const SizedBox(height: 12),
+              Text(
+                // A session this register never ran has no documents in local
+                // Drift; the overview says so with its own banner, so this
+                // stays a plain empty state rather than repeating it.
+                l.sessionNoDocuments,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium
+                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Sums the documents themselves, so a refund pulls the band down the same
+    // way it pulls the takings down.
+    final total = entries.fold<double>(0, (s, e) => s + e.document.total);
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('${entries.length} · ${l.sessionDocuments}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.labelLarge),
+                    Text(
+                      l.sessionDocumentsHint,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(money(total),
+                  style: theme.textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.bold)),
+            ],
+          ),
+        ),
+        const Divider(height: 1),
+        Expanded(
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            itemCount: entries.length,
+            separatorBuilder: (_, __) => const Divider(height: 1),
+            itemBuilder: (context, i) {
+              final e = entries[i];
+              final refund = e.isRefund;
+              final accent =
+                  refund ? context.dangerColor : theme.colorScheme.primary;
+              final who = _userLabel(users, e.document.userId);
+
+              return ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: accent.withValues(alpha: 0.15),
+                  child: Icon(refund ? Icons.undo : Icons.receipt_long,
+                      size: 18, color: accent),
+                ),
+                title: Row(
+                  children: [
+                    Flexible(
+                      child: Text(_documentNumber(context, e),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodyLarge
+                              ?.copyWith(fontWeight: FontWeight.w600)),
+                    ),
+                    if (e.isUnpaid) ...[
+                      const SizedBox(width: 8),
+                      _MiniTag(text: l.unpaid, color: context.warningColor),
+                    ],
+                  ],
+                ),
+                subtitle: Text(
+                  [
+                    _fmt(e.document.date),
+                    if ((e.customerName ?? '').trim().isNotEmpty)
+                      e.customerName!.trim(),
+                    who,
+                  ].join(' · '),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                ),
+                trailing: Text(
+                  money(e.document.total),
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: refund ? context.dangerColor : null),
+                ),
+                onTap: () => _openDocument(context, ref, e, who),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// The number, or why there isn't one yet. A blank where a document number
+  /// belongs reads as data loss.
+  String _documentNumber(BuildContext context, SessionDocumentEntry e) {
+    final number = (e.document.number ?? '').trim();
+    if (number.isNotEmpty) return number;
+    return e.isPendingSync
+        ? '(${AppLocalizations.of(context).pendingSync})'
+        : '—';
+  }
+
+  /// Opens the document on its header tab — arriving from a document row, the
+  /// header is what was tapped, unlike the payments list which lands on
+  /// Payments.
+  Future<void> _openDocument(BuildContext context, WidgetRef ref,
+      SessionDocumentEntry entry, String userName) {
+    return showDocumentEditor(
+      context,
+      ref,
+      existingDocument: documentFromRow(
+        entry.document,
+        userName: userName,
+        customerName: entry.customerName,
+      ),
+    );
+  }
+}
+
+/// A small inline status tag — "Unpaid" beside a document number.
+class _MiniTag extends StatelessWidget {
+  const _MiniTag({required this.text, required this.color});
+
+  final String text;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(text,
+          style: theme.textTheme.labelSmall
+              ?.copyWith(color: color, fontWeight: FontWeight.bold)),
+    );
+  }
+}
+
 /// Which register the session belongs to.
 ///
 /// 🚨 Prefers the name stored ON the session: this screen also shows sessions
@@ -1152,17 +1373,27 @@ class _Row extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
+          // 🚨 BOTH sides loose-Flexible, never Expanded on the label.
+          // `Expanded` is a TIGHT flex child: it takes its whole share of the
+          // free space whether the label needs it or not, so on a wide window
+          // the value began at the midpoint and read as centred rather than
+          // right-aligned. Loose children size to their own text and
+          // `spaceBetween` pushes the slack between them — label hard left,
+          // value hard right, at every width.
+          Flexible(
+            flex: 3,
             child: Text(label,
                 style: theme.textTheme.bodyMedium
                     ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           ),
           const SizedBox(width: 12),
-          // Flexible, not bare: a long device name or a cashier's full name
-          // overflows the row on a 10-inch tablet otherwise.
+          // Still capped at its share: a long device name or a cashier's full
+          // name would otherwise overflow the row on a 10-inch tablet.
           Flexible(
+            flex: 2,
             child: Text(value, textAlign: TextAlign.end, style: style),
           ),
         ],

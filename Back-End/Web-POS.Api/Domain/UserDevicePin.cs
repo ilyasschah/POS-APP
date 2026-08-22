@@ -13,7 +13,7 @@ namespace Api.Domain
         public string HashedPin { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         [ForeignKey(nameof(UserId))]
-        public virtual User User { get; private set; }
+        public virtual User? User { get; private set; }
         public UserDevicePin() { }
 
         private UserDevicePin(int userId, int companyId, string deviceId, string hashedPin)

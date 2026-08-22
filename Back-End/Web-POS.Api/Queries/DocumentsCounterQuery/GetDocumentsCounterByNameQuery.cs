@@ -7,7 +7,7 @@ namespace Api.Queries.DocumentsCounterQuery
 {
     public class GetDocumentsCounterByNameQuery : IRequest<DocumentsCounterDto?>
     {
-        public string Name { get; set; }
+        public required string Name { get; set; }
 
         public class GetDocumentsCounterByNameQueryHandler : IRequestHandler<GetDocumentsCounterByNameQuery, DocumentsCounterDto?>
         {

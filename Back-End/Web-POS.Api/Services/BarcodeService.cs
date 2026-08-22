@@ -32,7 +32,7 @@ namespace Api.Services
             return new BarcodeDto
             {
                 Id = newBarcode.Id,
-                Value = newBarcode.Value,
+                Value = newBarcode.Value ?? string.Empty,
                 ProductId = newBarcode.ProductId,
                 ProductName = product.Name
             };
@@ -59,7 +59,7 @@ namespace Api.Services
             return new BarcodeDto
             {
                 Id = entityToUpdate.Id,
-                Value = entityToUpdate.Value,
+                Value = entityToUpdate.Value ?? string.Empty,
                 ProductId = entityToUpdate.ProductId,
                 ProductName = entityToUpdate.Product?.Name ?? string.Empty
             };

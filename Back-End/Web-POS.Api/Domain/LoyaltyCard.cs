@@ -21,7 +21,7 @@ public class LoyaltyCard : ISyncableEntity
     public DateTime LastModified { get; set; } = DateTime.UtcNow;
 
     [ForeignKey(nameof(CustomerId))]
-    public virtual Customer Customer { get; private set; }
+    public virtual Customer? Customer { get; private set; }
 
     private LoyaltyCard(int customerId, string? cardNumber)
     {

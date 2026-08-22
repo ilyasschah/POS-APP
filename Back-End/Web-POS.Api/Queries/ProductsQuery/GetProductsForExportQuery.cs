@@ -53,7 +53,7 @@ namespace Api.Queries.ProductsQuery
                 {
                     pt.ProductId,
                     TaxId   = pt.TaxId,
-                    Name    = pt.Tax.Name,
+                    Name    = pt.Tax!.Name,
                     Rate    = pt.Tax.Rate,
                     Code    = pt.Tax.Code,
                     pt.Tax.IsFixed,
@@ -87,7 +87,7 @@ namespace Api.Queries.ProductsQuery
                 .Select(sc => new
                 {
                     sc.ProductId,
-                    SupplierName             = sc.CustomerId == null ? null : sc.Customer.Name,
+                    SupplierName             = sc.CustomerId == null ? null : sc.Customer!.Name,
                     sc.ReorderPoint,
                     sc.PreferredQuantity,
                     sc.IsLowStockWarningEnabled,

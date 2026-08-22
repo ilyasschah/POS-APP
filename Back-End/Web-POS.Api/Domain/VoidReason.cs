@@ -10,7 +10,7 @@ namespace Api.Domain
         [Key]
         public int Id { get; set; }
         public int CompanyId { get; set; }
-        public string Name { get; set; }
+        public string Name { get; set; } = default!;
         public int Rank { get; set; }
         public DateTime DateCreated { get; set; }
 

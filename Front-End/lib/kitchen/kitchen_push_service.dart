@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -18,6 +19,27 @@ const int kKdsPort = 9090;
 /// Sent inside the pairing handshake so the KDS knows where to call back.
 const int kPosListenerPort = 9091;
 
+/// The configured Kitchen Display addresses, from the raw CSV setting.
+List<String> parseKitchenDisplayIps(String? raw) => (raw ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .where((s) => s.isNotEmpty)
+    .toList();
+
+/// True while at least one Kitchen Display is paired to this terminal.
+///
+/// This IS the app's "KDS enabled" flag — there is no separate toggle: pairing
+/// adds an IP, unpairing removes it. Everything on the KDS network path gates
+/// on this, so a terminal with no display bound opens no listener and sends no
+/// requests.
+///
+/// Derived, so it only notifies when the boolean actually flips — not on every
+/// unrelated settings write.
+final kitchenDisplaysEnabledProvider = Provider<bool>((ref) {
+  final raw = ref.watch(appSettingsProvider)[SettingKeys.kitchenDisplayIps];
+  return parseKitchenDisplayIps(raw).isNotEmpty;
+});
+
 /// Orders at this serviceStatus (or higher) are "ready/done" and are excluded
 /// from kitchen pushes — mirrors `kServiceStatusReady` on the POS open-orders
 /// side and the KDS DONE action.
@@ -31,14 +53,25 @@ class KitchenSyncService {
   KitchenSyncService(this.ref);
   final Ref ref;
 
-  List<String> _ips() {
-    final raw = ref.read(appSettingsProvider)[SettingKeys.kitchenDisplayIps];
-    return (raw ?? '')
-        .split(',')
-        .map((s) => s.trim())
-        .where((s) => s.isNotEmpty)
-        .toList();
-  }
+  /// (ip, path) pairs whose last attempt failed and has already been logged.
+  ///
+  /// A dead tablet is re-POSTed on every cart change, and logging each 3-second
+  /// timeout buries everything else in the console. One line per target until
+  /// it answers again is enough to diagnose it.
+  final Set<String> _loggedFailures = {};
+
+  List<String> _ips() => parseKitchenDisplayIps(
+      ref.read(appSettingsProvider)[SettingKeys.kitchenDisplayIps]);
+
+  /// 🚨 THE GATE. Nothing on this path opens a socket to an address that is not
+  /// a currently-configured display.
+  ///
+  /// Unpairing removes the IP from settings, so this also answers "is the KDS
+  /// turned off" — an unpaired terminal has an empty list and every check here
+  /// fails closed. The teardown POST in [unpair] is the single deliberate
+  /// exception, because by definition it targets an address that was just
+  /// removed.
+  bool _isConfigured(String ip) => _ips().contains(ip);
 
   /// Deterministic per-company pairing token — enough for V1 mutual
   /// identification (both sides hold the same value; the KDS echoes it back on
@@ -53,6 +86,10 @@ class KitchenSyncService {
   /// Best-effort and fire-and-forget per device — an offline/unreachable tablet
   /// never blocks the POS.
   Future<void> push() async {
+    // Gate first, before any Drift work: with no display paired there is
+    // nothing to push to and no reason to build a payload.
+    if (!ref.read(kitchenDisplaysEnabledProvider)) return;
+
     final ips = _ips();
     if (ips.isEmpty) return;
     final companyId = ref.read(selectedCompanyProvider)?.id;
@@ -91,6 +128,7 @@ class KitchenSyncService {
   /// Sends the pairing handshake to a single KDS IP, then immediately pushes the
   /// current orders so the freshly-bound tablet is populated.
   Future<void> pair(String ip) async {
+    if (ip.trim().isEmpty) return;
     final company = ref.read(selectedCompanyProvider);
     final companyId = company?.id ?? 0;
     final selfIp = await _selfIp();
@@ -106,8 +144,50 @@ class KitchenSyncService {
     await push();
   }
 
-  /// Tells a KDS to forget this POS (returns it to the onboarding screen).
-  void unpair(String ip) => _post(ip, kKdsPort, '/unpair', '{}');
+  /// Unpairs a Kitchen Display: forgets it locally, then *best-effort* tells the
+  /// tablet to return to its onboarding screen.
+  ///
+  /// 🚨 The local state is cleared FIRST and unconditionally. The tablet being
+  /// unpaired is very often the one that is already off, reimaged, or on
+  /// another network — waiting on it, or letting its timeout propagate, would
+  /// mean an operator cannot remove a display that no longer exists. A failed
+  /// teardown POST is not an error: the POS has already forgotten the device,
+  /// and a tablet that never got the message shows a stale order list until
+  /// someone re-pairs it, which is the lesser problem by far.
+  ///
+  /// This is also what stopped the log spam: with the IP gone from settings,
+  /// [_isConfigured] fails for it forever after, so no later push can reopen a
+  /// socket to a machine nobody is listening on.
+  Future<void> unpair(String ip) async {
+    final target = ip.trim();
+    if (target.isEmpty) return;
+
+    // 1. Forget it locally — settings and its station assignment.
+    final settings = ref.read(appSettingsProvider.notifier);
+    final remaining = _ips().where((e) => e != target).join(',');
+    await settings.set(SettingKeys.kitchenDisplayIps, remaining);
+
+    final groups = parseDisplayGroups(
+        ref.read(appSettingsProvider)[SettingKeys.kitchenDisplayGroups]);
+    if (groups.remove(target) != null) {
+      await settings.set(
+          SettingKeys.kitchenDisplayGroups, encodeDisplayGroups(groups));
+    }
+
+    _loggedFailures.removeWhere((k) => k.startsWith('$target|'));
+
+    // 2. Tell the tablet, if it happens to be there. Teardown bypasses the
+    //    gate — the address it targets was just removed on purpose — and runs
+    //    on a short timeout so removing a dead display never hangs the UI.
+    await _post(
+      target,
+      kKdsPort,
+      '/unpair',
+      '{}',
+      teardown: true,
+      timeout: const Duration(seconds: 1),
+    );
+  }
 
   // ── Payload construction ──────────────────────────────────────────────────
 
@@ -210,20 +290,60 @@ class KitchenSyncService {
     return '';
   }
 
-  Future<void> _post(String ip, int port, String path, String body) async {
+  /// One best-effort POST to a display. Never throws.
+  ///
+  /// [teardown] is the only way past the configured-display gate, and exists
+  /// solely for `/unpair`.
+  Future<void> _post(
+    String ip,
+    int port,
+    String path,
+    String body, {
+    bool teardown = false,
+    Duration timeout = const Duration(seconds: 3),
+  }) async {
+    // 🚨 State gate. An unpaired (or never-paired) address gets no socket at
+    // all — this is what stops a removed tablet being dialled forever.
+    if (!teardown && !_isConfigured(ip)) return;
+
+    final key = '$ip|$path';
+    HttpClient? client;
     try {
-      final client = HttpClient()
-        ..connectionTimeout = const Duration(seconds: 3)
-        ..idleTimeout = const Duration(seconds: 3);
-      final req = await client.post(ip, port, path);
-      req.headers.contentType = ContentType.json;
-      req.write(body);
-      final res = await req.close();
-      await res.drain<void>();
-      client.close(force: true);
+      client = HttpClient()
+        ..connectionTimeout = timeout
+        ..idleTimeout = timeout;
+      // `connectionTimeout` only bounds the CONNECT; a half-open host can still
+      // hang on the response, so the whole exchange is bounded too.
+      await () async {
+        final req = await client!.post(ip, port, path);
+        req.headers.contentType = ContentType.json;
+        req.write(body);
+        final res = await req.close();
+        await res.drain<void>();
+      }()
+          .timeout(timeout);
+      _loggedFailures.remove(key);
+    } on SocketException catch (e) {
+      _noteFailure(key, teardown, '$ip:$port$path', e);
+    } on TimeoutException catch (e) {
+      _noteFailure(key, teardown, '$ip:$port$path', e);
+    } on HttpException catch (e) {
+      _noteFailure(key, teardown, '$ip:$port$path', e);
     } catch (e) {
-      debugPrint('[KDS] POST $path → $ip:$port failed — $e');
+      _noteFailure(key, teardown, '$ip:$port$path', e);
+    } finally {
+      client?.close(force: true);
     }
+  }
+
+  /// Logs a failed POST **once** per target until it succeeds again, and not at
+  /// all for a teardown — an unreachable tablet being unpaired is the expected
+  /// case, not a fault worth a line in the log.
+  void _noteFailure(String key, bool teardown, String target, Object error) {
+    if (teardown) return;
+    if (!_loggedFailures.add(key)) return;
+    debugPrint('[KDS] $target unreachable — $error '
+        '(silenced until it responds again)');
   }
 }
 

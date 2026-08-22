@@ -38,13 +38,13 @@ namespace Api.Repository
         {
             return await _db.ApplicationProperties
                 .Include(p => p.Company)
-                .FirstOrDefaultAsync(p => p.Name.ToLower() == name.ToLower() && p.CompanyId == companyId);
+                .FirstOrDefaultAsync(p => p.Name!.ToLower() == name.ToLower() && p.CompanyId == companyId);
         }
 
         public async Task<bool> ExistsAsync(string name, int companyId)
         {
             return await _db.ApplicationProperties
-                .AnyAsync(p => p.Name.ToLower() == name.ToLower() && p.CompanyId == companyId);
+                .AnyAsync(p => p.Name!.ToLower() == name.ToLower() && p.CompanyId == companyId);
         }
 
         public async Task AddAsync(ApplicationProperty entity)

@@ -1695,6 +1695,28 @@
     }
   },
   "periodLabel": "Period",
+  "docSearchHint": "Search documents, or pick a filter",
+  "filterSuggestionsSection": "Search for",
+  "filterNumberContains": "Number contains \"{query}\"",
+  "@filterNumberContains": {
+    "placeholders": {
+      "query": {}
+    }
+  },
+  "filterReferenceContains": "Reference contains \"{query}\"",
+  "@filterReferenceContains": {
+    "placeholders": {
+      "query": {}
+    }
+  },
+  "filterCustomerContains": "Customer contains \"{query}\"",
+  "@filterCustomerContains": {
+    "placeholders": {
+      "query": {}
+    }
+  },
+  "filterCustomRange": "Custom range...",
+  "filterKeepTyping": "Keep typing to narrow this list",
   "documentNumber": "Document number",
   "documentNumberHint": "e.g. 26-200-000001",
   "externalDocument": "External document",
@@ -3431,6 +3453,8 @@
   "sessionOverviewTab": "Overview",
   "sessionPaymentsTab": "Payments",
   "sessionNoPayments": "No payments taken in this session yet.",
+  "sessionNoDocuments": "No documents banked in this session yet.",
+  "sessionDocumentsHint": "Tap a document to open it",
   "sessionOpenDocumentHint": "Tap a payment to open its document",
   "sessionDocumentUnavailable": "That document is not on this device.",
   "developerMode": "Developer mode",

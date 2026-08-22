@@ -10,7 +10,7 @@ namespace Api.Helpers
             return new BarcodeDto
             {
                 Id = entity.Id,
-                Value = entity.Value,
+                Value = entity.Value ?? string.Empty,
                 ProductId = entity.ProductId,
                 ProductName = entity.Product?.Name ?? "N/A"
             };

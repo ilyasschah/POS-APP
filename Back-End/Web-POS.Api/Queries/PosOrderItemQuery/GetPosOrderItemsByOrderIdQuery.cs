@@ -54,7 +54,7 @@ namespace Api.Queries.PosOrderItemQuery
                         .Where(t => t.PosOrderItemId == dto.Id)
                         .Select(t => new PosOrderItemTaxDto
                         {
-                            Id = t.Tax.Id,
+                            Id = t.Tax!.Id,
                             Name = t.Tax.Name,
                             Rate = t.Tax.Rate,
                             IsFixed = t.Tax.IsFixed,

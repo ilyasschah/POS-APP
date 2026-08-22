@@ -12,7 +12,7 @@ namespace Api.Helpers
                 Id = booking.Id,
                 CustomerId = booking.CustomerId,
                 UserId = booking.UserId,
-                ReservationName = booking.ReservationName,
+                ReservationName = booking.ReservationName ?? string.Empty,
                 TableIds = booking.TableIds,
                 DocumentId = booking.DocumentId,
                 PosOrderId = booking.PosOrderId,

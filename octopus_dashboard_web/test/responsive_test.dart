@@ -225,6 +225,53 @@ void main() {
       expect(find.text('Disabled'), findsOneWidget);
     });
 
+    testWidgets('sessions show the live register and its figures', (
+      tester,
+    ) async {
+      await pumpShell(tester, const Size(1280, 800));
+      await tapDestination(tester, AppDestination.sessions);
+
+      // The trading register surfaces in the live strip with its state pill.
+      expect(find.text('LIVE'), findsWidgets);
+      expect(find.text('POS1'), findsWidgets);
+      // Per-session figures come from /PosSession/Summary, fetched per row.
+      expect(find.text('6,218.40 DH'), findsWidgets);
+      // A closed session that came up 40 short must show it as a shortfall.
+      expect(find.text('−40.00 DH'), findsWidgets);
+    });
+
+    testWidgets('a session detail page reconciles the drawer', (tester) async {
+      await pumpShell(tester, const Size(1280, 800));
+      await tapDestination(tester, AppDestination.sessions);
+
+      await tester.tap(find.text('#141'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('CASH RECONCILIATION'), findsOneWidget);
+      expect(find.text('Expected cash'), findsOneWidget);
+      expect(find.text('4,137.70 DH'), findsWidgets);
+      expect(find.text('4,097.70 DH'), findsWidgets);
+      expect(find.text('Short'), findsOneWidget);
+      // Both flags the server raised on this session have to be visible.
+      expect(find.text('Late sales arrived'), findsOneWidget);
+      expect(find.text('Cash methods were inferred'), findsOneWidget);
+    });
+
+    testWidgets('a live session detail renders on a phone', (tester) async {
+      // The tightest layout the detail page has to survive: the live card in
+      // the strip is the one row whose id never ellipsizes at 390px.
+      await pumpShell(tester, const Size(390, 844));
+      await tapDestination(tester, AppDestination.sessions);
+
+      // The id shows twice — once on the live card, once on its list row.
+      await tester.tap(find.text('#142').first);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Session #142'), findsOneWidget);
+      expect(find.text('Still open'), findsOneWidget);
+      expect(find.text('PAYMENT MIX'), findsOneWidget);
+    });
+
     testWidgets('products list shows price and cost', (tester) async {
       await pumpShell(tester, const Size(1280, 800));
       await tapDestination(tester, AppDestination.products);

@@ -8,7 +8,7 @@ namespace Api.Queries.ApplicationPropertyQuery
 {
     public class GetApplicationPropertyByNameQuery : IRequest<ApplicationPropertyDto?>
     {
-        public string Name { get; set; }
+        public required string Name { get; set; }
         public int CompanyId { get; set; }
     }
 

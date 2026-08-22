@@ -12,6 +12,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get navDashboard => 'Tableau de bord';
 
   @override
+  String get navSessions => 'Sessions de caisse';
+
+  @override
   String get navProducts => 'Produits et Prix';
 
   @override

@@ -12,6 +12,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navDashboard => 'Dashboard';
 
   @override
+  String get navSessions => 'POS Sessions';
+
+  @override
   String get navProducts => 'Products & Prices';
 
   @override

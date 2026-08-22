@@ -8,7 +8,7 @@ namespace Api.Queries.WarehousesQuery
 {
     public class GetWarehouseByName: IRequest<WarehouseDto?>
     {
-        public string Name { get; set; }
+        public required string Name { get; set; }
         public int CompanyId { get; set; }
     }
 

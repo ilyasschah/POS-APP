@@ -12,6 +12,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get navDashboard => 'لوحة القيادة';
 
   @override
+  String get navSessions => 'جلسات نقطة البيع';
+
+  @override
   String get navProducts => 'المنتجات والأسعار';
 
   @override

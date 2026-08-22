@@ -10,7 +10,7 @@ namespace Api.Helpers
             return new DocumentCategoryDto
             {
                 Id = documentCategory.Id,
-                Name = documentCategory.Name,
+                Name = documentCategory.Name ?? string.Empty,
                 LanguageKey = documentCategory.LanguageKey
             };
         }

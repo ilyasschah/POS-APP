@@ -4,8 +4,8 @@
     {
         public int Id { get; set; }
         public int CompanyId { get; set; }
-        public string Name { get; set; }
-        public string Value { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Value { get; set; } = string.Empty;
         public string? CompanyName { get; set; }
         public DateTime LastModified { get; set; }
     }

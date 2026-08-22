@@ -13,7 +13,7 @@ namespace Api.Helpers
                 Name = entity.Name,
                 Code = entity.Code,
                 DocumentCategoryId = entity.DocumentCategoryId,
-                DocumentCategoryName = entity.DocumentCategory.Name,
+                DocumentCategoryName = entity.DocumentCategory?.Name ?? string.Empty,
                 StockDirection = entity.StockDirection,
                 EditorType = entity.EditorType,
                 PrintTemplate = entity.PrintTemplate,

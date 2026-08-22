@@ -85,7 +85,7 @@ public class CompanyDataResetServiceTests
         var tables = await Tables(products: true, customers: true);
 
         Assert.Equal(tables.Count, tables.Distinct().Count());
-        Assert.Single(tables.Where(t => t == "StockControl"));
+        Assert.Single(tables, t => t == "StockControl");
     }
 
     [Fact]

@@ -7,14 +7,12 @@ namespace Api.Helpers
     {
         public static ApplicationPropertyDto MapToApplicationPropertyDto(ApplicationProperty entity)
         {
-            if (entity == null) return null;
-
             return new ApplicationPropertyDto
             {
                 Id = entity.Id,
                 CompanyId = entity.CompanyId,
-                Name = entity.Name,
-                Value = entity.Value,
+                Name = entity.Name ?? string.Empty,
+                Value = entity.Value ?? string.Empty,
                 CompanyName = entity.Company?.Name,
                 LastModified = entity.LastModified
             };

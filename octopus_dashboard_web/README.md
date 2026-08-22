@@ -1,9 +1,9 @@
 # Octopus Owner Dashboard — Flutter Web (PWA)
 
 An installable Progressive Web App companion for the Octopus POS system: sales
-analytics, product repricing, stock levels, sales documents, and staff account
-management. A web-only re-platform of the SwiftUI iOS app in
-`../Octopus_Dashboard/`.
+analytics, POS session history and drawer reconciliation, product repricing,
+stock levels, sales documents, and staff account management. A web-only
+re-platform of the SwiftUI iOS app in `../Octopus_Dashboard/`.
 
 Built with Flutter 3.44 · Riverpod 3 · Dio 5 · fl_chart 1.2.
 
@@ -14,7 +14,7 @@ Built with Flutter 3.44 · Riverpod 3 · Dio 5 · fl_chart 1.2.
 ```bash
 flutter pub get
 flutter run -d chrome          # local dev
-flutter test                   # 59 tests
+flutter test                   # 73 tests
 flutter analyze                # clean
 flutter build web --release    # output in build/web/
 ```
@@ -112,6 +112,10 @@ blurring, and the **Glass Transparency** slider (5–50%) drives the tint alpha.
 | Browser locale breaking currency | `NumberFormat('#,##0.00', 'en_US')` — always `1,234.56 DH`. |
 | Wrong endpoint names | `Document` is singular, `DocumentItems` is plural, users list at `GetAllUsers`. Mirrored verbatim in `OctopusApi`, with comments. |
 | Off-screen tabs burning frames | `IndexedStack` keeps hidden children *ticking*; `TickerMode` suspends animation for every screen except the visible one. |
+| Session times drifting by the viewer's UTC offset | POS sessions are stamped with `DateTime.UtcNow` but come back from EF as `Kind=Unspecified`, i.e. with **no** zone suffix. `Fmt.parseUtcDate` (not `Fmt.parseDate`) appends `Z` before parsing. Covered by the "unzoned timestamps are read as UTC" test. |
+| An attendance shift read as a live register | POS session statuses are 10–13; shifts in the same server table use 0/1. `PosSessionState.fromCode` maps anything else to `unknown`, never to a live state. |
+| 50 session summaries fetched to fill four visible rows | `/PosSession/History` carries no takings or order count, so each row watches its own `sessionSummaryProvider(id)` and a `SliverList` only builds what is on screen. The family is *not* auto-disposed — scrolling a row back would otherwise re-fetch it — and is invalidated wholesale on refresh. |
+| A "live" pulse repainting a page left open all day | The `LiveBeacon` is a static glow, not an animation. An endless repeat would also hang every `pumpAndSettle` in the test suite. |
 
 ---
 
@@ -171,6 +175,12 @@ powershell -ExecutionPolicy Bypass -File tool\generate_icons.ps1
   at the cost of XSS exposure — a deliberate, and reversible, call.
 - **`companyId` is hardcoded to 25** in `lib/core/constants.dart`. There is no
   company switcher.
+- **POS Sessions is read-only, deliberately.** The screen never calls
+  Open/ConfirmOpening/Close/ForceClose. A session is opened, counted and closed
+  on the register that owns the drawer; closing one from a browser would strand
+  a till mid-count. A closed session also shows its **frozen** expected cash
+  (what the cashier was held to) and only mentions the live recomputation when
+  the two disagree — that gap is money that arrived after the count.
 - **Password reset requires an Admin token.** The server enforces a
   `ManagerOnly` policy; a Cashier-level token gets a 403, surfaced as the
   server's own message.
@@ -185,11 +195,14 @@ lib/
   core/         constants, theme/palette, typography, glass, formatters,
                 breakpoints, ScreenState, AsyncController
   models/       DashboardData, Product, StockEntry/ProductStock,
-                SalesDocument/DocumentLineItem, StaffUser
+                SalesDocument/DocumentLineItem, StaffUser,
+                PosSession/PosSessionSummary/PosSessionMethod
   features/
     auth/       AuthController + login screen (environment picker)
     shell/      AppShell — bottom bar / rail / sidebar + refetch-on-visit
     dashboard/  charts, date-range filter, presets
+    sessions/   read-only POS session history, live-register strip,
+                per-session drawer reconciliation + payment mix
     products/   list + full-record price editor
     stock/      left-joined per-product stock
     documents/  list + pushed detail route with line items
@@ -215,17 +228,19 @@ tool/           generate_icons.ps1
 
 ## Tests
 
-`flutter test` — 59 tests, no network.
+`flutter test` — 73 tests, no network.
 
 - **`business_rules_test.dart`** — the update payload contract, the stock
-  left-join, role/status derivation, date presets (including year-boundary
-  rollover), currency and date formatting.
+  left-join, role/status derivation, POS session lifecycle mapping and UTC
+  timestamp parsing, date presets (including year-boundary rollover), currency
+  and date formatting.
 - **`api_error_test.dart`** — cancellation flagging, server-message extraction
   in both casings, ASP.NET validation errors, HTML-error-page suppression, URL
   normalization, `ScreenState` transitions.
 - **`responsive_test.dart`** — renders every screen at 360/390/768/1280/1920
   plus both breakpoint edges (599/600), asserting the right navigation type and
-  no layout overflow; verifies refetch-on-revisit against a counting fake.
+  no layout overflow; verifies refetch-on-revisit against a counting fake, and
+  opens a session detail page at both desktop and phone widths.
 - **`login_test.dart`** — environment presets rewriting the URL field,
   password toggle, success/failure paths, and the card's width cap at 1920px.
 

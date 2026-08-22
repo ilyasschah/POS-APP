@@ -9,7 +9,7 @@ namespace Api.Domain
         public int TaxId { get; set; }
 
         [ForeignKey(nameof(ProductId))]
-        public virtual Product Product { get; set; }
+        public virtual Product? Product { get; set; }
 
         public int CompanyId { get; set; }
 
@@ -17,7 +17,7 @@ namespace Api.Domain
         public virtual Company? Company { get; private set; }
 
         [ForeignKey(nameof(TaxId))]
-        public virtual Tax Tax { get; set; }
+        public virtual Tax? Tax { get; set; }
 
         private ProductTax(int productId, int taxId, int companyId)
         {

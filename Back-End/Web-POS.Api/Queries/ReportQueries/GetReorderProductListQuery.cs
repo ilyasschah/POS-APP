@@ -30,11 +30,11 @@ namespace Api.Queries.ReportQueries
                 // Nulls (N/A) first, then alphabetical by supplier, then by product
                 .OrderBy(sc => sc.CustomerId == null ? 0 : 1)
                 .ThenBy(sc => sc.Customer == null ? "" : sc.Customer.Name)
-                .ThenBy(sc => sc.Product.Name)
+                .ThenBy(sc => sc.Product!.Name)
                 .Select(sc => new ReorderProductListDto
                 {
-                    SupplierName  = sc.CustomerId == null ? "N/A" : (sc.Customer.Name ?? "N/A"),
-                    ProductName   = sc.Product.Name ?? "",
+                    SupplierName  = sc.CustomerId == null ? "N/A" : (sc.Customer!.Name ?? "N/A"),
+                    ProductName   = sc.Product!.Name ?? "",
                     OrderQuantity = sc.PreferredQuantity,
                     UOM           = sc.Product.MeasurementUnit ?? "",
                 })

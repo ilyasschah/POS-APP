@@ -125,7 +125,7 @@ namespace Api.Commands.PosOrderItemCommands.Add
                                     var otherWarehouses = await _db.Stocks
                                         .Include(s => s.Warehouse)
                                         .Where(s => s.ProductId == group.Key && s.WarehouseId != command.WarehouseId && s.Quantity >= deltaInStockUnit && s.CompanyId == command.CompanyId)
-                                        .Select(s => s.Warehouse.Name)
+                                        .Select(s => s.Warehouse!.Name)
                                         .ToListAsync(cancellationToken);
 
                                     string whList = otherWarehouses.Any() ? string.Join(", ", otherWarehouses) : "None";
@@ -183,7 +183,7 @@ namespace Api.Commands.PosOrderItemCommands.Add
 
                         foreach (var item in itemsToRemove)
                         {
-                            if (!item.Product.IsService)
+                            if (!item.Product!.IsService)
                             {
                                 if (stocks.TryGetValue(item.ProductId, out var stock))
                                 {

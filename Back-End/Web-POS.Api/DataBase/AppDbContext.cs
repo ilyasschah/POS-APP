@@ -427,7 +427,7 @@ namespace Api.DataBase
                 e.ToTable("Booking", tb => tb.HasTrigger("SomeTrigger"));
 
                 var intListComparer = new ValueComparer<List<int>>(
-                    (c1, c2) => c1.SequenceEqual(c2),
+                    (c1, c2) => c1 == null ? c2 == null : c2 != null && c1.SequenceEqual(c2),
                     c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
                     c => c.ToList());
 

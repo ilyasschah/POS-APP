@@ -10,8 +10,8 @@ namespace Api.Domain
         [DatabaseGenerated(DatabaseGeneratedOption.None)]
         public int PLU { get; set; }
         public int CompanyId { get; set; }
-        public string Name { get; set; }
-        public string VAT { get; set; }
+        public string Name { get; set; } = default!;
+        public string VAT { get; set; } = default!;
 
         private FiscalItem(int plu, string name, string vat)
         {

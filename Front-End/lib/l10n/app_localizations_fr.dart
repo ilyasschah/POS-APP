@@ -4032,6 +4032,33 @@ class AppLocalizationsFr extends AppLocalizations {
   String get periodLabel => 'Période';
 
   @override
+  String get docSearchHint => 'Rechercher un document, ou choisir un filtre';
+
+  @override
+  String get filterSuggestionsSection => 'Rechercher';
+
+  @override
+  String filterNumberContains(Object query) {
+    return 'Le numero contient \"$query\"';
+  }
+
+  @override
+  String filterReferenceContains(Object query) {
+    return 'La reference contient \"$query\"';
+  }
+
+  @override
+  String filterCustomerContains(Object query) {
+    return 'Le client contient \"$query\"';
+  }
+
+  @override
+  String get filterCustomRange => 'Periode personnalisee...';
+
+  @override
+  String get filterKeepTyping => 'Continuez a taper pour affiner la liste';
+
+  @override
   String get documentNumber => 'Numéro de document';
 
   @override
@@ -6656,6 +6683,13 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get sessionNoPayments => 'Aucun paiement encaissé dans cette session.';
+
+  @override
+  String get sessionNoDocuments =>
+      'Aucun document enregistré dans cette session.';
+
+  @override
+  String get sessionDocumentsHint => 'Touchez un document pour l\'ouvrir';
 
   @override
   String get sessionOpenDocumentHint =>

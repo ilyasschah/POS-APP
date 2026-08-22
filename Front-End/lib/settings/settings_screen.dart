@@ -5840,14 +5840,11 @@ class _KitchenDisplayTabState extends ConsumerState<_KitchenDisplayTab> {
   }
 
   void _removeIp(String ip) {
-    final existing = _parseIps(
-      ref.read(appSettingsProvider)[SettingKeys.kitchenDisplayIps],
-    );
-    final updated = existing.where((e) => e != ip).join(',');
-    ref
-        .read(appSettingsProvider.notifier)
-        .set(SettingKeys.kitchenDisplayIps, updated);
-    // Tell the tablet to drop the binding and return to its pairing screen.
+    // `unpair` owns the whole teardown: it clears the local pairing state
+    // (IP + station assignment) FIRST and only then tries to tell the tablet,
+    // so removing a display that is off or gone still works instantly and
+    // silently. Deliberately not awaited — the UI must not wait on a device
+    // that may not answer.
     ref.read(kitchenSyncProvider).unpair(ip);
   }
 

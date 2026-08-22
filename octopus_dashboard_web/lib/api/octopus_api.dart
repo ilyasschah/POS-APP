@@ -5,6 +5,7 @@ import '../core/formatters.dart';
 import '../core/json_utils.dart';
 import '../models/dashboard.dart';
 import '../models/document.dart';
+import '../models/pos_session.dart';
 import '../models/product.dart';
 import '../models/stock.dart';
 import '../models/user.dart';
@@ -199,6 +200,56 @@ class OctopusApi {
         cancelToken: cancelToken,
       );
       return asList(response.data, DocumentLineItem.fromJson);
+    });
+  }
+
+  // --- POS sessions -------------------------------------------------------
+
+  /// `GET /PosSession/History?companyId=...&take=...`
+  ///
+  /// Newest first, every register. Read-only by design: this app never calls
+  /// Open/ConfirmOpening/Close/ForceClose — a session is opened, counted and
+  /// closed on the register that owns the drawer, and an owner closing one
+  /// from a browser would strand a till mid-count.
+  Future<List<PosSession>> fetchPosSessions({
+    int take = 50,
+    CancelToken? cancelToken,
+  }) {
+    return _guard(() async {
+      final response = await _dio.get<dynamic>(
+        '/PosSession/History',
+        queryParameters: {..._companyQuery, 'take': take},
+        cancelToken: cancelToken,
+      );
+      return asList(response.data, PosSession.fromJson);
+    });
+  }
+
+  /// `GET /PosSession/Summary?companyId=...&sessionId=...`
+  ///
+  /// One session's figures — takings, order count, cash arithmetic and the
+  /// per-method rows. Computed server-side on every call, so a closed
+  /// session's numbers here can legitimately differ from the frozen ones on
+  /// the session row itself (that gap is late sales).
+  ///
+  /// Fetched per session rather than for the whole list: /History carries
+  /// neither takings nor an order count, and each summary is several queries
+  /// server-side.
+  Future<PosSessionSummary> fetchPosSessionSummary({
+    required int sessionId,
+    CancelToken? cancelToken,
+  }) {
+    return _guard(() async {
+      final response = await _dio.get<dynamic>(
+        '/PosSession/Summary',
+        queryParameters: {..._companyQuery, 'sessionId': sessionId},
+        cancelToken: cancelToken,
+      );
+      final data = response.data;
+      if (data is! Map) {
+        throw const ApiException('Unexpected session summary from server.');
+      }
+      return PosSessionSummary.fromJson(Map<String, dynamic>.from(data));
     });
   }
 

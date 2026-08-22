@@ -9,6 +9,9 @@ import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:pos_app/api/api_client.dart';
 import 'package:pos_app/core/app_date_picker.dart';
+import 'package:pos_app/core/ilyass_table.dart';
+import 'package:pos_app/core/unified_search_bar.dart';
+import 'package:pos_app/document/document_filters.dart';
 import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/security/security_guard.dart';
 import 'package:pos_app/security/security_keys.dart';
@@ -183,14 +186,13 @@ class DocumentsScreen extends ConsumerStatefulWidget {
 
 class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
   // ── filter state ──────────────────────────────────────────────────────────
-  int? _filterUserId;
-  int? _filterCustomerId;
-  int? _filterDocTypeId;
-  int? _filterPaidStatus;
-  int? _filterWarehouseId;
-  final _docNumberCtrl = TextEditingController();
-  final _refNumberCtrl = TextEditingController();
-  DateTimeRange? _filterDateRange;
+  /// Everything this screen filters on, in one immutable value. The eight
+  /// nullable fields this replaced had to be kept in step with a `where`
+  /// clause, a Reset button and eight dropdowns; a document now simply asks
+  /// [DocumentFilters.matches] whether it belongs.
+  DocumentFilters _filters = const DocumentFilters();
+
+  final _searchCtrl = TextEditingController();
 
   final _dateFmt = DateFormat('dd/MM/yy');
 
@@ -202,8 +204,7 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
 
   @override
   void dispose() {
-    _docNumberCtrl.dispose();
-    _refNumberCtrl.dispose();
+    _searchCtrl.dispose();
     super.dispose();
   }
 
@@ -289,55 +290,54 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
 
   // ── filtering ─────────────────────────────────────────────────────────────
 
-  List<Document> _applyFilters(List<Document> docs) {
-    final docNum = _docNumberCtrl.text.trim().toLowerCase();
-    final refNum = _refNumberCtrl.text.trim().toLowerCase();
+  List<Document> _applyFilters(List<Document> docs) =>
+      docs.where(_filters.matches).toList();
 
-    return docs.where((d) {
-      if (_filterUserId != null && d.userId != _filterUserId) return false;
-      if (_filterCustomerId != null && d.customerId != _filterCustomerId) {
-        return false;
-      }
-      if (_filterDocTypeId != null && d.documentTypeId != _filterDocTypeId) {
-        return false;
-      }
-      if (_filterPaidStatus != null && d.paidStatus != _filterPaidStatus) {
-        return false;
-      }
-      if (_filterWarehouseId != null && d.warehouseId != _filterWarehouseId) {
-        return false;
-      }
-      if (docNum.isNotEmpty && !d.number.toLowerCase().contains(docNum)) {
-        return false;
-      }
-      if (refNum.isNotEmpty &&
-          !(d.referenceDocumentNumber?.toLowerCase().contains(refNum) ??
-              false)) {
-        return false;
-      }
-      if (_filterDateRange != null) {
-        try {
-          final dt = DateTime.parse(d.date);
-          final end = _filterDateRange!.end.add(const Duration(days: 1));
-          if (dt.isBefore(_filterDateRange!.start) || !dt.isBefore(end)) {
-            return false;
-          }
-        } catch (_) {}
-      }
-      return true;
-    }).toList();
+  void _clearFilters() {
+    _searchCtrl.clear();
+    setState(() => _filters = const DocumentFilters());
   }
 
-  void _clearFilters() => setState(() {
-    _filterUserId = null;
-    _filterCustomerId = null;
-    _filterDocTypeId = null;
-    _filterPaidStatus = null;
-    _filterWarehouseId = null;
-    _filterDateRange = null;
-    _docNumberCtrl.clear();
-    _refNumberCtrl.clear();
-  });
+  /// Applies (or un-applies) one filter from the menu.
+  ///
+  /// A suggestion built from the typed text consumes that text: leaving it in
+  /// the field would filter twice — once as the chip, once as the free-text
+  /// query — and the second pass is invisible to the operator.
+  void _applyFilter(DocumentFilter filter, {bool consumesQuery = false}) {
+    setState(() {
+      var next = _filters.toggle(filter);
+      if (consumesQuery) {
+        _searchCtrl.clear();
+        next = next.withQuery('');
+      }
+      _filters = next;
+    });
+  }
+
+  void _removeFilter(DocumentFilterKind kind) =>
+      setState(() => _filters = _filters.without(kind));
+
+  Future<void> _pickPeriod() async {
+    final now = DateTime.now();
+    final current = _filters.of(DocumentFilterKind.period)?.value
+        as DateTimeRange?;
+    final range = await showAppDateRangePicker(
+      context,
+      initialStart: current?.start ?? DateTime(now.year, now.month, 1),
+      initialEnd: current?.end ?? now,
+      firstDate: DateTime(2020),
+      lastDate: now.add(const Duration(days: 365)),
+    );
+    if (range == null || !mounted) return;
+    _applyFilter(_periodFilter(range));
+  }
+
+  DocumentFilter _periodFilter(DateTimeRange range) => DocumentFilter(
+        kind: DocumentFilterKind.period,
+        label: '${_dateFmt.format(range.start)} - ${_dateFmt.format(range.end)}',
+        value: range,
+        icon: Icons.date_range_outlined,
+      );
 
   // ── column picker ─────────────────────────────────────────────────────────
 
@@ -407,77 +407,10 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
 
   // ── filter panel ──────────────────────────────────────────────────────────
 
-  InputDecoration _inputDeco(ColorScheme cs, String hint) => InputDecoration(
-    hintText: hint,
-    hintStyle: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
-    isDense: true,
-    filled: true,
-    fillColor: cs.surface,
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(10), // Rounder corners
-      borderSide: BorderSide.none, // Remove default harsh border
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(10),
-      borderSide: BorderSide(
-        color: cs.outlineVariant.withValues(alpha: 0.4),
-      ), // Subtle border
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(10),
-      borderSide: BorderSide(
-        color: cs.primary.withValues(alpha: 0.6),
-        width: 1.5,
-      ),
-    ),
-    contentPadding: const EdgeInsets.symmetric(
-      horizontal: 14,
-      vertical: 12,
-    ), // More breathing room
-  );
-
-  Widget _dropdownField<T>({
-    required ColorScheme cs,
-    required T value,
-    required String hint,
-    required List<DropdownMenuItem<T>> items,
-    required ValueChanged<T?> onChanged,
-  }) => Container(
-    decoration: BoxDecoration(
-      boxShadow: [
-        BoxShadow(
-          // Premium subtle shadow
-          color: Colors.black.withValues(alpha: 0.03),
-          blurRadius: 6,
-          offset: const Offset(0, 2),
-        ),
-      ],
-    ),
-    child: DropdownButtonFormField<T>(
-      key: ValueKey(value),
-      initialValue: value,
-      isExpanded: true,
-      icon: Icon(
-        Icons.keyboard_arrow_down_rounded,
-        color: cs.onSurfaceVariant,
-        size: 20,
-      ), // Nicer icon
-      dropdownColor: cs.surface,
-      borderRadius: BorderRadius.circular(12), // Rounds the popup menu
-      decoration: _inputDeco(cs, hint),
-      hint: Text(
-        hint,
-        style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
-      ),
-      items: items,
-      onChanged: onChanged,
-      style: TextStyle(
-        fontSize: 13,
-        color: cs.onSurface,
-        fontWeight: FontWeight.w500,
-      ),
-    ),
-  );
+  /// The Odoo-style unified search: one bar carrying the typed query and every
+  /// active filter as a dismissible chip, with a categorised menu anchored
+  /// under it. Replaces the eight exposed dropdowns, which cost a third of the
+  /// screen to state something the chips now say in one line.
   Widget _buildFilterPanel({
     required BuildContext context,
     required ThemeData theme,
@@ -490,343 +423,272 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
     final cs = theme.colorScheme;
     final l = AppLocalizations.of(context);
 
-    // Period display text
-    final periodLabel = _filterDateRange == null
-        ? l.allDates
-        : '${_dateFmt.format(_filterDateRange!.start)} – ${_dateFmt.format(_filterDateRange!.end)}';
+    return Container(
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
+        border: Border(
+          bottom: BorderSide(color: theme.dividerColor, width: 0.5),
+        ),
+      ),
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final searchBar = UnifiedSearchBar(
+            controller: _searchCtrl,
+            hintText: l.docSearchHint,
+            chips: _searchChips(),
+            sectionsBuilder: (query) => _filterSections(
+              query: query,
+              l: l,
+              types: types,
+              users: users,
+              customers: customers,
+              warehouses: warehouses,
+            ),
+            onQueryChanged: (value) =>
+                setState(() => _filters = _filters.withQuery(value)),
+            onClearAll: _clearFilters,
+          );
 
-    // User display name
+          final results = _ResultCount(count: totalResults, label: l.totalResultsUpper);
+
+          // The count sits beside the bar when there is room and drops under it
+          // when there is not - the bar itself must never be squeezed narrow.
+          if (constraints.maxWidth < 620) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                searchBar,
+                const Gap(10),
+                Align(alignment: AlignmentDirectional.centerEnd, child: results),
+              ],
+            );
+          }
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(child: searchBar),
+              const Gap(20),
+              results,
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  /// One chip per active filter, in the order they were applied.
+  List<SearchBarChip> _searchChips() => [
+        for (final f in _filters.filters)
+          SearchBarChip(
+            id: f.kind.name,
+            label: f.label,
+            icon: f.icon,
+            onRemove: () => _removeFilter(f.kind),
+          ),
+      ];
+
+  /// The menu under the bar. Sections are built against the CURRENT query, so
+  /// typing both offers "Number contains ..." suggestions and narrows the long
+  /// lists (customers, users) in place.
+  List<FilterMenuSection> _filterSections({
+    required String query,
+    required AppLocalizations l,
+    required List<DocumentType> types,
+    required List<User> users,
+    required List<Customer> customers,
+    required List<Warehouse> warehouses,
+  }) {
+    final q = query.trim();
+    final lower = q.toLowerCase();
+    const maxPerSection = 8;
+
     String userName(User u) {
       final full = '${u.firstName ?? ''} ${u.lastName ?? ''}'.trim();
       return full.isNotEmpty ? full : (u.username ?? l.userNumbered('${u.id}'));
     }
 
-    final labelStyle = TextStyle(
-      fontSize: 12,
-      fontWeight: FontWeight.w600,
-      color: cs.onSurfaceVariant.withValues(alpha: 0.8),
-    );
+    /// Narrows a list by the typed text and caps it, so a shop with 2000
+    /// customers still gets a menu that opens instantly.
+    (List<T>, bool) narrow<T>(List<T> all, String Function(T) label) {
+      final matched = lower.isEmpty
+          ? all
+          : all.where((e) => label(e).toLowerCase().contains(lower)).toList();
+      return (matched.take(maxPerSection).toList(),
+          matched.length > maxPerSection);
+    }
 
-    Widget label(String t) => Text(t, style: labelStyle);
-
-    Widget filterCol({required String lbl, required Widget control}) =>
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [label(lbl), const Gap(6), control],
-          ),
+    FilterMenuOption option(
+      DocumentFilter filter, {
+      bool consumesQuery = false,
+    }) =>
+        FilterMenuOption(
+          label: filter.label,
+          icon: filter.icon,
+          selected: _filters.has(filter.kind, filter.value),
+          onSelected: () =>
+              _applyFilter(filter, consumesQuery: consumesQuery),
         );
 
-    Widget shadowWrapper(Widget child) => Container(
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
+    final sections = <FilterMenuSection>[];
+
+    // 1. What the typed text could mean. Odoo's move: the query itself becomes
+    //    a filter, which is how a single bar replaces the Number and Reference
+    //    fields without losing them.
+    if (q.isNotEmpty) {
+      sections.add(FilterMenuSection(
+        title: l.filterSuggestionsSection,
+        icon: Icons.search,
+        options: [
+          option(
+            DocumentFilter(
+              kind: DocumentFilterKind.number,
+              label: l.filterNumberContains(q),
+              value: q,
+              icon: Icons.tag,
+            ),
+            consumesQuery: true,
+          ),
+          option(
+            DocumentFilter(
+              kind: DocumentFilterKind.reference,
+              label: l.filterReferenceContains(q),
+              value: q,
+              icon: Icons.link,
+            ),
+            consumesQuery: true,
           ),
         ],
-      ),
-      child: child,
+      ));
+    }
+
+    // 2. Status
+    sections.add(FilterMenuSection(
+      title: l.paidStatus,
+      icon: Icons.payments_outlined,
+      options: [
+        for (final entry in {1: l.paid, 2: l.partial, 0: l.unpaid}.entries)
+          option(DocumentFilter(
+            kind: DocumentFilterKind.paidStatus,
+            label: entry.value,
+            value: entry.key,
+            icon: Icons.payments_outlined,
+          )),
+      ],
+    ));
+
+    // 3. Period
+    final now = DateTime.now();
+    final thisMonth = DateTimeRange(
+      start: DateTime(now.year, now.month),
+      end: now,
     );
-
-    const gap = Gap(16);
-
-    return Container(
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest.withValues(
-          alpha: 0.3,
-        ), // Lighter background
-        border: Border(
-          bottom: BorderSide(color: theme.dividerColor, width: 0.5),
+    final lastMonthStart = DateTime(now.year, now.month - 1);
+    final lastMonth = DateTimeRange(
+      start: lastMonthStart,
+      end: DateTime(now.year, now.month).subtract(const Duration(days: 1)),
+    );
+    sections.add(FilterMenuSection(
+      title: l.periodLabel,
+      icon: Icons.date_range_outlined,
+      options: [
+        option(DocumentFilter(
+          kind: DocumentFilterKind.period,
+          label: l.today,
+          value: DateTimeRange(
+            start: DateTime(now.year, now.month, now.day),
+            end: DateTime(now.year, now.month, now.day),
+          ),
+          icon: Icons.today_outlined,
+        )),
+        option(DocumentFilter(
+          kind: DocumentFilterKind.period,
+          label: l.thisMonth,
+          value: thisMonth,
+          icon: Icons.date_range_outlined,
+        )),
+        option(DocumentFilter(
+          kind: DocumentFilterKind.period,
+          label: l.lastMonth,
+          value: lastMonth,
+          icon: Icons.date_range_outlined,
+        )),
+        FilterMenuOption(
+          label: l.filterCustomRange,
+          icon: Icons.edit_calendar_outlined,
+          onSelected: _pickPeriod,
         ),
-      ),
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 18),
-      child: Column(
-        children: [
-          // ── Row 1: User | Customer | Document Type ──────────────────────
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              filterCol(
-                lbl: l.userLabel,
-                control: _dropdownField<int?>(
-                  cs: cs,
-                  value: _filterUserId,
-                  hint: AppLocalizations.of(context).allUsers,
-                  items: [
-                    DropdownMenuItem(
-                      value: null,
-                      child: Text(AppLocalizations.of(context).allUsers),
-                    ),
-                    ...users.map(
-                      (u) => DropdownMenuItem(
-                        value: u.id,
-                        child: Text(userName(u)),
-                      ),
-                    ),
-                  ],
-                  onChanged: (v) => setState(() => _filterUserId = v),
-                ),
-              ),
-              gap,
-              filterCol(
-                lbl: l.customerLabel,
-                control: _dropdownField<int?>(
-                  cs: cs,
-                  value: _filterCustomerId,
-                  hint: AppLocalizations.of(context).allCustomers,
-                  items: [
-                    DropdownMenuItem(
-                      value: null,
-                      child: Text(AppLocalizations.of(context).allCustomers),
-                    ),
-                    ...customers.map(
-                      (c) => DropdownMenuItem(value: c.id, child: Text(c.name)),
-                    ),
-                  ],
-                  onChanged: (v) => setState(() => _filterCustomerId = v),
-                ),
-              ),
-              gap,
-              filterCol(
-                lbl: l.documentType,
-                control: _dropdownField<int?>(
-                  cs: cs,
-                  value: _filterDocTypeId,
-                  hint: AppLocalizations.of(context).allDocumentTypes,
-                  items: [
-                    DropdownMenuItem(
-                      value: null,
-                      child: Text(AppLocalizations.of(context).allDocumentTypes),
-                    ),
-                    ...types.map(
-                      (t) => DropdownMenuItem(value: t.id, child: Text(t.name)),
-                    ),
-                  ],
-                  onChanged: (v) => setState(() => _filterDocTypeId = v),
-                ),
-              ),
-            ],
-          ),
-          const Gap(12),
-          // ── Row 2: Paid Status | Warehouse | Doc Number ─────────────────
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              filterCol(
-                lbl: l.paidStatus,
-                control: _dropdownField<int?>(
-                  cs: cs,
-                  value: _filterPaidStatus,
-                  hint: AppLocalizations.of(context).allTransactions,
-                  items: [
-                    DropdownMenuItem(
-                      value: null,
-                      child: Text(AppLocalizations.of(context).allTransactions),
-                    ),
-                    DropdownMenuItem(value: 1, child: Text(AppLocalizations.of(context).paid)),
-                    DropdownMenuItem(value: 2, child: Text(AppLocalizations.of(context).partial)),
-                    DropdownMenuItem(value: 0, child: Text(AppLocalizations.of(context).unpaid)),
-                  ],
-                  onChanged: (v) => setState(() => _filterPaidStatus = v),
-                ),
-              ),
-              gap,
-              filterCol(
-                lbl: l.warehouse,
-                control: _dropdownField<int?>(
-                  cs: cs,
-                  value: _filterWarehouseId,
-                  hint: AppLocalizations.of(context).allWarehouses,
-                  items: [
-                    DropdownMenuItem(
-                      value: null,
-                      child: Text(AppLocalizations.of(context).allWarehouses),
-                    ),
-                    ...warehouses.map(
-                      (w) => DropdownMenuItem(value: w.id, child: Text(w.name)),
-                    ),
-                  ],
-                  onChanged: (v) => setState(() => _filterWarehouseId = v),
-                ),
-              ),
-              gap,
-              filterCol(
-                lbl: l.documentNumber,
-                control: shadowWrapper(
-                  TextField(
-                    controller: _docNumberCtrl,
-                    decoration: _inputDeco(cs, l.documentNumberHint),
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: cs.onSurface,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    onChanged: (_) => setState(() {}),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const Gap(12),
-          // ── Row 3: Ref Doc | Period | Clear | Search | Total ────────────
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              filterCol(
-                lbl: l.externalDocument,
-                control: shadowWrapper(
-                  TextField(
-                    controller: _refNumberCtrl,
-                    decoration: _inputDeco(cs, l.referenceDocument),
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: cs.onSurface,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    onChanged: (_) => setState(() {}),
-                  ),
-                ),
-              ),
-              gap,
-              filterCol(
-                lbl: l.periodLabel,
-                control: InkWell(
-                  borderRadius: BorderRadius.circular(10),
-                  onTap: () async {
-                    final now = DateTime.now();
-                    final current = _filterDateRange;
-                    final range = await showAppDateRangePicker(
-                      context,
-                      initialStart:
-                          current?.start ?? DateTime(now.year, now.month, 1),
-                      initialEnd: current?.end ?? now,
-                      firstDate: DateTime(2020),
-                      lastDate: now.add(const Duration(days: 365)),
-                    );
-                    if (range != null) setState(() => _filterDateRange = range);
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: cs.surface,
-                      border: Border.all(
-                        color: cs.outlineVariant.withValues(alpha: 0.4),
-                      ),
-                      borderRadius: BorderRadius.circular(10),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.03),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.date_range_outlined,
-                          size: 16,
-                          color: cs.onSurfaceVariant,
-                        ),
-                        const Gap(8),
-                        Expanded(
-                          child: Text(
-                            periodLabel,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: _filterDateRange != null
-                                  ? cs.onSurface
-                                  : cs.onSurfaceVariant,
-                            ),
-                          ),
-                        ),
-                        if (_filterDateRange != null)
-                          GestureDetector(
-                            onTap: () =>
-                                setState(() => _filterDateRange = null),
-                            child: Icon(
-                              Icons.close,
-                              size: 16,
-                              color: cs.onSurfaceVariant,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              gap,
-              // Buttons
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Row(
-                    children: [
-                      OutlinedButton.icon(
-                        icon: const Icon(
-                          Icons.filter_alt_off_outlined,
-                          size: 16,
-                        ),
-                        label: Text(AppLocalizations.of(context).actionReset),
-                        onPressed: _clearFilters,
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                        ),
-                      ),
-                      const Gap(8),
-                      FilledButton.icon(
-                        icon: const Icon(Icons.search, size: 16),
-                        label: Text(AppLocalizations.of(context).actionSearch),
-                        onPressed: () => setState(() {}),
-                        style: FilledButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                        ),
-                      ),
-                      const Gap(24),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            l.totalResultsUpper,
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1.1,
-                              color: cs.onSurfaceVariant,
-                            ),
-                          ),
-                          Text(
-                            totalResults.toString(),
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w900,
-                              color: cs.primary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
+      ],
+    ));
+
+    // 4-7. The lookup lists, each narrowed by the query.
+    final (docTypes, typesTruncated) = narrow(types, (t) => t.name);
+    sections.add(FilterMenuSection(
+      title: l.documentType,
+      icon: Icons.description_outlined,
+      footnote: typesTruncated ? l.filterKeepTyping : null,
+      options: [
+        for (final t in docTypes)
+          option(DocumentFilter(
+            kind: DocumentFilterKind.docType,
+            label: t.name,
+            value: t.id,
+            icon: Icons.description_outlined,
+          )),
+      ],
+    ));
+
+    final (people, customersTruncated) = narrow(customers, (c) => c.name);
+    sections.add(FilterMenuSection(
+      title: l.customerLabel,
+      icon: Icons.person_outline,
+      footnote: customersTruncated ? l.filterKeepTyping : null,
+      options: [
+        for (final c in people)
+          option(DocumentFilter(
+            kind: DocumentFilterKind.customer,
+            label: c.name,
+            value: c.id,
+            icon: Icons.person_outline,
+          )),
+      ],
+    ));
+
+    final (staff, usersTruncated) = narrow(users, userName);
+    sections.add(FilterMenuSection(
+      title: l.userLabel,
+      icon: Icons.badge_outlined,
+      footnote: usersTruncated ? l.filterKeepTyping : null,
+      options: [
+        for (final u in staff)
+          option(DocumentFilter(
+            kind: DocumentFilterKind.user,
+            label: userName(u),
+            value: u.id,
+            icon: Icons.badge_outlined,
+          )),
+      ],
+    ));
+
+    final (stores, warehousesTruncated) = narrow(warehouses, (w) => w.name);
+    sections.add(FilterMenuSection(
+      title: l.warehouse,
+      icon: Icons.warehouse_outlined,
+      footnote: warehousesTruncated ? l.filterKeepTyping : null,
+      options: [
+        for (final w in stores)
+          option(DocumentFilter(
+            kind: DocumentFilterKind.warehouse,
+            label: w.name,
+            value: w.id,
+            icon: Icons.warehouse_outlined,
+          )),
+      ],
+    ));
+
+    return sections;
   }
+
   // ── build ─────────────────────────────────────────────────────────────────
 
   @override
@@ -951,12 +813,14 @@ class _DocumentTable extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final columnsVisibility = ref.watch(documentVisibleColumnsProvider);
+    final visible = ref.watch(documentVisibleColumnsProvider);
     final sym = ref.watch(currencySymbolProvider);
 
-    if (documents.isEmpty) {
-      return Center(
+    return IlyassTable<Document>(
+      tableId: 'documents',
+      rows: documents,
+      columns: _columns(context, ref, visible, theme, sym),
+      emptyState: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -972,120 +836,70 @@ class _DocumentTable extends ConsumerWidget {
             ),
           ],
         ),
-      );
-    }
-
-    return LayoutBuilder(
-      builder: (context, constraints) => SingleChildScrollView(
-        scrollDirection: Axis.vertical,
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minWidth: constraints.maxWidth),
-            child: DataTable(
-              headingRowColor: WidgetStateProperty.all(
-                isDark
-                    ? theme.colorScheme.surfaceContainerHighest.withValues(
-                        alpha: 0.2,
-                      )
-                    : theme.colorScheme.surfaceContainerHighest.withValues(
-                        alpha: 0.4,
-                      ),
-              ),
-              dataRowMinHeight: 52,
-              dataRowMaxHeight: 60,
-              columnSpacing: 24,
-              dividerThickness: 0.5,
-              columns: _buildColumns(context, columnsVisibility, theme),
-              rows: documents
-                  .map(
-                    (d) => DataRow(
-                      cells: _buildCells(
-                        context,
-                        ref,
-                        d,
-                        columnsVisibility,
-                        theme,
-                        sym,
-                      ),
-                    ),
-                  )
-                  .toList(),
-            ),
-          ),
-        ),
       ),
     );
   }
 
-  List<DataColumn> _buildColumns(BuildContext context, Map<String, bool> v, ThemeData t) {
-    // Which column absorbs the surplus width. The ConstrainedBox above already
-    // makes the table fill its pane, but with NO flex column `RenderTable`
-    // spreads the slack EQUALLY — so a date column stretches as much as a
-    // customer name. Customer is the widest-varying field; Number is the
-    // fallback when it is switched off. If both are hidden the table simply
-    // reverts to the even spread, which is what it did before.
-    final flexKey = v['Customer'] == true
-        ? 'Customer'
-        : (v['Number'] == true ? 'Number' : null);
-    TableColumnWidth? flexFor(String key) =>
-        key == flexKey ? const IntrinsicColumnWidth(flex: 1) : null;
-
-    return [
-      if (v['ID'] == true) DataColumn(label: Text(AppLocalizations.of(context).idLabel), numeric: true),
-      if (v['Number'] == true)
-        DataColumn(
-            label: Text(AppLocalizations.of(context).colNumber),
-            columnWidth: flexFor('Number')),
-      if (v['Doc Type'] == true) DataColumn(label: Text(AppLocalizations.of(context).colType)),
-      if (v['Paid'] == true) DataColumn(label: Text(AppLocalizations.of(context).colStatus)),
-      if (v['Customer'] == true)
-        DataColumn(
-            label: Text(AppLocalizations.of(context).colCustomer),
-            columnWidth: flexFor('Customer')),
-      if (v['Date'] == true) DataColumn(label: Text(AppLocalizations.of(context).colDate)),
-      if (v['Order #'] == true) DataColumn(label: Text(AppLocalizations.of(context).colOrderNo)),
-      if (v['User'] == true) DataColumn(label: Text(AppLocalizations.of(context).colUser)),
-      if (v['Discount'] == true)
-        DataColumn(label: Text(AppLocalizations.of(context).colDisc), numeric: true),
-      if (v['Total'] == true)
-        DataColumn(label: Text(AppLocalizations.of(context).totalUpper), numeric: true),
-      if (v['Internal Note'] == true)
-        DataColumn(label: Text(AppLocalizations.of(context).internalNote)),
-      if (v['Note'] == true) DataColumn(label: Text(AppLocalizations.of(context).colNote)),
-      if (v['Created'] == true) DataColumn(label: Text(AppLocalizations.of(context).colCreated)),
-      if (v['Updated'] == true) DataColumn(label: Text(AppLocalizations.of(context).colUpdated)),
-      if (v['Actions'] == true) DataColumn(label: Text(AppLocalizations.of(context).colActions)),
-    ];
-  }
-
-  List<DataCell> _buildCells(
+  /// Columns and cells in ONE list.
+  ///
+  /// The old table declared them as two parallel `if (v['X'])` chains, header
+  /// and cell, which only lined up as long as both chains were edited
+  /// together - miss one and every column right of it shows the wrong data.
+  /// Here a column carries its own cell builder, so that class of bug cannot
+  /// be written.
+  ///
+  /// Widths are starting points: every column except Actions can be dragged by
+  /// its header edge, and [IlyassColumn.flexible] decides which one swallows
+  /// the surplus on a wide monitor.
+  List<IlyassColumn<Document>> _columns(
     BuildContext context,
     WidgetRef ref,
-    Document d,
     Map<String, bool> v,
     ThemeData theme,
     String sym,
   ) {
     final l = AppLocalizations.of(context);
+
+    // Which column absorbs the surplus width. Customer is the widest-varying
+    // field; Number is the fallback when it is switched off. With neither the
+    // table simply stops at its natural width rather than spreading the slack
+    // evenly - which is what opened the dead zone between CUSTOMER and DATE.
+    final flexKey = v['Customer'] == true
+        ? 'Customer'
+        : (v['Number'] == true ? 'Number' : null);
+
     return [
       if (v['ID'] == true)
-        DataCell(
-          Text(
+        IlyassColumn<Document>(
+          key: 'ID',
+          label: l.idLabel,
+          width: 72,
+          minWidth: 56,
+          numeric: true,
+          cell: (context, d) => Text(
             d.id.toString(),
             style: TextStyle(color: theme.disabledColor, fontSize: 12),
           ),
         ),
       if (v['Number'] == true)
-        DataCell(
-          Text(
+        IlyassColumn<Document>(
+          key: 'Number',
+          label: l.colNumber,
+          width: 170,
+          flexible: flexKey == 'Number',
+          cell: (context, d) => Text(
             _displayNumber(context, d),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
         ),
       if (v['Doc Type'] == true)
-        DataCell(
-          Row(
+        IlyassColumn<Document>(
+          key: 'Doc Type',
+          label: l.colType,
+          width: 160,
+          cell: (context, d) => Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
@@ -1094,43 +908,155 @@ class _DocumentTable extends ConsumerWidget {
                 color: theme.colorScheme.secondary,
               ),
               const SizedBox(width: 8),
-              Text(d.documentTypeName ?? '-'),
+              Flexible(
+                child: Text(
+                  d.documentTypeName ?? '-',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ],
           ),
         ),
-      if (v['Paid'] == true) DataCell(paidBadge(d.paidStatus)),
-      if (v['Customer'] == true) DataCell(Text(d.customerName ?? '-')),
+      if (v['Paid'] == true)
+        IlyassColumn<Document>(
+          key: 'Paid',
+          label: l.colStatus,
+          width: 120,
+          minWidth: 90,
+          cell: (context, d) => paidBadge(d.paidStatus),
+        ),
+      if (v['Customer'] == true)
+        IlyassColumn<Document>(
+          key: 'Customer',
+          label: l.colCustomer,
+          width: 220,
+          flexible: flexKey == 'Customer',
+          cell: (context, d) => Text(
+            d.customerName ?? '-',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
       if (v['Date'] == true)
-        DataCell(Text(formatDate(d.dateCreated ?? d.date))),
-      if (v['Order #'] == true) DataCell(Text(d.orderNumber ?? l.notAvailableShort)),
-      if (v['User'] == true) DataCell(Text(d.userName ?? '-')),
+        IlyassColumn<Document>(
+          key: 'Date',
+          label: l.colDate,
+          width: 165,
+          cell: (context, d) => Text(
+            formatDate(d.dateCreated ?? d.date),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      if (v['Order #'] == true)
+        IlyassColumn<Document>(
+          key: 'Order #',
+          label: l.colOrderNo,
+          width: 140,
+          cell: (context, d) => Text(
+            d.orderNumber ?? l.notAvailableShort,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      if (v['User'] == true)
+        IlyassColumn<Document>(
+          key: 'User',
+          label: l.colUser,
+          width: 150,
+          cell: (context, d) => Text(
+            d.userName ?? '-',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
       if (v['Discount'] == true)
-        DataCell(
-          Text(
+        IlyassColumn<Document>(
+          key: 'Discount',
+          label: l.colDisc,
+          width: 110,
+          minWidth: 80,
+          numeric: true,
+          cell: (context, d) => Text(
             d.discount <= 0
-                ? "-"
+                ? '-'
                 : (d.discountType == 1
-                      ? "-${d.discount.toStringAsFixed(2)}"
-                      : "${d.discount.toStringAsFixed(0)}%"),
+                      ? '-${d.discount.toStringAsFixed(2)}'
+                      : '${d.discount.toStringAsFixed(0)}%'),
           ),
         ),
       if (v['Total'] == true)
-        DataCell(
-          Text(
-            "${d.total.toStringAsFixed(2)} $sym",
+        IlyassColumn<Document>(
+          key: 'Total',
+          label: l.totalUpper,
+          width: 140,
+          minWidth: 100,
+          // Money is end-aligned, always. A column of totals is read by its
+          // last digits, and a centred one cannot be scanned at all.
+          numeric: true,
+          cell: (context, d) => Text(
+            '${d.total.toStringAsFixed(2)} $sym',
+            maxLines: 1,
             style: TextStyle(
               fontWeight: FontWeight.w900,
               color: theme.colorScheme.primary,
             ),
           ),
         ),
-      if (v['Internal Note'] == true) DataCell(Text(d.internalNote ?? '-')),
-      if (v['Note'] == true) DataCell(Text(d.note ?? '-')),
-      if (v['Created'] == true) DataCell(Text(formatDate(d.dateCreated))),
-      if (v['Updated'] == true) DataCell(Text(formatDate(d.dateUpdated))),
+      if (v['Internal Note'] == true)
+        IlyassColumn<Document>(
+          key: 'Internal Note',
+          label: l.internalNote,
+          width: 200,
+          cell: (context, d) => Text(
+            d.internalNote ?? '-',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      if (v['Note'] == true)
+        IlyassColumn<Document>(
+          key: 'Note',
+          label: l.colNote,
+          width: 200,
+          cell: (context, d) => Text(
+            d.note ?? '-',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      if (v['Created'] == true)
+        IlyassColumn<Document>(
+          key: 'Created',
+          label: l.colCreated,
+          width: 165,
+          cell: (context, d) => Text(
+            formatDate(d.dateCreated),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      if (v['Updated'] == true)
+        IlyassColumn<Document>(
+          key: 'Updated',
+          label: l.colUpdated,
+          width: 165,
+          cell: (context, d) => Text(
+            formatDate(d.dateUpdated),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
       if (v['Actions'] == true)
-        DataCell(
-          Row(
+        IlyassColumn<Document>(
+          key: 'Actions',
+          label: l.colActions,
+          // Fixed and not resizable: two icons at a known size, packed tight.
+          // Dragging this column would only ever create dead space.
+          width: 96,
+          resizable: false,
+          cell: (context, d) => Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               IconButton(
@@ -1139,7 +1065,13 @@ class _DocumentTable extends ConsumerWidget {
                   color: theme.colorScheme.secondary,
                   size: 20,
                 ),
-                tooltip: AppLocalizations.of(context).actionEdit,
+                tooltip: l.actionEdit,
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints.tightFor(
+                  width: 36,
+                  height: 36,
+                ),
                 onPressed: () =>
                     showDocumentEditor(context, ref, existingDocument: d),
               ),
@@ -1149,10 +1081,14 @@ class _DocumentTable extends ConsumerWidget {
                   color: context.dangerColor,
                   size: 20,
                 ),
-                tooltip: AppLocalizations.of(context).actionDelete,
-                onPressed: () => ref
-                    .read(securityGuardProvider)
-                    .guard(
+                tooltip: l.actionDelete,
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints.tightFor(
+                  width: 36,
+                  height: 36,
+                ),
+                onPressed: () => ref.read(securityGuardProvider).guard(
                       context,
                       SecurityKeys.invoicesDelete,
                       () => _confirmDelete(context, ref, d),
@@ -1234,5 +1170,41 @@ class _DocumentTable extends ConsumerWidget {
           AppLocalizations.of(context).deleteFailed;
       showAppSnackbar(context, ref, msg, isError: true);
     }
+  }
+}
+
+/// TOTAL RESULTS, pinned to the trailing edge beside the search bar.
+class _ResultCount extends StatelessWidget {
+  const _ResultCount({required this.count, required this.label});
+
+  final int count;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.1,
+            color: cs.onSurfaceVariant,
+          ),
+        ),
+        Text(
+          '$count',
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w900,
+            color: cs.primary,
+          ),
+        ),
+      ],
+    );
   }
 }

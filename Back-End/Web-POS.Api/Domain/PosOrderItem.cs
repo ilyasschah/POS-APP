@@ -50,10 +50,10 @@ namespace Api.Domain
         public int? DiscountInputType { get; private set; }
 
         [ForeignKey("PosOrderId")]
-        public virtual PosOrder PosOrder { get; private set; }
+        public virtual PosOrder? PosOrder { get; private set; }
 
         [ForeignKey("ProductId")]
-        public virtual Product Product { get; private set; }
+        public virtual Product? Product { get; private set; }
 
         [ForeignKey("VoidedBy")]
         public virtual User? VoidedByUser { get; private set; }

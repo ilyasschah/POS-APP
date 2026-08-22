@@ -7582,6 +7582,48 @@ abstract class AppLocalizations {
   /// **'Period'**
   String get periodLabel;
 
+  /// No description provided for @docSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search documents, or pick a filter'**
+  String get docSearchHint;
+
+  /// No description provided for @filterSuggestionsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Search for'**
+  String get filterSuggestionsSection;
+
+  /// No description provided for @filterNumberContains.
+  ///
+  /// In en, this message translates to:
+  /// **'Number contains \"{query}\"'**
+  String filterNumberContains(Object query);
+
+  /// No description provided for @filterReferenceContains.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference contains \"{query}\"'**
+  String filterReferenceContains(Object query);
+
+  /// No description provided for @filterCustomerContains.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer contains \"{query}\"'**
+  String filterCustomerContains(Object query);
+
+  /// No description provided for @filterCustomRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom range...'**
+  String get filterCustomRange;
+
+  /// No description provided for @filterKeepTyping.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep typing to narrow this list'**
+  String get filterKeepTyping;
+
   /// No description provided for @documentNumber.
   ///
   /// In en, this message translates to:
@@ -11887,6 +11929,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No payments taken in this session yet.'**
   String get sessionNoPayments;
+
+  /// No description provided for @sessionNoDocuments.
+  ///
+  /// In en, this message translates to:
+  /// **'No documents banked in this session yet.'**
+  String get sessionNoDocuments;
+
+  /// No description provided for @sessionDocumentsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a document to open it'**
+  String get sessionDocumentsHint;
 
   /// No description provided for @sessionOpenDocumentHint.
   ///

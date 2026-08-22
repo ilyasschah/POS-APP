@@ -45,7 +45,7 @@ public class IssueUserTokenQuery : IRequest<LoginResponse>
             if (user == null || !user.IsEnabled)
                 return new LoginResponse { Success = false, Message = "User no longer valid." };
 
-            var subject = user.Email ?? user.Username;
+            var subject = user.Email ?? user.Username!;
             var (token, expiresIn) = _tokenService.CreateJwt(subject, user.Id, user.AccessLevel, user.CompanyId);
 
             return new LoginResponse

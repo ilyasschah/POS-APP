@@ -63,9 +63,12 @@ namespace Api.Services
             var entity = await _repository.GetTaxByIdAsync(req.Id, companyId);
             if (entity == null)
                 throw new InvalidOperationException($"Tax with ID '{req.Id}' not found.");
-            var conflict = await _repository.GetByNameAsync(req.Name, companyId);
-            if (conflict != null && conflict.Id != req.Id)
-                throw new InvalidOperationException($"Another Tax with the name '{req.Name}' already exists.");
+            if (req.Name != null)
+            {
+                var conflict = await _repository.GetByNameAsync(req.Name, companyId);
+                if (conflict != null && conflict.Id != req.Id)
+                    throw new InvalidOperationException($"Another Tax with the name '{req.Name}' already exists.");
+            }
 
             // Same UQ_Tax_Code_PerCompany guard as CreateAsync — an edit that
             // moves a tax onto a code (or onto "no code") another tax already

@@ -287,7 +287,7 @@ namespace Api.Services
                     await _db.SaveChangesAsync(); 
 
                     var groupedPayments = unreportedPayments
-                        .GroupBy(p => new { p.PaymentTypeId, PaymentTypeName = p.PaymentType.Name })
+                        .GroupBy(p => new { p.PaymentTypeId, PaymentTypeName = p.PaymentType!.Name })
                         .Select(g => new
                         {
                             PaymentTypeId = g.Key.PaymentTypeId,

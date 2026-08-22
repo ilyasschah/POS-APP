@@ -41,13 +41,13 @@ namespace Api.Domain
         public void AttachToSession(int? sessionId) => SessionId = sessionId;
 
         [ForeignKey(nameof(DocumentId))]
-        public virtual Document Document { get; private set; }
+        public virtual Document? Document { get; private set; }
 
         [ForeignKey(nameof(PaymentTypeId))]
-        public virtual PaymentType PaymentType { get; private set; }
+        public virtual PaymentType? PaymentType { get; private set; }
 
         [ForeignKey(nameof(UserId))]
-        public virtual User User { get; private set; }
+        public virtual User? User { get; private set; }
 
         [ForeignKey(nameof(ZReportId))]
         public virtual ZReport? ZReport { get; private set; }

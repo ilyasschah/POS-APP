@@ -8,7 +8,7 @@ namespace Api.Queries.ProductGroupsQuery
 {
     public class GetProductGroupByNameQuery : IRequest<bool>
     {
-        public string Name { get; set; }
+        public required string Name { get; set; }
         public int CompanyId { get; set; }
 
         public class GetProductGroupByNameQueryHandler : IRequestHandler<GetProductGroupByNameQuery, bool>

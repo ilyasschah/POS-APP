@@ -11,7 +11,7 @@ namespace Api.Domain
         public int CompanyId { get; private set; }
 
         [MaxLength(100)]
-        public string Name { get; private set; }
+        public string Name { get; private set; } = default!;
 
         public int Level { get; private set; }
 
