@@ -1,4 +1,4 @@
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:pos_app/core/secure_storage.dart';
 
 /// In-memory cache of the active device/user JWT.
 ///
@@ -11,7 +11,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 class AuthTokenCache {
   AuthTokenCache._();
 
-  static const _storage = FlutterSecureStorage();
+  static const _storage = kSecureStorage;
   static const _key = 'jwt_token';
 
   static String? _token;

@@ -124,6 +124,14 @@ flutter_launcher_icons:
   windows:
     generate: true
     image_path: "assets/icon.png"
+  # macOS was missing here, which is why the .app shipped Flutter's default blue
+  # logo while every other platform had the octopus. The generated PNGs live in
+  # macos/Runner/Assets.xcassets/AppIcon.appiconset and ARE committed — Xcode
+  # reads them from the asset catalog at build time, so CI must not have to run
+  # this tool first.
+  macos:
+    generate: true
+    image_path: "assets/icon.png"
 
 flutter:
   uses-material-design: true
