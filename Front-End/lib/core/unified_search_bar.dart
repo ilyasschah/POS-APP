@@ -88,6 +88,7 @@ class UnifiedSearchBar extends StatefulWidget {
     this.onSubmitted,
     this.onClearAll,
     this.menuMaxHeight = 420,
+    this.singleLine = false,
   });
 
   final TextEditingController controller;
@@ -111,6 +112,14 @@ class UnifiedSearchBar extends StatefulWidget {
   final VoidCallback? onClearAll;
 
   final double menuMaxHeight;
+
+  /// Keeps the bar exactly one row tall: chips sit beside the input instead of
+  /// wrapping under it, and each one is capped so the field always keeps room
+  /// to type in.
+  ///
+  /// For hosts with a fixed height — a top bar is 62px and cannot grow — where
+  /// a second row of chips would overflow rather than expand.
+  final bool singleLine;
 
   @override
   State<UnifiedSearchBar> createState() => _UnifiedSearchBarState();
@@ -239,29 +248,17 @@ class _UnifiedSearchBarState extends State<UnifiedSearchBar> {
               width: _isOpen || _focusNode.hasFocus ? 1.5 : 1,
             ),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          padding: EdgeInsets.symmetric(
+            horizontal: 10,
+            vertical: widget.singleLine ? 3 : 6,
+          ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Icon(Icons.search, size: 20, color: cs.onSurfaceVariant),
               const SizedBox(width: 8),
-              // Chips FIRST, then the input — a Wrap so a long filter set moves
-              // to a second line instead of squeezing the field to nothing.
-              Expanded(
-                child: Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    for (final chip in widget.chips)
-                      _Chip(key: ValueKey(chip.id), chip: chip),
-                    SizedBox(
-                      width: widget.chips.isEmpty ? double.infinity : 200,
-                      child: _input(theme),
-                    ),
-                  ],
-                ),
-              ),
+              // Chips FIRST, then the input.
+              Expanded(child: _chipsAndInput(theme)),
               if (hasContent && widget.onClearAll != null)
                 IconButton(
                   icon: const Icon(Icons.close, size: 18),
@@ -291,6 +288,42 @@ class _UnifiedSearchBarState extends State<UnifiedSearchBar> {
     );
   }
 
+  /// Wrapping by default — a long filter set moves to a second line instead of
+  /// squeezing the field to nothing. In [UnifiedSearchBar.singleLine] the bar
+  /// cannot grow, so the chips are capped and share the row instead.
+  Widget _chipsAndInput(ThemeData theme) {
+    if (!widget.singleLine) {
+      return Wrap(
+        spacing: 6,
+        runSpacing: 6,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          for (final chip in widget.chips)
+            _Chip(key: ValueKey(chip.id), chip: chip),
+          SizedBox(
+            width: widget.chips.isEmpty ? double.infinity : 200,
+            child: _input(theme),
+          ),
+        ],
+      );
+    }
+
+    return Row(
+      children: [
+        for (final chip in widget.chips) ...[
+          ConstrainedBox(
+            // Capped, so three filters cannot leave the operator with a
+            // 20px-wide box to type in.
+            constraints: const BoxConstraints(maxWidth: 170),
+            child: _Chip(key: ValueKey(chip.id), chip: chip),
+          ),
+          const SizedBox(width: 6),
+        ],
+        Expanded(child: _input(theme)),
+      ],
+    );
+  }
+
   Widget _input(ThemeData theme) {
     return KeyboardListener(
       focusNode: FocusNode(skipTraversal: true, canRequestFocus: false),
@@ -313,7 +346,9 @@ class _UnifiedSearchBarState extends State<UnifiedSearchBar> {
           border: InputBorder.none,
           enabledBorder: InputBorder.none,
           focusedBorder: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+          contentPadding: EdgeInsets.symmetric(
+            vertical: widget.singleLine ? 6 : 10,
+          ),
           hintText: widget.chips.isEmpty ? widget.hintText : null,
           hintStyle: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),

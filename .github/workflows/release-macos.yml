@@ -1,0 +1,175 @@
+name: Release macOS DMG
+
+# Builds the Flutter macOS app on a GitHub-hosted Mac, packages it into a
+# drag-to-Applications DMG, and attaches that to the same GitHub Release the
+# Windows installer goes to.
+#
+# This workflow exists because a macOS app CANNOT be built on Windows: the build
+# needs Xcode, Apple's SDK and codesign, and Flutter refuses outright on a
+# non-Mac host. Pushing a tag from Windows is how you get a DMG without owning
+# a build Mac — the runner is the Mac.
+#
+# To cut a release (identical to Windows — one tag builds both):
+#   1. bump `version:` in Front-End/pubspec.yaml
+#   2. commit, then tag it:  git tag v1.2.3 && git push origin v1.2.3
+#
+# ⚠️ Release notes and the release body belong to release-windows.yml. This job
+# uploads files and nothing else, so the two workflows racing on the same tag
+# cannot clobber each other's text. (If the Mac job happens to create the
+# Release first, the auto-generated commit notes are lost — the body itself
+# still arrives from the Windows job. Cosmetic, and the price of keeping a
+# flaky Mac build from ever blocking a Windows installer.)
+#
+# ⚠️ macOS runner minutes bill at 10× on private repos. That is why this job
+# does not repeat `flutter analyze` / `flutter test` — they are
+# platform-independent and release-windows.yml already ran them on this commit.
+
+on:
+  push:
+    tags: ["v*"]
+  # Running this manually builds and packages but never publishes — the publish
+  # step is gated on a tag. The DMG still comes out as a downloadable build
+  # artifact, which is how you test a Mac build without cutting a release.
+  workflow_dispatch:
+
+permissions:
+  contents: write # required to create the Release and upload the asset
+
+jobs:
+  build:
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: Front-End
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          # Same pin as the Windows workflow. Both platforms must ship from one
+          # Flutter version or the two installers are not the same build.
+          flutter-version: "3.44.6"
+          channel: stable
+          cache: true
+
+      # ── Version: pubspec is the ONLY source ───────────────────────────────
+      - name: Resolve version from pubspec
+        id: version
+        run: |
+          set -euo pipefail
+          full=$(grep -E '^version:' pubspec.yaml | head -1 | cut -d: -f2 | tr -d ' \r')
+          numeric=${full%%+*}   # 1.2.3+4 -> 1.2.3
+          if [[ ! $numeric =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "pubspec version '$full' is not major.minor.patch." >&2
+            exit 1
+          fi
+          echo "full=$full"       >> "$GITHUB_OUTPUT"
+          echo "numeric=$numeric" >> "$GITHUB_OUTPUT"
+          echo "pubspec version: $full (numeric $numeric)"
+
+      - name: Tag must match pubspec
+        # Same guard as Windows: a tag that disagrees with the shipped build
+        # would put a DMG on a Release that claims a version it does not carry.
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME#v}"
+          pubspec="${{ steps.version.outputs.numeric }}"
+          if [ "$tag" != "$pubspec" ]; then
+            echo "Tag v$tag does not match pubspec version $pubspec. Bump pubspec.yaml, commit, then re-tag." >&2
+            exit 1
+          fi
+
+      # ── Build ─────────────────────────────────────────────────────────────
+      - run: flutter pub get
+
+      - run: flutter build macos --release
+
+      - name: Locate app bundle
+        id: app
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          apps=(build/macos/Build/Products/Release/*.app)
+          if [ ${#apps[@]} -eq 0 ]; then
+            echo "flutter build macos produced no .app bundle." >&2
+            exit 1
+          fi
+          app="${apps[0]}"
+          echo "path=$app" >> "$GITHUB_OUTPUT"
+          echo "Built: $app"
+          # Which CPUs the binary actually covers. Flutter's release config asks
+          # for a universal (arm64 + x86_64) build, but a plugin or a prebuilt
+          # native asset that ships only one slice quietly narrows it. This is
+          # the line to read when an Intel Mac says the app cannot be opened.
+          lipo -archs "$app/Contents/MacOS/"* || true
+
+      - name: Verify code signature
+        # The build signs ad-hoc (CODE_SIGN_IDENTITY = "-"), which is enough to
+        # run locally but is not a Developer ID. A signature broken here is what
+        # makes macOS report "the application is damaged" after download, so it
+        # is worth seeing in the log — but it does not block the release.
+        continue-on-error: true
+        run: codesign --verify --deep --strict --verbose=2 "${{ steps.app.outputs.path }}"
+
+      # ── Package ───────────────────────────────────────────────────────────
+      - name: Build DMG
+        run: |
+          set -euo pipefail
+          ver="${{ steps.version.outputs.numeric }}"
+          app="${{ steps.app.outputs.path }}"
+          stage=$(mktemp -d)
+
+          # ditto, not cp -R: it preserves the bundle's symlinks, extended
+          # attributes and the code signature. A signature mangled by the copy
+          # fails on the user's machine, not here.
+          ditto "$app" "$stage/$(basename "$app")"
+
+          # This symlink is the entire install UX — the DMG window opens and you
+          # drag the app onto Applications. It is the macOS counterpart of
+          # octopus_setup.iss, which is Windows-only and has no macOS meaning.
+          ln -s /Applications "$stage/Applications"
+
+          # Output/ is git-ignored — installers belong on a Release, not in the
+          # repo. Same directory the Windows installer uses.
+          mkdir -p Output
+          hdiutil create \
+            -volname "Octopus POS $ver" \
+            -srcfolder "$stage" \
+            -ov -format UDZO \
+            "Output/Octopus_POS_v$ver.dmg"
+
+      - name: Checksum
+        id: hash
+        run: |
+          set -euo pipefail
+          dmg="Output/Octopus_POS_v${{ steps.version.outputs.numeric }}.dmg"
+          [ -f "$dmg" ] || { echo "DMG not found at $dmg" >&2; exit 1; }
+          sha=$(shasum -a 256 "$dmg" | cut -d' ' -f1)
+          echo "$sha  $(basename "$dmg")" > "$dmg.sha256"
+          echo "sha256=$sha" >> "$GITHUB_OUTPUT"
+          echo "SHA-256: $sha"
+
+      - name: Upload build artifact
+        # Always kept, so a manual dry run still produces something installable.
+        uses: actions/upload-artifact@v4
+        with:
+          name: Octopus_POS_macOS_v${{ steps.version.outputs.numeric }}
+          path: |
+            Front-End/Output/*.dmg
+            Front-End/Output/*.sha256
+          retention-days: 14
+
+      # ── Publish ───────────────────────────────────────────────────────────
+      - name: Publish to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          # No `body` and no `generate_release_notes` on purpose — see the note
+          # at the top of this file. Passing either would overwrite the text the
+          # Windows job wrote for the same tag.
+          name: Octopus POS ${{ steps.version.outputs.numeric }}
+          files: |
+            Front-End/Output/*.dmg
+            Front-End/Output/*.sha256

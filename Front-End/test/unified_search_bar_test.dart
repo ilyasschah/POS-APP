@@ -53,12 +53,14 @@ void main() {
     WidgetTester tester, {
     List<SearchBarChip> chips = const [],
     VoidCallback? onClearAll,
+    bool singleLine = false,
   }) =>
       tester.pumpWidget(MaterialApp(
         home: Scaffold(
           body: Padding(
             padding: const EdgeInsets.all(24),
             child: UnifiedSearchBar(
+              singleLine: singleLine,
               controller: controller,
               chips: chips,
               sectionsBuilder: sections,
@@ -190,5 +192,49 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('STATUS'), findsNothing);
+  });
+
+  group('single-line mode', () {
+    // A PosTopBar is a fixed 62px: a bar that grows a second row of chips
+    // overflows it rather than expanding, so the chips have to share the row.
+    testWidgets('the bar does not grow when chips are added', (tester) async {
+      await pumpBar(tester, singleLine: true);
+      final empty = tester.getSize(find.byType(UnifiedSearchBar)).height;
+
+      await pumpBar(
+        tester,
+        singleLine: true,
+        chips: [chip('customer', 'A Very Long Customer Name Indeed'),
+                chip('user', 'Another Long Cashier Name')],
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.getSize(find.byType(UnifiedSearchBar)).height, empty);
+      expect(empty, lessThan(62),
+          reason: 'it has to clear the top bar it lives in');
+    });
+
+    testWidgets('chips stay on the same row as the input', (tester) async {
+      await pumpBar(
+        tester,
+        singleLine: true,
+        chips: [chip('customer', 'Cafe Atlas')],
+      );
+
+      final chipY = tester.getCenter(find.text('Cafe Atlas')).dy;
+      final fieldY = tester.getCenter(find.byType(TextField)).dy;
+      expect((chipY - fieldY).abs(), lessThan(8));
+    });
+
+    testWidgets('the input keeps room to type in', (tester) async {
+      await pumpBar(
+        tester,
+        singleLine: true,
+        chips: [chip('a', 'A Very Long Customer Name That Runs On'),
+                chip('b', 'Another Extremely Long Cashier Name')],
+      );
+
+      expect(tester.getSize(find.byType(TextField)).width, greaterThan(60));
+    });
   });
 }
