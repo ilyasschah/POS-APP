@@ -81,6 +81,26 @@ jobs:
             exit 1
           fi
 
+      # ── CocoaPods build dependencies ──────────────────────────────────────
+      - name: Install autotools for the libserialport pod
+        # flutter_libserialport vendors the `libserialport` pod, which is not a
+        # prebuilt framework — its podspec runs ./autogen.sh && ./configure as a
+        # CocoaPods `prepare_command`, so `pod install` needs automake and
+        # glibtoolize on PATH. GitHub's macOS runner ships neither, and the
+        # failure surfaces as the pod's own message: "Please run `brew install
+        # automake libtool`". This step is that instruction.
+        #
+        # Note the irony: the weighing scale is Windows-only
+        # (`kScaleSupported = Platform.isWindows`), so nothing on macOS ever
+        # calls into this C library — but Flutter has no way to exclude a
+        # dependency from one platform, so it still has to compile.
+        env:
+          # Keep Homebrew from spending a minute updating its formula index
+          # before installing two packages that have been stable for years.
+          HOMEBREW_NO_AUTO_UPDATE: 1
+          HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: 1
+        run: brew install automake libtool
+
       # ── Build ─────────────────────────────────────────────────────────────
       - run: flutter pub get
 
