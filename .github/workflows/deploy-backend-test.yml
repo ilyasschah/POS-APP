@@ -40,9 +40,48 @@ jobs:
         # gracefully unloads the app, releasing the lock on Web-POS.Api.dll. This needs
         # only filesystem write access to the site folder - no IIS management API
         # rights, so it works from a low-privilege runner service account.
+        #
+        # This step used to write the file and `Start-Sleep -Seconds 5`, which is a
+        # race, not a wait: how long the worker takes to drain in-flight requests and
+        # release the DLL is not a constant, and when it ran long the next step died
+        # with "ERROR 32 ... Copying File Web-POS.Api.dll" - a sharing violation
+        # against a lock that had simply not been dropped yet. Note that an idle site
+        # is NOT an unlocked one: IIS keeps the worker process (and the loaded
+        # assemblies) alive until the app pool's idle timeout, whether or not anyone
+        # has the site open.
+        #
+        # So test the actual condition the copy needs instead of guessing at it:
+        # open the DLL with FileShare.None, which succeeds only when no other process
+        # holds it.
         run: |
-          Set-Content -Path "C:\inetpub\wwwroot\pos-api\app_offline.htm" -Value "Deploying..." -Encoding utf8
-          Start-Sleep -Seconds 5
+          $site = "C:\inetpub\wwwroot\pos-api"
+          Set-Content -Path "$site\app_offline.htm" -Value "Deploying..." -Encoding utf8
+
+          $dll = Join-Path $site "Web-POS.Api.dll"
+          $deadline = (Get-Date).AddSeconds(90)
+          $freed = $false
+
+          while ((Get-Date) -lt $deadline) {
+            # Absent on a first-ever deploy - nothing to wait for.
+            if (-not (Test-Path $dll)) { $freed = $true; break }
+            try {
+              $fs = [System.IO.File]::Open(
+                $dll,
+                [System.IO.FileMode]::Open,
+                [System.IO.FileAccess]::ReadWrite,
+                [System.IO.FileShare]::None)
+              $fs.Close()
+              $freed = $true
+              break
+            } catch {
+              Start-Sleep -Seconds 2
+            }
+          }
+
+          if (-not $freed) {
+            throw "Web-POS.Api.dll was still locked 90s after app_offline.htm was written. Something is holding it that ANCM does not control: check for a stray 'dotnet Web-POS.Api.dll' process, an antivirus scan of the site folder, or an app pool set to AlwaysRunning/preload."
+          }
+          Write-Host "Site unloaded; Web-POS.Api.dll is free."
 
       - name: Replace site files
         shell: powershell
@@ -50,7 +89,9 @@ jobs:
           # lease_signing_key.pem is a server-only secret (gitignored, never in the
           # publish output) - excluded here so /MIR doesn't delete it. app_offline.htm
           # is excluded so it survives until the "bring back online" step removes it.
-          robocopy "$env:PUBLISH_DIR" "C:\inetpub\wwwroot\pos-api" /MIR /XD logs /XF app_offline.htm lease_signing_key.pem /NFL /NDL /NJH /NJS
+          # /R and /W are explicit because robocopy's defaults are /R:1000000 /W:30 -
+          # a lock it cannot get would retry for weeks rather than fail the job.
+          robocopy "$env:PUBLISH_DIR" "C:\inetpub\wwwroot\pos-api" /MIR /XD logs /XF app_offline.htm lease_signing_key.pem /R:5 /W:3 /NFL /NDL /NJH /NJS
           $rc = $LASTEXITCODE
           if ($rc -ge 8) { throw "robocopy failed with exit code $rc" }
           # Robocopy's own "success" codes (0-7) are non-zero (e.g. 1 = files copied),
