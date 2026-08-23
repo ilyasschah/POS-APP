@@ -1136,6 +1136,28 @@ class CartNotifier extends Notifier<CartState> {
     state = state.copyWith(items: items);
   }
 
+  /// Sets one line's unit price — the cart keypad's **Prix** mode.
+  ///
+  /// 🚨 The CALLER decides whether this is allowed: only a product with
+  /// `isPriceChangeAllowed` may be repriced, and that flag rides on the cart
+  /// item itself. Enforcing it here as well would be the wrong place — a
+  /// promotion or a price-list change also writes this field and is not the
+  /// cashier overriding a price.
+  ///
+  /// Promotions are re-applied because a repriced line can cross a threshold
+  /// ("10% off over 100") that the old price did not.
+  void updateItemPrice(String cartItemId, double newPrice) {
+    if (newPrice < 0) return;
+
+    final items = List<CartItem>.from(state.items);
+    final index = items.indexWhere((i) => i.cartItemId == cartItemId);
+    if (index < 0) return;
+
+    items[index].price = newPrice;
+    _applyPromotions(items);
+    state = state.copyWith(items: items);
+  }
+
   void updateItemTaxes(String cartItemId, List<MenuTax> newTaxes) {
     final items = List<CartItem>.from(state.items);
     final index = items.indexWhere((i) => i.cartItemId == cartItemId);

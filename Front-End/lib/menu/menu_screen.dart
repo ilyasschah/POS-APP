@@ -27,7 +27,7 @@ import 'package:pos_app/stock/warehouse_model.dart';
 import 'package:pos_app/stock/warehouse_picker_dialog.dart';
 import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/menu/discount_dialog.dart';
-import 'package:pos_app/menu/quantity_keypad_dialog.dart';
+import 'package:pos_app/menu/cart_keypad.dart';
 import 'package:pos_app/product/product_group_model.dart';
 import 'package:pos_app/product/product_group_provider.dart';
 import 'package:pos_app/cart/checkout_models.dart';
@@ -380,8 +380,6 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
         settings[SettingKeys.showAdditionBtn]?.toLowerCase() != 'false';
     final showTaxBtn =
         settings[SettingKeys.showTaxBtn]?.toLowerCase() != 'false';
-    final showQuantityBtn =
-        settings[SettingKeys.showQuantityBtn]?.toLowerCase() != 'false';
     final showCommentBtn =
         settings[SettingKeys.showCommentBtn]?.toLowerCase() != 'false';
     // A sync can swap an offline-created table's temp id out from under an open
@@ -782,76 +780,6 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                               builder: (_) => const DiscountDialog(),
                             ),
                           ),
-                    ),
-                  if (showQuantityBtn)
-                    _MenuHeaderActionBtn(
-                      icon: Icons.dialpad,
-                      label: AppLocalizations.of(context).fieldQuantity,
-                      // Greyed out until a cart line is selected — same gating
-                      // the Tax button uses.
-                      onTap: cartState.selectedCartItemId == null
-                          ? null
-                          : () async {
-                              final cart = ref.read(cartProvider);
-                              final item = cart.items
-                                  .where(
-                                    (i) =>
-                                        i.cartItemId == cart.selectedCartItemId,
-                                  )
-                                  .firstOrNull;
-                              if (item == null) {
-                                showAppSnackbar(
-                                  context,
-                                  ref,
-                                  AppLocalizations.of(context).selectedItemNotFound,
-                                  isError: true,
-                                );
-                                return;
-                              }
-                              // Odoo's "the Price button updates the quantity"
-                              // note maps onto THIS button: it is the affordance
-                              // that changes a weighed line's amount. A weighed
-                              // line goes back through the scale dialog so the
-                              // cashier can simply re-weigh; everything else
-                              // keeps the plain keypad.
-                              final unit = uomById(item.uomId);
-                              final double? newQty;
-                              if (item.isToWeigh) {
-                                newQty = await showWeighItemDialog(
-                                  context,
-                                  ref,
-                                  itemName: item.productName,
-                                  uomId: item.uomId,
-                                  unitPrice: item.price,
-                                  currencySymbol: ref.read(currencySymbolProvider),
-                                );
-                              } else {
-                                newQty = await showQuantityKeypad(
-                                  context,
-                                  itemName: item.productName,
-                                  initialQuantity: item.quantity,
-                                  unit: unit.code,
-                                );
-                              }
-                              if (newQty == null || !context.mounted) return;
-                              if (newQty < 0) {
-                                showAppSnackbar(
-                                  context,
-                                  ref,
-                                  AppLocalizations.of(context).quantityCannotBeNegative,
-                                  isError: true,
-                                );
-                                return;
-                              }
-                              // Taken exactly as typed. Snapping to the unit's
-                              // rounding here turned a deliberate 0.5 on a pcs
-                              // line into 1 — the app silently overruling the
-                              // cashier. Float noise is dealt with at the
-                              // storage boundary instead.
-                              ref
-                                  .read(cartProvider.notifier)
-                                  .updateItemQuantity(item.cartItemId, newQty);
-                            },
                     ),
                   if (showTaxBtn)
                     _MenuHeaderActionBtn(
@@ -2540,6 +2468,153 @@ class CartSection extends ConsumerStatefulWidget {
 }
 
 class _CartSectionState extends ConsumerState<CartSection> {
+  // ── keypad state ──────────────────────────────────────────────────────────
+  /// What the cashier has typed since the last selection change. Empty means
+  /// "nothing typed" — which is what makes the backspace key fall through to
+  /// removing the line.
+  String _keypadEntry = '';
+
+  CartKeypadMode _keypadMode = CartKeypadMode.quantity;
+
+  /// The line every keypad key acts on.
+  CartItem? _selectedItem(CartState cart) => cart.items
+      .where((i) => i.cartItemId == cart.selectedCartItemId)
+      .firstOrNull;
+
+  void _selectLine(String cartItemId) {
+    // A fresh selection starts a fresh number: carrying "25" from the last line
+    // over to this one would reprice or re-quantify it on the next digit.
+    setState(() {
+      _keypadEntry = '';
+      _keypadMode = CartKeypadMode.quantity;
+    });
+    ref.read(cartProvider.notifier).setSelectedProduct(cartItemId);
+  }
+
+  void _setKeypadMode(CartKeypadMode mode) {
+    setState(() {
+      _keypadMode = mode;
+      _keypadEntry = '';
+    });
+  }
+
+  /// Appends a digit (or the decimal separator) and applies it live, the way a
+  /// POS keypad is expected to behave — the line reads back what was typed.
+  void _onKeypadDigit(String key) {
+    final item = _selectedItem(ref.read(cartProvider));
+    if (item == null) return;
+
+    final isSeparator = key != '0' &&
+        int.tryParse(key) == null; // ',' or '.'
+    if (isSeparator && _keypadEntry.contains(RegExp(r'[.,]'))) return;
+
+    setState(() => _keypadEntry += key);
+    _applyKeypadEntry(item);
+  }
+
+  /// 🚨 Toggles the sign of what is being typed, and refuses to apply it.
+  ///
+  /// A negative quantity is not a thing this cart can hold — `updateItemQuantity`
+  /// treats anything <= 0 as "remove the line", and stock, promotions and
+  /// checkout all assume positive lines. Refunds have their own flow. So the
+  /// key exists (a cashier reaching for it gets an answer) and says why.
+  void _onKeypadSign() {
+    setState(() {
+      _keypadEntry = _keypadEntry.startsWith('-')
+          ? _keypadEntry.substring(1)
+          : '-$_keypadEntry';
+    });
+    if (_keypadEntry.startsWith('-')) {
+      showAppSnackbar(
+        context,
+        ref,
+        AppLocalizations.of(context).quantityCannotBeNegative,
+        isError: true,
+      );
+    }
+  }
+
+  /// Erases the last character; with nothing typed, removes the line.
+  void _onKeypadBackspace() {
+    final cart = ref.read(cartProvider);
+    final item = _selectedItem(cart);
+    if (item == null) return;
+
+    if (_keypadEntry.isNotEmpty) {
+      setState(() =>
+          _keypadEntry = _keypadEntry.substring(0, _keypadEntry.length - 1));
+      _applyKeypadEntry(item);
+      return;
+    }
+
+    // 🚨 Same gate the old per-row X carried: trimming a fresh cart is ordinary
+    // cashier work, but removing a line from an order that has already been
+    // saved is a void and needs authorisation.
+    void remove() {
+      ref.read(cartProvider.notifier).removeItem(item.cartItemId);
+      setState(() => _keypadEntry = '');
+    }
+
+    if (cart.activePosOrderId == null) {
+      remove();
+    } else {
+      ref
+          .read(securityGuardProvider)
+          .guard(context, SecurityKeys.orderItemVoid, remove);
+    }
+  }
+
+  /// Read from the CATALOGUE, not the cart line.
+  ///
+  /// The line does not carry the flag, and adding it would mean a Drift column
+  /// and a migration for something that is not line data. Reading it live is
+  /// the better answer anyway: a manager who turns "allow price change" off
+  /// should see that take effect when a parked order is reopened, not be
+  /// overruled by a copy taken at add time.
+  bool _priceChangeAllowed(CartItem item) {
+    final products = ref.read(allProductsListProvider).value ?? const [];
+    return products
+            .where((p) => p.id == item.productId)
+            .firstOrNull
+            ?.isPriceChangeAllowed ??
+        false;
+  }
+
+  /// Attaches a customer to this order — the same picker the header button
+  /// opens, reachable from the cart where the cashier is already looking.
+  Future<void> _pickCartCustomer(BuildContext context) async {
+    final all = ref.read(selectableCustomersProvider).value ?? const [];
+    final selected = await showCustomerPickerDialog(
+      context,
+      all.where((c) => c.isCustomer).toList(),
+      selectedId: ref.read(cartProvider).selectedCustomer?.id,
+    );
+    if (selected == null || !context.mounted) return;
+
+    ref.read(currentCustomerProvider.notifier).setCustomer(selected);
+    final companyId = ref.read(selectedCompanyProvider)?.id;
+    if (companyId != null) {
+      ref.read(cartProvider.notifier).setCustomer(companyId, selected);
+    }
+  }
+
+  void _applyKeypadEntry(CartItem item) {
+    final value = double.tryParse(_keypadEntry.replaceAll(',', '.'));
+    if (value == null || value < 0) return;
+
+    final notifier = ref.read(cartProvider.notifier);
+    switch (_keypadMode) {
+      case CartKeypadMode.quantity:
+        // 0 is a state the cashier passes THROUGH while typing "0.5"; applying
+        // it would delete the line mid-keystroke.
+        if (value > 0) notifier.updateItemQuantity(item.cartItemId, value);
+      case CartKeypadMode.price:
+        if (_priceChangeAllowed(item)) {
+          notifier.updateItemPrice(item.cartItemId, value);
+        }
+    }
+  }
+
   Future<void> _handleSave(BuildContext context, WidgetRef ref) async {
     final company = ref.read(selectedCompanyProvider);
     if (company == null) return;
@@ -2873,18 +2948,17 @@ class _CartSectionState extends ConsumerState<CartSection> {
     final cartItems = cartState.items;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final subtotal = cartNotifier.subtotal;
+    // What the keypad and the Client button act on.
+    final selectedItem = _selectedItem(cartState);
+    final selectedCustomer = cartState.selectedCustomer;
+
     final discountTotal = cartNotifier.discountTotal;
-    final taxTotal = cartNotifier.taxTotal;
     final grandTotal = cartNotifier.grandTotal;
     final sym = ref.watch(currencySymbolProvider);
     final settings = ref.watch(appSettingsProvider);
     final taxIncluded =
         settings[SettingKeys.displayAndPrintTaxIncluded]?.toLowerCase() !=
         'false';
-    // Gross subtotal (after item discounts, including tax) used when taxIncluded=true.
-    // Math: grossSubtotal - customerDiscount - cartDiscount = grandTotal ✓
-    final grossSubtotal = subtotal - discountTotal + taxTotal;
     final dualEnabled =
         settings[SettingKeys.dualCurrencyEnabled]?.toLowerCase() == 'true';
     final dualSym = settings[SettingKeys.dualCurrencySymbol] ?? '€';
@@ -2994,55 +3068,97 @@ class _CartSectionState extends ConsumerState<CartSection> {
               ],
             ),
           ),
+        // ── Cart header strip: order number, refresh, save ─────────────────
+        // Sized from the width it actually has: SAVE keeps its label while
+        // there is room and drops to the icon alone when the cart column is
+        // narrow, so the order number is never the thing that gets ellipsized.
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           color: Theme.of(context).colorScheme.surfaceContainerHighest,
           width: double.infinity,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Flexible(
-                child: Text(
-                  contextLabel,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              const refreshWidth = 44.0;
+              const saveWithLabel = 104.0;
+              const saveIconOnly = 48.0;
+              const labelMin = 120.0;
 
-              IconButton(
-                icon: const Icon(Icons.refresh, size: 20),
-                tooltip: AppLocalizations.of(context).refreshOrderNumber,
-                onPressed: () async {
-                  final companyId = ref.read(selectedCompanyProvider)?.id;
-                  if (companyId == null) return;
-                  ref.invalidate(openOrdersProvider);
-                  await Future.delayed(const Duration(milliseconds: 300));
-                  await ref
-                      .read(cartProvider.notifier)
-                      .syncOrderNumber(companyId);
-                },
-              ),
+              final showSaveLabel = constraints.maxWidth >=
+                  labelMin + refreshWidth + saveWithLabel;
+              final canSave = cartItems.isNotEmpty;
 
-              ElevatedButton.icon(
-                onPressed: cartItems.isEmpty
-                    ? null
-                    : () => _handleSave(context, ref),
-                icon: const Icon(Icons.save, size: 18, color: Colors.white),
-                label: Text(
-                  AppLocalizations.of(context).saveUpper,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
+              return Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      contextLabel,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                ),
-              ),
-            ],
+                  IconButton(
+                    icon: const Icon(Icons.refresh, size: 20),
+                    tooltip: AppLocalizations.of(context).refreshOrderNumber,
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () async {
+                      final companyId = ref.read(selectedCompanyProvider)?.id;
+                      if (companyId == null) return;
+                      ref.invalidate(openOrdersProvider);
+                      await Future.delayed(const Duration(milliseconds: 300));
+                      await ref
+                          .read(cartProvider.notifier)
+                          .syncOrderNumber(companyId);
+                    },
+                  ),
+                  SizedBox(
+                    width: showSaveLabel ? saveWithLabel : saveIconOnly,
+                    height: 38,
+                    child: showSaveLabel
+                        ? ElevatedButton.icon(
+                            onPressed: canSave
+                                ? () => _handleSave(context, ref)
+                                : null,
+                            icon: const Icon(Icons.save, size: 18),
+                            label: Text(
+                              AppLocalizations.of(context).saveUpper,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                              ),
+                              backgroundColor:
+                                  Theme.of(context).colorScheme.primary,
+                              foregroundColor: Colors.white,
+                            ),
+                          )
+                        : ElevatedButton(
+                            onPressed: canSave
+                                ? () => _handleSave(context, ref)
+                                : null,
+                            style: ElevatedButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              backgroundColor:
+                                  Theme.of(context).colorScheme.primary,
+                              foregroundColor: Colors.white,
+                            ),
+                            child: Tooltip(
+                              message: AppLocalizations.of(context).saveUpper,
+                              child: const Icon(Icons.save, size: 18),
+                            ),
+                          ),
+                  ),
+                ],
+              );
+            },
           ),
         ),
 
@@ -3066,22 +3182,6 @@ class _CartSectionState extends ConsumerState<CartSection> {
                     final cs = Theme.of(context).colorScheme;
                     final hasDiscount =
                         item.discount > 0 || item.promotionalDiscount > 0;
-
-                    // Compact +/- stepper button — shrunk from the default 48px
-                    // IconButton tap target so the controls row fits even a
-                    // narrow cart panel without overflowing.
-                    Widget stepBtn(IconData icon, VoidCallback onTap) =>
-                        IconButton(
-                          icon: Icon(icon, color: cs.onSurfaceVariant),
-                          iconSize: 22,
-                          visualDensity: VisualDensity.compact,
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(
-                            minWidth: 34,
-                            minHeight: 34,
-                          ),
-                          onPressed: onTap,
-                        );
 
                     // Small status pill (TAX / discount).
                     Widget badge(IconData icon, String label, Color color) =>
@@ -3112,9 +3212,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
                         );
 
                     return InkWell(
-                      onTap: () => ref
-                          .read(cartProvider.notifier)
-                          .setSelectedProduct(item.cartItemId),
+                      onTap: () => _selectLine(item.cartItemId),
                       child: Container(
                         color: isSelected
                             ? (isDark
@@ -3125,53 +3223,18 @@ class _CartSectionState extends ConsumerState<CartSection> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // ── Name + remove ──────────────────────────────
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    item.productName,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                IconButton(
-                                  icon: Icon(
-                                    Icons.close,
-                                    color: context.dangerColor,
-                                    size: 20,
-                                  ),
-                                  visualDensity: VisualDensity.compact,
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(
-                                    minWidth: 34,
-                                    minHeight: 34,
-                                  ),
-                                  onPressed: () {
-                                    void remove() => ref
-                                        .read(cartProvider.notifier)
-                                        .removeItem(item.cartItemId);
-                                    // Removing a line from an already-saved
-                                    // order is a gated "void item" action;
-                                    // trimming a fresh unsaved cart is normal
-                                    // cashier work and is not gated.
-                                    if (cartState.activePosOrderId == null) {
-                                      remove();
-                                    } else {
-                                      ref
-                                          .read(securityGuardProvider)
-                                          .guard(
-                                            context,
-                                            SecurityKeys.orderItemVoid,
-                                            remove,
-                                          );
-                                    }
-                                  },
-                                ),
-                              ],
+                            // ── Name ───────────────────────────────────────
+                            // No X and no stepper: a line is selected by
+                            // tapping it and edited on the keypad below. Three
+                            // small targets per row were the thing a cashier
+                            // hit by accident on a busy screen.
+                            Text(
+                              item.productName,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             // ── Badges (wrap so they never overflow) ───────
                             if (item.appliedTaxes.isNotEmpty || hasDiscount)
@@ -3205,86 +3268,28 @@ class _CartSectionState extends ConsumerState<CartSection> {
                                   ],
                                 ),
                               ),
-                            // ── Quantity stepper + price ───────────────────
+                            // ── Quantity + line total ──────────────────────
+                            // Read-only: the keypad below is the only way to
+                            // change a quantity now.
                             Row(
                               children: [
-                                stepBtn(
-                                  Icons.remove_circle_outline,
-                                  () => ref
-                                      .read(cartProvider.notifier)
-                                      .decrementItem(item.cartItemId),
-                                ),
-                                InkWell(
-                                  onTap: () {
-                                    final controller = TextEditingController(
-                                      // Seeded at full precision: whatever sits
-                                      // here is what gets parsed back on Set,
-                                      // so a rounded seed rewrites the line.
-                                      text: formatQuantityValue(
-                                          item.quantity, item.uomId),
-                                    );
-                                    showDialog(
-                                      context: context,
-                                      builder: (ctx) => AlertDialog(
-                                        title: Text(AppLocalizations.of(context).enterQuantity),
-                                        content: TextField(
-                                          controller: controller,
-                                          keyboardType:
-                                              const TextInputType.numberWithOptions(
-                                                decimal: true,
-                                              ),
-                                          autofocus: true,
-                                          decoration: InputDecoration(
-                                            labelText: AppLocalizations.of(context).fieldQuantity,
-                                            suffixText: item.measurementUnit ??
-                                                uomById(item.uomId).code,
-                                          ),
-                                        ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () => Navigator.pop(ctx),
-                                            child: Text(AppLocalizations.of(context).actionCancel),
-                                          ),
-                                          ElevatedButton(
-                                            onPressed: () {
-                                              final newQty = double.tryParse(
-                                                controller.text,
-                                              );
-                                              if (newQty != null &&
-                                                  newQty >= 0) {
-                                                ref
-                                                    .read(cartProvider.notifier)
-                                                    .updateItemQuantity(
-                                                      item.cartItemId,
-                                                      newQty,
-                                                    );
-                                              }
-                                              Navigator.pop(ctx);
-                                            },
-                                            child: Text(AppLocalizations.of(context).actionSet),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  },
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 4,
-                                    ),
-                                    child: Text(
-                                      _formatCartQty(item),
-                                      style: const TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: cs.primary.withValues(alpha: 0.10),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    _formatCartQty(item),
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                      color: cs.primary,
                                     ),
                                   ),
-                                ),
-                                stepBtn(
-                                  Icons.add_circle_outline,
-                                  () => ref
-                                      .read(cartProvider.notifier)
-                                      .incrementItem(item.cartItemId),
                                 ),
                                 const Spacer(),
                                 // Price (strikethrough original + net).
@@ -3343,21 +3348,10 @@ class _CartSectionState extends ConsumerState<CartSection> {
           ),
           child: Column(
             children: [
-              _totalsRow(
-                Text(
-                  taxIncluded
-                      ? AppLocalizations.of(context).subtotalInclTax
-                      : AppLocalizations.of(context).subtotal,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 16),
-                ),
-                value: Text(
-                  "${(taxIncluded ? grossSubtotal : subtotal).toStringAsFixed(2)} $sym",
-                  textAlign: TextAlign.right,
-                  style: const TextStyle(fontSize: 16),
-                ),
-              ),
+              // Subtotal and Tax rows removed on purpose: the cart states one
+              // number. Any discount that IS applied still gets its own line
+              // below, because a price the cashier cannot explain to the
+              // customer is worse than a longer footer.
               if (discountTotal > 0 && !taxIncluded)
                 Padding(
                   padding: const EdgeInsets.only(top: 6),
@@ -3453,43 +3447,13 @@ class _CartSectionState extends ConsumerState<CartSection> {
                     ),
                   ),
                 ),
-              const SizedBox(height: 6),
-              _totalsRow(
-                Text(
-                  taxIncluded
-                      ? AppLocalizations.of(context).taxInclLabel
-                      : AppLocalizations.of(context).taxesLabel,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: taxIncluded
-                        ? Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.45)
-                        : null,
-                  ),
-                ),
-                value: Text(
-                  "${taxTotal.toStringAsFixed(2)} $sym",
-                  textAlign: TextAlign.right,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: taxIncluded
-                        ? Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.45)
-                        : null,
-                  ),
-                ),
-              ),
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 8),
                 child: Divider(height: 1, thickness: 1),
               ),
               _totalsRow(
                 Text(
-                  AppLocalizations.of(context).totalDue,
+                  AppLocalizations.of(context).totalLabel,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -3533,50 +3497,70 @@ class _CartSectionState extends ConsumerState<CartSection> {
               // Flat, touch-sized split: VOID (danger) + PAY (success), via the
               // theme-aware StatusColors tokens; everything else matches the app's
               // flat style — no shadow, consistent rounding + height.
+              // ── Client + actions ────────────────────────────────────────
               Row(
                 children: [
                   Expanded(
-                    flex: 2,
-                    child: _CartFooterButton(
-                      icon: Icons.block,
-                      label: AppLocalizations.of(context).posVoid,
-                      color: context.dangerColor,
-                      onTap: cartState.activePosOrderId == null
-                          ? null
-                          : () => ref
-                                .read(securityGuardProvider)
-                                .guard(
-                                  context,
-                                  SecurityKeys.orderVoid,
-                                  () => _handleVoidOrder(
-                                    context,
-                                    ref,
-                                    cartState,
-                                    cartItems,
-                                  ),
-                                ),
+                    child: _CartToolButton(
+                      icon: selectedCustomer != null
+                          ? Icons.person
+                          : Icons.person_outline,
+                      label: selectedCustomer?.name ??
+                          AppLocalizations.of(context).customerLabel,
+                      active: selectedCustomer != null,
+                      onTap: () => _pickCartCustomer(context),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    flex: 3,
-                    child: _CartFooterButton(
-                      icon: Icons.payments,
-                      label: AppLocalizations.of(context).posPay,
-                      color: context.successColor,
-                      onTap: cartItems.isEmpty
-                          ? null
-                          : () {
-                              showDialog(
-                                context: context,
-                                barrierDismissible: false,
-                                builder: (context) =>
-                                    const PaymentCheckoutDialog(),
-                              );
-                            },
-                    ),
+                  const SizedBox(width: 8),
+                  // ⋮ — everything that is not an everyday key. VOID lives here
+                  // now: it ends an order, and a destructive action does not
+                  // belong beside PAY where a thumb lands on it by accident.
+                  _CartActionsMenu(
+                    onVoid: cartState.activePosOrderId == null
+                        ? null
+                        : () => ref.read(securityGuardProvider).guard(
+                              context,
+                              SecurityKeys.orderVoid,
+                              () => _handleVoidOrder(
+                                context,
+                                ref,
+                                cartState,
+                                cartItems,
+                              ),
+                            ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 8),
+              // ── Keypad ──────────────────────────────────────────────────
+              CartKeypad(
+                mode: _keypadMode,
+                onModeChanged: _setKeypadMode,
+                onDigit: _onKeypadDigit,
+                onSignToggle: _onKeypadSign,
+                onBackspace: _onKeypadBackspace,
+                hasSelection: selectedItem != null,
+                priceChangeAllowed:
+                    selectedItem != null && _priceChangeAllowed(selectedItem),
+              ),
+              const SizedBox(height: 10),
+              // ── Pay ─────────────────────────────────────────────────────
+              SizedBox(
+                width: double.infinity,
+                child: _CartFooterButton(
+                  icon: Icons.payments,
+                  label: AppLocalizations.of(context).posPay,
+                  color: context.successColor,
+                  onTap: cartItems.isEmpty
+                      ? null
+                      : () {
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (context) => const PaymentCheckoutDialog(),
+                          );
+                        },
+                ),
               ),
             ],
           ),
@@ -3708,6 +3692,114 @@ class _MenuHeaderActionBtn extends StatelessWidget {
             badgeCount: badgeCount,
             highlight: highlight,
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Cart tool button (Client) ──────────────────────────────────────────────
+// Flat, touch-sized, and it doubles as its own state readout: with a customer
+// attached it shows that customer's name, highlighted.
+class _CartToolButton extends StatelessWidget {
+  const _CartToolButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.active = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final color = active ? cs.primary : cs.onSurface;
+
+    return Material(
+      color: active
+          ? cs.primary.withValues(alpha: 0.12)
+          : cs.surfaceContainerHighest.withValues(alpha: 0.6),
+      borderRadius: BorderRadius.circular(10),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          height: 44,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 18, color: color),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Cart actions menu (⋮) ──────────────────────────────────────────────────
+// Holds what is not an everyday key. VOID is the first entry; anything else
+// that ends or reshapes a whole order belongs here rather than beside PAY.
+class _CartActionsMenu extends StatelessWidget {
+  const _CartActionsMenu({required this.onVoid});
+
+  /// Null when there is no saved order to void — the entry greys out rather
+  /// than disappearing, so the action stays findable.
+  final VoidCallback? onVoid;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Material(
+      color: cs.surfaceContainerHighest.withValues(alpha: 0.6),
+      borderRadius: BorderRadius.circular(10),
+      clipBehavior: Clip.antiAlias,
+      child: PopupMenuButton<int>(
+        tooltip: AppLocalizations.of(context).colActions,
+        position: PopupMenuPosition.under,
+        onSelected: (_) => onVoid?.call(),
+        itemBuilder: (context) => [
+          PopupMenuItem(
+            value: 0,
+            enabled: onVoid != null,
+            child: Row(
+              children: [
+                Icon(
+                  Icons.block,
+                  size: 18,
+                  color: onVoid == null
+                      ? cs.onSurface.withValues(alpha: 0.35)
+                      : context.dangerColor,
+                ),
+                const SizedBox(width: 10),
+                Text(AppLocalizations.of(context).posVoid),
+              ],
+            ),
+          ),
+        ],
+        child: SizedBox(
+          height: 44,
+          width: 44,
+          child: Icon(Icons.more_vert, size: 20, color: cs.onSurface),
         ),
       ),
     );

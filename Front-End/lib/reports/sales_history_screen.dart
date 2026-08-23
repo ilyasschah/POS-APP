@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:pos_app/uom/unit_of_measure.dart';
@@ -14,7 +16,10 @@ import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/app_settings/app_settings_provider.dart';
 import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/core/app_date_picker.dart';
+import 'package:pos_app/core/ilyass_table.dart';
+import 'package:pos_app/core/unified_search_bar.dart';
 import 'package:pos_app/auth/auth_provider.dart';
+import 'package:pos_app/auth/user_model.dart';
 import 'package:pos_app/cart/checkout_models.dart';
 import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/currency/currencies_provider.dart';
@@ -120,126 +125,71 @@ class SalesHistoryDocument {
   }
 }
 
-// ── Responsive table helpers ──────────────────────────────────────────────────
+/// Narrows the fetched rows by the search bar's free text.
+///
+/// Matches the number, the customer, the order number and the external
+/// reference — the four things anyone types into this screen. Deliberately a
+/// plain function rather than a method: it is the one piece of this screen
+/// that decides whether a sale the operator KNOWS exists is visible, so it is
+/// worth testing without standing up a database.
+List<SalesHistoryDocument> salesHistorySearch(
+  List<SalesHistoryDocument> documents,
+  String query,
+) {
+  final q = query.trim().toLowerCase();
+  if (q.isEmpty) return documents;
 
-class _ColDef {
-  final String label;
-  final double flex;
-  final bool numeric;
-  const _ColDef(this.label, {this.flex = 1.0, this.numeric = false});
+  bool has(String? value) => (value ?? '').toLowerCase().contains(q);
+  return documents
+      .where(
+        (d) =>
+            has(d.number) ||
+            has(d.customerName) ||
+            has(d.orderNumber) ||
+            has(d.referenceDocumentNumber),
+      )
+      .toList();
 }
 
-class _FlexTable extends StatelessWidget {
-  final List<_ColDef> columns;
-  final int rowCount;
-  final List<Widget> Function(int index) rowBuilder;
-  final bool Function(int index)? isRowSelected;
-  final void Function(int index)? onRowTap;
-  final Widget? emptyWidget;
+/// Height of one pane's section header ("Documents" / "Document items").
+const double kSalesHistorySectionHeaderHeight = 36.0;
 
-  const _FlexTable({
-    required this.columns,
-    required this.rowCount,
-    required this.rowBuilder,
-    this.isRowSelected,
-    this.onRowTap,
-    this.emptyWidget,
-  });
+/// Height of the draggable handle between the two panes.
+const double kSalesHistoryDividerHeight = 16.0;
 
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // ── Sticky header ──────────────────────────────────────────────────
-        Container(
-          decoration: BoxDecoration(
-            color: cs.surfaceContainerHighest.withValues(alpha: 0.45),
-            border: Border(
-              bottom: BorderSide(color: theme.dividerColor, width: 0.5),
-            ),
-          ),
-          child: _buildRow(
-            columns
-                .map(
-                  (c) => Text(
-                    c.label,
-                    style: TextStyle(
-                      fontSize: 14, // Increased size for touch targets
-                      fontWeight: FontWeight.w700,
-                      color: cs.onSurface.withValues(alpha: 0.65),
-                      letterSpacing: 0.4,
-                    ),
-                    textAlign: c.numeric ? TextAlign.right : TextAlign.left,
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
-                )
-                .toList(),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          ),
-        ),
-        // ── Body ──────────────────────────────────────────────────────────
-        Expanded(
-          child: rowCount == 0
-              ? (emptyWidget ?? const SizedBox.shrink())
-              : ListView.separated(
-                  itemCount: rowCount,
-                  separatorBuilder: (_, __) => Divider(
-                    height: 0.5,
-                    color: theme.dividerColor.withValues(alpha: 0.4),
-                  ),
-                  itemBuilder: (ctx, i) {
-                    final selected = isRowSelected?.call(i) ?? false;
-                    return InkWell(
-                      onTap: onRowTap == null ? null : () => onRowTap!(i),
-                      mouseCursor: onRowTap == null
-                          ? null
-                          : SystemMouseCursors.click,
-                      child: Container(
-                        color: selected
-                            ? cs.primary.withValues(alpha: 0.14)
-                            : null,
-                        child: _buildRow(
-                          rowBuilder(i),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 14, // Fatter rows for easier tapping
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-        ),
-      ],
-    );
+/// Splits the body between the master and detail panes.
+///
+/// 🚨 Every bound here is COMPUTED. The first version clamped to a hardcoded
+/// `(150, totalHeight - 150)`, which on a short viewport — an on-screen
+/// keyboard is the usual cause — asks for `clamp(150, 40)`. Dart throws
+/// ArgumentError on a crossed range, once per frame, and the screen turns into
+/// a red rectangle. A pane squeezed small is a bad layout; a pane that throws
+/// is no screen at all.
+///
+/// Returns the two BODY heights, their section headers already deducted and
+/// both guaranteed non-negative — a SizedBox cannot take a negative height
+/// either.
+({double master, double detail}) salesHistorySplit(
+  double totalHeight,
+  double fraction, {
+  double headerHeight = kSalesHistorySectionHeaderHeight,
+  double dividerHeight = kSalesHistoryDividerHeight,
+}) {
+  if (totalHeight <= 0 || !totalHeight.isFinite) {
+    return (master: 0, detail: 0);
   }
 
-  Widget _buildRow(List<Widget> cells, {required EdgeInsets padding}) {
-    return Padding(
-      padding: padding,
-      child: Row(
-        children: List.generate(columns.length, (i) {
-          return Expanded(
-            flex: (columns[i].flex * 10).round(),
-            child: Padding(
-              padding: EdgeInsets.only(right: i < columns.length - 1 ? 10 : 0),
-              child: Align(
-                alignment: columns[i].numeric
-                    ? Alignment.centerRight
-                    : Alignment.centerLeft,
-                child: cells[i],
-              ),
-            ),
-          );
-        }),
-      ),
-    );
-  }
+  final minPane = math.min(150.0, totalHeight / 3);
+  final maxMaster = math.max(minPane, totalHeight - minPane);
+  final master = (totalHeight * fraction).clamp(minPane, maxMaster);
+
+  // `master` is the pane INCLUDING its own section header, so only the detail
+  // pane's header is deducted here. The original subtracted two and left a
+  // 36px strip of nothing under the detail table on every screen.
+  return (
+    master: math.max(0.0, master - headerHeight),
+    detail: math.max(0.0, totalHeight - master - dividerHeight - headerHeight),
+  );
 }
 
 // ── Screen ────────────────────────────────────────────────────────────────────
@@ -255,9 +205,18 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
   // ── filter state ──────────────────────────────────────────────────────────
   DateTime _startDate = DateTime.now();
   DateTime _endDate = DateTime.now();
-  bool _showAllUsers = true;
+
+  /// Null = every user's sales. Otherwise the one user whose sales to show —
+  /// "My sales" is simply this set to the signed-in user, so the quick preset
+  /// and the per-user pick are the same filter rather than two ideas.
+  int? _filterUserId;
+
   Customer? _filterCustomer;
-  final _docNumCtrl = TextEditingController();
+
+  /// Free text in the search bar. Client-side and live, unlike the period /
+  /// user / customer filters, which are worth a round trip to Drift.
+  final _searchCtrl = TextEditingController();
+  String _query = '';
 
   // ── data state ────────────────────────────────────────────────────────────
   List<SalesHistoryDocument> _documents = [];
@@ -282,14 +241,8 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
   void initState() {
     super.initState();
     tz_data.initializeTimeZones();
-    _visibleMasterColIds = _loadCols(
-      _prefsMasterColsKey,
-      _masterColumnIds,
-    );
-    _visibleDetailColIds = _loadCols(
-      _prefsDetailColsKey,
-      _detailColumnIds,
-    );
+    _visibleMasterColIds = _loadCols(_prefsMasterColsKey, _masterColumnIds);
+    _visibleDetailColIds = _loadCols(_prefsDetailColsKey, _detailColumnIds);
     WidgetsBinding.instance.addPostFrameCallback((_) => _fetchDocuments());
   }
 
@@ -307,7 +260,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
 
   @override
   void dispose() {
-    _docNumCtrl.dispose();
+    _searchCtrl.dispose();
     super.dispose();
   }
 
@@ -363,7 +316,6 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
 
     try {
       final db = ref.read(appDatabaseProvider);
-      final user = ref.read(currentUserProvider);
 
       final userRows = await db.select(db.usersTable).get();
       final customerRows = await db.select(db.customersTable).get();
@@ -388,7 +340,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
         companyId: company.id,
         from: from,
         to: to,
-        userId: _showAllUsers ? null : user?.id,
+        userId: _filterUserId,
         customerId: _filterCustomer?.id,
       );
 
@@ -442,15 +394,8 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
         );
       }
 
-      var filtered = docs;
-      final search = _docNumCtrl.text.trim().toLowerCase();
-      if (search.isNotEmpty) {
-        filtered = filtered
-            .where((d) => d.number.toLowerCase().contains(search))
-            .toList();
-      }
       setState(() {
-        _documents = filtered;
+        _documents = docs;
       });
     } catch (e) {
       setState(() {
@@ -515,16 +460,23 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(AppLocalizations.of(context).deleteDocument, style: const TextStyle(fontSize: 20)),
+        title: Text(
+          AppLocalizations.of(context).deleteDocument,
+          style: const TextStyle(fontSize: 20),
+        ),
         content: Text(
-          AppLocalizations.of(context)
-              .deleteDocumentConfirmPermanent(doc.number),
+          AppLocalizations.of(
+            context,
+          ).deleteDocumentConfirmPermanent(doc.number),
           style: const TextStyle(fontSize: 16),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text(AppLocalizations.of(context).actionCancel, style: const TextStyle(fontSize: 16)),
+            child: Text(
+              AppLocalizations.of(context).actionCancel,
+              style: const TextStyle(fontSize: 16),
+            ),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
@@ -532,7 +484,10 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text(AppLocalizations.of(context).actionDelete, style: const TextStyle(fontSize: 16)),
+            child: Text(
+              AppLocalizations.of(context).actionDelete,
+              style: const TextStyle(fontSize: 16),
+            ),
           ),
         ],
       ),
@@ -556,14 +511,17 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       }
       if (!mounted) return;
       showAppSnackbar(
-          context, ref, AppLocalizations.of(context).documentDeleted);
+        context,
+        ref,
+        AppLocalizations.of(context).documentDeleted,
+      );
       _fetchDocuments();
     } on DioException catch (e) {
       if (!mounted) return;
       final data = e.response?.data;
       final msg =
           (data is Map ? data['message'] : data?.toString()) ??
-              AppLocalizations.of(context).deleteFailed;
+          AppLocalizations.of(context).deleteFailed;
       showAppSnackbar(context, ref, msg, isError: true);
     }
   }
@@ -806,19 +764,159 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     );
   }
 
+  /// What the table and the footer actually show: the fetched set narrowed by
+  /// the free text. Everything else has already been applied by the query.
+  List<SalesHistoryDocument> get _visibleDocuments =>
+      salesHistorySearch(_documents, _query);
+
+  /// Chips for the two filters that survive a fetch. The period keeps its own
+  /// pill in the header — it is the one filter an operator changes constantly,
+  /// and burying it in a menu would cost a click every time.
+  List<SearchBarChip> _searchChips(List<User> users) {
+    final l = AppLocalizations.of(context);
+    return [
+      if (_filterUserId != null)
+        SearchBarChip(
+          id: 'user',
+          icon: Icons.badge_outlined,
+          label: _userLabel(users, _filterUserId!) ?? l.userLabel,
+          onRemove: () => _setUserFilter(null),
+        ),
+      if (_filterCustomer != null)
+        SearchBarChip(
+          id: 'customer',
+          icon: Icons.person_outline,
+          label: _filterCustomer!.name,
+          onRemove: () => _setCustomerFilter(null),
+        ),
+    ];
+  }
+
+  String? _userLabel(List<User> users, int id) {
+    for (final u in users) {
+      final full = '${u.firstName ?? ''} ${u.lastName ?? ''}'.trim();
+      if (u.id == id) return full.isNotEmpty ? full : (u.username ?? '#$id');
+    }
+    return null;
+  }
+
+  /// Both of these re-query Drift: user and customer are server-side filters,
+  /// so a chip going on or off has to reload rather than hide rows.
+  void _setUserFilter(int? userId) {
+    setState(() => _filterUserId = userId);
+    _fetchDocuments();
+  }
+
+  void _setCustomerFilter(Customer? customer) {
+    setState(() => _filterCustomer = customer);
+    _fetchDocuments();
+  }
+
+  /// The filter menu: who rang the sale up, and who it was for.
+  List<FilterMenuSection> _filterSections(
+    String query,
+    List<User> users,
+    List<Customer> customers,
+  ) {
+    final l = AppLocalizations.of(context);
+    final lower = query.trim().toLowerCase();
+    const maxPerSection = 8;
+    final me = ref.read(currentUserProvider);
+
+    (List<T>, bool) narrow<T>(List<T> all, String Function(T) label) {
+      final matched = lower.isEmpty
+          ? all
+          : all.where((e) => label(e).toLowerCase().contains(lower)).toList();
+      return (
+        matched.take(maxPerSection).toList(),
+        matched.length > maxPerSection,
+      );
+    }
+
+    String nameOf(User u) {
+      final full = '${u.firstName ?? ''} ${u.lastName ?? ''}'.trim();
+      return full.isNotEmpty ? full : (u.username ?? '#${u.id}');
+    }
+
+    final (staff, staffTruncated) = narrow(users, nameOf);
+    final (people, peopleTruncated) = narrow(customers, (c) => c.name);
+
+    return [
+      FilterMenuSection(
+        title: l.userLabel,
+        icon: Icons.badge_outlined,
+        footnote: staffTruncated ? l.filterKeepTyping : null,
+        options: [
+          FilterMenuOption(
+            label: l.allUsers,
+            icon: Icons.group_outlined,
+            selected: _filterUserId == null,
+            onSelected: () => _setUserFilter(null),
+          ),
+          if (me != null)
+            FilterMenuOption(
+              label: l.mySales,
+              icon: Icons.person_outline,
+              selected: _filterUserId == me.id,
+              onSelected: () => _setUserFilter(me.id),
+            ),
+          for (final u in staff)
+            if (u.id != me?.id)
+              FilterMenuOption(
+                label: nameOf(u),
+                icon: Icons.badge_outlined,
+                selected: _filterUserId == u.id,
+                onSelected: () =>
+                    _setUserFilter(_filterUserId == u.id ? null : u.id),
+              ),
+        ],
+      ),
+      FilterMenuSection(
+        title: l.customerLabel,
+        icon: Icons.person_outline,
+        footnote: peopleTruncated ? l.filterKeepTyping : null,
+        options: [
+          FilterMenuOption(
+            label: l.allCustomers,
+            icon: Icons.groups_outlined,
+            selected: _filterCustomer == null,
+            onSelected: () => _setCustomerFilter(null),
+          ),
+          for (final c in people)
+            FilterMenuOption(
+              label: c.name,
+              icon: Icons.person_outline,
+              selected: _filterCustomer?.id == c.id,
+              onSelected: () =>
+                  _setCustomerFilter(_filterCustomer?.id == c.id ? null : c),
+            ),
+          // The full picker stays reachable: a shop with thousands of accounts
+          // cannot be served by eight quick picks.
+          FilterMenuOption(
+            label: l.selectCustomer,
+            icon: Icons.manage_search,
+            onSelected: _showCustomerPicker,
+          ),
+        ],
+      ),
+    ];
+  }
+
   Future<void> _showCustomerPicker() async {
     final selected = await showDialog<_CustomerPickerResult>(
       context: context,
       builder: (_) => _CustomerPickerDialog(current: _filterCustomer),
     );
     if (selected == null) return;
-    setState(() => _filterCustomer = selected.customer);
-    _fetchDocuments();
+    _setCustomerFilter(selected.customer);
   }
 
   void _notImplemented(String action) {
     showAppSnackbar(
-        context, ref, AppLocalizations.of(context).featureComingSoon(action));
+      context,
+      ref,
+      AppLocalizations.of(context).featureComingSoon(action),
+    );
   }
 
   // ── build ─────────────────────────────────────────────────────────────────
@@ -831,6 +929,12 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
+      // 🚨 The on-screen keyboard OVERLAYS this screen instead of resizing it.
+      // Resizing left the split panes barely 150px tall, which both reflowed
+      // two tables on every keystroke and drove the split maths into an
+      // inverted clamp. The search bar lives in the top bar, so it stays above
+      // the keyboard either way.
+      resizeToAvoidBottomInset: false,
       body: Column(
         children: [
           PosTopBar(
@@ -842,78 +946,46 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
               tooltip: AppLocalizations.of(context).back,
               onPressed: () => Navigator.pop(context),
             ),
-            // Header content: Replaced generic Text title with a comprehensive Row
-            title: Row(
-              children: [
-                Text(
-                  AppLocalizations.of(context).salesHistoryTitle,
-                  style: const TextStyle(
-                      fontSize: 22, fontWeight: FontWeight.bold),
-                ),
-                const Spacer(),
+            // Header: the title and the search bar. The search is what an
+            // operator reaches for first, so it gets the most prominent slot
+            // on the screen; the period moved down to the toolbar band, where
+            // it sits beside the actions.
+            //
+            // `singleLine` matters here: PosTopBar is a fixed 62px and cannot
+            // grow, so the chips share the row rather than wrapping under it.
+            title: LayoutBuilder(
+              builder: (context, constraints) {
+                const gap = 12.0;
+                const titleWidth = 170.0;
+                const barMin = 280.0;
 
-                // Date picker moved to the header
-                InkWell(
-                  onTap: _pickDateRange,
-                  borderRadius: BorderRadius.circular(8),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: cs.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.calendar_month_outlined,
-                          size: 20,
-                          color: cs.primary,
-                        ),
-                        const Gap(8),
-                        Text(
-                          '${_dateFmt.format(_startDate)} – ${_dateFmt.format(_endDate)}',
-                          style: TextStyle(
-                            fontSize: 15, // Larger font
-                            color: cs.onSurface,
-                            fontWeight: FontWeight.w500,
+                // The title is the first thing to go: it names a screen the
+                // operator already navigated to, while the search box is the
+                // one they came to use.
+                final showTitle =
+                    constraints.maxWidth >= titleWidth + barMin + gap;
+
+                return Row(
+                  children: [
+                    if (showTitle) ...[
+                      Flexible(
+                        child: Text(
+                          AppLocalizations.of(context).salesHistoryTitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                ),
-                const Gap(16),
-
-                // Search bar moved to the header and made wider for POS
-                SizedBox(
-                  width: 260,
-                  child: TextField(
-                    controller: _docNumCtrl,
-                    decoration: InputDecoration(
-                      hintText: AppLocalizations.of(context).searchDocument,
-                      isDense: true,
-                      prefixIcon: const Icon(Icons.search, size: 22),
-                      filled: true,
-                      fillColor: cs.surfaceContainerHighest,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide.none,
                       ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14, // Fatter target
-                      ),
-                    ),
-                    style: TextStyle(fontSize: 16, color: cs.onSurface),
-                    onSubmitted: (_) => _fetchDocuments(),
-                  ),
-                ),
-                const Gap(8),
-              ],
+                      const Gap(gap),
+                    ],
+                    Expanded(child: _searchBar(singleLine: true)),
+                    const Gap(8),
+                  ],
+                );
+              },
             ),
           ),
           _buildToolbar(theme, cs),
@@ -924,6 +996,82 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     );
   }
 
+  /// A touch-sized header control: icon, and a label only when the header has
+  /// the room for one.
+  Widget _headerPill(
+    ColorScheme cs, {
+    required IconData icon,
+    required VoidCallback onTap,
+    String? label,
+    String? tooltip,
+  }) {
+    final pill = InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: label == null ? 12 : 16,
+          vertical: 12,
+        ),
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 20, color: cs.primary),
+            if (label != null) ...[
+              const Gap(8),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 15,
+                  color: cs.onSurface,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+    return tooltip == null ? pill : Tooltip(message: tooltip, child: pill);
+  }
+
+  /// The unified search bar: the free text plus the user and customer filters
+  /// as chips. Built here rather than inline so the header can host it while
+  /// the filters it drives belong to the whole screen.
+  ///
+  /// Filters live in the bar, actions in the toolbar. That split is what freed
+  /// the room: "All users" and "Customer" used to be buttons whose labels
+  /// doubled as their own state readout.
+  Widget _searchBar({bool singleLine = false}) {
+    final users = ref.watch(allUsersProvider).value ?? const <User>[];
+    final customers =
+        ref.watch(allCustomersProvider).value ?? const <Customer>[];
+
+    return UnifiedSearchBar(
+      singleLine: singleLine,
+      controller: _searchCtrl,
+      hintText: AppLocalizations.of(context).searchDocument,
+      chips: _searchChips(users),
+      sectionsBuilder: (query) => _filterSections(query, users, customers),
+      onQueryChanged: (value) => setState(() => _query = value),
+      onClearAll: () {
+        _searchCtrl.clear();
+        setState(() {
+          _query = '';
+          _filterCustomer = null;
+          _filterUserId = null;
+        });
+        _fetchDocuments();
+      },
+    );
+  }
+
   // ── toolbar ───────────────────────────────────────────────────────────────
 
   Widget _buildToolbar(ThemeData theme, ColorScheme cs) {
@@ -931,48 +1079,10 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
         ? _documents.where((d) => d.localId == _selectedDocLocalId).firstOrNull
         : null;
 
-    return Container(
-      height: 80, // Increased height for POS touch buttons
-      decoration: BoxDecoration(
-        color: cs.surface,
-        border: Border(
-          bottom: BorderSide(color: theme.dividerColor, width: 0.5),
-        ),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+    final actions = SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
       child: Row(
         children: [
-          // The action buttons scroll horizontally so they never run off a
-          // narrow (7") screen; Columns/Refresh stay pinned on the right.
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-          _toolBtn(
-            _showAllUsers ? Icons.group : Icons.person_outline,
-            _showAllUsers
-                ? AppLocalizations.of(context).allUsers
-                : AppLocalizations.of(context).mySales,
-            () {
-              setState(() => _showAllUsers = !_showAllUsers);
-              _fetchDocuments();
-            },
-            active: !_showAllUsers,
-          ),
-          _toolBtn(
-            Icons.person,
-            _filterCustomer != null
-                ? _filterCustomer!.name
-                : AppLocalizations.of(context).customerLabel,
-            () => _showCustomerPicker(),
-            active: _filterCustomer != null,
-          ),
-
-          const Gap(12),
-          const VerticalDivider(width: 1, indent: 16, endIndent: 16),
-          const Gap(12),
-
           _toolBtn(
             Icons.print_outlined,
             AppLocalizations.of(context).setPrint,
@@ -1001,8 +1111,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
             AppLocalizations.of(context).sendEmail,
             sel == null
                 ? null
-                : () => _notImplemented(
-                    AppLocalizations.of(context).sendEmail),
+                : () => _notImplemented(AppLocalizations.of(context).sendEmail),
           ),
 
           const Gap(12),
@@ -1040,33 +1149,78 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
                       ),
             color: context.dangerColor,
           ),
-
-                ],
-              ),
-            ),
-          ),
-          const Gap(12),
-          const VerticalDivider(width: 1, indent: 16, endIndent: 16),
-          const Gap(12),
-          _toolBtn(
-            Icons.view_column_outlined,
-            AppLocalizations.of(context).columns,
-            () => _pickColumns(
-              title: AppLocalizations.of(context).documentsColumns,
-              columns: _masterColumns(context)
-                  .map((c) => (id: c.id, label: c.label))
-                  .toList(),
-              visible: _visibleMasterColIds,
-              prefsKey: _prefsMasterColsKey,
-              onApply: (s) => setState(() => _visibleMasterColIds = s),
-            ),
-          ),
-          _toolBtn(Icons.sync, AppLocalizations.of(context).refresh,
-              () => _fetchDocuments()),
         ],
       ),
     );
+
+    return Container(
+      constraints: const BoxConstraints(minHeight: 80),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        border: Border(
+          bottom: BorderSide(color: theme.dividerColor, width: 0.5),
+        ),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Math, not a breakpoint: the period pill needs its label, the
+          // actions need room to be tappable; when both cannot have it, the
+          // pill drops to icon-only rather than the row overflowing.
+          const pillFull = 240.0;
+          const actionsMin = 340.0;
+          const gap = 12.0;
+          final showRangeLabel =
+              constraints.maxWidth >= pillFull + actionsMin + gap;
+
+          return Row(
+            children: [
+              _headerPill(
+                cs,
+                icon: Icons.calendar_month_outlined,
+                onTap: _pickDateRange,
+                label: showRangeLabel
+                    ? '${_dateFmt.format(_startDate)} - ${_dateFmt.format(_endDate)}'
+                    : null,
+                tooltip:
+                    '${_dateFmt.format(_startDate)} - ${_dateFmt.format(_endDate)}',
+              ),
+              const Gap(gap),
+              const VerticalDivider(width: 1, indent: 16, endIndent: 16),
+              const Gap(gap),
+              Expanded(child: actions),
+              ..._bandTrailing(cs),
+            ],
+          );
+        },
+      ),
+    );
   }
+
+  /// Columns + Refresh — pinned to the trailing edge of the toolbar band.
+  List<Widget> _bandTrailing(ColorScheme cs) => [
+    const Gap(12),
+    const VerticalDivider(width: 1, indent: 16, endIndent: 16),
+    const Gap(12),
+    _toolBtn(
+      Icons.view_column_outlined,
+      AppLocalizations.of(context).columns,
+      () => _pickColumns(
+        title: AppLocalizations.of(context).documentsColumns,
+        columns: _masterColumns(
+          context,
+        ).map((c) => (id: c.id, label: c.label)).toList(),
+        visible: _visibleMasterColIds,
+        prefsKey: _prefsMasterColsKey,
+        onApply: (s) => setState(() => _visibleMasterColIds = s),
+      ),
+    ),
+    _toolBtn(
+      Icons.sync,
+      AppLocalizations.of(context).refresh,
+      () => _fetchDocuments(),
+    ),
+  ];
 
   // ── column selector ─────────────────────────────────────────────────────────
 
@@ -1170,7 +1324,10 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
             FilledButton.icon(
               onPressed: _fetchDocuments,
               icon: const Icon(Icons.refresh, size: 24),
-              label: Text(AppLocalizations.of(context).actionRetry, style: const TextStyle(fontSize: 16)),
+              label: Text(
+                AppLocalizations.of(context).actionRetry,
+                style: const TextStyle(fontSize: 16),
+              ),
             ),
           ],
         ),
@@ -1180,17 +1337,18 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final totalH = constraints.maxHeight;
-        final masterH = (totalH * _splitFraction).clamp(150.0, totalH - 150.0);
-        const dividerH = 16.0; // Slightly thicker divider handle
-        const headerH = 36.0;
-        final detailH = totalH - masterH - dividerH - (headerH * 2);
+        const dividerH = kSalesHistoryDividerHeight;
+
+        final split = salesHistorySplit(totalH, _splitFraction);
+        final masterBodyH = split.master;
+        final detailH = split.detail;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _sectionHeader(theme, cs, AppLocalizations.of(context).documents),
             SizedBox(
-              height: masterH - headerH,
+              height: masterBodyH,
               child: _buildMasterTable(context, theme, cs, sym),
             ),
 
@@ -1226,16 +1384,19 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
                 cs,
                 () => _pickColumns(
                   title: AppLocalizations.of(context).documentItemsColumns,
-                  columns: _detailColumns(context)
-                      .map((c) => (id: c.id, label: c.label))
-                      .toList(),
+                  columns: _detailColumns(
+                    context,
+                  ).map((c) => (id: c.id, label: c.label)).toList(),
                   visible: _visibleDetailColIds,
                   prefsKey: _prefsDetailColsKey,
                   onApply: (s) => setState(() => _visibleDetailColIds = s),
                 ),
               ),
             ),
-            SizedBox(height: detailH, child: _buildDetailTable(context, theme, cs, sym)),
+            SizedBox(
+              height: detailH,
+              child: _buildDetailTable(context, theme, cs, sym),
+            ),
           ],
         );
       },
@@ -1307,38 +1468,131 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
   // Ids only — needed in initState, where AppLocalizations.of(context) is not
   // yet usable. Must stay in sync with _masterColumns below.
   static const _masterColumnIds = <String>[
-    'id','type','user','number','external','customer','date','created','pos',
-    'order','payment','discount','totalBefore','tax','total',
+    'id',
+    'type',
+    'user',
+    'number',
+    'external',
+    'customer',
+    'date',
+    'created',
+    'pos',
+    'order',
+    'payment',
+    'discount',
+    'totalBefore',
+    'tax',
+    'total',
   ];
 
   // Built per-frame rather than const: the labels are localized, so they can
   // only be resolved once a BuildContext exists.
-  static List<({String id, String label, double flex, bool numeric})>
-      _masterColumns(BuildContext context) =>
-      <({String id, String label, double flex, bool numeric})>[
-        (id: 'id', label: AppLocalizations.of(context).idLabel, flex: 0.4, numeric: true),
-        (id: 'type', label: AppLocalizations.of(context).documentType, flex: 0.8, numeric: false),
-        (id: 'user', label: AppLocalizations.of(context).userLabel, flex: 0.7, numeric: false),
-        (id: 'number', label: AppLocalizations.of(context).numberLabel, flex: 1.2, numeric: false),
-        (id: 'external', label: AppLocalizations.of(context).externalRef, flex: 0.7, numeric: false),
-        (id: 'customer', label: AppLocalizations.of(context).customerLabel, flex: 1.1, numeric: false),
-        (id: 'date', label: AppLocalizations.of(context).dateLabel, flex: 1.0, numeric: false),
-        (id: 'created', label: AppLocalizations.of(context).created, flex: 1.3, numeric: false),
-        (id: 'pos', label: AppLocalizations.of(context).posLabel, flex: 0.9, numeric: false),
-        (id: 'order', label: AppLocalizations.of(context).orderNoLabel, flex: 0.9, numeric: false),
-        (id: 'payment', label: AppLocalizations.of(context).paymentLabel, flex: 0.9, numeric: false),
-        (id: 'discount', label: AppLocalizations.of(context).posDiscount, flex: 0.5, numeric: true),
+  //
+  // `width` is a STARTING width, not a share: every column is draggable by its
+  // header edge (Ilyass Style), and `customer` is the one that absorbs surplus
+  // width on a wide monitor. The old flex shares squeezed all fifteen columns
+  // into the pane, so on a till every one of them was truncated at once.
+  static List<({String id, String label, double width, bool numeric})>
+  _masterColumns(BuildContext context) =>
+      <({String id, String label, double width, bool numeric})>[
+        (
+          id: 'id',
+          label: AppLocalizations.of(context).idLabel,
+          width: 70,
+          numeric: true,
+        ),
+        (
+          id: 'type',
+          label: AppLocalizations.of(context).documentType,
+          width: 110,
+          numeric: false,
+        ),
+        (
+          id: 'user',
+          label: AppLocalizations.of(context).userLabel,
+          width: 120,
+          numeric: false,
+        ),
+        (
+          id: 'number',
+          label: AppLocalizations.of(context).numberLabel,
+          width: 170,
+          numeric: false,
+        ),
+        (
+          id: 'external',
+          label: AppLocalizations.of(context).externalRef,
+          width: 120,
+          numeric: false,
+        ),
+        (
+          id: 'customer',
+          label: AppLocalizations.of(context).customerLabel,
+          width: 180,
+          numeric: false,
+        ),
+        (
+          id: 'date',
+          label: AppLocalizations.of(context).dateLabel,
+          width: 150,
+          numeric: false,
+        ),
+        (
+          id: 'created',
+          label: AppLocalizations.of(context).created,
+          width: 165,
+          numeric: false,
+        ),
+        (
+          id: 'pos',
+          label: AppLocalizations.of(context).posLabel,
+          width: 110,
+          numeric: false,
+        ),
+        (
+          id: 'order',
+          label: AppLocalizations.of(context).orderNoLabel,
+          width: 130,
+          numeric: false,
+        ),
+        (
+          id: 'payment',
+          label: AppLocalizations.of(context).paymentLabel,
+          width: 140,
+          numeric: false,
+        ),
+        (
+          id: 'discount',
+          label: AppLocalizations.of(context).posDiscount,
+          width: 95,
+          numeric: true,
+        ),
         (
           id: 'totalBefore',
           label: AppLocalizations.of(context).totalBeforeTax,
-          flex: 0.7,
+          width: 130,
           numeric: true,
         ),
-        (id: 'tax', label: AppLocalizations.of(context).fieldTax, flex: 0.5, numeric: true),
-        (id: 'total', label: AppLocalizations.of(context).totalLabel, flex: 0.7, numeric: true),
+        (
+          id: 'tax',
+          label: AppLocalizations.of(context).fieldTax,
+          width: 95,
+          numeric: true,
+        ),
+        (
+          id: 'total',
+          label: AppLocalizations.of(context).totalLabel,
+          width: 135,
+          numeric: true,
+        ),
       ];
 
-  Widget _buildMasterTable(BuildContext context, ThemeData theme, ColorScheme cs, String sym) {
+  Widget _buildMasterTable(
+    BuildContext context,
+    ThemeData theme,
+    ColorScheme cs,
+    String sym,
+  ) {
     const ts = TextStyle(fontSize: 15); // Scaled up table row font
     final dimTs = TextStyle(
       fontSize: 15,
@@ -1394,30 +1648,34 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       ),
     };
 
-    final visibleCols = _masterColumns(context)
-        .where((c) => _visibleMasterColIds.contains(c.id))
-        .toList();
-    final columns = visibleCols
-        .map((c) => _ColDef(c.label, flex: c.flex, numeric: c.numeric))
-        .toList();
+    final visibleCols = _masterColumns(
+      context,
+    ).where((c) => _visibleMasterColIds.contains(c.id)).toList();
 
-    return _FlexTable(
-      columns: columns,
-      rowCount: _documents.length,
-      rowBuilder: (i) {
-        final doc = _documents[i];
-        return visibleCols.map((c) => cellBuilders[c.id]!(doc)).toList();
-      },
-      isRowSelected: (i) => _documents[i].localId == _selectedDocLocalId,
-      onRowTap: (i) {
-        final doc = _documents[i];
+    return IlyassTable<SalesHistoryDocument>(
+      tableId: 'salesHistoryMaster',
+      rows: _visibleDocuments,
+      rowHeight: 52,
+      columns: [
+        for (final c in visibleCols)
+          IlyassColumn<SalesHistoryDocument>(
+            key: c.id,
+            label: c.label,
+            width: c.width,
+            numeric: c.numeric,
+            flexible: c.id == 'customer',
+            cell: (context, doc) => cellBuilders[c.id]!(doc),
+          ),
+      ],
+      isRowSelected: (doc) => doc.localId == _selectedDocLocalId,
+      onRowTap: (doc) {
         setState(() {
           _selectedDocLocalId = doc.localId;
           _items = [];
         });
         _fetchItems(doc);
       },
-      emptyWidget: Center(
+      emptyState: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -1444,37 +1702,96 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
 
   // Ids only — see the note on _masterColumnIds.
   static const _detailColumnIds = <String>[
-    'id','code','name','unit','qty','priceBeforeTax','tax','price',
-    'totalBeforeDiscount','discount','total',
+    'id',
+    'code',
+    'name',
+    'unit',
+    'qty',
+    'priceBeforeTax',
+    'tax',
+    'price',
+    'totalBeforeDiscount',
+    'discount',
+    'total',
   ];
 
-  static List<({String id, String label, double flex, bool numeric})>
-      _detailColumns(BuildContext context) =>
-      <({String id, String label, double flex, bool numeric})>[
-        (id: 'id', label: AppLocalizations.of(context).idLabel, flex: 0.35, numeric: true),
-        (id: 'code', label: AppLocalizations.of(context).fieldCode, flex: 0.7, numeric: false),
-        (id: 'name', label: AppLocalizations.of(context).fieldName, flex: 1.6, numeric: false),
-        (id: 'unit', label: AppLocalizations.of(context).unitOfMeasure, flex: 0.8, numeric: false),
-        (id: 'qty', label: AppLocalizations.of(context).fieldQuantity, flex: 0.7, numeric: true),
+  static List<({String id, String label, double width, bool numeric})>
+  _detailColumns(BuildContext context) =>
+      <({String id, String label, double width, bool numeric})>[
+        (
+          id: 'id',
+          label: AppLocalizations.of(context).idLabel,
+          width: 70,
+          numeric: true,
+        ),
+        (
+          id: 'code',
+          label: AppLocalizations.of(context).fieldCode,
+          width: 115,
+          numeric: false,
+        ),
+        (
+          id: 'name',
+          label: AppLocalizations.of(context).fieldName,
+          width: 240,
+          numeric: false,
+        ),
+        (
+          id: 'unit',
+          label: AppLocalizations.of(context).unitOfMeasure,
+          width: 110,
+          numeric: false,
+        ),
+        (
+          id: 'qty',
+          label: AppLocalizations.of(context).fieldQuantity,
+          width: 100,
+          numeric: true,
+        ),
         (
           id: 'priceBeforeTax',
           label: AppLocalizations.of(context).priceBeforeTax,
-          flex: 0.9,
+          width: 135,
           numeric: true,
         ),
-        (id: 'tax', label: AppLocalizations.of(context).fieldTax, flex: 0.45, numeric: true),
-        (id: 'price', label: AppLocalizations.of(context).priceLabel, flex: 0.7, numeric: true),
+        (
+          id: 'tax',
+          label: AppLocalizations.of(context).fieldTax,
+          width: 85,
+          numeric: true,
+        ),
+        (
+          id: 'price',
+          label: AppLocalizations.of(context).priceLabel,
+          width: 115,
+          numeric: true,
+        ),
         (
           id: 'totalBeforeDiscount',
           label: AppLocalizations.of(context).totalBeforeDiscount,
-          flex: 1.0,
+          width: 155,
           numeric: true,
         ),
-        (id: 'discount', label: AppLocalizations.of(context).posDiscount, flex: 0.55, numeric: true),
-        (id: 'total', label: AppLocalizations.of(context).totalLabel, flex: 0.7, numeric: true),
+        (
+          id: 'discount',
+          label: AppLocalizations.of(context).posDiscount,
+          width: 105,
+          numeric: true,
+        ),
+        (
+          id: 'total',
+          label: AppLocalizations.of(context).totalLabel,
+          width: 125,
+          numeric: true,
+        ),
       ];
 
-  Widget _buildDetailTable(BuildContext context, ThemeData theme, ColorScheme cs, String sym) {
+  Widget _buildDetailTable(
+    BuildContext context,
+    ThemeData theme,
+    ColorScheme cs,
+    String sym,
+  ) {
     if (_selectedDocLocalId == null) {
       return Center(
         child: Text(
@@ -1509,7 +1826,9 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       // that unit's real precision — 0.002 kg reads 0.002, not 0.00.
       'qty': (item) => Text(
         formatQuantityValue(
-            item.quantity, uomFromLegacyText(item.measurementUnit)),
+          item.quantity,
+          uomFromLegacyText(item.measurementUnit),
+        ),
         style: ts,
       ),
       'priceBeforeTax': (item) =>
@@ -1537,20 +1856,28 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       ),
     };
 
-    final visibleCols = _detailColumns(context)
-        .where((c) => _visibleDetailColIds.contains(c.id))
-        .toList();
-    final columns = visibleCols
-        .map((c) => _ColDef(c.label, flex: c.flex, numeric: c.numeric))
-        .toList();
-    return _FlexTable(
-      columns: columns,
-      rowCount: _items.length,
-      rowBuilder: (i) {
-        final item = _items[i];
-        return visibleCols.map((c) => cellBuilders[c.id]!(item)).toList();
-      },
-      emptyWidget: Center(
+    final visibleCols = _detailColumns(
+      context,
+    ).where((c) => _visibleDetailColIds.contains(c.id)).toList();
+
+    return IlyassTable<DocumentItem>(
+      tableId: 'salesHistoryDetail',
+      rows: _items,
+      rowHeight: 52,
+      columns: [
+        for (final c in visibleCols)
+          IlyassColumn<DocumentItem>(
+            key: c.id,
+            label: c.label,
+            width: c.width,
+            numeric: c.numeric,
+            // The product name is the widest-varying field on a line, so it
+            // takes the slack rather than stretching the unit column.
+            flexible: c.id == 'name',
+            cell: (context, item) => cellBuilders[c.id]!(item),
+          ),
+      ],
+      emptyState: Center(
         child: Text(
           AppLocalizations.of(context).noItemsForDocument,
           style: TextStyle(
@@ -1565,7 +1892,8 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
   // ── footer ────────────────────────────────────────────────────────────────
 
   Widget _buildFooter(ThemeData theme, ColorScheme cs, String sym) {
-    final totalAmount = _documents.fold<double>(0, (sum, d) => sum + d.total);
+    final visible = _visibleDocuments;
+    final totalAmount = visible.fold<double>(0, (sum, d) => sum + d.total);
 
     return Container(
       height: 60, // Scaled up Footer
@@ -1577,7 +1905,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       child: Row(
         children: [
           Text(
-            AppLocalizations.of(context).documentsCountValue(_documents.length),
+            AppLocalizations.of(context).documentsCountValue(visible.length),
             style: TextStyle(
               fontSize: 16, // Larger font
               color: cs.onSurface.withValues(alpha: 0.7),
@@ -1586,8 +1914,9 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
           ),
           const Spacer(),
           Text(
-            AppLocalizations.of(context).totalAmountWithValue(
-                _numFmt.format(totalAmount), sym),
+            AppLocalizations.of(
+              context,
+            ).totalAmountWithValue(_numFmt.format(totalAmount), sym),
             style: TextStyle(
               fontSize: 20, // Highlight the final total
               fontWeight: FontWeight.w800,
@@ -1716,7 +2045,10 @@ class _ColumnSelectorDialogState extends State<_ColumnSelectorDialog> {
                         vertical: 12,
                       ),
                     ),
-                    child: Text(AppLocalizations.of(context).actionApply, style: const TextStyle(fontSize: 16)),
+                    child: Text(
+                      AppLocalizations.of(context).actionApply,
+                      style: const TextStyle(fontSize: 16),
+                    ),
                   ),
                 ],
               ),

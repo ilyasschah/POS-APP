@@ -2679,9 +2679,20 @@ IlyassTable<Document>(
 ```
 
 Column **visibility** stays where it already is — a `StateProvider<Map<String,
-bool>>` per screen plus the existing column picker. Widths are in-memory per
-sitting; persisting them (device-scoped `shared_preferences`) is an open
-follow-up.
+bool>>` per screen plus the existing column picker. Column **widths persist**
+per table id under `ilyass.table.widths.<tableId>` in `shared_preferences`
+(device-scoped, like the printer name — a width is how one operator likes their
+screen, not company data), written once on drag release.
+
+Two rules make the drag feel solid rather than glitchy, and both are load-bearing:
+* **The drag is measured from where it started**, never accumulated frame by
+  frame — summing `delta.dx` drifts by whatever the clamp swallowed, so after
+  hitting the minimum and coming back the edge no longer sits under the pointer.
+* **The flexible column is pinned for the duration of the drag**, and the pin is
+  kept as an explicit width on release. Otherwise it absorbs what the dragged
+  column gives up, and since it usually sits to the LEFT of the handle, pulling
+  a right edge visibly slides the left half of the table. It still fills a wider
+  pane afterwards — the surplus rule adds to the pinned value.
 
 ## Where it is applied
 
@@ -2689,8 +2700,9 @@ follow-up.
 |---|---|
 | `lib/session/session_screen.dart` | `_Row` alignment, `_StatGrid` fluid wrap, 1200px cap on both tabs |
 | `lib/document/documents_screen.dart` | `IlyassTable` with resizable columns, end-aligned TOTAL, tight ACTIONS. The 8 filters became the unified search bar (`lib/core/unified_search_bar.dart`) — its chip row and result-count header still follow rules 1–2. |
+| `lib/reports/sales_history_screen.dart` | Both master and detail tables are `IlyassTable` (15 and 11 columns, resizable, money end-aligned); `UnifiedSearchBar` carries the user + customer filters as chips; header and toolbar band size themselves from their own content minimums |
 | `lib/core/ilyass_table.dart` | The shared table + `ilyassColumnWidthsProvider` |
 | `lib/core/responsive.dart` | `kMaxReadableWidth` |
 
 Still on the old pattern, and the obvious next candidates: the products list,
-the stock screen, the session list table, and the reports tables.
+the stock screen, the session list table, and the remaining reports tables.
