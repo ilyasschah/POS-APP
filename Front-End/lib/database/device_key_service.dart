@@ -4,16 +4,17 @@ import 'dart:math';
 
 import 'package:crypto/crypto.dart';
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:pos_app/core/secure_storage.dart';
 
 /// Pillar 3 — derives the SQLCipher key for the local database.
 ///
 /// The key is **never hardcoded**. It is derived (HKDF-SHA256) from two inputs:
 ///
-///  1. A 256-bit random *secret* generated once and kept in
-///     [FlutterSecureStorage]. On Windows that store is DPAPI (user+machine
-///     bound); on Android it is Keystore-backed and **non-exportable**. This is
-///     the strong binding — the secret cannot be copied to another machine/user.
+///  1. A 256-bit random *secret* generated once and kept in [kSecureStorage].
+///     On Windows that store is DPAPI (user+machine bound); on Android it is
+///     Keystore-backed and **non-exportable**; on macOS it is the login
+///     keychain, scoped to the user account. This is the strong binding — the
+///     secret cannot be copied to another machine/user.
 ///  2. A stable *hardware fingerprint* (machine GUID / device build identity),
 ///     used as the HKDF salt for defense-in-depth.
 ///
@@ -22,7 +23,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 /// reconstructed there. This is also what makes the Pillar-4 seat binding
 /// clone-proof (a soft `device_id` alone was copyable).
 class DeviceKeyService {
-  static const _secureStorage = FlutterSecureStorage();
+  static const _secureStorage = kSecureStorage;
 
   /// Secure-storage key holding the random secret (the strong, non-exportable
   /// half of the derivation).
