@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:pos_app/core/secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
@@ -9,7 +9,7 @@ import 'package:pos_app/auth/auth_token_cache.dart';
 final authStorageProvider = Provider<AuthStorage>((ref) => AuthStorage());
 
 class AuthStorage {
-  final _secureStorage = const FlutterSecureStorage();
+  final _secureStorage = kSecureStorage;
 
   static const _keyJwt = 'jwt_token';
   // The device's own token from master-login. Kept alongside the active token so

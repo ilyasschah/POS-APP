@@ -26,16 +26,42 @@ class AppRestart {
   static Future<bool> restart() async {
     if (!canRestart) return false;
     try {
-      await Process.start(
-        Platform.resolvedExecutable,
-        <String>[],
-        workingDirectory: File(Platform.resolvedExecutable).parent.path,
-        mode: ProcessStartMode.detached,
-      );
+      final bundle = _macAppBundle();
+      if (bundle != null) {
+        // On macOS `resolvedExecutable` is the binary *inside* the bundle
+        // (Octopus POS.app/Contents/MacOS/Octopus POS). Starting it directly
+        // does produce a running app, but one launched behind LaunchServices'
+        // back — no proper Dock identity, and macOS is free to treat it
+        // differently from the app the user installed. `open -n` asks the
+        // system to launch a new instance of the *bundle*, which is the
+        // supported way to relaunch.
+        await Process.start(
+          'open',
+          <String>['-n', bundle],
+          mode: ProcessStartMode.detached,
+        );
+      } else {
+        await Process.start(
+          Platform.resolvedExecutable,
+          <String>[],
+          workingDirectory: File(Platform.resolvedExecutable).parent.path,
+          mode: ProcessStartMode.detached,
+        );
+      }
       exit(0);
     } catch (e) {
       debugPrint('AppRestart: could not relaunch — $e');
       return false;
     }
+  }
+
+  /// The `.app` directory this process is running from, or null when there is
+  /// not one — every non-macOS platform, and a macOS process started outside a
+  /// bundle. Callers fall back to relaunching the executable directly.
+  static String? _macAppBundle() {
+    if (!Platform.isMacOS) return null;
+    // <bundle>.app/Contents/MacOS/<binary> — three levels up from the binary.
+    final bundle = File(Platform.resolvedExecutable).parent.parent.parent;
+    return bundle.path.endsWith('.app') ? bundle.path : null;
   }
 }
