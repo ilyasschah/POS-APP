@@ -1,8 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  App Sandbox is deliberately OFF.
+
+  The sandbox was on (Flutter's template default) with no other entitlement,
+  which silently blocks everything this app is: no outbound network (every Dio
+  call to the API fails), no Keychain access for the DB encryption key and the
+  auth token, no printing, and no user-chosen backup path. Running sandboxed
+  would mean getting network.client, print, files.user-selected.read-write and
+  a keychain-access-group all exactly right, and any one of them wrong is a
+  till that boots to a broken screen.
+
+  The sandbox is only mandatory for the Mac App Store. This app is distributed
+  directly (a DMG on a GitHub Release), which is where nearly every Flutter
+  desktop app lands, so the entitlement set is empty and the app has the same
+  access it has on Windows and Linux.
+
+  If Mac App Store distribution is ever on the table, re-add
+  com.apple.security.app-sandbox here plus the four entitlements above, and
+  test each one on a real machine before shipping.
+-->
 <plist version="1.0">
 <dict>
-	<key>com.apple.security.app-sandbox</key>
-	<true/>
 </dict>
 </plist>

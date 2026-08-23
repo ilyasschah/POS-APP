@@ -27,7 +27,9 @@ class UpdateService {
 
   final Dio _dio;
 
-  /// Android cannot silently self-install, and there is no macOS/Linux build.
+  /// Android cannot silently self-install. The macOS build ships as a DMG the
+  /// user drags to Applications — an app cannot replace its own running bundle
+  /// the way the Windows installer does — and there is no Linux build at all.
   /// Callers use this to hide the UI rather than offer something that cannot work.
   static bool get isSupported => Platform.isWindows;
 

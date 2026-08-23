@@ -1,14 +1,19 @@
 // Application-level settings for the Runner target.
+
+// The application's name. This is the .app bundle's name, the title of the
+// Flutter window, and what shows in the menu bar — so it is the product name,
+// not the Dart package name. (The Windows build gets the same name from
+// octopus_setup.iss; only the executable there is still pos_app.exe.)
+PRODUCT_NAME = Octopus POS
+
+// The application's bundle identifier.
 //
-// This may be replaced with something auto-generated from metadata (e.g., pubspec.yaml) in the
-// future. If not, the values below would default to using the project name when this becomes a
-// 'flutter create' template.
-
-// The application's name. By default this is also the title of the Flutter window.
-PRODUCT_NAME = pos_app
-
-// The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.example.posApp
+// ⚠️ macOS keys per-app state on this: the Keychain items holding the database
+// encryption key and the auth token, the Application Support directory the
+// local database lives in, and (later) the code-signing identity. Changing it
+// on a machine that already has the app orphans all of that — the app comes up
+// as a fresh install. It must never go back to a com.example.* template value.
+PRODUCT_BUNDLE_IDENTIFIER = com.futur3.octopuspos
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2026 com.example. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2026 FUTUR3. All rights reserved.
