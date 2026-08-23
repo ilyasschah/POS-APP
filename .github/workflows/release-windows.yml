@@ -140,6 +140,12 @@ jobs:
           files: |
             Front-End/Output/*.exe
             Front-End/Output/*.sha256
+          # ⚠️ This body is the whole Release's text, for BOTH platforms —
+          # release-macos.yml deliberately publishes files only so it cannot
+          # overwrite what is written here. That means the macOS paragraph below
+          # is written before the Mac job has finished: if that build fails,
+          # this text describes a `.dmg` that is not attached. Check the Actions
+          # tab, not the body, for whether the Mac build actually shipped.
           body: |
             **Windows installer** — download the `.exe` below and run it.
 
@@ -147,3 +153,20 @@ jobs:
             settings are left untouched.
 
             SHA-256: `${{ steps.hash.outputs.sha256 }}`
+
+            ---
+
+            **macOS** — download the `.dmg`, open it, and drag **Octopus POS**
+            to Applications. Requires macOS 11 or newer.
+
+            The build is not signed with an Apple Developer ID yet, so the first
+            launch is blocked by Gatekeeper ("Octopus POS is damaged" or
+            "unidentified developer"). Clear it once, in Terminal:
+
+            ```
+            xattr -dr com.apple.quarantine "/Applications/Octopus POS.app"
+            ```
+
+            The macOS build has no in-app updater, no serial weighing scale and
+            no customer display — those are Windows-only. Install a new version
+            by dragging the next DMG over the old app.
