@@ -3403,6 +3403,14 @@ class AppLocalizationsFr extends AppLocalizations {
   String get priceEditsQuantity => 'Prix modifie la quantité';
 
   @override
+  String get keypadAmount => 'Montant';
+
+  @override
+  String amountBuysQuantity(String amount, String quantity) {
+    return '$amount donne $quantity';
+  }
+
+  @override
   String get barcodeRules => 'Règles de code-barres';
 
   @override
@@ -6742,4 +6750,209 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get maxCashDifferenceHint =>
       'Au-delà, la clôture exige le code PIN d’un administrateur.';
+
+  @override
+  String get cashDrawerTransport => 'Comment le tiroir est raccordé';
+
+  @override
+  String get cashDrawerTransportPrinter => 'Via l’imprimante de tickets (RJ11)';
+
+  @override
+  String get cashDrawerTransportNetwork =>
+      'Réseau — IP de l’imprimante ou du tiroir';
+
+  @override
+  String get cashDrawerTransportSerial => 'Port série (COM)';
+
+  @override
+  String get cashDrawerTransportHint =>
+      'Où le signal d’ouverture est envoyé. La plupart des tiroirs se branchent sur le port RJ11 de l’imprimante de tickets.';
+
+  @override
+  String get cashDrawerHost => 'Adresse IP';
+
+  @override
+  String get cashDrawerTcpPort => 'Port';
+
+  @override
+  String get cashDrawerSerialPortLabel => 'Port COM';
+
+  @override
+  String get cashDrawerBaudRate => 'Débit (bauds)';
+
+  @override
+  String get cashDrawerOpenedOk => 'Signal envoyé au tiroir-caisse';
+
+  @override
+  String cashDrawerFailed(String error) {
+    return 'Impossible d’ouvrir le tiroir-caisse : $error';
+  }
+
+  @override
+  String get cashDrawerTransportUnavailable =>
+      'Cette connexion n’est pas disponible sur cet appareil.';
+
+  @override
+  String get setSounds => 'Sons';
+
+  @override
+  String get setSoundsEnabled => 'Activer les sons';
+
+  @override
+  String get setSoundVolume => 'Volume';
+
+  @override
+  String get setSoundScanOk => 'Scan accepté';
+
+  @override
+  String get setSoundScanFail => 'Scan refusé';
+
+  @override
+  String get setSoundCheckout => 'Vente terminée';
+
+  @override
+  String get setSoundError => 'Message d’erreur';
+
+  @override
+  String get soundsHint =>
+      'Brefs signaux sonores à la caisse. Appuyez sur lecture pour en écouter un.';
+
+  @override
+  String get playSound => 'Écouter ce son';
+
+  @override
+  String get printZReport => 'Imprimer rapport Z';
+
+  @override
+  String get zReportPreview => 'Rapport Z — aperçu';
+
+  @override
+  String get nothingToReport =>
+      'Rien à déclarer — aucun paiement n’a été encaissé.';
+
+  @override
+  String get modifierGroups => 'Groupes d\'options';
+
+  @override
+  String get modifierGroupsHint =>
+      'Un groupe est un ensemble de choix — « Garnitures », « Cuisson ». Créez-le une fois ici, puis rattachez-le à autant de produits que vous voulez depuis l\'onglet Options du produit.';
+
+  @override
+  String get addModifierGroup => 'Nouveau groupe';
+
+  @override
+  String get editModifierGroup => 'Modifier le groupe';
+
+  @override
+  String get noModifierGroupsYet => 'Aucun groupe d\'options';
+
+  @override
+  String get modifierGroupNameHint => 'Garnitures';
+
+  @override
+  String get modifierOptionsTitle => 'Choix';
+
+  @override
+  String get addModifierOption => 'Ajouter un choix';
+
+  @override
+  String get optionNameHint => 'Supplément fromage';
+
+  @override
+  String get extraPrice => 'Prix en plus';
+
+  @override
+  String get minSelections => 'Doit choisir au moins';
+
+  @override
+  String get maxSelections => 'Peut choisir au plus';
+
+  @override
+  String get selectionRuleOptionalOne => 'Facultatif · un seul';
+
+  @override
+  String selectionRuleOptionalMany(int max) {
+    return 'Facultatif · jusqu\'à $max';
+  }
+
+  @override
+  String get selectionRuleExactlyOne => 'Obligatoire · un seul';
+
+  @override
+  String selectionRuleRange(int min, int max) {
+    return 'Obligatoire · de $min à $max';
+  }
+
+  @override
+  String get allowFreeText => 'Autoriser une note libre';
+
+  @override
+  String get allowFreeTextHint =>
+      'Ajoute un champ libre à cette section, pour « sans glace » ou « allergique aux noix ».';
+
+  @override
+  String get groupIsDisabled => 'Désactivé';
+
+  @override
+  String get groupEnabled => 'Disponible en caisse';
+
+  @override
+  String optionCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count choix',
+      one: '1 choix',
+      zero: 'aucun choix',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String deleteModifierGroupQ(String name) {
+    return 'Supprimer « $name » ?';
+  }
+
+  @override
+  String get deleteModifierGroupBody =>
+      'Il sera retiré de tous les produits qui le proposent. Les ventes passées gardent leur propre copie et ne changent pas.';
+
+  @override
+  String get disableRatherThanDelete =>
+      'Désactiver un groupe vaut souvent mieux que le supprimer : le changement atteint toutes les caisses à la prochaine synchro, alors qu\'une suppression n\'arrive qu\'à une synchro complète.';
+
+  @override
+  String get modifierGroupSaved => 'Groupe enregistré';
+
+  @override
+  String get aGroupNeedsAName => 'Le groupe a besoin d\'un nom';
+
+  @override
+  String get mandatoryNeedsOptions =>
+      'Un groupe obligatoire a besoin d\'au moins un choix, sinon le produit ne pourrait jamais être vendu.';
+
+  @override
+  String minCannotExceedChoices(int min, int count) {
+    return 'Vous demandez $min choix mais n\'en avez listé que $count.';
+  }
+
+  @override
+  String get productModifierGroups => 'Groupes d\'options';
+
+  @override
+  String get productModifierGroupsHint =>
+      'En caisse, toucher ce produit demandera ceci, dans cet ordre.';
+
+  @override
+  String get noGroupsAttached =>
+      'Aucun groupe rattaché — le produit part directement au panier.';
+
+  @override
+  String get attachModifierGroup => 'Rattacher un groupe';
+
+  @override
+  String get moveUp => 'Monter';
+
+  @override
+  String get moveDown => 'Descendre';
 }

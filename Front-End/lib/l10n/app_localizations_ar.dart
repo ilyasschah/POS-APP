@@ -3356,6 +3356,14 @@ class AppLocalizationsAr extends AppLocalizations {
   String get priceEditsQuantity => 'السعر يعدّل الكمية';
 
   @override
+  String get keypadAmount => 'المبلغ';
+
+  @override
+  String amountBuysQuantity(String amount, String quantity) {
+    return '$amount يعادل $quantity';
+  }
+
+  @override
   String get barcodeRules => 'قواعد الباركود';
 
   @override
@@ -6696,4 +6704,208 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get maxCashDifferenceHint =>
       'إذا تجاوزه الفرق، يتطلب الإغلاق رمز مسؤول.';
+
+  @override
+  String get cashDrawerTransport => 'طريقة توصيل الدرج';
+
+  @override
+  String get cashDrawerTransportPrinter => 'عبر طابعة الإيصالات (RJ11)';
+
+  @override
+  String get cashDrawerTransportNetwork => 'الشبكة — عنوان IP للطابعة أو الدرج';
+
+  @override
+  String get cashDrawerTransportSerial => 'منفذ تسلسلي (COM)';
+
+  @override
+  String get cashDrawerTransportHint =>
+      'إلى أين يُرسل أمر الفتح. معظم الأدراج تُوصَّل بمنفذ RJ11 في طابعة الإيصالات.';
+
+  @override
+  String get cashDrawerHost => 'عنوان IP';
+
+  @override
+  String get cashDrawerTcpPort => 'المنفذ';
+
+  @override
+  String get cashDrawerSerialPortLabel => 'منفذ COM';
+
+  @override
+  String get cashDrawerBaudRate => 'معدل الباود';
+
+  @override
+  String get cashDrawerOpenedOk => 'تم إرسال إشارة فتح الدرج';
+
+  @override
+  String cashDrawerFailed(String error) {
+    return 'تعذّر فتح درج النقد: $error';
+  }
+
+  @override
+  String get cashDrawerTransportUnavailable =>
+      'هذا الاتصال غير متاح على هذا الجهاز.';
+
+  @override
+  String get setSounds => 'الأصوات';
+
+  @override
+  String get setSoundsEnabled => 'تفعيل الأصوات';
+
+  @override
+  String get setSoundVolume => 'مستوى الصوت';
+
+  @override
+  String get setSoundScanOk => 'تم قبول المسح';
+
+  @override
+  String get setSoundScanFail => 'تم رفض المسح';
+
+  @override
+  String get setSoundCheckout => 'اكتملت عملية البيع';
+
+  @override
+  String get setSoundError => 'رسالة خطأ';
+
+  @override
+  String get soundsHint =>
+      'نغمات قصيرة تُشغَّل عند نقطة البيع. اضغط تشغيل للاستماع.';
+
+  @override
+  String get playSound => 'تشغيل هذا الصوت';
+
+  @override
+  String get printZReport => 'طباعة تقرير Z';
+
+  @override
+  String get zReportPreview => 'تقرير Z — معاينة';
+
+  @override
+  String get nothingToReport =>
+      'لا يوجد ما يُبلَّغ عنه — لم يتم تحصيل أي دفعة.';
+
+  @override
+  String get modifierGroups => 'مجموعات الخيارات';
+
+  @override
+  String get modifierGroupsHint =>
+      'المجموعة هي مجموعة من الخيارات — «الإضافات»، «درجة الطهي». أنشئها مرة واحدة هنا، ثم اربطها بأي عدد من المنتجات من تبويب الخيارات في المنتج.';
+
+  @override
+  String get addModifierGroup => 'مجموعة جديدة';
+
+  @override
+  String get editModifierGroup => 'تعديل المجموعة';
+
+  @override
+  String get noModifierGroupsYet => 'لا توجد مجموعات خيارات بعد';
+
+  @override
+  String get modifierGroupNameHint => 'الإضافات';
+
+  @override
+  String get modifierOptionsTitle => 'الخيارات';
+
+  @override
+  String get addModifierOption => 'إضافة خيار';
+
+  @override
+  String get optionNameHint => 'جبن إضافي';
+
+  @override
+  String get extraPrice => 'سعر إضافي';
+
+  @override
+  String get minSelections => 'الحد الأدنى للاختيار';
+
+  @override
+  String get maxSelections => 'الحد الأقصى للاختيار';
+
+  @override
+  String get selectionRuleOptionalOne => 'اختياري · خيار واحد';
+
+  @override
+  String selectionRuleOptionalMany(int max) {
+    return 'اختياري · حتى $max';
+  }
+
+  @override
+  String get selectionRuleExactlyOne => 'إلزامي · خيار واحد';
+
+  @override
+  String selectionRuleRange(int min, int max) {
+    return 'إلزامي · من $min إلى $max';
+  }
+
+  @override
+  String get allowFreeText => 'السماح بملاحظة حرة';
+
+  @override
+  String get allowFreeTextHint =>
+      'يضيف حقلاً حراً لهذا القسم، مثل «بدون ثلج» أو «حساسية من المكسرات».';
+
+  @override
+  String get groupIsDisabled => 'معطّل';
+
+  @override
+  String get groupEnabled => 'متاح في نقطة البيع';
+
+  @override
+  String optionCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count خيارات',
+      one: 'خيار واحد',
+      zero: 'لا خيارات',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String deleteModifierGroupQ(String name) {
+    return 'حذف «$name»؟';
+  }
+
+  @override
+  String get deleteModifierGroupBody =>
+      'سيُزال من كل منتج يعرضه. المبيعات السابقة تحتفظ بنسختها ولا تتأثر.';
+
+  @override
+  String get disableRatherThanDelete =>
+      'تعطيل المجموعة أفضل عادةً من حذفها: التعطيل يصل إلى كل الأجهزة في المزامنة التالية، أما الحذف فلا يصل إلا بمزامنة كاملة.';
+
+  @override
+  String get modifierGroupSaved => 'تم حفظ المجموعة';
+
+  @override
+  String get aGroupNeedsAName => 'المجموعة تحتاج اسماً';
+
+  @override
+  String get mandatoryNeedsOptions =>
+      'المجموعة الإلزامية تحتاج خياراً واحداً على الأقل، وإلا تعذّر بيع المنتج.';
+
+  @override
+  String minCannotExceedChoices(int min, int count) {
+    return 'تطلب $min خيارات لكنك أدرجت $count فقط.';
+  }
+
+  @override
+  String get productModifierGroups => 'مجموعات الخيارات';
+
+  @override
+  String get productModifierGroupsHint =>
+      'عند لمس هذا المنتج في نقطة البيع سيُطلب هذا، بهذا الترتيب.';
+
+  @override
+  String get noGroupsAttached =>
+      'لا توجد مجموعات مرتبطة — يُضاف المنتج إلى السلة مباشرة.';
+
+  @override
+  String get attachModifierGroup => 'ربط مجموعة';
+
+  @override
+  String get moveUp => 'تحريك لأعلى';
+
+  @override
+  String get moveDown => 'تحريك لأسفل';
 }

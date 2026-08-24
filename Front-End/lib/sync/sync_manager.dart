@@ -79,6 +79,9 @@ class SyncManager {
   static const _kCustomers = 'customers';
   static const _kPromotions = 'promotions';
   static const _kProductComments = 'product_comments';
+  static const _kModifierGroups = 'modifier_groups';
+  static const _kModifierOptions = 'modifier_options';
+  static const _kProductModifierGroups = 'product_modifier_groups';
   static const _kDocuments = 'documents';
   static const _kLoyaltyCards = 'loyalty_cards';
 
@@ -289,6 +292,9 @@ class SyncManager {
         () => pushPendingProductOps(companyId)); // remaps order/doc items.productId
     await _step('push:productComments',
         () => pushPendingProductCommentOps(companyId)); // offline products
+    // After products, so a group linked to an offline-created product already
+    // carries the real productId.
+    await _step('push:modifiers', () => pushPendingModifierOps(companyId));
     await _step('push:barcodes', () => pushPendingBarcodeOps(companyId));
     await _step('push:taxes',
         () => pushPendingTaxOps(companyId)); // remaps product-tax + item taxes
@@ -453,6 +459,13 @@ class SyncManager {
     await _step('customers', () => pullCustomers(companyId));
     await _step('promotions', () => pullPromotions(companyId));
     await _step('productComments', () => pullProductComments(companyId));
+    // Groups BEFORE options and links: both point at a group id, and a till
+    // that cached an option whose group had not arrived yet would render a
+    // choice with no section to put it in.
+    await _step('modifierGroups', () => pullModifierGroups(companyId));
+    await _step('modifierOptions', () => pullModifierOptions(companyId));
+    await _step('productModifierGroups',
+        () => pullProductModifierGroups(companyId));
     // NB securityKeys is pulled by sync() BEFORE the push phase — see the note
     // there. It stays here too so a caller invoking pullMasterData directly
     // still gets RBAC; pullSecurityKeys is a cheap full replace, so running it
@@ -5212,6 +5225,293 @@ class SyncManager {
     if (removed > 0) {
       debugPrint(
           'pullDocuments: retired $removed document(s) deleted on another device.');
+    }
+  }
+
+  /// The modifier catalogue's three tables, each on its own watermark.
+  ///
+  /// 🚨 Disabled rows are pulled DELIBERATELY, not filtered out. A group the
+  /// admin just switched off has to reach the till so the till stops offering
+  /// it — dropping it here would leave every device that already cached it
+  /// showing the group forever. Deletion is the case this cannot cover: nothing
+  /// in this API has tombstones, so a deleted group only disappears on a full
+  /// pull, which is exactly why disabling is the documented way to retire one.
+  Future<void> pullModifierGroups(int companyId) async {
+    final startedAt = DateTime.now().toUtc();
+    final watermark = await _getLastSync(_kModifierGroups);
+
+    final res = await dio.get<List<dynamic>>(
+      '/Modifiers/GetGroups',
+      queryParameters: _query(companyId, watermark),
+    );
+    final rows = res.data ?? const [];
+
+    final pendingDeletes = await db.pendingDeleteModifierGroupIds(companyId);
+
+    await db.batch((batch) {
+      for (final json in rows.cast<Map<String, dynamic>>()) {
+        final id = json['id'] as int;
+        if (pendingDeletes.contains(id)) continue;
+        batch.insert(
+          db.modifierGroupsTable,
+          ModifierGroupsTableCompanion(
+            id: Value(id),
+            companyId: Value(json['companyId'] as int? ?? companyId),
+            name: Value(json['name'] as String? ?? ''),
+            minSelections: Value((json['minSelections'] as num?)?.toInt() ?? 0),
+            maxSelections: Value((json['maxSelections'] as num?)?.toInt() ?? 1),
+            allowsFreeText: Value(json['allowsFreeText'] as bool? ?? false),
+            rank: Value((json['rank'] as num?)?.toInt() ?? 0),
+            isEnabled: Value(json['isEnabled'] as bool? ?? true),
+            lastModified: Value(_parseLastModified(json['lastModified'])),
+            syncStatus: const Value('synced'),
+          ),
+          mode: InsertMode.insertOrReplace,
+        );
+      }
+    });
+
+    await _setLastSync(_kModifierGroups, startedAt);
+  }
+
+  Future<void> pullModifierOptions(int companyId) async {
+    final startedAt = DateTime.now().toUtc();
+    final watermark = await _getLastSync(_kModifierOptions);
+
+    final res = await dio.get<List<dynamic>>(
+      '/Modifiers/GetOptions',
+      queryParameters: _query(companyId, watermark),
+    );
+    final rows = res.data ?? const [];
+
+    await db.batch((batch) {
+      for (final json in rows.cast<Map<String, dynamic>>()) {
+        batch.insert(
+          db.modifierOptionsTable,
+          ModifierOptionsTableCompanion(
+            id: Value(json['id'] as int),
+            companyId: Value(json['companyId'] as int? ?? companyId),
+            modifierGroupId:
+                Value((json['modifierGroupId'] as num?)?.toInt() ?? 0),
+            name: Value(json['name'] as String? ?? ''),
+            additionalPrice:
+                Value((json['additionalPrice'] as num?)?.toDouble() ?? 0),
+            rank: Value((json['rank'] as num?)?.toInt() ?? 0),
+            isEnabled: Value(json['isEnabled'] as bool? ?? true),
+            lastModified: Value(_parseLastModified(json['lastModified'])),
+            syncStatus: const Value('synced'),
+          ),
+          mode: InsertMode.insertOrReplace,
+        );
+      }
+    });
+
+    await _setLastSync(_kModifierOptions, startedAt);
+  }
+
+  Future<void> pullProductModifierGroups(int companyId) async {
+    final startedAt = DateTime.now().toUtc();
+    final watermark = await _getLastSync(_kProductModifierGroups);
+
+    final res = await dio.get<List<dynamic>>(
+      '/Modifiers/GetProductLinks',
+      queryParameters: _query(companyId, watermark),
+    );
+    final rows = res.data ?? const [];
+
+    await db.batch((batch) {
+      for (final json in rows.cast<Map<String, dynamic>>()) {
+        batch.insert(
+          db.productModifierGroupsTable,
+          ProductModifierGroupsTableCompanion(
+            id: Value(json['id'] as int),
+            companyId: Value(json['companyId'] as int? ?? companyId),
+            productId: Value((json['productId'] as num?)?.toInt() ?? 0),
+            modifierGroupId:
+                Value((json['modifierGroupId'] as num?)?.toInt() ?? 0),
+            rank: Value((json['rank'] as num?)?.toInt() ?? 0),
+            lastModified: Value(_parseLastModified(json['lastModified'])),
+            syncStatus: const Value('synced'),
+          ),
+          mode: InsertMode.insertOrReplace,
+        );
+      }
+    });
+
+    await _setLastSync(_kProductModifierGroups, startedAt);
+  }
+
+  /// Drains offline modifier edits.
+  ///
+  /// One group at a time, and the group carries its options with it, because
+  /// `/Modifiers/SaveGroup` takes the whole thing in one transaction — a group
+  /// can never land on the server with three of its six options.
+  ///
+  /// A temp (negative) id always POSTs and then swaps for the real id, taking
+  /// its options and product links with it via [remapModifierGroupId]. A failure
+  /// on one group leaves it pending and moves on: one bad group must not block
+  /// the rest of the sync.
+  Future<void> pushPendingModifierOps(int companyId) async {
+    // Self-repair first, for databases written before the server returned its
+    // saved options: temporary option rows the server has already superseded
+    // are invisible to the queue below (their group is `synced`) and would
+    // otherwise duplicate every choice forever.
+    final purged = await db.purgeSupersededModifierOptions(companyId);
+    if (purged > 0) {
+      debugPrint('pushPendingModifierOps: purged $purged superseded option row(s)');
+    }
+
+    final pending = await db.getPendingModifierGroups(companyId);
+    if (pending.isEmpty) return;
+
+    for (final g in pending) {
+      try {
+        final isTemp = g.id < 0;
+
+        if (g.syncStatus == 'pending_delete') {
+          if (!isTemp) {
+            await dio.delete<dynamic>(
+              '/Modifiers/DeleteGroup',
+              queryParameters: {'id': g.id, 'companyId': companyId},
+            );
+          }
+          await db.hardDeleteModifierGroup(g.id);
+          continue;
+        }
+
+        final options = await db.modifierOptionsForGroup(g.id);
+        final res = await dio.post<dynamic>(
+          '/Modifiers/SaveGroup',
+          queryParameters: {'companyId': companyId},
+          data: {
+            // 0 tells the server to create. A negative temp id would be read as
+            // "update row -3", which does not exist.
+            'id': isTemp ? 0 : g.id,
+            'name': g.name,
+            'minSelections': g.minSelections,
+            'maxSelections': g.maxSelections,
+            'allowsFreeText': g.allowsFreeText,
+            'rank': g.rank,
+            'isEnabled': g.isEnabled,
+            'options': [
+              for (final o in options)
+                {
+                  'id': o.id < 0 ? 0 : o.id,
+                  'name': o.name,
+                  'additionalPrice': o.additionalPrice,
+                  'isEnabled': o.isEnabled,
+                },
+            ],
+          },
+        );
+
+        final body =
+            res.data is Map ? ((res.data as Map)['data'] ?? res.data) : null;
+        final realId = (body is Map ? (body['id'] as num?) : null)?.toInt();
+        if (realId == null) {
+          throw Exception('Server returned no id for modifier group save');
+        }
+
+        // Remap FIRST, so the options land under the id they now belong to.
+        if (isTemp) {
+          await db.remapModifierGroupId(g.id, realId);
+        } else {
+          await (db.update(db.modifierGroupsTable)
+                ..where((t) => t.id.equals(g.id)))
+              .write(const ModifierGroupsTableCompanion(
+                  syncStatus: Value('synced')));
+        }
+
+        // 🚨 Replace the options with what the server SAVED, rather than
+        // leaving the local rows for a later pull to sort out. Only the server
+        // knows which temporary negative id became which real one — and a pull
+        // cannot know either, so it used to insert the real rows alongside the
+        // temporary ones and every choice appeared twice. By then the group was
+        // `synced` and never re-entered this queue, making the duplicate
+        // permanent.
+        final savedOptions = (body is Map ? body['options'] as List? : null) ??
+            const <dynamic>[];
+        await db.replaceModifierOptionsFromServer(
+          companyId: companyId,
+          groupId: realId,
+          options: [
+            for (final raw in savedOptions.cast<Map<String, dynamic>>())
+              (
+                id: (raw['id'] as num).toInt(),
+                name: raw['name'] as String? ?? '',
+                additionalPrice:
+                    (raw['additionalPrice'] as num?)?.toDouble() ?? 0,
+                rank: (raw['rank'] as num?)?.toInt() ?? 0,
+                isEnabled: raw['isEnabled'] as bool? ?? true,
+                lastModified: _parseLastModified(raw['lastModified']),
+              ),
+          ],
+        );
+      } catch (e) {
+        debugPrint('pushPendingModifierOps: group ${g.id} failed — $e');
+      }
+    }
+
+    // Links go last, after every group has a real id — see below.
+    await pushPendingProductModifierLinks(companyId);
+  }
+
+  /// Drains offline product→group links.
+  ///
+  /// Runs AFTER the group loop above, and that order is load-bearing: a link
+  /// written offline points at whatever group id existed locally, which for a
+  /// brand-new group is a temporary NEGATIVE one. Pushing it before the group
+  /// exists server-side would send an id the server has never heard of, and it
+  /// rejects the whole product.
+  ///
+  /// The unit is one PRODUCT, not one link, because `/Modifiers/SetProductGroups`
+  /// replaces a product's whole set — which is also what makes it idempotent and
+  /// safe to retry.
+  Future<void> pushPendingProductModifierLinks(int companyId) async {
+    final productIds = await db.productIdsWithPendingModifierLinks(companyId);
+    if (productIds.isEmpty) return;
+
+    for (final productId in productIds) {
+      try {
+        final links = await db.modifierLinksForProduct(companyId, productId);
+
+        // A group whose create has not landed yet still carries a temp id.
+        // Leave the whole product for the next cycle rather than pushing a
+        // partial list the server would treat as the complete one.
+        if (links.any((l) => l.modifierGroupId < 0)) continue;
+
+        final res = await dio.put<dynamic>(
+          '/Modifiers/SetProductGroups',
+          queryParameters: {'companyId': companyId},
+          data: {
+            'productId': productId,
+            'modifierGroupIds': links.map((l) => l.modifierGroupId).toList(),
+          },
+        );
+
+        final body = res.data is Map
+            ? ((res.data as Map)['data'] ?? res.data)
+            : res.data;
+        final rows = (body is List ? body : const <dynamic>[])
+            .cast<Map<String, dynamic>>();
+
+        await db.replaceProductModifierLinksFromServer(
+          companyId: companyId,
+          productId: productId,
+          links: [
+            for (final raw in rows)
+              (
+                id: (raw['id'] as num).toInt(),
+                modifierGroupId: (raw['modifierGroupId'] as num?)?.toInt() ?? 0,
+                rank: (raw['rank'] as num?)?.toInt() ?? 0,
+                lastModified: _parseLastModified(raw['lastModified']),
+              ),
+          ],
+        );
+      } catch (e) {
+        debugPrint(
+            'pushPendingProductModifierLinks: product $productId failed — $e');
+      }
     }
   }
 

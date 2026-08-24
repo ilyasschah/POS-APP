@@ -1,5 +1,3 @@
-import 'dart:convert';
-import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,12 +6,11 @@ import 'package:pos_app/cart/payment_provider.dart';
 import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/currency/currencies_provider.dart';
-import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/reports/z_report_model.dart';
 import 'package:pos_app/reports/z_report_provider.dart';
-import 'package:pos_app/app_settings/app_settings_provider.dart';
-import 'package:pos_app/printer/receipt_printer_service.dart';
+import 'package:pos_app/reports/z_report_receipt_dialog.dart';
+import 'package:pos_app/reports/z_report_service.dart';
 import 'package:pos_app/sync/sync_notifier.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
 
@@ -46,121 +43,32 @@ class _EndOfDayScreenState extends ConsumerState<EndOfDayScreen> {
     setState(() => _isGenerating = true);
 
     try {
-      // OFFLINE-FIRST: aggregate the Z-report from local Drift right now so the
-      // cashier sees the result + print button instantly — no server wait. The
-      // sync engine still pushes /ZReports/Generate later, but there is no
-      // pullZReports: this row is the ONLY copy the app will ever read, so
-      // every figure must be computed and persisted here, not left for a pull.
-      final db = ref.read(appDatabaseProvider);
-      final now = DateTime.now().toUtc();
-
-      // Every figure the report states, aggregated from Drift. Must run BEFORE
-      // the payments are flagged below — stamping the placeholder id empties
-      // the unreported set this is scoped to.
-      final totals = await db.aggregateUnreportedForZReport(companyId);
-
-      // Tender breakdown over that same unreported set.
-      final payments = await ref.read(unreportedPaymentsProvider.future);
-      final byType = <int, ({String name, double amount})>{};
-      for (final p in payments) {
-        final cur = byType[p.paymentTypeId];
-        byType[p.paymentTypeId] = (
-          // Persisted into paymentBreakdownJson, so it stays English like every
-          // other value written to the DB — only the on-screen copy is translated.
-          name: p.paymentTypeName ?? 'Unknown',
-          amount: (cur?.amount ?? 0) + p.amount,
-        );
-      }
-
-      // Cash in/out from the active (unfinalized) drawer movements.
-      final cashRows = await db.getActiveStartingCash(companyId);
-      double totalCashIn = 0, totalCashOut = 0;
-      for (final c in cashRows) {
-        if (c.type == 'in') {
-          totalCashIn += c.amount;
-        } else if (c.type == 'out') {
-          totalCashOut += c.amount;
-        }
-      }
-
-      final breakdownJson = jsonEncode(byType.entries
-          .map((e) => {
-                'paymentTypeId': e.key,
-                'paymentTypeName': e.value.name,
-                'totalAmount': e.value.amount,
-              })
-          .toList());
-
-      // Device-local number so the slip printed right now is identified; the
-      // push overwrites it with the server's authoritative one.
-      final number = await db.nextLocalZReportNumber(companyId);
-
-      await db.insertOfflineZReport(
-        ZReportsTableCompanion.insert(
-          localId: '', // helper fills a UUID when blank
-          companyId: companyId,
-          userId: currentUser.id,
-          totalSales: totals.totalSales,
-          totalCashIn: totalCashIn,
-          totalCashOut: totalCashOut,
-          paymentBreakdownJson: breakdownJson,
-          closedAt: now,
-          number: Value(number),
-          dateCreated: Value(now),
-          documentCount: Value(totals.documentCount),
-          fromDocumentNumber: Value(totals.fromDocumentNumber),
-          toDocumentNumber: Value(totals.toDocumentNumber),
-          totalReturns: Value(totals.totalReturns),
-          discountsGranted: Value(totals.discountsGranted),
-          taxableTotal: Value(totals.taxableTotal),
-          totalTax: Value(totals.totalTax),
-          grandTotal: Value(totals.grandTotal),
-        ),
+      // One implementation, shared with Close Register — see
+      // `reports/z_report_service.dart`. It aggregates from local Drift, writes
+      // the row, stamps what it reported and hands back the slip, all offline.
+      final report = await ZReportService.generate(
+        db: ref.read(appDatabaseProvider),
+        companyId: companyId,
+        userId: currentUser.id,
+        scope: ZReportScope.company,
       );
-
-      // Optimistic local finalization: flag the just-reported payments and the
-      // active cash movements so they drop out of the "current shift" view
-      // immediately. This is what empties the set `totals` was computed from —
-      // it must stay after the aggregation above.
-      await db.assignUnreportedPaymentsToZReport(companyId);
-      await db.optimisticallyFinalizeActiveStartingCash(companyId);
 
       ref.invalidate(unreportedPaymentsProvider);
       ref.invalidate(allZReportsProvider);
+
+      if (report == null) {
+        if (mounted) {
+          showAppSnackbar(
+              context, ref, AppLocalizations.of(context).nothingToReport);
+        }
+        return;
+      }
+
       // Best-effort push so the server-authoritative Z-report syncs when online.
       ref.read(syncStateProvider.notifier).sync().catchError((_) {});
 
       // Show the freshly-computed report (result + print button) instantly.
-      if (mounted) {
-        _showReceiptDialog(ZReportModel(
-          id: 0,
-          companyId: companyId,
-          number: number,
-          dateCreated: now,
-          fromDocumentId: 0,
-          toDocumentId: 0,
-          documentCount: totals.documentCount,
-          fromDocumentNumber: totals.fromDocumentNumber,
-          toDocumentNumber: totals.toDocumentNumber,
-          totalSales: totals.totalSales,
-          totalReturns: totals.totalReturns,
-          discountsGranted: totals.discountsGranted,
-          taxableTotal: totals.taxableTotal,
-          totalTax: totals.totalTax,
-          grandTotal: totals.grandTotal,
-          totalCashIn: totalCashIn,
-          totalCashOut: totalCashOut,
-          paymentSummaries: byType.entries
-              .map((e) => ZReportPaymentSummaryModel(
-                    id: 0,
-                    zReportId: 0,
-                    paymentTypeId: e.key,
-                    paymentTypeName: e.value.name,
-                    totalAmount: e.value.amount,
-                  ))
-              .toList(),
-        ));
-      }
+      if (mounted) await showZReportDialog(context, ref, report);
     } catch (e) {
       if (mounted) {
         showAppSnackbar(
@@ -172,237 +80,6 @@ class _EndOfDayScreenState extends ConsumerState<EndOfDayScreen> {
         setState(() => _isGenerating = false);
       }
     }
-  }
-
-  void _showReceiptDialog(ZReportModel report) {
-    final sym = ref.read(currencySymbolProvider);
-    final theme = Theme.of(context);
-    final l = AppLocalizations.of(context);
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: theme.colorScheme.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Column(
-          children: [
-            Icon(
-              Icons.receipt_long,
-              size: 48,
-              color: theme.colorScheme.primary,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              l.zReportNumber('${report.number}'),
-              style: const TextStyle(fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-        content: SizedBox(
-          width: 400,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  l.shiftSummaryUpper,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: theme.colorScheme.onSurfaceVariant,
-                    letterSpacing: 2,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Divider(color: theme.colorScheme.outlineVariant),
-                const SizedBox(height: 8),
-                _receiptRow(
-                  l.dateTimeLabel,
-                  report.dateCreated
-                      .toIso8601String()
-                      .split('.')[0]
-                      .replaceFirst('T', ' '),
-                  theme,
-                ),
-                _receiptRow(
-                  l.documents,
-                  report.documentCount?.toString() ?? "—",
-                  theme,
-                ),
-                if (report.fromDocumentNumber != null)
-                  _receiptRow(
-                    l.rangeLabel,
-                    report.fromDocumentNumber == report.toDocumentNumber
-                        ? report.fromDocumentNumber!
-                        : "${report.fromDocumentNumber} → ${report.toDocumentNumber}",
-                    theme,
-                  ),
-                const SizedBox(height: 8),
-                Divider(color: theme.colorScheme.outlineVariant),
-                const SizedBox(height: 8),
-                _receiptRow(
-                  l.totalSales,
-                  "${report.totalSales.toStringAsFixed(2)} $sym",
-                  theme,
-                ),
-                _receiptRow(
-                  l.totalReturns,
-                  "${report.totalReturns.toStringAsFixed(2)} $sym",
-                  theme,
-                ),
-                _receiptRow(
-                  l.discountsLabel,
-                  "${report.discountsGranted.toStringAsFixed(2)} $sym",
-                  theme,
-                ),
-                _receiptRow(
-                  l.taxableTotal,
-                  "${report.taxableTotal.toStringAsFixed(2)} $sym",
-                  theme,
-                ),
-                _receiptRow(
-                  l.totalTax,
-                  "${report.totalTax.toStringAsFixed(2)} $sym",
-                  theme,
-                ),
-                const SizedBox(height: 8),
-                Divider(color: theme.colorScheme.outlineVariant),
-                const SizedBox(height: 8),
-                Text(
-                  l.cashMovementsUpper,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: theme.colorScheme.onSurfaceVariant,
-                    letterSpacing: 2,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Divider(color: theme.colorScheme.outlineVariant),
-                const SizedBox(height: 8),
-                _receiptRow(
-                  l.cashIn,
-                  "+${report.totalCashIn.toStringAsFixed(2)} $sym",
-                  theme,
-                ),
-                _receiptRow(
-                  l.cashOut,
-                  "-${report.totalCashOut.toStringAsFixed(2)} $sym",
-                  theme,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  l.tenderTypesUpper,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: theme.colorScheme.onSurfaceVariant,
-                    letterSpacing: 2,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Divider(color: theme.colorScheme.outlineVariant),
-                const SizedBox(height: 8),
-                if (report.paymentSummaries.isEmpty)
-                  Text(
-                    l.noPaymentsRecorded,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontStyle: FontStyle.italic,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ...report.paymentSummaries.map(
-                  (p) => _receiptRow(
-                    p.paymentTypeName ?? l.unknownLabel,
-                    "${p.totalAmount.toStringAsFixed(2)} $sym",
-                    theme,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: _receiptRow(
-                    l.grandTotalUpper,
-                    "${report.grandTotal.toStringAsFixed(2)} $sym",
-                    theme,
-                    isBold: true,
-                    overrideColor: theme.colorScheme.onPrimaryContainer,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(AppLocalizations.of(context).actionClose),
-          ),
-          ElevatedButton.icon(
-            icon: const Icon(Icons.print),
-            label: Text(AppLocalizations.of(context).printReceipt),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: theme.colorScheme.primary,
-              foregroundColor: theme.colorScheme.onPrimary,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            ),
-            onPressed: () async {
-              Navigator.of(ctx).pop();
-              await ReceiptPrinterService().printZReport(
-                report,
-                sym,
-                roleSettings: ref.read(appSettingsProvider),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _receiptRow(
-    String label,
-    String value,
-    ThemeData theme, {
-    bool isBold = false,
-    Color? overrideColor,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-              fontSize: isBold ? 16 : 14,
-              color: overrideColor ?? theme.colorScheme.onSurface,
-            ),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
-              fontSize: isBold ? 18 : 14,
-              color: overrideColor ?? theme.colorScheme.onSurface,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
@@ -465,7 +142,10 @@ class _EndOfDayScreenState extends ConsumerState<EndOfDayScreen> {
         body: TabBarView(
           children: [
             _CurrentShiftTab(),
-            _ZReportHistoryTab(onViewReceipt: _showReceiptDialog),
+            _ZReportHistoryTab(
+              onViewReceipt: (report) =>
+                  showZReportDialog(context, ref, report),
+            ),
           ],
         ),
       ),

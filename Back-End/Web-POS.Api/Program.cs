@@ -181,6 +181,7 @@ builder.Services.AddScoped<TimeClockRepository>();
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<BarcodeService>();
 builder.Services.AddScoped<BarcodeRuleService>();
+builder.Services.AddScoped<ModifierService>();
 builder.Services.AddScoped<CurrencyService>();
 builder.Services.AddScoped<FiscalItemService>();
 builder.Services.AddScoped<ProductCommentService>();

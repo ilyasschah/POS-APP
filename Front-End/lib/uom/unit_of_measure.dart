@@ -141,9 +141,68 @@ double snapToStorage(double value) => snapToRounding(value, kQuantityStorageStep
 double snapToRounding(double value, double rounding) {
   if (rounding <= 0) return value;
 
-  // Scaled through an int before multiplying back, so 0.001 steps do not
-  // reintroduce the binary-floating error this call exists to remove.
-  return (value / rounding).roundToDouble() * rounding;
+  // Counting the steps is exact; multiplying them back by a fractional step is
+  // NOT, and the product carries binary error this function exists to remove.
+  // `3500 * 0.0001` is 0.35000000000000003, not 0.35 — which is invisible in
+  // arithmetic and glaring on screen, because [formatQuantityValue] grows its
+  // decimals until the text round-trips and so printed a real 350 g line as
+  // `0.350000 kg`. (2.750 kg escaped it only because 2.75 happens to be exactly
+  // representable.) Re-rounding at the step's own decimal places lands the
+  // result on the number a human would have written.
+  //
+  // The C# twin needs none of this: `UnitOfMeasure.Snap` works in `decimal`,
+  // where 0.0001 is exact. Same output, different arithmetic — which is the
+  // one licensed divergence between the two files.
+  final snapped = (value / rounding).roundToDouble() * rounding;
+  return double.parse(snapped.toStringAsFixed(_decimalsOf(rounding)));
+}
+
+/// Decimal places [rounding] needs to write itself exactly — 4 for 0.0001,
+/// 0 for 1. Capped at 10, past which a double is describing its own error.
+int _decimalsOf(double rounding) {
+  var digits = 0;
+  while (digits < 10 &&
+      double.parse(rounding.toStringAsFixed(digits)) != rounding) {
+    digits++;
+  }
+  return digits;
+}
+
+/// How far one tap of a +/- stepper should move a quantity counted in [uomId].
+///
+/// Deliberately NOT the unit's [UnitOfMeasure.rounding]. That is the smallest
+/// step the unit can MEAN, which on a fractional unit is far too fine to drive
+/// by hand — 0.001 kg is 350 taps to clear a 0.350 kg refund line. A flat 1 is
+/// the opposite failure: on that same line the − key can only empty it and the
+/// + key only refill it, which is what the refund dialog used to do.
+///
+/// So: a whole-number unit (pcs, g, mL, cm) steps by one of itself — both its
+/// rounding and what a cashier expects — and a fractional one steps by a tenth,
+/// putting any figure on a typical weighed line a few taps away.
+double quantityStepFor(int? uomId) {
+  final unit = uomById(uomId);
+  return unit.allowsFractions ? 0.1 : unit.rounding;
+}
+
+/// What ONE reference unit costs, for a product priced per [uomId].
+///
+/// Stock is held in the category's reference unit and a price is quoted per
+/// SALE unit, so the two cannot be multiplied together — a 30 MAD/g product
+/// holding 0.400 kg is worth 12 000 MAD, and the stock screen said 12.00
+/// because it multiplied the kilogram figure by the gram price. Every
+/// valuation of a stock quantity goes through here.
+double pricePerReferenceUnit(double unitPrice, int? uomId) =>
+    unitPrice * uomById(uomId).factor;
+
+/// The quantity, in the unit with [uomId], that [amount] of money buys at
+/// [unitPrice] per unit — the reverse of a line total.
+///
+/// This is what the cart keypad's **Price** key means on a weighed line: a
+/// customer asking for "50 dirhams of saffron" is stating a total, and at
+/// 30 MAD/g that is 1.6667 g. Returns null when the price cannot divide.
+double? quantityForAmount(double amount, double unitPrice, int? uomId) {
+  if (unitPrice <= 0 || amount <= 0) return null;
+  return snapToStorage(amount / unitPrice);
 }
 
 /// Formats [quantity] at the precision its unit deserves — `1.500 kg`, `250 g`,

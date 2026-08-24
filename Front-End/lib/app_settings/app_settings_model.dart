@@ -126,6 +126,17 @@ class SettingKeys {
   // App updates (Windows only). Device-scoped — see device_scoped_settings.dart.
   static const autoCheckUpdates = 'App.Update.AutoCheck';
 
+  // ── Sounds ────────────────────────────────────────────────────────────────
+  // Audible feedback at the till — see core/sound_service.dart. The master
+  // switch plus one key per event, so a venue can keep the scanner beep (the
+  // one a head-down cashier actually needs) and silence everything else.
+  static const soundsEnabled = 'App.Sounds.Enabled';
+  static const soundVolume = 'App.Sounds.Volume';
+  static const soundScanOk = 'App.Sounds.ScanOk';
+  static const soundScanFail = 'App.Sounds.ScanFail';
+  static const soundCheckout = 'App.Sounds.Checkout';
+  static const soundError = 'App.Sounds.Error';
+
   // Dual Currency
   static const dualCurrencyEnabled = 'DualCurrency.Enabled';
   static const dualCurrencySymbol = 'DualCurrency.Symbol';
@@ -313,6 +324,20 @@ class SettingKeys {
       '$role.CashDrawer.Enabled';
   static String roleCashDrawerCommand(String role) =>
       '$role.CashDrawer.Command';
+  // How the kick reaches the drawer — 'printer' | 'network' | 'serial'. See
+  // `printer/cash_drawer_service.dart`. Everything below this line describes
+  // the WIRING in front of one terminal, so all five are device-scoped
+  // (`DeviceScopedSettings`): the Windows till with an RJ11 drawer and the
+  // tablet driving a LAN printer must not overwrite each other.
+  static String roleCashDrawerTransport(String role) =>
+      '$role.CashDrawer.Transport';
+  static String roleCashDrawerHost(String role) => '$role.CashDrawer.Host';
+  static String roleCashDrawerTcpPort(String role) =>
+      '$role.CashDrawer.TcpPort';
+  static String roleCashDrawerSerialPort(String role) =>
+      '$role.CashDrawer.SerialPort';
+  static String roleCashDrawerBaudRate(String role) =>
+      '$role.CashDrawer.BaudRate';
   // The printer group (station) this printer prints. Empty = all products.
   // Resolved against [kitchenPrinterGroups]. Stored per-printer (offline-first).
   static String rolePrinterGroupId(String role) => '$role.PrinterGroupId';
@@ -486,6 +511,16 @@ const Map<String, String> kSettingDefaults = {
   // On by default: a till running an old build is a support problem nobody
   // reports. The operator can still turn it off per terminal.
   SettingKeys.autoCheckUpdates: 'true',
+
+  // Sounds. On by default except the error tone: an alert that fires on every
+  // validation toast wears out its welcome in a day, and a venue that wants it
+  // can switch it on. Volume is 0-100.
+  SettingKeys.soundsEnabled: 'true',
+  SettingKeys.soundVolume: '70',
+  SettingKeys.soundScanOk: 'true',
+  SettingKeys.soundScanFail: 'true',
+  SettingKeys.soundCheckout: 'true',
+  SettingKeys.soundError: 'false',
   SettingKeys.dualCurrencyEnabled: 'false',
   SettingKeys.dualCurrencySymbol: '€',
   SettingKeys.dualCurrencyRate: '1.0',
@@ -632,6 +667,11 @@ const Map<String, String> kSettingDefaults = {
   'Receipt.FontSize': '100',
   'Receipt.CashDrawer.Enabled': 'false',
   'Receipt.CashDrawer.Command': r'\x1B\x70\x00\x19\xFA',
+  'Receipt.CashDrawer.Transport': 'printer',
+  'Receipt.CashDrawer.Host': '',
+  'Receipt.CashDrawer.TcpPort': '9100',
+  'Receipt.CashDrawer.SerialPort': '',
+  'Receipt.CashDrawer.BaudRate': '9600',
 
   // Basic Operations
   SettingKeys.useFloorPlans: 'true',
@@ -722,6 +762,11 @@ const Map<String, String> kSettingDefaults = {
   'Kitchen.FontSize': '100',
   'Kitchen.CashDrawer.Enabled': 'false',
   'Kitchen.CashDrawer.Command': r'\x1B\x70\x00\x19\xFA',
+  'Kitchen.CashDrawer.Transport': 'printer',
+  'Kitchen.CashDrawer.Host': '',
+  'Kitchen.CashDrawer.TcpPort': '9100',
+  'Kitchen.CashDrawer.SerialPort': '',
+  'Kitchen.CashDrawer.BaudRate': '9600',
 
   SettingKeys.loyaltyEnabled: 'false',
   SettingKeys.loyaltyMinAmount: '100',

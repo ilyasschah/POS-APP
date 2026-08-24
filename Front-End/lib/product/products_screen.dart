@@ -28,6 +28,9 @@ import 'package:pos_app/product/product_group_model.dart';
 import 'package:pos_app/product/product_provider.dart';
 import 'package:pos_app/tax/tax_model.dart';
 import 'package:pos_app/tax/tax_provider.dart';
+import 'package:pos_app/modifier/modifier_models.dart';
+import 'package:pos_app/modifier/modifier_groups_screen.dart' show selectionRuleLabel;
+import 'package:pos_app/modifier/modifier_provider.dart';
 import 'package:pos_app/product/product_comment_provider.dart';
 import 'package:pos_app/sync/sync_provider.dart';
 import 'package:pos_app/barcode/barcode_provider.dart';
@@ -2452,6 +2455,13 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
               style: TextStyle(color: theme.hintColor)),
           const SizedBox(height: 24),
 
+          // ── Modifier groups ──────────────────────────────────────────────
+          // The structured half, which supersedes the free-text list below it.
+          // Both are shown while the two coexist; the comment editor goes when
+          // the old catalogue is retired.
+          _ProductModifierGroupsPicker(productId: productId),
+          const Divider(height: 40),
+
           // INPUT ROW
           Row(
             children: [
@@ -2938,4 +2948,152 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
     );
   }
 
+}
+
+/// Attaches shared modifier groups to one product, in the order the cashier
+/// will be asked for them.
+///
+/// Only ATTACHES — a group's own name, choices and rules are edited once in
+/// Management → Modifier Groups. Letting a product edit a shared group here
+/// would mean changing a burger's "Toppings" silently rewrote every other
+/// product that offers it.
+class _ProductModifierGroupsPicker extends ConsumerWidget {
+  const _ProductModifierGroupsPicker({required this.productId});
+
+  final int productId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    final attachedAsync = ref.watch(productModifierGroupIdsProvider(productId));
+    final allAsync = ref.watch(allModifierGroupsProvider);
+
+    final attached = attachedAsync.value ?? const <int>[];
+    final all = allAsync.value ?? const <ModifierGroup>[];
+    final byId = {for (final g in all) g.id: g};
+
+    Future<void> write(List<int> ids) async {
+      final companyId = ref.read(selectedCompanyProvider)?.id;
+      if (companyId == null) return;
+      await ref.read(appDatabaseProvider).setProductModifierGroupsLocal(
+            companyId: companyId,
+            productId: productId,
+            groupIds: ids,
+          );
+      ref.read(syncStateProvider.notifier).sync().catchError((_) {});
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(l10n.productModifierGroups,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        Text(l10n.productModifierGroupsHint,
+            style: TextStyle(color: theme.hintColor, fontSize: 12)),
+        const SizedBox(height: 12),
+
+        if (attached.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Text(l10n.noGroupsAttached,
+                style: TextStyle(color: cs.onSurfaceVariant)),
+          )
+        else
+          for (var i = 0; i < attached.length; i++)
+            Builder(builder: (context) {
+              final g = byId[attached[i]];
+              // A link whose group is gone locally still has to be removable,
+              // so it renders by id rather than being silently skipped.
+              return Card(
+                elevation: 0,
+                margin: const EdgeInsets.only(bottom: 6),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  side: BorderSide(color: cs.outlineVariant),
+                ),
+                child: ListTile(
+                  dense: true,
+                  leading: CircleAvatar(
+                    radius: 12,
+                    backgroundColor: cs.secondaryContainer,
+                    child: Text('${i + 1}',
+                        style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: cs.onSecondaryContainer)),
+                  ),
+                  title: Text(g?.name ?? '#${attached[i]}'),
+                  subtitle: g == null
+                      ? null
+                      : Text(
+                          '${selectionRuleLabel(context, g)} · '
+                          '${l10n.optionCount(g.options.length)}',
+                          style: TextStyle(color: cs.onSurfaceVariant)),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_upward, size: 18),
+                        tooltip: l10n.moveUp,
+                        onPressed: i == 0
+                            ? null
+                            : () {
+                                final next = [...attached];
+                                next.insert(i - 1, next.removeAt(i));
+                                write(next);
+                              },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.arrow_downward, size: 18),
+                        tooltip: l10n.moveDown,
+                        onPressed: i == attached.length - 1
+                            ? null
+                            : () {
+                                final next = [...attached];
+                                next.insert(i + 1, next.removeAt(i));
+                                write(next);
+                              },
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.close, size: 18, color: cs.error),
+                        tooltip: l10n.actionDelete,
+                        onPressed: () =>
+                            write([...attached]..removeAt(i)),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+
+        const SizedBox(height: 8),
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: PopupMenuButton<int>(
+            enabled: all.any((g) => !attached.contains(g.id)),
+            onSelected: (id) => write([...attached, id]),
+            itemBuilder: (_) => [
+              for (final g in all.where((g) => !attached.contains(g.id)))
+                PopupMenuItem(
+                  value: g.id,
+                  child: Text(g.isEnabled
+                      ? g.name
+                      : '${g.name} (${l10n.groupIsDisabled})'),
+                ),
+            ],
+            child: TextButton.icon(
+              // The button is the popup's child, so its own onPressed must be
+              // null or it would swallow the tap before the menu opens.
+              onPressed: null,
+              icon: const Icon(Icons.add, size: 18),
+              label: Text(l10n.attachModifierGroup),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }

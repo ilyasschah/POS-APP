@@ -6466,6 +6466,18 @@ abstract class AppLocalizations {
   /// **'Price edits quantity'**
   String get priceEditsQuantity;
 
+  /// No description provided for @keypadAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get keypadAmount;
+
+  /// No description provided for @amountBuysQuantity.
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} buys {quantity}'**
+  String amountBuysQuantity(String amount, String quantity);
+
   /// No description provided for @barcodeRules.
   ///
   /// In en, this message translates to:
@@ -12025,6 +12037,354 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Beyond this, closing the drawer needs an administrator PIN.'**
   String get maxCashDifferenceHint;
+
+  /// No description provided for @cashDrawerTransport.
+  ///
+  /// In en, this message translates to:
+  /// **'How the drawer is connected'**
+  String get cashDrawerTransport;
+
+  /// No description provided for @cashDrawerTransportPrinter.
+  ///
+  /// In en, this message translates to:
+  /// **'Through the receipt printer (RJ11)'**
+  String get cashDrawerTransportPrinter;
+
+  /// No description provided for @cashDrawerTransportNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Network — printer or drawer IP'**
+  String get cashDrawerTransportNetwork;
+
+  /// No description provided for @cashDrawerTransportSerial.
+  ///
+  /// In en, this message translates to:
+  /// **'Serial port (COM)'**
+  String get cashDrawerTransportSerial;
+
+  /// No description provided for @cashDrawerTransportHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Where the open signal is sent. Most drawers plug into the receipt printer\'s RJ11 port.'**
+  String get cashDrawerTransportHint;
+
+  /// No description provided for @cashDrawerHost.
+  ///
+  /// In en, this message translates to:
+  /// **'IP address'**
+  String get cashDrawerHost;
+
+  /// No description provided for @cashDrawerTcpPort.
+  ///
+  /// In en, this message translates to:
+  /// **'Port'**
+  String get cashDrawerTcpPort;
+
+  /// No description provided for @cashDrawerSerialPortLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'COM port'**
+  String get cashDrawerSerialPortLabel;
+
+  /// No description provided for @cashDrawerBaudRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Baud rate'**
+  String get cashDrawerBaudRate;
+
+  /// No description provided for @cashDrawerOpenedOk.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash drawer signal sent'**
+  String get cashDrawerOpenedOk;
+
+  /// No description provided for @cashDrawerFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open the cash drawer: {error}'**
+  String cashDrawerFailed(String error);
+
+  /// No description provided for @cashDrawerTransportUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This connection is not available on this device.'**
+  String get cashDrawerTransportUnavailable;
+
+  /// No description provided for @setSounds.
+  ///
+  /// In en, this message translates to:
+  /// **'Sounds'**
+  String get setSounds;
+
+  /// No description provided for @setSoundsEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable sounds'**
+  String get setSoundsEnabled;
+
+  /// No description provided for @setSoundVolume.
+  ///
+  /// In en, this message translates to:
+  /// **'Volume'**
+  String get setSoundVolume;
+
+  /// No description provided for @setSoundScanOk.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan accepted'**
+  String get setSoundScanOk;
+
+  /// No description provided for @setSoundScanFail.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan rejected'**
+  String get setSoundScanFail;
+
+  /// No description provided for @setSoundCheckout.
+  ///
+  /// In en, this message translates to:
+  /// **'Sale completed'**
+  String get setSoundCheckout;
+
+  /// No description provided for @setSoundError.
+  ///
+  /// In en, this message translates to:
+  /// **'Error message'**
+  String get setSoundError;
+
+  /// No description provided for @soundsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Short tones played at the till. Press play to hear one.'**
+  String get soundsHint;
+
+  /// No description provided for @playSound.
+  ///
+  /// In en, this message translates to:
+  /// **'Play this sound'**
+  String get playSound;
+
+  /// No description provided for @printZReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Print Z Report'**
+  String get printZReport;
+
+  /// No description provided for @zReportPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Z Report — preview'**
+  String get zReportPreview;
+
+  /// No description provided for @nothingToReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to report — no payments have been taken.'**
+  String get nothingToReport;
+
+  /// No description provided for @modifierGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'Modifier Groups'**
+  String get modifierGroups;
+
+  /// No description provided for @modifierGroupsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A group is a set of choices — \"Toppings\", \"Doneness\". Build it once here, then attach it to as many products as you like from the product\'s Modifiers tab.'**
+  String get modifierGroupsHint;
+
+  /// No description provided for @addModifierGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'New group'**
+  String get addModifierGroup;
+
+  /// No description provided for @editModifierGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit group'**
+  String get editModifierGroup;
+
+  /// No description provided for @noModifierGroupsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No modifier groups yet'**
+  String get noModifierGroupsYet;
+
+  /// No description provided for @modifierGroupNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Toppings'**
+  String get modifierGroupNameHint;
+
+  /// No description provided for @modifierOptionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choices'**
+  String get modifierOptionsTitle;
+
+  /// No description provided for @addModifierOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a choice'**
+  String get addModifierOption;
+
+  /// No description provided for @optionNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Extra cheese'**
+  String get optionNameHint;
+
+  /// No description provided for @extraPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Extra price'**
+  String get extraPrice;
+
+  /// No description provided for @minSelections.
+  ///
+  /// In en, this message translates to:
+  /// **'Must choose at least'**
+  String get minSelections;
+
+  /// No description provided for @maxSelections.
+  ///
+  /// In en, this message translates to:
+  /// **'May choose at most'**
+  String get maxSelections;
+
+  /// No description provided for @selectionRuleOptionalOne.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional · pick one'**
+  String get selectionRuleOptionalOne;
+
+  /// No description provided for @selectionRuleOptionalMany.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional · pick up to {max}'**
+  String selectionRuleOptionalMany(int max);
+
+  /// No description provided for @selectionRuleExactlyOne.
+  ///
+  /// In en, this message translates to:
+  /// **'Required · pick one'**
+  String get selectionRuleExactlyOne;
+
+  /// No description provided for @selectionRuleRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Required · pick {min} to {max}'**
+  String selectionRuleRange(int min, int max);
+
+  /// No description provided for @allowFreeText.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow a typed note'**
+  String get allowFreeText;
+
+  /// No description provided for @allowFreeTextHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Adds a free-text box to this section, for things like \"no ice\" or \"allergic to nuts\".'**
+  String get allowFreeTextHint;
+
+  /// No description provided for @groupIsDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Disabled'**
+  String get groupIsDisabled;
+
+  /// No description provided for @groupEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Available at the till'**
+  String get groupEnabled;
+
+  /// No description provided for @optionCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{no choices} =1{1 choice} other{{count} choices}}'**
+  String optionCount(int count);
+
+  /// No description provided for @deleteModifierGroupQ.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete \"{name}\"?'**
+  String deleteModifierGroupQ(String name);
+
+  /// No description provided for @deleteModifierGroupBody.
+  ///
+  /// In en, this message translates to:
+  /// **'It will be removed from every product that offers it. Past sales keep their own copy and are not affected.'**
+  String get deleteModifierGroupBody;
+
+  /// No description provided for @disableRatherThanDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Turning a group off is usually better than deleting it — the change reaches every till on the next sync, while a delete only reaches them on a full one.'**
+  String get disableRatherThanDelete;
+
+  /// No description provided for @modifierGroupSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Group saved'**
+  String get modifierGroupSaved;
+
+  /// No description provided for @aGroupNeedsAName.
+  ///
+  /// In en, this message translates to:
+  /// **'The group needs a name'**
+  String get aGroupNeedsAName;
+
+  /// No description provided for @mandatoryNeedsOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'A required group needs at least one choice, or the product could never be sold.'**
+  String get mandatoryNeedsOptions;
+
+  /// No description provided for @minCannotExceedChoices.
+  ///
+  /// In en, this message translates to:
+  /// **'You are asking for {min} choices but only listed {count}.'**
+  String minCannotExceedChoices(int min, int count);
+
+  /// No description provided for @productModifierGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'Modifier groups'**
+  String get productModifierGroups;
+
+  /// No description provided for @productModifierGroupsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tapping this product at the till will ask for these, in this order.'**
+  String get productModifierGroupsHint;
+
+  /// No description provided for @noGroupsAttached.
+  ///
+  /// In en, this message translates to:
+  /// **'No groups attached — this product is added straight to the cart.'**
+  String get noGroupsAttached;
+
+  /// No description provided for @attachModifierGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach a group'**
+  String get attachModifierGroup;
+
+  /// No description provided for @moveUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Move up'**
+  String get moveUp;
+
+  /// No description provided for @moveDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Move down'**
+  String get moveDown;
 }
 
 class _AppLocalizationsDelegate

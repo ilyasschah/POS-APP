@@ -16,6 +16,7 @@ import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/database/app_database.dart' show ProductsTableData;
 import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/document/documents_screen.dart' show allDocumentsProvider;
+import 'package:pos_app/uom/unit_of_measure.dart';
 
 class RefundDialog extends ConsumerStatefulWidget {
   final String? initialDocumentNumber;
@@ -36,7 +37,29 @@ class _RefundDialogState extends ConsumerState<RefundDialog> {
   int? _selectedPaymentTypeId;
   // productId → quantity the cashier wants to refund
   Map<int, double> _refundQty = {};
+  // productId → the unit that quantity is IN. A receipt line carries a bare
+  // number, so without this the dialog stepped 350 grams of saffron a kilo at a
+  // time and printed it through the money formatter as a flat "350.00".
+  Map<int, int> _uomByProduct = {};
   final _fmt = NumberFormat('#,##0.00');
+
+  int _uomOf(int productId) => _uomByProduct[productId] ?? kUomPieces;
+
+  /// Reads the sale units for a set of products out of the local catalogue.
+  /// Offline-first, like everything else on this screen.
+  Future<Map<int, int>> _loadUoms(Iterable<int> productIds) async {
+    final ids = productIds.toSet().toList();
+    if (ids.isEmpty) return const {};
+    final db = ref.read(appDatabaseProvider);
+    final rows =
+        await (db.select(db.productsTable)..where((t) => t.id.isIn(ids))).get();
+    return {
+      for (final r in rows)
+        r.id: r.uomId == kUomPieces
+            ? uomFromLegacyText(r.measurementUnit)
+            : r.uomId,
+    };
+  }
 
   // ── Blind-return state ──────────────────────────────────────────────────
   // A blind return refunds goods this terminal never sold (no local receipt,
@@ -75,6 +98,7 @@ class _RefundDialogState extends ConsumerState<RefundDialog> {
       // The cart's per-unit price already nets item discounts out; the blind
       // line is priced the same way the picker would price it.
       price: item.price,
+      uomId: item.uomId,
       qty: item.quantity,
     ));
   }
@@ -122,9 +146,14 @@ class _RefundDialogState extends ConsumerState<RefundDialog> {
         }
       }
 
+      final uoms = doc == null
+          ? const <int, int>{}
+          : await _loadUoms(doc.items.map((i) => i.productId));
+
       setState(() {
         _document = doc;
         _error    = doc == null ? l.receiptNotFound(number) : null;
+        _uomByProduct = uoms;
         if (doc != null) {
           // default: refund full quantity of every item
           _refundQty = {for (final i in doc.items) i.productId: i.quantity};
@@ -194,13 +223,14 @@ class _RefundDialogState extends ConsumerState<RefundDialog> {
     setState(() {
       final idx = _blindLines.indexWhere((l) => l.productId == picked.id);
       if (idx >= 0) {
-        _blindLines[idx].qty += 1;
+        _blindLines[idx].qty += uomById(picked.uomId).rounding;
       } else {
         _blindLines.add(_BlindLine(
           productId: picked.id,
           name:      picked.name,
           price:     picked.price,
-          qty:       1,
+          uomId:     picked.uomId,
+          qty:       uomById(picked.uomId).rounding,
         ));
       }
     });
@@ -374,7 +404,9 @@ class _RefundDialogState extends ConsumerState<RefundDialog> {
                                           fontSize: 13,
                                           fontWeight: FontWeight.w600,
                                           color: cs.onSurface)),
-                                  Text(_fmt.format(line.price),
+                                  Text(
+                                      '${_fmt.format(line.price)} / '
+                                      '${uomById(line.uomId).code}',
                                       style: TextStyle(
                                           fontSize: 11,
                                           color: cs.onSurfaceVariant)),
@@ -384,6 +416,7 @@ class _RefundDialogState extends ConsumerState<RefundDialog> {
                             _QtyStepper(
                               value: line.qty,
                               max:   9999,
+                              uomId: line.uomId,
                               onChanged: (v) => setState(() {
                                 if (v <= 0) {
                                   _blindLines.removeAt(i);
@@ -452,7 +485,7 @@ class _RefundDialogState extends ConsumerState<RefundDialog> {
                     Text(
                       AppLocalizations.of(context).priceTimesMaxQty(
                         _fmt.format(item.price),
-                        _fmt.format(item.quantity),
+                        formatQuantity(item.quantity, _uomOf(item.productId)),
                       ),
                       style: TextStyle(
                           fontSize: 11, color: cs.onSurfaceVariant),
@@ -463,6 +496,7 @@ class _RefundDialogState extends ConsumerState<RefundDialog> {
               _QtyStepper(
                 value: qty,
                 max:   item.quantity,
+                uomId: _uomOf(item.productId),
                 onChanged: (v) =>
                     setState(() => _refundQty[item.productId] = v),
               ),
@@ -786,30 +820,38 @@ class _RefundDialogState extends ConsumerState<RefundDialog> {
 class _QtyStepper extends StatelessWidget {
   final double value;
   final double max;
+
+  /// The unit [value] is counted in. It sets both the step and the precision:
+  /// ±1 on a product sold in grams, ±0.001 on one sold in kilos. Stepping a
+  /// weighed line by a flat 1 meant the − key could only ever empty a 0.350 kg
+  /// line, and the + key overshoot the quantity that was actually sold.
+  final int uomId;
   final ValueChanged<double> onChanged;
 
   const _QtyStepper(
-      {required this.value, required this.max, required this.onChanged});
-
-  String _label(double v) =>
-      v.truncateToDouble() == v ? v.toInt().toString() : v.toStringAsFixed(2);
+      {required this.value,
+      required this.max,
+      required this.uomId,
+      required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         _StepBtn(
           icon:    Icons.remove,
           enabled: value > 0,
-          onTap:   () => onChanged(value - 1),
+          onTap:   () => onChanged(
+              steppedRefundQuantity(value: value, max: max, uomId: uomId, up: false)),
           cs:      cs,
         ),
         Container(
-          width: 34,
+          width: 52,
           alignment: Alignment.center,
-          child: Text(_label(value),
+          child: Text(formatQuantityValue(value, uomId),
               style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
@@ -818,12 +860,37 @@ class _QtyStepper extends StatelessWidget {
         _StepBtn(
           icon:    Icons.add,
           enabled: value < max,
-          onTap:   () => onChanged(value + 1),
+          onTap:   () => onChanged(
+              steppedRefundQuantity(value: value, max: max, uomId: uomId, up: true)),
           cs:      cs,
         ),
       ],
     );
   }
+}
+
+/// What one tap of the refund stepper produces.
+///
+/// Split out as a plain function so the rule can be tested without standing up
+/// the whole refund dialog — the arithmetic here decides how much money leaves
+/// the drawer and how much stock comes back.
+///
+/// Two things it fixes over the old inline `value ± 1`:
+///  * The step is the UNIT's ([quantityStepFor]), so a gram line moves a gram
+///    at a time instead of a kilogram — the old ±1 on a 0.350 kg line could
+///    only ever empty it or overfill it.
+///  * It CLAMPS rather than merely disabling the buttons. `enabled: value < max`
+///    gated entry into the tap but nothing bounded the result, so a 0.350 kg
+///    line stepped to 1.350 and refunded a kilo that was never sold — and the −
+///    key ran a line straight past zero into a negative quantity.
+double steppedRefundQuantity({
+  required double value,
+  required double max,
+  required int uomId,
+  required bool up,
+}) {
+  final step = quantityStepFor(uomId);
+  return snapToStorage((value + (up ? step : -step)).clamp(0, max));
 }
 
 class _StepBtn extends StatelessWidget {
@@ -921,11 +988,16 @@ class _BlindLine {
   final int productId;
   final String name;
   final double price;
+
+  /// The unit [qty] and [price] are both stated in. A blind return of a weighed
+  /// product is counted in grams, not kilos, and the stepper steps accordingly.
+  final int uomId;
   double qty;
   _BlindLine({
     required this.productId,
     required this.name,
     required this.price,
+    required this.uomId,
     required this.qty,
   });
 }
@@ -935,7 +1007,13 @@ class _PickedProduct {
   final int id;
   final String name;
   final double price;
-  const _PickedProduct({required this.id, required this.name, required this.price});
+  /// The unit [price] is quoted in — and the one a blind line will count in.
+  final int uomId;
+  const _PickedProduct(
+      {required this.id,
+      required this.name,
+      required this.price,
+      required this.uomId});
 }
 
 /// Manager-PIN prompt. Returns the entered PIN (verification happens in the
@@ -1012,6 +1090,13 @@ class _ProductPickerDialogState extends ConsumerState<_ProductPickerDialog> {
   final _fmt = NumberFormat('#,##0.00');
   String _query = '';
 
+  /// The unit a row is priced and sold in. Falls back to the legacy free-text
+  /// unit when the id is still the bare `pcs` default — the same self-healing
+  /// read `Product.fromDrift` does, so the picker cannot disagree with the
+  /// product editor about what a product is measured in.
+  UnitOfMeasure _uomOfRow(ProductsTableData p) => uomById(
+      p.uomId == kUomPieces ? uomFromLegacyText(p.measurementUnit) : p.uomId);
+
   @override
   void dispose() {
     _searchCtrl.dispose();
@@ -1082,14 +1167,19 @@ class _ProductPickerDialogState extends ConsumerState<_ProductPickerDialog> {
                         dense: true,
                         title: Text(p.name,
                             style: TextStyle(color: cs.onSurface)),
+                        // A gram price beside a name reads as absurd without
+                        // its unit — "30.00" on saffron is 30 per GRAM.
                         trailing: Text(
-                          _fmt.format(p.price),
+                          '${_fmt.format(p.price)} / ${_uomOfRow(p).code}',
                           style: TextStyle(
                               fontWeight: FontWeight.w600, color: cs.primary),
                         ),
                         onTap: () => Navigator.of(context).pop(
                           _PickedProduct(
-                              id: p.id, name: p.name, price: p.price),
+                              id: p.id,
+                              name: p.name,
+                              price: p.price,
+                              uomId: _uomOfRow(p).id),
                         ),
                       );
                     },

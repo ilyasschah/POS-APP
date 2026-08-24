@@ -9,8 +9,9 @@ enum CartKeypadMode {
   /// The selected line's quantity.
   quantity,
 
-  /// The selected line's unit price. Only for a product whose
-  /// `isPriceChangeAllowed` is set.
+  /// The selected line's unit price — or, on a **weighed** line, the money the
+  /// customer wants to spend, which the parent back-solves into a weight. See
+  /// [CartKeypad.priceEntersAmount].
   price,
 }
 
@@ -41,6 +42,7 @@ class CartKeypad extends StatelessWidget {
     required this.onBackspace,
     required this.hasSelection,
     required this.priceChangeAllowed,
+    this.priceEntersAmount = false,
     this.keyHeight = 52,
   });
 
@@ -62,6 +64,18 @@ class CartKeypad extends StatelessWidget {
   /// Gates the **Prix** key. A product the cashier may not reprice keeps the
   /// key visible but dead, so the rule is legible rather than invisible.
   final bool priceChangeAllowed;
+
+  /// True when the selected line is sold BY WEIGHT, which reverses what the
+  /// price key means.
+  ///
+  /// A customer at the counter does not ask for 1.67 grams of saffron, they ask
+  /// for 50 dirhams of it — so on a weighed line the digits are a money total
+  /// and the parent divides by the unit price to get the weight. The key is
+  /// therefore live regardless of [priceChangeAllowed]: nothing is being
+  /// repriced, the shelf price is the divisor. It relabels to **Amount**,
+  /// because a key that silently means something else is a wrong sale waiting
+  /// to happen.
+  final bool priceEntersAmount;
 
   final double keyHeight;
 
@@ -139,11 +153,15 @@ class CartKeypad extends StatelessWidget {
                   Row(
                     children: [
                       _KeypadKey(
-                        label: l.priceLabel,
+                        label: priceEntersAmount
+                            ? l.keypadAmount
+                            : l.priceLabel,
                         height: keyHeight,
                         // Dead, not hidden: "you cannot change this price" is
                         // information the cashier needs at the moment they try.
-                        enabled: hasSelection && priceChangeAllowed,
+                        // A weighed line is never dead — it is not a reprice.
+                        enabled: hasSelection &&
+                            (priceChangeAllowed || priceEntersAmount),
                         selected: mode == CartKeypadMode.price,
                         onTap: () => onModeChanged(CartKeypadMode.price),
                       ),

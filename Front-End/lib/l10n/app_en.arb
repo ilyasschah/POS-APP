@@ -29,7 +29,7 @@
   "deviceRegistrationSubtitle": "Sign in with your account to link this terminal",
   "fieldEmail": "Email",
   "fieldPassword": "Password",
-  "developerMode": "Developer Mode",
+  "developerMode": "Developer mode",
   "unlinkDeviceConfirm": "Are you sure you want to unlink this device?",
   "unlinkDevice": "Unlink Device",
   "timeClock": "TIME CLOCK",
@@ -1330,8 +1330,20 @@
   "placeOnScale": "Place the item on the scale",
   "scaleNotConnected": "No scale connected — enter the quantity",
   "useThisWeight": "Use this weight",
-  "enterQuantity": "Enter quantity",
+  "enterQuantity": "Enter Quantity",
   "priceEditsQuantity": "Price edits quantity",
+  "keypadAmount": "Amount",
+  "amountBuysQuantity": "{amount} buys {quantity}",
+  "@amountBuysQuantity": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "quantity": {
+        "type": "String"
+      }
+    }
+  },
   "barcodeRules": "Barcode Rules",
   "barcodeRulesHint": "Barcode rules define how a scanned barcode is read. A barcode is matched against the first rule whose pattern fits, so order matters. Patterns can embed a value such as a weight or a price: {NNDD} marks where the digits sit, and D positions are decimals. A product whose barcode carries an embedded value must store those positions as zeros.",
   "ruleName": "Rule Name",
@@ -1557,7 +1569,6 @@
   "voidOrderConfirm": "Are you sure you want to void this order?",
   "enterVoidReason": "Enter void reason here",
   "refreshOrderNumber": "Refresh order number",
-  "enterQuantity": "Enter Quantity",
   "setSalePrice": "Set Sale Price",
   "fieldPrice": "Price",
   "ageRestriction": "Age Restriction",
@@ -3457,16 +3468,26 @@
   "sessionDocumentsHint": "Tap a document to open it",
   "sessionOpenDocumentHint": "Tap a payment to open its document",
   "sessionDocumentUnavailable": "That document is not on this device.",
-  "developerMode": "Developer mode",
   "developerModeHint": "Shows a floating debug button on this terminal, with a barcode simulator for price and weight labels.",
   "generateScaleBarcode": "Scale label",
   "scaleBarcodeRuleUnusable": "The rule {pattern} cannot generate a product barcode.",
   "@scaleBarcodeRuleUnusable": {
-    "placeholders": { "pattern": { "type": "String" } }
+    "placeholders": {
+      "pattern": {
+        "type": "String"
+      }
+    }
   },
   "barcodeAlreadyUsedBy": "{code} already belongs to {product}.",
   "@barcodeAlreadyUsedBy": {
-    "placeholders": { "code": { "type": "String" }, "product": { "type": "String" } }
+    "placeholders": {
+      "code": {
+        "type": "String"
+      },
+      "product": {
+        "type": "String"
+      }
+    }
   },
   "setPosSession": "POS session",
   "setCashMethods": "Cash methods",
@@ -3475,5 +3496,111 @@
   "cashMethodsConfirm": "Use these",
   "noPaymentMethodsDefined": "No payment methods defined.",
   "setMaxCashDifference": "Allowed cash difference",
-  "maxCashDifferenceHint": "Beyond this, closing the drawer needs an administrator PIN."
+  "maxCashDifferenceHint": "Beyond this, closing the drawer needs an administrator PIN.",
+  "cashDrawerTransport": "How the drawer is connected",
+  "cashDrawerTransportPrinter": "Through the receipt printer (RJ11)",
+  "cashDrawerTransportNetwork": "Network — printer or drawer IP",
+  "cashDrawerTransportSerial": "Serial port (COM)",
+  "cashDrawerTransportHint": "Where the open signal is sent. Most drawers plug into the receipt printer's RJ11 port.",
+  "cashDrawerHost": "IP address",
+  "cashDrawerTcpPort": "Port",
+  "cashDrawerSerialPortLabel": "COM port",
+  "cashDrawerBaudRate": "Baud rate",
+  "cashDrawerOpenedOk": "Cash drawer signal sent",
+  "cashDrawerFailed": "Could not open the cash drawer: {error}",
+  "@cashDrawerFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "cashDrawerTransportUnavailable": "This connection is not available on this device.",
+  "setSounds": "Sounds",
+  "setSoundsEnabled": "Enable sounds",
+  "setSoundVolume": "Volume",
+  "setSoundScanOk": "Scan accepted",
+  "setSoundScanFail": "Scan rejected",
+  "setSoundCheckout": "Sale completed",
+  "setSoundError": "Error message",
+  "soundsHint": "Short tones played at the till. Press play to hear one.",
+  "playSound": "Play this sound",
+  "printZReport": "Print Z Report",
+  "zReportPreview": "Z Report — preview",
+  "nothingToReport": "Nothing to report — no payments have been taken.",
+  "modifierGroups": "Modifier Groups",
+  "modifierGroupsHint": "A group is a set of choices — \"Toppings\", \"Doneness\". Build it once here, then attach it to as many products as you like from the product's Modifiers tab.",
+  "addModifierGroup": "New group",
+  "editModifierGroup": "Edit group",
+  "noModifierGroupsYet": "No modifier groups yet",
+  "modifierGroupNameHint": "Toppings",
+  "modifierOptionsTitle": "Choices",
+  "addModifierOption": "Add a choice",
+  "optionNameHint": "Extra cheese",
+  "extraPrice": "Extra price",
+  "minSelections": "Must choose at least",
+  "maxSelections": "May choose at most",
+  "selectionRuleOptionalOne": "Optional · pick one",
+  "selectionRuleOptionalMany": "Optional · pick up to {max}",
+  "@selectionRuleOptionalMany": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "selectionRuleExactlyOne": "Required · pick one",
+  "selectionRuleRange": "Required · pick {min} to {max}",
+  "@selectionRuleRange": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "allowFreeText": "Allow a typed note",
+  "allowFreeTextHint": "Adds a free-text box to this section, for things like \"no ice\" or \"allergic to nuts\".",
+  "groupIsDisabled": "Disabled",
+  "groupEnabled": "Available at the till",
+  "optionCount": "{count, plural, =0{no choices} =1{1 choice} other{{count} choices}}",
+  "@optionCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteModifierGroupQ": "Delete \"{name}\"?",
+  "@deleteModifierGroupQ": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteModifierGroupBody": "It will be removed from every product that offers it. Past sales keep their own copy and are not affected.",
+  "disableRatherThanDelete": "Turning a group off is usually better than deleting it — the change reaches every till on the next sync, while a delete only reaches them on a full one.",
+  "modifierGroupSaved": "Group saved",
+  "aGroupNeedsAName": "The group needs a name",
+  "mandatoryNeedsOptions": "A required group needs at least one choice, or the product could never be sold.",
+  "minCannotExceedChoices": "You are asking for {min} choices but only listed {count}.",
+  "@minCannotExceedChoices": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "productModifierGroups": "Modifier groups",
+  "productModifierGroupsHint": "Tapping this product at the till will ask for these, in this order.",
+  "noGroupsAttached": "No groups attached — this product is added straight to the cart.",
+  "attachModifierGroup": "Attach a group",
+  "moveUp": "Move up",
+  "moveDown": "Move down"
 }

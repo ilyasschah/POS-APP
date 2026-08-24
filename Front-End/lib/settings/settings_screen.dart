@@ -27,6 +27,7 @@ import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:pos_app/app_settings/app_settings_model.dart';
+import 'package:pos_app/core/sound_service.dart';
 import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/scale/scale_service.dart';
 import 'package:pos_app/settings/barcode_rules_editor.dart';
@@ -1542,10 +1543,15 @@ class _NumericStepper extends ConsumerWidget {
   final int min;
   final int max;
 
+  /// How much one tap moves the value. 1 for a message duration; 10 for a
+  /// 0-100 volume, where single steps would mean a hundred taps.
+  final int step;
+
   const _NumericStepper({
     required this.settingKey,
     required this.min,
     required this.max,
+    this.step = 1,
   });
 
   @override
@@ -1571,7 +1577,7 @@ class _NumericStepper extends ConsumerWidget {
             enabled: value > min,
             onTap: () => ref
                 .read(appSettingsProvider.notifier)
-                .set(settingKey, '${value - 1}'),
+                .set(settingKey, '${(value - step).clamp(min, max)}'),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 18),
@@ -1589,10 +1595,125 @@ class _NumericStepper extends ConsumerWidget {
             enabled: value < max,
             onTap: () => ref
                 .read(appSettingsProvider.notifier)
-                .set(settingKey, '${value + 1}'),
+                .set(settingKey, '${(value + step).clamp(min, max)}'),
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Settings → General → Sounds (handoff.md ⭐10).
+///
+/// The master switch, a volume, and one row per event with a play button, so
+/// the four tones can be auditioned here rather than by ringing up a sale.
+class _SoundsCard extends ConsumerWidget {
+  const _SoundsCard();
+
+  static String _labelFor(AppLocalizations l10n, PosSound sound) =>
+      switch (sound) {
+        PosSound.scanOk => l10n.setSoundScanOk,
+        PosSound.scanFail => l10n.setSoundScanFail,
+        PosSound.checkout => l10n.setSoundCheckout,
+        PosSound.error => l10n.setSoundError,
+      };
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final enabled =
+        ref.watch(appSettingsProvider)[SettingKeys.soundsEnabled]
+                ?.toLowerCase() ==
+            'true';
+
+    return _SettingsCard(
+      title: l10n.setSounds,
+      children: [
+        _SettingSwitch(
+          settingKey: SettingKeys.soundsEnabled,
+          label: l10n.setSoundsEnabled,
+          subtitle: l10n.soundsHint,
+          icon: Icons.volume_up_outlined,
+        ),
+        _StepperRow(
+          label: l10n.setSoundVolume,
+          settingKey: SettingKeys.soundVolume,
+          min: 0,
+          max: 100,
+          step: 10,
+          suffix: '%',
+        ),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            // Column count from the width the card actually has, not from a
+            // breakpoint — each row needs room for a label, a switch and a
+            // play button before it is worth splitting in two.
+            const minTileWidth = 340.0;
+            final columns =
+                (constraints.maxWidth / minTileWidth).floor().clamp(1, 2);
+            final itemWidth = constraints.maxWidth / columns;
+            return Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                for (final sound in PosSound.values)
+                  SizedBox(
+                    width: itemWidth,
+                    child: _SoundRow(
+                      sound: sound,
+                      label: _labelFor(l10n, sound),
+                      parentEnabled: enabled,
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+}
+
+class _SoundRow extends ConsumerWidget {
+  final PosSound sound;
+  final String label;
+  final bool parentEnabled;
+
+  const _SoundRow({
+    required this.sound,
+    required this.label,
+    required this.parentEnabled,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Row(
+      children: [
+        Expanded(
+          child: _SettingSwitch(
+            settingKey: sound.settingKey,
+            label: label,
+            enabled: parentEnabled,
+          ),
+        ),
+        IconButton(
+          tooltip: AppLocalizations.of(context).playSound,
+          icon: const Icon(Icons.play_circle_outline),
+          onPressed: () {
+            // Auditioning is an explicit request, so it plays even when this
+            // event (or the master switch) is off — otherwise the one control
+            // that lets you hear the tone goes silent exactly when you are
+            // deciding whether to turn it on.
+            final settings = {
+              ...ref.read(appSettingsProvider),
+              SettingKeys.soundsEnabled: 'true',
+              sound.settingKey: 'true',
+            };
+            SoundService.instance.play(settings, sound);
+          },
+        ),
+        const SizedBox(width: 8),
+      ],
     );
   }
 }
@@ -1602,6 +1723,7 @@ class _StepperRow extends StatelessWidget {
   final String settingKey;
   final int min;
   final int max;
+  final int step;
   final String? suffix;
 
   const _StepperRow({
@@ -1609,6 +1731,7 @@ class _StepperRow extends StatelessWidget {
     required this.settingKey,
     required this.min,
     required this.max,
+    this.step = 1,
     this.suffix,
   });
 
@@ -1621,7 +1744,8 @@ class _StepperRow extends StatelessWidget {
           Expanded(
             child: Text(label, style: Theme.of(context).textTheme.bodyMedium),
           ),
-          _NumericStepper(settingKey: settingKey, min: min, max: max),
+          _NumericStepper(
+              settingKey: settingKey, min: min, max: max, step: step),
           if (suffix != null) ...[
             const SizedBox(width: 8),
             Text(suffix!, style: Theme.of(context).textTheme.bodyMedium),
@@ -2140,6 +2264,47 @@ List<SearchableSetting> _kSearchableSettings(
     tabIndex: 0,
     trailingBuilder: (_) =>
         const _DropdownControl(SettingKeys.messagePosition, ['Top', 'Bottom']),
+  ),
+  SearchableSetting(
+    title: AppLocalizations.of(context).setSoundsEnabled,
+    tabName: 'General · Sounds',
+    tabIndex: 0,
+    trailingBuilder: (_) => const _SwitchControl(SettingKeys.soundsEnabled),
+  ),
+  SearchableSetting(
+    title: AppLocalizations.of(context).setSoundVolume,
+    tabName: 'General · Sounds',
+    tabIndex: 0,
+    trailingBuilder: (_) => const _NumericStepper(
+      settingKey: SettingKeys.soundVolume,
+      min: 0,
+      max: 100,
+      step: 10,
+    ),
+  ),
+  SearchableSetting(
+    title: AppLocalizations.of(context).setSoundScanOk,
+    tabName: 'General · Sounds',
+    tabIndex: 0,
+    trailingBuilder: (_) => const _SwitchControl(SettingKeys.soundScanOk),
+  ),
+  SearchableSetting(
+    title: AppLocalizations.of(context).setSoundScanFail,
+    tabName: 'General · Sounds',
+    tabIndex: 0,
+    trailingBuilder: (_) => const _SwitchControl(SettingKeys.soundScanFail),
+  ),
+  SearchableSetting(
+    title: AppLocalizations.of(context).setSoundCheckout,
+    tabName: 'General · Sounds',
+    tabIndex: 0,
+    trailingBuilder: (_) => const _SwitchControl(SettingKeys.soundCheckout),
+  ),
+  SearchableSetting(
+    title: AppLocalizations.of(context).setSoundError,
+    tabName: 'General · Sounds',
+    tabIndex: 0,
+    trailingBuilder: (_) => const _SwitchControl(SettingKeys.soundError),
   ),
   SearchableSetting(
     title: AppLocalizations.of(context).setShowCashInOnStart,
@@ -3824,6 +3989,7 @@ class _GeneralTab extends ConsumerWidget {
             const SizedBox(height: 8), // Bottom padding buffer
           ],
         ),
+        const _SoundsCard(),
         _SettingsCard(
           // <-- Make sure to remove the 'const' keyword here
           title: AppLocalizations.of(context).setBusinessDay,

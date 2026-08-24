@@ -12,6 +12,7 @@ import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/document/document_type_constants.dart';
 import 'package:pos_app/session/session_provider.dart';
 import 'package:pos_app/settings/device_identity.dart';
+import 'package:pos_app/uom/unit_of_measure.dart';
 
 /// Server `DocumentTypeConstants.Refund`. Refund documents written locally must
 /// carry this type so the documents list / reports classify them correctly and
@@ -391,10 +392,31 @@ class RefundService {
   /// `current - quantity`, so a negative quantity adds back).
   Future<void> _restoreLocalStock(RefundPayload payload) async {
     final db = _ref.read(appDatabaseProvider);
+
+    // The refund payload carries product ids and quantities, never units — so
+    // the unit is read back off the catalogue. It is not optional detail: the
+    // refunded quantity is in the product's SALE unit, and a 100 g line handed
+    // to the stock table unconverted returns 100 KILOGRAMS to the shelf.
+    // A product missing locally falls back to pieces, which is the identity
+    // conversion and so cannot make the figure worse than it already is.
+    final productIds =
+        payload.items.map((i) => i['productId'] as int).toSet().toList();
+    final uomByProduct = <int, int>{};
+    if (productIds.isNotEmpty) {
+      final rows = await (db.select(db.productsTable)
+            ..where((t) => t.id.isIn(productIds)))
+          .get();
+      for (final r in rows) {
+        uomByProduct[r.id] =
+            r.uomId == kUomPieces ? uomFromLegacyText(r.measurementUnit) : r.uomId;
+      }
+    }
+
     final items = payload.items
         .map((i) => (
               productId: i['productId'] as int,
               quantity: -((i['quantity'] as num).toDouble()),
+              uomId: uomByProduct[i['productId'] as int] ?? kUomPieces,
               warehouseId: payload.warehouseId,
               isService: false,
               productName: '',
