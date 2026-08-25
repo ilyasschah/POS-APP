@@ -15938,6 +15938,2699 @@ class ProductCommentsTableCompanion
   }
 }
 
+class $ModifierGroupsTableTable extends ModifierGroupsTable
+    with TableInfo<$ModifierGroupsTableTable, ModifierGroupsTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ModifierGroupsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _companyIdMeta = const VerificationMeta(
+    'companyId',
+  );
+  @override
+  late final GeneratedColumn<int> companyId = GeneratedColumn<int>(
+    'company_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _minSelectionsMeta = const VerificationMeta(
+    'minSelections',
+  );
+  @override
+  late final GeneratedColumn<int> minSelections = GeneratedColumn<int>(
+    'min_selections',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _maxSelectionsMeta = const VerificationMeta(
+    'maxSelections',
+  );
+  @override
+  late final GeneratedColumn<int> maxSelections = GeneratedColumn<int>(
+    'max_selections',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _allowsFreeTextMeta = const VerificationMeta(
+    'allowsFreeText',
+  );
+  @override
+  late final GeneratedColumn<bool> allowsFreeText = GeneratedColumn<bool>(
+    'allows_free_text',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("allows_free_text" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _iconKeyMeta = const VerificationMeta(
+    'iconKey',
+  );
+  @override
+  late final GeneratedColumn<String> iconKey = GeneratedColumn<String>(
+    'icon_key',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _rankMeta = const VerificationMeta('rank');
+  @override
+  late final GeneratedColumn<int> rank = GeneratedColumn<int>(
+    'rank',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _isEnabledMeta = const VerificationMeta(
+    'isEnabled',
+  );
+  @override
+  late final GeneratedColumn<bool> isEnabled = GeneratedColumn<bool>(
+    'is_enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _lastModifiedMeta = const VerificationMeta(
+    'lastModified',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastModified = GeneratedColumn<DateTime>(
+    'last_modified',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _syncStatusMeta = const VerificationMeta(
+    'syncStatus',
+  );
+  @override
+  late final GeneratedColumn<String> syncStatus = GeneratedColumn<String>(
+    'sync_status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('synced'),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    companyId,
+    name,
+    minSelections,
+    maxSelections,
+    allowsFreeText,
+    iconKey,
+    rank,
+    isEnabled,
+    lastModified,
+    syncStatus,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'modifier_groups';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ModifierGroupsTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('company_id')) {
+      context.handle(
+        _companyIdMeta,
+        companyId.isAcceptableOrUnknown(data['company_id']!, _companyIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_companyIdMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('min_selections')) {
+      context.handle(
+        _minSelectionsMeta,
+        minSelections.isAcceptableOrUnknown(
+          data['min_selections']!,
+          _minSelectionsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('max_selections')) {
+      context.handle(
+        _maxSelectionsMeta,
+        maxSelections.isAcceptableOrUnknown(
+          data['max_selections']!,
+          _maxSelectionsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('allows_free_text')) {
+      context.handle(
+        _allowsFreeTextMeta,
+        allowsFreeText.isAcceptableOrUnknown(
+          data['allows_free_text']!,
+          _allowsFreeTextMeta,
+        ),
+      );
+    }
+    if (data.containsKey('icon_key')) {
+      context.handle(
+        _iconKeyMeta,
+        iconKey.isAcceptableOrUnknown(data['icon_key']!, _iconKeyMeta),
+      );
+    }
+    if (data.containsKey('rank')) {
+      context.handle(
+        _rankMeta,
+        rank.isAcceptableOrUnknown(data['rank']!, _rankMeta),
+      );
+    }
+    if (data.containsKey('is_enabled')) {
+      context.handle(
+        _isEnabledMeta,
+        isEnabled.isAcceptableOrUnknown(data['is_enabled']!, _isEnabledMeta),
+      );
+    }
+    if (data.containsKey('last_modified')) {
+      context.handle(
+        _lastModifiedMeta,
+        lastModified.isAcceptableOrUnknown(
+          data['last_modified']!,
+          _lastModifiedMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_lastModifiedMeta);
+    }
+    if (data.containsKey('sync_status')) {
+      context.handle(
+        _syncStatusMeta,
+        syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ModifierGroupsTableData map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ModifierGroupsTableData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      companyId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}company_id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      minSelections: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}min_selections'],
+      )!,
+      maxSelections: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}max_selections'],
+      )!,
+      allowsFreeText: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}allows_free_text'],
+      )!,
+      iconKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}icon_key'],
+      ),
+      rank: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}rank'],
+      )!,
+      isEnabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_enabled'],
+      )!,
+      lastModified: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_modified'],
+      )!,
+      syncStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sync_status'],
+      )!,
+    );
+  }
+
+  @override
+  $ModifierGroupsTableTable createAlias(String alias) {
+    return $ModifierGroupsTableTable(attachedDatabase, alias);
+  }
+}
+
+class ModifierGroupsTableData extends DataClass
+    implements Insertable<ModifierGroupsTableData> {
+  final int id;
+  final int companyId;
+  final String name;
+
+  /// Fewest options that must be chosen; 0 makes the group optional. The POS
+  /// blocks "Add to order" until every linked group is satisfied.
+  final int minSelections;
+
+  /// Most that may be chosen. 1 renders as radios, more as checkboxes — the
+  /// only thing deciding the control the cashier sees.
+  final int maxSelections;
+
+  /// Whether this group also accepts a free-text note, which is what keeps
+  /// "no ice" / "allergic to nuts" possible after the free-text
+  /// `product_comments` catalogue is retired. The note lands in the order
+  /// line's existing `comment` column.
+  final bool allowsFreeText;
+
+  /// Stable key into `lib/modifier/modifier_icons.dart` — the icon the operator
+  /// picked. Null means the till draws its neutral fallback.
+  ///
+  /// A key rather than a codepoint so it survives an icon-set swap, and a
+  /// CHOICE rather than a guess from [name] so it is right in French and Arabic
+  /// too. See the notes in that file.
+  final String? iconKey;
+  final int rank;
+  final bool isEnabled;
+  final DateTime lastModified;
+  final String syncStatus;
+  const ModifierGroupsTableData({
+    required this.id,
+    required this.companyId,
+    required this.name,
+    required this.minSelections,
+    required this.maxSelections,
+    required this.allowsFreeText,
+    this.iconKey,
+    required this.rank,
+    required this.isEnabled,
+    required this.lastModified,
+    required this.syncStatus,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['company_id'] = Variable<int>(companyId);
+    map['name'] = Variable<String>(name);
+    map['min_selections'] = Variable<int>(minSelections);
+    map['max_selections'] = Variable<int>(maxSelections);
+    map['allows_free_text'] = Variable<bool>(allowsFreeText);
+    if (!nullToAbsent || iconKey != null) {
+      map['icon_key'] = Variable<String>(iconKey);
+    }
+    map['rank'] = Variable<int>(rank);
+    map['is_enabled'] = Variable<bool>(isEnabled);
+    map['last_modified'] = Variable<DateTime>(lastModified);
+    map['sync_status'] = Variable<String>(syncStatus);
+    return map;
+  }
+
+  ModifierGroupsTableCompanion toCompanion(bool nullToAbsent) {
+    return ModifierGroupsTableCompanion(
+      id: Value(id),
+      companyId: Value(companyId),
+      name: Value(name),
+      minSelections: Value(minSelections),
+      maxSelections: Value(maxSelections),
+      allowsFreeText: Value(allowsFreeText),
+      iconKey: iconKey == null && nullToAbsent
+          ? const Value.absent()
+          : Value(iconKey),
+      rank: Value(rank),
+      isEnabled: Value(isEnabled),
+      lastModified: Value(lastModified),
+      syncStatus: Value(syncStatus),
+    );
+  }
+
+  factory ModifierGroupsTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ModifierGroupsTableData(
+      id: serializer.fromJson<int>(json['id']),
+      companyId: serializer.fromJson<int>(json['companyId']),
+      name: serializer.fromJson<String>(json['name']),
+      minSelections: serializer.fromJson<int>(json['minSelections']),
+      maxSelections: serializer.fromJson<int>(json['maxSelections']),
+      allowsFreeText: serializer.fromJson<bool>(json['allowsFreeText']),
+      iconKey: serializer.fromJson<String?>(json['iconKey']),
+      rank: serializer.fromJson<int>(json['rank']),
+      isEnabled: serializer.fromJson<bool>(json['isEnabled']),
+      lastModified: serializer.fromJson<DateTime>(json['lastModified']),
+      syncStatus: serializer.fromJson<String>(json['syncStatus']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'companyId': serializer.toJson<int>(companyId),
+      'name': serializer.toJson<String>(name),
+      'minSelections': serializer.toJson<int>(minSelections),
+      'maxSelections': serializer.toJson<int>(maxSelections),
+      'allowsFreeText': serializer.toJson<bool>(allowsFreeText),
+      'iconKey': serializer.toJson<String?>(iconKey),
+      'rank': serializer.toJson<int>(rank),
+      'isEnabled': serializer.toJson<bool>(isEnabled),
+      'lastModified': serializer.toJson<DateTime>(lastModified),
+      'syncStatus': serializer.toJson<String>(syncStatus),
+    };
+  }
+
+  ModifierGroupsTableData copyWith({
+    int? id,
+    int? companyId,
+    String? name,
+    int? minSelections,
+    int? maxSelections,
+    bool? allowsFreeText,
+    Value<String?> iconKey = const Value.absent(),
+    int? rank,
+    bool? isEnabled,
+    DateTime? lastModified,
+    String? syncStatus,
+  }) => ModifierGroupsTableData(
+    id: id ?? this.id,
+    companyId: companyId ?? this.companyId,
+    name: name ?? this.name,
+    minSelections: minSelections ?? this.minSelections,
+    maxSelections: maxSelections ?? this.maxSelections,
+    allowsFreeText: allowsFreeText ?? this.allowsFreeText,
+    iconKey: iconKey.present ? iconKey.value : this.iconKey,
+    rank: rank ?? this.rank,
+    isEnabled: isEnabled ?? this.isEnabled,
+    lastModified: lastModified ?? this.lastModified,
+    syncStatus: syncStatus ?? this.syncStatus,
+  );
+  ModifierGroupsTableData copyWithCompanion(ModifierGroupsTableCompanion data) {
+    return ModifierGroupsTableData(
+      id: data.id.present ? data.id.value : this.id,
+      companyId: data.companyId.present ? data.companyId.value : this.companyId,
+      name: data.name.present ? data.name.value : this.name,
+      minSelections: data.minSelections.present
+          ? data.minSelections.value
+          : this.minSelections,
+      maxSelections: data.maxSelections.present
+          ? data.maxSelections.value
+          : this.maxSelections,
+      allowsFreeText: data.allowsFreeText.present
+          ? data.allowsFreeText.value
+          : this.allowsFreeText,
+      iconKey: data.iconKey.present ? data.iconKey.value : this.iconKey,
+      rank: data.rank.present ? data.rank.value : this.rank,
+      isEnabled: data.isEnabled.present ? data.isEnabled.value : this.isEnabled,
+      lastModified: data.lastModified.present
+          ? data.lastModified.value
+          : this.lastModified,
+      syncStatus: data.syncStatus.present
+          ? data.syncStatus.value
+          : this.syncStatus,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ModifierGroupsTableData(')
+          ..write('id: $id, ')
+          ..write('companyId: $companyId, ')
+          ..write('name: $name, ')
+          ..write('minSelections: $minSelections, ')
+          ..write('maxSelections: $maxSelections, ')
+          ..write('allowsFreeText: $allowsFreeText, ')
+          ..write('iconKey: $iconKey, ')
+          ..write('rank: $rank, ')
+          ..write('isEnabled: $isEnabled, ')
+          ..write('lastModified: $lastModified, ')
+          ..write('syncStatus: $syncStatus')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    companyId,
+    name,
+    minSelections,
+    maxSelections,
+    allowsFreeText,
+    iconKey,
+    rank,
+    isEnabled,
+    lastModified,
+    syncStatus,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ModifierGroupsTableData &&
+          other.id == this.id &&
+          other.companyId == this.companyId &&
+          other.name == this.name &&
+          other.minSelections == this.minSelections &&
+          other.maxSelections == this.maxSelections &&
+          other.allowsFreeText == this.allowsFreeText &&
+          other.iconKey == this.iconKey &&
+          other.rank == this.rank &&
+          other.isEnabled == this.isEnabled &&
+          other.lastModified == this.lastModified &&
+          other.syncStatus == this.syncStatus);
+}
+
+class ModifierGroupsTableCompanion
+    extends UpdateCompanion<ModifierGroupsTableData> {
+  final Value<int> id;
+  final Value<int> companyId;
+  final Value<String> name;
+  final Value<int> minSelections;
+  final Value<int> maxSelections;
+  final Value<bool> allowsFreeText;
+  final Value<String?> iconKey;
+  final Value<int> rank;
+  final Value<bool> isEnabled;
+  final Value<DateTime> lastModified;
+  final Value<String> syncStatus;
+  const ModifierGroupsTableCompanion({
+    this.id = const Value.absent(),
+    this.companyId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.minSelections = const Value.absent(),
+    this.maxSelections = const Value.absent(),
+    this.allowsFreeText = const Value.absent(),
+    this.iconKey = const Value.absent(),
+    this.rank = const Value.absent(),
+    this.isEnabled = const Value.absent(),
+    this.lastModified = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+  });
+  ModifierGroupsTableCompanion.insert({
+    this.id = const Value.absent(),
+    required int companyId,
+    required String name,
+    this.minSelections = const Value.absent(),
+    this.maxSelections = const Value.absent(),
+    this.allowsFreeText = const Value.absent(),
+    this.iconKey = const Value.absent(),
+    this.rank = const Value.absent(),
+    this.isEnabled = const Value.absent(),
+    required DateTime lastModified,
+    this.syncStatus = const Value.absent(),
+  }) : companyId = Value(companyId),
+       name = Value(name),
+       lastModified = Value(lastModified);
+  static Insertable<ModifierGroupsTableData> custom({
+    Expression<int>? id,
+    Expression<int>? companyId,
+    Expression<String>? name,
+    Expression<int>? minSelections,
+    Expression<int>? maxSelections,
+    Expression<bool>? allowsFreeText,
+    Expression<String>? iconKey,
+    Expression<int>? rank,
+    Expression<bool>? isEnabled,
+    Expression<DateTime>? lastModified,
+    Expression<String>? syncStatus,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (companyId != null) 'company_id': companyId,
+      if (name != null) 'name': name,
+      if (minSelections != null) 'min_selections': minSelections,
+      if (maxSelections != null) 'max_selections': maxSelections,
+      if (allowsFreeText != null) 'allows_free_text': allowsFreeText,
+      if (iconKey != null) 'icon_key': iconKey,
+      if (rank != null) 'rank': rank,
+      if (isEnabled != null) 'is_enabled': isEnabled,
+      if (lastModified != null) 'last_modified': lastModified,
+      if (syncStatus != null) 'sync_status': syncStatus,
+    });
+  }
+
+  ModifierGroupsTableCompanion copyWith({
+    Value<int>? id,
+    Value<int>? companyId,
+    Value<String>? name,
+    Value<int>? minSelections,
+    Value<int>? maxSelections,
+    Value<bool>? allowsFreeText,
+    Value<String?>? iconKey,
+    Value<int>? rank,
+    Value<bool>? isEnabled,
+    Value<DateTime>? lastModified,
+    Value<String>? syncStatus,
+  }) {
+    return ModifierGroupsTableCompanion(
+      id: id ?? this.id,
+      companyId: companyId ?? this.companyId,
+      name: name ?? this.name,
+      minSelections: minSelections ?? this.minSelections,
+      maxSelections: maxSelections ?? this.maxSelections,
+      allowsFreeText: allowsFreeText ?? this.allowsFreeText,
+      iconKey: iconKey ?? this.iconKey,
+      rank: rank ?? this.rank,
+      isEnabled: isEnabled ?? this.isEnabled,
+      lastModified: lastModified ?? this.lastModified,
+      syncStatus: syncStatus ?? this.syncStatus,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (companyId.present) {
+      map['company_id'] = Variable<int>(companyId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (minSelections.present) {
+      map['min_selections'] = Variable<int>(minSelections.value);
+    }
+    if (maxSelections.present) {
+      map['max_selections'] = Variable<int>(maxSelections.value);
+    }
+    if (allowsFreeText.present) {
+      map['allows_free_text'] = Variable<bool>(allowsFreeText.value);
+    }
+    if (iconKey.present) {
+      map['icon_key'] = Variable<String>(iconKey.value);
+    }
+    if (rank.present) {
+      map['rank'] = Variable<int>(rank.value);
+    }
+    if (isEnabled.present) {
+      map['is_enabled'] = Variable<bool>(isEnabled.value);
+    }
+    if (lastModified.present) {
+      map['last_modified'] = Variable<DateTime>(lastModified.value);
+    }
+    if (syncStatus.present) {
+      map['sync_status'] = Variable<String>(syncStatus.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ModifierGroupsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('companyId: $companyId, ')
+          ..write('name: $name, ')
+          ..write('minSelections: $minSelections, ')
+          ..write('maxSelections: $maxSelections, ')
+          ..write('allowsFreeText: $allowsFreeText, ')
+          ..write('iconKey: $iconKey, ')
+          ..write('rank: $rank, ')
+          ..write('isEnabled: $isEnabled, ')
+          ..write('lastModified: $lastModified, ')
+          ..write('syncStatus: $syncStatus')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ModifierOptionsTableTable extends ModifierOptionsTable
+    with TableInfo<$ModifierOptionsTableTable, ModifierOptionsTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ModifierOptionsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _companyIdMeta = const VerificationMeta(
+    'companyId',
+  );
+  @override
+  late final GeneratedColumn<int> companyId = GeneratedColumn<int>(
+    'company_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _modifierGroupIdMeta = const VerificationMeta(
+    'modifierGroupId',
+  );
+  @override
+  late final GeneratedColumn<int> modifierGroupId = GeneratedColumn<int>(
+    'modifier_group_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _additionalPriceMeta = const VerificationMeta(
+    'additionalPrice',
+  );
+  @override
+  late final GeneratedColumn<double> additionalPrice = GeneratedColumn<double>(
+    'additional_price',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _rankMeta = const VerificationMeta('rank');
+  @override
+  late final GeneratedColumn<int> rank = GeneratedColumn<int>(
+    'rank',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _isEnabledMeta = const VerificationMeta(
+    'isEnabled',
+  );
+  @override
+  late final GeneratedColumn<bool> isEnabled = GeneratedColumn<bool>(
+    'is_enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _lastModifiedMeta = const VerificationMeta(
+    'lastModified',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastModified = GeneratedColumn<DateTime>(
+    'last_modified',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _syncStatusMeta = const VerificationMeta(
+    'syncStatus',
+  );
+  @override
+  late final GeneratedColumn<String> syncStatus = GeneratedColumn<String>(
+    'sync_status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('synced'),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    companyId,
+    modifierGroupId,
+    name,
+    additionalPrice,
+    rank,
+    isEnabled,
+    lastModified,
+    syncStatus,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'modifier_options';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ModifierOptionsTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('company_id')) {
+      context.handle(
+        _companyIdMeta,
+        companyId.isAcceptableOrUnknown(data['company_id']!, _companyIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_companyIdMeta);
+    }
+    if (data.containsKey('modifier_group_id')) {
+      context.handle(
+        _modifierGroupIdMeta,
+        modifierGroupId.isAcceptableOrUnknown(
+          data['modifier_group_id']!,
+          _modifierGroupIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_modifierGroupIdMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('additional_price')) {
+      context.handle(
+        _additionalPriceMeta,
+        additionalPrice.isAcceptableOrUnknown(
+          data['additional_price']!,
+          _additionalPriceMeta,
+        ),
+      );
+    }
+    if (data.containsKey('rank')) {
+      context.handle(
+        _rankMeta,
+        rank.isAcceptableOrUnknown(data['rank']!, _rankMeta),
+      );
+    }
+    if (data.containsKey('is_enabled')) {
+      context.handle(
+        _isEnabledMeta,
+        isEnabled.isAcceptableOrUnknown(data['is_enabled']!, _isEnabledMeta),
+      );
+    }
+    if (data.containsKey('last_modified')) {
+      context.handle(
+        _lastModifiedMeta,
+        lastModified.isAcceptableOrUnknown(
+          data['last_modified']!,
+          _lastModifiedMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_lastModifiedMeta);
+    }
+    if (data.containsKey('sync_status')) {
+      context.handle(
+        _syncStatusMeta,
+        syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ModifierOptionsTableData map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ModifierOptionsTableData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      companyId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}company_id'],
+      )!,
+      modifierGroupId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}modifier_group_id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      additionalPrice: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}additional_price'],
+      )!,
+      rank: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}rank'],
+      )!,
+      isEnabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_enabled'],
+      )!,
+      lastModified: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_modified'],
+      )!,
+      syncStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sync_status'],
+      )!,
+    );
+  }
+
+  @override
+  $ModifierOptionsTableTable createAlias(String alias) {
+    return $ModifierOptionsTableTable(attachedDatabase, alias);
+  }
+}
+
+class ModifierOptionsTableData extends DataClass
+    implements Insertable<ModifierOptionsTableData> {
+  final int id;
+  final int companyId;
+  final int modifierGroupId;
+  final String name;
+  final double additionalPrice;
+  final int rank;
+  final bool isEnabled;
+  final DateTime lastModified;
+  final String syncStatus;
+  const ModifierOptionsTableData({
+    required this.id,
+    required this.companyId,
+    required this.modifierGroupId,
+    required this.name,
+    required this.additionalPrice,
+    required this.rank,
+    required this.isEnabled,
+    required this.lastModified,
+    required this.syncStatus,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['company_id'] = Variable<int>(companyId);
+    map['modifier_group_id'] = Variable<int>(modifierGroupId);
+    map['name'] = Variable<String>(name);
+    map['additional_price'] = Variable<double>(additionalPrice);
+    map['rank'] = Variable<int>(rank);
+    map['is_enabled'] = Variable<bool>(isEnabled);
+    map['last_modified'] = Variable<DateTime>(lastModified);
+    map['sync_status'] = Variable<String>(syncStatus);
+    return map;
+  }
+
+  ModifierOptionsTableCompanion toCompanion(bool nullToAbsent) {
+    return ModifierOptionsTableCompanion(
+      id: Value(id),
+      companyId: Value(companyId),
+      modifierGroupId: Value(modifierGroupId),
+      name: Value(name),
+      additionalPrice: Value(additionalPrice),
+      rank: Value(rank),
+      isEnabled: Value(isEnabled),
+      lastModified: Value(lastModified),
+      syncStatus: Value(syncStatus),
+    );
+  }
+
+  factory ModifierOptionsTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ModifierOptionsTableData(
+      id: serializer.fromJson<int>(json['id']),
+      companyId: serializer.fromJson<int>(json['companyId']),
+      modifierGroupId: serializer.fromJson<int>(json['modifierGroupId']),
+      name: serializer.fromJson<String>(json['name']),
+      additionalPrice: serializer.fromJson<double>(json['additionalPrice']),
+      rank: serializer.fromJson<int>(json['rank']),
+      isEnabled: serializer.fromJson<bool>(json['isEnabled']),
+      lastModified: serializer.fromJson<DateTime>(json['lastModified']),
+      syncStatus: serializer.fromJson<String>(json['syncStatus']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'companyId': serializer.toJson<int>(companyId),
+      'modifierGroupId': serializer.toJson<int>(modifierGroupId),
+      'name': serializer.toJson<String>(name),
+      'additionalPrice': serializer.toJson<double>(additionalPrice),
+      'rank': serializer.toJson<int>(rank),
+      'isEnabled': serializer.toJson<bool>(isEnabled),
+      'lastModified': serializer.toJson<DateTime>(lastModified),
+      'syncStatus': serializer.toJson<String>(syncStatus),
+    };
+  }
+
+  ModifierOptionsTableData copyWith({
+    int? id,
+    int? companyId,
+    int? modifierGroupId,
+    String? name,
+    double? additionalPrice,
+    int? rank,
+    bool? isEnabled,
+    DateTime? lastModified,
+    String? syncStatus,
+  }) => ModifierOptionsTableData(
+    id: id ?? this.id,
+    companyId: companyId ?? this.companyId,
+    modifierGroupId: modifierGroupId ?? this.modifierGroupId,
+    name: name ?? this.name,
+    additionalPrice: additionalPrice ?? this.additionalPrice,
+    rank: rank ?? this.rank,
+    isEnabled: isEnabled ?? this.isEnabled,
+    lastModified: lastModified ?? this.lastModified,
+    syncStatus: syncStatus ?? this.syncStatus,
+  );
+  ModifierOptionsTableData copyWithCompanion(
+    ModifierOptionsTableCompanion data,
+  ) {
+    return ModifierOptionsTableData(
+      id: data.id.present ? data.id.value : this.id,
+      companyId: data.companyId.present ? data.companyId.value : this.companyId,
+      modifierGroupId: data.modifierGroupId.present
+          ? data.modifierGroupId.value
+          : this.modifierGroupId,
+      name: data.name.present ? data.name.value : this.name,
+      additionalPrice: data.additionalPrice.present
+          ? data.additionalPrice.value
+          : this.additionalPrice,
+      rank: data.rank.present ? data.rank.value : this.rank,
+      isEnabled: data.isEnabled.present ? data.isEnabled.value : this.isEnabled,
+      lastModified: data.lastModified.present
+          ? data.lastModified.value
+          : this.lastModified,
+      syncStatus: data.syncStatus.present
+          ? data.syncStatus.value
+          : this.syncStatus,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ModifierOptionsTableData(')
+          ..write('id: $id, ')
+          ..write('companyId: $companyId, ')
+          ..write('modifierGroupId: $modifierGroupId, ')
+          ..write('name: $name, ')
+          ..write('additionalPrice: $additionalPrice, ')
+          ..write('rank: $rank, ')
+          ..write('isEnabled: $isEnabled, ')
+          ..write('lastModified: $lastModified, ')
+          ..write('syncStatus: $syncStatus')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    companyId,
+    modifierGroupId,
+    name,
+    additionalPrice,
+    rank,
+    isEnabled,
+    lastModified,
+    syncStatus,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ModifierOptionsTableData &&
+          other.id == this.id &&
+          other.companyId == this.companyId &&
+          other.modifierGroupId == this.modifierGroupId &&
+          other.name == this.name &&
+          other.additionalPrice == this.additionalPrice &&
+          other.rank == this.rank &&
+          other.isEnabled == this.isEnabled &&
+          other.lastModified == this.lastModified &&
+          other.syncStatus == this.syncStatus);
+}
+
+class ModifierOptionsTableCompanion
+    extends UpdateCompanion<ModifierOptionsTableData> {
+  final Value<int> id;
+  final Value<int> companyId;
+  final Value<int> modifierGroupId;
+  final Value<String> name;
+  final Value<double> additionalPrice;
+  final Value<int> rank;
+  final Value<bool> isEnabled;
+  final Value<DateTime> lastModified;
+  final Value<String> syncStatus;
+  const ModifierOptionsTableCompanion({
+    this.id = const Value.absent(),
+    this.companyId = const Value.absent(),
+    this.modifierGroupId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.additionalPrice = const Value.absent(),
+    this.rank = const Value.absent(),
+    this.isEnabled = const Value.absent(),
+    this.lastModified = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+  });
+  ModifierOptionsTableCompanion.insert({
+    this.id = const Value.absent(),
+    required int companyId,
+    required int modifierGroupId,
+    required String name,
+    this.additionalPrice = const Value.absent(),
+    this.rank = const Value.absent(),
+    this.isEnabled = const Value.absent(),
+    required DateTime lastModified,
+    this.syncStatus = const Value.absent(),
+  }) : companyId = Value(companyId),
+       modifierGroupId = Value(modifierGroupId),
+       name = Value(name),
+       lastModified = Value(lastModified);
+  static Insertable<ModifierOptionsTableData> custom({
+    Expression<int>? id,
+    Expression<int>? companyId,
+    Expression<int>? modifierGroupId,
+    Expression<String>? name,
+    Expression<double>? additionalPrice,
+    Expression<int>? rank,
+    Expression<bool>? isEnabled,
+    Expression<DateTime>? lastModified,
+    Expression<String>? syncStatus,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (companyId != null) 'company_id': companyId,
+      if (modifierGroupId != null) 'modifier_group_id': modifierGroupId,
+      if (name != null) 'name': name,
+      if (additionalPrice != null) 'additional_price': additionalPrice,
+      if (rank != null) 'rank': rank,
+      if (isEnabled != null) 'is_enabled': isEnabled,
+      if (lastModified != null) 'last_modified': lastModified,
+      if (syncStatus != null) 'sync_status': syncStatus,
+    });
+  }
+
+  ModifierOptionsTableCompanion copyWith({
+    Value<int>? id,
+    Value<int>? companyId,
+    Value<int>? modifierGroupId,
+    Value<String>? name,
+    Value<double>? additionalPrice,
+    Value<int>? rank,
+    Value<bool>? isEnabled,
+    Value<DateTime>? lastModified,
+    Value<String>? syncStatus,
+  }) {
+    return ModifierOptionsTableCompanion(
+      id: id ?? this.id,
+      companyId: companyId ?? this.companyId,
+      modifierGroupId: modifierGroupId ?? this.modifierGroupId,
+      name: name ?? this.name,
+      additionalPrice: additionalPrice ?? this.additionalPrice,
+      rank: rank ?? this.rank,
+      isEnabled: isEnabled ?? this.isEnabled,
+      lastModified: lastModified ?? this.lastModified,
+      syncStatus: syncStatus ?? this.syncStatus,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (companyId.present) {
+      map['company_id'] = Variable<int>(companyId.value);
+    }
+    if (modifierGroupId.present) {
+      map['modifier_group_id'] = Variable<int>(modifierGroupId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (additionalPrice.present) {
+      map['additional_price'] = Variable<double>(additionalPrice.value);
+    }
+    if (rank.present) {
+      map['rank'] = Variable<int>(rank.value);
+    }
+    if (isEnabled.present) {
+      map['is_enabled'] = Variable<bool>(isEnabled.value);
+    }
+    if (lastModified.present) {
+      map['last_modified'] = Variable<DateTime>(lastModified.value);
+    }
+    if (syncStatus.present) {
+      map['sync_status'] = Variable<String>(syncStatus.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ModifierOptionsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('companyId: $companyId, ')
+          ..write('modifierGroupId: $modifierGroupId, ')
+          ..write('name: $name, ')
+          ..write('additionalPrice: $additionalPrice, ')
+          ..write('rank: $rank, ')
+          ..write('isEnabled: $isEnabled, ')
+          ..write('lastModified: $lastModified, ')
+          ..write('syncStatus: $syncStatus')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ProductModifierGroupsTableTable extends ProductModifierGroupsTable
+    with
+        TableInfo<
+          $ProductModifierGroupsTableTable,
+          ProductModifierGroupsTableData
+        > {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ProductModifierGroupsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _companyIdMeta = const VerificationMeta(
+    'companyId',
+  );
+  @override
+  late final GeneratedColumn<int> companyId = GeneratedColumn<int>(
+    'company_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _productIdMeta = const VerificationMeta(
+    'productId',
+  );
+  @override
+  late final GeneratedColumn<int> productId = GeneratedColumn<int>(
+    'product_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _modifierGroupIdMeta = const VerificationMeta(
+    'modifierGroupId',
+  );
+  @override
+  late final GeneratedColumn<int> modifierGroupId = GeneratedColumn<int>(
+    'modifier_group_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _rankMeta = const VerificationMeta('rank');
+  @override
+  late final GeneratedColumn<int> rank = GeneratedColumn<int>(
+    'rank',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _lastModifiedMeta = const VerificationMeta(
+    'lastModified',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastModified = GeneratedColumn<DateTime>(
+    'last_modified',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _syncStatusMeta = const VerificationMeta(
+    'syncStatus',
+  );
+  @override
+  late final GeneratedColumn<String> syncStatus = GeneratedColumn<String>(
+    'sync_status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('synced'),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    companyId,
+    productId,
+    modifierGroupId,
+    rank,
+    lastModified,
+    syncStatus,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'product_modifier_groups';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ProductModifierGroupsTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('company_id')) {
+      context.handle(
+        _companyIdMeta,
+        companyId.isAcceptableOrUnknown(data['company_id']!, _companyIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_companyIdMeta);
+    }
+    if (data.containsKey('product_id')) {
+      context.handle(
+        _productIdMeta,
+        productId.isAcceptableOrUnknown(data['product_id']!, _productIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_productIdMeta);
+    }
+    if (data.containsKey('modifier_group_id')) {
+      context.handle(
+        _modifierGroupIdMeta,
+        modifierGroupId.isAcceptableOrUnknown(
+          data['modifier_group_id']!,
+          _modifierGroupIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_modifierGroupIdMeta);
+    }
+    if (data.containsKey('rank')) {
+      context.handle(
+        _rankMeta,
+        rank.isAcceptableOrUnknown(data['rank']!, _rankMeta),
+      );
+    }
+    if (data.containsKey('last_modified')) {
+      context.handle(
+        _lastModifiedMeta,
+        lastModified.isAcceptableOrUnknown(
+          data['last_modified']!,
+          _lastModifiedMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_lastModifiedMeta);
+    }
+    if (data.containsKey('sync_status')) {
+      context.handle(
+        _syncStatusMeta,
+        syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ProductModifierGroupsTableData map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ProductModifierGroupsTableData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      companyId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}company_id'],
+      )!,
+      productId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}product_id'],
+      )!,
+      modifierGroupId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}modifier_group_id'],
+      )!,
+      rank: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}rank'],
+      )!,
+      lastModified: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_modified'],
+      )!,
+      syncStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sync_status'],
+      )!,
+    );
+  }
+
+  @override
+  $ProductModifierGroupsTableTable createAlias(String alias) {
+    return $ProductModifierGroupsTableTable(attachedDatabase, alias);
+  }
+}
+
+class ProductModifierGroupsTableData extends DataClass
+    implements Insertable<ProductModifierGroupsTableData> {
+  final int id;
+  final int companyId;
+  final int productId;
+  final int modifierGroupId;
+  final int rank;
+  final DateTime lastModified;
+  final String syncStatus;
+  const ProductModifierGroupsTableData({
+    required this.id,
+    required this.companyId,
+    required this.productId,
+    required this.modifierGroupId,
+    required this.rank,
+    required this.lastModified,
+    required this.syncStatus,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['company_id'] = Variable<int>(companyId);
+    map['product_id'] = Variable<int>(productId);
+    map['modifier_group_id'] = Variable<int>(modifierGroupId);
+    map['rank'] = Variable<int>(rank);
+    map['last_modified'] = Variable<DateTime>(lastModified);
+    map['sync_status'] = Variable<String>(syncStatus);
+    return map;
+  }
+
+  ProductModifierGroupsTableCompanion toCompanion(bool nullToAbsent) {
+    return ProductModifierGroupsTableCompanion(
+      id: Value(id),
+      companyId: Value(companyId),
+      productId: Value(productId),
+      modifierGroupId: Value(modifierGroupId),
+      rank: Value(rank),
+      lastModified: Value(lastModified),
+      syncStatus: Value(syncStatus),
+    );
+  }
+
+  factory ProductModifierGroupsTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ProductModifierGroupsTableData(
+      id: serializer.fromJson<int>(json['id']),
+      companyId: serializer.fromJson<int>(json['companyId']),
+      productId: serializer.fromJson<int>(json['productId']),
+      modifierGroupId: serializer.fromJson<int>(json['modifierGroupId']),
+      rank: serializer.fromJson<int>(json['rank']),
+      lastModified: serializer.fromJson<DateTime>(json['lastModified']),
+      syncStatus: serializer.fromJson<String>(json['syncStatus']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'companyId': serializer.toJson<int>(companyId),
+      'productId': serializer.toJson<int>(productId),
+      'modifierGroupId': serializer.toJson<int>(modifierGroupId),
+      'rank': serializer.toJson<int>(rank),
+      'lastModified': serializer.toJson<DateTime>(lastModified),
+      'syncStatus': serializer.toJson<String>(syncStatus),
+    };
+  }
+
+  ProductModifierGroupsTableData copyWith({
+    int? id,
+    int? companyId,
+    int? productId,
+    int? modifierGroupId,
+    int? rank,
+    DateTime? lastModified,
+    String? syncStatus,
+  }) => ProductModifierGroupsTableData(
+    id: id ?? this.id,
+    companyId: companyId ?? this.companyId,
+    productId: productId ?? this.productId,
+    modifierGroupId: modifierGroupId ?? this.modifierGroupId,
+    rank: rank ?? this.rank,
+    lastModified: lastModified ?? this.lastModified,
+    syncStatus: syncStatus ?? this.syncStatus,
+  );
+  ProductModifierGroupsTableData copyWithCompanion(
+    ProductModifierGroupsTableCompanion data,
+  ) {
+    return ProductModifierGroupsTableData(
+      id: data.id.present ? data.id.value : this.id,
+      companyId: data.companyId.present ? data.companyId.value : this.companyId,
+      productId: data.productId.present ? data.productId.value : this.productId,
+      modifierGroupId: data.modifierGroupId.present
+          ? data.modifierGroupId.value
+          : this.modifierGroupId,
+      rank: data.rank.present ? data.rank.value : this.rank,
+      lastModified: data.lastModified.present
+          ? data.lastModified.value
+          : this.lastModified,
+      syncStatus: data.syncStatus.present
+          ? data.syncStatus.value
+          : this.syncStatus,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProductModifierGroupsTableData(')
+          ..write('id: $id, ')
+          ..write('companyId: $companyId, ')
+          ..write('productId: $productId, ')
+          ..write('modifierGroupId: $modifierGroupId, ')
+          ..write('rank: $rank, ')
+          ..write('lastModified: $lastModified, ')
+          ..write('syncStatus: $syncStatus')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    companyId,
+    productId,
+    modifierGroupId,
+    rank,
+    lastModified,
+    syncStatus,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ProductModifierGroupsTableData &&
+          other.id == this.id &&
+          other.companyId == this.companyId &&
+          other.productId == this.productId &&
+          other.modifierGroupId == this.modifierGroupId &&
+          other.rank == this.rank &&
+          other.lastModified == this.lastModified &&
+          other.syncStatus == this.syncStatus);
+}
+
+class ProductModifierGroupsTableCompanion
+    extends UpdateCompanion<ProductModifierGroupsTableData> {
+  final Value<int> id;
+  final Value<int> companyId;
+  final Value<int> productId;
+  final Value<int> modifierGroupId;
+  final Value<int> rank;
+  final Value<DateTime> lastModified;
+  final Value<String> syncStatus;
+  const ProductModifierGroupsTableCompanion({
+    this.id = const Value.absent(),
+    this.companyId = const Value.absent(),
+    this.productId = const Value.absent(),
+    this.modifierGroupId = const Value.absent(),
+    this.rank = const Value.absent(),
+    this.lastModified = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+  });
+  ProductModifierGroupsTableCompanion.insert({
+    this.id = const Value.absent(),
+    required int companyId,
+    required int productId,
+    required int modifierGroupId,
+    this.rank = const Value.absent(),
+    required DateTime lastModified,
+    this.syncStatus = const Value.absent(),
+  }) : companyId = Value(companyId),
+       productId = Value(productId),
+       modifierGroupId = Value(modifierGroupId),
+       lastModified = Value(lastModified);
+  static Insertable<ProductModifierGroupsTableData> custom({
+    Expression<int>? id,
+    Expression<int>? companyId,
+    Expression<int>? productId,
+    Expression<int>? modifierGroupId,
+    Expression<int>? rank,
+    Expression<DateTime>? lastModified,
+    Expression<String>? syncStatus,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (companyId != null) 'company_id': companyId,
+      if (productId != null) 'product_id': productId,
+      if (modifierGroupId != null) 'modifier_group_id': modifierGroupId,
+      if (rank != null) 'rank': rank,
+      if (lastModified != null) 'last_modified': lastModified,
+      if (syncStatus != null) 'sync_status': syncStatus,
+    });
+  }
+
+  ProductModifierGroupsTableCompanion copyWith({
+    Value<int>? id,
+    Value<int>? companyId,
+    Value<int>? productId,
+    Value<int>? modifierGroupId,
+    Value<int>? rank,
+    Value<DateTime>? lastModified,
+    Value<String>? syncStatus,
+  }) {
+    return ProductModifierGroupsTableCompanion(
+      id: id ?? this.id,
+      companyId: companyId ?? this.companyId,
+      productId: productId ?? this.productId,
+      modifierGroupId: modifierGroupId ?? this.modifierGroupId,
+      rank: rank ?? this.rank,
+      lastModified: lastModified ?? this.lastModified,
+      syncStatus: syncStatus ?? this.syncStatus,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (companyId.present) {
+      map['company_id'] = Variable<int>(companyId.value);
+    }
+    if (productId.present) {
+      map['product_id'] = Variable<int>(productId.value);
+    }
+    if (modifierGroupId.present) {
+      map['modifier_group_id'] = Variable<int>(modifierGroupId.value);
+    }
+    if (rank.present) {
+      map['rank'] = Variable<int>(rank.value);
+    }
+    if (lastModified.present) {
+      map['last_modified'] = Variable<DateTime>(lastModified.value);
+    }
+    if (syncStatus.present) {
+      map['sync_status'] = Variable<String>(syncStatus.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProductModifierGroupsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('companyId: $companyId, ')
+          ..write('productId: $productId, ')
+          ..write('modifierGroupId: $modifierGroupId, ')
+          ..write('rank: $rank, ')
+          ..write('lastModified: $lastModified, ')
+          ..write('syncStatus: $syncStatus')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $PosOrderItemModifiersTableTable extends PosOrderItemModifiersTable
+    with
+        TableInfo<
+          $PosOrderItemModifiersTableTable,
+          PosOrderItemModifiersTableData
+        > {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PosOrderItemModifiersTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _localIdMeta = const VerificationMeta(
+    'localId',
+  );
+  @override
+  late final GeneratedColumn<String> localId = GeneratedColumn<String>(
+    'local_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _orderItemLocalIdMeta = const VerificationMeta(
+    'orderItemLocalId',
+  );
+  @override
+  late final GeneratedColumn<String> orderItemLocalId = GeneratedColumn<String>(
+    'order_item_local_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _modifierOptionIdMeta = const VerificationMeta(
+    'modifierOptionId',
+  );
+  @override
+  late final GeneratedColumn<int> modifierOptionId = GeneratedColumn<int>(
+    'modifier_option_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _groupNameMeta = const VerificationMeta(
+    'groupName',
+  );
+  @override
+  late final GeneratedColumn<String> groupName = GeneratedColumn<String>(
+    'group_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _additionalPriceMeta = const VerificationMeta(
+    'additionalPrice',
+  );
+  @override
+  late final GeneratedColumn<double> additionalPrice = GeneratedColumn<double>(
+    'additional_price',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _rankMeta = const VerificationMeta('rank');
+  @override
+  late final GeneratedColumn<int> rank = GeneratedColumn<int>(
+    'rank',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    localId,
+    orderItemLocalId,
+    modifierOptionId,
+    groupName,
+    name,
+    additionalPrice,
+    rank,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'pos_order_item_modifiers';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PosOrderItemModifiersTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('local_id')) {
+      context.handle(
+        _localIdMeta,
+        localId.isAcceptableOrUnknown(data['local_id']!, _localIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_localIdMeta);
+    }
+    if (data.containsKey('order_item_local_id')) {
+      context.handle(
+        _orderItemLocalIdMeta,
+        orderItemLocalId.isAcceptableOrUnknown(
+          data['order_item_local_id']!,
+          _orderItemLocalIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_orderItemLocalIdMeta);
+    }
+    if (data.containsKey('modifier_option_id')) {
+      context.handle(
+        _modifierOptionIdMeta,
+        modifierOptionId.isAcceptableOrUnknown(
+          data['modifier_option_id']!,
+          _modifierOptionIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('group_name')) {
+      context.handle(
+        _groupNameMeta,
+        groupName.isAcceptableOrUnknown(data['group_name']!, _groupNameMeta),
+      );
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('additional_price')) {
+      context.handle(
+        _additionalPriceMeta,
+        additionalPrice.isAcceptableOrUnknown(
+          data['additional_price']!,
+          _additionalPriceMeta,
+        ),
+      );
+    }
+    if (data.containsKey('rank')) {
+      context.handle(
+        _rankMeta,
+        rank.isAcceptableOrUnknown(data['rank']!, _rankMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {localId};
+  @override
+  PosOrderItemModifiersTableData map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PosOrderItemModifiersTableData(
+      localId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}local_id'],
+      )!,
+      orderItemLocalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}order_item_local_id'],
+      )!,
+      modifierOptionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}modifier_option_id'],
+      ),
+      groupName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}group_name'],
+      ),
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      additionalPrice: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}additional_price'],
+      )!,
+      rank: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}rank'],
+      )!,
+    );
+  }
+
+  @override
+  $PosOrderItemModifiersTableTable createAlias(String alias) {
+    return $PosOrderItemModifiersTableTable(attachedDatabase, alias);
+  }
+}
+
+class PosOrderItemModifiersTableData extends DataClass
+    implements Insertable<PosOrderItemModifiersTableData> {
+  final String localId;
+  final String orderItemLocalId;
+  final int? modifierOptionId;
+  final String? groupName;
+  final String name;
+  final double additionalPrice;
+  final int rank;
+  const PosOrderItemModifiersTableData({
+    required this.localId,
+    required this.orderItemLocalId,
+    this.modifierOptionId,
+    this.groupName,
+    required this.name,
+    required this.additionalPrice,
+    required this.rank,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['local_id'] = Variable<String>(localId);
+    map['order_item_local_id'] = Variable<String>(orderItemLocalId);
+    if (!nullToAbsent || modifierOptionId != null) {
+      map['modifier_option_id'] = Variable<int>(modifierOptionId);
+    }
+    if (!nullToAbsent || groupName != null) {
+      map['group_name'] = Variable<String>(groupName);
+    }
+    map['name'] = Variable<String>(name);
+    map['additional_price'] = Variable<double>(additionalPrice);
+    map['rank'] = Variable<int>(rank);
+    return map;
+  }
+
+  PosOrderItemModifiersTableCompanion toCompanion(bool nullToAbsent) {
+    return PosOrderItemModifiersTableCompanion(
+      localId: Value(localId),
+      orderItemLocalId: Value(orderItemLocalId),
+      modifierOptionId: modifierOptionId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(modifierOptionId),
+      groupName: groupName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(groupName),
+      name: Value(name),
+      additionalPrice: Value(additionalPrice),
+      rank: Value(rank),
+    );
+  }
+
+  factory PosOrderItemModifiersTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PosOrderItemModifiersTableData(
+      localId: serializer.fromJson<String>(json['localId']),
+      orderItemLocalId: serializer.fromJson<String>(json['orderItemLocalId']),
+      modifierOptionId: serializer.fromJson<int?>(json['modifierOptionId']),
+      groupName: serializer.fromJson<String?>(json['groupName']),
+      name: serializer.fromJson<String>(json['name']),
+      additionalPrice: serializer.fromJson<double>(json['additionalPrice']),
+      rank: serializer.fromJson<int>(json['rank']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'localId': serializer.toJson<String>(localId),
+      'orderItemLocalId': serializer.toJson<String>(orderItemLocalId),
+      'modifierOptionId': serializer.toJson<int?>(modifierOptionId),
+      'groupName': serializer.toJson<String?>(groupName),
+      'name': serializer.toJson<String>(name),
+      'additionalPrice': serializer.toJson<double>(additionalPrice),
+      'rank': serializer.toJson<int>(rank),
+    };
+  }
+
+  PosOrderItemModifiersTableData copyWith({
+    String? localId,
+    String? orderItemLocalId,
+    Value<int?> modifierOptionId = const Value.absent(),
+    Value<String?> groupName = const Value.absent(),
+    String? name,
+    double? additionalPrice,
+    int? rank,
+  }) => PosOrderItemModifiersTableData(
+    localId: localId ?? this.localId,
+    orderItemLocalId: orderItemLocalId ?? this.orderItemLocalId,
+    modifierOptionId: modifierOptionId.present
+        ? modifierOptionId.value
+        : this.modifierOptionId,
+    groupName: groupName.present ? groupName.value : this.groupName,
+    name: name ?? this.name,
+    additionalPrice: additionalPrice ?? this.additionalPrice,
+    rank: rank ?? this.rank,
+  );
+  PosOrderItemModifiersTableData copyWithCompanion(
+    PosOrderItemModifiersTableCompanion data,
+  ) {
+    return PosOrderItemModifiersTableData(
+      localId: data.localId.present ? data.localId.value : this.localId,
+      orderItemLocalId: data.orderItemLocalId.present
+          ? data.orderItemLocalId.value
+          : this.orderItemLocalId,
+      modifierOptionId: data.modifierOptionId.present
+          ? data.modifierOptionId.value
+          : this.modifierOptionId,
+      groupName: data.groupName.present ? data.groupName.value : this.groupName,
+      name: data.name.present ? data.name.value : this.name,
+      additionalPrice: data.additionalPrice.present
+          ? data.additionalPrice.value
+          : this.additionalPrice,
+      rank: data.rank.present ? data.rank.value : this.rank,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PosOrderItemModifiersTableData(')
+          ..write('localId: $localId, ')
+          ..write('orderItemLocalId: $orderItemLocalId, ')
+          ..write('modifierOptionId: $modifierOptionId, ')
+          ..write('groupName: $groupName, ')
+          ..write('name: $name, ')
+          ..write('additionalPrice: $additionalPrice, ')
+          ..write('rank: $rank')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    localId,
+    orderItemLocalId,
+    modifierOptionId,
+    groupName,
+    name,
+    additionalPrice,
+    rank,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PosOrderItemModifiersTableData &&
+          other.localId == this.localId &&
+          other.orderItemLocalId == this.orderItemLocalId &&
+          other.modifierOptionId == this.modifierOptionId &&
+          other.groupName == this.groupName &&
+          other.name == this.name &&
+          other.additionalPrice == this.additionalPrice &&
+          other.rank == this.rank);
+}
+
+class PosOrderItemModifiersTableCompanion
+    extends UpdateCompanion<PosOrderItemModifiersTableData> {
+  final Value<String> localId;
+  final Value<String> orderItemLocalId;
+  final Value<int?> modifierOptionId;
+  final Value<String?> groupName;
+  final Value<String> name;
+  final Value<double> additionalPrice;
+  final Value<int> rank;
+  final Value<int> rowid;
+  const PosOrderItemModifiersTableCompanion({
+    this.localId = const Value.absent(),
+    this.orderItemLocalId = const Value.absent(),
+    this.modifierOptionId = const Value.absent(),
+    this.groupName = const Value.absent(),
+    this.name = const Value.absent(),
+    this.additionalPrice = const Value.absent(),
+    this.rank = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PosOrderItemModifiersTableCompanion.insert({
+    required String localId,
+    required String orderItemLocalId,
+    this.modifierOptionId = const Value.absent(),
+    this.groupName = const Value.absent(),
+    required String name,
+    this.additionalPrice = const Value.absent(),
+    this.rank = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : localId = Value(localId),
+       orderItemLocalId = Value(orderItemLocalId),
+       name = Value(name);
+  static Insertable<PosOrderItemModifiersTableData> custom({
+    Expression<String>? localId,
+    Expression<String>? orderItemLocalId,
+    Expression<int>? modifierOptionId,
+    Expression<String>? groupName,
+    Expression<String>? name,
+    Expression<double>? additionalPrice,
+    Expression<int>? rank,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (localId != null) 'local_id': localId,
+      if (orderItemLocalId != null) 'order_item_local_id': orderItemLocalId,
+      if (modifierOptionId != null) 'modifier_option_id': modifierOptionId,
+      if (groupName != null) 'group_name': groupName,
+      if (name != null) 'name': name,
+      if (additionalPrice != null) 'additional_price': additionalPrice,
+      if (rank != null) 'rank': rank,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PosOrderItemModifiersTableCompanion copyWith({
+    Value<String>? localId,
+    Value<String>? orderItemLocalId,
+    Value<int?>? modifierOptionId,
+    Value<String?>? groupName,
+    Value<String>? name,
+    Value<double>? additionalPrice,
+    Value<int>? rank,
+    Value<int>? rowid,
+  }) {
+    return PosOrderItemModifiersTableCompanion(
+      localId: localId ?? this.localId,
+      orderItemLocalId: orderItemLocalId ?? this.orderItemLocalId,
+      modifierOptionId: modifierOptionId ?? this.modifierOptionId,
+      groupName: groupName ?? this.groupName,
+      name: name ?? this.name,
+      additionalPrice: additionalPrice ?? this.additionalPrice,
+      rank: rank ?? this.rank,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (localId.present) {
+      map['local_id'] = Variable<String>(localId.value);
+    }
+    if (orderItemLocalId.present) {
+      map['order_item_local_id'] = Variable<String>(orderItemLocalId.value);
+    }
+    if (modifierOptionId.present) {
+      map['modifier_option_id'] = Variable<int>(modifierOptionId.value);
+    }
+    if (groupName.present) {
+      map['group_name'] = Variable<String>(groupName.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (additionalPrice.present) {
+      map['additional_price'] = Variable<double>(additionalPrice.value);
+    }
+    if (rank.present) {
+      map['rank'] = Variable<int>(rank.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PosOrderItemModifiersTableCompanion(')
+          ..write('localId: $localId, ')
+          ..write('orderItemLocalId: $orderItemLocalId, ')
+          ..write('modifierOptionId: $modifierOptionId, ')
+          ..write('groupName: $groupName, ')
+          ..write('name: $name, ')
+          ..write('additionalPrice: $additionalPrice, ')
+          ..write('rank: $rank, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $DocumentItemModifiersTableTable extends DocumentItemModifiersTable
+    with
+        TableInfo<
+          $DocumentItemModifiersTableTable,
+          DocumentItemModifiersTableData
+        > {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DocumentItemModifiersTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _localIdMeta = const VerificationMeta(
+    'localId',
+  );
+  @override
+  late final GeneratedColumn<String> localId = GeneratedColumn<String>(
+    'local_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _documentItemLocalIdMeta =
+      const VerificationMeta('documentItemLocalId');
+  @override
+  late final GeneratedColumn<String> documentItemLocalId =
+      GeneratedColumn<String>(
+        'document_item_local_id',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _modifierOptionIdMeta = const VerificationMeta(
+    'modifierOptionId',
+  );
+  @override
+  late final GeneratedColumn<int> modifierOptionId = GeneratedColumn<int>(
+    'modifier_option_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _groupNameMeta = const VerificationMeta(
+    'groupName',
+  );
+  @override
+  late final GeneratedColumn<String> groupName = GeneratedColumn<String>(
+    'group_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _additionalPriceMeta = const VerificationMeta(
+    'additionalPrice',
+  );
+  @override
+  late final GeneratedColumn<double> additionalPrice = GeneratedColumn<double>(
+    'additional_price',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _rankMeta = const VerificationMeta('rank');
+  @override
+  late final GeneratedColumn<int> rank = GeneratedColumn<int>(
+    'rank',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    localId,
+    documentItemLocalId,
+    modifierOptionId,
+    groupName,
+    name,
+    additionalPrice,
+    rank,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'document_item_modifiers';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DocumentItemModifiersTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('local_id')) {
+      context.handle(
+        _localIdMeta,
+        localId.isAcceptableOrUnknown(data['local_id']!, _localIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_localIdMeta);
+    }
+    if (data.containsKey('document_item_local_id')) {
+      context.handle(
+        _documentItemLocalIdMeta,
+        documentItemLocalId.isAcceptableOrUnknown(
+          data['document_item_local_id']!,
+          _documentItemLocalIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_documentItemLocalIdMeta);
+    }
+    if (data.containsKey('modifier_option_id')) {
+      context.handle(
+        _modifierOptionIdMeta,
+        modifierOptionId.isAcceptableOrUnknown(
+          data['modifier_option_id']!,
+          _modifierOptionIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('group_name')) {
+      context.handle(
+        _groupNameMeta,
+        groupName.isAcceptableOrUnknown(data['group_name']!, _groupNameMeta),
+      );
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('additional_price')) {
+      context.handle(
+        _additionalPriceMeta,
+        additionalPrice.isAcceptableOrUnknown(
+          data['additional_price']!,
+          _additionalPriceMeta,
+        ),
+      );
+    }
+    if (data.containsKey('rank')) {
+      context.handle(
+        _rankMeta,
+        rank.isAcceptableOrUnknown(data['rank']!, _rankMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {localId};
+  @override
+  DocumentItemModifiersTableData map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DocumentItemModifiersTableData(
+      localId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}local_id'],
+      )!,
+      documentItemLocalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}document_item_local_id'],
+      )!,
+      modifierOptionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}modifier_option_id'],
+      ),
+      groupName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}group_name'],
+      ),
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      additionalPrice: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}additional_price'],
+      )!,
+      rank: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}rank'],
+      )!,
+    );
+  }
+
+  @override
+  $DocumentItemModifiersTableTable createAlias(String alias) {
+    return $DocumentItemModifiersTableTable(attachedDatabase, alias);
+  }
+}
+
+class DocumentItemModifiersTableData extends DataClass
+    implements Insertable<DocumentItemModifiersTableData> {
+  final String localId;
+  final String documentItemLocalId;
+  final int? modifierOptionId;
+  final String? groupName;
+  final String name;
+  final double additionalPrice;
+  final int rank;
+  const DocumentItemModifiersTableData({
+    required this.localId,
+    required this.documentItemLocalId,
+    this.modifierOptionId,
+    this.groupName,
+    required this.name,
+    required this.additionalPrice,
+    required this.rank,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['local_id'] = Variable<String>(localId);
+    map['document_item_local_id'] = Variable<String>(documentItemLocalId);
+    if (!nullToAbsent || modifierOptionId != null) {
+      map['modifier_option_id'] = Variable<int>(modifierOptionId);
+    }
+    if (!nullToAbsent || groupName != null) {
+      map['group_name'] = Variable<String>(groupName);
+    }
+    map['name'] = Variable<String>(name);
+    map['additional_price'] = Variable<double>(additionalPrice);
+    map['rank'] = Variable<int>(rank);
+    return map;
+  }
+
+  DocumentItemModifiersTableCompanion toCompanion(bool nullToAbsent) {
+    return DocumentItemModifiersTableCompanion(
+      localId: Value(localId),
+      documentItemLocalId: Value(documentItemLocalId),
+      modifierOptionId: modifierOptionId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(modifierOptionId),
+      groupName: groupName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(groupName),
+      name: Value(name),
+      additionalPrice: Value(additionalPrice),
+      rank: Value(rank),
+    );
+  }
+
+  factory DocumentItemModifiersTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DocumentItemModifiersTableData(
+      localId: serializer.fromJson<String>(json['localId']),
+      documentItemLocalId: serializer.fromJson<String>(
+        json['documentItemLocalId'],
+      ),
+      modifierOptionId: serializer.fromJson<int?>(json['modifierOptionId']),
+      groupName: serializer.fromJson<String?>(json['groupName']),
+      name: serializer.fromJson<String>(json['name']),
+      additionalPrice: serializer.fromJson<double>(json['additionalPrice']),
+      rank: serializer.fromJson<int>(json['rank']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'localId': serializer.toJson<String>(localId),
+      'documentItemLocalId': serializer.toJson<String>(documentItemLocalId),
+      'modifierOptionId': serializer.toJson<int?>(modifierOptionId),
+      'groupName': serializer.toJson<String?>(groupName),
+      'name': serializer.toJson<String>(name),
+      'additionalPrice': serializer.toJson<double>(additionalPrice),
+      'rank': serializer.toJson<int>(rank),
+    };
+  }
+
+  DocumentItemModifiersTableData copyWith({
+    String? localId,
+    String? documentItemLocalId,
+    Value<int?> modifierOptionId = const Value.absent(),
+    Value<String?> groupName = const Value.absent(),
+    String? name,
+    double? additionalPrice,
+    int? rank,
+  }) => DocumentItemModifiersTableData(
+    localId: localId ?? this.localId,
+    documentItemLocalId: documentItemLocalId ?? this.documentItemLocalId,
+    modifierOptionId: modifierOptionId.present
+        ? modifierOptionId.value
+        : this.modifierOptionId,
+    groupName: groupName.present ? groupName.value : this.groupName,
+    name: name ?? this.name,
+    additionalPrice: additionalPrice ?? this.additionalPrice,
+    rank: rank ?? this.rank,
+  );
+  DocumentItemModifiersTableData copyWithCompanion(
+    DocumentItemModifiersTableCompanion data,
+  ) {
+    return DocumentItemModifiersTableData(
+      localId: data.localId.present ? data.localId.value : this.localId,
+      documentItemLocalId: data.documentItemLocalId.present
+          ? data.documentItemLocalId.value
+          : this.documentItemLocalId,
+      modifierOptionId: data.modifierOptionId.present
+          ? data.modifierOptionId.value
+          : this.modifierOptionId,
+      groupName: data.groupName.present ? data.groupName.value : this.groupName,
+      name: data.name.present ? data.name.value : this.name,
+      additionalPrice: data.additionalPrice.present
+          ? data.additionalPrice.value
+          : this.additionalPrice,
+      rank: data.rank.present ? data.rank.value : this.rank,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DocumentItemModifiersTableData(')
+          ..write('localId: $localId, ')
+          ..write('documentItemLocalId: $documentItemLocalId, ')
+          ..write('modifierOptionId: $modifierOptionId, ')
+          ..write('groupName: $groupName, ')
+          ..write('name: $name, ')
+          ..write('additionalPrice: $additionalPrice, ')
+          ..write('rank: $rank')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    localId,
+    documentItemLocalId,
+    modifierOptionId,
+    groupName,
+    name,
+    additionalPrice,
+    rank,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DocumentItemModifiersTableData &&
+          other.localId == this.localId &&
+          other.documentItemLocalId == this.documentItemLocalId &&
+          other.modifierOptionId == this.modifierOptionId &&
+          other.groupName == this.groupName &&
+          other.name == this.name &&
+          other.additionalPrice == this.additionalPrice &&
+          other.rank == this.rank);
+}
+
+class DocumentItemModifiersTableCompanion
+    extends UpdateCompanion<DocumentItemModifiersTableData> {
+  final Value<String> localId;
+  final Value<String> documentItemLocalId;
+  final Value<int?> modifierOptionId;
+  final Value<String?> groupName;
+  final Value<String> name;
+  final Value<double> additionalPrice;
+  final Value<int> rank;
+  final Value<int> rowid;
+  const DocumentItemModifiersTableCompanion({
+    this.localId = const Value.absent(),
+    this.documentItemLocalId = const Value.absent(),
+    this.modifierOptionId = const Value.absent(),
+    this.groupName = const Value.absent(),
+    this.name = const Value.absent(),
+    this.additionalPrice = const Value.absent(),
+    this.rank = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DocumentItemModifiersTableCompanion.insert({
+    required String localId,
+    required String documentItemLocalId,
+    this.modifierOptionId = const Value.absent(),
+    this.groupName = const Value.absent(),
+    required String name,
+    this.additionalPrice = const Value.absent(),
+    this.rank = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : localId = Value(localId),
+       documentItemLocalId = Value(documentItemLocalId),
+       name = Value(name);
+  static Insertable<DocumentItemModifiersTableData> custom({
+    Expression<String>? localId,
+    Expression<String>? documentItemLocalId,
+    Expression<int>? modifierOptionId,
+    Expression<String>? groupName,
+    Expression<String>? name,
+    Expression<double>? additionalPrice,
+    Expression<int>? rank,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (localId != null) 'local_id': localId,
+      if (documentItemLocalId != null)
+        'document_item_local_id': documentItemLocalId,
+      if (modifierOptionId != null) 'modifier_option_id': modifierOptionId,
+      if (groupName != null) 'group_name': groupName,
+      if (name != null) 'name': name,
+      if (additionalPrice != null) 'additional_price': additionalPrice,
+      if (rank != null) 'rank': rank,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DocumentItemModifiersTableCompanion copyWith({
+    Value<String>? localId,
+    Value<String>? documentItemLocalId,
+    Value<int?>? modifierOptionId,
+    Value<String?>? groupName,
+    Value<String>? name,
+    Value<double>? additionalPrice,
+    Value<int>? rank,
+    Value<int>? rowid,
+  }) {
+    return DocumentItemModifiersTableCompanion(
+      localId: localId ?? this.localId,
+      documentItemLocalId: documentItemLocalId ?? this.documentItemLocalId,
+      modifierOptionId: modifierOptionId ?? this.modifierOptionId,
+      groupName: groupName ?? this.groupName,
+      name: name ?? this.name,
+      additionalPrice: additionalPrice ?? this.additionalPrice,
+      rank: rank ?? this.rank,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (localId.present) {
+      map['local_id'] = Variable<String>(localId.value);
+    }
+    if (documentItemLocalId.present) {
+      map['document_item_local_id'] = Variable<String>(
+        documentItemLocalId.value,
+      );
+    }
+    if (modifierOptionId.present) {
+      map['modifier_option_id'] = Variable<int>(modifierOptionId.value);
+    }
+    if (groupName.present) {
+      map['group_name'] = Variable<String>(groupName.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (additionalPrice.present) {
+      map['additional_price'] = Variable<double>(additionalPrice.value);
+    }
+    if (rank.present) {
+      map['rank'] = Variable<int>(rank.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DocumentItemModifiersTableCompanion(')
+          ..write('localId: $localId, ')
+          ..write('documentItemLocalId: $documentItemLocalId, ')
+          ..write('modifierOptionId: $modifierOptionId, ')
+          ..write('groupName: $groupName, ')
+          ..write('name: $name, ')
+          ..write('additionalPrice: $additionalPrice, ')
+          ..write('rank: $rank, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $CompaniesTableTable extends CompaniesTable
     with TableInfo<$CompaniesTableTable, CompaniesTableData> {
   @override
@@ -37266,6 +39959,16 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $PromotionItemsTableTable(this);
   late final $ProductCommentsTableTable productCommentsTable =
       $ProductCommentsTableTable(this);
+  late final $ModifierGroupsTableTable modifierGroupsTable =
+      $ModifierGroupsTableTable(this);
+  late final $ModifierOptionsTableTable modifierOptionsTable =
+      $ModifierOptionsTableTable(this);
+  late final $ProductModifierGroupsTableTable productModifierGroupsTable =
+      $ProductModifierGroupsTableTable(this);
+  late final $PosOrderItemModifiersTableTable posOrderItemModifiersTable =
+      $PosOrderItemModifiersTableTable(this);
+  late final $DocumentItemModifiersTableTable documentItemModifiersTable =
+      $DocumentItemModifiersTableTable(this);
   late final $CompaniesTableTable companiesTable = $CompaniesTableTable(this);
   late final $PosOrdersTableTable posOrdersTable = $PosOrdersTableTable(this);
   late final $PosOrderItemsTableTable posOrderItemsTable =
@@ -37396,6 +40099,11 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     promotionsTable,
     promotionItemsTable,
     productCommentsTable,
+    modifierGroupsTable,
+    modifierOptionsTable,
+    productModifierGroupsTable,
+    posOrderItemModifiersTable,
+    documentItemModifiersTable,
     companiesTable,
     posOrdersTable,
     posOrderItemsTable,
@@ -45564,6 +48272,1417 @@ typedef $$ProductCommentsTableTableProcessedTableManager =
         >,
       ),
       ProductCommentsTableData,
+      PrefetchHooks Function()
+    >;
+typedef $$ModifierGroupsTableTableCreateCompanionBuilder =
+    ModifierGroupsTableCompanion Function({
+      Value<int> id,
+      required int companyId,
+      required String name,
+      Value<int> minSelections,
+      Value<int> maxSelections,
+      Value<bool> allowsFreeText,
+      Value<String?> iconKey,
+      Value<int> rank,
+      Value<bool> isEnabled,
+      required DateTime lastModified,
+      Value<String> syncStatus,
+    });
+typedef $$ModifierGroupsTableTableUpdateCompanionBuilder =
+    ModifierGroupsTableCompanion Function({
+      Value<int> id,
+      Value<int> companyId,
+      Value<String> name,
+      Value<int> minSelections,
+      Value<int> maxSelections,
+      Value<bool> allowsFreeText,
+      Value<String?> iconKey,
+      Value<int> rank,
+      Value<bool> isEnabled,
+      Value<DateTime> lastModified,
+      Value<String> syncStatus,
+    });
+
+class $$ModifierGroupsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $ModifierGroupsTableTable> {
+  $$ModifierGroupsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get companyId => $composableBuilder(
+    column: $table.companyId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get minSelections => $composableBuilder(
+    column: $table.minSelections,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get maxSelections => $composableBuilder(
+    column: $table.maxSelections,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get allowsFreeText => $composableBuilder(
+    column: $table.allowsFreeText,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get iconKey => $composableBuilder(
+    column: $table.iconKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get rank => $composableBuilder(
+    column: $table.rank,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isEnabled => $composableBuilder(
+    column: $table.isEnabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastModified => $composableBuilder(
+    column: $table.lastModified,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ModifierGroupsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $ModifierGroupsTableTable> {
+  $$ModifierGroupsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get companyId => $composableBuilder(
+    column: $table.companyId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get minSelections => $composableBuilder(
+    column: $table.minSelections,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get maxSelections => $composableBuilder(
+    column: $table.maxSelections,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get allowsFreeText => $composableBuilder(
+    column: $table.allowsFreeText,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get iconKey => $composableBuilder(
+    column: $table.iconKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get rank => $composableBuilder(
+    column: $table.rank,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isEnabled => $composableBuilder(
+    column: $table.isEnabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastModified => $composableBuilder(
+    column: $table.lastModified,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ModifierGroupsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ModifierGroupsTableTable> {
+  $$ModifierGroupsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get companyId =>
+      $composableBuilder(column: $table.companyId, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<int> get minSelections => $composableBuilder(
+    column: $table.minSelections,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get maxSelections => $composableBuilder(
+    column: $table.maxSelections,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get allowsFreeText => $composableBuilder(
+    column: $table.allowsFreeText,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get iconKey =>
+      $composableBuilder(column: $table.iconKey, builder: (column) => column);
+
+  GeneratedColumn<int> get rank =>
+      $composableBuilder(column: $table.rank, builder: (column) => column);
+
+  GeneratedColumn<bool> get isEnabled =>
+      $composableBuilder(column: $table.isEnabled, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastModified => $composableBuilder(
+    column: $table.lastModified,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => column,
+  );
+}
+
+class $$ModifierGroupsTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ModifierGroupsTableTable,
+          ModifierGroupsTableData,
+          $$ModifierGroupsTableTableFilterComposer,
+          $$ModifierGroupsTableTableOrderingComposer,
+          $$ModifierGroupsTableTableAnnotationComposer,
+          $$ModifierGroupsTableTableCreateCompanionBuilder,
+          $$ModifierGroupsTableTableUpdateCompanionBuilder,
+          (
+            ModifierGroupsTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $ModifierGroupsTableTable,
+              ModifierGroupsTableData
+            >,
+          ),
+          ModifierGroupsTableData,
+          PrefetchHooks Function()
+        > {
+  $$ModifierGroupsTableTableTableManager(
+    _$AppDatabase db,
+    $ModifierGroupsTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ModifierGroupsTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ModifierGroupsTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$ModifierGroupsTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> companyId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<int> minSelections = const Value.absent(),
+                Value<int> maxSelections = const Value.absent(),
+                Value<bool> allowsFreeText = const Value.absent(),
+                Value<String?> iconKey = const Value.absent(),
+                Value<int> rank = const Value.absent(),
+                Value<bool> isEnabled = const Value.absent(),
+                Value<DateTime> lastModified = const Value.absent(),
+                Value<String> syncStatus = const Value.absent(),
+              }) => ModifierGroupsTableCompanion(
+                id: id,
+                companyId: companyId,
+                name: name,
+                minSelections: minSelections,
+                maxSelections: maxSelections,
+                allowsFreeText: allowsFreeText,
+                iconKey: iconKey,
+                rank: rank,
+                isEnabled: isEnabled,
+                lastModified: lastModified,
+                syncStatus: syncStatus,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int companyId,
+                required String name,
+                Value<int> minSelections = const Value.absent(),
+                Value<int> maxSelections = const Value.absent(),
+                Value<bool> allowsFreeText = const Value.absent(),
+                Value<String?> iconKey = const Value.absent(),
+                Value<int> rank = const Value.absent(),
+                Value<bool> isEnabled = const Value.absent(),
+                required DateTime lastModified,
+                Value<String> syncStatus = const Value.absent(),
+              }) => ModifierGroupsTableCompanion.insert(
+                id: id,
+                companyId: companyId,
+                name: name,
+                minSelections: minSelections,
+                maxSelections: maxSelections,
+                allowsFreeText: allowsFreeText,
+                iconKey: iconKey,
+                rank: rank,
+                isEnabled: isEnabled,
+                lastModified: lastModified,
+                syncStatus: syncStatus,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ModifierGroupsTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ModifierGroupsTableTable,
+      ModifierGroupsTableData,
+      $$ModifierGroupsTableTableFilterComposer,
+      $$ModifierGroupsTableTableOrderingComposer,
+      $$ModifierGroupsTableTableAnnotationComposer,
+      $$ModifierGroupsTableTableCreateCompanionBuilder,
+      $$ModifierGroupsTableTableUpdateCompanionBuilder,
+      (
+        ModifierGroupsTableData,
+        BaseReferences<
+          _$AppDatabase,
+          $ModifierGroupsTableTable,
+          ModifierGroupsTableData
+        >,
+      ),
+      ModifierGroupsTableData,
+      PrefetchHooks Function()
+    >;
+typedef $$ModifierOptionsTableTableCreateCompanionBuilder =
+    ModifierOptionsTableCompanion Function({
+      Value<int> id,
+      required int companyId,
+      required int modifierGroupId,
+      required String name,
+      Value<double> additionalPrice,
+      Value<int> rank,
+      Value<bool> isEnabled,
+      required DateTime lastModified,
+      Value<String> syncStatus,
+    });
+typedef $$ModifierOptionsTableTableUpdateCompanionBuilder =
+    ModifierOptionsTableCompanion Function({
+      Value<int> id,
+      Value<int> companyId,
+      Value<int> modifierGroupId,
+      Value<String> name,
+      Value<double> additionalPrice,
+      Value<int> rank,
+      Value<bool> isEnabled,
+      Value<DateTime> lastModified,
+      Value<String> syncStatus,
+    });
+
+class $$ModifierOptionsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $ModifierOptionsTableTable> {
+  $$ModifierOptionsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get companyId => $composableBuilder(
+    column: $table.companyId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get modifierGroupId => $composableBuilder(
+    column: $table.modifierGroupId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get additionalPrice => $composableBuilder(
+    column: $table.additionalPrice,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get rank => $composableBuilder(
+    column: $table.rank,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isEnabled => $composableBuilder(
+    column: $table.isEnabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastModified => $composableBuilder(
+    column: $table.lastModified,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ModifierOptionsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $ModifierOptionsTableTable> {
+  $$ModifierOptionsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get companyId => $composableBuilder(
+    column: $table.companyId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get modifierGroupId => $composableBuilder(
+    column: $table.modifierGroupId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get additionalPrice => $composableBuilder(
+    column: $table.additionalPrice,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get rank => $composableBuilder(
+    column: $table.rank,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isEnabled => $composableBuilder(
+    column: $table.isEnabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastModified => $composableBuilder(
+    column: $table.lastModified,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ModifierOptionsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ModifierOptionsTableTable> {
+  $$ModifierOptionsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get companyId =>
+      $composableBuilder(column: $table.companyId, builder: (column) => column);
+
+  GeneratedColumn<int> get modifierGroupId => $composableBuilder(
+    column: $table.modifierGroupId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<double> get additionalPrice => $composableBuilder(
+    column: $table.additionalPrice,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get rank =>
+      $composableBuilder(column: $table.rank, builder: (column) => column);
+
+  GeneratedColumn<bool> get isEnabled =>
+      $composableBuilder(column: $table.isEnabled, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastModified => $composableBuilder(
+    column: $table.lastModified,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => column,
+  );
+}
+
+class $$ModifierOptionsTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ModifierOptionsTableTable,
+          ModifierOptionsTableData,
+          $$ModifierOptionsTableTableFilterComposer,
+          $$ModifierOptionsTableTableOrderingComposer,
+          $$ModifierOptionsTableTableAnnotationComposer,
+          $$ModifierOptionsTableTableCreateCompanionBuilder,
+          $$ModifierOptionsTableTableUpdateCompanionBuilder,
+          (
+            ModifierOptionsTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $ModifierOptionsTableTable,
+              ModifierOptionsTableData
+            >,
+          ),
+          ModifierOptionsTableData,
+          PrefetchHooks Function()
+        > {
+  $$ModifierOptionsTableTableTableManager(
+    _$AppDatabase db,
+    $ModifierOptionsTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ModifierOptionsTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ModifierOptionsTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$ModifierOptionsTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> companyId = const Value.absent(),
+                Value<int> modifierGroupId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<double> additionalPrice = const Value.absent(),
+                Value<int> rank = const Value.absent(),
+                Value<bool> isEnabled = const Value.absent(),
+                Value<DateTime> lastModified = const Value.absent(),
+                Value<String> syncStatus = const Value.absent(),
+              }) => ModifierOptionsTableCompanion(
+                id: id,
+                companyId: companyId,
+                modifierGroupId: modifierGroupId,
+                name: name,
+                additionalPrice: additionalPrice,
+                rank: rank,
+                isEnabled: isEnabled,
+                lastModified: lastModified,
+                syncStatus: syncStatus,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int companyId,
+                required int modifierGroupId,
+                required String name,
+                Value<double> additionalPrice = const Value.absent(),
+                Value<int> rank = const Value.absent(),
+                Value<bool> isEnabled = const Value.absent(),
+                required DateTime lastModified,
+                Value<String> syncStatus = const Value.absent(),
+              }) => ModifierOptionsTableCompanion.insert(
+                id: id,
+                companyId: companyId,
+                modifierGroupId: modifierGroupId,
+                name: name,
+                additionalPrice: additionalPrice,
+                rank: rank,
+                isEnabled: isEnabled,
+                lastModified: lastModified,
+                syncStatus: syncStatus,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ModifierOptionsTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ModifierOptionsTableTable,
+      ModifierOptionsTableData,
+      $$ModifierOptionsTableTableFilterComposer,
+      $$ModifierOptionsTableTableOrderingComposer,
+      $$ModifierOptionsTableTableAnnotationComposer,
+      $$ModifierOptionsTableTableCreateCompanionBuilder,
+      $$ModifierOptionsTableTableUpdateCompanionBuilder,
+      (
+        ModifierOptionsTableData,
+        BaseReferences<
+          _$AppDatabase,
+          $ModifierOptionsTableTable,
+          ModifierOptionsTableData
+        >,
+      ),
+      ModifierOptionsTableData,
+      PrefetchHooks Function()
+    >;
+typedef $$ProductModifierGroupsTableTableCreateCompanionBuilder =
+    ProductModifierGroupsTableCompanion Function({
+      Value<int> id,
+      required int companyId,
+      required int productId,
+      required int modifierGroupId,
+      Value<int> rank,
+      required DateTime lastModified,
+      Value<String> syncStatus,
+    });
+typedef $$ProductModifierGroupsTableTableUpdateCompanionBuilder =
+    ProductModifierGroupsTableCompanion Function({
+      Value<int> id,
+      Value<int> companyId,
+      Value<int> productId,
+      Value<int> modifierGroupId,
+      Value<int> rank,
+      Value<DateTime> lastModified,
+      Value<String> syncStatus,
+    });
+
+class $$ProductModifierGroupsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $ProductModifierGroupsTableTable> {
+  $$ProductModifierGroupsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get companyId => $composableBuilder(
+    column: $table.companyId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get productId => $composableBuilder(
+    column: $table.productId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get modifierGroupId => $composableBuilder(
+    column: $table.modifierGroupId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get rank => $composableBuilder(
+    column: $table.rank,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastModified => $composableBuilder(
+    column: $table.lastModified,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ProductModifierGroupsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $ProductModifierGroupsTableTable> {
+  $$ProductModifierGroupsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get companyId => $composableBuilder(
+    column: $table.companyId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get productId => $composableBuilder(
+    column: $table.productId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get modifierGroupId => $composableBuilder(
+    column: $table.modifierGroupId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get rank => $composableBuilder(
+    column: $table.rank,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastModified => $composableBuilder(
+    column: $table.lastModified,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ProductModifierGroupsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ProductModifierGroupsTableTable> {
+  $$ProductModifierGroupsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get companyId =>
+      $composableBuilder(column: $table.companyId, builder: (column) => column);
+
+  GeneratedColumn<int> get productId =>
+      $composableBuilder(column: $table.productId, builder: (column) => column);
+
+  GeneratedColumn<int> get modifierGroupId => $composableBuilder(
+    column: $table.modifierGroupId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get rank =>
+      $composableBuilder(column: $table.rank, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastModified => $composableBuilder(
+    column: $table.lastModified,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => column,
+  );
+}
+
+class $$ProductModifierGroupsTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ProductModifierGroupsTableTable,
+          ProductModifierGroupsTableData,
+          $$ProductModifierGroupsTableTableFilterComposer,
+          $$ProductModifierGroupsTableTableOrderingComposer,
+          $$ProductModifierGroupsTableTableAnnotationComposer,
+          $$ProductModifierGroupsTableTableCreateCompanionBuilder,
+          $$ProductModifierGroupsTableTableUpdateCompanionBuilder,
+          (
+            ProductModifierGroupsTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $ProductModifierGroupsTableTable,
+              ProductModifierGroupsTableData
+            >,
+          ),
+          ProductModifierGroupsTableData,
+          PrefetchHooks Function()
+        > {
+  $$ProductModifierGroupsTableTableTableManager(
+    _$AppDatabase db,
+    $ProductModifierGroupsTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ProductModifierGroupsTableTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$ProductModifierGroupsTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$ProductModifierGroupsTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> companyId = const Value.absent(),
+                Value<int> productId = const Value.absent(),
+                Value<int> modifierGroupId = const Value.absent(),
+                Value<int> rank = const Value.absent(),
+                Value<DateTime> lastModified = const Value.absent(),
+                Value<String> syncStatus = const Value.absent(),
+              }) => ProductModifierGroupsTableCompanion(
+                id: id,
+                companyId: companyId,
+                productId: productId,
+                modifierGroupId: modifierGroupId,
+                rank: rank,
+                lastModified: lastModified,
+                syncStatus: syncStatus,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int companyId,
+                required int productId,
+                required int modifierGroupId,
+                Value<int> rank = const Value.absent(),
+                required DateTime lastModified,
+                Value<String> syncStatus = const Value.absent(),
+              }) => ProductModifierGroupsTableCompanion.insert(
+                id: id,
+                companyId: companyId,
+                productId: productId,
+                modifierGroupId: modifierGroupId,
+                rank: rank,
+                lastModified: lastModified,
+                syncStatus: syncStatus,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ProductModifierGroupsTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ProductModifierGroupsTableTable,
+      ProductModifierGroupsTableData,
+      $$ProductModifierGroupsTableTableFilterComposer,
+      $$ProductModifierGroupsTableTableOrderingComposer,
+      $$ProductModifierGroupsTableTableAnnotationComposer,
+      $$ProductModifierGroupsTableTableCreateCompanionBuilder,
+      $$ProductModifierGroupsTableTableUpdateCompanionBuilder,
+      (
+        ProductModifierGroupsTableData,
+        BaseReferences<
+          _$AppDatabase,
+          $ProductModifierGroupsTableTable,
+          ProductModifierGroupsTableData
+        >,
+      ),
+      ProductModifierGroupsTableData,
+      PrefetchHooks Function()
+    >;
+typedef $$PosOrderItemModifiersTableTableCreateCompanionBuilder =
+    PosOrderItemModifiersTableCompanion Function({
+      required String localId,
+      required String orderItemLocalId,
+      Value<int?> modifierOptionId,
+      Value<String?> groupName,
+      required String name,
+      Value<double> additionalPrice,
+      Value<int> rank,
+      Value<int> rowid,
+    });
+typedef $$PosOrderItemModifiersTableTableUpdateCompanionBuilder =
+    PosOrderItemModifiersTableCompanion Function({
+      Value<String> localId,
+      Value<String> orderItemLocalId,
+      Value<int?> modifierOptionId,
+      Value<String?> groupName,
+      Value<String> name,
+      Value<double> additionalPrice,
+      Value<int> rank,
+      Value<int> rowid,
+    });
+
+class $$PosOrderItemModifiersTableTableFilterComposer
+    extends Composer<_$AppDatabase, $PosOrderItemModifiersTableTable> {
+  $$PosOrderItemModifiersTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get localId => $composableBuilder(
+    column: $table.localId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get orderItemLocalId => $composableBuilder(
+    column: $table.orderItemLocalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get modifierOptionId => $composableBuilder(
+    column: $table.modifierOptionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get groupName => $composableBuilder(
+    column: $table.groupName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get additionalPrice => $composableBuilder(
+    column: $table.additionalPrice,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get rank => $composableBuilder(
+    column: $table.rank,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$PosOrderItemModifiersTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $PosOrderItemModifiersTableTable> {
+  $$PosOrderItemModifiersTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get localId => $composableBuilder(
+    column: $table.localId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get orderItemLocalId => $composableBuilder(
+    column: $table.orderItemLocalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get modifierOptionId => $composableBuilder(
+    column: $table.modifierOptionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get groupName => $composableBuilder(
+    column: $table.groupName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get additionalPrice => $composableBuilder(
+    column: $table.additionalPrice,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get rank => $composableBuilder(
+    column: $table.rank,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$PosOrderItemModifiersTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PosOrderItemModifiersTableTable> {
+  $$PosOrderItemModifiersTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get localId =>
+      $composableBuilder(column: $table.localId, builder: (column) => column);
+
+  GeneratedColumn<String> get orderItemLocalId => $composableBuilder(
+    column: $table.orderItemLocalId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get modifierOptionId => $composableBuilder(
+    column: $table.modifierOptionId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get groupName =>
+      $composableBuilder(column: $table.groupName, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<double> get additionalPrice => $composableBuilder(
+    column: $table.additionalPrice,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get rank =>
+      $composableBuilder(column: $table.rank, builder: (column) => column);
+}
+
+class $$PosOrderItemModifiersTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PosOrderItemModifiersTableTable,
+          PosOrderItemModifiersTableData,
+          $$PosOrderItemModifiersTableTableFilterComposer,
+          $$PosOrderItemModifiersTableTableOrderingComposer,
+          $$PosOrderItemModifiersTableTableAnnotationComposer,
+          $$PosOrderItemModifiersTableTableCreateCompanionBuilder,
+          $$PosOrderItemModifiersTableTableUpdateCompanionBuilder,
+          (
+            PosOrderItemModifiersTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $PosOrderItemModifiersTableTable,
+              PosOrderItemModifiersTableData
+            >,
+          ),
+          PosOrderItemModifiersTableData,
+          PrefetchHooks Function()
+        > {
+  $$PosOrderItemModifiersTableTableTableManager(
+    _$AppDatabase db,
+    $PosOrderItemModifiersTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PosOrderItemModifiersTableTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$PosOrderItemModifiersTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$PosOrderItemModifiersTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> localId = const Value.absent(),
+                Value<String> orderItemLocalId = const Value.absent(),
+                Value<int?> modifierOptionId = const Value.absent(),
+                Value<String?> groupName = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<double> additionalPrice = const Value.absent(),
+                Value<int> rank = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PosOrderItemModifiersTableCompanion(
+                localId: localId,
+                orderItemLocalId: orderItemLocalId,
+                modifierOptionId: modifierOptionId,
+                groupName: groupName,
+                name: name,
+                additionalPrice: additionalPrice,
+                rank: rank,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String localId,
+                required String orderItemLocalId,
+                Value<int?> modifierOptionId = const Value.absent(),
+                Value<String?> groupName = const Value.absent(),
+                required String name,
+                Value<double> additionalPrice = const Value.absent(),
+                Value<int> rank = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PosOrderItemModifiersTableCompanion.insert(
+                localId: localId,
+                orderItemLocalId: orderItemLocalId,
+                modifierOptionId: modifierOptionId,
+                groupName: groupName,
+                name: name,
+                additionalPrice: additionalPrice,
+                rank: rank,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$PosOrderItemModifiersTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PosOrderItemModifiersTableTable,
+      PosOrderItemModifiersTableData,
+      $$PosOrderItemModifiersTableTableFilterComposer,
+      $$PosOrderItemModifiersTableTableOrderingComposer,
+      $$PosOrderItemModifiersTableTableAnnotationComposer,
+      $$PosOrderItemModifiersTableTableCreateCompanionBuilder,
+      $$PosOrderItemModifiersTableTableUpdateCompanionBuilder,
+      (
+        PosOrderItemModifiersTableData,
+        BaseReferences<
+          _$AppDatabase,
+          $PosOrderItemModifiersTableTable,
+          PosOrderItemModifiersTableData
+        >,
+      ),
+      PosOrderItemModifiersTableData,
+      PrefetchHooks Function()
+    >;
+typedef $$DocumentItemModifiersTableTableCreateCompanionBuilder =
+    DocumentItemModifiersTableCompanion Function({
+      required String localId,
+      required String documentItemLocalId,
+      Value<int?> modifierOptionId,
+      Value<String?> groupName,
+      required String name,
+      Value<double> additionalPrice,
+      Value<int> rank,
+      Value<int> rowid,
+    });
+typedef $$DocumentItemModifiersTableTableUpdateCompanionBuilder =
+    DocumentItemModifiersTableCompanion Function({
+      Value<String> localId,
+      Value<String> documentItemLocalId,
+      Value<int?> modifierOptionId,
+      Value<String?> groupName,
+      Value<String> name,
+      Value<double> additionalPrice,
+      Value<int> rank,
+      Value<int> rowid,
+    });
+
+class $$DocumentItemModifiersTableTableFilterComposer
+    extends Composer<_$AppDatabase, $DocumentItemModifiersTableTable> {
+  $$DocumentItemModifiersTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get localId => $composableBuilder(
+    column: $table.localId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get documentItemLocalId => $composableBuilder(
+    column: $table.documentItemLocalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get modifierOptionId => $composableBuilder(
+    column: $table.modifierOptionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get groupName => $composableBuilder(
+    column: $table.groupName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get additionalPrice => $composableBuilder(
+    column: $table.additionalPrice,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get rank => $composableBuilder(
+    column: $table.rank,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$DocumentItemModifiersTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $DocumentItemModifiersTableTable> {
+  $$DocumentItemModifiersTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get localId => $composableBuilder(
+    column: $table.localId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get documentItemLocalId => $composableBuilder(
+    column: $table.documentItemLocalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get modifierOptionId => $composableBuilder(
+    column: $table.modifierOptionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get groupName => $composableBuilder(
+    column: $table.groupName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get additionalPrice => $composableBuilder(
+    column: $table.additionalPrice,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get rank => $composableBuilder(
+    column: $table.rank,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$DocumentItemModifiersTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DocumentItemModifiersTableTable> {
+  $$DocumentItemModifiersTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get localId =>
+      $composableBuilder(column: $table.localId, builder: (column) => column);
+
+  GeneratedColumn<String> get documentItemLocalId => $composableBuilder(
+    column: $table.documentItemLocalId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get modifierOptionId => $composableBuilder(
+    column: $table.modifierOptionId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get groupName =>
+      $composableBuilder(column: $table.groupName, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<double> get additionalPrice => $composableBuilder(
+    column: $table.additionalPrice,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get rank =>
+      $composableBuilder(column: $table.rank, builder: (column) => column);
+}
+
+class $$DocumentItemModifiersTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DocumentItemModifiersTableTable,
+          DocumentItemModifiersTableData,
+          $$DocumentItemModifiersTableTableFilterComposer,
+          $$DocumentItemModifiersTableTableOrderingComposer,
+          $$DocumentItemModifiersTableTableAnnotationComposer,
+          $$DocumentItemModifiersTableTableCreateCompanionBuilder,
+          $$DocumentItemModifiersTableTableUpdateCompanionBuilder,
+          (
+            DocumentItemModifiersTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $DocumentItemModifiersTableTable,
+              DocumentItemModifiersTableData
+            >,
+          ),
+          DocumentItemModifiersTableData,
+          PrefetchHooks Function()
+        > {
+  $$DocumentItemModifiersTableTableTableManager(
+    _$AppDatabase db,
+    $DocumentItemModifiersTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DocumentItemModifiersTableTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$DocumentItemModifiersTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$DocumentItemModifiersTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> localId = const Value.absent(),
+                Value<String> documentItemLocalId = const Value.absent(),
+                Value<int?> modifierOptionId = const Value.absent(),
+                Value<String?> groupName = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<double> additionalPrice = const Value.absent(),
+                Value<int> rank = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DocumentItemModifiersTableCompanion(
+                localId: localId,
+                documentItemLocalId: documentItemLocalId,
+                modifierOptionId: modifierOptionId,
+                groupName: groupName,
+                name: name,
+                additionalPrice: additionalPrice,
+                rank: rank,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String localId,
+                required String documentItemLocalId,
+                Value<int?> modifierOptionId = const Value.absent(),
+                Value<String?> groupName = const Value.absent(),
+                required String name,
+                Value<double> additionalPrice = const Value.absent(),
+                Value<int> rank = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DocumentItemModifiersTableCompanion.insert(
+                localId: localId,
+                documentItemLocalId: documentItemLocalId,
+                modifierOptionId: modifierOptionId,
+                groupName: groupName,
+                name: name,
+                additionalPrice: additionalPrice,
+                rank: rank,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$DocumentItemModifiersTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DocumentItemModifiersTableTable,
+      DocumentItemModifiersTableData,
+      $$DocumentItemModifiersTableTableFilterComposer,
+      $$DocumentItemModifiersTableTableOrderingComposer,
+      $$DocumentItemModifiersTableTableAnnotationComposer,
+      $$DocumentItemModifiersTableTableCreateCompanionBuilder,
+      $$DocumentItemModifiersTableTableUpdateCompanionBuilder,
+      (
+        DocumentItemModifiersTableData,
+        BaseReferences<
+          _$AppDatabase,
+          $DocumentItemModifiersTableTable,
+          DocumentItemModifiersTableData
+        >,
+      ),
+      DocumentItemModifiersTableData,
       PrefetchHooks Function()
     >;
 typedef $$CompaniesTableTableCreateCompanionBuilder =
@@ -56660,6 +60779,28 @@ class $AppDatabaseManager {
       $$PromotionItemsTableTableTableManager(_db, _db.promotionItemsTable);
   $$ProductCommentsTableTableTableManager get productCommentsTable =>
       $$ProductCommentsTableTableTableManager(_db, _db.productCommentsTable);
+  $$ModifierGroupsTableTableTableManager get modifierGroupsTable =>
+      $$ModifierGroupsTableTableTableManager(_db, _db.modifierGroupsTable);
+  $$ModifierOptionsTableTableTableManager get modifierOptionsTable =>
+      $$ModifierOptionsTableTableTableManager(_db, _db.modifierOptionsTable);
+  $$ProductModifierGroupsTableTableTableManager
+  get productModifierGroupsTable =>
+      $$ProductModifierGroupsTableTableTableManager(
+        _db,
+        _db.productModifierGroupsTable,
+      );
+  $$PosOrderItemModifiersTableTableTableManager
+  get posOrderItemModifiersTable =>
+      $$PosOrderItemModifiersTableTableTableManager(
+        _db,
+        _db.posOrderItemModifiersTable,
+      );
+  $$DocumentItemModifiersTableTableTableManager
+  get documentItemModifiersTable =>
+      $$DocumentItemModifiersTableTableTableManager(
+        _db,
+        _db.documentItemModifiersTable,
+      );
   $$CompaniesTableTableTableManager get companiesTable =>
       $$CompaniesTableTableTableManager(_db, _db.companiesTable);
   $$PosOrdersTableTableTableManager get posOrdersTable =>

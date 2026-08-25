@@ -264,13 +264,21 @@ class _StockScreenState extends ConsumerState<StockScreen> {
     for (final item in items) {
       final p    = item.product;
       final qty  = item.totalQuantity;
-      final costBT  = qty * p.cost;
+      // 🚨 `qty` is a STOCK figure — in the category's reference unit — while
+      // `cost` and `price` are quoted per SALE unit. Multiplying them directly
+      // valued 400 g of a 30 MAD/g product at 12 MAD instead of 12 000, because
+      // it charged the gram price for a whole kilogram. Both money figures are
+      // restated per reference unit first; for a product sold in its own
+      // reference unit this is the identity and nothing changes.
+      final unitCost  = pricePerReferenceUnit(p.cost, p.uomId);
+      final unitPrice = pricePerReferenceUnit(p.price, p.uomId);
+      final costBT  = qty * unitCost;
       // A product with no assignment of its own inherits the configured
       // default, exactly like the cart's fallback.
       final pct     = ratesByProduct[p.id] ?? defaultPctRate;
       final divisor = 1 + pct / 100;
-      final saleBT  = p.isTaxInclusivePrice ? qty * p.price / divisor : qty * p.price;
-      final saleIT  = p.isTaxInclusivePrice ? qty * p.price : qty * p.price * divisor;
+      final saleBT  = p.isTaxInclusivePrice ? qty * unitPrice / divisor : qty * unitPrice;
+      final saleIT  = p.isTaxInclusivePrice ? qty * unitPrice : qty * unitPrice * divisor;
 
       totalCostBT  += costBT;
       totalCostIT  += costBT; // cost incl tax == cost bef tax (no cost tax rate)
@@ -284,7 +292,7 @@ class _StockScreenState extends ConsumerState<StockScreen> {
         p.name,
         formatQuantityValue(qty, referenceUomOf(uomById(p.uomId)).id),
         referenceUomOf(uomById(p.uomId)).code,
-        moneyFmt.format(p.cost),
+        moneyFmt.format(unitCost),
         moneyFmt.format(costBT),
         moneyFmt.format(costBT),
         moneyFmt.format(saleBT),
@@ -861,7 +869,10 @@ class _StockScreenState extends ConsumerState<StockScreen> {
             .where((s) => s.warehouseId == _selectedWarehouseId)
             .toList();
     final double totalQty = stocks.fold(0, (sum, s) => sum + s.quantity);
-    final double totalValue = totalQty * product.price;
+    // Priced per SALE unit, counted in the STOCK unit — see the note in the
+    // report builder above. 0.400 kg of a 30 MAD/g product is 12 000 MAD.
+    final double totalValue =
+        totalQty * pricePerReferenceUnit(product.price, product.uomId);
     final bool isSelected = _selectedProductId == product.id;
 
     // Stock-control rule status (offline-first, from _rules).
@@ -2011,7 +2022,7 @@ class _StockEntry extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  "${(stock.quantity * product.price).toStringAsFixed(2)} $sym",
+                  "${(stock.quantity * pricePerReferenceUnit(product.price, product.uomId)).toStringAsFixed(2)} $sym",
                   style: theme.textTheme.bodySmall?.copyWith(
                       color:
                           theme.colorScheme.onSurfaceVariant),

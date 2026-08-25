@@ -62,43 +62,80 @@ final activePromotionsProvider =
 
 /// Single source of truth for "is this promotion live right now" — used by both
 /// the menu (to apply discounts / show the star) and the promotions list (to
-/// show an accurate Active/Inactive badge). Checks enabled + date range + day
-/// of week + time-of-day window.
+/// show an accurate Active/Inactive badge).
+///
+/// **Start and End are instants, not a daily window.** The edit screen offers
+/// four fields labelled "Start Date / Start Time / End Date / End Time", so a
+/// promotion set to 22 Aug 22:17 → 24 Aug 22:18 runs *continuously* across
+/// those two nights. The time pair used to be enforced as a time-of-day window
+/// on *every* day of the range, which silently turned that promotion into a
+/// 60-second slot per day and left it reading "Inactive" for the other 1439.
+///
+/// The daily-window reading survives for the one shape where it is the only
+/// possible one: **no dates at all** plus a time pair — the open-ended
+/// "happy hour 17:00–19:00" (narrowed further by the day-of-week bitmask).
 bool isPromotionActiveNow(PromotionDto p, [DateTime? at]) {
   if (!p.isEnabled) return false;
   final now = at ?? DateTime.now();
-
-  if (p.startDate != null) {
-    final s = p.startDate!.toLocal();
-    if (now.isBefore(DateTime(s.year, s.month, s.day))) return false;
-  }
-  if (p.endDate != null) {
-    final e = p.endDate!.toLocal();
-    if (now.isAfter(DateTime(e.year, e.month, e.day, 23, 59, 59))) return false;
-  }
 
   // Day-of-week bitmask (Mon=bit0 … Sun=bit6). 0 means "every day".
   final dayBitmask = 1 << (now.weekday - 1);
   if (p.daysOfWeek > 0 && (p.daysOfWeek & dayBitmask) == 0) return false;
 
-  // Only enforce a time-of-day window when both ends are set AND differ. A
-  // zero-width window (start == end, e.g. "20:20"–"20:20") is a data-entry
-  // artifact that would otherwise make the promo active for a single second —
-  // treat it as "all day".
+  final start = _promotionBoundary(p.startDate, p.startTime, endOfDay: false);
+  final end = _promotionBoundary(p.endDate, p.endTime, endOfDay: true);
+
+  if (start != null || end != null) {
+    if (start != null && now.isBefore(start)) return false;
+    if (end != null && now.isAfter(end)) return false;
+    return true;
+  }
+
+  return _matchesDailyWindow(p, now);
+}
+
+/// Folds a promotion date and its companion time into one local instant.
+///
+/// Returns null when the date is absent: that end of the range is unbounded,
+/// and a lone time has no day to anchor itself to. A missing or malformed time
+/// falls back to the edge of the day — 00:00:00 for the start, 23:59:59 for
+/// the end — so a date-only promotion still covers its full first and last day.
+DateTime? _promotionBoundary(DateTime? date, String? time,
+    {required bool endOfDay}) {
+  if (date == null) return null;
+  final d = date.toLocal();
+  final parts = (time ?? '').split(':');
+  final h = parts.length >= 2 ? int.tryParse(parts[0]) : null;
+  final m = parts.length >= 2 ? int.tryParse(parts[1]) : null;
+  if (h == null || m == null) {
+    return endOfDay
+        ? DateTime(d.year, d.month, d.day, 23, 59, 59)
+        : DateTime(d.year, d.month, d.day);
+  }
+  final s = parts.length >= 3 ? (int.tryParse(parts[2]) ?? 0) : 0;
+  return DateTime(d.year, d.month, d.day, h, m, s);
+}
+
+/// Recurring time-of-day window, for promotions with no date range.
+///
+/// Only enforced when both ends are set AND differ. A zero-width window
+/// (start == end, e.g. "20:20"–"20:20") is a data-entry artifact that would
+/// otherwise make the promo active for a single second — treat it as all day.
+bool _matchesDailyWindow(PromotionDto p, DateTime now) {
   final hasTimeWindow = p.startTime != null &&
       p.startTime!.isNotEmpty &&
       p.endTime != null &&
       p.endTime!.isNotEmpty &&
       p.startTime != p.endTime;
-  if (hasTimeWindow) {
-    final currentTimeString =
-        "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}";
-    final safeStart =
-        p.startTime!.length == 5 ? "${p.startTime}:00" : p.startTime!;
-    final safeEnd = p.endTime!.length == 5 ? "${p.endTime}:00" : p.endTime!;
-    if (currentTimeString.compareTo(safeStart) < 0) return false;
-    if (currentTimeString.compareTo(safeEnd) > 0) return false;
-  }
+  if (!hasTimeWindow) return true;
+
+  final currentTimeString =
+      "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}";
+  final safeStart =
+      p.startTime!.length == 5 ? "${p.startTime}:00" : p.startTime!;
+  final safeEnd = p.endTime!.length == 5 ? "${p.endTime}:00" : p.endTime!;
+  if (currentTimeString.compareTo(safeStart) < 0) return false;
+  if (currentTimeString.compareTo(safeEnd) > 0) return false;
   return true;
 }
 

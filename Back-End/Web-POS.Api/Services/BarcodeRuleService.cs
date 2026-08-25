@@ -79,21 +79,33 @@ namespace Api.Services
                 parsed.Add((dto.Name.Trim(), type, encoding, dto.Pattern.Trim(), dto.IsEnabled));
             }
 
-            await using var tx = await _db.Database.BeginTransactionAsync(ct);
-
-            var existing = await _db.BarcodeRules.Where(r => r.CompanyId == companyId).ToListAsync(ct);
-            _db.BarcodeRules.RemoveRange(existing);
-            await _db.SaveChangesAsync(ct);
-
-            var sequence = 10;
-            foreach (var (name, type, encoding, pattern, isEnabled) in parsed)
+            // 🚨 Inside an execution strategy, and not optionally. The API runs
+            // with EnableRetryOnFailure, and SqlServerRetryingExecutionStrategy
+            // refuses a hand-rolled BeginTransactionAsync — a retry has to be
+            // able to replay the whole unit, which it cannot do around a
+            // transaction it did not open. Without this wrapper, saving the
+            // nomenclature threw "does not support user-initiated transactions"
+            // on every attempt. Replacing the whole set is naturally idempotent,
+            // so a replay is safe.
+            var strategy = _db.Database.CreateExecutionStrategy();
+            await strategy.ExecuteAsync(async () =>
             {
-                _db.BarcodeRules.Add(BarcodeRule.Create(companyId, name, sequence, type, encoding, pattern, isEnabled));
-                sequence += 10;
-            }
+                await using var tx = await _db.Database.BeginTransactionAsync(ct);
 
-            await _db.SaveChangesAsync(ct);
-            await tx.CommitAsync(ct);
+                var existing = await _db.BarcodeRules.Where(r => r.CompanyId == companyId).ToListAsync(ct);
+                _db.BarcodeRules.RemoveRange(existing);
+                await _db.SaveChangesAsync(ct);
+
+                var sequence = 10;
+                foreach (var (name, type, encoding, pattern, isEnabled) in parsed)
+                {
+                    _db.BarcodeRules.Add(BarcodeRule.Create(companyId, name, sequence, type, encoding, pattern, isEnabled));
+                    sequence += 10;
+                }
+
+                await _db.SaveChangesAsync(ct);
+                await tx.CommitAsync(ct);
+            });
 
             return await GetAllAsync(companyId, ct);
         }

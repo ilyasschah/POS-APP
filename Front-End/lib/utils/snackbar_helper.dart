@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/app_settings/app_settings_provider.dart';
+import 'package:pos_app/core/sound_service.dart';
 
 /// Shows a premium overlay toast, respecting [SettingKeys.messageDuration]
 /// and [SettingKeys.messagePosition] ('Top' or 'Bottom').
@@ -16,6 +17,12 @@ void showAppSnackbar(
   final duration =
       int.tryParse(settings[SettingKeys.messageDuration] ?? '3') ?? 3;
   final position = settings[SettingKeys.messagePosition] ?? 'Bottom';
+
+  // The error tone is hooked here rather than at each failure site: every path
+  // in the app that tells the operator something went wrong comes through this
+  // one function, so a list of "places that should beep" can never fall behind
+  // the code. Off by default — see kSettingDefaults.
+  if (isError) SoundService.instance.play(settings, PosSound.error);
 
   _insertToast(context, message, isError: isError, duration: duration, position: position);
 }

@@ -221,7 +221,16 @@ namespace Api.Services
                             
                             if (stock != null)
                             {
-                                stock.UpdateDetails(stock.Quantity + item.Quantity, stock.WarehouseId, stock.ProductId);
+                                // The order line is in the product's own unit; stock is
+                                // in its category reference. Voiding 100 g must hand back
+                                // 0.100 kg, not 100 kilograms. Same conversion as
+                                // PosOrderVoidService and BulkAddPosOrderItemsCommand —
+                                // this path is the one the POS actually takes (it voids
+                                // with /PosVoids/Add + DELETE /PosOrder/Delete), so
+                                // missing it here made every weighed void wrong on the
+                                // server even while the till got it right locally.
+                                var restored = UnitOfMeasure.ToReference(item.Quantity, item.Product.UomId);
+                                stock.UpdateDetails(stock.Quantity + restored, stock.WarehouseId, stock.ProductId);
                                 _repository._db.Stocks.Update(stock);
                             }
                         }

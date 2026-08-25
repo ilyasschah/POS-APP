@@ -9,6 +9,7 @@ import 'package:gap/gap.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:pos_app/core/dropdown_options.dart';
+import 'package:pos_app/core/sound_service.dart';
 import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/menu/open_orders_screen.dart';
 import 'package:pos_app/navigation/main_layout.dart';
@@ -60,6 +61,8 @@ import 'package:pos_app/barcode/nomenclature/barcode_matcher.dart';
 import 'package:pos_app/barcode/nomenclature/barcode_rule.dart';
 import 'package:pos_app/barcode/nomenclature/barcode_rules_provider.dart';
 import 'package:pos_app/menu/weigh_item_dialog.dart';
+import 'package:pos_app/modifier/customize_item_sheet.dart';
+import 'package:pos_app/modifier/modifier_models.dart';
 import 'package:pos_app/uom/unit_of_measure.dart';
 import 'package:pos_app/customer_display/customer_display_provider.dart';
 import 'package:pos_app/stock/stock_provider.dart';
@@ -1283,6 +1286,11 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
         findProductByBarcode(sellable, key, extraBarcodes: extraBarcodes);
 
     if (match == null) {
+      // The reject tone fires for ANY unmatched scan, including the silent case
+      // below: a cashier scanning head-down needs to hear that nothing went in
+      // the cart, which is precisely the gap ⭐10 describes. The message stays
+      // conditional; the sound does not.
+      SoundService.instance.play(settings, PosSound.scanFail);
       // A rule claimed the barcode but no product carries that key — worth
       // saying so, because the usual cause is a product whose stored barcode
       // does not have the embedded positions zeroed. A plain unmatched scan
@@ -1463,6 +1471,12 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
         }
       }
 
+      // Sounded here, not at the match: everything between (stock guards, the
+      // age-restriction dialog, tax resolution) can still abandon the scan, and
+      // a confirmation tone for an item that never reached the cart is worse
+      // than no tone at all.
+      SoundService.instance.play(settings, PosSound.scanOk);
+
       _searchCtrl.clear();
       ref.read(searchQueryProvider.notifier).state = '';
     } catch (e) {
@@ -1491,9 +1505,6 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
     }
   }
 
-  String _fmtQty(double q) =>
-      q == q.roundToDouble() ? q.toInt().toString() : q.toString();
-
   /// Synchronous, offline-first stock validation run the instant a product is
   /// tapped to be added to the cart. Reads live local stock ([_stockMap]) and the
   /// per-product control rules ([_stockControlMap]) — both seeded reactively in
@@ -1510,13 +1521,21 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
     if (product.isService) return true;
 
     final settings = ref.read(appSettingsProvider);
+
+    // 🚨 Everything here is in the STOCK unit, and [quantity] arrives in the
+    // SALE unit. Comparing them raw made a gram-priced product unsellable: one
+    // gram of saffron read as one kilogram, 0.500 − 1 went negative, and the
+    // out-of-stock dialog fired on the first tap of a product with half a kilo
+    // on the shelf. The cart lines get the same treatment — each carries its
+    // own uomId, and a cart can hold the same product under two of them.
     final currentStock = _stockMap[product.id] ?? 0;
     final cartQty = ref
         .read(cartProvider)
         .items
         .where((i) => i.productId == product.id)
-        .fold(0.0, (sum, i) => sum + i.quantity);
-    final projectedQuantity = currentStock - cartQty - quantity;
+        .fold(0.0, (sum, i) => sum + uomToReference(i.quantity, i.uomId));
+    final projectedQuantity = snapToStorage(
+        currentStock - cartQty - uomToReference(quantity, product.uomId));
 
     // Hard block — negative inventory is not permitted.
     final preventNegInv =
@@ -1561,10 +1580,12 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
         ),
         title: Text(AppLocalizations.of(context).productRunningLow(product.name)),
         content: Text(
+          // The projection came out of the stock ledger, so it is named in the
+          // STOCK unit — quoting the sale unit here would read "0.4 g" under a
+          // product holding 400 grams.
           AppLocalizations.of(context).lowStockAddAnyway(
-            _fmtQty(projectedQuantity),
-            product.measurementUnit ??
-                AppLocalizations.of(context).unitsFallback,
+            formatQuantityValue(projectedQuantity, product.stockUom.id),
+            product.stockUom.code,
           ),
           style: tt.bodyMedium?.copyWith(color: context.navMuted),
         ),
@@ -1652,7 +1673,11 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
                               context,
                             ).warehouseNumbered('${e.key}'),
                       ),
-                      subtitle: Text(AppLocalizations.of(context).quantityInStock(_fmtQty(e.value))),
+                      // Warehouse figures are stock-ledger figures: named in the
+                      // reference unit, at that unit's precision.
+                      subtitle: Text(AppLocalizations.of(context).quantityInStock(
+                          '${formatQuantityValue(e.value, product.stockUom.id)} '
+                          '${product.stockUom.code}')),
                       trailing: FilledButton.tonal(
                         onPressed: () {
                           ref.read(cartProvider.notifier).setWarehouseId(e.key);
@@ -2115,8 +2140,10 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
           if (!confirmed) return;
         }
 
+        final isWeighedSale = product.isToWeigh && !product.isService;
+
         double quantity = 1.0;
-        if (product.isToWeigh && !product.isService) {
+        if (isWeighedSale) {
           // Odoo's flow: a weighed product asks for its quantity up front —
           // from the scale when one is configured, from the keypad otherwise.
           // Checked before isUsingDefaultQuantity so a product carrying both
@@ -2142,13 +2169,56 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
           quantity = qty;
         }
 
+        // ── Modifiers ────────────────────────────────────────────────────
+        // Asked BEFORE the stock guards and the comment popup, because backing
+        // out of the sheet must abandon the whole add — running the guards
+        // first would warn about stock for an item that never gets added.
+        List<SelectedModifier> chosenModifiers = const [];
+        String? modifierNote;
+
+        // Read straight from Drift — see the note on
+        // `modifierGroupsForProductDirect`. Going through the autoDispose
+        // family provider's `.future` here resolved before the watch-stream
+        // emitted, so a product WITH groups never opened the sheet at all.
+        List<ModifierGroup> groups = const [];
+        try {
+          final rows = await ref
+              .read(appDatabaseProvider)
+              .modifierGroupsForProductDirect(
+                ref.read(selectedCompanyProvider)?.id ?? 0,
+                product.id,
+              );
+          groups = modifierGroupsFromRows(rows);
+        } catch (_) {}
+
+        if (groups.isNotEmpty) {
+          if (!context.mounted) return;
+          final result = await showCustomizeItemSheet(
+            context,
+            itemName: product.name,
+            basePrice: product.price,
+            groups: groups,
+          );
+          // Null means cancelled, and cancelled means add NOTHING. Falling
+          // through to add the plain item would be a sale nobody asked for.
+          if (result == null) return;
+          chosenModifiers = result.modifiers;
+          modifierNote = result.note;
+        }
+
         // Offline stock validation: hard-block negative inventory and warn on
         // low stock (acknowledgement required) using the real tapped quantity.
         if (!context.mounted) return;
         if (!await _passesStockGuards(product, quantity)) return;
 
         double price = product.price;
-        if (product.isPriceChangeAllowed) {
+        // 🚨 A weighed product never asks for a price on the way in, even when
+        // it is flagged price-changeable. Its price is per gram — a cashier
+        // typing "50" into that box would set 50 MAD *per gram* and ring up
+        // 5 000 for a 100 g bag. The money entry a weighed sale actually needs
+        // is the cart keypad's Amount key, which back-solves the WEIGHT from
+        // the shelf price and leaves the price alone.
+        if (product.isPriceChangeAllowed && !isWeighedSale) {
           final preventBelowCost =
               ref
                   .read(
@@ -2234,8 +2304,12 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
               .addItem(
                 menuProduct,
                 quantity: quantity,
-                comment: comment,
+                // The modifier sheet's free-text note and the comment popup
+                // both land in the same column; whichever the operator
+                // actually filled in wins.
+                comment: comment ?? modifierNote,
                 measurementUnit: product.measurementUnit,
+                modifiers: chosenModifiers,
               );
         } catch (e) {
           if (!context.mounted) return;
@@ -2580,6 +2654,23 @@ class _CartSectionState extends ConsumerState<CartSection> {
         false;
   }
 
+  /// Whether this line is sold by weight — which is what turns the keypad's
+  /// price key into an amount key.
+  ///
+  /// Read from the CATALOGUE first for the same reason [_priceChangeAllowed] is:
+  /// a manager who flips "sell by weight" should see it take effect on a
+  /// reopened order rather than be overruled by a copy taken at add time. The
+  /// line's own flag is the fallback for a product this terminal has not cached.
+  bool _isWeighedLine(CartItem item) {
+    final products = ref.read(allProductsListProvider).value ?? const [];
+    final product =
+        products.where((p) => p.id == item.productId).firstOrNull;
+    final weighed = product?.isToWeigh ?? item.isToWeigh;
+    // A service has no weight to solve for, and the product editor already
+    // refuses the combination — this is the belt to that's braces.
+    return weighed && !(product?.isService ?? item.isService);
+  }
+
   /// Attaches a customer to this order — the same picker the header button
   /// opens, reachable from the cart where the cashier is already looking.
   Future<void> _pickCartCustomer(BuildContext context) async {
@@ -2609,7 +2700,17 @@ class _CartSectionState extends ConsumerState<CartSection> {
         // it would delete the line mid-keystroke.
         if (value > 0) notifier.updateItemQuantity(item.cartItemId, value);
       case CartKeypadMode.price:
-        if (_priceChangeAllowed(item)) {
+        if (_isWeighedLine(item)) {
+          // 🚨 The reverse sale. On a weighed line the digits are MONEY, not a
+          // unit price: "50 dirhams of saffron" at 30 MAD/g is 1.6667 g, and
+          // the weight is what the keypad writes. `price` is deliberately left
+          // alone — it is the divisor, so every keystroke re-solves from the
+          // shelf price instead of compounding on the last answer.
+          final weight = quantityForAmount(value, item.price, item.uomId);
+          if (weight != null && weight > 0) {
+            notifier.updateItemQuantity(item.cartItemId, weight);
+          }
+        } else if (_priceChangeAllowed(item)) {
           notifier.updateItemPrice(item.cartItemId, value);
         }
     }
@@ -2808,6 +2909,10 @@ class _CartSectionState extends ConsumerState<CartSection> {
                 (item) => (
                   productId: item.productId,
                   quantity: -item.quantity, // negative = add back to stock
+                  // In the line's SALE unit; the conversion back to the stock
+                  // unit is deductStockForCheckout's job. Without it a voided
+                  // 100 g line put 100 KILOS of saffron back on the shelf.
+                  uomId: item.uomId,
                   warehouseId: item.warehouseId ?? warehouseId,
                   isService: item.isService,
                   productName: item.productName,
@@ -2833,6 +2938,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
                   (item) => (
                     productId: item.productId,
                     quantity: -item.quantity,
+                    uomId: item.uomId,
                     warehouseId: item.warehouseId ?? warehouseId,
                     isService: item.isService,
                     productName: item.productName,
@@ -3078,13 +3184,12 @@ class _CartSectionState extends ConsumerState<CartSection> {
           width: double.infinity,
           child: LayoutBuilder(
             builder: (context, constraints) {
-              const refreshWidth = 44.0;
               const saveWithLabel = 104.0;
               const saveIconOnly = 48.0;
               const labelMin = 120.0;
 
-              final showSaveLabel = constraints.maxWidth >=
-                  labelMin + refreshWidth + saveWithLabel;
+              final showSaveLabel =
+                  constraints.maxWidth >= labelMin + saveWithLabel;
               final canSave = cartItems.isNotEmpty;
 
               return Row(
@@ -3099,20 +3204,6 @@ class _CartSectionState extends ConsumerState<CartSection> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.refresh, size: 20),
-                    tooltip: AppLocalizations.of(context).refreshOrderNumber,
-                    visualDensity: VisualDensity.compact,
-                    onPressed: () async {
-                      final companyId = ref.read(selectedCompanyProvider)?.id;
-                      if (companyId == null) return;
-                      ref.invalidate(openOrdersProvider);
-                      await Future.delayed(const Duration(milliseconds: 300));
-                      await ref
-                          .read(cartProvider.notifier)
-                          .syncOrderNumber(companyId);
-                    },
                   ),
                   SizedBox(
                     width: showSaveLabel ? saveWithLabel : saveIconOnly,
@@ -3219,115 +3310,214 @@ class _CartSectionState extends ConsumerState<CartSection> {
                                   ? Colors.blue[900]?.withValues(alpha: 0.3)
                                   : Colors.blue[50])
                             : null,
-                        padding: const EdgeInsets.fromLTRB(12, 8, 6, 8),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // ── Name ───────────────────────────────────────
-                            // No X and no stepper: a line is selected by
-                            // tapping it and edited on the keypad below. Three
-                            // small targets per row were the thing a cashier
-                            // hit by accident on a busy screen.
-                            Text(
-                              item.productName,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            // ── Badges (wrap so they never overflow) ───────
-                            if (item.appliedTaxes.isNotEmpty || hasDiscount)
-                              Padding(
-                                padding: const EdgeInsets.only(
-                                  top: 2,
-                                  bottom: 2,
+                        padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+                        // ONE line: quantity, name (+ badges), price. The
+                        // stacked layout put the money on a second row, which
+                        // is the number a cashier is scanning for — and it
+                        // halved how many lines fit on a till screen.
+                        //
+                        // Widths are decided from what the row actually has
+                        // (Ilyass Style): the badges and the struck-through
+                        // original price are dropped in that order when the
+                        // cart column is narrow, so the name and the amount
+                        // never have to fight for room.
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            const qtyWidth = 62.0;
+                            const priceWidth = 96.0;
+                            const gap = 8.0;
+
+                            // What each optional piece costs, and the width the
+                            // product name may never drop below.
+                            var badgeWidth = 0.0;
+                            if (item.appliedTaxes.isNotEmpty) {
+                              badgeWidth += 52;
+                            }
+                            if (item.discount > 0) badgeWidth += 56;
+                            if (item.promotionalDiscount > 0) badgeWidth += 20;
+
+                            final fit = cartRowFit(
+                              width: constraints.maxWidth,
+                              hasDiscount: hasDiscount,
+                              badgeWidth: badgeWidth,
+                              qtyWidth: qtyWidth,
+                              priceWidth: priceWidth,
+                              gap: gap,
+                            );
+                            final showOriginal = fit.showOriginal;
+                            final showBadges = fit.showBadges;
+
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                            Row(
+                              children: [
+                                // Quantity — fixed, so the names line up.
+                                SizedBox(
+                                  width: qtyWidth,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 3,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: cs.primary.withValues(alpha: 0.10),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Text(
+                                        _formatCartQty(item),
+                                        maxLines: 1,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: cs.primary,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                                child: Wrap(
-                                  spacing: 6,
-                                  runSpacing: 4,
-                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                const SizedBox(width: gap),
+                                // Name + badges — takes whatever is left.
+                                Expanded(
+                                  child: Row(
+                                    children: [
+                                      Flexible(
+                                        child: Text(
+                                          item.productName,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                      if (showBadges) ...[
+                                        const SizedBox(width: 6),
+                                        if (item.appliedTaxes.isNotEmpty)
+                                          badge(
+                                            Icons.receipt_long,
+                                            'TAX',
+                                            context.infoColor,
+                                          ),
+                                        if (item.discount > 0) ...[
+                                          const SizedBox(width: 4),
+                                          badge(
+                                            Icons.sell,
+                                            "-${item.discountType == 0 ? item.discount.toInt() : item.discount.toStringAsFixed(1)}",
+                                            context.successColor,
+                                          ),
+                                        ],
+                                        if (item.promotionalDiscount > 0) ...[
+                                          const SizedBox(width: 4),
+                                          const Text(
+                                            '⭐',
+                                            style: TextStyle(fontSize: 12),
+                                          ),
+                                        ],
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: gap),
+                                // Price — hard right, so a column of amounts
+                                // can be read down its last digits.
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    if (item.appliedTaxes.isNotEmpty)
-                                      badge(
-                                        Icons.receipt_long,
-                                        'TAX',
-                                        context.infoColor,
+                                    if (showOriginal) ...[
+                                      Text(
+                                        "${(taxIncluded ? _grossLineFullPrice(item) : item.price * item.quantity).toStringAsFixed(2)} $sym",
+                                        maxLines: 1,
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: cs.onSurfaceVariant,
+                                          decoration:
+                                              TextDecoration.lineThrough,
+                                        ),
                                       ),
-                                    if (item.discount > 0)
-                                      badge(
-                                        Icons.sell,
-                                        "-${item.discountType == 0 ? item.discount.toInt() : item.discount.toStringAsFixed(1)}",
-                                        context.successColor,
+                                      const SizedBox(width: 6),
+                                    ],
+                                    ConstrainedBox(
+                                      constraints: const BoxConstraints(
+                                        maxWidth: priceWidth,
                                       ),
-                                    if (item.promotionalDiscount > 0)
-                                      const Text(
-                                        '⭐',
-                                        style: TextStyle(fontSize: 12),
+                                      child: FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        alignment:
+                                            AlignmentDirectional.centerEnd,
+                                        child: Text(
+                                          "${(taxIncluded ? _grossLineTotal(item) : (item.price - item.discount - item.promotionalDiscount) * item.quantity).toStringAsFixed(2)} $sym",
+                                          maxLines: 1,
+                                          style: TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.bold,
+                                            color: hasDiscount
+                                                ? context.successColor
+                                                : null,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            // The chosen modifiers, indented under the name.
+                            // Rendered from the line's own SNAPSHOTS, never
+                            // from the catalogue — a renamed or deleted option
+                            // must still print what was actually sold.
+                            if (item.selectedModifiers.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsetsDirectional.only(
+                                    start: qtyWidth + gap, top: 2),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    for (final m in item.selectedModifiers)
+                                      Row(
+                                        children: [
+                                          Flexible(
+                                            flex: 3,
+                                            child: Text(
+                                              '· ${m.name}',
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                color: cs.onSurfaceVariant,
+                                              ),
+                                            ),
+                                          ),
+                                          // A free choice prints no price:
+                                          // "+0.00" beside "No Sugar" is noise
+                                          // on every line of every receipt.
+                                          if (m.additionalPrice != 0) ...[
+                                            const SizedBox(width: 6),
+                                            Flexible(
+                                              flex: 2,
+                                              child: Text(
+                                                '${m.additionalPrice > 0 ? '+' : '−'}'
+                                                '${m.additionalPrice.abs().toStringAsFixed(2)}',
+                                                maxLines: 1,
+                                                overflow:
+                                                    TextOverflow.ellipsis,
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  color: cs.onSurfaceVariant,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ],
                                       ),
                                   ],
                                 ),
                               ),
-                            // ── Quantity + line total ──────────────────────
-                            // Read-only: the keypad below is the only way to
-                            // change a quantity now.
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: cs.primary.withValues(alpha: 0.10),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Text(
-                                    _formatCartQty(item),
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.bold,
-                                      color: cs.primary,
-                                    ),
-                                  ),
-                                ),
-                                const Spacer(),
-                                // Price (strikethrough original + net).
-                                Flexible(
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      if (hasDiscount)
-                                        Text(
-                                          "${(taxIncluded ? _grossLineFullPrice(item) : item.price * item.quantity).toStringAsFixed(2)} $sym",
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: cs.onSurfaceVariant,
-                                            decoration:
-                                                TextDecoration.lineThrough,
-                                          ),
-                                        ),
-                                      Text(
-                                        "${(taxIncluded ? _grossLineTotal(item) : (item.price - item.discount - item.promotionalDiscount) * item.quantity).toStringAsFixed(2)} $sym",
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.bold,
-                                          color: hasDiscount
-                                              ? context.successColor
-                                              : null,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
                               ],
-                            ),
-                          ],
+                            );
+                          },
                         ),
                       ),
                     );
@@ -3542,6 +3732,8 @@ class _CartSectionState extends ConsumerState<CartSection> {
                 hasSelection: selectedItem != null,
                 priceChangeAllowed:
                     selectedItem != null && _priceChangeAllowed(selectedItem),
+                priceEntersAmount:
+                    selectedItem != null && _isWeighedLine(selectedItem),
               ),
               const SizedBox(height: 10),
               // ── Pay ─────────────────────────────────────────────────────
@@ -3696,6 +3888,33 @@ class _MenuHeaderActionBtn extends StatelessWidget {
       ),
     );
   }
+}
+
+/// What still fits on one cart line at [width].
+///
+/// 🚨 The order things are dropped in is the whole point. The NET amount and
+/// the product name always survive: the amount is what the customer is being
+/// charged, and a truncated name is the cashier not knowing what they are
+/// selling. The struck-through original price goes first, the TAX/discount
+/// badges second — those are hints, and their information is still on the
+/// receipt and in the totals.
+({bool showOriginal, bool showBadges}) cartRowFit({
+  required double width,
+  required bool hasDiscount,
+  required double badgeWidth,
+  double qtyWidth = 62,
+  double priceWidth = 96,
+  double gap = 8,
+  double strikeWidth = 62,
+  double nameMin = 96,
+}) {
+  var free = width - qtyWidth - gap * 2 - priceWidth;
+
+  final showOriginal = hasDiscount && free - strikeWidth >= nameMin;
+  if (showOriginal) free -= strikeWidth;
+
+  final showBadges = badgeWidth > 0 && free - badgeWidth >= nameMin;
+  return (showOriginal: showOriginal, showBadges: showBadges);
 }
 
 // ── Cart tool button (Client) ──────────────────────────────────────────────

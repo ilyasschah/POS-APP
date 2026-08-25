@@ -166,20 +166,11 @@ class _BarcodeDebugPanelState extends ConsumerState<BarcodeDebugPanel> {
         ? _rule
         : (embeddingRules.isEmpty ? null : embeddingRules.first);
 
-    // A product can only carry an embedded label if its own stored barcode
-    // already decodes under the rule — i.e. it has the prefix AND zeros in the
-    // value positions. Listing only those turns the commonest setup mistake
-    // ("nothing appears here") into the answer.
-    final candidates = <_BarcodeCandidate>[
-      if (rule != null)
-        for (final p in products.where((p) => p.isEnabled))
-          for (final code in [
-            ...p.barcodes,
-            ...(extraBarcodes[p.id] ?? const <String>[]),
-          ])
-            if (tryMatchRule(code.trim(), rule) != null)
-              _BarcodeCandidate(product: p, barcode: code.trim()),
-    ];
+    final candidates = barcodeCandidatesFor(
+      rule: rule,
+      products: products,
+      extraBarcodes: extraBarcodes,
+    );
     final selected = candidates.any((c) => c.barcode == _productBarcode)
         ? _productBarcode
         : (candidates.isEmpty ? null : candidates.first.barcode);
@@ -452,8 +443,45 @@ class _BarcodeDebugPanelState extends ConsumerState<BarcodeDebugPanel> {
   }
 }
 
-class _BarcodeCandidate {
-  const _BarcodeCandidate({required this.product, required this.barcode});
+/// The products a rule can build a label for, one entry per matching barcode.
+///
+/// A product can only carry an embedded label if its own stored barcode already
+/// decodes under the rule — i.e. it has the prefix AND zeros in the value
+/// positions. Listing only those turns the commonest setup mistake ("nothing
+/// appears here") into the answer.
+///
+/// 🚨 De-duplicated BY BARCODE, and that is not tidiness. The two sources
+/// overlap — `Product.barcodes` and the `barcodes` table both hold a code the
+/// moment one is added through the product editor — and the dropdown this feeds
+/// keys its items on the barcode string alone. Two items sharing a value is a
+/// hard assertion in `DropdownButtonFormField`, so the second copy did not
+/// merely look odd: it red-screened the whole simulator, which is exactly the
+/// panel someone opens when their barcode setup is already confusing them.
+/// First writer wins, so the product a code is listed under is stable.
+List<BarcodeCandidate> barcodeCandidatesFor({
+  required BarcodeRule? rule,
+  required List<Product> products,
+  required Map<int, List<String>> extraBarcodes,
+}) {
+  if (rule == null) return const [];
+
+  final byBarcode = <String, BarcodeCandidate>{};
+  for (final p in products.where((p) => p.isEnabled)) {
+    for (final raw in [
+      ...p.barcodes,
+      ...(extraBarcodes[p.id] ?? const <String>[]),
+    ]) {
+      final code = raw.trim();
+      if (code.isEmpty || byBarcode.containsKey(code)) continue;
+      if (tryMatchRule(code, rule) == null) continue;
+      byBarcode[code] = BarcodeCandidate(product: p, barcode: code);
+    }
+  }
+  return byBarcode.values.toList();
+}
+
+class BarcodeCandidate {
+  const BarcodeCandidate({required this.product, required this.barcode});
 
   final Product product;
   final String barcode;

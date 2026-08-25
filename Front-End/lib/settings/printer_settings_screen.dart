@@ -13,6 +13,7 @@ import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/currency/currencies_provider.dart';
 import 'package:pos_app/customer/customer_model.dart';
 import 'package:pos_app/kitchen/printer_group_model.dart';
+import 'package:pos_app/printer/cash_drawer_service.dart';
 import 'package:pos_app/printer/printer_config_model.dart';
 import 'package:pos_app/printer/printer_platform.dart';
 import 'package:pos_app/printer/receipt_printer_service.dart';
@@ -1387,27 +1388,77 @@ class _CashDrawerSubTab extends ConsumerWidget {
             ?.toLowerCase() ==
         'true';
 
+    final l10n = AppLocalizations.of(context);
+    final transport = CashDrawerTransport.fromSetting(
+      ref.watch(appSettingsProvider)[_k('CashDrawer.Transport')],
+    );
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 32),
       children: [
         _PCard(
-          title: AppLocalizations.of(context).setCashDrawer,
+          title: l10n.setCashDrawer,
           icon: Icons.point_of_sale_outlined,
           children: [
             _PSSwitch(
               settingKey: _k('CashDrawer.Enabled'),
-              label: AppLocalizations.of(context).openCashDrawerLower,
-              subtitle: AppLocalizations.of(context).cashDrawerSignalHint,
+              label: l10n.openCashDrawerLower,
+              subtitle: l10n.cashDrawerSignalHint,
             ),
             if (drawerEnabled) ...[
+              // The wiring question ⭐8 asked (RJ11 / COM / LAN) is answered
+              // here instead of in code, so one build serves every venue.
+              _PSDropdown(
+                settingKey: _k('CashDrawer.Transport'),
+                label: l10n.cashDrawerTransport,
+                options: CashDrawerTransport.values
+                    .map((t) => t.settingValue)
+                    .toList(),
+                labels: {
+                  CashDrawerTransport.printer.settingValue:
+                      l10n.cashDrawerTransportPrinter,
+                  CashDrawerTransport.network.settingValue:
+                      l10n.cashDrawerTransportNetwork,
+                  CashDrawerTransport.serial.settingValue:
+                      l10n.cashDrawerTransportSerial,
+                },
+                helper: transport.isSupportedHere
+                    ? l10n.cashDrawerTransportHint
+                    : l10n.cashDrawerTransportUnavailable,
+                helperIsWarning: !transport.isSupportedHere,
+              ),
+              if (transport == CashDrawerTransport.network) ...[
+                _PSTextField(
+                  settingKey: _k('CashDrawer.Host'),
+                  label: l10n.cashDrawerHost,
+                  hint: '192.168.1.50',
+                ),
+                _PSTextField(
+                  settingKey: _k('CashDrawer.TcpPort'),
+                  label: l10n.cashDrawerTcpPort,
+                  hint: '$kDefaultDrawerTcpPort',
+                ),
+              ],
+              if (transport == CashDrawerTransport.serial) ...[
+                _PSTextField(
+                  settingKey: _k('CashDrawer.SerialPort'),
+                  label: l10n.cashDrawerSerialPortLabel,
+                  hint: 'COM3',
+                ),
+                _PSTextField(
+                  settingKey: _k('CashDrawer.BaudRate'),
+                  label: l10n.cashDrawerBaudRate,
+                  hint: '9600',
+                ),
+              ],
               _PSTextField(
                 settingKey: _k('CashDrawer.Command'),
-                label: AppLocalizations.of(context).cashDrawerCommand,
+                label: l10n.cashDrawerCommand,
                 hint: r'\x1B\x70\x00\x19\xFA',
               ),
-              const Padding(
-                padding: EdgeInsets.fromLTRB(20, 4, 20, 16),
-                child: _TestDrawerButton(),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
+                child: _TestDrawerButton(role: role),
               ),
             ],
           ],
@@ -1560,7 +1611,9 @@ class _GroupRadioTile extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _TestDrawerButton extends ConsumerStatefulWidget {
-  const _TestDrawerButton();
+  /// Printer prefix whose drawer settings this tests (`Receipt`, `Kitchen`…).
+  final String role;
+  const _TestDrawerButton({required this.role});
 
   @override
   ConsumerState<_TestDrawerButton> createState() => _TestDrawerButtonState();
@@ -1569,13 +1622,47 @@ class _TestDrawerButton extends ConsumerStatefulWidget {
 class _TestDrawerButtonState extends ConsumerState<_TestDrawerButton> {
   bool _testing = false;
 
+  /// 🚨 This used to be `await Future.delayed(700ms)` followed by "Test signal
+  /// sent to cash drawer" — a button that reported success without touching the
+  /// hardware, which is why nobody noticed the drawer was never wired at all
+  /// (handoff.md ⭐8). It now sends the real bytes and reports the real result,
+  /// including the exact reason when it fails.
   Future<void> _test() async {
+    final l10n = AppLocalizations.of(context);
+    final settings = ref.read(appSettingsProvider);
+    final command = settings[SettingKeys.roleCashDrawerCommand(widget.role)];
+
+    // Validate strictly here, unlike the checkout path — this is the one screen
+    // where a typo in the command can actually be corrected.
+    if (command != null && command.trim().isNotEmpty) {
+      try {
+        parseKickCommand(command);
+      } on FormatException catch (e) {
+        showAppSnackbar(context, ref, l10n.cashDrawerFailed(e.message),
+            isError: true);
+        return;
+      }
+    }
+
     setState(() => _testing = true);
-    await Future.delayed(const Duration(milliseconds: 700));
+    String? error;
+    try {
+      await kickCashDrawer(
+        CashDrawerConfig.fromSettings(settings, widget.role),
+      );
+    } on CashDrawerException catch (e) {
+      error = e.message;
+    } catch (e) {
+      error = e.toString();
+    }
     if (!mounted) return;
     setState(() => _testing = false);
     showAppSnackbar(
-        context, ref, AppLocalizations.of(context).testSignalSentToDrawer);
+      context,
+      ref,
+      error == null ? l10n.cashDrawerOpenedOk : l10n.cashDrawerFailed(error),
+      isError: error != null,
+    );
   }
 
   @override
@@ -1926,10 +2013,26 @@ class _PSDropdown extends ConsumerWidget {
   final String label;
   final List<String> options;
 
+  /// Display text per option, for settings whose stored value must stay stable
+  /// while the wording is translated (the cash-drawer transport is one — the
+  /// string `printer` is parsed by `CashDrawerTransport.fromSetting`). Omit and
+  /// the raw option is shown, which is right for `80mm` or a font name.
+  final Map<String, String>? labels;
+
+  /// Small note under the field.
+  final String? helper;
+
+  /// Renders [helper] as a warning rather than a hint — used when the chosen
+  /// option cannot work on this platform.
+  final bool helperIsWarning;
+
   const _PSDropdown({
     required this.settingKey,
     required this.label,
     required this.options,
+    this.labels,
+    this.helper,
+    this.helperIsWarning = false,
   });
 
   @override
@@ -1963,7 +2066,11 @@ class _PSDropdown extends ConsumerWidget {
                 .map(
                   (o) => DropdownMenuItem(
                     value: o,
-                    child: Text(o, style: const TextStyle(fontSize: 13)),
+                    child: Text(
+                      labels?[o] ?? o,
+                      style: const TextStyle(fontSize: 13),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 )
                 .toList(),
@@ -1974,6 +2081,30 @@ class _PSDropdown extends ConsumerWidget {
             },
             theme: theme,
           ),
+          if (helper != null) ...[
+            const SizedBox(height: 6),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (helperIsWarning) ...[
+                  Icon(Icons.warning_amber_rounded,
+                      size: 14, color: theme.colorScheme.error),
+                  const SizedBox(width: 6),
+                ],
+                Flexible(
+                  child: Text(
+                    helper!,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: helperIsWarning
+                          ? theme.colorScheme.error
+                          : theme.hintColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );

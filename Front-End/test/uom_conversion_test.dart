@@ -85,6 +85,81 @@ void main() {
     });
   });
 
+  group('a snapped quantity is EXACT, not merely close', () {
+    // Every other expectation in this file uses closeTo, which is right for
+    // conversion but blind to the bug these cover: `(0.35 / 0.0001).round() *
+    // 0.0001` is 0.35000000000000003, close enough for arithmetic and wrong on
+    // screen. formatQuantityValue grows its decimals until the text round-trips
+    // to the same double, so that residue printed a real 350 g line as
+    // `0.350000 kg` in the cart — while 2.750 kg looked perfect, because 2.75
+    // is exactly representable and 0.35 is not. Hence `equals`, not `closeTo`.
+    test('350 g converts to a kilogram figure with no binary residue', () {
+      expect(uomToReference(350, kUomGram), 0.35);
+      expect(formatQuantity(uomToReference(350, kUomGram), kUomKilogram),
+          '0.350 kg');
+    });
+
+    test('the weights that used to disagree now format alike', () {
+      for (final grams in <double>[350, 2750, 1, 125, 999]) {
+        final kg = uomToReference(grams, kUomGram);
+        expect(formatQuantityValue(kg, kUomKilogram).length, 5,
+            reason: '$grams g rendered as ${formatQuantityValue(kg, kUomKilogram)}');
+      }
+    });
+
+    test('a scale reading survives the round trip unchanged', () {
+      expect(uomFromReference(uomToReference(350, kUomGram), kUomGram), 350);
+      expect(uomToReference(0.4999999996, kUomKilogram), 0.5);
+      expect(snapToStorage(4.166666666), 4.1667);
+    });
+  });
+
+  group('valuing stock at a sale-unit price', () {
+    // Stock is held in the reference unit and priced per SALE unit, so the two
+    // are not multipliable. The stock screen did multiply them and valued
+    // 0.400 kg of a 30 MAD/g product at 12.00 MAD — the gram price charged for
+    // a whole kilogram, off by the unit's own factor.
+    test('a gram price restates as a kilogram price', () {
+      expect(pricePerReferenceUnit(30, kUomGram), 30000);
+      expect(0.400 * pricePerReferenceUnit(30, kUomGram), closeTo(12000, 1e-6));
+    });
+
+    test('a product sold in its own reference unit is untouched', () {
+      expect(pricePerReferenceUnit(30, kUomKilogram), 30);
+      expect(pricePerReferenceUnit(12.5, kUomPieces), 12.5);
+      expect(pricePerReferenceUnit(4, kUomLitre), 4);
+    });
+
+    test('millilitres scale the same way grams do', () {
+      expect(pricePerReferenceUnit(0.5, kUomMillilitre), 500);
+    });
+  });
+
+  group('money back-solved into a quantity', () {
+    // "I want 50 dirhams of saffron", which the cart keypad's Amount key turns
+    // into a weight at the shelf price.
+    test('50 MAD at 30 MAD/g is 1.6667 g', () {
+      expect(quantityForAmount(50, 30, kUomGram), closeTo(1.6667, 1e-9));
+    });
+
+    test('it lands on the storage precision, not the unit step', () {
+      // Snapping to the gram's own rounding (1) would quantise this to 2 g and
+      // charge 60 MAD for a 50 MAD request.
+      expect(quantityForAmount(50, 30, kUomGram), isNot(2));
+    });
+
+    test('an unpriced or free product cannot divide', () {
+      expect(quantityForAmount(50, 0, kUomGram), isNull);
+      expect(quantityForAmount(50, -1, kUomGram), isNull);
+      expect(quantityForAmount(0, 30, kUomGram), isNull);
+    });
+
+    test('the answer costs what was asked for', () {
+      final weight = quantityForAmount(50, 30, kUomGram)!;
+      expect(weight * 30, closeTo(50, 0.01));
+    });
+  });
+
   group('catalog integrity', () {
     test('an unknown unit id falls back to pieces rather than throwing', () {
       expect(uomById(9999).code, 'pcs');

@@ -10,6 +10,7 @@ import 'package:pos_app/app_settings/app_settings_provider.dart';
 import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/auth/login_screen.dart';
 import 'package:pos_app/cart/cart_provider.dart';
+import 'package:pos_app/core/sound_service.dart';
 import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:pos_app/cart/checkout_models.dart';
@@ -26,6 +27,7 @@ import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/document/document_type_constants.dart';
 import 'package:pos_app/settings/device_identity.dart';
 import 'package:pos_app/navigation/main_layout.dart';
+import 'package:pos_app/printer/cash_drawer_service.dart';
 import 'package:pos_app/printer/receipt_printer_service.dart';
 import 'package:pos_app/printer/printer_routing_service.dart';
 import 'package:pos_app/cart/discount_display.dart';
@@ -468,6 +470,9 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
             .map((item) => (
                   productId:   item.productId,
                   quantity:    item.quantity,
+                  // The line's own unit — a 100 g line takes 0.100 kg off the
+                  // shelf, and deductStockForCheckout does that conversion.
+                  uomId:       item.uomId,
                   warehouseId: item.warehouseId ??
                       cartNotifier.effectiveWarehouseId,
                   isService:   item.isService,
@@ -685,6 +690,30 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
       );
 
       if (!mounted) return;
+
+      // The sale is banked — say so out loud before any of the printing and
+      // drawer work below, which can take a second or two on real hardware.
+      SoundService.instance.play(appSettings, PosSound.checkout);
+
+      // ── Pop the cash drawer ───────────────────────────────────────
+      // Before the receipt, because the cashier's hand is already moving to the
+      // drawer and printing can take a second or two. Fire-and-forget: the sale
+      // is banked, so a drawer that will not open reports itself in a snackbar
+      // and nothing else. See `cash_drawer_service.dart` (handoff.md ⭐8).
+      if (shouldOpenDrawerForSale(
+        paymentTypeOpensDrawer: selectedPayType?.openCashDrawer == true,
+        anyPaymentTypeOpensDrawer: payTypes.any((t) => t.openCashDrawer),
+      )) {
+        unawaited(openDrawersAfterSale(appSettings).then((failures) {
+          if (failures.isEmpty || !ctx.mounted) return;
+          showAppSnackbar(
+            ctx,
+            ref,
+            AppLocalizations.of(ctx).cashDrawerFailed(failures.first),
+            isError: true,
+          );
+        }));
+      }
 
       // ── Resolve print settings ────────────────────────────────────
       final autoprint =

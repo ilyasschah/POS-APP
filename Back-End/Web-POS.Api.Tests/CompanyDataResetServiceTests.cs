@@ -120,4 +120,48 @@ public class CompanyDataResetServiceTests
         await Assert.ThrowsAsync<InvalidOperationException>(
             () => Service.ResetAsync(0, new ResetCompanyDataOptions { Documents = true }));
     }
+
+    [Fact]
+    public async Task Documents_drags_the_modifier_lines()
+    {
+        // FK_DocumentItemModifier_DocumentItem_DocumentItemId and
+        // FK_PosOrderItemModifier_PosOrderItem_PosOrderItemId. Both arrived with
+        // the modifiers feature after this group was written, so a reset on a
+        // shop that uses modifiers aborted on the WITH CHECK re-enable.
+        var tables = await Tables(documents: true);
+
+        Assert.Contains("DocumentItemModifier", tables);
+        Assert.Contains("PosOrderItemModifier", tables);
+    }
+
+    [Fact]
+    public async Task Documents_drags_everything_that_hangs_off_a_session()
+    {
+        // All three carry a FK to Shift, and the session itself is deleted by
+        // ResetAsync. Left behind they orphan, and the re-enable throws.
+        var tables = await Tables(documents: true);
+
+        Assert.Contains("PosSessionPaymentCount", tables);  // FK_..._Shift_SessionId
+        Assert.Contains("StartingCash", tables);            // FK_..._Shift_SessionId
+        Assert.Contains("ZReportCorrection", tables);       // FK_..._Shift_SessionId
+    }
+
+    [Fact]
+    public async Task Shift_is_never_a_whole_table_delete_outside_Everything()
+    {
+        // The table holds BOTH shapes. A blanket DELETE would take the payroll
+        // record of every employee along with the register's sales history, so
+        // the session purge is a filtered statement inside ResetAsync
+        // (`PosDeviceId IS NOT NULL`) and Shift must stay out of every group.
+        foreach (var tables in new[]
+                 {
+                     await Tables(documents: true),
+                     await Tables(products: true),
+                     await Tables(customers: true),
+                     await Tables(products: true, customers: true, documents: true),
+                 })
+        {
+            Assert.DoesNotContain("Shift", tables);
+        }
+    }
 }

@@ -1,4 +1,4 @@
-﻿name: pos_app
+name: pos_app
 description: "A new Flutter project."
 publish_to: 'none'
 # 1.0.1 is the release being cut (matches tag v1.0.1); +3 keeps the build number
@@ -77,6 +77,14 @@ dependencies:
   # builds, but a COM/tty scale is only reachable on Windows in practice â€” the
   # scale UI and ScaleService are capability-gated to Windows (see lib/scale/).
   flutter_libserialport: ^0.6.0
+  # Cash-drawer kick through a Windows print queue. `printing` is a PDF pipeline
+  # and cannot send raw ESC/POS bytes, so `printer/raw_printer_windows.dart`
+  # calls the spooler's RAW path (OpenPrinter/StartDocPrinter/WritePrinter)
+  # directly. Both arrived transitively already; declared because that file
+  # imports them, and a transitive path is not a promise.
+  ffi: ^2.1.0
+  win32: ^5.5.0
+  audioplayers: ^6.8.1
 
 dependency_overrides:
   phosphor_flutter:
@@ -144,6 +152,11 @@ flutter:
     # carry no Arabic glyphs at all â€” without this, Arabic text lays out
     # correctly and renders as empty boxes.
     - assets/fonts/
+    # POS feedback sounds (see lib/core/sound_service.dart). Short 16-bit mono
+    # WAVs, generated rather than sampled so they ship with no licence attached
+    # — replace any file with your own of the same name and it is picked up on
+    # the next build.
+    - assets/sounds/
 
 # Pillar 3 â€” tell the sqlite3 native-assets build hook to provide SQLCipher
 # (encryption-at-rest) instead of the default plaintext SQLite. The hook

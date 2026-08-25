@@ -17,7 +17,7 @@ namespace Api.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.9")
+                .HasAnnotation("ProductVersion", "10.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -802,6 +802,48 @@ namespace Api.Migrations
                     b.ToTable("DocumentItemExpirationDate");
                 });
 
+            modelBuilder.Entity("Api.Domain.DocumentItemModifier", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("AdditionalPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DocumentItemId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("GroupName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int?>("ModifierOptionId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("Rank")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "ModifierOptionId");
+
+                    b.HasIndex("DocumentItemId", "Rank");
+
+                    b.ToTable("DocumentItemModifier");
+                });
+
             modelBuilder.Entity("Api.Domain.DocumentItemTax", b =>
                 {
                     b.Property<int>("DocumentItemId")
@@ -1237,6 +1279,92 @@ namespace Api.Migrations
                     b.ToTable("Migration");
                 });
 
+            modelBuilder.Entity("Api.Domain.ModifierGroup", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("AllowsFreeText")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("IconKey")
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("LastModified")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("MaxSelections")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MinSelections")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("Rank")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "Rank");
+
+                    b.ToTable("ModifierGroup");
+                });
+
+            modelBuilder.Entity("Api.Domain.ModifierOption", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("AdditionalPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("LastModified")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ModifierGroupId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("Rank")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId");
+
+                    b.HasIndex("ModifierGroupId", "Rank");
+
+                    b.ToTable("ModifierOption");
+                });
+
             modelBuilder.Entity("Api.Domain.Payment", b =>
                 {
                     b.Property<int>("Id")
@@ -1521,6 +1649,48 @@ namespace Api.Migrations
                     b.HasIndex("VoidedBy");
 
                     b.ToTable("PosOrderItem");
+                });
+
+            modelBuilder.Entity("Api.Domain.PosOrderItemModifier", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("AdditionalPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("GroupName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int?>("ModifierOptionId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("PosOrderItemId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Rank")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId");
+
+                    b.HasIndex("PosOrderItemId", "Rank");
+
+                    b.ToTable("PosOrderItemModifier");
                 });
 
             modelBuilder.Entity("Api.Domain.PosOrderItemTax", b =>
@@ -1913,6 +2083,41 @@ namespace Api.Migrations
                     b.HasIndex("ParentGroupId");
 
                     b.ToTable("ProductGroup");
+                });
+
+            modelBuilder.Entity("Api.Domain.ProductModifierGroup", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("LastModified")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ModifierGroupId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Rank")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ModifierGroupId");
+
+                    b.HasIndex("ProductId", "ModifierGroupId")
+                        .IsUnique();
+
+                    b.HasIndex("CompanyId", "ProductId", "Rank");
+
+                    b.ToTable("ProductModifierGroup");
                 });
 
             modelBuilder.Entity("Api.Domain.ProductTax", b =>
@@ -3695,6 +3900,25 @@ namespace Api.Migrations
                     b.Navigation("DocumentItem");
                 });
 
+            modelBuilder.Entity("Api.Domain.DocumentItemModifier", b =>
+                {
+                    b.HasOne("Api.Domain.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Api.Domain.DocumentItem", "DocumentItem")
+                        .WithMany()
+                        .HasForeignKey("DocumentItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Company");
+
+                    b.Navigation("DocumentItem");
+                });
+
             modelBuilder.Entity("Api.Domain.DocumentItemTax", b =>
                 {
                     b.HasOne("Api.Domain.Company", "Company")
@@ -3753,6 +3977,36 @@ namespace Api.Migrations
                         .IsRequired();
 
                     b.Navigation("Customer");
+                });
+
+            modelBuilder.Entity("Api.Domain.ModifierGroup", b =>
+                {
+                    b.HasOne("Api.Domain.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Company");
+                });
+
+            modelBuilder.Entity("Api.Domain.ModifierOption", b =>
+                {
+                    b.HasOne("Api.Domain.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Api.Domain.ModifierGroup", "ModifierGroup")
+                        .WithMany("Options")
+                        .HasForeignKey("ModifierGroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Company");
+
+                    b.Navigation("ModifierGroup");
                 });
 
             modelBuilder.Entity("Api.Domain.Payment", b =>
@@ -3849,6 +4103,25 @@ namespace Api.Migrations
                     b.Navigation("Product");
 
                     b.Navigation("VoidedByUser");
+                });
+
+            modelBuilder.Entity("Api.Domain.PosOrderItemModifier", b =>
+                {
+                    b.HasOne("Api.Domain.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Api.Domain.PosOrderItem", "PosOrderItem")
+                        .WithMany()
+                        .HasForeignKey("PosOrderItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Company");
+
+                    b.Navigation("PosOrderItem");
                 });
 
             modelBuilder.Entity("Api.Domain.PosOrderItemTax", b =>
@@ -3959,6 +4232,33 @@ namespace Api.Migrations
                     b.Navigation("Company");
 
                     b.Navigation("ParentGroup");
+                });
+
+            modelBuilder.Entity("Api.Domain.ProductModifierGroup", b =>
+                {
+                    b.HasOne("Api.Domain.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Api.Domain.ModifierGroup", "ModifierGroup")
+                        .WithMany()
+                        .HasForeignKey("ModifierGroupId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Api.Domain.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Company");
+
+                    b.Navigation("ModifierGroup");
+
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("Api.Domain.ProductTax", b =>
@@ -4154,6 +4454,11 @@ namespace Api.Migrations
                     b.Navigation("PaymentType");
 
                     b.Navigation("ZReport");
+                });
+
+            modelBuilder.Entity("Api.Domain.ModifierGroup", b =>
+                {
+                    b.Navigation("Options");
                 });
 
             modelBuilder.Entity("Api.Domain.Product", b =>

@@ -12,6 +12,7 @@ import 'package:uuid/uuid.dart';
 import 'package:pos_app/database/device_key_service.dart';
 import 'package:pos_app/database/restore_service.dart';
 import 'package:pos_app/document/document_type_constants.dart';
+import 'package:pos_app/uom/unit_of_measure.dart';
 
 part 'app_database.g.dart';
 
@@ -371,6 +372,141 @@ class CompaniesTable extends Table {
 
 /// Per-product comment suggestions (e.g. "no onions", "extra cheese") used
 /// by the menu grid's tap dialog. Pulled in bulk via /ProductComments/GetAll.
+/// Catalogue: a named set of choices — "Toppings", "Doneness".
+///
+/// Mirrors `Back-End/Web-POS.Api/Domain/ModifierGroup.cs`. A group is
+/// company-level and shared across products, which is why the product link is
+/// its own table rather than a column here.
+class ModifierGroupsTable extends Table {
+  @override
+  String get tableName => 'modifier_groups';
+
+  IntColumn get id => integer()();          // positive = server id; negative = temp local id
+  IntColumn get companyId => integer()();
+  TextColumn get name => text()();
+
+  /// Fewest options that must be chosen; 0 makes the group optional. The POS
+  /// blocks "Add to order" until every linked group is satisfied.
+  IntColumn get minSelections => integer().withDefault(const Constant(0))();
+
+  /// Most that may be chosen. 1 renders as radios, more as checkboxes — the
+  /// only thing deciding the control the cashier sees.
+  IntColumn get maxSelections => integer().withDefault(const Constant(1))();
+
+  /// Whether this group also accepts a free-text note, which is what keeps
+  /// "no ice" / "allergic to nuts" possible after the free-text
+  /// `product_comments` catalogue is retired. The note lands in the order
+  /// line's existing `comment` column.
+  BoolColumn get allowsFreeText => boolean().withDefault(const Constant(false))();
+
+  /// Stable key into `lib/modifier/modifier_icons.dart` — the icon the operator
+  /// picked. Null means the till draws its neutral fallback.
+  ///
+  /// A key rather than a codepoint so it survives an icon-set swap, and a
+  /// CHOICE rather than a guess from [name] so it is right in French and Arabic
+  /// too. See the notes in that file.
+  TextColumn get iconKey => text().nullable()();
+
+  IntColumn get rank => integer().withDefault(const Constant(0))();
+  BoolColumn get isEnabled => boolean().withDefault(const Constant(true))();
+  DateTimeColumn get lastModified => dateTime()();
+  TextColumn get syncStatus =>
+      text().withDefault(const Constant('synced'))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Catalogue: one choice inside a group, with the money it adds.
+///
+/// `additionalPrice` may be 0 ("No Sugar" is a real instruction that happens to
+/// be free) and may be negative (a "small size" reduction).
+class ModifierOptionsTable extends Table {
+  @override
+  String get tableName => 'modifier_options';
+
+  IntColumn get id => integer()();
+  IntColumn get companyId => integer()();
+  IntColumn get modifierGroupId => integer()();
+  TextColumn get name => text()();
+  RealColumn get additionalPrice => real().withDefault(const Constant(0))();
+  IntColumn get rank => integer().withDefault(const Constant(0))();
+  BoolColumn get isEnabled => boolean().withDefault(const Constant(true))();
+  DateTimeColumn get lastModified => dateTime()();
+  TextColumn get syncStatus =>
+      text().withDefault(const Constant('synced'))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Catalogue: which groups a product offers, and in what order.
+///
+/// Read on every product tap to decide whether the customise sheet opens at
+/// all, so it has to be present offline like the rest of the catalogue.
+class ProductModifierGroupsTable extends Table {
+  @override
+  String get tableName => 'product_modifier_groups';
+
+  IntColumn get id => integer()();
+  IntColumn get companyId => integer()();
+  IntColumn get productId => integer()();
+  IntColumn get modifierGroupId => integer()();
+  IntColumn get rank => integer().withDefault(const Constant(0))();
+  DateTimeColumn get lastModified => dateTime()();
+  TextColumn get syncStatus =>
+      text().withDefault(const Constant('synced'))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// What was actually chosen on one open-order line.
+///
+/// 🚨 A SNAPSHOT, not a reference. `name` and `additionalPrice` are copied off
+/// the option when the line is created and never read back from the catalogue:
+/// renaming "Extra Cheese" or repricing it must not reach backwards and change
+/// what a parked order says it sold. `modifierOptionId` is nullable and carries
+/// no foreign key — it is there for reporting, and a deleted option leaves the
+/// line perfectly readable.
+///
+/// The surcharge is ALSO already inside `pos_order_items.unitPrice`, which is
+/// what lets tax, discounts and promotions work unchanged. These rows show the
+/// breakdown; summing them into a total would charge every modifier twice.
+class PosOrderItemModifiersTable extends Table {
+  @override
+  String get tableName => 'pos_order_item_modifiers';
+
+  TextColumn get localId => text()();
+  TextColumn get orderItemLocalId => text()();
+  IntColumn get modifierOptionId => integer().nullable()();
+  TextColumn get groupName => text().nullable()();
+  TextColumn get name => text()();
+  RealColumn get additionalPrice => real().withDefault(const Constant(0))();
+  IntColumn get rank => integer().withDefault(const Constant(0))();
+
+  @override
+  Set<Column> get primaryKey => {localId};
+}
+
+/// What was sold on one banked document line — the permanent half of
+/// [PosOrderItemModifiersTable], and what a reprinted receipt reads from.
+class DocumentItemModifiersTable extends Table {
+  @override
+  String get tableName => 'document_item_modifiers';
+
+  TextColumn get localId => text()();
+  TextColumn get documentItemLocalId => text()();
+  IntColumn get modifierOptionId => integer().nullable()();
+  TextColumn get groupName => text().nullable()();
+  TextColumn get name => text()();
+  RealColumn get additionalPrice => real().withDefault(const Constant(0))();
+  IntColumn get rank => integer().withDefault(const Constant(0))();
+
+  @override
+  Set<Column> get primaryKey => {localId};
+}
+
 class ProductCommentsTable extends Table {
   @override
   String get tableName => 'product_comments';
@@ -1620,6 +1756,11 @@ class ZReportPaymentSummariesTable extends Table {
     PromotionsTable,
     PromotionItemsTable,
     ProductCommentsTable,
+    ModifierGroupsTable,
+    ModifierOptionsTable,
+    ProductModifierGroupsTable,
+    PosOrderItemModifiersTable,
+    DocumentItemModifiersTable,
     CompaniesTable,
     PosOrdersTable,
     PosOrderItemsTable,
@@ -1662,7 +1803,7 @@ class AppDatabase extends _$AppDatabase {
   /// Restore validation needs it before Drift is touched: a backup whose
   /// `user_version` is higher came from a newer build, and Drift migrates
   /// forward only, so opening it here would corrupt it.
-  static const int expectedSchemaVersion = 61;
+  static const int expectedSchemaVersion = 63;
 
   @override
   int get schemaVersion => expectedSchemaVersion;
@@ -1691,6 +1832,20 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(productsTable, productsTable.uomId);
             await m.addColumn(productsTable, productsTable.isToWeigh);
             await m.createTable(barcodeRulesTable);
+          }
+          if (from < 62) {
+            // Modifiers. Purely additive — five new tables, no existing column
+            // touched — so an install that never syncs the new catalogue behaves
+            // exactly as it did before.
+            await m.createTable(modifierGroupsTable);
+            await m.createTable(modifierOptionsTable);
+            await m.createTable(productModifierGroupsTable);
+            await m.createTable(posOrderItemModifiersTable);
+            await m.createTable(documentItemModifiersTable);
+          }
+          if (from < 63) {
+            // Nullable, so every existing group simply keeps the fallback icon.
+            await m.addColumn(modifierGroupsTable, modifierGroupsTable.iconKey);
           }
 
           if (from < 60) {
@@ -2602,10 +2757,20 @@ class AppDatabase extends _$AppDatabase {
   ///
   /// Service products (isService = true) are always skipped.
   /// Products with no local stock record are skipped (treated as untracked).
+  ///
+  /// 🚨 `quantity` is in the line's SALE unit and `uomId` says which one, because
+  /// the two are not the same thing: stock is held in the category's reference
+  /// unit (weight ⇒ kg), so 100 g off the shelf is 0.100 kg off the row. The
+  /// conversion happens HERE rather than at the four call sites, so a fifth
+  /// caller cannot forget it — passing `uomId` is what the compiler asks for,
+  /// and passing the right one is all it has to get right. Mirrors
+  /// `UnitOfMeasure.ToReference` in `BulkAddPosOrderItemsCommand` /
+  /// `DocumentItemService`, which the server already applies to the same sale.
   Future<({bool success, String? message})> deductStockForCheckout({
     required List<({
       int productId,
       double quantity,
+      int uomId,
       int warehouseId,
       bool isService,
       String productName,
@@ -2616,19 +2781,21 @@ class AppDatabase extends _$AppDatabase {
     if (!allowNegative) {
       for (final item in items) {
         if (item.isService) continue;
+        final needed = uomToReference(item.quantity, item.uomId);
         final stock = await (select(stocksTable)
               ..where((t) => t.productId.equals(item.productId))
               ..where((t) => t.warehouseId.equals(item.warehouseId))
               ..limit(1))
             .getSingleOrNull();
         if (stock == null) continue; // untracked product — allow
-        if (stock.quantity < item.quantity) {
+        if (stock.quantity < needed) {
+          final unit = referenceUomOf(uomById(item.uomId));
           return (
             success: false,
             message:
                 '${item.productName} is out of stock '
-                '(available: ${stock.quantity.toStringAsFixed(2)}, '
-                'needed: ${item.quantity.toStringAsFixed(2)}).',
+                '(available: ${formatQuantity(stock.quantity, unit.id)}, '
+                'needed: ${formatQuantity(needed, unit.id)}).',
           );
         }
       }
@@ -2646,7 +2813,8 @@ class AppDatabase extends _$AppDatabase {
         if (stock == null) continue;
         await (update(stocksTable)..where((t) => t.id.equals(stock.id))).write(
           StocksTableCompanion(
-            quantity: Value(stock.quantity - item.quantity),
+            quantity: Value(snapToStorage(
+                stock.quantity - uomToReference(item.quantity, item.uomId))),
             lastModified: Value(DateTime.now().toUtc()),
           ),
         );
@@ -3886,13 +4054,29 @@ class AppDatabase extends _$AppDatabase {
   /// Upserts an open (status=0) order and replaces its items atomically.
   /// Used by the offline-first SAVE button — creates a new local row the
   /// first time and updates it on every subsequent re-save.
+  /// Writes a parked order, replacing its lines, taxes and chosen modifiers.
+  ///
+  /// 🚨 [itemModifiers] is not optional detail. Without it, parking an order
+  /// offline keeps the MONEY (the surcharge is already inside `unitPrice`) and
+  /// silently loses the instruction — reopening showed the right total with no
+  /// "Extra Cheese" on it, and the kitchen ticket printed a plain burger. A
+  /// price that is right while the ticket is wrong is the worst shape this can
+  /// fail in, because nothing looks broken.
   Future<void> saveOpenOrder(
     PosOrdersTableCompanion order,
     List<PosOrderItemsTableCompanion> newItems, {
     List<PosOrderItemTaxesTableCompanion> itemTaxes = const [],
+    List<PosOrderItemModifiersTableCompanion> itemModifiers = const [],
   }) {
     return transaction(() async {
       await into(posOrdersTable).insertOnConflictUpdate(order);
+
+      // 🚨 Modifier rows FIRST, while the old lines still exist. They hang off
+      // the LINE's localId, and every save deletes and reinserts the lines with
+      // fresh ones — so clearing them after that point looks up the NEW ids,
+      // matches nothing, and leaves the previous save's rows orphaned. Two
+      // saves then showed every choice twice.
+      await deleteOrderItemModifiers(order.localId.value);
 
       await (delete(posOrderItemsTable)
             ..where((t) => t.orderId.equals(order.localId.value)))
@@ -3911,7 +4095,45 @@ class AppDatabase extends _$AppDatabase {
           b.insertAll(posOrderItemTaxesTable, itemTaxes);
         });
       }
+
+      if (itemModifiers.isNotEmpty) {
+        await batch((b) {
+          b.insertAll(posOrderItemModifiersTable, itemModifiers);
+        });
+      }
     });
+  }
+
+  /// Clears every modifier row belonging to one parked order's lines.
+  Future<void> deleteOrderItemModifiers(String orderLocalId) async {
+    final itemIds = await (select(posOrderItemsTable)
+          ..where((t) => t.orderId.equals(orderLocalId)))
+        .get();
+    if (itemIds.isEmpty) return;
+    await (delete(posOrderItemModifiersTable)
+          ..where((t) => t.orderItemLocalId.isIn(itemIds.map((i) => i.localId))))
+        .go();
+  }
+
+  /// The chosen modifiers for a parked order, keyed by its line's localId.
+  Future<Map<String, List<PosOrderItemModifiersTableData>>>
+      orderItemModifiersByLine(String orderLocalId) async {
+    final lines = await (select(posOrderItemsTable)
+          ..where((t) => t.orderId.equals(orderLocalId)))
+        .get();
+    if (lines.isEmpty) return const {};
+
+    final rows = await (select(posOrderItemModifiersTable)
+          ..where((t) =>
+              t.orderItemLocalId.isIn(lines.map((l) => l.localId)))
+          ..orderBy([(t) => OrderingTerm(expression: t.rank)]))
+        .get();
+
+    final byLine = <String, List<PosOrderItemModifiersTableData>>{};
+    for (final r in rows) {
+      byLine.putIfAbsent(r.orderItemLocalId, () => []).add(r);
+    }
+    return byLine;
   }
 
   /// Stamps the server-assigned id on a row mid-sync without flipping
@@ -4391,6 +4613,417 @@ class AppDatabase extends _$AppDatabase {
     return rows.map((r) => r.id).toSet();
   }
 
+  // ── Modifiers ─────────────────────────────────────────────────────────────
+  //
+  // The unit of work is the WHOLE GROUP — a group plus its complete option list
+  // — because that is what the admin screen edits and what the server's
+  // /Modifiers/SaveGroup accepts. Saving them separately would let a group land
+  // on the server with three of its six options if the push died between calls.
+
+  Future<int> _nextModifierGroupTempId() async {
+    final row = await (selectOnly(modifierGroupsTable)
+          ..addColumns([modifierGroupsTable.id.min()]))
+        .getSingleOrNull();
+    final min = row?.read(modifierGroupsTable.id.min());
+    return (min == null || min >= 0) ? -1 : min - 1;
+  }
+
+  Future<int> _nextModifierOptionTempId() async {
+    final row = await (selectOnly(modifierOptionsTable)
+          ..addColumns([modifierOptionsTable.id.min()]))
+        .getSingleOrNull();
+    final min = row?.read(modifierOptionsTable.id.min());
+    return (min == null || min >= 0) ? -1 : min - 1;
+  }
+
+  /// Creates or updates a group and its options locally, queued for push.
+  ///
+  /// [options] is the group's COMPLETE list: anything missing from it is
+  /// removed, matching the server's replace semantics. Returns the group id —
+  /// negative while it is still only local.
+  Future<int> saveModifierGroupLocal({
+    required int companyId,
+    int? groupId,
+    required String name,
+    required int minSelections,
+    required int maxSelections,
+    required bool allowsFreeText,
+    required int rank,
+    required bool isEnabled,
+    String? iconKey,
+    required List<({int? id, String name, double additionalPrice, bool isEnabled})>
+        options,
+  }) async {
+    return transaction(() async {
+      final id = groupId ?? await _nextModifierGroupTempId();
+      final existing = await (select(modifierGroupsTable)
+            ..where((t) => t.id.equals(id)))
+          .getSingleOrNull();
+
+      // A row already pushed once becomes pending_update; one that has never
+      // reached the server stays pending_create, so the push still POSTs it
+      // rather than trying to PUT an id the server has never seen.
+      final status = (existing?.syncStatus == 'pending_create' || id < 0)
+          ? 'pending_create'
+          : 'pending_update';
+
+      await into(modifierGroupsTable).insertOnConflictUpdate(
+        ModifierGroupsTableCompanion(
+          id: Value(id),
+          companyId: Value(companyId),
+          name: Value(name),
+          minSelections: Value(minSelections),
+          maxSelections: Value(maxSelections),
+          allowsFreeText: Value(allowsFreeText),
+          iconKey: Value(iconKey),
+          rank: Value(rank),
+          isEnabled: Value(isEnabled),
+          lastModified: Value(DateTime.now().toUtc()),
+          syncStatus: Value(status),
+        ),
+      );
+
+      // Replace, not merge — the caller passed the whole list.
+      await (delete(modifierOptionsTable)
+            ..where((t) => t.modifierGroupId.equals(id)))
+          .go();
+
+      var tempId = await _nextModifierOptionTempId();
+      for (var i = 0; i < options.length; i++) {
+        final o = options[i];
+        // Real ids are PRESERVED. Past sales point at them for reporting, so
+        // recreating the row on every save would orphan every
+        // document_item_modifier that referenced it.
+        final optionId = (o.id != null && o.id! > 0) ? o.id! : tempId--;
+        await into(modifierOptionsTable).insertOnConflictUpdate(
+          ModifierOptionsTableCompanion(
+            id: Value(optionId),
+            companyId: Value(companyId),
+            modifierGroupId: Value(id),
+            name: Value(o.name),
+            additionalPrice: Value(o.additionalPrice),
+            rank: Value(i),
+            isEnabled: Value(o.isEnabled),
+            lastModified: Value(DateTime.now().toUtc()),
+            syncStatus: Value(status),
+          ),
+        );
+      }
+
+      return id;
+    });
+  }
+
+  /// Flags a group for deletion, or drops it outright when the server never
+  /// saw it. Its options go with it either way.
+  Future<void> deleteModifierGroupLocal(int id) async {
+    final row = await (select(modifierGroupsTable)..where((t) => t.id.equals(id)))
+        .getSingleOrNull();
+    if (row == null) return;
+
+    if (row.syncStatus == 'pending_create' || row.id < 0) {
+      await hardDeleteModifierGroup(id);
+    } else {
+      await (update(modifierGroupsTable)..where((t) => t.id.equals(id))).write(
+        const ModifierGroupsTableCompanion(syncStatus: Value('pending_delete')),
+      );
+    }
+  }
+
+  /// Hard-removes a group, its options and every product link to it.
+  Future<void> hardDeleteModifierGroup(int id) => transaction(() async {
+        await (delete(modifierOptionsTable)
+              ..where((t) => t.modifierGroupId.equals(id)))
+            .go();
+        await (delete(productModifierGroupsTable)
+              ..where((t) => t.modifierGroupId.equals(id)))
+            .go();
+        await (delete(modifierGroupsTable)..where((t) => t.id.equals(id))).go();
+      });
+
+  /// Swaps a temporary negative group id for the server's real one, carrying
+  /// its options and product links with it. Without the cascade those rows
+  /// would keep pointing at an id that no longer exists.
+  Future<void> remapModifierGroupId(int tempId, int realId) => transaction(() async {
+        final row = await (select(modifierGroupsTable)
+              ..where((t) => t.id.equals(tempId)))
+            .getSingleOrNull();
+        if (row == null) return;
+
+        await (delete(modifierGroupsTable)..where((t) => t.id.equals(tempId))).go();
+        await into(modifierGroupsTable).insertOnConflictUpdate(
+          row.toCompanion(true).copyWith(
+                id: Value(realId),
+                syncStatus: const Value('synced'),
+              ),
+        );
+        await (update(modifierOptionsTable)
+              ..where((t) => t.modifierGroupId.equals(tempId)))
+            .write(ModifierOptionsTableCompanion(modifierGroupId: Value(realId)));
+        await (update(productModifierGroupsTable)
+              ..where((t) => t.modifierGroupId.equals(tempId)))
+            .write(
+                ProductModifierGroupsTableCompanion(modifierGroupId: Value(realId)));
+      });
+
+  /// Groups still needing a server push, newest edit last.
+  Future<List<ModifierGroupsTableData>> getPendingModifierGroups(int companyId) =>
+      (select(modifierGroupsTable)
+            ..where((t) => t.companyId.equals(companyId))
+            ..where((t) => t.syncStatus
+                .isIn(['pending_create', 'pending_update', 'pending_delete']))
+            ..orderBy([(t) => OrderingTerm(expression: t.lastModified)]))
+          .get();
+
+  /// Server ids flagged for local deletion — the pull skips these so an
+  /// incremental sync cannot resurrect a group before its DELETE is pushed.
+  Future<Set<int>> pendingDeleteModifierGroupIds(int companyId) async {
+    final rows = await (select(modifierGroupsTable)
+          ..where((t) => t.companyId.equals(companyId))
+          ..where((t) => t.syncStatus.equals('pending_delete')))
+        .get();
+    return rows.map((r) => r.id).toSet();
+  }
+
+  /// Every option of one group, in display order.
+  Future<List<ModifierOptionsTableData>> modifierOptionsForGroup(int groupId) =>
+      (select(modifierOptionsTable)
+            ..where((t) => t.modifierGroupId.equals(groupId))
+            ..orderBy([
+              (t) => OrderingTerm(expression: t.rank),
+              (t) => OrderingTerm(expression: t.id),
+            ]))
+          .get();
+
+  /// Replaces the groups a product offers. List order is section order.
+  Future<void> setProductModifierGroupsLocal({
+    required int companyId,
+    required int productId,
+    required List<int> groupIds,
+  }) =>
+      transaction(() async {
+        await (delete(productModifierGroupsTable)
+              ..where((t) => t.companyId.equals(companyId))
+              ..where((t) => t.productId.equals(productId)))
+            .go();
+
+        for (var i = 0; i < groupIds.length; i++) {
+          await into(productModifierGroupsTable).insertOnConflictUpdate(
+            ProductModifierGroupsTableCompanion(
+              // Deterministic local id: the server assigns its own on push, and
+              // this only has to be unique and negative until then.
+              id: Value(-((productId * 1000) + i + 1)),
+              companyId: Value(companyId),
+              productId: Value(productId),
+              modifierGroupId: Value(groupIds[i]),
+              rank: Value(i),
+              lastModified: Value(DateTime.now().toUtc()),
+              syncStatus: const Value('pending_create'),
+            ),
+          );
+        }
+      });
+
+  /// Replaces a group's options with the server's authoritative set.
+  ///
+  /// 🚨 This is what stops every choice appearing twice. A new option is written
+  /// locally with a temporary NEGATIVE id; the server assigns a real one. Until
+  /// the local row is replaced, the next delta pull inserts the server's row
+  /// ALONGSIDE it — and because the group is `synced` by then, it never
+  /// re-enters the push queue, so the duplicate is permanent. Deleting by group
+  /// (not by id) is deliberate: it clears temporary rows whose id nothing can
+  /// map to a server row.
+  Future<void> replaceModifierOptionsFromServer({
+    required int companyId,
+    required int groupId,
+    required List<
+            ({
+              int id,
+              String name,
+              double additionalPrice,
+              int rank,
+              bool isEnabled,
+              DateTime lastModified
+            })>
+        options,
+  }) =>
+      transaction(() async {
+        await (delete(modifierOptionsTable)
+              ..where((t) => t.modifierGroupId.equals(groupId)))
+            .go();
+
+        for (final o in options) {
+          await into(modifierOptionsTable).insertOnConflictUpdate(
+            ModifierOptionsTableCompanion(
+              id: Value(o.id),
+              companyId: Value(companyId),
+              modifierGroupId: Value(groupId),
+              name: Value(o.name),
+              additionalPrice: Value(o.additionalPrice),
+              rank: Value(o.rank),
+              isEnabled: Value(o.isEnabled),
+              lastModified: Value(o.lastModified),
+              syncStatus: const Value('synced'),
+            ),
+          );
+        }
+      });
+
+  /// Removes temporary option rows the server has already superseded.
+  ///
+  /// Self-repair for databases written before [replaceModifierOptionsFromServer]
+  /// existed: a negative id under a group that is fully `synced` cannot be a
+  /// pending edit — an edit marks its group `pending_update` — so it is a
+  /// leftover from a push that assigned real ids and left the temporaries
+  /// behind. Runs every push; matches nothing once a device is clean.
+  Future<int> purgeSupersededModifierOptions(int companyId) async {
+    final syncedGroups = await (select(modifierGroupsTable)
+          ..where((t) => t.companyId.equals(companyId))
+          ..where((t) => t.syncStatus.equals('synced')))
+        .get();
+    if (syncedGroups.isEmpty) return 0;
+
+    final ids = syncedGroups.map((g) => g.id).toList();
+    return (delete(modifierOptionsTable)
+          ..where((t) => t.modifierGroupId.isIn(ids) & t.id.isSmallerThanValue(0)))
+        .go();
+  }
+
+  /// Products whose group links have not reached the server yet.
+  Future<List<int>> productIdsWithPendingModifierLinks(int companyId) async {
+    final rows = await (select(productModifierGroupsTable)
+          ..where((t) => t.companyId.equals(companyId))
+          ..where((t) => t.syncStatus.isNotIn(['synced'])))
+        .get();
+    return rows.map((r) => r.productId).toSet().toList();
+  }
+
+  /// One product's links, in section order.
+  Future<List<ProductModifierGroupsTableData>> modifierLinksForProduct(
+    int companyId,
+    int productId,
+  ) =>
+      (select(productModifierGroupsTable)
+            ..where((t) => t.companyId.equals(companyId))
+            ..where((t) => t.productId.equals(productId))
+            ..orderBy([
+              (t) => OrderingTerm(expression: t.rank),
+              (t) => OrderingTerm(expression: t.id),
+            ]))
+          .get();
+
+  /// Replaces one product's links with the server's authoritative set.
+  ///
+  /// Same reasoning as [replaceModifierOptionsFromServer]: local links are
+  /// written with a synthetic negative id, and only the server knows the real
+  /// one. `SetProductGroups` replaces the whole set server-side, so its response
+  /// is the complete truth for this product.
+  Future<void> replaceProductModifierLinksFromServer({
+    required int companyId,
+    required int productId,
+    required List<({int id, int modifierGroupId, int rank, DateTime lastModified})>
+        links,
+  }) =>
+      transaction(() async {
+        await (delete(productModifierGroupsTable)
+              ..where((t) => t.companyId.equals(companyId))
+              ..where((t) => t.productId.equals(productId)))
+            .go();
+
+        for (final l in links) {
+          await into(productModifierGroupsTable).insertOnConflictUpdate(
+            ProductModifierGroupsTableCompanion(
+              id: Value(l.id),
+              companyId: Value(companyId),
+              productId: Value(productId),
+              modifierGroupId: Value(l.modifierGroupId),
+              rank: Value(l.rank),
+              lastModified: Value(l.lastModified),
+              syncStatus: const Value('synced'),
+            ),
+          );
+        }
+      });
+
+  /// The enabled modifier groups a product offers, each with its enabled
+  /// options, in the order the cashier will be asked.
+  ///
+  /// 🚨 A DIRECT query on purpose. The obvious alternative — reading
+  /// `modifierGroupsForProductProvider(id).future` — is an autoDispose `.family`
+  /// StreamProvider, and with no active listener that future can resolve before
+  /// the Drift watch-stream has emitted its first row. A product that HAS
+  /// groups then looks like it has none and the customise sheet silently never
+  /// opens. That is not a hypothetical: the identical trap is documented on
+  /// `productCommentsProvider` a few lines from this call site, and it caught
+  /// this feature too.
+  ///
+  /// Returns rows, not models, so this layer keeps no dependency on the modifier
+  /// models; the caller composes them.
+  Future<List<({ModifierGroupsTableData group, List<ModifierOptionsTableData> options})>>
+      modifierGroupsForProductDirect(int companyId, int productId) async {
+    final links = await (select(productModifierGroupsTable)
+          ..where((t) => t.companyId.equals(companyId))
+          ..where((t) => t.productId.equals(productId))
+          ..orderBy([
+            (t) => OrderingTerm(expression: t.rank),
+            (t) => OrderingTerm(expression: t.id),
+          ]))
+        .get();
+    if (links.isEmpty) return const [];
+
+    final groupIds = links.map((l) => l.modifierGroupId).toList();
+    final groups = await (select(modifierGroupsTable)
+          ..where((t) => t.id.isIn(groupIds))
+          ..where((t) => t.isEnabled.equals(true))
+          ..where((t) => t.syncStatus.isNotIn(['pending_delete'])))
+        .get();
+    final groupById = {for (final g in groups) g.id: g};
+
+    final options = await (select(modifierOptionsTable)
+          ..where((t) => t.modifierGroupId.isIn(groupIds))
+          ..where((t) => t.isEnabled.equals(true))
+          ..orderBy([
+            (t) => OrderingTerm(expression: t.rank),
+            (t) => OrderingTerm(expression: t.id),
+          ]))
+        .get();
+
+    final optionsByGroup = <int, List<ModifierOptionsTableData>>{};
+    for (final o in options) {
+      optionsByGroup.putIfAbsent(o.modifierGroupId, () => []).add(o);
+    }
+
+    final result = <({ModifierGroupsTableData group, List<ModifierOptionsTableData> options})>[];
+    for (final link in links) {
+      final group = groupById[link.modifierGroupId];
+      if (group == null) continue;
+
+      // A group with nothing choosable is dropped rather than rendered as an
+      // empty section. A MANDATORY one in that state would block the sale with
+      // nothing to click, which is worse than not asking at all.
+      final opts = optionsByGroup[group.id] ?? const <ModifierOptionsTableData>[];
+      if (opts.isEmpty) continue;
+
+      result.add((group: group, options: opts));
+    }
+    return result;
+  }
+
+  /// Product ids that have at least one group linked.
+  ///
+  /// Read once and cached by the menu so tapping a product can decide whether
+  /// to open the customise sheet without a per-tap query.
+  Future<Set<int>> productIdsWithModifiers(int companyId) async {
+    final rows = await (selectOnly(productModifierGroupsTable, distinct: true)
+          ..addColumns([productModifierGroupsTable.productId])
+          ..where(productModifierGroupsTable.companyId.equals(companyId)))
+        .get();
+    return rows
+        .map((r) => r.read(productModifierGroupsTable.productId))
+        .whereType<int>()
+        .toSet();
+  }
+
   /// Changes a product's single assigned tax offline-first: removes the old
   /// assignment and adds the new one (either may be null = none).
   Future<void> setProductTaxLocal({
@@ -4471,6 +5104,14 @@ class AppDatabase extends _$AppDatabase {
     await (update(productCommentsTable)
           ..where((t) => t.productId.equals(tempId)))
         .write(ProductCommentsTableCompanion(productId: Value(realId)));
+    // Modifier groups attached to an offline product. /Modifiers/SetProductGroups
+    // sends the productId, so a link still pointing at the temp id would 400 —
+    // and the till's own lookup (modifierGroupsForProductDirect) keys on
+    // productId too, so the customise sheet would stop opening for the product
+    // the moment it got its real id.
+    await (update(productModifierGroupsTable)
+          ..where((t) => t.productId.equals(tempId)))
+        .write(ProductModifierGroupsTableCompanion(productId: Value(realId)));
     // Promotion built offline that targets an offline product: /Promotions/Add
     // sends items[].productId, so repoint it before pushPendingPromotionOps.
     await (update(promotionItemsTable)
@@ -5480,8 +6121,42 @@ extension OfflineQueueHelpers on AppDatabase {
   /// placeholder id and empties the set. The result must be persisted onto the
   /// z_reports row, because nothing records which payments belonged to which
   /// report — once stamped, the scope is unrecoverable.
-  Future<ZReportAggregates> aggregateUnreportedForZReport(int companyId) async {
-    final payments = await getUnreportedPayments(companyId);
+  Future<ZReportAggregates> aggregateUnreportedForZReport(int companyId) async =>
+      _aggregateForZReport(await getUnreportedPayments(companyId));
+
+  /// Payments booked by ONE session that no Z-report has claimed yet.
+  ///
+  /// The session link is what makes a per-session Z-report possible offline:
+  /// `payments`, `documents` and `starting_cash` all carry `sessionLocalId`, so
+  /// closing a register can report on exactly the sales that register took
+  /// rather than on everything the company has left unreported.
+  ///
+  /// `zReportId IS NULL` is still part of the scope, so closing a session that
+  /// was already reported on cannot bill the same money twice.
+  Future<List<PaymentsTableData>> getUnreportedSessionPayments(
+      String sessionLocalId) {
+    return (select(paymentsTable)
+          ..where((t) => t.sessionLocalId.equals(sessionLocalId))
+          ..where((t) => t.zReportId.isNull())
+          ..where((t) => t.syncStatus.equals('pending_delete').not()))
+        .get();
+  }
+
+  /// Session-scoped twin of [aggregateUnreportedForZReport] — the figures for
+  /// the Z-report generated when a register closes.
+  Future<ZReportAggregates> aggregateSessionForZReport(
+          String sessionLocalId) async =>
+      _aggregateForZReport(await getUnreportedSessionPayments(sessionLocalId));
+
+  /// The one implementation of the Z-report arithmetic.
+  ///
+  /// 🚨 Company-wide and per-session close differ ONLY in which payments they
+  /// start from. Everything downstream — how a refund is classified, which
+  /// discount field may be summed, how the taxable base is derived — is
+  /// identical, and a second copy of it would be free to drift out of agreement
+  /// with the first while both kept printing confident numbers.
+  Future<ZReportAggregates> _aggregateForZReport(
+      List<PaymentsTableData> payments) async {
     if (payments.isEmpty) return ZReportAggregates.empty;
 
     // Refund payments are stored negative, so this nets to the real drawer take.
@@ -5537,6 +6212,38 @@ extension OfflineQueueHelpers on AppDatabase {
       totalTax: totalTax,
       grandTotal: grandTotal,
     );
+  }
+
+  /// Stamps the optimistic placeholder on the payments this session banked, so
+  /// the money it just reported drops out of the company-wide unreported set.
+  ///
+  /// 🚨 Without this a session close and a later End-of-Day would each count
+  /// the same sales — the session report would be right, and the day report
+  /// would silently include the money a second time.
+  Future<void> assignSessionPaymentsToZReport(String sessionLocalId) async {
+    await (update(paymentsTable)
+          ..where((t) => t.sessionLocalId.equals(sessionLocalId))
+          ..where((t) => t.zReportId.isNull()))
+        .write(const PaymentsTableCompanion(
+            zReportId: Value(optimisticZReportPlaceholder)));
+  }
+
+  /// Cash in/out booked against one session and not yet reported on.
+  Future<List<StartingCashTableData>> getActiveSessionStartingCash(
+          String sessionLocalId) =>
+      (select(startingCashTable)
+            ..where((t) => t.sessionLocalId.equals(sessionLocalId))
+            ..where((t) => t.zReportNumber.isNull()))
+          .get();
+
+  /// Session-scoped twin of [optimisticallyFinalizeActiveStartingCash].
+  Future<void> finalizeSessionStartingCash(String sessionLocalId) async {
+    await (update(startingCashTable)
+          ..where((t) => t.sessionLocalId.equals(sessionLocalId))
+          ..where((t) => t.zReportNumber.isNull()))
+        .write(const StartingCashTableCompanion(
+      zReportNumber: Value(optimisticZReportPlaceholder),
+    ));
   }
 
   /// The next device-local Z-report number for a company. The server keeps its

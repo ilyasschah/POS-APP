@@ -19,6 +19,17 @@ namespace Api.DataBase
         public DbSet<BarcodeRule> BarcodeRules { get; set; }
         public DbSet<SecurityKey> SecurityKeys { get; set; }
         public DbSet<ProductComment> ProductComments { get; set; }
+
+        // ── Modifiers (see Domain/ModifierGroup.cs) ─────────────────────────
+        // Catalogue: a group is company-level and shared across products, so the
+        // link is its own table rather than a column on Product.
+        public DbSet<ModifierGroup> ModifierGroups { get; set; }
+        public DbSet<ModifierOption> ModifierOptions { get; set; }
+        public DbSet<ProductModifierGroup> ProductModifierGroups { get; set; }
+        // Per-line snapshots of what was actually chosen. Paired the same way
+        // PosOrderItemTax / DocumentItemTax are: working state and the record.
+        public DbSet<PosOrderItemModifier> PosOrderItemModifiers { get; set; }
+        public DbSet<DocumentItemModifier> DocumentItemModifiers { get; set; }
         public DbSet<Tax> Taxes { get; set; }
         public DbSet<ProductTax> ProductsTaxes { get; set; }
         public DbSet<VoidReason> VoidReasons { get; internal set; }
@@ -464,6 +475,108 @@ namespace Api.DataBase
 
                 // Every lookup is "all rules for this company, in order".
                 e.HasIndex(x => new { x.CompanyId, x.Sequence });
+            });
+            // 🚨 Every modifier table below pins its Company foreign key to
+            // NoAction, and it is not optional. `CompanyId` is a non-nullable
+            // int, so EF's default for it is CASCADE — which gave SQL Server two
+            // cascade paths into ModifierOption (Company → ModifierOption, and
+            // Company → ModifierGroup → ModifierOption) and it refused the whole
+            // migration with error 1785. The same shape threatens every child
+            // table here, so the rule is applied uniformly rather than only
+            // where it happened to bite first.
+            //
+            // Nothing is lost by it: deleting a Company row is not how this
+            // system removes a company's data — CompanyDataResetService does
+            // that explicitly, in the order it chooses.
+            b.Entity<ModifierGroup>(e =>
+            {
+                // The admin screen and the sync both read "every group for this
+                // company, in display order".
+                e.HasIndex(x => new { x.CompanyId, x.Rank });
+
+                e.HasOne(x => x.Company)
+                 .WithMany()
+                 .HasForeignKey(x => x.CompanyId)
+                 .OnDelete(DeleteBehavior.NoAction);
+            });
+            b.Entity<ModifierOption>(e =>
+            {
+                // Deleting a group takes its options with it — an option outside
+                // a group is not a thing the POS can render or price.
+                e.HasOne(x => x.ModifierGroup)
+                 .WithMany(g => g.Options)
+                 .HasForeignKey(x => x.ModifierGroupId)
+                 .OnDelete(DeleteBehavior.Cascade);
+
+                e.HasIndex(x => new { x.ModifierGroupId, x.Rank });
+
+                e.HasOne(x => x.Company)
+                 .WithMany()
+                 .HasForeignKey(x => x.CompanyId)
+                 .OnDelete(DeleteBehavior.NoAction);
+            });
+            b.Entity<ProductModifierGroup>(e =>
+            {
+                // The POS asks this on every product tap: "does this product
+                // have any groups?" It has to be an index seek, not a scan.
+                e.HasIndex(x => new { x.CompanyId, x.ProductId, x.Rank });
+
+                // One product cannot offer the same group twice — it would
+                // render as two identical sections in the customise sheet.
+                e.HasIndex(x => new { x.ProductId, x.ModifierGroupId }).IsUnique();
+
+                // 🚨 NoAction on BOTH sides, deliberately. SQL Server refuses
+                // multiple cascade paths into one table, and either cascade here
+                // would also mean deleting a product or a group silently rewrites
+                // what a live order is offering. The API deletes the links
+                // explicitly instead.
+                e.HasOne(x => x.Product)
+                 .WithMany()
+                 .HasForeignKey(x => x.ProductId)
+                 .OnDelete(DeleteBehavior.NoAction);
+
+                e.HasOne(x => x.ModifierGroup)
+                 .WithMany()
+                 .HasForeignKey(x => x.ModifierGroupId)
+                 .OnDelete(DeleteBehavior.NoAction);
+
+                e.HasOne(x => x.Company)
+                 .WithMany()
+                 .HasForeignKey(x => x.CompanyId)
+                 .OnDelete(DeleteBehavior.NoAction);
+            });
+            b.Entity<PosOrderItemModifier>(e =>
+            {
+                // Removing a line takes its chosen modifiers with it.
+                e.HasOne(x => x.PosOrderItem)
+                 .WithMany()
+                 .HasForeignKey(x => x.PosOrderItemId)
+                 .OnDelete(DeleteBehavior.Cascade);
+
+                e.HasIndex(x => new { x.PosOrderItemId, x.Rank });
+
+                e.HasOne(x => x.Company)
+                 .WithMany()
+                 .HasForeignKey(x => x.CompanyId)
+                 .OnDelete(DeleteBehavior.NoAction);
+            });
+            b.Entity<DocumentItemModifier>(e =>
+            {
+                e.HasOne(x => x.DocumentItem)
+                 .WithMany()
+                 .HasForeignKey(x => x.DocumentItemId)
+                 .OnDelete(DeleteBehavior.Cascade);
+
+                e.HasIndex(x => new { x.DocumentItemId, x.Rank });
+
+                // The reporting query these tables exist for: sales of one
+                // option across a period, for a company.
+                e.HasIndex(x => new { x.CompanyId, x.ModifierOptionId });
+
+                e.HasOne(x => x.Company)
+                 .WithMany()
+                 .HasForeignKey(x => x.CompanyId)
+                 .OnDelete(DeleteBehavior.NoAction);
             });
             b.Entity<PosOrder>(e => 
             { 

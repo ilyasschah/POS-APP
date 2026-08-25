@@ -9,6 +9,7 @@ import 'package:pos_app/customer/customers_screen.dart';
 import 'package:pos_app/navigation/nav_widgets.dart';
 import 'package:pos_app/dashboard/dashboard_screen.dart';
 import 'package:pos_app/document/documents_screen.dart';
+import 'package:pos_app/modifier/modifier_groups_screen.dart';
 import 'package:pos_app/product/products_screen.dart';
 import 'package:pos_app/product/product_groups_screen.dart';
 import 'package:pos_app/stock/stock_screen.dart';
@@ -51,6 +52,7 @@ class _ManagementLayoutState extends ConsumerState<ManagementLayout> {
     'Management.Company',       // 11 My company
     'Management.VoidReasons',   // 12 Void reasons
     'Management.LoyaltyCards',  // 13 Loyalty Cards
+    'Management.ModifierGroups',// 14 Modifier groups
   ];
 
   @override
@@ -99,6 +101,7 @@ class _ManagementLayoutState extends ConsumerState<ManagementLayout> {
       MyCompanyScreen(onMenuPressed: screenMenu),
       VoidReasonsScreen(onMenuPressed: screenMenu),
       LoyaltyCardsScreen(onMenuPressed: screenMenu),
+      ModifierGroupsScreen(onMenuPressed: screenMenu),
     ];
 
     void handleNavTap(int index) {
@@ -263,6 +266,13 @@ class _ManagementLayoutState extends ConsumerState<ManagementLayout> {
                       label: AppLocalizations.of(context).loyaltyCards,
                       isActive: _selectedIndex == 13,
                       onTap: () => handleNavTap(13),
+                    ),
+                    NavItem(
+                      isMini: isMini,
+                      icon: Icons.tune,
+                      label: AppLocalizations.of(context).modifierGroups,
+                      isActive: _selectedIndex == 14,
+                      onTap: () => handleNavTap(14),
                     ),
                     const SizedBox(height: 16),
                   ],

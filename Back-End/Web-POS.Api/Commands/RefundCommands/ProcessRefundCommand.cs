@@ -220,8 +220,14 @@ namespace Api.Commands.RefundCommands
 
                             if (stock != null)
                             {
+                                // Refunded quantities are in the product's SALE unit —
+                                // they came off a document line — while stock is held in
+                                // the category reference. Refunding 100 g of a gram-priced
+                                // product returns 0.100 kg. Mirrors
+                                // DocumentItemService.ApplyStockDelta.
+                                var restored = UnitOfMeasure.ToReference(ri.Quantity, product.UomId);
                                 stock.UpdateDetails(
-                                    stock.Quantity + ri.Quantity,
+                                    stock.Quantity + restored,
                                     stock.WarehouseId,
                                     stock.ProductId);
                                 _db.Stocks.Update(stock);
@@ -356,8 +362,11 @@ namespace Api.Commands.RefundCommands
 
                     if (stock != null)
                     {
+                        // Same conversion as the verified arm above: a blind return of a
+                        // weighed product is counted in the unit it is sold in.
+                        var restored = UnitOfMeasure.ToReference(ri.Quantity, product.UomId);
                         stock.UpdateDetails(
-                            stock.Quantity + ri.Quantity,
+                            stock.Quantity + restored,
                             stock.WarehouseId,
                             stock.ProductId);
                         _db.Stocks.Update(stock);

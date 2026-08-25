@@ -86,7 +86,20 @@ class DeviceScopedSettings {
   /// an OS-level print queue that only exists on the machine it was chosen on.
   /// Deliberately NOT included: paper size, margins, fonts, header/footer, RTL —
   /// those describe the *ticket*, which the venue does want identical everywhere.
-  static const List<String> _suffixes = ['.PrinterName'];
+  /// The cash-drawer wiring joins them for the same reason: the drawer is
+  /// physically attached to ONE terminal. A Windows till with the drawer in its
+  /// receipt printer's RJ11 port and a tablet reaching a LAN printer over TCP
+  /// are both correct at the same time, and a cloud-synced transport would have
+  /// each overwrite the other's. The *command bytes* are deliberately NOT here —
+  /// those describe the printer model, which the venue does share.
+  static const List<String> _suffixes = [
+    '.PrinterName',
+    '.CashDrawer.Transport',
+    '.CashDrawer.Host',
+    '.CashDrawer.TcpPort',
+    '.CashDrawer.SerialPort',
+    '.CashDrawer.BaudRate',
+  ];
 
   static bool isDeviceScoped(String key) =>
       _exactKeys.contains(key) ||
@@ -160,11 +173,20 @@ class DeviceScopedSettings {
       if (Platform.isWindows && value.startsWith('/')) return null;
     }
     if (key.endsWith('.PrinterName') && isMobile) return null;
-    if ((key == 'Scale.Port' || key == 'CustomerDisplay.Port') &&
+    if ((key == 'Scale.Port' ||
+            key == 'CustomerDisplay.Port' ||
+            key.endsWith('.CashDrawer.SerialPort')) &&
         !Platform.isWindows &&
         value.toUpperCase().startsWith('COM')) {
       return null;
     }
+    // A drawer transport inherited from a Windows till is unreachable on a
+    // tablet — `printer` addresses a Windows print queue and `serial` a COM
+    // port. Coerce rather than drop: the shipped default is `printer` too, so
+    // returning null would land on the same dead end. Pointing at the one
+    // transport Android has turns the failure into the useful "enter the
+    // printer IP address" instead of "this needs Windows".
+    if (key.endsWith('.CashDrawer.Transport') && isMobile) return 'network';
     return value;
   }
 

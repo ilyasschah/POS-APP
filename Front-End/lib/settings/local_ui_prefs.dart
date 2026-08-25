@@ -12,7 +12,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 const _kFontScaleKey = 'ui.fontScale';
 const _kCartWidthKey = 'ui.cartWidth';
-const _kGroupSidebarWidthKey = 'ui.groupSidebarWidth';
 
 const double kFontScaleDefault = 1.0;
 const double kFontScaleMin = 0.8;
@@ -20,9 +19,6 @@ const double kFontScaleMax = 1.3;
 
 const double kCartWidthDefault = 350.0;
 const double kCartWidthMin = 250.0;
-
-const double kGroupSidebarWidthDefault = 280.0;
-const double kGroupSidebarWidthMin = 180.0;
 
 /// Base class for a single locally-persisted `double` preference.
 abstract class _LocalDoublePref extends Notifier<double> {
@@ -79,18 +75,6 @@ class _CartWidthNotifier extends _LocalDoublePref {
   double clampValue(double v) => v < kCartWidthMin ? kCartWidthMin : v;
 }
 
-class _GroupSidebarWidthNotifier extends _LocalDoublePref {
-  @override
-  String get _key => _kGroupSidebarWidthKey;
-  @override
-  double get _fallback => kGroupSidebarWidthDefault;
-  // As with the cart, the upper bound depends on the window size, so the
-  // products screen clamps at use-time; only the lower bound is enforced here.
-  @override
-  double clampValue(double v) =>
-      v < kGroupSidebarWidthMin ? kGroupSidebarWidthMin : v;
-}
-
 /// Global font scale (1.0 = default), applied as a MediaQuery textScaler in
 /// main.dart. Local to this terminal.
 final fontScaleProvider =
@@ -101,8 +85,3 @@ final fontScaleProvider =
 final cartWidthProvider =
     NotifierProvider<_CartWidthNotifier, double>(_CartWidthNotifier.new);
 
-/// Width (px) of the resizable category-tree sidebar on the products screen.
-/// Local to this terminal.
-final groupSidebarWidthProvider =
-    NotifierProvider<_GroupSidebarWidthNotifier, double>(
-        _GroupSidebarWidthNotifier.new);
