@@ -28,6 +28,9 @@ import 'package:pos_app/product/product_group_model.dart';
 import 'package:pos_app/product/product_provider.dart';
 import 'package:pos_app/tax/tax_model.dart';
 import 'package:pos_app/tax/tax_provider.dart';
+import 'package:pos_app/core/responsive.dart';
+import 'package:pos_app/core/ilyass_table.dart';
+import 'package:pos_app/core/unified_search_bar.dart';
 import 'package:pos_app/modifier/modifier_models.dart';
 import 'package:pos_app/modifier/modifier_groups_screen.dart' show selectionRuleLabel;
 import 'package:pos_app/modifier/modifier_provider.dart';
@@ -41,8 +44,6 @@ import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/app_settings/app_settings_provider.dart';
 import 'package:pos_app/product/product_import_screen.dart';
 import 'package:pos_app/product/product_search.dart';
-import 'package:pos_app/product/product_search_bar.dart';
-import 'package:pos_app/settings/local_ui_prefs.dart';
 import 'package:pos_app/sync/sync_notifier.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
 import 'package:uuid/uuid.dart';
@@ -358,11 +359,54 @@ class ProductsScreen extends ConsumerStatefulWidget {
 class _ProductsScreenState extends ConsumerState<ProductsScreen> {
   final Set<int> _selectedIds = {};
 
+  // Search state is LOCAL, not a provider: leaving the screen must clear the
+  // filter. A global provider would have the admin come back to a silently
+  // filtered catalogue and read it as missing products. It is also separate
+  // from the POS menu's `searchQueryProvider` on purpose — the two screens are
+  // used at the same time on the same terminal.
+  //
+  // It lives on the SCREEN rather than on the table because the bar now sits
+  // in the header, above every `when` branch: an operator whose query matched
+  // nothing must still have the box they just typed into in front of them.
+  final _searchCtrl = TextEditingController();
+  String _query = '';
+
+  // Defaults to the widest scope. Unlike the POS menu this is NOT driven by
+  // `Menu.DefaultSearch`: that setting is about the cashier's till, and an admin
+  // hunting for a product should not have to guess which field it lives in.
+  String _scope = ProductSearchScope.allFields;
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
   void _updateSelection(Set<int> ids) {
     setState(() {
       _selectedIds.clear();
       _selectedIds.addAll(ids);
     });
+  }
+
+  /// Selection is by id and survives filtering, so a row hidden by the search
+  /// would still be deleted by the Actions menu's Delete while showing as
+  /// unselected. Clearing on every filter change is the same rule the category
+  /// filter follows.
+  void _setFilter({String? query, String? scope}) {
+    setState(() {
+      if (query != null) _query = query;
+      if (scope != null) _scope = scope;
+      _selectedIds.clear();
+    });
+  }
+
+  /// The category filter is the same provider the removed sidebar drove, so
+  /// `productsByGroupProvider` still does the filtering in Drift rather than in
+  /// the widget — only the control that sets it has moved into the search bar.
+  void _setCategory(int? groupId) {
+    ref.read(selectedProductGroupIdProvider.notifier).state = groupId;
+    if (_selectedIds.isNotEmpty) setState(() => _selectedIds.clear());
   }
 
   Future<void> _bulkDelete() async {
@@ -483,7 +527,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                   return CheckboxListTile(
                     dense: true,
                     title: Text(productColumnLabel(context, col.key)),
-                    // Mandatory columns (Name, Edit) stay locked on.
+                    // Mandatory columns (Name) stay locked on.
                     subtitle: col.mandatory ? Text(AppLocalizations.of(context).alwaysShown) : null,
                     value: isOn,
                     onChanged: col.mandatory
@@ -509,344 +553,380 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
     );
   }
 
+  void _openImport() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ProductImportScreen()),
+    ).then((_) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.invalidate(productsByGroupProvider);
+      });
+    });
+  }
+
+  /// Two-phase create: taxes, barcodes and stock all need a REAL server id, so
+  /// phase 2 only opens for a product that actually reached the server.
+  Future<void> _addProduct() async {
+    final result = await showDialog(
+      context: context,
+      builder: (_) => const _ProductEditorDialog(isPostCreation: false),
+    );
+    ref.invalidate(productsByGroupProvider);
+    if (result is Product && mounted) {
+      if (result.isPendingCreate) {
+        showAppSnackbar(context, ref,
+            AppLocalizations.of(context).productSavedLocallySyncFirst);
+      } else {
+        showDialog(
+          context: context,
+          builder: (_) => _ProductEditorDialog(
+              existingProduct: result, isPostCreation: true),
+        ).then((_) => ref.invalidate(productsByGroupProvider));
+      }
+    }
+  }
+
+  // ── header ────────────────────────────────────────────────────────────────
+
+  /// The unified bar, in the header rather than the body: the table is the
+  /// screen now, and a search row stacked above it cost a full strip of height
+  /// on a 10" tablet for a control that is one field tall.
+  Widget _buildSearchBar(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final groups =
+        ref.watch(allProductGroupsProvider).value ?? const <ProductGroup>[];
+    final selectedGroupId = ref.watch(selectedProductGroupIdProvider);
+    final selectedGroup =
+        groups.where((g) => g.id == selectedGroupId).firstOrNull;
+
+    return UnifiedSearchBar(
+      controller: _searchCtrl,
+      // The bar lives in a fixed-height toolbar, so chips share the row with
+      // the field instead of wrapping onto a second one it has no room for.
+      singleLine: true,
+      hintText: l.searchProductsHint,
+      chips: [
+        if (selectedGroupId != null)
+          SearchBarChip(
+            id: 'category',
+            label: selectedGroup?.name ?? l.categoryLabel,
+            icon: Icons.folder_outlined,
+            onRemove: () => _setCategory(null),
+          ),
+      ],
+      sectionsBuilder: (query) => _filterSections(context, query, groups),
+      onQueryChanged: (v) => _setFilter(query: v),
+      onClearAll: () {
+        _searchCtrl.clear();
+        _setFilter(query: '');
+        _setCategory(null);
+      },
+      trailing: _buildScopeToggles(context),
+    );
+  }
+
+  /// The category dropdown, as an inline filter section rather than a control
+  /// of its own — the same shape Documents and Sales History use, so one chip
+  /// in the bar says what the catalogue is narrowed to.
+  List<FilterMenuSection> _filterSections(
+    BuildContext context,
+    String query,
+    List<ProductGroup> groups,
+  ) {
+    final l = AppLocalizations.of(context);
+    final lower = query.trim().toLowerCase();
+    final selectedGroupId = ref.read(selectedProductGroupIdProvider);
+
+    // Capped so a catalogue with 300 categories still opens the menu instantly;
+    // typing narrows it, which is what the footnote tells the operator.
+    const maxOptions = 8;
+    final flat = _flattenGroups(groups);
+    final matched = lower.isEmpty
+        ? flat
+        : flat.where((e) => e.$1.name.toLowerCase().contains(lower)).toList();
+
+    return [
+      FilterMenuSection(
+        title: l.categoryLabel,
+        icon: Icons.folder_outlined,
+        footnote: matched.length > maxOptions ? l.filterKeepTyping : null,
+        options: [
+          FilterMenuOption(
+            label: l.allProducts,
+            icon: Icons.all_inbox,
+            selected: selectedGroupId == null,
+            onSelected: () => _setCategory(null),
+          ),
+          for (final (group, depth) in matched.take(maxOptions))
+            FilterMenuOption(
+              // Indented rather than flattened: a child category called
+              // "Small" means nothing without the parent above it.
+              label: '${'    ' * depth}${group.name}',
+              icon: depth == 0
+                  ? Icons.folder_outlined
+                  : Icons.subdirectory_arrow_right,
+              selected: selectedGroupId == group.id,
+              onSelected: () => _setCategory(group.id),
+            ),
+        ],
+      ),
+    ];
+  }
+
+  /// Depth-first walk of the category tree, roots first and each level by rank
+  /// — the order the removed sidebar rendered, kept so the menu reads the way
+  /// the tree did.
+  List<(ProductGroup, int)> _flattenGroups(List<ProductGroup> all) {
+    final byParent = <int?, List<ProductGroup>>{};
+    for (final g in all) {
+      (byParent[g.parentGroupId] ??= []).add(g);
+    }
+    for (final list in byParent.values) {
+      list.sort((a, b) => a.rank.compareTo(b.rank));
+    }
+
+    final out = <(ProductGroup, int)>[];
+    // A group whose parent chain loops back on itself would otherwise recurse
+    // forever — this comes off a server that does not enforce acyclicity.
+    final seen = <int>{};
+    void walk(int? parentId, int depth) {
+      for (final g in byParent[parentId] ?? const <ProductGroup>[]) {
+        if (!seen.add(g.id)) continue;
+        out.add((g, depth));
+        walk(g.id, depth + 1);
+      }
+    }
+
+    walk(null, 0);
+    return out;
+  }
+
+  /// The scope toggles, INSIDE the bar's border: all fields, barcode, code,
+  /// name. Not filters — they change what the typed text is matched against,
+  /// so they carry no chip.
+  Widget _buildScopeToggles(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    const icons = <String, IconData>{
+      ProductSearchScope.allFields: PhosphorIconsRegular.asterisk,
+      ProductSearchScope.barcode: PhosphorIconsRegular.barcode,
+      ProductSearchScope.code: PhosphorIconsRegular.hash,
+      ProductSearchScope.name: PhosphorIconsRegular.tag,
+    };
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final mode in ProductSearchScope.all)
+          Tooltip(
+            message: productSearchScopeLabel(context, mode),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(8),
+              onTap: () => _setFilter(scope: mode),
+              child: Container(
+                // Finger-sized inside a bar that cannot grow taller — wider
+                // than it is tall rather than shorter than it is wide.
+                constraints: const BoxConstraints(minWidth: 42, minHeight: 34),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: _scope == mode
+                      ? cs.primary.withValues(alpha: 0.15)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: PhosphorIcon(
+                  icons[mode] ?? PhosphorIconsRegular.tag,
+                  size: 19,
+                  color: _scope == mode ? cs.primary : cs.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// Delete / Columns / Import / Export, which were four loose buttons eating
+  /// the header. None of them is what an operator came to this screen to do —
+  /// that is Add Product, and it is the FAB now.
+  Widget _buildActionsMenu(BuildContext context, ThemeData theme) {
+    final l = AppLocalizations.of(context);
+    final hasSelection = _selectedIds.isNotEmpty;
+
+    Widget item(IconData icon, String label, {Color? color}) => Row(
+          children: [
+            Icon(icon, size: 20, color: color),
+            const SizedBox(width: 12),
+            Flexible(child: Text(label, style: TextStyle(color: color))),
+          ],
+        );
+
+    return PopupMenuButton<String>(
+      tooltip: l.actionsLabel,
+      position: PopupMenuPosition.under,
+      onSelected: (value) {
+        switch (value) {
+          case 'delete':
+            _bulkDelete();
+            break;
+          case 'columns':
+            _showColumnPicker(context);
+            break;
+          case 'import':
+            _openImport();
+            break;
+          case 'export':
+            _showExportDialog(context, ref);
+            break;
+        }
+      },
+      itemBuilder: (_) => [
+        PopupMenuItem<String>(
+          value: 'delete',
+          height: 52,
+          enabled: hasSelection,
+          child: item(
+            Icons.delete_rounded,
+            hasSelection
+                ? l.deleteWithCount(_selectedIds.length)
+                : l.actionDelete,
+            color: hasSelection ? context.dangerColor : theme.disabledColor,
+          ),
+        ),
+        const PopupMenuDivider(),
+        PopupMenuItem<String>(
+          value: 'columns',
+          height: 52,
+          child: item(Icons.view_column_rounded, l.columns),
+        ),
+        PopupMenuItem<String>(
+          value: 'import',
+          height: 52,
+          child: item(Icons.download_rounded, l.importLabel),
+        ),
+        PopupMenuItem<String>(
+          value: 'export',
+          height: 52,
+          child: item(Icons.upload_rounded, l.exportLabel),
+        ),
+      ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (!context.isCompact) ...[
+              Text(l.actionsLabel,
+                  style: theme.textTheme.labelLarge
+                      ?.copyWith(color: theme.colorScheme.onSurface)),
+              const SizedBox(width: 4),
+            ],
+            const Icon(Icons.more_vert, size: 22),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final hasSelection = _selectedIds.isNotEmpty;
+    final l = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         automaticallyImplyLeading: false,
+        // Taller than the 56px default: the bar carries chips and the scope
+        // toggles, and squeezing those into a standard toolbar is exactly what
+        // makes them mouse-sized.
+        toolbarHeight: 72,
+        titleSpacing: 12,
         leading: widget.onMenuPressed != null
             ? IconButton(
                 icon: const Icon(Icons.menu),
                 onPressed: widget.onMenuPressed,
               )
             : null,
-        title: Text(AppLocalizations.of(context).products),
         backgroundColor: theme.colorScheme.surface,
-        actions: [
-          TextButton.icon(
-            icon: Icon(Icons.delete_rounded,
-                color: hasSelection ? context.dangerColor : theme.disabledColor),
-            label: Text(
-              hasSelection
-                  ? AppLocalizations.of(context)
-                      .deleteWithCount(_selectedIds.length)
-                  : AppLocalizations.of(context).actionDelete,
-              style: TextStyle(
-                  color:
-                      hasSelection ? context.dangerColor : theme.disabledColor),
-            ),
-            onPressed: hasSelection ? _bulkDelete : null,
-          ),
-          const SizedBox(width: 4),
-          TextButton.icon(
-            icon: const Icon(Icons.view_column_rounded),
-            label: Text(AppLocalizations.of(context).columns),
-            onPressed: () => _showColumnPicker(context),
-          ),
-          const SizedBox(width: 4),
-          TextButton.icon(
-            icon: const Icon(Icons.download_rounded),
-            label: Text(AppLocalizations.of(context).importLabel),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const ProductImportScreen()),
-            ).then((_) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                ref.invalidate(productsByGroupProvider);
-              });
-            }),
-          ),
-          const SizedBox(width: 4),
-          TextButton.icon(
-            icon: const Icon(Icons.upload_rounded),
-            label: Text(AppLocalizations.of(context).exportLabel),
-            onPressed: () => _showExportDialog(context, ref),
-          ),
-          const SizedBox(width: 8),
-          ElevatedButton.icon(
-            icon: const Icon(Icons.add),
-            label: Text(AppLocalizations.of(context).addProduct),
-            style: ElevatedButton.styleFrom(
-                backgroundColor: theme.colorScheme.primary,
-                foregroundColor: theme.colorScheme.onPrimary),
-            onPressed: () async {
-              final result = await showDialog(
-                context: context,
-                builder: (_) =>
-                    const _ProductEditorDialog(isPostCreation: false),
-              );
-              ref.invalidate(productsByGroupProvider);
-              if (result is Product && context.mounted) {
-                if (result.isPendingCreate) {
-                  // Product has a temp id — it doesn't exist on the server yet.
-                  // Tax/barcode/stock setup requires a real server id; skip Phase 2
-                  // and tell the user to sync first.
-                  showAppSnackbar(context, ref,
-                      AppLocalizations.of(context).productSavedLocallySyncFirst);
-                } else {
-                  showDialog(
-                    context: context,
-                    builder: (_) => _ProductEditorDialog(
-                        existingProduct: result, isPostCreation: true),
-                  ).then((_) => ref.invalidate(productsByGroupProvider));
-                }
-              }
-            },
-          ),
-          const SizedBox(width: 16),
-        ],
-      ),
-      body: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // LEFT SIDEBAR
-          Container(
-            width: ref.watch(groupSidebarWidthProvider),
-            color: theme.colorScheme.surface,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  color: theme.colorScheme.surfaceContainerHighest,
-                  child: Text(AppLocalizations.of(context).categoriesHeader,
-                      style: theme.textTheme.labelMedium?.copyWith(
-                          fontWeight: FontWeight.bold, letterSpacing: 1.2)),
-                ),
-                const Expanded(child: _GroupTreeSidebar()),
-              ],
-            ),
-          ),
-          // Drag handle — same interaction as the cart panel on the menu
-          // screen: live resize on drag, one write to on-device storage when
-          // the drag settles. Local only, so it never affects another terminal.
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onHorizontalDragUpdate: (details) {
-              final maxWidth = MediaQuery.of(context).size.width * 0.5;
-              // Sidebar is on the LEFT, so dragging right grows it.
-              final newWidth =
-                  ref.read(groupSidebarWidthProvider) + details.delta.dx;
-              ref.read(groupSidebarWidthProvider.notifier).set(
-                  newWidth > maxWidth ? maxWidth : newWidth);
-            },
-            onHorizontalDragEnd: (_) {
-              ref.read(groupSidebarWidthProvider.notifier).persist();
-            },
-            child: const MouseRegion(
-              cursor: SystemMouseCursors.resizeLeftRight,
-              child: SizedBox(
-                width: 8,
-                child: VerticalDivider(width: 8, thickness: 1),
-              ),
-            ),
-          ),
-          // RIGHT AREA
-          Expanded(
-            child: _ProductListContent(
-              selectedIds: Set.from(_selectedIds),
-              onSelectionChanged: _updateSelection,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// --- CUSTOM TREE SIDEBAR WIDGET ---
-class _GroupTreeSidebar extends ConsumerWidget {
-  const _GroupTreeSidebar();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final asyncGroups = ref.watch(allProductGroupsProvider);
-
-    return asyncGroups.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text(AppLocalizations.of(context).errorLoadingGroups)),
-        data: (groups) {
-          final rootGroups = groups
-              .where((g) => g.parentGroupId == null)
-              .toList()
-            ..sort((a, b) => a.rank.compareTo(b.rank));
-
-          return ListView(
-            children: [
-              Material(
-                color: Colors.transparent,
-                child: ListTile(
-                  leading: Icon(Icons.all_inbox, color: Theme.of(context).colorScheme.primary),
-                  title: Text(AppLocalizations.of(context).allProducts,
-                      style: const TextStyle(fontWeight: FontWeight.bold)),
-                  selected: ref.watch(selectedProductGroupIdProvider) == null,
-                  selectedTileColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                  onTap: () => ref
-                      .read(selectedProductGroupIdProvider.notifier)
-                      .state = null,
-                ),
-              ),
-              Divider(height: 1, color: Theme.of(context).dividerColor.withValues(alpha: 0.1)),
-              ...rootGroups.map((g) =>
-                  _TreeNode(group: g, allGroups: groups, depth: 0, ref: ref)),
+        title: Row(
+          children: [
+            // The title yields to the search bar first — on a narrow tablet the
+            // bar is the control and the word "Products" is decoration.
+            if (!context.isCompact) ...[
+              Text(l.products),
+              const SizedBox(width: 20),
             ],
-          );
-        });
-  }
-}
-
-// --- RECURSIVE TREE NODE ---
-class _TreeNode extends StatefulWidget {
-  final ProductGroup group;
-  final List<ProductGroup> allGroups;
-  final int depth;
-  final WidgetRef ref;
-
-  const _TreeNode(
-      {required this.group,
-      required this.allGroups,
-      required this.depth,
-      required this.ref});
-
-  @override
-  State<_TreeNode> createState() => _TreeNodeState();
-}
-
-class _TreeNodeState extends State<_TreeNode> {
-  bool _isExpanded = true;
-
-  @override
-  Widget build(BuildContext context) {
-    final children = widget.allGroups
-        .where((g) => g.parentGroupId == widget.group.id)
-        .toList()
-      ..sort((a, b) => a.rank.compareTo(b.rank));
-    final hasChildren = children.isNotEmpty;
-    final isSelected =
-        widget.ref.watch(selectedProductGroupIdProvider) == widget.group.id;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        InkWell(
-          onTap: () => widget.ref
-              .read(selectedProductGroupIdProvider.notifier)
-              .state = widget.group.id,
-          child: Container(
-            color: isSelected
-                ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
-                : Colors.transparent,
-            padding: EdgeInsets.only(
-                left: 8.0 + (widget.depth * 16.0),
-                right: 8.0,
-                top: 6,
-                bottom: 6),
-            child: Row(
-              children: [
-                if (hasChildren)
-                  InkWell(
-                    onTap: () => setState(() => _isExpanded = !_isExpanded),
-                    borderRadius: BorderRadius.circular(4),
-                    child: Padding(
-                      padding: const EdgeInsets.all(4.0),
-                      child: Icon(
-                          _isExpanded
-                              ? Icons.arrow_drop_down
-                              : Icons.arrow_right,
-                          size: 22,
-                          color: Colors.grey[700]),
-                    ),
-                  )
-                else
-                  const SizedBox(width: 30),
-                Icon(
-                    hasChildren
-                        ? (_isExpanded ? Icons.folder_open : Icons.folder)
-                        : Icons.folder_outlined,
-                    color: widget.group.flutterColor,
-                    size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(widget.group.name,
-                      style: TextStyle(
-                          fontWeight:
-                              isSelected ? FontWeight.bold : FontWeight.normal,
-                          color: isSelected
-                              ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context).textTheme.bodyMedium?.color,
-                          fontSize: 14)),
-                ),
-              ],
-            ),
-          ),
+            Expanded(child: _buildSearchBar(context)),
+          ],
         ),
-        if (_isExpanded && hasChildren)
-          ...children.map((c) => _TreeNode(
-              group: c,
-              allGroups: widget.allGroups,
-              depth: widget.depth + 1,
-              ref: widget.ref)),
-      ],
+        actions: [
+          _buildActionsMenu(context, theme),
+          const SizedBox(width: 8),
+        ],
+      ),
+      // Full width — no sidebar, no drag handle, no reserved gutter.
+      body: _ProductListContent(
+        query: _query,
+        scope: _scope,
+        selectedIds: Set.from(_selectedIds),
+        onSelectionChanged: _updateSelection,
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _addProduct,
+        icon: const Icon(Icons.add),
+        label: Text(l.addProduct),
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
+      ),
     );
   }
 }
 
 // --- PRODUCT DATA TABLE WIDGET ---
-class _ProductListContent extends ConsumerStatefulWidget {
-  final Set<int> selectedIds;
-  final ValueChanged<Set<int>> onSelectionChanged;
 
+/// Starting widths per column key. Every one of them is draggable from its
+/// header edge and persisted per device by [IlyassTable], so these are only
+/// what an operator who has never touched a handle sees.
+const _kProductColumnWidths = <String, double>{
+  'image': 78,
+  'color': 72,
+  'code': 130,
+  'name': 260,
+  'category': 160,
+  'price': 120,
+  'cost': 120,
+  'plu': 90,
+  'unit': 100,
+  'markup': 110,
+  'lastPurchase': 140,
+  'ageRestriction': 120,
+  'rank': 90,
+  'taxInclusive': 120,
+  'service': 100,
+  'priceChange': 130,
+  'enabled': 110,
+  'description': 280,
+  'created': 140,
+  'updated': 140,
+};
+
+class _ProductListContent extends ConsumerWidget {
   const _ProductListContent({
+    required this.query,
+    required this.scope,
     required this.selectedIds,
     required this.onSelectionChanged,
   });
 
-  @override
-  ConsumerState<_ProductListContent> createState() =>
-      _ProductListContentState();
-}
-
-class _ProductListContentState extends ConsumerState<_ProductListContent> {
-  // Search state is LOCAL, not a provider: leaving the screen must clear the
-  // filter. A global provider would have the admin come back to a silently
-  // filtered catalogue and read it as missing products. It is also separate
-  // from the POS menu's `searchQueryProvider` on purpose — the two screens are
-  // used at the same time on the same terminal.
-  final _searchCtrl = TextEditingController();
-  String _query = '';
-  // Defaults to the widest scope. Unlike the POS menu this is NOT driven by
-  // `Menu.DefaultSearch`: that setting is about the cashier's till, and an admin
-  // hunting for a product should not have to guess which field it lives in.
-  String _scope = ProductSearchScope.allFields;
+  final String query;
+  final String scope;
+  final Set<int> selectedIds;
+  final ValueChanged<Set<int>> onSelectionChanged;
 
   @override
-  void dispose() {
-    _searchCtrl.dispose();
-    super.dispose();
-  }
-
-  /// Selection is by id and survives filtering, so a row hidden by the search
-  /// would still be deleted by the toolbar's Delete button while showing as
-  /// unselected. Clearing on every filter change is the same rule the category
-  /// sidebar already follows.
-  void _setFilter({String? query, String? scope}) {
-    setState(() {
-      if (query != null) _query = query;
-      if (scope != null) _scope = scope;
-    });
-    if (widget.selectedIds.isNotEmpty) widget.onSelectionChanged({});
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final selectedIds = widget.selectedIds;
-    final onSelectionChanged = widget.onSelectionChanged;
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     final sym = ref.watch(currencySymbolProvider);
     final asyncProducts = ref.watch(productsByGroupProvider);
     final groups = ref.watch(allProductGroupsProvider).value ?? [];
@@ -855,309 +935,322 @@ class _ProductListContentState extends ConsumerState<_ProductListContent> {
     final extraBarcodes =
         ref.watch(allBarcodesByProductIdProvider).value ?? const {};
 
-    // Clear selection whenever the category filter changes.
-    ref.listen(selectedProductGroupIdProvider, (_, __) {
-      onSelectionChanged({});
-    });
-
-    // The bar is ALWAYS mounted — outside every `when` branch and above the
-    // empty state. Rendering it inside the data branch would make it vanish the
-    // moment a query matched nothing, trapping the operator with no way to
-    // clear what they just typed.
-    Widget withSearchBar(Widget child) => Column(
-          children: [
-            ProductSearchBar(
-              controller: _searchCtrl,
-              query: _query,
-              scope: _scope,
-              hintText: AppLocalizations.of(context).searchProductsHint,
-              onQueryChanged: (v) => _setFilter(query: v),
-              onScopeChanged: (s) => _setFilter(scope: s),
-            ),
-            Expanded(child: child),
-          ],
-        );
+    // Only the columns the user has chosen to keep, in catalogue order.
+    final visibleCols = ref.watch(productVisibleColumnsProvider);
+    final activeCols = kProductColumns
+        .where((c) => visibleCols[c.key] ?? c.defaultVisible)
+        .toList();
 
     return asyncProducts.when(
-        loading: () => withSearchBar(
-            const Center(child: CircularProgressIndicator())),
-        error: (e, _) => withSearchBar(Center(
-            child: Text(AppLocalizations.of(context)
-                .errorWithMessage(_parseApiError(context, e))))),
-        data: (allProducts) {
-          final products = _query.trim().isEmpty
-              ? allProducts
-              : allProducts
-                  .where((p) => productMatchesSearch(
-                        p,
-                        _query,
-                        _scope,
-                        extraBarcodes: extraBarcodes[p.id] ?? const [],
-                      ))
-                  .toList();
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) =>
+          Center(child: Text(l.errorWithMessage(_parseApiError(context, e)))),
+      data: (allProducts) {
+        final products = query.trim().isEmpty
+            ? allProducts
+            : allProducts
+                .where((p) => productMatchesSearch(
+                      p,
+                      query,
+                      scope,
+                      extraBarcodes: extraBarcodes[p.id] ?? const [],
+                    ))
+                .toList();
 
-          if (products.isEmpty) {
-            return withSearchBar(Center(
-                child: Text(
-                    _query.trim().isEmpty
-                        ? AppLocalizations.of(context).noProductsFound
-                        : AppLocalizations.of(context)
-                            .noProductsMatchSearch(_query.trim()),
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                        color: Theme.of(context).hintColor, fontSize: 18))));
+        final effectiveSelected =
+            selectedIds.intersection(products.map((p) => p.id).toSet());
+
+        String groupNameFor(Product p) =>
+            groups.where((g) => g.id == p.productGroupId).firstOrNull?.name ??
+            '-';
+
+        void toggle(int id, bool on) {
+          final next = Set<int>.from(selectedIds);
+          if (on) {
+            next.add(id);
+          } else {
+            next.remove(id);
           }
+          onSelectionChanged(next);
+        }
 
-          final effectiveSelected =
-              selectedIds.intersection(products.map((p) => p.id).toSet());
+        // Every product row opens the editor. The pencil column was a 40px
+        // target on a screen driven by fingers; the row is 900 of them.
+        void openEditor(Product p) => showDialog(
+              context: context,
+              builder: (_) => _ProductEditorDialog(existingProduct: p),
+            ).then((_) => ref.invalidate(productsByGroupProvider));
 
-          // Only the columns the user has chosen to keep, in catalogue order.
-          final visibleCols = ref.watch(productVisibleColumnsProvider);
-          final activeCols = kProductColumns
-              .where((c) => visibleCols[c.key] ?? c.defaultVisible)
-              .toList();
-
-          String groupNameFor(Product p) =>
-              groups.where((g) => g.id == p.productGroupId).firstOrNull?.name ??
-              '-';
-
-          Widget boolCell(bool v) => Icon(
-                v ? Icons.check_circle : Icons.remove_circle_outline,
-                size: 18,
-                color: v ? context.successColor : theme.disabledColor,
-              );
-
-          DataCell cellFor(ProductColumnDef col, Product p) {
-            switch (col.key) {
-              case 'image':
-                // Prefer FileImage over MemoryImage — Flutter caches FileImage
-                // by path so the same thumbnail decodes once across the grid.
-                final ImageProvider? provider = p.imageFile != null
-                    ? FileImage(p.imageFile!)
-                    : (p.imageBytes != null ? MemoryImage(p.imageBytes!) : null);
-                // No image → tint the placeholder with the colour marker so a
-                // coloured product reads as coloured here too, not grey.
-                final marker = p.markerColor;
-                return DataCell(Container(
-                  width: 45,
-                  height: 45,
-                  decoration: BoxDecoration(
-                    color: provider == null && marker != null
-                        ? marker.withValues(alpha: 0.20)
-                        : theme.colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(6),
-                    image: provider != null
-                        ? DecorationImage(image: provider, fit: BoxFit.cover)
-                        : null,
-                  ),
-                  child: provider == null
-                      ? PhosphorIcon(PhosphorIconsRegular.forkKnife,
-                          color: marker != null
-                              ? marker.withValues(alpha: 0.9)
-                              : theme.hintColor)
-                      : null,
-                ));
-              case 'color':
-                final marker = p.markerColor;
-                return DataCell(marker == null
-                    ? const Text('-')
-                    : Container(
-                        width: 22,
-                        height: 22,
-                        decoration: BoxDecoration(
-                          color: marker,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                              color: theme.colorScheme.outlineVariant,
-                              width: 1),
-                        ),
-                      ));
-              case 'code':
-                return DataCell(Text(p.code ?? '-'));
-              case 'name':
-                return DataCell(ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 260),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Flexible(
-                        child: Text(
-                          p.name,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              decoration: p.isEnabled
-                                  ? null
-                                  : TextDecoration.lineThrough),
-                        ),
-                      ),
-                      if (p.isPendingSync) ...[
-                        const SizedBox(width: 6),
-                        Tooltip(
-                          message: p.isPendingCreate
-                              ? AppLocalizations.of(context).pendingSyncNew
-                              : AppLocalizations.of(context).pendingSyncUpdate,
-                          child: Icon(Icons.cloud_upload_outlined,
-                              size: 14, color: theme.colorScheme.tertiary),
-                        ),
-                      ],
-                    ],
-                  ),
-                ));
-              case 'category':
-                return DataCell(Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                      color: theme.colorScheme.primaryContainer
-                          .withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(6)),
-                  child: Text(groupNameFor(p),
-                      style: TextStyle(
-                          color: theme.colorScheme.primary,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold)),
-                ));
-              case 'price':
-                return DataCell(Text("${p.price.toStringAsFixed(2)} $sym",
-                    style: TextStyle(
-                        color: context.successColor,
-                        fontWeight: FontWeight.bold)));
-              case 'cost':
-                return DataCell(Text("${p.cost.toStringAsFixed(2)} $sym",
-                    style: TextStyle(color: context.dangerColor)));
-              case 'plu':
-                return DataCell(Text(p.plu?.toString() ?? '-'));
-              case 'unit':
-                return DataCell(Text(p.measurementUnit ?? '-'));
-              case 'markup':
-                return DataCell(Text(
-                    p.markup != null ? '${p.markup!.toStringAsFixed(1)}%' : '-'));
-              case 'lastPurchase':
-                return DataCell(Text(p.lastPurchasePrice != null
-                    ? '${p.lastPurchasePrice!.toStringAsFixed(2)} $sym'
-                    : '-'));
-              case 'ageRestriction':
-                return DataCell(Text(p.ageRestriction?.toString() ?? '-'));
-              case 'rank':
-                return DataCell(Text(p.rank?.toString() ?? '-'));
-              case 'taxInclusive':
-                return DataCell(boolCell(p.isTaxInclusivePrice));
-              case 'service':
-                return DataCell(boolCell(p.isService));
-              case 'priceChange':
-                return DataCell(boolCell(p.isPriceChangeAllowed));
-              case 'enabled':
-                return DataCell(boolCell(p.isEnabled));
-              case 'description':
-                return DataCell(ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 260),
-                  child: Text(p.description ?? '-',
-                      maxLines: 2, overflow: TextOverflow.ellipsis),
-                ));
-              case 'created':
-                return DataCell(Text(p.dateCreated ?? '-'));
-              case 'updated':
-                return DataCell(Text(p.dateUpdated ?? '-'));
-              case 'actions':
-                return DataCell(IconButton(
-                  icon: Icon(Icons.edit,
-                      color: theme.colorScheme.primary, size: 20),
-                  onPressed: () => showDialog(
-                          context: context,
-                          builder: (_) =>
-                              _ProductEditorDialog(existingProduct: p))
-                      .then((_) => ref.invalidate(productsByGroupProvider)),
-                ));
-              default:
-                return const DataCell(Text('-'));
-            }
-          }
-
-          // Horizontal scroll lets the grid grow past the viewport as more
-          // columns are enabled, while ConstrainedBox keeps it filling the
-          // width when only a few are shown.
-          return withSearchBar(LayoutBuilder(builder: (context, constraints) {
-            return SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minWidth: constraints.maxWidth),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Card(
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(
-                          color: theme.dividerColor.withValues(alpha: 0.1)),
-                    ),
-                    color: theme.cardColor,
-                    clipBehavior: Clip.antiAlias,
-                    child: DataTable(
-                      headingRowColor: WidgetStateProperty.all(
-                          theme.colorScheme.surfaceContainerHighest),
-                      dataRowMaxHeight: 65,
-                      onSelectAll: (val) => onSelectionChanged(
-                          val == true ? products.map((p) => p.id).toSet() : {}),
-                      // The ConstrainedBox above already makes the table fill
-                      // its pane, but with no flex column `RenderTable` spreads
-                      // the surplus EQUALLY — a numeric price column stretches
-                      // as much as a product name. Give the slack to the first
-                      // TEXT column (the name, in every default layout).
-                      //
-                      // NB when exactly one column is non-numeric, DataTable
-                      // already flexes it on its own (`_onlyTextColumn`); this
-                      // just makes the behaviour hold for the usual case of
-                      // several text columns.
-                      columns: () {
-                        final flexKey = activeCols
-                            .where((c) => !c.numeric)
-                            .firstOrNull
-                            ?.key;
-                        return activeCols
-                            .map((c) => DataColumn(
-                                label:
-                                    Text(productColumnLabel(context, c.key)),
-                                numeric: c.numeric,
-                                columnWidth: c.key == flexKey
-                                    ? const IntrinsicColumnWidth(flex: 1)
-                                    : null))
-                            .toList();
-                      }(),
-                      rows: products.map((p) {
-                        return DataRow(
-                          selected: effectiveSelected.contains(p.id),
-                          onSelectChanged: (val) {
-                            final next = Set<int>.from(selectedIds);
-                            if (val == true) {
-                              next.add(p.id);
-                            } else {
-                              next.remove(p.id);
-                            }
-                            onSelectionChanged(next);
-                          },
-                          color: WidgetStateProperty.resolveWith((states) {
-                            if (states.contains(WidgetState.selected)) {
-                              return theme.colorScheme.primary
-                                  .withValues(alpha: 0.08);
-                            }
-                            return p.isEnabled
-                                ? Colors.transparent
-                                : theme.disabledColor.withValues(alpha: 0.05);
-                          }),
-                          cells:
-                              activeCols.map((c) => cellFor(c, p)).toList(),
-                        );
-                      }).toList(),
-                    ),
-                  ),
+        return IlyassTable<Product>(
+          tableId: 'products',
+          rows: products,
+          // Comfortably past the 56px touch minimum, and enough for the 45px
+          // product thumbnail to sit in with air around it.
+          rowHeight: 64,
+          columns: [
+            _selectionColumn(
+              products: products,
+              selected: effectiveSelected,
+              onToggle: toggle,
+              onSelectAll: onSelectionChanged,
+            ),
+            for (final col in activeCols)
+              IlyassColumn<Product>(
+                key: col.key,
+                label: productColumnLabel(context, col.key),
+                width: _kProductColumnWidths[col.key] ?? 140,
+                numeric: col.numeric,
+                // Name is mandatory, so there is always exactly one column to
+                // hand the surplus to and never a dead zone on the right.
+                flexible: col.key == 'name',
+                cell: (context, p) => _cell(
+                  context: context,
+                  theme: theme,
+                  key: col.key,
+                  product: p,
+                  sym: sym,
+                  groupNameFor: groupNameFor,
                 ),
               ),
-            );
-          }));
-        });
+          ],
+          onRowTap: openEditor,
+          isRowSelected: (p) => effectiveSelected.contains(p.id),
+          // A disabled product still reads as one at a glance, the way the
+          // struck-through name and the Enabled column already say it.
+          rowColor: (p) =>
+              p.isEnabled ? null : theme.disabledColor.withValues(alpha: 0.05),
+          emptyState: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.inventory_2_outlined,
+                      size: 64,
+                      color: theme.disabledColor.withValues(alpha: 0.3)),
+                  const SizedBox(height: 16),
+                  Text(
+                    query.trim().isEmpty
+                        ? l.noProductsFound
+                        : l.noProductsMatchSearch(query.trim()),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: theme.hintColor, fontSize: 18),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// The checkbox column. Fixed width and not resizable — dragging it out is
+  /// pure dead space — and the whole 40×40 box is the target, not the 18px
+  /// tick in the middle of it.
+  ///
+  /// 🚨 The [GestureDetector] here is what keeps the ROW's tap from firing:
+  /// it sits deeper in the hit test than [IlyassTable]'s row handler, so it
+  /// wins the gesture arena and ticking a box never opens the editor.
+  IlyassColumn<Product> _selectionColumn({
+    required List<Product> products,
+    required Set<int> selected,
+    required void Function(int id, bool on) onToggle,
+    required ValueChanged<Set<int>> onSelectAll,
+  }) {
+    final allSelected =
+        products.isNotEmpty && selected.length == products.length;
+
+    Widget box({required bool? value, required VoidCallback onTap}) =>
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onTap,
+          child: SizedBox(
+            width: 40,
+            height: 40,
+            // The checkbox is painted, never tapped: one recognizer for the
+            // whole cell beats two competing for the same 40px.
+            child: IgnorePointer(
+              child: Checkbox(
+                tristate: true,
+                value: value,
+                onChanged: (_) {},
+              ),
+            ),
+          ),
+        );
+
+    return IlyassColumn<Product>(
+      key: 'select',
+      label: '',
+      width: 64,
+      minWidth: 64,
+      resizable: false,
+      // Tristate: all / none / some, so a partial selection is visible in the
+      // header rather than reading as "nothing is selected".
+      header: (context) => box(
+        value: allSelected ? true : (selected.isEmpty ? false : null),
+        onTap: () =>
+            onSelectAll(allSelected ? {} : products.map((p) => p.id).toSet()),
+      ),
+      cell: (context, p) {
+        final isOn = selected.contains(p.id);
+        return box(value: isOn, onTap: () => onToggle(p.id, !isOn));
+      },
+    );
+  }
+
+  Widget _cell({
+    required BuildContext context,
+    required ThemeData theme,
+    required String key,
+    required Product product,
+    required String sym,
+    required String Function(Product) groupNameFor,
+  }) {
+    final p = product;
+
+    Widget boolCell(bool v) => Icon(
+          v ? Icons.check_circle : Icons.remove_circle_outline,
+          size: 18,
+          color: v ? context.successColor : theme.disabledColor,
+        );
+
+    switch (key) {
+      case 'image':
+        // Prefer FileImage over MemoryImage — Flutter caches FileImage by path
+        // so the same thumbnail decodes once across the grid.
+        final ImageProvider? provider = p.imageFile != null
+            ? FileImage(p.imageFile!)
+            : (p.imageBytes != null ? MemoryImage(p.imageBytes!) : null);
+        // No image → tint the placeholder with the colour marker so a coloured
+        // product reads as coloured here too, not grey.
+        final marker = p.markerColor;
+        return Container(
+          width: 45,
+          height: 45,
+          decoration: BoxDecoration(
+            color: provider == null && marker != null
+                ? marker.withValues(alpha: 0.20)
+                : theme.colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(6),
+            image: provider != null
+                ? DecorationImage(image: provider, fit: BoxFit.cover)
+                : null,
+          ),
+          child: provider == null
+              ? PhosphorIcon(PhosphorIconsRegular.forkKnife,
+                  color: marker != null
+                      ? marker.withValues(alpha: 0.9)
+                      : theme.hintColor)
+              : null,
+        );
+      case 'color':
+        final marker = p.markerColor;
+        return marker == null
+            ? const Text('-')
+            : Container(
+                width: 22,
+                height: 22,
+                decoration: BoxDecoration(
+                  color: marker,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                      color: theme.colorScheme.outlineVariant, width: 1),
+                ),
+              );
+      case 'code':
+        return Text(p.code ?? '-',
+            maxLines: 1, overflow: TextOverflow.ellipsis);
+      case 'name':
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Loose Flexible, not Expanded: the sync badge stays welded to the
+            // end of the name instead of being stranded at the column's edge.
+            Flexible(
+              child: Text(
+                p.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    decoration:
+                        p.isEnabled ? null : TextDecoration.lineThrough),
+              ),
+            ),
+            if (p.isPendingSync) ...[
+              const SizedBox(width: 6),
+              Tooltip(
+                message: p.isPendingCreate
+                    ? AppLocalizations.of(context).pendingSyncNew
+                    : AppLocalizations.of(context).pendingSyncUpdate,
+                child: Icon(Icons.cloud_upload_outlined,
+                    size: 14, color: theme.colorScheme.tertiary),
+              ),
+            ],
+          ],
+        );
+      case 'category':
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+              color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(6)),
+          child: Text(groupNameFor(p),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                  color: theme.colorScheme.primary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold)),
+        );
+      case 'price':
+        return Text("${p.price.toStringAsFixed(2)} $sym",
+            style: TextStyle(
+                color: context.successColor, fontWeight: FontWeight.bold));
+      case 'cost':
+        return Text("${p.cost.toStringAsFixed(2)} $sym",
+            style: TextStyle(color: context.dangerColor));
+      case 'plu':
+        return Text(p.plu?.toString() ?? '-');
+      case 'unit':
+        return Text(p.measurementUnit ?? '-',
+            maxLines: 1, overflow: TextOverflow.ellipsis);
+      case 'markup':
+        return Text(
+            p.markup != null ? '${p.markup!.toStringAsFixed(1)}%' : '-');
+      case 'lastPurchase':
+        return Text(p.lastPurchasePrice != null
+            ? '${p.lastPurchasePrice!.toStringAsFixed(2)} $sym'
+            : '-');
+      case 'ageRestriction':
+        return Text(p.ageRestriction?.toString() ?? '-');
+      case 'rank':
+        return Text(p.rank?.toString() ?? '-');
+      case 'taxInclusive':
+        return boolCell(p.isTaxInclusivePrice);
+      case 'service':
+        return boolCell(p.isService);
+      case 'priceChange':
+        return boolCell(p.isPriceChangeAllowed);
+      case 'enabled':
+        return boolCell(p.isEnabled);
+      case 'description':
+        return Text(p.description ?? '-',
+            maxLines: 2, overflow: TextOverflow.ellipsis);
+      case 'created':
+        return Text(p.dateCreated ?? '-',
+            maxLines: 1, overflow: TextOverflow.ellipsis);
+      case 'updated':
+        return Text(p.dateUpdated ?? '-',
+            maxLines: 1, overflow: TextOverflow.ellipsis);
+      default:
+        return const Text('-');
+    }
   }
 }
+
 
 // --- ADD/EDIT TABBED DIALOG ---
 class _ProductEditorDialog extends ConsumerStatefulWidget {
@@ -2443,10 +2536,16 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
     final asyncComments = ref.watch(productCommentsProvider(productId));
     final companyId = ref.read(selectedCompanyProvider)?.id;
 
-    return Padding(
-      padding: const EdgeInsets.all(32.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    // 🚨 Scrollable, and it has to be. This was a fixed Column with the comment
+    // list in an Expanded, which works only while everything above it is short.
+    // Attaching a handful of groups on a 10-inch tablet overflowed the tab —
+    // the exact RenderFlex failure the house rules call out. Capped at the
+    // readable width too, so the fields do not stretch across a desktop.
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: kMaxReadableWidth),
+        child: ListView(
+        padding: const EdgeInsets.all(32.0),
         children: [
           Text(AppLocalizations.of(context).productModifiersComments,
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
@@ -2527,8 +2626,8 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
           const SizedBox(height: 32),
 
           // LIST OF COMMENTS
-          Expanded(
-            child: asyncComments.when(
+          Builder(
+            builder: (context) => asyncComments.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (e, _) => Center(
                     child: Text(AppLocalizations.of(context).errorWithMessage(_parseApiError(context, e)),
@@ -2547,6 +2646,10 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: ListView.separated(
+                      // Sized by its content now that the tab scrolls — a
+                      // nested scroller inside a scroller traps the drag.
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
                       itemCount: comments.length,
                       separatorBuilder: (_, __) => const Divider(height: 1),
                       itemBuilder: (context, index) {
@@ -2589,8 +2692,9 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                     ),
                   );
                 }),
-          )
+          ),
         ],
+        ),
       ),
     );
   }
@@ -2968,12 +3072,12 @@ class _ProductModifierGroupsPicker extends ConsumerWidget {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
-    final attachedAsync = ref.watch(productModifierGroupIdsProvider(productId));
-    final allAsync = ref.watch(allModifierGroupsProvider);
-
-    final attached = attachedAsync.value ?? const <int>[];
-    final all = allAsync.value ?? const <ModifierGroup>[];
+    final attached = ref.watch(productModifierGroupIdsProvider(productId)).value ??
+        const <int>[];
+    final all = ref.watch(allModifierGroupsProvider).value ??
+        const <ModifierGroup>[];
     final byId = {for (final g in all) g.id: g};
+    final available = all.where((g) => !attached.contains(g.id)).toList();
 
     Future<void> write(List<int> ids) async {
       final companyId = ref.read(selectedCompanyProvider)?.id;
@@ -2983,7 +3087,10 @@ class _ProductModifierGroupsPicker extends ConsumerWidget {
             productId: productId,
             groupIds: ids,
           );
-      ref.read(syncStateProvider.notifier).sync().catchError((_) {});
+      unawaited(ref
+          .read(syncManagerProvider)
+          .sync(companyId)
+          .catchError((Object _) => <String>[]));
     }
 
     return Column(
@@ -2996,18 +3103,30 @@ class _ProductModifierGroupsPicker extends ConsumerWidget {
         const SizedBox(height: 12),
 
         if (attached.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Text(l10n.noGroupsAttached,
-                style: TextStyle(color: cs.onSurfaceVariant)),
+          _HintCard(
+            icon: Icons.info_outline,
+            // Two different empty states, because they need different actions:
+            // "nothing attached" is a choice, "no groups exist" is a dead end
+            // unless the operator is told where to go.
+            text: all.isEmpty
+                ? l10n.noModifierGroupsExistYet
+                : l10n.noGroupsAttached,
           )
-        else
-          for (var i = 0; i < attached.length; i++)
-            Builder(builder: (context) {
-              final g = byId[attached[i]];
-              // A link whose group is gone locally still has to be removable,
-              // so it renders by id rather than being silently skipped.
+        else ...[
+          ReorderableListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            buildDefaultDragHandles: false,
+            itemCount: attached.length,
+            onReorder: (oldIndex, newIndex) =>
+                write(reorderedForDrag(attached, oldIndex, newIndex)),
+            itemBuilder: (context, i) {
+              final id = attached[i];
+              final g = byId[id];
+              // A link whose group is not cached locally still has to be
+              // removable, so it renders by id rather than being skipped.
               return Card(
+                key: ValueKey(id),
                 elevation: 0,
                 margin: const EdgeInsets.only(bottom: 6),
                 shape: RoundedRectangleBorder(
@@ -3015,85 +3134,252 @@ class _ProductModifierGroupsPicker extends ConsumerWidget {
                   side: BorderSide(color: cs.outlineVariant),
                 ),
                 child: ListTile(
-                  dense: true,
-                  leading: CircleAvatar(
-                    radius: 12,
-                    backgroundColor: cs.secondaryContainer,
-                    child: Text('${i + 1}',
-                        style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: cs.onSecondaryContainer)),
+                  leading: ReorderableDragStartListener(
+                    index: i,
+                    child: Tooltip(
+                      message: l10n.dragToReorderGroups,
+                      child: Padding(
+                        // Finger-sized: the handle is the control this list is
+                        // driven by on a touch screen.
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 4, vertical: 12),
+                        child: Icon(Icons.drag_indicator, color: cs.outline),
+                      ),
+                    ),
                   ),
-                  title: Text(g?.name ?? '#${attached[i]}'),
+                  title: Text(g?.name ?? '#$id',
+                      style: const TextStyle(fontWeight: FontWeight.w600)),
                   subtitle: g == null
                       ? null
                       : Text(
                           '${selectionRuleLabel(context, g)} · '
                           '${l10n.optionCount(g.options.length)}',
                           style: TextStyle(color: cs.onSurfaceVariant)),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_upward, size: 18),
-                        tooltip: l10n.moveUp,
-                        onPressed: i == 0
-                            ? null
-                            : () {
-                                final next = [...attached];
-                                next.insert(i - 1, next.removeAt(i));
-                                write(next);
-                              },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.arrow_downward, size: 18),
-                        tooltip: l10n.moveDown,
-                        onPressed: i == attached.length - 1
-                            ? null
-                            : () {
-                                final next = [...attached];
-                                next.insert(i + 1, next.removeAt(i));
-                                write(next);
-                              },
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.close, size: 18, color: cs.error),
-                        tooltip: l10n.actionDelete,
-                        onPressed: () =>
-                            write([...attached]..removeAt(i)),
-                      ),
-                    ],
+                  trailing: IconButton(
+                    icon: Icon(Icons.close, color: cs.error),
+                    tooltip: l10n.actionDelete,
+                    onPressed: () => write([...attached]..removeAt(i)),
                   ),
                 ),
               );
-            }),
+            },
+          ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(l10n.dragToReorderGroups,
+                style: TextStyle(color: theme.hintColor, fontSize: 11)),
+          ),
+        ],
 
-        const SizedBox(height: 8),
+        const SizedBox(height: 4),
         Align(
           alignment: AlignmentDirectional.centerStart,
-          child: PopupMenuButton<int>(
-            enabled: all.any((g) => !attached.contains(g.id)),
-            onSelected: (id) => write([...attached, id]),
-            itemBuilder: (_) => [
-              for (final g in all.where((g) => !attached.contains(g.id)))
-                PopupMenuItem(
-                  value: g.id,
-                  child: Text(g.isEnabled
-                      ? g.name
-                      : '${g.name} (${l10n.groupIsDisabled})'),
-                ),
-            ],
-            child: TextButton.icon(
-              // The button is the popup's child, so its own onPressed must be
-              // null or it would swallow the tap before the menu opens.
-              onPressed: null,
-              icon: const Icon(Icons.add, size: 18),
-              label: Text(l10n.attachModifierGroup),
+          child: FilledButton.tonalIcon(
+            // A real button with a real callback. It was previously a
+            // TextButton with onPressed: null nested inside a PopupMenuButton,
+            // which rendered permanently greyed out and looked broken — the
+            // popup worked, but nothing about the control said so.
+            onPressed: available.isEmpty
+                ? null
+                : () async {
+                    final picked = await showDialog<int>(
+                      context: context,
+                      builder: (_) => _ModifierGroupPickerDialog(
+                        groups: available,
+                      ),
+                    );
+                    if (picked != null) await write([...attached, picked]);
+                  },
+            icon: const Icon(Icons.add),
+            label: Text(
+              // Says WHY it is unavailable instead of sitting silently dead.
+              all.isEmpty
+                  ? l10n.noModifierGroupsYet
+                  : available.isEmpty
+                      ? l10n.allModifierGroupsAttached
+                      : l10n.attachModifierGroup,
             ),
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Picks one group to attach, showing enough of it to choose without leaving.
+///
+/// A bare list of names is not enough: two groups called "Extras" differ only
+/// by their rule and their prices, and attaching the wrong one is discovered at
+/// the till. Each row therefore carries its selection rule and its choices.
+class _ModifierGroupPickerDialog extends StatefulWidget {
+  const _ModifierGroupPickerDialog({required this.groups});
+
+  final List<ModifierGroup> groups;
+
+  @override
+  State<_ModifierGroupPickerDialog> createState() =>
+      _ModifierGroupPickerDialogState();
+}
+
+class _ModifierGroupPickerDialogState
+    extends State<_ModifierGroupPickerDialog> {
+  final _searchCtrl = TextEditingController();
+  String _query = '';
+
+  /// Below this the search box is noise; above it, scrolling for a group is.
+  static const int _searchThreshold = 6;
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final cs = Theme.of(context).colorScheme;
+
+    final shown = _query.isEmpty
+        ? widget.groups
+        : widget.groups
+            .where((g) =>
+                g.name.toLowerCase().contains(_query) ||
+                g.options.any((o) => o.name.toLowerCase().contains(_query)))
+            .toList();
+
+    return AlertDialog(
+      title: Text(l10n.chooseAModifierGroup),
+      content: SizedBox(
+        width: 460,
+        height: 420,
+        child: Column(
+          children: [
+            if (widget.groups.length >= _searchThreshold) ...[
+              TextField(
+                controller: _searchCtrl,
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: l10n.searchProductEllipsis,
+                  prefixIcon: const Icon(Icons.search),
+                  isDense: true,
+                  border: const OutlineInputBorder(),
+                ),
+                onChanged: (v) =>
+                    setState(() => _query = v.trim().toLowerCase()),
+              ),
+              const SizedBox(height: 12),
+            ],
+            Expanded(
+              child: shown.isEmpty
+                  ? Center(
+                      child: Text(l10n.noModifierGroupsYet,
+                          style: TextStyle(color: cs.onSurfaceVariant)),
+                    )
+                  : ListView.separated(
+                      itemCount: shown.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 6),
+                      itemBuilder: (_, i) {
+                        final g = shown[i];
+                        return Card(
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            side: BorderSide(color: cs.outlineVariant),
+                          ),
+                          child: ListTile(
+                            onTap: () => Navigator.pop(context, g.id),
+                            title: Row(
+                              children: [
+                                Flexible(
+                                  flex: 3,
+                                  child: Text(g.name,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.w600)),
+                                ),
+                                if (!g.isEnabled) ...[
+                                  const SizedBox(width: 8),
+                                  Flexible(
+                                    flex: 2,
+                                    child: Text(l10n.groupIsDisabled,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                            color: cs.onSurfaceVariant)),
+                                  ),
+                                ],
+                              ],
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${selectionRuleLabel(context, g)} · '
+                                  '${l10n.optionCount(g.options.length)}',
+                                  style: TextStyle(color: cs.onSurfaceVariant),
+                                ),
+                                if (g.options.isNotEmpty)
+                                  Text(
+                                    g.options.map((o) => o.name).join(' · '),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                        fontSize: 11,
+                                        color: cs.onSurfaceVariant
+                                            .withValues(alpha: 0.8)),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(l10n.actionCancel),
+        ),
+      ],
+    );
+  }
+}
+
+/// A quiet informational block — used where an empty state needs a sentence
+/// rather than a control.
+class _HintCard extends StatelessWidget {
+  const _HintCard({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: cs.onSurfaceVariant),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(text,
+                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
+          ),
+        ],
+      ),
     );
   }
 }

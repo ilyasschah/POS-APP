@@ -7,6 +7,8 @@ import 'package:pos_app/core/responsive.dart';
 import 'package:pos_app/currency/currencies_provider.dart';
 import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:pos_app/modifier/modifier_icons.dart';
 import 'package:pos_app/modifier/modifier_models.dart';
 import 'package:pos_app/modifier/modifier_provider.dart';
 import 'package:pos_app/sync/sync_notifier.dart';
@@ -350,6 +352,7 @@ class _GroupEditorState extends ConsumerState<_GroupEditor> {
   late int _max;
   late bool _allowsFreeText;
   late bool _isEnabled;
+  late String? _iconKey;
 
   bool _saving = false;
   String? _error;
@@ -363,6 +366,9 @@ class _GroupEditorState extends ConsumerState<_GroupEditor> {
     _max = g?.maxSelections ?? 1;
     _allowsFreeText = g?.allowsFreeText ?? false;
     _isEnabled = g?.isEnabled ?? true;
+    // A key from a build that knew more icons than this one falls back to "no
+    // icon" in the picker rather than showing nothing as selected.
+    _iconKey = isKnownModifierIcon(g?.iconKey) ? g!.iconKey : null;
     _options = [
       for (final o in g?.options ?? const <ModifierOption>[])
         _DraftOption(id: o.id, name: o.name, price: o.additionalPrice)
@@ -424,6 +430,7 @@ class _GroupEditorState extends ConsumerState<_GroupEditor> {
             // till as a product that cannot be added.
             maxSelections: _max < _min ? _min : _max,
             allowsFreeText: _allowsFreeText,
+            iconKey: _iconKey,
             rank: widget.group?.rank ?? 0,
             isEnabled: _isEnabled,
             options: [
@@ -525,6 +532,13 @@ class _GroupEditorState extends ConsumerState<_GroupEditor> {
                 border: const OutlineInputBorder(),
                 prefixIcon: const Icon(Icons.label_outline),
               ),
+            ),
+            const SizedBox(height: 20),
+
+            // ── Icon ──────────────────────────────────────────────────────
+            _IconPicker(
+              selected: _iconKey,
+              onChanged: (key) => setState(() => _iconKey = key),
             ),
             const SizedBox(height: 20),
 
@@ -731,6 +745,112 @@ class _NumberField extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Picks the icon a group carries at the till.
+///
+/// A short, fixed row rather than a searchable grid: this is one field on a
+/// form somebody is filling in to get a menu working, not a browsing task. The
+/// eight are generic on purpose — a sauce drop covers ketchup, harissa and mayo
+/// — so nobody has to hunt for their exact product and give up.
+///
+/// "None" is the FIRST option, not a missing state hidden at the end. It is a
+/// legitimate choice, it is the default, and the till has a neutral icon ready
+/// for it.
+class _IconPicker extends StatelessWidget {
+  const _IconPicker({required this.selected, required this.onChanged});
+
+  final String? selected;
+  final ValueChanged<String?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    String labelFor(String key) => switch (key) {
+          'burger' => l10n.iconBurger,
+          'pizza' => l10n.iconPizza,
+          'meal' => l10n.iconMeal,
+          'side' => l10n.iconSide,
+          'sauce' => l10n.iconSauce,
+          'drink' => l10n.iconDrink,
+          'dessert' => l10n.iconDessert,
+          'spice' => l10n.iconSpice,
+          _ => l10n.iconNone,
+        };
+
+    Widget tile({
+      required String? key,
+      required IconData icon,
+      required String label,
+    }) {
+      final isSelected = key == selected;
+      return Tooltip(
+        message: label,
+        child: Semantics(
+          label: label,
+          selected: isSelected,
+          button: true,
+          child: Material(
+            color: isSelected
+                ? cs.primaryContainer
+                : cs.surfaceContainerHighest.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(10),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: () => onChanged(key),
+              child: Container(
+                // Finger-sized, like everything else an operator taps.
+                width: 52,
+                height: 52,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: isSelected ? cs.primary : cs.outlineVariant,
+                    width: isSelected ? 2 : 1,
+                  ),
+                ),
+                child: PhosphorIcon(
+                  icon,
+                  size: 24,
+                  color: isSelected ? cs.primary : cs.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(l10n.groupIcon,
+            style: theme.textTheme.titleSmall
+                ?.copyWith(fontWeight: FontWeight.bold)),
+        Text(l10n.groupIconHint,
+            style: theme.textTheme.bodySmall
+                ?.copyWith(color: cs.onSurfaceVariant)),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            tile(
+              key: null,
+              icon: kModifierIconFallback.regular,
+              label: l10n.iconNone,
+            ),
+            for (final i in kModifierIcons)
+              tile(key: i.key, icon: i.regular, label: labelFor(i.key)),
+          ],
+        ),
+      ],
     );
   }
 }

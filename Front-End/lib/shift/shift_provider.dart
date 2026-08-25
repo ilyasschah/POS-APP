@@ -1,4 +1,4 @@
-import 'package:drift/drift.dart' show Value, OrderingTerm;
+import 'package:drift/drift.dart' show Value, OrderingTerm, ComparableExpr;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
@@ -6,6 +6,7 @@ import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/database/database_provider.dart';
+import 'package:pos_app/session/pos_session_status.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PROVIDERS
@@ -29,7 +30,12 @@ final activeShiftProvider = StreamProvider<ShiftsTableData?>((ref) {
       .watchSingleOrNull();
 });
 
-/// Ordered history of all shifts for the selected company (newest first).
+/// Ordered history of the company's ATTENDANCE shifts (newest first).
+///
+/// 🚨 POS sessions live in this table too and are excluded by status — see
+/// [PosSessionStatus]. Without the filter the Shift dashboard lists every
+/// register's trading period as if it were an employee's working day. Sessions
+/// have their own screen (`allSessionsProvider`).
 final shiftHistoryProvider = StreamProvider<List<ShiftsTableData>>((ref) {
   final db = ref.watch(appDatabaseProvider);
   final companyId = ref.watch(selectedCompanyProvider)?.id;
@@ -37,6 +43,7 @@ final shiftHistoryProvider = StreamProvider<List<ShiftsTableData>>((ref) {
 
   return (db.select(db.shiftsTable)
         ..where((t) => t.companyId.equals(companyId))
+        ..where((t) => t.status.isSmallerThanValue(PosSessionStatus.firstStatus))
         ..orderBy([(t) => OrderingTerm.desc(t.openedAt)]))
       .watch();
 });

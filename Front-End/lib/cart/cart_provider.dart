@@ -22,6 +22,7 @@ import 'package:pos_app/stock/warehouse_provider.dart';
 import 'package:pos_app/kitchen/kitchen_push_service.dart';
 import 'package:pos_app/product/product_model.dart'; // Added to use Product.fromDrift
 import 'package:pos_app/tax/tax_model.dart';
+import 'package:pos_app/modifier/modifier_models.dart';
 import 'package:pos_app/tax/tax_provider.dart';
 import 'package:pos_app/uom/unit_of_measure.dart';
 
@@ -1007,6 +1008,7 @@ class CartNotifier extends Notifier<CartState> {
     double quantity = 1,
     String? comment,
     String? measurementUnit,
+    List<SelectedModifier> modifiers = const [],
   }) {
     if (state.activePosOrderId == null) return;
 
@@ -1016,10 +1018,22 @@ class CartNotifier extends Notifier<CartState> {
     final newCartItemId =
         '${product.id}_${DateTime.now().microsecondsSinceEpoch}';
 
+    // The modifiers add to the unit price BEFORE anything else looks at it, so
+    // tax, discounts, promotions and every report keep working untouched.
+    final surcharge = modifierSurcharge(modifiers);
+    final unitPrice = product.price + surcharge;
+
     final items = List<CartItem>.from(state.items);
+    // 🚨 The merge key includes the CHOSEN MODIFIERS, not just the product.
+    // Merging on product id alone collapsed a plain burger and a burger with
+    // extra cheese into one line at whichever price arrived first — and the
+    // kitchen got a single ticket for two different sandwiches.
+    final incomingKey = modifierSelectionKey(modifiers);
     final existingIndex = separateRow
         ? -1
-        : items.indexWhere((i) => i.productId == product.id);
+        : items.indexWhere((i) =>
+            i.productId == product.id &&
+            modifierSelectionKey(i.selectedModifiers) == incomingKey);
 
     // `stockQuantity` is a STOCK figure — held in the category's reference unit
     // — while `quantity` is in the product's sale unit, so the two only compare
@@ -1056,7 +1070,9 @@ class CartNotifier extends Notifier<CartState> {
           cartItemId: newCartItemId,
           posOrderId: state.activePosOrderId!,
           productId: product.id,
-          price: product.price,
+          price: unitPrice,
+          basePrice: product.price,
+          selectedModifiers: List<SelectedModifier>.from(modifiers),
           cost: product.cost,
           quantity: quantity,
           productName: product.name,
@@ -1161,7 +1177,42 @@ class CartNotifier extends Notifier<CartState> {
     final index = items.indexWhere((i) => i.cartItemId == cartItemId);
     if (index < 0) return;
 
+    // The cashier is repricing what they can SEE, which is the modified unit
+    // price — so [newPrice] becomes `price` and the base is back-derived, not
+    // the other way round. Setting `basePrice = newPrice` would silently add
+    // the surcharge on top and ring up more than was typed.
     items[index].price = newPrice;
+    items[index].basePrice =
+        newPrice - modifierSurcharge(items[index].selectedModifiers);
+    _applyPromotions(items);
+    state = state.copyWith(items: items);
+  }
+
+  /// Re-chooses the modifiers on a line already in the cart.
+  ///
+  /// Recomputes from [CartItem.basePrice] rather than from the current `price`,
+  /// so changing the choices twice cannot compound: the surcharge is applied to
+  /// the product's own price every time, never to a price that already carries
+  /// one.
+  ///
+  /// A manual reprice is deliberately NOT preserved — the operator repriced a
+  /// line that no longer exists in the same form, and silently carrying an
+  /// override onto a different set of choices is how a line ends up at a price
+  /// nobody chose.
+  void setItemModifiers(
+    String cartItemId,
+    List<SelectedModifier> modifiers, {
+    String? comment,
+  }) {
+    final items = List<CartItem>.from(state.items);
+    final index = items.indexWhere((i) => i.cartItemId == cartItemId);
+    if (index < 0) return;
+
+    final item = items[index];
+    item.selectedModifiers = List<SelectedModifier>.from(modifiers);
+    item.price = item.basePrice + modifierSurcharge(modifiers);
+    if (comment != null) item.comment = comment.trim().isEmpty ? null : comment;
+
     _applyPromotions(items);
     state = state.copyWith(items: items);
   }
@@ -1393,6 +1444,9 @@ class CartNotifier extends Notifier<CartState> {
           settings[SettingKeys.discountApplyRule] == 'Before tax';
 
       final taxRows = <PosOrderItemTaxesTableCompanion>[];
+      // Snapshots of what each line was customised with. They hang off the
+      // line's own localId, minted just below.
+      final modifierRows = <PosOrderItemModifiersTableCompanion>[];
 
       // cartItemId → the localId its pos_order_item row gets, so discount_lines
       // can link item-level discounts to the right row.
@@ -1401,6 +1455,23 @@ class CartNotifier extends Notifier<CartState> {
       final items = state.items.map((item) {
         final itemLocalId = const Uuid().v4();
         itemLocalIds[item.cartItemId] = itemLocalId;
+
+        for (var mi = 0; mi < item.selectedModifiers.length; mi++) {
+          final m = item.selectedModifiers[mi];
+          modifierRows.add(
+            PosOrderItemModifiersTableCompanion(
+              localId: Value(const Uuid().v4()),
+              orderItemLocalId: Value(itemLocalId),
+              // Nullable and unenforced: the snapshot below is the record, the
+              // id only exists so reports can group by option.
+              modifierOptionId: Value(m.modifierOptionId),
+              groupName: Value(m.groupName),
+              name: Value(m.name),
+              additionalPrice: Value(m.additionalPrice),
+              rank: Value(mi),
+            ),
+          );
+        }
 
         final summedRate = item.appliedTaxes
             .where((t) => !t.isFixed)
@@ -1495,6 +1566,7 @@ class CartNotifier extends Notifier<CartState> {
         ),
         items,
         itemTaxes: taxRows,
+        itemModifiers: modifierRows,
       );
 
       // Phase 2: record the normalized discount breakdown for this order. The
@@ -1589,6 +1661,10 @@ class CartNotifier extends Notifier<CartState> {
           ),
       };
 
+      // The chosen modifiers, keyed by the line's own localId. Loaded up front
+      // rather than per line so reopening an order is one query, not N.
+      final modifiersByLine = await db.orderItemModifiersByLine(localId);
+
       // Build CartItems using the safe query-backed product map for metadata.
       final List<CartItem> loadedItems = itemRows.map((item) {
         final product = productMap[item.productId];
@@ -1617,6 +1693,18 @@ class CartNotifier extends Notifier<CartState> {
           appliedTaxes: appliedTaxes,
           warehouseId: item.warehouseId,
           comment: item.comment,
+          // 🚨 Restored from the line's own SNAPSHOTS, not recomputed from the
+          // catalogue. Without this a parked order reopened with the right
+          // TOTAL and no choices on it — the surcharge is already inside
+          // `unitPrice`, so the money looked correct while the kitchen ticket
+          // had lost the instruction. `basePrice` is derived back out so
+          // re-editing the choices recomputes from the product's own price
+          // instead of compounding on one that already carries a surcharge.
+          selectedModifiers:
+              selectedModifiersFromRows(modifiersByLine[item.localId] ?? const []),
+          basePrice: item.unitPrice -
+              modifierSurcharge(selectedModifiersFromRows(
+                  modifiersByLine[item.localId] ?? const [])),
           // The unit is NOT stored on the order line — it belongs to the
           // product, and a reopened line has to read it back or it silently
           // becomes `pcs`. Same restore as the two API paths above.

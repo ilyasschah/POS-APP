@@ -21,8 +21,11 @@ void main() {
   tearDown(() => db.close());
 
   group('the schema', () {
-    test('the version moved to 62 — the migration will not run otherwise', () {
-      expect(AppDatabase.expectedSchemaVersion, 62);
+    test('the version is ahead of 61 — the migration will not run otherwise', () {
+      // Pinned as a FLOOR, not an exact number: every later feature bumps this,
+      // and a test that has to be edited on each bump gets edited without being
+      // read. What matters is that the modifier tables landed after v61.
+      expect(AppDatabase.expectedSchemaVersion, greaterThanOrEqualTo(62));
     });
 
     test('a group round-trips with its selection rules intact', () async {

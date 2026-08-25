@@ -18,6 +18,10 @@ namespace Api.Models
         public int MinSelections { get; set; }
         public int MaxSelections { get; set; } = 1;
         public bool AllowsFreeText { get; set; }
+
+        /// <summary>Stable icon key; null means the till draws its fallback.</summary>
+        public string? IconKey { get; set; }
+
         public int Rank { get; set; }
         public bool IsEnabled { get; set; } = true;
         public DateTime LastModified { get; set; }
@@ -90,6 +94,13 @@ namespace Api.Models
         public int MinSelections { get; set; }
         public int MaxSelections { get; set; } = 1;
         public bool AllowsFreeText { get; set; }
+
+        /// <summary>
+        /// The icon the operator picked, or null for the till's fallback.
+        /// Sent on every save, so clearing it is just sending null.
+        /// </summary>
+        public string? IconKey { get; set; }
+
         public int Rank { get; set; }
         public bool IsEnabled { get; set; } = true;
 

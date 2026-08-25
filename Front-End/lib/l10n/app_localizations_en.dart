@@ -6135,7 +6135,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get resetDocumentsNote =>
-      'Sales, orders, payments, voids and Z-reports. Bookings are kept.';
+      'Sales, orders, payments, voids, Z-reports, register sessions and cash movements. Bookings and attendance shifts are kept.';
 
   @override
   String get resetEverything => 'Everything';
@@ -6875,4 +6875,88 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get moveDown => 'Move down';
+
+  @override
+  String get chooseAModifierGroup => 'Choose a group';
+
+  @override
+  String get noModifierGroupsExistYet =>
+      'You have not built any modifier groups yet. Create one in Management → Modifier Groups, then come back and attach it here.';
+
+  @override
+  String get allModifierGroupsAttached => 'Every group is already attached';
+
+  @override
+  String get dragToReorderGroups =>
+      'Drag to change the order the cashier is asked.';
+
+  @override
+  String customizeItem(String name) {
+    return 'Customize $name';
+  }
+
+  @override
+  String get addToOrder => 'Add to order';
+
+  @override
+  String chooseAtLeastN(int min) {
+    return 'Choose at least $min';
+  }
+
+  @override
+  String get aNoteForTheKitchen => 'Note for the kitchen';
+
+  @override
+  String get aNoteHint => 'no ice, allergic to nuts…';
+
+  @override
+  String get maxReachedForGroup => 'Limit reached';
+
+  @override
+  String get editChoices => 'Edit choices';
+
+  @override
+  String get tagRequired => 'Required';
+
+  @override
+  String get tagDone => 'Done';
+
+  @override
+  String get tagOptional => 'Optional';
+
+  @override
+  String get customizeEyebrow => 'CUSTOMIZE';
+
+  @override
+  String get groupIcon => 'Icon';
+
+  @override
+  String get groupIconHint => 'Shown beside this group at the till. Optional.';
+
+  @override
+  String get iconNone => 'None';
+
+  @override
+  String get iconBurger => 'Burger';
+
+  @override
+  String get iconPizza => 'Pizza';
+
+  @override
+  String get iconMeal => 'Meal';
+
+  @override
+  String get iconSide => 'Side';
+
+  @override
+  String get iconSauce => 'Sauce';
+
+  @override
+  String get iconDrink => 'Drink';
+
+  @override
+  String get iconDessert => 'Dessert';
+
+  @override
+  String get iconSpice => 'Spice';
 }

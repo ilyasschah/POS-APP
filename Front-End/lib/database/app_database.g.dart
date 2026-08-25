@@ -16012,6 +16012,17 @@ class $ModifierGroupsTableTable extends ModifierGroupsTable
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _iconKeyMeta = const VerificationMeta(
+    'iconKey',
+  );
+  @override
+  late final GeneratedColumn<String> iconKey = GeneratedColumn<String>(
+    'icon_key',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _rankMeta = const VerificationMeta('rank');
   @override
   late final GeneratedColumn<int> rank = GeneratedColumn<int>(
@@ -16068,6 +16079,7 @@ class $ModifierGroupsTableTable extends ModifierGroupsTable
     minSelections,
     maxSelections,
     allowsFreeText,
+    iconKey,
     rank,
     isEnabled,
     lastModified,
@@ -16129,6 +16141,12 @@ class $ModifierGroupsTableTable extends ModifierGroupsTable
           data['allows_free_text']!,
           _allowsFreeTextMeta,
         ),
+      );
+    }
+    if (data.containsKey('icon_key')) {
+      context.handle(
+        _iconKeyMeta,
+        iconKey.isAcceptableOrUnknown(data['icon_key']!, _iconKeyMeta),
       );
     }
     if (data.containsKey('rank')) {
@@ -16196,6 +16214,10 @@ class $ModifierGroupsTableTable extends ModifierGroupsTable
         DriftSqlType.bool,
         data['${effectivePrefix}allows_free_text'],
       )!,
+      iconKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}icon_key'],
+      ),
       rank: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}rank'],
@@ -16240,6 +16262,14 @@ class ModifierGroupsTableData extends DataClass
   /// `product_comments` catalogue is retired. The note lands in the order
   /// line's existing `comment` column.
   final bool allowsFreeText;
+
+  /// Stable key into `lib/modifier/modifier_icons.dart` — the icon the operator
+  /// picked. Null means the till draws its neutral fallback.
+  ///
+  /// A key rather than a codepoint so it survives an icon-set swap, and a
+  /// CHOICE rather than a guess from [name] so it is right in French and Arabic
+  /// too. See the notes in that file.
+  final String? iconKey;
   final int rank;
   final bool isEnabled;
   final DateTime lastModified;
@@ -16251,6 +16281,7 @@ class ModifierGroupsTableData extends DataClass
     required this.minSelections,
     required this.maxSelections,
     required this.allowsFreeText,
+    this.iconKey,
     required this.rank,
     required this.isEnabled,
     required this.lastModified,
@@ -16265,6 +16296,9 @@ class ModifierGroupsTableData extends DataClass
     map['min_selections'] = Variable<int>(minSelections);
     map['max_selections'] = Variable<int>(maxSelections);
     map['allows_free_text'] = Variable<bool>(allowsFreeText);
+    if (!nullToAbsent || iconKey != null) {
+      map['icon_key'] = Variable<String>(iconKey);
+    }
     map['rank'] = Variable<int>(rank);
     map['is_enabled'] = Variable<bool>(isEnabled);
     map['last_modified'] = Variable<DateTime>(lastModified);
@@ -16280,6 +16314,9 @@ class ModifierGroupsTableData extends DataClass
       minSelections: Value(minSelections),
       maxSelections: Value(maxSelections),
       allowsFreeText: Value(allowsFreeText),
+      iconKey: iconKey == null && nullToAbsent
+          ? const Value.absent()
+          : Value(iconKey),
       rank: Value(rank),
       isEnabled: Value(isEnabled),
       lastModified: Value(lastModified),
@@ -16299,6 +16336,7 @@ class ModifierGroupsTableData extends DataClass
       minSelections: serializer.fromJson<int>(json['minSelections']),
       maxSelections: serializer.fromJson<int>(json['maxSelections']),
       allowsFreeText: serializer.fromJson<bool>(json['allowsFreeText']),
+      iconKey: serializer.fromJson<String?>(json['iconKey']),
       rank: serializer.fromJson<int>(json['rank']),
       isEnabled: serializer.fromJson<bool>(json['isEnabled']),
       lastModified: serializer.fromJson<DateTime>(json['lastModified']),
@@ -16315,6 +16353,7 @@ class ModifierGroupsTableData extends DataClass
       'minSelections': serializer.toJson<int>(minSelections),
       'maxSelections': serializer.toJson<int>(maxSelections),
       'allowsFreeText': serializer.toJson<bool>(allowsFreeText),
+      'iconKey': serializer.toJson<String?>(iconKey),
       'rank': serializer.toJson<int>(rank),
       'isEnabled': serializer.toJson<bool>(isEnabled),
       'lastModified': serializer.toJson<DateTime>(lastModified),
@@ -16329,6 +16368,7 @@ class ModifierGroupsTableData extends DataClass
     int? minSelections,
     int? maxSelections,
     bool? allowsFreeText,
+    Value<String?> iconKey = const Value.absent(),
     int? rank,
     bool? isEnabled,
     DateTime? lastModified,
@@ -16340,6 +16380,7 @@ class ModifierGroupsTableData extends DataClass
     minSelections: minSelections ?? this.minSelections,
     maxSelections: maxSelections ?? this.maxSelections,
     allowsFreeText: allowsFreeText ?? this.allowsFreeText,
+    iconKey: iconKey.present ? iconKey.value : this.iconKey,
     rank: rank ?? this.rank,
     isEnabled: isEnabled ?? this.isEnabled,
     lastModified: lastModified ?? this.lastModified,
@@ -16359,6 +16400,7 @@ class ModifierGroupsTableData extends DataClass
       allowsFreeText: data.allowsFreeText.present
           ? data.allowsFreeText.value
           : this.allowsFreeText,
+      iconKey: data.iconKey.present ? data.iconKey.value : this.iconKey,
       rank: data.rank.present ? data.rank.value : this.rank,
       isEnabled: data.isEnabled.present ? data.isEnabled.value : this.isEnabled,
       lastModified: data.lastModified.present
@@ -16379,6 +16421,7 @@ class ModifierGroupsTableData extends DataClass
           ..write('minSelections: $minSelections, ')
           ..write('maxSelections: $maxSelections, ')
           ..write('allowsFreeText: $allowsFreeText, ')
+          ..write('iconKey: $iconKey, ')
           ..write('rank: $rank, ')
           ..write('isEnabled: $isEnabled, ')
           ..write('lastModified: $lastModified, ')
@@ -16395,6 +16438,7 @@ class ModifierGroupsTableData extends DataClass
     minSelections,
     maxSelections,
     allowsFreeText,
+    iconKey,
     rank,
     isEnabled,
     lastModified,
@@ -16410,6 +16454,7 @@ class ModifierGroupsTableData extends DataClass
           other.minSelections == this.minSelections &&
           other.maxSelections == this.maxSelections &&
           other.allowsFreeText == this.allowsFreeText &&
+          other.iconKey == this.iconKey &&
           other.rank == this.rank &&
           other.isEnabled == this.isEnabled &&
           other.lastModified == this.lastModified &&
@@ -16424,6 +16469,7 @@ class ModifierGroupsTableCompanion
   final Value<int> minSelections;
   final Value<int> maxSelections;
   final Value<bool> allowsFreeText;
+  final Value<String?> iconKey;
   final Value<int> rank;
   final Value<bool> isEnabled;
   final Value<DateTime> lastModified;
@@ -16435,6 +16481,7 @@ class ModifierGroupsTableCompanion
     this.minSelections = const Value.absent(),
     this.maxSelections = const Value.absent(),
     this.allowsFreeText = const Value.absent(),
+    this.iconKey = const Value.absent(),
     this.rank = const Value.absent(),
     this.isEnabled = const Value.absent(),
     this.lastModified = const Value.absent(),
@@ -16447,6 +16494,7 @@ class ModifierGroupsTableCompanion
     this.minSelections = const Value.absent(),
     this.maxSelections = const Value.absent(),
     this.allowsFreeText = const Value.absent(),
+    this.iconKey = const Value.absent(),
     this.rank = const Value.absent(),
     this.isEnabled = const Value.absent(),
     required DateTime lastModified,
@@ -16461,6 +16509,7 @@ class ModifierGroupsTableCompanion
     Expression<int>? minSelections,
     Expression<int>? maxSelections,
     Expression<bool>? allowsFreeText,
+    Expression<String>? iconKey,
     Expression<int>? rank,
     Expression<bool>? isEnabled,
     Expression<DateTime>? lastModified,
@@ -16473,6 +16522,7 @@ class ModifierGroupsTableCompanion
       if (minSelections != null) 'min_selections': minSelections,
       if (maxSelections != null) 'max_selections': maxSelections,
       if (allowsFreeText != null) 'allows_free_text': allowsFreeText,
+      if (iconKey != null) 'icon_key': iconKey,
       if (rank != null) 'rank': rank,
       if (isEnabled != null) 'is_enabled': isEnabled,
       if (lastModified != null) 'last_modified': lastModified,
@@ -16487,6 +16537,7 @@ class ModifierGroupsTableCompanion
     Value<int>? minSelections,
     Value<int>? maxSelections,
     Value<bool>? allowsFreeText,
+    Value<String?>? iconKey,
     Value<int>? rank,
     Value<bool>? isEnabled,
     Value<DateTime>? lastModified,
@@ -16499,6 +16550,7 @@ class ModifierGroupsTableCompanion
       minSelections: minSelections ?? this.minSelections,
       maxSelections: maxSelections ?? this.maxSelections,
       allowsFreeText: allowsFreeText ?? this.allowsFreeText,
+      iconKey: iconKey ?? this.iconKey,
       rank: rank ?? this.rank,
       isEnabled: isEnabled ?? this.isEnabled,
       lastModified: lastModified ?? this.lastModified,
@@ -16527,6 +16579,9 @@ class ModifierGroupsTableCompanion
     if (allowsFreeText.present) {
       map['allows_free_text'] = Variable<bool>(allowsFreeText.value);
     }
+    if (iconKey.present) {
+      map['icon_key'] = Variable<String>(iconKey.value);
+    }
     if (rank.present) {
       map['rank'] = Variable<int>(rank.value);
     }
@@ -16551,6 +16606,7 @@ class ModifierGroupsTableCompanion
           ..write('minSelections: $minSelections, ')
           ..write('maxSelections: $maxSelections, ')
           ..write('allowsFreeText: $allowsFreeText, ')
+          ..write('iconKey: $iconKey, ')
           ..write('rank: $rank, ')
           ..write('isEnabled: $isEnabled, ')
           ..write('lastModified: $lastModified, ')
@@ -48226,6 +48282,7 @@ typedef $$ModifierGroupsTableTableCreateCompanionBuilder =
       Value<int> minSelections,
       Value<int> maxSelections,
       Value<bool> allowsFreeText,
+      Value<String?> iconKey,
       Value<int> rank,
       Value<bool> isEnabled,
       required DateTime lastModified,
@@ -48239,6 +48296,7 @@ typedef $$ModifierGroupsTableTableUpdateCompanionBuilder =
       Value<int> minSelections,
       Value<int> maxSelections,
       Value<bool> allowsFreeText,
+      Value<String?> iconKey,
       Value<int> rank,
       Value<bool> isEnabled,
       Value<DateTime> lastModified,
@@ -48281,6 +48339,11 @@ class $$ModifierGroupsTableTableFilterComposer
 
   ColumnFilters<bool> get allowsFreeText => $composableBuilder(
     column: $table.allowsFreeText,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get iconKey => $composableBuilder(
+    column: $table.iconKey,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -48344,6 +48407,11 @@ class $$ModifierGroupsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get iconKey => $composableBuilder(
+    column: $table.iconKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get rank => $composableBuilder(
     column: $table.rank,
     builder: (column) => ColumnOrderings(column),
@@ -48397,6 +48465,9 @@ class $$ModifierGroupsTableTableAnnotationComposer
     column: $table.allowsFreeText,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get iconKey =>
+      $composableBuilder(column: $table.iconKey, builder: (column) => column);
 
   GeneratedColumn<int> get rank =>
       $composableBuilder(column: $table.rank, builder: (column) => column);
@@ -48464,6 +48535,7 @@ class $$ModifierGroupsTableTableTableManager
                 Value<int> minSelections = const Value.absent(),
                 Value<int> maxSelections = const Value.absent(),
                 Value<bool> allowsFreeText = const Value.absent(),
+                Value<String?> iconKey = const Value.absent(),
                 Value<int> rank = const Value.absent(),
                 Value<bool> isEnabled = const Value.absent(),
                 Value<DateTime> lastModified = const Value.absent(),
@@ -48475,6 +48547,7 @@ class $$ModifierGroupsTableTableTableManager
                 minSelections: minSelections,
                 maxSelections: maxSelections,
                 allowsFreeText: allowsFreeText,
+                iconKey: iconKey,
                 rank: rank,
                 isEnabled: isEnabled,
                 lastModified: lastModified,
@@ -48488,6 +48561,7 @@ class $$ModifierGroupsTableTableTableManager
                 Value<int> minSelections = const Value.absent(),
                 Value<int> maxSelections = const Value.absent(),
                 Value<bool> allowsFreeText = const Value.absent(),
+                Value<String?> iconKey = const Value.absent(),
                 Value<int> rank = const Value.absent(),
                 Value<bool> isEnabled = const Value.absent(),
                 required DateTime lastModified,
@@ -48499,6 +48573,7 @@ class $$ModifierGroupsTableTableTableManager
                 minSelections: minSelections,
                 maxSelections: maxSelections,
                 allowsFreeText: allowsFreeText,
+                iconKey: iconKey,
                 rank: rank,
                 isEnabled: isEnabled,
                 lastModified: lastModified,

@@ -3242,7 +3242,7 @@
   "resetStepConfirmSubtitle": "Authorize and perform reset on selected entities",
   "resetAdminPin": "Enter administrator PIN",
   "resetAlsoClearsDocuments": "Also clears Documents — sales rows reference these.",
-  "resetDocumentsNote": "Sales, orders, payments, voids and Z-reports. Bookings are kept.",
+  "resetDocumentsNote": "Sales, orders, payments, voids, Z-reports, register sessions and cash movements. Bookings and attendance shifts are kept.",
   "resetEverything": "Everything",
   "resetEverythingNote": "All company data. Users and your settings are kept so you can sign back in.",
   "resetWrongPin": "Incorrect PIN.",
@@ -3602,5 +3602,45 @@
   "noGroupsAttached": "No groups attached — this product is added straight to the cart.",
   "attachModifierGroup": "Attach a group",
   "moveUp": "Move up",
-  "moveDown": "Move down"
+  "moveDown": "Move down",
+  "chooseAModifierGroup": "Choose a group",
+  "noModifierGroupsExistYet": "You have not built any modifier groups yet. Create one in Management → Modifier Groups, then come back and attach it here.",
+  "allModifierGroupsAttached": "Every group is already attached",
+  "dragToReorderGroups": "Drag to change the order the cashier is asked.",
+  "customizeItem": "Customize {name}",
+  "@customizeItem": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "addToOrder": "Add to order",
+  "chooseAtLeastN": "Choose at least {min}",
+  "@chooseAtLeastN": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "aNoteForTheKitchen": "Note for the kitchen",
+  "aNoteHint": "no ice, allergic to nuts…",
+  "maxReachedForGroup": "Limit reached",
+  "editChoices": "Edit choices",
+  "tagRequired": "Required",
+  "tagDone": "Done",
+  "tagOptional": "Optional",
+  "customizeEyebrow": "CUSTOMIZE",
+  "groupIcon": "Icon",
+  "groupIconHint": "Shown beside this group at the till. Optional.",
+  "iconNone": "None",
+  "iconBurger": "Burger",
+  "iconPizza": "Pizza",
+  "iconMeal": "Meal",
+  "iconSide": "Side",
+  "iconSauce": "Sauce",
+  "iconDrink": "Drink",
+  "iconDessert": "Dessert",
+  "iconSpice": "Spice"
 }

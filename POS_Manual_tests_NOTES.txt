@@ -14,43 +14,16 @@ screen tests. The rest you can test on the POS.
 
 --- NEWLY REPORTED (to do next) ---
 
-[39] NEW - POS SESSIONS: two things, and one answer.
-
-     (a) THE ANSWER first, because it explains your last line.
-         There IS no "POS session" table, by design. A session is a
-         row in the SHIFT table with a PosDeviceId set and a status
-         of 10-13, while an attendance shift uses 0-1. They share
-         one table on purpose - the ranges are kept apart so the
-         two can never be mistaken for each other. So nothing is
-         missing from the database; you were looking for a table
-         that was never meant to exist.
-
-     (b) DATABASE RESET does not clear sessions. Confirmed: the
-         reset only knows Products / Customers / Documents /
-         Everything, and touches no shift or session rows at all.
-         So wiping Documents leaves every past session behind, and
-         the register still thinks it has history. Sessions belong
-         with Documents (same money, same day) - I will add them
-         there.
-
-     (c) THE TIMER on top of User Info. It counts attendance hours
-         and should only appear when a USER clocks in, never when a
-         register opens. Already ruled out the obvious cause: the
-         sidebar clock watches "shift status = 0" and opening a
-         session writes status = 10, so those two do not overlap
-         and the session is not what is switching it on. Something
-         else is - needs a proper look, not a guess.
-
 [38] IN PROGRESS - MODIFIERS. First thing you CAN press.
 
      Structured, priced options on an item ("Extra Cheese" +12.00,
      "No Sugar" +0.00), grouped, with pick-one / pick-many and
      mandatory rules. Replaces the free-text Comments catalogue.
 
-     Phases 1-3 of 6 are done: the data layer, the API + sync, and
-     the admin screen. The SQL is applied. The CASHIER side does
-     not exist yet - tapping a product at the till behaves exactly
-     as it does today.
+     Phases 1-4 of 6 are done. The CASHIER side works now: tap a
+     product that has groups attached and the Customize sheet
+     opens. What is NOT done yet is the kitchen ticket and the
+     receipt - they still print the line without its choices.
 
      WHAT TO TRY (Management -> Modifier Groups, new sidebar entry):
      (a) New group -> name it "Toppings", set "may choose at most"
@@ -72,8 +45,41 @@ screen tests. The rest you can test on the POS.
      (g) Dark mode + the 10-inch tablet: at tablet width the screen
          becomes one pane and tapping a group opens it as a page.
 
-     Phases 4-6, in order: the cashier's Customize sheet -> kitchen
-     ticket + receipt -> retiring Comments.
+     AT THE TILL (new):
+     (h) Tap a product with groups -> "Customize <name>" opens.
+         Pick-one groups show radios, pick-many show checkboxes.
+     (i) A required group blocks "Add to order" until answered, and
+         names the group in red only AFTER you press it - not the
+         moment the sheet opens.
+     (j) On a pick-many group, choose up to the limit -> the rest
+         grey out, but the ones you already chose stay tappable so
+         you can change your mind.
+     (k) The button shows the running unit price as you tap.
+     (l) CANCEL -> nothing is added at all. Check the cart.
+     (m) Add a plain burger, then a burger with extra cheese ->
+         TWO separate lines at two different prices. They must not
+         merge. Add a second identical cheese burger -> that one
+         DOES merge, quantity 2.
+     (n) The cart line shows the choices indented underneath, with
+         their price. A free choice shows no price.
+     (o) Select a customised line, press PRICE on the keypad, type
+         a number -> the line becomes exactly that, and keeps its
+         choices.
+     (p) Turn on "Allow a typed note" for a group -> a note box
+         appears at the bottom of the sheet.
+     (q) ** NEEDS A SECOND SQL SCRIPT + API RESTART **
+         Modifier Groups -> edit a group -> new "Icon" row with
+         nine tiles: None first, then burger / pizza / meal / side
+         / sauce / drink / dessert / spice. Pick one, Save, then
+         tap that product at the till -> the icon is beside the
+         group name in the sheet. Pick None -> a neutral icon.
+         The icon is SAVED to the group, so it is the same in
+         English, French and Arabic - it is never guessed from the
+         group's name.
+           Back-End/Web-POS.Api/DataBase/SQL/AddModifierGroupIcon_2026-08-25.sql
+
+     Phases 5-6, in order: kitchen ticket + receipt -> retiring
+     Comments.
 
 [35] NEW - the REPORTS are still English. Not a bug, a scope line.
      Item 7 translated everything a CUSTOMER is handed: receipt,

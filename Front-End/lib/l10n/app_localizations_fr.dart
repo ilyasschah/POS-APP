@@ -6209,7 +6209,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get resetDocumentsNote =>
-      'Ventes, commandes, paiements, annulations et rapports Z. Les réservations sont conservées.';
+      'Ventes, commandes, paiements, annulations, rapports Z, sessions de caisse et mouvements d’espèces. Les réservations et les pointages sont conservés.';
 
   @override
   String get resetEverything => 'Tout';
@@ -6955,4 +6955,90 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get moveDown => 'Descendre';
+
+  @override
+  String get chooseAModifierGroup => 'Choisir un groupe';
+
+  @override
+  String get noModifierGroupsExistYet =>
+      'Vous n\'avez encore créé aucun groupe d\'options. Créez-en un dans Gestion → Groupes d\'options, puis revenez le rattacher ici.';
+
+  @override
+  String get allModifierGroupsAttached =>
+      'Tous les groupes sont déjà rattachés';
+
+  @override
+  String get dragToReorderGroups =>
+      'Glissez pour changer l\'ordre des questions en caisse.';
+
+  @override
+  String customizeItem(String name) {
+    return 'Personnaliser $name';
+  }
+
+  @override
+  String get addToOrder => 'Ajouter à la commande';
+
+  @override
+  String chooseAtLeastN(int min) {
+    return 'Choisissez au moins $min';
+  }
+
+  @override
+  String get aNoteForTheKitchen => 'Note pour la cuisine';
+
+  @override
+  String get aNoteHint => 'sans glace, allergique aux noix…';
+
+  @override
+  String get maxReachedForGroup => 'Limite atteinte';
+
+  @override
+  String get editChoices => 'Modifier les choix';
+
+  @override
+  String get tagRequired => 'Obligatoire';
+
+  @override
+  String get tagDone => 'Fait';
+
+  @override
+  String get tagOptional => 'Facultatif';
+
+  @override
+  String get customizeEyebrow => 'PERSONNALISER';
+
+  @override
+  String get groupIcon => 'Icône';
+
+  @override
+  String get groupIconHint =>
+      'Affichée à côté du groupe en caisse. Facultatif.';
+
+  @override
+  String get iconNone => 'Aucune';
+
+  @override
+  String get iconBurger => 'Burger';
+
+  @override
+  String get iconPizza => 'Pizza';
+
+  @override
+  String get iconMeal => 'Plat';
+
+  @override
+  String get iconSide => 'Accompagnement';
+
+  @override
+  String get iconSauce => 'Sauce';
+
+  @override
+  String get iconDrink => 'Boisson';
+
+  @override
+  String get iconDessert => 'Dessert';
+
+  @override
+  String get iconSpice => 'Piquant';
 }

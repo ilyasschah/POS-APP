@@ -68,14 +68,23 @@ namespace Api.Services
         // the whole transaction with it. So each group must contain everything
         // that references it.
 
-        /// Sales history and live orders. ZReportPaymentSummary has no CompanyId
-        /// of its own and is handled separately, by ZReportId.
+        /// Sales history and live orders — plus everything that hangs off a POS
+        /// SESSION, because the session itself goes with them (see the filtered
+        /// Shift delete in <see cref="ResetAsync"/>). ZReportPaymentSummary has
+        /// no CompanyId of its own and is handled separately, by ZReportId.
         private static readonly string[] DocumentTables =
         [
             "DiscountLine", "Payment",
-            "DocumentItemTax", "DocumentItemExpirationDate", "DocumentItem", "Document",
-            "PosOrderItemTax", "PosOrderItem", "PosOrder", "PosVoid",
-            "ZReport",
+            "DocumentItemTax", "DocumentItemModifier", "DocumentItemExpirationDate",
+            "DocumentItem", "Document",
+            "PosOrderItemTax", "PosOrderItemModifier", "PosOrderItem", "PosOrder",
+            "PosVoid",
+            "ZReport", "ZReportCorrection",
+            // Session children. FK_PosSessionPaymentCount_Shift_SessionId,
+            // FK_StartingCash_Shift_SessionId and FK_ZReportCorrection_Shift_SessionId
+            // all point at Shift, so they have to go with the session or the
+            // WITH CHECK re-enable throws on the orphans.
+            "PosSessionPaymentCount", "StartingCash",
         ];
 
         /// The catalogue. Requires <see cref="DocumentTables"/>: DocumentItem and
@@ -188,6 +197,32 @@ namespace Api.Services
                             $"DELETE FROM dbo.[{table}] WHERE CompanyId = @cid;",
                             new SqlParameter("@cid", companyId));
 #pragma warning restore EF1002
+                    }
+
+                    // ── POS SESSIONS ──────────────────────────────────────────
+                    // A session is Documents' money — same register, same day —
+                    // so clearing sales has to take it too. Left behind, a till
+                    // whose history has just been wiped reopens still believing
+                    // it has one, and the next session numbers itself after
+                    // sales that no longer exist.
+                    //
+                    // 🚨 Filtered, NOT a member of DocumentTables: ATTENDANCE
+                    // shifts share this table (PosDeviceId NULL) and are payroll
+                    // records, not sales. Wiping the day's takings must never
+                    // erase who worked it. `PosDeviceId IS NOT NULL` is the same
+                    // discriminator the domain model uses.
+                    //
+                    // Skipped when "Shift" is already in [tables] — that is the
+                    // Everything branch, which deletes both shapes outright, and
+                    // deleting twice would double-count the reported row total.
+                    if (!tables.Contains("Shift")
+                        && (options.Documents || options.Products || options.Customers))
+                    {
+                        rows += await _db.Database.ExecuteSqlRawAsync(
+                            "DELETE FROM dbo.Shift " +
+                            "WHERE CompanyId = @cid AND PosDeviceId IS NOT NULL;",
+                            new SqlParameter("@cid", companyId));
+                        tables.Add("Shift");
                     }
                 }
                 finally

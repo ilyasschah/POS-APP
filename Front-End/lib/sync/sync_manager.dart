@@ -5261,6 +5261,7 @@ class SyncManager {
             minSelections: Value((json['minSelections'] as num?)?.toInt() ?? 0),
             maxSelections: Value((json['maxSelections'] as num?)?.toInt() ?? 1),
             allowsFreeText: Value(json['allowsFreeText'] as bool? ?? false),
+            iconKey: Value(json['iconKey'] as String?),
             rank: Value((json['rank'] as num?)?.toInt() ?? 0),
             isEnabled: Value(json['isEnabled'] as bool? ?? true),
             lastModified: Value(_parseLastModified(json['lastModified'])),
@@ -5391,6 +5392,7 @@ class SyncManager {
             'minSelections': g.minSelections,
             'maxSelections': g.maxSelections,
             'allowsFreeText': g.allowsFreeText,
+            'iconKey': g.iconKey,
             'rank': g.rank,
             'isEnabled': g.isEnabled,
             'options': [

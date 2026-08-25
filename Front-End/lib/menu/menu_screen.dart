@@ -61,6 +61,8 @@ import 'package:pos_app/barcode/nomenclature/barcode_matcher.dart';
 import 'package:pos_app/barcode/nomenclature/barcode_rule.dart';
 import 'package:pos_app/barcode/nomenclature/barcode_rules_provider.dart';
 import 'package:pos_app/menu/weigh_item_dialog.dart';
+import 'package:pos_app/modifier/customize_item_sheet.dart';
+import 'package:pos_app/modifier/modifier_models.dart';
 import 'package:pos_app/uom/unit_of_measure.dart';
 import 'package:pos_app/customer_display/customer_display_provider.dart';
 import 'package:pos_app/stock/stock_provider.dart';
@@ -2167,6 +2169,43 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
           quantity = qty;
         }
 
+        // ── Modifiers ────────────────────────────────────────────────────
+        // Asked BEFORE the stock guards and the comment popup, because backing
+        // out of the sheet must abandon the whole add — running the guards
+        // first would warn about stock for an item that never gets added.
+        List<SelectedModifier> chosenModifiers = const [];
+        String? modifierNote;
+
+        // Read straight from Drift — see the note on
+        // `modifierGroupsForProductDirect`. Going through the autoDispose
+        // family provider's `.future` here resolved before the watch-stream
+        // emitted, so a product WITH groups never opened the sheet at all.
+        List<ModifierGroup> groups = const [];
+        try {
+          final rows = await ref
+              .read(appDatabaseProvider)
+              .modifierGroupsForProductDirect(
+                ref.read(selectedCompanyProvider)?.id ?? 0,
+                product.id,
+              );
+          groups = modifierGroupsFromRows(rows);
+        } catch (_) {}
+
+        if (groups.isNotEmpty) {
+          if (!context.mounted) return;
+          final result = await showCustomizeItemSheet(
+            context,
+            itemName: product.name,
+            basePrice: product.price,
+            groups: groups,
+          );
+          // Null means cancelled, and cancelled means add NOTHING. Falling
+          // through to add the plain item would be a sale nobody asked for.
+          if (result == null) return;
+          chosenModifiers = result.modifiers;
+          modifierNote = result.note;
+        }
+
         // Offline stock validation: hard-block negative inventory and warn on
         // low stock (acknowledgement required) using the real tapped quantity.
         if (!context.mounted) return;
@@ -2265,8 +2304,12 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
               .addItem(
                 menuProduct,
                 quantity: quantity,
-                comment: comment,
+                // The modifier sheet's free-text note and the comment popup
+                // both land in the same column; whichever the operator
+                // actually filled in wins.
+                comment: comment ?? modifierNote,
                 measurementUnit: product.measurementUnit,
+                modifiers: chosenModifiers,
               );
         } catch (e) {
           if (!context.mounted) return;
@@ -3304,7 +3347,10 @@ class _CartSectionState extends ConsumerState<CartSection> {
                             final showOriginal = fit.showOriginal;
                             final showBadges = fit.showBadges;
 
-                            return Row(
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                            Row(
                               children: [
                                 // Quantity — fixed, so the names line up.
                                 SizedBox(
@@ -3416,6 +3462,59 @@ class _CartSectionState extends ConsumerState<CartSection> {
                                     ),
                                   ],
                                 ),
+                              ],
+                            ),
+                            // The chosen modifiers, indented under the name.
+                            // Rendered from the line's own SNAPSHOTS, never
+                            // from the catalogue — a renamed or deleted option
+                            // must still print what was actually sold.
+                            if (item.selectedModifiers.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsetsDirectional.only(
+                                    start: qtyWidth + gap, top: 2),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    for (final m in item.selectedModifiers)
+                                      Row(
+                                        children: [
+                                          Flexible(
+                                            flex: 3,
+                                            child: Text(
+                                              '· ${m.name}',
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                color: cs.onSurfaceVariant,
+                                              ),
+                                            ),
+                                          ),
+                                          // A free choice prints no price:
+                                          // "+0.00" beside "No Sugar" is noise
+                                          // on every line of every receipt.
+                                          if (m.additionalPrice != 0) ...[
+                                            const SizedBox(width: 6),
+                                            Flexible(
+                                              flex: 2,
+                                              child: Text(
+                                                '${m.additionalPrice > 0 ? '+' : '−'}'
+                                                '${m.additionalPrice.abs().toStringAsFixed(2)}',
+                                                maxLines: 1,
+                                                overflow:
+                                                    TextOverflow.ellipsis,
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  color: cs.onSurfaceVariant,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                  ],
+                                ),
+                              ),
                               ],
                             );
                           },

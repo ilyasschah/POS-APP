@@ -6,6 +6,11 @@
 /// receipt that disagrees with the database.
 library;
 
+// `reorderedForDrag` used to live here. It moved to core when the column picker
+// needed the same off-by-one correction; re-exported so the modifier code that
+// has always called it through this library still can.
+export 'package:pos_app/core/reorder.dart' show reorderedForDrag;
+
 import 'package:pos_app/database/app_database.dart';
 
 /// A named set of choices offered on a product — "Toppings", "Doneness".
@@ -24,6 +29,10 @@ class ModifierGroup {
   /// being a second feature beside modifiers.
   final bool allowsFreeText;
 
+  /// Stable key into the icon catalog; null draws the fallback. Chosen by the
+  /// operator rather than guessed from [name], so it is right in every language.
+  final String? iconKey;
+
   final int rank;
   final bool isEnabled;
 
@@ -36,6 +45,7 @@ class ModifierGroup {
     this.minSelections = 0,
     this.maxSelections = 1,
     this.allowsFreeText = false,
+    this.iconKey,
     this.rank = 0,
     this.isEnabled = true,
     this.options = const [],
@@ -54,6 +64,7 @@ class ModifierGroup {
         minSelections: minSelections,
         maxSelections: maxSelections,
         allowsFreeText: allowsFreeText,
+        iconKey: iconKey,
         rank: rank,
         isEnabled: isEnabled,
         options: next,
@@ -65,6 +76,7 @@ class ModifierGroup {
         minSelections: (json['minSelections'] as num?)?.toInt() ?? 0,
         maxSelections: (json['maxSelections'] as num?)?.toInt() ?? 1,
         allowsFreeText: json['allowsFreeText'] as bool? ?? false,
+        iconKey: json['iconKey'] as String?,
         rank: (json['rank'] as num?)?.toInt() ?? 0,
         isEnabled: json['isEnabled'] as bool? ?? true,
         options: (json['options'] as List?)
@@ -79,6 +91,7 @@ class ModifierGroup {
         minSelections: row.minSelections,
         maxSelections: row.maxSelections,
         allowsFreeText: row.allowsFreeText,
+        iconKey: row.iconKey,
         rank: row.rank,
         isEnabled: row.isEnabled,
       );
@@ -216,6 +229,36 @@ String modifierSelectionKey(Iterable<SelectedModifier> selected) {
   final ids = selected.map((m) => m._identity).toList()..sort();
   return ids.join('|');
 }
+
+/// Rebuilds a line's chosen modifiers from its stored snapshot rows.
+List<SelectedModifier> selectedModifiersFromRows(
+  List<PosOrderItemModifiersTableData> rows,
+) =>
+    [
+      for (final r in rows)
+        SelectedModifier(
+          modifierOptionId: r.modifierOptionId,
+          groupName: r.groupName,
+          name: r.name,
+          additionalPrice: r.additionalPrice,
+          rank: r.rank,
+        ),
+    ];
+
+/// Composes what `AppDatabase.modifierGroupsForProductDirect` returns into the
+/// models the customise sheet takes.
+///
+/// Kept beside the models rather than in the database layer so that layer stays
+/// free of them.
+List<ModifierGroup> modifierGroupsFromRows(
+  List<({ModifierGroupsTableData group, List<ModifierOptionsTableData> options})>
+      rows,
+) =>
+    [
+      for (final row in rows)
+        ModifierGroup.fromDrift(row.group)
+            .withOptions(row.options.map(ModifierOption.fromDrift).toList()),
+    ];
 
 /// Whether a group's current selection satisfies its own rules.
 ///

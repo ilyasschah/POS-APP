@@ -399,6 +399,14 @@ class ModifierGroupsTable extends Table {
   /// line's existing `comment` column.
   BoolColumn get allowsFreeText => boolean().withDefault(const Constant(false))();
 
+  /// Stable key into `lib/modifier/modifier_icons.dart` — the icon the operator
+  /// picked. Null means the till draws its neutral fallback.
+  ///
+  /// A key rather than a codepoint so it survives an icon-set swap, and a
+  /// CHOICE rather than a guess from [name] so it is right in French and Arabic
+  /// too. See the notes in that file.
+  TextColumn get iconKey => text().nullable()();
+
   IntColumn get rank => integer().withDefault(const Constant(0))();
   BoolColumn get isEnabled => boolean().withDefault(const Constant(true))();
   DateTimeColumn get lastModified => dateTime()();
@@ -1795,7 +1803,7 @@ class AppDatabase extends _$AppDatabase {
   /// Restore validation needs it before Drift is touched: a backup whose
   /// `user_version` is higher came from a newer build, and Drift migrates
   /// forward only, so opening it here would corrupt it.
-  static const int expectedSchemaVersion = 62;
+  static const int expectedSchemaVersion = 63;
 
   @override
   int get schemaVersion => expectedSchemaVersion;
@@ -1834,6 +1842,10 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(productModifierGroupsTable);
             await m.createTable(posOrderItemModifiersTable);
             await m.createTable(documentItemModifiersTable);
+          }
+          if (from < 63) {
+            // Nullable, so every existing group simply keeps the fallback icon.
+            await m.addColumn(modifierGroupsTable, modifierGroupsTable.iconKey);
           }
 
           if (from < 60) {
@@ -4042,13 +4054,29 @@ class AppDatabase extends _$AppDatabase {
   /// Upserts an open (status=0) order and replaces its items atomically.
   /// Used by the offline-first SAVE button — creates a new local row the
   /// first time and updates it on every subsequent re-save.
+  /// Writes a parked order, replacing its lines, taxes and chosen modifiers.
+  ///
+  /// 🚨 [itemModifiers] is not optional detail. Without it, parking an order
+  /// offline keeps the MONEY (the surcharge is already inside `unitPrice`) and
+  /// silently loses the instruction — reopening showed the right total with no
+  /// "Extra Cheese" on it, and the kitchen ticket printed a plain burger. A
+  /// price that is right while the ticket is wrong is the worst shape this can
+  /// fail in, because nothing looks broken.
   Future<void> saveOpenOrder(
     PosOrdersTableCompanion order,
     List<PosOrderItemsTableCompanion> newItems, {
     List<PosOrderItemTaxesTableCompanion> itemTaxes = const [],
+    List<PosOrderItemModifiersTableCompanion> itemModifiers = const [],
   }) {
     return transaction(() async {
       await into(posOrdersTable).insertOnConflictUpdate(order);
+
+      // 🚨 Modifier rows FIRST, while the old lines still exist. They hang off
+      // the LINE's localId, and every save deletes and reinserts the lines with
+      // fresh ones — so clearing them after that point looks up the NEW ids,
+      // matches nothing, and leaves the previous save's rows orphaned. Two
+      // saves then showed every choice twice.
+      await deleteOrderItemModifiers(order.localId.value);
 
       await (delete(posOrderItemsTable)
             ..where((t) => t.orderId.equals(order.localId.value)))
@@ -4067,7 +4095,45 @@ class AppDatabase extends _$AppDatabase {
           b.insertAll(posOrderItemTaxesTable, itemTaxes);
         });
       }
+
+      if (itemModifiers.isNotEmpty) {
+        await batch((b) {
+          b.insertAll(posOrderItemModifiersTable, itemModifiers);
+        });
+      }
     });
+  }
+
+  /// Clears every modifier row belonging to one parked order's lines.
+  Future<void> deleteOrderItemModifiers(String orderLocalId) async {
+    final itemIds = await (select(posOrderItemsTable)
+          ..where((t) => t.orderId.equals(orderLocalId)))
+        .get();
+    if (itemIds.isEmpty) return;
+    await (delete(posOrderItemModifiersTable)
+          ..where((t) => t.orderItemLocalId.isIn(itemIds.map((i) => i.localId))))
+        .go();
+  }
+
+  /// The chosen modifiers for a parked order, keyed by its line's localId.
+  Future<Map<String, List<PosOrderItemModifiersTableData>>>
+      orderItemModifiersByLine(String orderLocalId) async {
+    final lines = await (select(posOrderItemsTable)
+          ..where((t) => t.orderId.equals(orderLocalId)))
+        .get();
+    if (lines.isEmpty) return const {};
+
+    final rows = await (select(posOrderItemModifiersTable)
+          ..where((t) =>
+              t.orderItemLocalId.isIn(lines.map((l) => l.localId)))
+          ..orderBy([(t) => OrderingTerm(expression: t.rank)]))
+        .get();
+
+    final byLine = <String, List<PosOrderItemModifiersTableData>>{};
+    for (final r in rows) {
+      byLine.putIfAbsent(r.orderItemLocalId, () => []).add(r);
+    }
+    return byLine;
   }
 
   /// Stamps the server-assigned id on a row mid-sync without flipping
@@ -4584,6 +4650,7 @@ class AppDatabase extends _$AppDatabase {
     required bool allowsFreeText,
     required int rank,
     required bool isEnabled,
+    String? iconKey,
     required List<({int? id, String name, double additionalPrice, bool isEnabled})>
         options,
   }) async {
@@ -4608,6 +4675,7 @@ class AppDatabase extends _$AppDatabase {
           minSelections: Value(minSelections),
           maxSelections: Value(maxSelections),
           allowsFreeText: Value(allowsFreeText),
+          iconKey: Value(iconKey),
           rank: Value(rank),
           isEnabled: Value(isEnabled),
           lastModified: Value(DateTime.now().toUtc()),
@@ -4877,6 +4945,70 @@ class AppDatabase extends _$AppDatabase {
         }
       });
 
+  /// The enabled modifier groups a product offers, each with its enabled
+  /// options, in the order the cashier will be asked.
+  ///
+  /// 🚨 A DIRECT query on purpose. The obvious alternative — reading
+  /// `modifierGroupsForProductProvider(id).future` — is an autoDispose `.family`
+  /// StreamProvider, and with no active listener that future can resolve before
+  /// the Drift watch-stream has emitted its first row. A product that HAS
+  /// groups then looks like it has none and the customise sheet silently never
+  /// opens. That is not a hypothetical: the identical trap is documented on
+  /// `productCommentsProvider` a few lines from this call site, and it caught
+  /// this feature too.
+  ///
+  /// Returns rows, not models, so this layer keeps no dependency on the modifier
+  /// models; the caller composes them.
+  Future<List<({ModifierGroupsTableData group, List<ModifierOptionsTableData> options})>>
+      modifierGroupsForProductDirect(int companyId, int productId) async {
+    final links = await (select(productModifierGroupsTable)
+          ..where((t) => t.companyId.equals(companyId))
+          ..where((t) => t.productId.equals(productId))
+          ..orderBy([
+            (t) => OrderingTerm(expression: t.rank),
+            (t) => OrderingTerm(expression: t.id),
+          ]))
+        .get();
+    if (links.isEmpty) return const [];
+
+    final groupIds = links.map((l) => l.modifierGroupId).toList();
+    final groups = await (select(modifierGroupsTable)
+          ..where((t) => t.id.isIn(groupIds))
+          ..where((t) => t.isEnabled.equals(true))
+          ..where((t) => t.syncStatus.isNotIn(['pending_delete'])))
+        .get();
+    final groupById = {for (final g in groups) g.id: g};
+
+    final options = await (select(modifierOptionsTable)
+          ..where((t) => t.modifierGroupId.isIn(groupIds))
+          ..where((t) => t.isEnabled.equals(true))
+          ..orderBy([
+            (t) => OrderingTerm(expression: t.rank),
+            (t) => OrderingTerm(expression: t.id),
+          ]))
+        .get();
+
+    final optionsByGroup = <int, List<ModifierOptionsTableData>>{};
+    for (final o in options) {
+      optionsByGroup.putIfAbsent(o.modifierGroupId, () => []).add(o);
+    }
+
+    final result = <({ModifierGroupsTableData group, List<ModifierOptionsTableData> options})>[];
+    for (final link in links) {
+      final group = groupById[link.modifierGroupId];
+      if (group == null) continue;
+
+      // A group with nothing choosable is dropped rather than rendered as an
+      // empty section. A MANDATORY one in that state would block the sale with
+      // nothing to click, which is worse than not asking at all.
+      final opts = optionsByGroup[group.id] ?? const <ModifierOptionsTableData>[];
+      if (opts.isEmpty) continue;
+
+      result.add((group: group, options: opts));
+    }
+    return result;
+  }
+
   /// Product ids that have at least one group linked.
   ///
   /// Read once and cached by the menu so tapping a product can decide whether
@@ -4972,6 +5104,14 @@ class AppDatabase extends _$AppDatabase {
     await (update(productCommentsTable)
           ..where((t) => t.productId.equals(tempId)))
         .write(ProductCommentsTableCompanion(productId: Value(realId)));
+    // Modifier groups attached to an offline product. /Modifiers/SetProductGroups
+    // sends the productId, so a link still pointing at the temp id would 400 —
+    // and the till's own lookup (modifierGroupsForProductDirect) keys on
+    // productId too, so the customise sheet would stop opening for the product
+    // the moment it got its real id.
+    await (update(productModifierGroupsTable)
+          ..where((t) => t.productId.equals(tempId)))
+        .write(ProductModifierGroupsTableCompanion(productId: Value(realId)));
     // Promotion built offline that targets an offline product: /Promotions/Add
     // sends items[].productId, so repoint it before pushPendingPromotionOps.
     await (update(promotionItemsTable)

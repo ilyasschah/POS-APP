@@ -1,3 +1,4 @@
+import 'package:pos_app/modifier/modifier_models.dart';
 import 'package:pos_app/uom/unit_of_measure.dart';
 class MenuTax {
   final int id;
@@ -163,6 +164,25 @@ class CartItem {
   bool isToWeigh;
   final bool isService;
 
+  /// The modifier options chosen for THIS line, as snapshots.
+  ///
+  /// Display and reporting only. The money they add is already inside [price]
+  /// — see [basePrice] — so summing these into a line total charges every
+  /// modifier twice.
+  List<SelectedModifier> selectedModifiers;
+
+  /// The product's own unit price, before modifiers.
+  ///
+  /// 🚨 The invariant this whole feature rests on: `price == basePrice +
+  /// modifierSurcharge(selectedModifiers)`. Everything downstream — the tax
+  /// split, the discount and promotion engines, `CheckoutItemDto`, all 36
+  /// reports — reads [price] as THE unit price and knows nothing about
+  /// modifiers, which is exactly why none of them needed changing. [basePrice]
+  /// exists so the breakdown can still be shown, and so re-choosing modifiers
+  /// on an existing line recomputes from the right number instead of
+  /// compounding on the last answer.
+  double basePrice;
+
   /// Whether [price] already CONTAINS the applied taxes.
   ///
   /// Copied from `Product.isTaxInclusivePrice` when the line is created, and
@@ -201,7 +221,9 @@ class CartItem {
     this.isToWeigh = false,
     this.isService = false,
     this.isTaxInclusive = true,
-  });
+    this.selectedModifiers = const [],
+    double? basePrice,
+  }) : basePrice = basePrice ?? price;
 
   Map<String, dynamic> toJson() {
     return {
@@ -237,6 +259,10 @@ class CartItem {
       'AppliedTaxIds': appliedTaxes.map((t) => t.id).toList(),
       'warehouseId': warehouseId, // Include warehouseId in JSON
       'WarehouseId': warehouseId,
+      // Snapshots, so the server records what was actually sold rather than
+      // re-reading a catalogue that may have moved on since.
+      'modifiers': selectedModifiers.map((m) => m.toJson()).toList(),
+      'Modifiers': selectedModifiers.map((m) => m.toJson()).toList(),
     };
   }
 }

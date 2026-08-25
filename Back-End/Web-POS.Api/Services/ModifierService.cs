@@ -50,6 +50,7 @@ namespace Api.Services
                     MinSelections = g.MinSelections,
                     MaxSelections = g.MaxSelections,
                     AllowsFreeText = g.AllowsFreeText,
+                    IconKey = g.IconKey,
                     Rank = g.Rank,
                     IsEnabled = g.IsEnabled,
                     LastModified = g.LastModified
@@ -155,13 +156,18 @@ namespace Api.Services
                         ?? throw new InvalidOperationException($"Modifier group {req.Id} was not found.");
 
                     group.Update(req.Name, req.MinSelections, req.MaxSelections,
-                                 req.AllowsFreeText, req.Rank, req.IsEnabled);
+                                 req.AllowsFreeText, req.Rank, req.IsEnabled,
+                                 iconKey: req.IconKey,
+                                 // The save always carries the whole group, so a
+                                 // null key here really does mean "no icon" —
+                                 // the operator picked the fallback.
+                                 clearIcon: string.IsNullOrWhiteSpace(req.IconKey));
                 }
                 else
                 {
                     group = ModifierGroup.Create(companyId, req.Name, req.MinSelections,
                                                  req.MaxSelections, req.AllowsFreeText,
-                                                 req.Rank, req.IsEnabled);
+                                                 req.Rank, req.IsEnabled, req.IconKey);
                     _db.ModifierGroups.Add(group);
                 }
 
@@ -227,6 +233,7 @@ namespace Api.Services
                     MinSelections = group.MinSelections,
                     MaxSelections = group.MaxSelections,
                     AllowsFreeText = group.AllowsFreeText,
+                    IconKey = group.IconKey,
                     Rank = group.Rank,
                     IsEnabled = group.IsEnabled,
                     LastModified = group.LastModified,

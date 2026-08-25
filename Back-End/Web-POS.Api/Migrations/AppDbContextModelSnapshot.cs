@@ -1293,6 +1293,10 @@ namespace Api.Migrations
                     b.Property<int>("CompanyId")
                         .HasColumnType("int");
 
+                    b.Property<string>("IconKey")
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
                     b.Property<bool>("IsEnabled")
                         .HasColumnType("bit");
 

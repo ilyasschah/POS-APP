@@ -11063,7 +11063,7 @@ abstract class AppLocalizations {
   /// No description provided for @resetDocumentsNote.
   ///
   /// In en, this message translates to:
-  /// **'Sales, orders, payments, voids and Z-reports. Bookings are kept.'**
+  /// **'Sales, orders, payments, voids, Z-reports, register sessions and cash movements. Bookings and attendance shifts are kept.'**
   String get resetDocumentsNote;
 
   /// No description provided for @resetEverything.
@@ -12385,6 +12385,162 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Move down'**
   String get moveDown;
+
+  /// No description provided for @chooseAModifierGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a group'**
+  String get chooseAModifierGroup;
+
+  /// No description provided for @noModifierGroupsExistYet.
+  ///
+  /// In en, this message translates to:
+  /// **'You have not built any modifier groups yet. Create one in Management → Modifier Groups, then come back and attach it here.'**
+  String get noModifierGroupsExistYet;
+
+  /// No description provided for @allModifierGroupsAttached.
+  ///
+  /// In en, this message translates to:
+  /// **'Every group is already attached'**
+  String get allModifierGroupsAttached;
+
+  /// No description provided for @dragToReorderGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag to change the order the cashier is asked.'**
+  String get dragToReorderGroups;
+
+  /// No description provided for @customizeItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Customize {name}'**
+  String customizeItem(String name);
+
+  /// No description provided for @addToOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to order'**
+  String get addToOrder;
+
+  /// No description provided for @chooseAtLeastN.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose at least {min}'**
+  String chooseAtLeastN(int min);
+
+  /// No description provided for @aNoteForTheKitchen.
+  ///
+  /// In en, this message translates to:
+  /// **'Note for the kitchen'**
+  String get aNoteForTheKitchen;
+
+  /// No description provided for @aNoteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'no ice, allergic to nuts…'**
+  String get aNoteHint;
+
+  /// No description provided for @maxReachedForGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Limit reached'**
+  String get maxReachedForGroup;
+
+  /// No description provided for @editChoices.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit choices'**
+  String get editChoices;
+
+  /// No description provided for @tagRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Required'**
+  String get tagRequired;
+
+  /// No description provided for @tagDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get tagDone;
+
+  /// No description provided for @tagOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional'**
+  String get tagOptional;
+
+  /// No description provided for @customizeEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'CUSTOMIZE'**
+  String get customizeEyebrow;
+
+  /// No description provided for @groupIcon.
+  ///
+  /// In en, this message translates to:
+  /// **'Icon'**
+  String get groupIcon;
+
+  /// No description provided for @groupIconHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Shown beside this group at the till. Optional.'**
+  String get groupIconHint;
+
+  /// No description provided for @iconNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get iconNone;
+
+  /// No description provided for @iconBurger.
+  ///
+  /// In en, this message translates to:
+  /// **'Burger'**
+  String get iconBurger;
+
+  /// No description provided for @iconPizza.
+  ///
+  /// In en, this message translates to:
+  /// **'Pizza'**
+  String get iconPizza;
+
+  /// No description provided for @iconMeal.
+  ///
+  /// In en, this message translates to:
+  /// **'Meal'**
+  String get iconMeal;
+
+  /// No description provided for @iconSide.
+  ///
+  /// In en, this message translates to:
+  /// **'Side'**
+  String get iconSide;
+
+  /// No description provided for @iconSauce.
+  ///
+  /// In en, this message translates to:
+  /// **'Sauce'**
+  String get iconSauce;
+
+  /// No description provided for @iconDrink.
+  ///
+  /// In en, this message translates to:
+  /// **'Drink'**
+  String get iconDrink;
+
+  /// No description provided for @iconDessert.
+  ///
+  /// In en, this message translates to:
+  /// **'Dessert'**
+  String get iconDessert;
+
+  /// No description provided for @iconSpice.
+  ///
+  /// In en, this message translates to:
+  /// **'Spice'**
+  String get iconSpice;
 }
 
 class _AppLocalizationsDelegate

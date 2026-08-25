@@ -32,6 +32,19 @@ abstract final class PosSessionStatus {
 
   static bool isLive(int status) => live.contains(status);
 
+  /// The lowest session status. Anything BELOW it in the `shifts` table is an
+  /// attendance shift (0 = open, 1 = closed).
+  static const int firstStatus = openingControl;
+
+  /// Whether a `shifts` row is a POS session rather than an attendance shift.
+  ///
+  /// 🚨 The STATUS is the discriminator here, not `posDeviceUid`. A session
+  /// pulled from ANOTHER register lands with a null uid — `pullSessions` only
+  /// fills that in for rows this terminal already owns — so a uid test reads
+  /// every other till's sessions as attendance and bills them to payroll.
+  /// Status survives the pull intact.
+  static bool isSession(int status) => status >= firstStatus;
+
   /// Whether a session in this state may take money.
   static bool canSell(int status) => status == opened;
 

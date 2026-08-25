@@ -9,8 +9,8 @@ import 'package:pos_app/l10n/app_localizations.dart';
 /// Definition of a single column the Products grid is able to render.
 ///
 /// [mandatory] columns are always visible and are not offered as a toggle in
-/// the column picker (e.g. the product name and the edit action), so the table
-/// can never end up with nothing meaningful to show.
+/// the column picker (the product name), so the table can never end up with
+/// nothing meaningful to show.
 class ProductColumnDef {
   final String key;
 
@@ -60,7 +60,6 @@ const kProductColumns = <ProductColumnDef>[
   ProductColumnDef('description', 'Description'),
   ProductColumnDef('created', 'Created'),
   ProductColumnDef('updated', 'Updated'),
-  ProductColumnDef('actions', 'Edit', defaultVisible: true, mandatory: true),
 ];
 
 /// Localized header for a [ProductColumnDef.key]. Falls back to the `const`
@@ -89,7 +88,6 @@ String productColumnLabel(BuildContext context, String key) {
     'description' => l.fieldDescription,
     'created' => l.created,
     'updated' => l.updatedLabel,
-    'actions' => l.actionEdit,
     _ => kProductColumns
         .firstWhere(
           (c) => c.key == key,

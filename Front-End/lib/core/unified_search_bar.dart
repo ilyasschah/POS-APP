@@ -89,6 +89,7 @@ class UnifiedSearchBar extends StatefulWidget {
     this.onClearAll,
     this.menuMaxHeight = 420,
     this.singleLine = false,
+    this.trailing,
   });
 
   final TextEditingController controller;
@@ -112,6 +113,13 @@ class UnifiedSearchBar extends StatefulWidget {
   final VoidCallback? onClearAll;
 
   final double menuMaxHeight;
+
+  /// Quick actions that belong to the search itself, rendered INSIDE the bar's
+  /// border just before the filter button — the Products screen's scope
+  /// toggles (all fields / barcode / code / name) are the case this exists
+  /// for. They are not filters: a scope changes what the typed text is matched
+  /// against, so it has no chip and never appears in the menu.
+  final Widget? trailing;
 
   /// Keeps the bar exactly one row tall: chips sit beside the input instead of
   /// wrapping under it, and each one is capped so the field always keeps room
@@ -271,6 +279,17 @@ class _UnifiedSearchBarState extends State<UnifiedSearchBar> {
                     _closeMenu();
                   },
                 ),
+              if (widget.trailing != null) ...[
+                SizedBox(
+                  height: 26,
+                  child: VerticalDivider(
+                    width: 12,
+                    thickness: 1,
+                    color: cs.outlineVariant.withValues(alpha: 0.5),
+                  ),
+                ),
+                widget.trailing!,
+              ],
               SizedBox(
                 height: 26,
                 child: VerticalDivider(

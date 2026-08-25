@@ -6172,7 +6172,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get resetDocumentsNote =>
-      'المبيعات والطلبات والمدفوعات والإلغاءات وتقارير Z. تُحفظ الحجوزات.';
+      'المبيعات والطلبات والمدفوعات والإلغاءات وتقارير Z وجلسات الصندوق والحركات النقدية. تُحفظ الحجوزات وورديات الحضور.';
 
   @override
   String get resetEverything => 'كل شيء';
@@ -6908,4 +6908,87 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get moveDown => 'تحريك لأسفل';
+
+  @override
+  String get chooseAModifierGroup => 'اختر مجموعة';
+
+  @override
+  String get noModifierGroupsExistYet =>
+      'لم تنشئ أي مجموعة خيارات بعد. أنشئ واحدة من الإدارة ← مجموعات الخيارات، ثم عد لربطها هنا.';
+
+  @override
+  String get allModifierGroupsAttached => 'كل المجموعات مرتبطة بالفعل';
+
+  @override
+  String get dragToReorderGroups => 'اسحب لتغيير ترتيب الأسئلة في نقطة البيع.';
+
+  @override
+  String customizeItem(String name) {
+    return 'تخصيص $name';
+  }
+
+  @override
+  String get addToOrder => 'إضافة إلى الطلب';
+
+  @override
+  String chooseAtLeastN(int min) {
+    return 'اختر $min على الأقل';
+  }
+
+  @override
+  String get aNoteForTheKitchen => 'ملاحظة للمطبخ';
+
+  @override
+  String get aNoteHint => 'بدون ثلج، حساسية من المكسرات…';
+
+  @override
+  String get maxReachedForGroup => 'بلغت الحد';
+
+  @override
+  String get editChoices => 'تعديل الخيارات';
+
+  @override
+  String get tagRequired => 'إلزامي';
+
+  @override
+  String get tagDone => 'تم';
+
+  @override
+  String get tagOptional => 'اختياري';
+
+  @override
+  String get customizeEyebrow => 'تخصيص';
+
+  @override
+  String get groupIcon => 'أيقونة';
+
+  @override
+  String get groupIconHint => 'تظهر بجانب المجموعة في نقطة البيع. اختيارية.';
+
+  @override
+  String get iconNone => 'بلا';
+
+  @override
+  String get iconBurger => 'برغر';
+
+  @override
+  String get iconPizza => 'بيتزا';
+
+  @override
+  String get iconMeal => 'طبق';
+
+  @override
+  String get iconSide => 'طبق جانبي';
+
+  @override
+  String get iconSauce => 'صلصة';
+
+  @override
+  String get iconDrink => 'مشروب';
+
+  @override
+  String get iconDessert => 'حلوى';
+
+  @override
+  String get iconSpice => 'حار';
 }

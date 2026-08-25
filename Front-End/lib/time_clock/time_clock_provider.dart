@@ -1,7 +1,8 @@
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
-import 'package:drift/drift.dart' show Value, OrderingTerm;
+import 'package:drift/drift.dart'
+    show Value, OrderingTerm, Expression, ComparableExpr;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
@@ -11,6 +12,20 @@ import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/l10n/app_locale.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
+import 'package:pos_app/session/pos_session_status.dart';
+
+/// Restricts a `shifts` query to ATTENDANCE shifts, excluding POS sessions.
+///
+/// 🚨 Required on every reader on this page. The `shifts` table holds both
+/// shapes (see [PosSessionStatus]), so without it OPENING A REGISTER writes a
+/// row that every attendance reader counts as clocked-in time: the sidebar
+/// timer switches itself on, and the hours report bills the register's whole
+/// trading day to whoever happened to open it.
+///
+/// Tests `status`, not `posDeviceUid`, because a session pulled from another
+/// till arrives with a null uid — see [PosSessionStatus.isSession].
+Expression<bool> _attendanceOnly(ShiftsTable t) =>
+    t.status.isSmallerThanValue(PosSessionStatus.firstStatus);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PROVIDERS
@@ -182,7 +197,8 @@ final hoursReportProvider =
     final users = await usersQuery.get();
 
     final shifts = await (db.select(db.shiftsTable)
-          ..where((t) => t.companyId.equals(params.companyId)))
+          ..where((t) => t.companyId.equals(params.companyId))
+          ..where(_attendanceOnly))
         .get();
 
     // Build per-user minute totals, clamped to the selected date range.
@@ -265,6 +281,7 @@ final shiftSessionsProvider =
 
     final query = db.select(db.shiftsTable)
       ..where((t) => t.companyId.equals(params.companyId))
+      ..where(_attendanceOnly)
       ..orderBy([(t) => OrderingTerm.desc(t.openedAt)]);
 
     return query.watch().asyncMap((shifts) async {
@@ -312,7 +329,8 @@ final todayTotalMinutesProvider = StreamProvider<int>((ref) {
 
   return (db.select(db.shiftsTable)
         ..where((t) => t.companyId.equals(companyId))
-        ..where((t) => t.userId.equals(userId)))
+        ..where((t) => t.userId.equals(userId))
+        ..where(_attendanceOnly))
       .watch()
       .map((shifts) {
     int total = 0;
