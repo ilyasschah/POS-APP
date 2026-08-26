@@ -3,7 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:pos_app/company/company_provider.dart';
+import 'package:pos_app/core/ilyass_list_scaffold.dart';
+import 'package:pos_app/core/ilyass_table.dart';
 import 'package:pos_app/core/responsive.dart';
+import 'package:pos_app/core/unified_search_bar.dart';
 import 'package:pos_app/currency/currencies_provider.dart';
 import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
@@ -14,19 +17,15 @@ import 'package:pos_app/modifier/modifier_provider.dart';
 import 'package:pos_app/sync/sync_notifier.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
 
-/// The modifier catalogue's admin screen: groups on the left, the selected
-/// group's editor on the right.
+/// The modifier catalogue's admin screen: a table of groups, each opening its
+/// own editor page.
 ///
-/// Master/detail rather than a list plus a dialog because a group is edited as
-/// ONE thing — its name, its selection rule and its whole option list are saved
-/// together (see `/Modifiers/SaveGroup`), and splitting them across a dialog
-/// would hide half the record while the other half is being changed.
-///
-/// Below [kModifierMasterDetailWidth] the detail pane cannot hold a price field
-/// next to a name field without overflowing, so the two panes stack into one
-/// and the list pushes the editor as a full page. The threshold is measured
-/// against the pane's own constraints, never `context.isCompact` — a 10-inch
-/// tablet in landscape is not a phone, and it has the room.
+/// 🚨 The editor is a full PAGE, not a dialog, and that has not changed. A
+/// group is saved as ONE thing — its name, its selection rule and its whole
+/// option list go to `/Modifiers/SaveGroup` together — so a dialog would hide
+/// half the record while the other half is being changed. What went away is the
+/// permanent side-by-side split, which cost 60% of the width to show one group
+/// whether or not anyone was editing it.
 class ModifierGroupsScreen extends ConsumerStatefulWidget {
   /// Passed by ManagementLayout when the sidebar is hidden, so the AppBar shows
   /// a menu icon rather than a back arrow.
@@ -39,85 +38,241 @@ class ModifierGroupsScreen extends ConsumerStatefulWidget {
       _ModifierGroupsScreenState();
 }
 
-/// Narrower than this and the editor's name+price row has nowhere to go.
-const double kModifierMasterDetailWidth = 900;
-
 class _ModifierGroupsScreenState extends ConsumerState<ModifierGroupsScreen> {
-  /// The group being edited. Null means nothing is selected.
-  int? _selectedId;
+  final _searchCtrl = TextEditingController();
+  String _query = '';
+
+  /// Ticked rows, by group id.
+  final Set<int> _selectedIds = {};
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  void _setQuery(String value) {
+    setState(() {
+      _query = value;
+      // Selection is by id and survives filtering, so a row the search hid must
+      // drop out of it.
+      _selectedIds.clear();
+    });
+  }
+
+  /// Matches the group name AND its option names — an operator hunting for
+  /// "Extra cheese" should not have to remember it lives under "Toppings".
+  List<ModifierGroup> _visible(List<ModifierGroup> all) {
+    final q = _query.trim().toLowerCase();
+    if (q.isEmpty) return all;
+    return all
+        .where((g) =>
+            g.name.toLowerCase().contains(q) ||
+            g.options.any((o) => o.name.toLowerCase().contains(q)))
+        .toList();
+  }
+
+  Future<void> _bulkDelete() async {
+    if (_selectedIds.isEmpty) return;
+    final l10n = AppLocalizations.of(context);
+    final all =
+        ref.read(allModifierGroupsProvider).value ?? const <ModifierGroup>[];
+    final targets = all.where((g) => _selectedIds.contains(g.id)).toList();
+    if (targets.isEmpty) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.deleteGroup),
+        content: Text(targets.length == 1
+            ? l10n.deleteQuotedConfirm(targets.first.name)
+            : l10n.deleteProductsConfirm(targets.length)),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l10n.actionCancel)),
+          FilledButton(
+            style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(ctx).colorScheme.error),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l10n.actionDelete),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !mounted) return;
+
+    final companyId = ref.read(selectedCompanyProvider)?.id;
+    if (companyId == null) return;
+    try {
+      for (final group in targets) {
+        await ref.read(appDatabaseProvider).deleteModifierGroupLocal(group.id);
+      }
+      ref.read(syncStateProvider.notifier).sync().catchError((_) {});
+      if (mounted) setState(_selectedIds.clear);
+    } catch (_) {
+      if (mounted) {
+        showAppSnackbar(context, ref, AppLocalizations.of(context).deleteFailed,
+            isError: true);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     final groups = ref.watch(allModifierGroupsProvider);
+    final hasSelection = _selectedIds.isNotEmpty;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.modifierGroups,
-            style: const TextStyle(fontWeight: FontWeight.bold)),
-        centerTitle: false,
-        automaticallyImplyLeading: false,
-        leading: widget.onMenuPressed != null
-            ? IconButton(
-                icon: const Icon(Icons.menu),
-                tooltip: l10n.showNavigation,
-                onPressed: widget.onMenuPressed,
-              )
-            : null,
+    return IlyassListScaffold(
+      title: l10n.modifierGroups,
+      onMenuPressed: widget.onMenuPressed,
+      searchBar: UnifiedSearchBar(
+        controller: _searchCtrl,
+        singleLine: true,
+        hintText: l10n.actionSearch,
+        chips: const [],
+        sectionsBuilder: (_) => const [],
+        onQueryChanged: _setQuery,
+        onClearAll: () {
+          _searchCtrl.clear();
+          _setQuery('');
+        },
       ),
+      actions: [
+        IlyassMenuAction(
+          icon: Icons.delete_outline_rounded,
+          label: hasSelection
+              ? l10n.deleteWithCount(_selectedIds.length)
+              : l10n.actionDelete,
+          color: hasSelection ? cs.error : null,
+          enabled: hasSelection,
+          onSelected: _bulkDelete,
+        ),
+      ],
+      fabLabel: l10n.addModifierGroup,
+      onFabPressed: () => _openAsPage(null),
       body: groups.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(l10n.errorWithMessage(e.toString()),
-              style: TextStyle(color: Theme.of(context).colorScheme.error)),
+              style: TextStyle(color: cs.error)),
         ),
-        data: (list) => LayoutBuilder(
-          builder: (context, constraints) {
-            final wide = constraints.maxWidth >= kModifierMasterDetailWidth;
-            final selected =
-                list.where((g) => g.id == _selectedId).firstOrNull;
+        data: (all) {
+          final list = _visible(all);
+          final selected =
+              _selectedIds.intersection(list.map((g) => g.id).toSet());
 
-            if (!wide) {
-              return _GroupList(
-                groups: list,
-                selectedId: null,
-                onTap: (g) => _openAsPage(g),
-                onNew: () => _openAsPage(null),
-              );
-            }
-
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: _GroupList(
-                    groups: list,
-                    selectedId: _selectedId,
-                    onTap: (g) => setState(() => _selectedId = g.id),
-                    onNew: () => setState(() => _selectedId = null),
-                  ),
+          return IlyassTable<ModifierGroup>(
+            tableId: 'modifierGroups',
+            rows: list,
+            rowHeight: 64,
+            onRowTap: _openAsPage,
+            isRowSelected: (g) => selected.contains(g.id),
+            // A disabled group reads as disabled at a glance.
+            rowColor: (g) => g.isEnabled
+                ? null
+                : theme.disabledColor.withValues(alpha: 0.05),
+            columns: [
+              ilyassSelectionColumn<ModifierGroup, int>(
+                rows: list,
+                selected: selected,
+                idOf: (g) => g.id,
+                onChanged: (ids) => setState(() {
+                  _selectedIds
+                    ..clear()
+                    ..addAll(ids);
+                }),
+              ),
+              IlyassColumn<ModifierGroup>(
+                key: 'name',
+                label: l10n.fieldName,
+                width: 240,
+                flexible: true,
+                cell: (context, g) => Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    PhosphorIcon(modifierIconFor(g.iconKey).regular, size: 18),
+                    const SizedBox(width: 10),
+                    Flexible(
+                      child: Text(
+                        g.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
                 ),
-                Container(
-                  width: 1,
-                  color: Theme.of(context).colorScheme.outlineVariant,
+              ),
+              IlyassColumn<ModifierGroup>(
+                key: 'rule',
+                label: l10n.colSelectionRule,
+                width: 200,
+                cell: (context, g) => Text(
+                  selectionRuleLabel(context, g),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: cs.onSurfaceVariant),
                 ),
-                Expanded(
-                  flex: 3,
-                  child: _GroupEditor(
-                    // Keyed by group id so switching selection REBUILDS the
-                    // editor's controllers. Without it the previous group's
-                    // text stays in the fields and the next Save writes it.
-                    key: ValueKey(_selectedId),
-                    group: selected,
-                    onSaved: (id) => setState(() => _selectedId = id),
-                    onDeleted: () => setState(() => _selectedId = null),
-                  ),
+              ),
+              IlyassColumn<ModifierGroup>(
+                key: 'options',
+                label: l10n.options,
+                width: 130,
+                numeric: true,
+                cell: (context, g) => Text('${g.options.length}'),
+              ),
+              IlyassColumn<ModifierGroup>(
+                key: 'freeText',
+                label: l10n.allowFreeText,
+                width: 140,
+                cell: (context, g) => Icon(
+                  g.allowsFreeText
+                      ? Icons.check_circle
+                      : Icons.remove_circle_outline,
+                  size: 18,
+                  color: g.allowsFreeText
+                      ? cs.primary
+                      : theme.disabledColor,
                 ),
-              ],
-            );
-          },
-        ),
+              ),
+              IlyassColumn<ModifierGroup>(
+                key: 'enabled',
+                label: l10n.fieldEnabled,
+                width: 120,
+                cell: (context, g) => Icon(
+                  g.isEnabled ? Icons.check_circle : Icons.remove_circle_outline,
+                  size: 18,
+                  color: g.isEnabled ? cs.primary : theme.disabledColor,
+                ),
+              ),
+            ],
+            emptyState: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.tune,
+                        size: 64,
+                        color: theme.disabledColor.withValues(alpha: 0.3)),
+                    const SizedBox(height: 16),
+                    Text(
+                      all.isEmpty
+                          ? l10n.noModifierGroupsYet
+                          : l10n.noResultsForFilters,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: theme.hintColor, fontSize: 16),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -142,127 +297,6 @@ class _ModifierGroupsScreenState extends ConsumerState<ModifierGroupsScreen> {
   }
 }
 
-// ── The list ─────────────────────────────────────────────────────────────────
-
-class _GroupList extends StatelessWidget {
-  const _GroupList({
-    required this.groups,
-    required this.selectedId,
-    required this.onTap,
-    required this.onNew,
-  });
-
-  final List<ModifierGroup> groups;
-  final int? selectedId;
-  final ValueChanged<ModifierGroup> onTap;
-  final VoidCallback onNew;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final cs = Theme.of(context).colorScheme;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(l10n.modifierGroupsHint,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: cs.onSurfaceVariant)),
-              const SizedBox(height: 12),
-              FilledButton.icon(
-                onPressed: onNew,
-                icon: const Icon(Icons.add),
-                label: Text(l10n.addModifierGroup),
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: groups.isEmpty
-              ? Center(
-                  child: Text(l10n.noModifierGroupsYet,
-                      style: TextStyle(color: cs.onSurfaceVariant)),
-                )
-              : ListView.separated(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: groups.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
-                  itemBuilder: (_, i) {
-                    final g = groups[i];
-                    final isSelected = g.id == selectedId;
-                    return Card(
-                      elevation: 0,
-                      color: isSelected ? cs.primaryContainer : cs.surface,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        side: BorderSide(
-                          color: isSelected ? cs.primary : cs.outlineVariant,
-                          width: isSelected ? 2 : 1,
-                        ),
-                      ),
-                      child: ListTile(
-                        onTap: () => onTap(g),
-                        title: Row(
-                          children: [
-                            // Loose Flexible on both sides with spaceBetween —
-                            // Expanded on the name would strand the badge at
-                            // the row's midpoint.
-                            Flexible(
-                              flex: 3,
-                              child: Text(
-                                g.name,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  color: isSelected
-                                      ? cs.onPrimaryContainer
-                                      : cs.onSurface,
-                                ),
-                              ),
-                            ),
-                            if (!g.isEnabled) ...[
-                              const SizedBox(width: 8),
-                              Flexible(
-                                flex: 2,
-                                child: _Badge(
-                                  label: l10n.groupIsDisabled,
-                                  color: cs.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                        subtitle: Text(
-                          '${selectionRuleLabel(context, g)} · '
-                          '${l10n.optionCount(g.options.length)}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                              color: isSelected
-                                  ? cs.onPrimaryContainer.withValues(alpha: 0.8)
-                                  : cs.onSurfaceVariant),
-                        ),
-                        trailing: g.allowsFreeText
-                            ? Icon(Icons.edit_note, color: cs.onSurfaceVariant)
-                            : null,
-                      ),
-                    );
-                  },
-                ),
-        ),
-      ],
-    );
-  }
-}
-
 /// Plain-language rendering of a group's min/max pair.
 ///
 /// The raw numbers are meaningless to whoever configures this ("min 1 max 1"),
@@ -279,34 +313,6 @@ String selectionRuleLabel(BuildContext context, ModifierGroup g) {
       : l10n.selectionRuleRange(g.minSelections, g.maxSelections);
 }
 
-class _Badge extends StatelessWidget {
-  const _Badge({required this.label, required this.color});
-
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Text(label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-                fontSize: 11, fontWeight: FontWeight.bold, color: color)),
-      );
-}
-
-// ── The editor ───────────────────────────────────────────────────────────────
-
-/// One option's in-progress edit state.
-///
-/// Carries the catalogue [id] through untouched, which is load-bearing: past
-/// sales point at it for reporting, so a save must UPDATE the row rather than
-/// recreate it. Null means this choice is new.
 class _DraftOption {
   _DraftOption({this.id, String name = '', double price = 0})
       : nameCtrl = TextEditingController(text: name),
@@ -329,8 +335,11 @@ class _DraftOption {
 }
 
 class _GroupEditor extends ConsumerStatefulWidget {
+  // No `key`: the editor used to be a persistent side pane that had to be
+  // rebuilt when the selection changed, or the previous group's text stayed in
+  // the fields. Each editor is its own route now, so it is fresh by
+  // construction.
   const _GroupEditor({
-    super.key,
     required this.group,
     required this.onSaved,
     required this.onDeleted,

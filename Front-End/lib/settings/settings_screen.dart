@@ -2350,6 +2350,12 @@ List<SearchableSetting> _kSearchableSettings(
     trailingBuilder: (_) => const _SwitchControl(SettingKeys.showCommentBtn),
   ),
   SearchableSetting(
+    title: AppLocalizations.of(context).setModifiersButton,
+    tabName: 'General · POS Buttons',
+    tabIndex: 0,
+    trailingBuilder: (_) => const _SwitchControl(SettingKeys.showModifiersBtn),
+  ),
+  SearchableSetting(
     title: AppLocalizations.of(context).setRefundButton,
     tabName: 'General · POS Buttons',
     tabIndex: 0,
@@ -4078,6 +4084,11 @@ class _GeneralTab extends ConsumerWidget {
                     key: SettingKeys.showCommentBtn,
                     label: AppLocalizations.of(context).posComment,
                     icon: Icons.chat_bubble_outline,
+                  ),
+                  (
+                    key: SettingKeys.showModifiersBtn,
+                    label: AppLocalizations.of(context).posModifiers,
+                    icon: Icons.tune,
                   ),
                   (
                     key: SettingKeys.showRefundBtn,

@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/core/ilyass_column_order.dart';
+import 'package:pos_app/core/ilyass_list_scaffold.dart';
+import 'package:pos_app/core/ilyass_table.dart';
+import 'package:pos_app/core/status_colors.dart';
+import 'package:pos_app/core/unified_search_bar.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/cart/payment_type_model.dart';
@@ -54,7 +59,7 @@ String _paymentColumnLabel(BuildContext context, String id) {
 // SCREEN
 // ─────────────────────────────────────────────────────────────
 
-class PaymentTypesScreen extends ConsumerWidget {
+class PaymentTypesScreen extends ConsumerStatefulWidget {
   /// Passed by ManagementLayout when the sidebar is hidden so the AppBar can
   /// show a menu icon rather than the default back arrow.
   final VoidCallback? onMenuPressed;
@@ -62,558 +67,326 @@ class PaymentTypesScreen extends ConsumerWidget {
   const PaymentTypesScreen({super.key, this.onMenuPressed});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
+  ConsumerState<PaymentTypesScreen> createState() =>
+      _PaymentTypesScreenState();
+}
 
-    final asyncTypes = ref.watch(allPaymentTypesProvider);
-    final company = ref.watch(selectedCompanyProvider);
+class _PaymentTypesScreenState extends ConsumerState<PaymentTypesScreen> {
+  final _searchCtrl = TextEditingController();
+  String _query = '';
 
-    final visibleColumns = ref.watch(paymentTypeVisibleColumnsProvider);
+  /// Ticked rows, by payment-type id.
+  final Set<int> _selectedIds = {};
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
 
-      appBar: AppBar(
-        title: Text(AppLocalizations.of(context).paymentTypes),
-        // Suppress the auto back-arrow — ManagementLayout controls navigation.
-        automaticallyImplyLeading: false,
-        leading: onMenuPressed != null
-            ? IconButton(
-                icon: const Icon(Icons.menu),
-                tooltip: AppLocalizations.of(context).showNavigation,
-                onPressed: onMenuPressed,
-              )
-            : null,
+  void _setQuery(String value) {
+    setState(() {
+      _query = value;
+      // Selection is by id and survives filtering, so a row the search hid must
+      // drop out of it.
+      _selectedIds.clear();
+    });
+  }
 
+  List<PaymentType> _visible(List<PaymentType> all) {
+    final q = _query.trim().toLowerCase();
+    if (q.isEmpty) return all;
+    return all
+        .where((t) =>
+            t.name.toLowerCase().contains(q) ||
+            (t.code?.toLowerCase().contains(q) ?? false))
+        .toList();
+  }
+
+  Future<void> _openEditor(int companyId, [PaymentType? paymentType]) async {
+    await showDialog(
+      context: context,
+      builder: (_) => _PaymentTypeFormDialog(
+        companyId: companyId,
+        paymentType: paymentType,
+      ),
+    );
+    ref.invalidate(allPaymentTypesProvider);
+    await ref.read(syncManagerProvider).pullPaymentTypes(companyId);
+  }
+
+  void _showColumnPicker(BuildContext context) {
+    final catalogue =
+        ref.read(paymentTypeVisibleColumnsProvider).keys.toList();
+
+    showIlyassColumnPicker(
+      context: context,
+      tableId: 'paymentTypes',
+      columns: [
+        for (final key in catalogue)
+          IlyassPickerColumn(key: key, label: _paymentColumnLabel(context, key)),
+      ],
+      isVisible: (key) =>
+          ref.read(paymentTypeVisibleColumnsProvider)[key] ?? false,
+      onVisibleChanged: (key, value) {
+        final updated =
+            Map<String, bool>.from(ref.read(paymentTypeVisibleColumnsProvider));
+        updated[key] = value;
+        ref.read(paymentTypeVisibleColumnsProvider.notifier).state = updated;
+      },
+    );
+  }
+
+  Future<void> _bulkDelete(int companyId) async {
+    if (_selectedIds.isEmpty) return;
+    final l = AppLocalizations.of(context);
+    final all =
+        ref.read(allPaymentTypesProvider).value ?? const <PaymentType>[];
+    final targets = all.where((t) => _selectedIds.contains(t.id)).toList();
+    if (targets.isEmpty) return;
+
+    // ONE confirmation for the batch — looping the per-row dialog would put
+    // nine prompts in front of someone deleting nine rows.
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.confirmDelete),
+        content: Text(targets.length == 1
+            ? l.deletePaymentTypeConfirm(targets.first.name)
+            : l.deleteProductsConfirm(targets.length)),
         actions: [
-          // COLUMN PICKER
-          IconButton(
-            icon: const Icon(Icons.view_column_rounded),
-            tooltip: AppLocalizations.of(context).columnsTooltip,
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (_) {
-                  return Consumer(
-                    builder: (context, ref, _) {
-                      final columns = ref.watch(
-                        paymentTypeVisibleColumnsProvider,
-                      );
-
-                      return AlertDialog(
-                        title: Text(AppLocalizations.of(context).visibleColumns),
-
-                        content: SizedBox(
-                          width: 320,
-                          child: SingleChildScrollView(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: columns.entries.map((entry) {
-                                return CheckboxListTile(
-                                  value: entry.value,
-                                  title: Text(
-                                      _paymentColumnLabel(context, entry.key)),
-                                  controlAffinity:
-                                      ListTileControlAffinity.leading,
-                                  onChanged: (v) {
-                                    final updated = Map<String, bool>.from(
-                                      columns,
-                                    );
-
-                                    updated[entry.key] = v ?? false;
-
-                                    ref
-                                            .read(
-                                              paymentTypeVisibleColumnsProvider
-                                                  .notifier,
-                                            )
-                                            .state =
-                                        updated;
-                                  },
-                                );
-                              }).toList(),
-                            ),
-                          ),
-                        ),
-
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            child: Text(AppLocalizations.of(context).actionClose),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                },
-              );
-            },
-          ),
-
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: AppLocalizations.of(context).refreshTooltip,
-            onPressed: company == null
-                ? null
-                : () => ref
-                    .read(syncManagerProvider)
-                    .pullPaymentTypes(company.id),
-          ),
-
-          IconButton(
-            icon: const Icon(Icons.add),
-            tooltip: AppLocalizations.of(context).newPaymentType,
-            onPressed: company == null
-                ? null
-                : () async {
-                    await showDialog(
-                      context: context,
-                      builder: (_) =>
-                          _PaymentTypeFormDialog(companyId: company.id),
-                    );
-
-                    await ref
-                        .read(syncManagerProvider)
-                        .pullPaymentTypes(company.id);
-                  },
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l.actionCancel)),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: ctx.dangerColor,
+              foregroundColor: ctx.onStatusColor,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l.actionDelete),
           ),
         ],
       ),
+    );
+    if (confirm != true || !mounted) return;
 
+    for (final type in targets) {
+      if (!mounted) return;
+      await _delete(context, ref, type.id, companyId);
+    }
+    if (mounted) setState(_selectedIds.clear);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final asyncTypes = ref.watch(allPaymentTypesProvider);
+    final company = ref.watch(selectedCompanyProvider);
+    final visibleColumns = ref.watch(paymentTypeVisibleColumnsProvider);
+    final hasSelection = _selectedIds.isNotEmpty;
+
+    return IlyassListScaffold(
+      title: l.paymentTypes,
+      onMenuPressed: widget.onMenuPressed,
+      searchBar: UnifiedSearchBar(
+        controller: _searchCtrl,
+        singleLine: true,
+        hintText: l.actionSearch,
+        chips: const [],
+        sectionsBuilder: (_) => const [],
+        onQueryChanged: _setQuery,
+        onClearAll: () {
+          _searchCtrl.clear();
+          _setQuery('');
+        },
+      ),
+      actions: [
+        IlyassMenuAction(
+          icon: Icons.delete_outline_rounded,
+          label: hasSelection
+              ? l.deleteWithCount(_selectedIds.length)
+              : l.actionDelete,
+          color: hasSelection ? context.dangerColor : null,
+          enabled: hasSelection && company != null,
+          onSelected: () {
+            if (company != null) _bulkDelete(company.id);
+          },
+        ),
+        IlyassMenuAction(
+          icon: Icons.view_column_rounded,
+          label: l.columnsTooltip,
+          dividerBefore: true,
+          onSelected: () => _showColumnPicker(context),
+        ),
+        IlyassMenuAction(
+          icon: Icons.refresh,
+          label: l.refreshTooltip,
+          enabled: company != null,
+          onSelected: () {
+            if (company != null) {
+              ref.read(syncManagerProvider).pullPaymentTypes(company.id);
+            }
+          },
+        ),
+      ],
+      fabLabel: l.newPaymentType,
+      onFabPressed: company == null ? null : () => _openEditor(company.id),
       body: asyncTypes.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-
-        error: (e, _) => Center(
-          child: Text(
-            AppLocalizations.of(context).errorLoadingPaymentTypes(e.toString()),
-          ),
-        ),
-
-        data: (types) {
+        error: (e, _) =>
+            Center(child: Text(l.errorLoadingPaymentTypes(e.toString()))),
+        data: (all) {
           if (company == null) {
-            return Center(child: Text(AppLocalizations.of(context).noCompanySelectedShort));
+            return Center(child: Text(l.noCompanySelectedShort));
           }
+          final companyId = company.id;
+          final types = _visible(all);
+          final selected =
+              _selectedIds.intersection(types.map((t) => t.id).toSet());
 
-          final int companyId = company.id;
+          Widget boolCell(bool v) => _BoolIcon(value: v);
 
-          if (types.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    AppLocalizations.of(context).noPaymentTypesFound,
-                    style: TextStyle(color: theme.disabledColor, fontSize: 16),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.add),
-                    label: Text(AppLocalizations.of(context).addFirstPaymentType),
-
-                    onPressed: () async {
-                      await showDialog(
-                        context: context,
-                        builder: (_) =>
-                            _PaymentTypeFormDialog(companyId: companyId),
-                      );
-
-                      await ref
-                          .read(syncManagerProvider)
-                          .pullPaymentTypes(companyId);
-                    },
-                  ),
-                ],
+          /// One entry per toggleable column, in the order the provider
+          /// declares them — the picker reorders this list, so the widths and
+          /// cells must live with their key rather than in a parallel chain.
+          final catalogue = <String, IlyassColumn<PaymentType>>{
+            'Name': IlyassColumn<PaymentType>(
+              key: 'Name',
+              label: _paymentColumnLabel(context, 'Name'),
+              width: 220,
+              flexible: true,
+              cell: (context, t) => Text(
+                t.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.w600),
               ),
-            );
-          }
+            ),
+            'Code': IlyassColumn<PaymentType>(
+              key: 'Code',
+              label: _paymentColumnLabel(context, 'Code'),
+              width: 130,
+              cell: (context, t) => Text(t.code ?? '-',
+                  maxLines: 1, overflow: TextOverflow.ellipsis),
+            ),
+            'Position': IlyassColumn<PaymentType>(
+              key: 'Position',
+              label: _paymentColumnLabel(context, 'Position'),
+              width: 110,
+              numeric: true,
+              cell: (context, t) => Text('${t.ordinal}'),
+            ),
+            'Enabled': IlyassColumn<PaymentType>(
+              key: 'Enabled',
+              label: _paymentColumnLabel(context, 'Enabled'),
+              width: 110,
+              cell: (context, t) => boolCell(t.isEnabled),
+            ),
+            'Quick Pay': IlyassColumn<PaymentType>(
+              key: 'Quick Pay',
+              label: _paymentColumnLabel(context, 'Quick Pay'),
+              width: 120,
+              cell: (context, t) => boolCell(t.isQuickPayment),
+            ),
+            'Customer Req.': IlyassColumn<PaymentType>(
+              key: 'Customer Req.',
+              label: _paymentColumnLabel(context, 'Customer Req.'),
+              width: 140,
+              cell: (context, t) => boolCell(t.isCustomerRequired),
+            ),
+            'Change': IlyassColumn<PaymentType>(
+              key: 'Change',
+              label: _paymentColumnLabel(context, 'Change'),
+              width: 110,
+              cell: (context, t) => boolCell(t.isChangeAllowed),
+            ),
+            'Mark Paid': IlyassColumn<PaymentType>(
+              key: 'Mark Paid',
+              label: _paymentColumnLabel(context, 'Mark Paid'),
+              width: 120,
+              cell: (context, t) => boolCell(t.markAsPaid),
+            ),
+            'Cash Drawer': IlyassColumn<PaymentType>(
+              key: 'Cash Drawer',
+              label: _paymentColumnLabel(context, 'Cash Drawer'),
+              width: 130,
+              cell: (context, t) => boolCell(t.openCashDrawer),
+            ),
+            'Fiscal': IlyassColumn<PaymentType>(
+              key: 'Fiscal',
+              label: _paymentColumnLabel(context, 'Fiscal'),
+              width: 110,
+              cell: (context, t) => boolCell(t.isFiscal),
+            ),
+            'Slip': IlyassColumn<PaymentType>(
+              key: 'Slip',
+              label: _paymentColumnLabel(context, 'Slip'),
+              width: 110,
+              cell: (context, t) => boolCell(t.isSlipRequired),
+            ),
+            'Shortcut': IlyassColumn<PaymentType>(
+              key: 'Shortcut',
+              label: _paymentColumnLabel(context, 'Shortcut'),
+              width: 120,
+              cell: (context, t) => Text(t.shortcutKey ?? '-'),
+            ),
+          };
 
-          return Padding(
-            padding: const EdgeInsets.all(16),
-            child: Card(
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(
-                  color: theme.dividerColor.withValues(alpha: 0.1),
-                ),
+          return IlyassTable<PaymentType>(
+            tableId: 'paymentTypes',
+            rows: types,
+            rowHeight: 64,
+            onRowTap: (t) => _openEditor(companyId, t),
+            isRowSelected: (t) => selected.contains(t.id),
+            // A switched-off type reads as switched off at a glance.
+            rowColor: (t) => t.isEnabled
+                ? null
+                : theme.disabledColor.withValues(alpha: 0.05),
+            columns: [
+              ilyassSelectionColumn<PaymentType, int>(
+                rows: types,
+                selected: selected,
+                idOf: (t) => t.id,
+                onChanged: (ids) => setState(() {
+                  _selectedIds
+                    ..clear()
+                    ..addAll(ids);
+                }),
               ),
-              clipBehavior: Clip.antiAlias,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // --- RESPONSIVE HEADER ROW ---
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
+              for (final entry in catalogue.entries)
+                if (visibleColumns[entry.key] == true) entry.value,
+            ],
+            emptyState: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.payments_outlined,
+                        size: 64,
+                        color: theme.disabledColor.withValues(alpha: 0.3)),
+                    const SizedBox(height: 16),
+                    Text(
+                      all.isEmpty
+                          ? l.noPaymentTypesFound
+                          : l.noResultsForFilters,
+                      textAlign: TextAlign.center,
+                      style:
+                          TextStyle(color: theme.disabledColor, fontSize: 16),
                     ),
-                    color: theme.colorScheme.surfaceContainerHighest.withValues(
-                      alpha: 0.5,
-                    ),
-                    child: Row(
-                      children: [
-                        if (visibleColumns['Name'] == true)
-                          Expanded(
-                            flex: 3,
-                            child: Text(
-                              _paymentColumnLabel(context, 'Name'),
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: theme.textTheme.bodyMedium?.color,
-                              ),
-                            ),
-                          ),
-                        if (visibleColumns['Code'] == true)
-                          Expanded(
-                            flex: 1,
-                            child: Text(
-                              _paymentColumnLabel(context, 'Code'),
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: theme.textTheme.bodyMedium?.color,
-                              ),
-                            ),
-                          ),
-                        if (visibleColumns['Position'] == true)
-                          Expanded(
-                            flex: 1,
-                            child: Text(
-                              _paymentColumnLabel(context, 'Position'),
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: theme.textTheme.bodyMedium?.color,
-                              ),
-                            ),
-                          ),
-                        if (visibleColumns['Enabled'] == true)
-                          Expanded(
-                            flex: 1,
-                            child: Text(
-                              _paymentColumnLabel(context, 'Enabled'),
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: theme.textTheme.bodyMedium?.color,
-                              ),
-                            ),
-                          ),
-                        if (visibleColumns['Quick Pay'] == true)
-                          Expanded(
-                            flex: 1,
-                            child: Text(
-                              _paymentColumnLabel(context, 'Quick Pay'),
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: theme.textTheme.bodyMedium?.color,
-                              ),
-                            ),
-                          ),
-                        if (visibleColumns['Customer Req.'] == true)
-                          Expanded(
-                            flex: 1,
-                            child: Text(
-                              _paymentColumnLabel(context, 'Customer Req.'),
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: theme.textTheme.bodyMedium?.color,
-                              ),
-                            ),
-                          ),
-                        if (visibleColumns['Change'] == true)
-                          Expanded(
-                            flex: 1,
-                            child: Text(
-                              _paymentColumnLabel(context, 'Change'),
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: theme.textTheme.bodyMedium?.color,
-                              ),
-                            ),
-                          ),
-                        if (visibleColumns['Mark Paid'] == true)
-                          Expanded(
-                            flex: 1,
-                            child: Text(
-                              _paymentColumnLabel(context, 'Mark Paid'),
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: theme.textTheme.bodyMedium?.color,
-                              ),
-                            ),
-                          ),
-                        if (visibleColumns['Cash Drawer'] == true)
-                          Expanded(
-                            flex: 1,
-                            child: Text(
-                              _paymentColumnLabel(context, 'Cash Drawer'),
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: theme.textTheme.bodyMedium?.color,
-                              ),
-                            ),
-                          ),
-                        if (visibleColumns['Fiscal'] == true)
-                          Expanded(
-                            flex: 1,
-                            child: Text(
-                              _paymentColumnLabel(context, 'Fiscal'),
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: theme.textTheme.bodyMedium?.color,
-                              ),
-                            ),
-                          ),
-                        if (visibleColumns['Slip'] == true)
-                          Expanded(
-                            flex: 1,
-                            child: Text(
-                              _paymentColumnLabel(context, 'Slip'),
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: theme.textTheme.bodyMedium?.color,
-                              ),
-                            ),
-                          ),
-                        if (visibleColumns['Shortcut'] == true)
-                          Expanded(
-                            flex: 1,
-                            child: Text(
-                              _paymentColumnLabel(context, 'Shortcut'),
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: theme.textTheme.bodyMedium?.color,
-                              ),
-                            ),
-                          ),
-                        if (visibleColumns['Actions'] == true)
-                          SizedBox(
-                            width: 100,
-                            child: Text(
-                              _paymentColumnLabel(context, 'Actions'),
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: theme.textTheme.bodyMedium?.color,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-
-                  // --- LIST OF ITEMS ---
-                  Expanded(
-                    child: ListView.separated(
-                      itemCount: types.length,
-                      separatorBuilder: (_, __) => Divider(
-                        height: 1,
-                        color: theme.dividerColor.withValues(alpha: 0.2),
+                    if (all.isEmpty) ...[
+                      const SizedBox(height: 12),
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.add),
+                        label: Text(l.addFirstPaymentType),
+                        onPressed: () => _openEditor(companyId),
                       ),
-                      itemBuilder: (context, index) {
-                        final t = types[index];
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 10,
-                          ),
-                          child: Row(
-                            children: [
-                              if (visibleColumns['Name'] == true)
-                                Expanded(
-                                  flex: 3,
-                                  child: Text(
-                                    t.name,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              if (visibleColumns['Code'] == true)
-                                Expanded(flex: 1, child: Text(t.code ?? '-')),
-                              if (visibleColumns['Position'] == true)
-                                Expanded(
-                                  flex: 1,
-                                  child: Text(t.ordinal.toString()),
-                                ),
-                              if (visibleColumns['Enabled'] == true)
-                                Expanded(
-                                  flex: 1,
-                                  child: Align(
-                                    alignment: AlignmentDirectional.centerStart,
-                                    child: _BoolIcon(value: t.isEnabled),
-                                  ),
-                                ),
-                              if (visibleColumns['Quick Pay'] == true)
-                                Expanded(
-                                  flex: 1,
-                                  child: Align(
-                                    alignment: AlignmentDirectional.centerStart,
-                                    child: _BoolIcon(value: t.isQuickPayment),
-                                  ),
-                                ),
-                              if (visibleColumns['Customer Req.'] == true)
-                                Expanded(
-                                  flex: 1,
-                                  child: Align(
-                                    alignment: AlignmentDirectional.centerStart,
-                                    child: _BoolIcon(
-                                      value: t.isCustomerRequired,
-                                    ),
-                                  ),
-                                ),
-                              if (visibleColumns['Change'] == true)
-                                Expanded(
-                                  flex: 1,
-                                  child: Align(
-                                    alignment: AlignmentDirectional.centerStart,
-                                    child: _BoolIcon(value: t.isChangeAllowed),
-                                  ),
-                                ),
-                              if (visibleColumns['Mark Paid'] == true)
-                                Expanded(
-                                  flex: 1,
-                                  child: Align(
-                                    alignment: AlignmentDirectional.centerStart,
-                                    child: _BoolIcon(value: t.markAsPaid),
-                                  ),
-                                ),
-                              if (visibleColumns['Cash Drawer'] == true)
-                                Expanded(
-                                  flex: 1,
-                                  child: Align(
-                                    alignment: AlignmentDirectional.centerStart,
-                                    child: _BoolIcon(value: t.openCashDrawer),
-                                  ),
-                                ),
-                              if (visibleColumns['Fiscal'] == true)
-                                Expanded(
-                                  flex: 1,
-                                  child: Align(
-                                    alignment: AlignmentDirectional.centerStart,
-                                    child: _BoolIcon(value: t.isFiscal),
-                                  ),
-                                ),
-                              if (visibleColumns['Slip'] == true)
-                                Expanded(
-                                  flex: 1,
-                                  child: Align(
-                                    alignment: AlignmentDirectional.centerStart,
-                                    child: _BoolIcon(value: t.isSlipRequired),
-                                  ),
-                                ),
-                              if (visibleColumns['Shortcut'] == true)
-                                Expanded(
-                                  flex: 1,
-                                  child: Text(t.shortcutKey ?? '-'),
-                                ),
-                              if (visibleColumns['Actions'] == true)
-                                SizedBox(
-                                  width: 100,
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Tooltip(
-                                        message: AppLocalizations.of(context).actionEdit,
-                                        child: InkWell(
-                                          onTap: () async {
-                                            await showDialog(
-                                              context: context,
-                                              builder: (_) =>
-                                                  _PaymentTypeFormDialog(
-                                                    companyId: companyId,
-                                                    paymentType: t,
-                                                  ),
-                                            );
-                                            ref.invalidate(
-                                              allPaymentTypesProvider,
-                                            );
-                                          },
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(4.0),
-                                            child: Icon(
-                                              Icons.edit,
-                                              color: theme.colorScheme.primary,
-                                              size: 18,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Tooltip(
-                                        message: AppLocalizations.of(context).actionDelete,
-                                        child: InkWell(
-                                          onTap: () async {
-                                            final confirm = await showDialog<bool>(
-                                              context: context,
-                                              builder: (ctx) => AlertDialog(
-                                                title: Text(AppLocalizations.of(context).actionDelete),
-                                                content: Text(
-                                                  AppLocalizations.of(context).deletePaymentTypeConfirm(t.name),
-                                                ),
-                                                actions: [
-                                                  TextButton(
-                                                    onPressed: () =>
-                                                        Navigator.of(
-                                                          ctx,
-                                                        ).pop(false),
-                                                    child: Text(AppLocalizations.of(context).actionCancel),
-                                                  ),
-                                                  ElevatedButton(
-                                                    style:
-                                                        ElevatedButton.styleFrom(
-                                                          backgroundColor: theme
-                                                              .colorScheme
-                                                              .error,
-                                                        ),
-                                                    onPressed: () =>
-                                                        Navigator.of(
-                                                          ctx,
-                                                        ).pop(true),
-                                                    child: Text(
-                                                      AppLocalizations.of(context)
-                                                          .actionDelete,
-                                                      style: TextStyle(
-                                                        color: theme
-                                                            .colorScheme
-                                                            .onError,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            );
-                                            if (confirm == true &&
-                                                context.mounted) {
-                                              await _delete(
-                                                context,
-                                                ref,
-                                                t.id,
-                                                companyId,
-                                              );
-                                            }
-                                          },
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(4.0),
-                                            child: Icon(
-                                              Icons.delete,
-                                              color: theme.colorScheme.error,
-                                              size: 18,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
+                    ],
+                  ],
+                ),
               ),
             ),
           );

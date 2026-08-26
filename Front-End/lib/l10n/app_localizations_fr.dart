@@ -6972,6 +6972,22 @@ class AppLocalizationsFr extends AppLocalizations {
       'Glissez pour changer l\'ordre des questions en caisse.';
 
   @override
+  String get dragToReorderColumns =>
+      'Faites glisser pour changer l\'ordre des colonnes';
+
+  @override
+  String get noResultsForFilters => 'Aucun résultat pour ces filtres';
+
+  @override
+  String get colSelectionRule => 'Règle de sélection';
+
+  @override
+  String get posModifiers => 'Options';
+
+  @override
+  String get setModifiersButton => 'Bouton Options';
+
+  @override
   String customizeItem(String name) {
     return 'Personnaliser $name';
   }

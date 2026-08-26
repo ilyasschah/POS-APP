@@ -6923,6 +6923,21 @@ class AppLocalizationsAr extends AppLocalizations {
   String get dragToReorderGroups => 'اسحب لتغيير ترتيب الأسئلة في نقطة البيع.';
 
   @override
+  String get dragToReorderColumns => 'اسحب لتغيير ترتيب الأعمدة';
+
+  @override
+  String get noResultsForFilters => 'لا توجد نتائج لهذه المرشحات';
+
+  @override
+  String get colSelectionRule => 'قاعدة الاختيار';
+
+  @override
+  String get posModifiers => 'الإضافات';
+
+  @override
+  String get setModifiersButton => 'زر الإضافات';
+
+  @override
   String customizeItem(String name) {
     return 'تخصيص $name';
   }

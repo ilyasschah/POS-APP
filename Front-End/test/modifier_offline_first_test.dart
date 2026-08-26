@@ -295,4 +295,151 @@ void main() {
       expect(await db.productIdsWithPendingModifierLinks(companyId), [7]);
     });
   });
+
+  // 🚨 The server has NO column for a line's chosen modifiers — the sync only
+  // carries the modifier CATALOGUE. So the moment an order reached 'synced',
+  // the background tick that replaces local lines with the server's orphaned
+  // every snapshot it touched: a burger saved with Extra Cheese quietly became
+  // a plain burger seconds later, at the right price, on every ticket.
+  group('a server line-refresh keeps the choices', () {
+    const orderLocalId = 'order-1';
+
+    /// Parks one order with two lines, the second customised.
+    Future<void> park() async {
+      await db.saveOpenOrder(
+        PosOrdersTableCompanion(
+          localId: const Value(orderLocalId),
+          serverId: const Value(500),
+          companyId: const Value(companyId),
+          userId: const Value(1),
+          status: const Value(0),
+          total: const Value(83),
+          syncStatus: const Value('synced'),
+          serviceType: const Value(0),
+          warehouseId: const Value(1),
+          openedAt: Value(DateTime.utc(2026, 8, 25)),
+          lastModified: Value(DateTime.utc(2026, 8, 25)),
+        ),
+        [
+          const PosOrderItemsTableCompanion(
+            localId: Value('line-a'),
+            orderId: Value(orderLocalId),
+            productId: Value(11),
+            warehouseId: Value(1),
+            quantity: Value(1),
+            unitPrice: Value(38),
+          ),
+          const PosOrderItemsTableCompanion(
+            localId: Value('line-b'),
+            orderId: Value(orderLocalId),
+            productId: Value(22),
+            warehouseId: Value(1),
+            quantity: Value(1),
+            unitPrice: Value(45),
+          ),
+        ],
+        itemModifiers: [
+          const PosOrderItemModifiersTableCompanion(
+            localId: Value('mod-1'),
+            orderItemLocalId: Value('line-b'),
+            groupName: Value('Toppings'),
+            name: Value('Extra Chees'),
+            additionalPrice: Value(3),
+            rank: Value(0),
+          ),
+        ],
+      );
+    }
+
+    /// What `_pullOrderItems` does to the lines: delete them all and reinsert
+    /// from the server response, with brand new localIds.
+    Future<void> replaceLinesFromServer() async {
+      final previousModifiers = await db.orderItemModifiersByLine(orderLocalId);
+      final previousLines = await (db.select(db.posOrderItemsTable)
+            ..where((t) => t.orderId.equals(orderLocalId)))
+          .get();
+      final carried = <int, List<List<PosOrderItemModifiersTableData>>>{};
+      for (final line in previousLines) {
+        final mods = previousModifiers[line.localId];
+        if (mods == null || mods.isEmpty) continue;
+        (carried[line.productId] ??= []).add(mods);
+      }
+
+      await db.transaction(() async {
+        await db.deleteOrderItemModifiers(orderLocalId);
+        await (db.delete(db.posOrderItemsTable)
+              ..where((t) => t.orderId.equals(orderLocalId)))
+            .go();
+
+        for (final row in [(id: 901, productId: 11), (id: 902, productId: 22)]) {
+          final itemLocalId = 'svri_${row.id}';
+          await db.into(db.posOrderItemsTable).insert(
+                PosOrderItemsTableCompanion(
+                  localId: Value(itemLocalId),
+                  orderId: const Value(orderLocalId),
+                  productId: Value(row.productId),
+                  warehouseId: const Value(1),
+                  quantity: const Value(1),
+                  unitPrice: const Value(45),
+                  syncStatus: const Value('synced'),
+                ),
+              );
+          final queue = carried[row.productId];
+          if (queue != null && queue.isNotEmpty) {
+            final mods = queue.removeAt(0);
+            await db.batch((b) {
+              b.insertAll(db.posOrderItemModifiersTable, [
+                for (final m in mods)
+                  PosOrderItemModifiersTableCompanion(
+                    localId: Value('new-${m.localId}'),
+                    orderItemLocalId: Value(itemLocalId),
+                    modifierOptionId: Value(m.modifierOptionId),
+                    groupName: Value(m.groupName),
+                    name: Value(m.name),
+                    additionalPrice: Value(m.additionalPrice),
+                    rank: Value(m.rank),
+                  ),
+              ]);
+            });
+          }
+        }
+      });
+    }
+
+    test('the snapshot survives, re-keyed onto the new line', () async {
+      await park();
+      await replaceLinesFromServer();
+
+      final byLine = await db.orderItemModifiersByLine(orderLocalId);
+      final all = byLine.values.expand((e) => e).toList();
+
+      expect(all.length, 1, reason: 'the choice is neither lost nor duplicated');
+      expect(all.single.name, 'Extra Chees');
+      expect(all.single.additionalPrice, 3);
+      expect(byLine.containsKey('line-b'), isFalse,
+          reason: 'the old line id is gone');
+      expect(byLine['svri_902'], isNotNull,
+          reason: 'and the snapshot moved to the line that replaced it');
+    });
+
+    test('a line with no choices gains none', () async {
+      await park();
+      await replaceLinesFromServer();
+
+      final byLine = await db.orderItemModifiersByLine(orderLocalId);
+      expect(byLine['svri_901'], isNull,
+          reason: 'the plain burger stays plain');
+    });
+
+    test('repeating the refresh does not stack duplicates', () async {
+      await park();
+      await replaceLinesFromServer();
+      await replaceLinesFromServer();
+      await replaceLinesFromServer();
+
+      final byLine = await db.orderItemModifiersByLine(orderLocalId);
+      expect(byLine.values.expand((e) => e).length, 1,
+          reason: 'the tick runs every 10 seconds — it must be idempotent');
+    });
+  });
 }

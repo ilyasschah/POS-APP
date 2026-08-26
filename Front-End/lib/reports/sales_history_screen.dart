@@ -16,6 +16,7 @@ import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/app_settings/app_settings_provider.dart';
 import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/core/app_date_picker.dart';
+import 'package:pos_app/core/ilyass_column_order.dart';
 import 'package:pos_app/core/ilyass_table.dart';
 import 'package:pos_app/core/unified_search_bar.dart';
 import 'package:pos_app/auth/auth_provider.dart';
@@ -1210,7 +1211,8 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
         columns: _masterColumns(
           context,
         ).map((c) => (id: c.id, label: c.label)).toList(),
-        visible: _visibleMasterColIds,
+        tableId: 'salesHistoryMaster',
+        visible: () => _visibleMasterColIds,
         prefsKey: _prefsMasterColsKey,
         onApply: (s) => setState(() => _visibleMasterColIds = s),
       ),
@@ -1224,25 +1226,41 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
 
   // ── column selector ─────────────────────────────────────────────────────────
 
-  Future<void> _pickColumns({
+  /// Live, not apply-on-close: the shared picker also carries the column ORDER,
+  /// and an order that only lands when the dialog is dismissed cannot be judged
+  /// against the table it is reordering.
+  ///
+  /// [visible] is a closure rather than a value because the dialog outlives
+  /// each toggle — reading a snapshot would have the second tick undo the
+  /// first.
+  void _pickColumns({
     required String title,
+    required String tableId,
     required List<({String id, String label})> columns,
-    required Set<String> visible,
+    required Set<String> Function() visible,
     required String prefsKey,
     required ValueChanged<Set<String>> onApply,
-  }) async {
-    final result = await showDialog<Set<String>>(
+  }) {
+    showIlyassColumnPicker(
       context: context,
-      builder: (_) => _ColumnSelectorDialog(
-        title: title,
-        columns: columns,
-        visible: visible,
-      ),
+      title: title,
+      tableId: tableId,
+      columns: [
+        for (final c in columns)
+          IlyassPickerColumn(key: c.id, label: c.label),
+      ],
+      isVisible: (key) => visible().contains(key),
+      onVisibleChanged: (key, value) {
+        final next = {...visible()};
+        if (value) {
+          next.add(key);
+        } else {
+          next.remove(key);
+        }
+        _saveCols(prefsKey, next);
+        onApply(next);
+      },
     );
-    if (result != null && result.isNotEmpty) {
-      _saveCols(prefsKey, result);
-      onApply(result);
-    }
   }
 
   // Expanded ToolButton with touch-pad sizing
@@ -1387,7 +1405,8 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
                   columns: _detailColumns(
                     context,
                   ).map((c) => (id: c.id, label: c.label)).toList(),
-                  visible: _visibleDetailColIds,
+                  tableId: 'salesHistoryDetail',
+                  visible: () => _visibleDetailColIds,
                   prefsKey: _prefsDetailColsKey,
                   onApply: (s) => setState(() => _visibleDetailColIds = s),
                 ),
@@ -1930,135 +1949,6 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
 }
 
 // ── Column selector dialog ──────────────────────────────────────────────────
-class _ColumnSelectorDialog extends StatefulWidget {
-  final String title;
-  final List<({String id, String label})> columns;
-  final Set<String> visible;
-  const _ColumnSelectorDialog({
-    required this.title,
-    required this.columns,
-    required this.visible,
-  });
-
-  @override
-  State<_ColumnSelectorDialog> createState() => _ColumnSelectorDialogState();
-}
-
-class _ColumnSelectorDialogState extends State<_ColumnSelectorDialog> {
-  late final Set<String> _sel = {...widget.visible};
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-
-    return Dialog(
-      backgroundColor: theme.cardColor,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: SizedBox(
-        width: 380, // Made wider for easier tapping
-        height: 600,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              decoration: BoxDecoration(
-                color: cs.surfaceContainerHighest,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(12),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.view_column_outlined, size: 24, color: cs.primary),
-                  const Gap(12),
-                  Text(
-                    widget.title,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 18,
-                    ),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.close, size: 24),
-                    onPressed: () => Navigator.pop(context),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: ListView(
-                children: widget.columns.map((c) {
-                  final checked = _sel.contains(c.id);
-                  final lockLast = checked && _sel.length == 1;
-                  return CheckboxListTile(
-                    dense: false,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 4,
-                    ),
-                    value: checked,
-                    title: Text(
-                      c.label,
-                      style: const TextStyle(fontSize: 16),
-                    ), // Bigger Font
-                    controlAffinity: ListTileControlAffinity.leading,
-                    onChanged: lockLast
-                        ? null
-                        : (v) => setState(() {
-                            if (v == true) {
-                              _sel.add(c.id);
-                            } else {
-                              _sel.remove(c.id);
-                            }
-                          }),
-                  );
-                }).toList(),
-              ),
-            ),
-            Divider(height: 1, color: theme.dividerColor),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              child: Row(
-                children: [
-                  TextButton(
-                    onPressed: () => setState(
-                      () => _sel
-                        ..clear()
-                        ..addAll(widget.columns.map((c) => c.id)),
-                    ),
-                    child: Text(
-                      AppLocalizations.of(context).selectAll,
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                  ),
-                  const Spacer(),
-                  FilledButton(
-                    onPressed: () => Navigator.pop(context, _sel),
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
-                      ),
-                    ),
-                    child: Text(
-                      AppLocalizations.of(context).actionApply,
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 // ── Customer picker helpers ────────────────────────────────────────────────────
 

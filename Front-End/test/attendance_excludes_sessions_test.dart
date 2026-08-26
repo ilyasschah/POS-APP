@@ -104,8 +104,30 @@ void main() {
             ),
           );
 
-  /// Today, so the UTC-day window in `todayTotalMinutesProvider` includes it.
-  DateTime hoursAgo(int h) =>
+  /// The boundary `todayTotalMinutesProvider` measures from: LOCAL midnight,
+  /// expressed as an instant.
+  DateTime todayStartUtc() {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day).toUtc();
+  }
+
+  /// [h] hours ago, clamped so it never lands before today's local midnight.
+  ///
+  /// 🚨 The clamp is the whole point. The badge legitimately resets at local
+  /// midnight, so a plain `now - 2h` falls into YESTERDAY for the first two
+  /// hours of every local day and the provider correctly counts zero — this
+  /// test then failed daily between 00:00 and 02:00 for a reason that had
+  /// nothing to do with what it checks. Anything clamped is still inside
+  /// today's window, which is the only property these cases need.
+  DateTime hoursAgo(int h) {
+    final target = DateTime.now().toUtc().subtract(Duration(hours: h));
+    final start = todayStartUtc();
+    return target.isBefore(start) ? start.add(const Duration(minutes: 1)) : target;
+  }
+
+  /// The same clamp, unbounded — for a range that is MEANT to reach back past
+  /// midnight (the hours report's 48-hour window).
+  DateTime hoursAgoUnclamped(int h) =>
       DateTime.now().toUtc().subtract(Duration(hours: h));
 
   group('the sidebar hours badge', () {
@@ -117,14 +139,21 @@ void main() {
     });
 
     test('counts a clock-in, and only the clock-in', () async {
-      await clockIn(openedAt: hoursAgo(2));
+      final clockedInAt = hoursAgo(2);
+      await clockIn(openedAt: clockedInAt);
       await openRegister(openedAt: hoursAgo(6));
 
       container.listen(todayTotalMinutesProvider, (_, __) {});
       final minutes = await container.read(todayTotalMinutesProvider.future);
-      // ~120, not ~480. A tolerance because "now" moves between the insert and
-      // the read; the point is that the register's six hours are absent.
-      expect(minutes, inInclusiveRange(119, 121));
+
+      // Derived from the clock-in's OWN elapsed time rather than hard-coded at
+      // 120, because `hoursAgo` clamps near midnight. The assertion keeps its
+      // teeth either way: counting the register too would add its six hours on
+      // top and miss this range by a mile.
+      final expected =
+          DateTime.now().toUtc().difference(clockedInAt).inMinutes;
+      expect(minutes, inInclusiveRange(expected - 1, expected + 1),
+          reason: "the register's hours must be absent");
     });
 
     test('ignores a session pulled from ANOTHER register', () async {
@@ -158,7 +187,7 @@ void main() {
       await openRegister(openedAt: hoursAgo(8));
 
       final HoursQueryParams params = (
-        rangeStart: hoursAgo(48),
+        rangeStart: hoursAgoUnclamped(48),
         rangeEnd: DateTime.now().toUtc(),
         userId: null,
         companyId: _companyId,

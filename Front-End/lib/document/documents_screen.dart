@@ -3,12 +3,13 @@ import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/legacy.dart';
-import 'package:gap/gap.dart';
 import 'package:intl/intl.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:pos_app/api/api_client.dart';
 import 'package:pos_app/core/app_date_picker.dart';
+import 'package:pos_app/core/ilyass_column_order.dart';
+import 'package:pos_app/core/ilyass_list_scaffold.dart';
 import 'package:pos_app/core/ilyass_table.dart';
 import 'package:pos_app/core/unified_search_bar.dart';
 import 'package:pos_app/document/document_filters.dart';
@@ -156,7 +157,6 @@ final documentVisibleColumnsProvider = StateProvider<Map<String, bool>>(
     'Note': false,
     'Created': false,
     'Updated': false,
-    'Actions': true,
   },
 );
 
@@ -193,6 +193,11 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
   DocumentFilters _filters = const DocumentFilters();
 
   final _searchCtrl = TextEditingController();
+
+  /// Ticked rows, by document id. Cleared whenever the filter changes — a row
+  /// the filter hid would otherwise still be deleted by the ⋮ menu while
+  /// showing as unselected.
+  final Set<int> _selectedIds = {};
 
   final _dateFmt = DateFormat('dd/MM/yy');
 
@@ -361,119 +366,65 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
       'Note' => l.noteLabel,
       'Created' => l.created,
       'Updated' => l.updatedLabel,
-      'Actions' => l.actionsLabel,
       _ => id,
     };
   }
 
   void _showColumnPicker(BuildContext context) {
-    showDialog(
+    // The provider's own key order IS the declared catalogue order — it is a
+    // literal map, and `{...s, col: v}` preserves insertion order — so it
+    // doubles as the "reset" order the picker falls back to.
+    final catalogue = ref.read(documentVisibleColumnsProvider).keys.toList();
+
+    showIlyassColumnPicker(
       context: context,
-      builder: (context) => Consumer(
-        builder: (context, ref, _) {
-          final columns = ref.watch(documentVisibleColumnsProvider);
-          return AlertDialog(
-            title: Text(AppLocalizations.of(context).showHideColumns),
-            content: SizedBox(
-              width: 300,
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: columns.keys
-                      .map(
-                        (col) => CheckboxListTile(
-                          title: Text(_columnLabel(context, col)),
-                          value: columns[col],
-                          onChanged: (val) => ref
-                              .read(documentVisibleColumnsProvider.notifier)
-                              .update((s) => {...s, col: val ?? false}),
-                        ),
-                      )
-                      .toList(),
-                ),
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(AppLocalizations.of(context).actionClose),
-              ),
-            ],
-          );
-        },
-      ),
+      tableId: 'documents',
+      columns: [
+        for (final key in catalogue)
+          IlyassPickerColumn(key: key, label: _columnLabel(context, key)),
+      ],
+      isVisible: (key) =>
+          ref.read(documentVisibleColumnsProvider)[key] ?? false,
+      onVisibleChanged: (key, value) => ref
+          .read(documentVisibleColumnsProvider.notifier)
+          .update((s) => {...s, key: value}),
     );
   }
 
-  // ── filter panel ──────────────────────────────────────────────────────────
+  // ── search ────────────────────────────────────────────────────────────────
 
   /// The Odoo-style unified search: one bar carrying the typed query and every
   /// active filter as a dismissible chip, with a categorised menu anchored
   /// under it. Replaces the eight exposed dropdowns, which cost a third of the
   /// screen to state something the chips now say in one line.
-  Widget _buildFilterPanel({
+  ///
+  Widget _buildSearchBar({
     required BuildContext context,
-    required ThemeData theme,
     required List<DocumentType> types,
     required List<User> users,
     required List<Customer> customers,
     required List<Warehouse> warehouses,
-    required int totalResults,
   }) {
-    final cs = theme.colorScheme;
     final l = AppLocalizations.of(context);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
-        border: Border(
-          bottom: BorderSide(color: theme.dividerColor, width: 0.5),
-        ),
+    return UnifiedSearchBar(
+      controller: _searchCtrl,
+      // A fixed-height toolbar cannot grow, so chips share the row with the
+      // field instead of wrapping onto a second line.
+      singleLine: true,
+      hintText: l.docSearchHint,
+      chips: _searchChips(),
+      sectionsBuilder: (query) => _filterSections(
+        query: query,
+        l: l,
+        types: types,
+        users: users,
+        customers: customers,
+        warehouses: warehouses,
       ),
-      padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final searchBar = UnifiedSearchBar(
-            controller: _searchCtrl,
-            hintText: l.docSearchHint,
-            chips: _searchChips(),
-            sectionsBuilder: (query) => _filterSections(
-              query: query,
-              l: l,
-              types: types,
-              users: users,
-              customers: customers,
-              warehouses: warehouses,
-            ),
-            onQueryChanged: (value) =>
-                setState(() => _filters = _filters.withQuery(value)),
-            onClearAll: _clearFilters,
-          );
-
-          final results = _ResultCount(count: totalResults, label: l.totalResultsUpper);
-
-          // The count sits beside the bar when there is room and drops under it
-          // when there is not - the bar itself must never be squeezed narrow.
-          if (constraints.maxWidth < 620) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                searchBar,
-                const Gap(10),
-                Align(alignment: AlignmentDirectional.centerEnd, child: results),
-              ],
-            );
-          }
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(child: searchBar),
-              const Gap(20),
-              results,
-            ],
-          );
-        },
-      ),
+      onQueryChanged: (value) =>
+          setState(() => _filters = _filters.withQuery(value)),
+      onClearAll: _clearFilters,
     );
   }
 
@@ -691,11 +642,104 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
 
   // ── build ─────────────────────────────────────────────────────────────────
 
+  /// 🚨 Behind [SecurityKeys.invoicesDelete], exactly as the per-row delete
+  /// button was. Moving an action into a menu must not move it out from behind
+  /// its permission.
+  void _bulkDelete() {
+    if (_selectedIds.isEmpty) return;
+    final companyId = ref.read(selectedCompanyProvider)?.id;
+    if (companyId == null) return;
+
+    ref.read(securityGuardProvider).guard(
+          context,
+          SecurityKeys.invoicesDelete,
+          () async {
+            final all = ref.read(allDocumentsProvider).value ?? const [];
+            final targets =
+                all.where((d) => _selectedIds.contains(d.id)).toList();
+            if (targets.isEmpty) return;
+
+            // ONE confirmation for the batch. Looping the per-row dialog would
+            // put nine prompts in front of someone deleting nine rows.
+            final l = AppLocalizations.of(context);
+            final confirm = await showDialog<bool>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: Text(l.deleteDocument),
+                content: Text(targets.length == 1
+                    ? l.confirmDeleteQuoted(
+                        _displayNumber(context, targets.first))
+                    : l.deleteProductsConfirm(targets.length)),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(false),
+                    child: Text(l.actionCancel),
+                  ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: ctx.dangerColor,
+                      foregroundColor: ctx.onStatusColor,
+                    ),
+                    onPressed: () => Navigator.of(ctx).pop(true),
+                    child: Text(l.actionDelete),
+                  ),
+                ],
+              ),
+            );
+            if (confirm != true || !mounted) return;
+
+            for (final doc in targets) {
+              if (!mounted) return;
+              await _deleteDocument(context, ref, doc, companyId);
+            }
+            if (!mounted) return;
+            setState(_selectedIds.clear);
+            ref.invalidate(allDocumentsProvider);
+          },
+        );
+  }
+
+  List<IlyassMenuAction> _menuActions(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final hasSelection = _selectedIds.isNotEmpty;
+
+    return [
+      IlyassMenuAction(
+        icon: Icons.delete_outline_rounded,
+        label: hasSelection
+            ? l.deleteWithCount(_selectedIds.length)
+            : l.actionDelete,
+        color: hasSelection ? context.dangerColor : null,
+        enabled: hasSelection,
+        onSelected: _bulkDelete,
+      ),
+      IlyassMenuAction(
+        icon: Icons.view_column_rounded,
+        label: l.columns,
+        dividerBefore: true,
+        onSelected: () => _showColumnPicker(context),
+      ),
+      IlyassMenuAction(
+        icon: Icons.refresh,
+        label: l.syncAndRefresh,
+        onSelected: () {
+          // The refresh ON the documents screen — the single most likely place
+          // someone checks whether another till's delete has landed. Must
+          // reconcile deletions, not just pull additions.
+          ref
+              .read(syncStateProvider.notifier)
+              .sync(manual: true)
+              .catchError((_) {});
+          ref.invalidate(allDocumentsProvider);
+        },
+      ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final asyncDocs = ref.watch(allDocumentsProvider);
     final company = ref.watch(selectedCompanyProvider);
-    final theme = Theme.of(context);
 
     // Load filter-source data (silently — empty list while loading)
     final types = ref.watch(allDocumentTypesProvider).value ?? [];
@@ -703,89 +747,47 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
     final customers = ref.watch(allCustomersProvider).value ?? [];
     final warehouses = ref.watch(allWarehousesProvider).value ?? [];
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(AppLocalizations.of(context).documentExplorer),
-        elevation: 0,
-        // Suppress the auto back-arrow — ManagementLayout controls navigation.
-        automaticallyImplyLeading: false,
-        leading: widget.onMenuPressed != null
-            ? IconButton(
-                icon: const Icon(Icons.menu),
-                tooltip: AppLocalizations.of(context).showNavigation,
-                onPressed: widget.onMenuPressed,
-              )
-            : null,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.view_column_rounded),
-            tooltip: AppLocalizations.of(context).columns,
-            onPressed: () => _showColumnPicker(context),
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: AppLocalizations.of(context).syncAndRefresh,
-            onPressed: () {
-              // The refresh button ON the documents screen — the single most
-              // likely place someone checks whether another till's delete has
-              // landed. Must reconcile deletions, not just pull additions.
-              ref
-                  .read(syncStateProvider.notifier)
-                  .sync(manual: true)
-                  .catchError((_) {});
-              ref.invalidate(allDocumentsProvider);
-            },
-          ),
-          const SizedBox(width: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: ElevatedButton.icon(
-              onPressed: company == null
-                  ? null
-                  : () => showDocumentEditor(context, ref),
-              icon: const Icon(Icons.add, size: 18),
-              label: Text(AppLocalizations.of(context).colNew),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: theme.colorScheme.primary,
-                foregroundColor: theme.colorScheme.onPrimary,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-        ],
+    return IlyassListScaffold(
+      title: AppLocalizations.of(context).documentExplorer,
+      onMenuPressed: widget.onMenuPressed,
+      searchBar: _buildSearchBar(
+        context: context,
+        types: types,
+        users: users,
+        customers: customers,
+        warehouses: warehouses,
       ),
+      actions: _menuActions(context),
+      fabLabel: AppLocalizations.of(context).colNew,
+      onFabPressed:
+          company == null ? null : () => showDocumentEditor(context, ref),
       body: asyncDocs.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text(AppLocalizations.of(context).errorLoadingDocuments(e.toString()))),
+        error: (e, _) => Center(
+            child: Text(AppLocalizations.of(context)
+                .errorLoadingDocuments(e.toString()))),
         data: (allDocs) {
           if (company == null) {
-            return Center(child: Text(AppLocalizations.of(context).noCompanySelectedShort));
+            return Center(
+                child: Text(
+                    AppLocalizations.of(context).noCompanySelectedShort));
           }
           final filtered = _applyFilters(allDocs);
+          // Selection is by id and survives filtering, so anything the filter
+          // hid drops out of it.
+          final effectiveSelected =
+              _selectedIds.intersection(filtered.map((d) => d.id).toSet());
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildFilterPanel(
-                context: context,
-                theme: theme,
-                types: types,
-                users: users,
-                customers: customers,
-                warehouses: warehouses,
-                totalResults: filtered.length,
-              ),
-              Expanded(
-                child: _DocumentTable(
-                  documents: filtered,
-                  companyId: company.id,
-                  formatDate: _formatDate,
-                  paidBadge: (status) => _paidBadge(context, status),
-                  onRefresh: () => ref.invalidate(allDocumentsProvider),
-                ),
-              ),
-            ],
+          return _DocumentTable(
+            documents: filtered,
+            formatDate: _formatDate,
+            paidBadge: (status) => _paidBadge(context, status),
+            selectedIds: effectiveSelected,
+            onSelectionChanged: (ids) => setState(() {
+              _selectedIds
+                ..clear()
+                ..addAll(ids);
+            }),
           );
         },
       ),
@@ -797,17 +799,17 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
 
 class _DocumentTable extends ConsumerWidget {
   final List<Document> documents;
-  final int companyId;
   final String Function(String?) formatDate;
   final Widget Function(int) paidBadge;
-  final VoidCallback onRefresh;
+  final Set<int> selectedIds;
+  final ValueChanged<Set<int>> onSelectionChanged;
 
   const _DocumentTable({
     required this.documents,
-    required this.companyId,
     required this.formatDate,
     required this.paidBadge,
-    required this.onRefresh,
+    required this.selectedIds,
+    required this.onSelectionChanged,
   });
 
   @override
@@ -819,7 +821,21 @@ class _DocumentTable extends ConsumerWidget {
     return IlyassTable<Document>(
       tableId: 'documents',
       rows: documents,
-      columns: _columns(context, ref, visible, theme, sym),
+      // Comfortably past the 56px touch minimum, matching the Products grid.
+      rowHeight: 64,
+      // Every row opens the editor. The pencil column was a 36px target on a
+      // screen driven by fingers; the row is hundreds of them.
+      onRowTap: (d) => showDocumentEditor(context, ref, existingDocument: d),
+      isRowSelected: (d) => selectedIds.contains(d.id),
+      columns: [
+        ilyassSelectionColumn<Document, int>(
+          rows: documents,
+          selected: selectedIds,
+          idOf: (d) => d.id,
+          onChanged: onSelectionChanged,
+        ),
+        ..._columns(context, ref, visible, theme, sym),
+      ],
       emptyState: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -1048,100 +1064,20 @@ class _DocumentTable extends ConsumerWidget {
             overflow: TextOverflow.ellipsis,
           ),
         ),
-      if (v['Actions'] == true)
-        IlyassColumn<Document>(
-          key: 'Actions',
-          label: l.colActions,
-          // Fixed and not resizable: two icons at a known size, packed tight.
-          // Dragging this column would only ever create dead space.
-          width: 96,
-          resizable: false,
-          cell: (context, d) => Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                icon: Icon(
-                  Icons.edit_rounded,
-                  color: theme.colorScheme.secondary,
-                  size: 20,
-                ),
-                tooltip: l.actionEdit,
-                visualDensity: VisualDensity.compact,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints.tightFor(
-                  width: 36,
-                  height: 36,
-                ),
-                onPressed: () =>
-                    showDocumentEditor(context, ref, existingDocument: d),
-              ),
-              IconButton(
-                icon: Icon(
-                  Icons.delete_outline_rounded,
-                  color: context.dangerColor,
-                  size: 20,
-                ),
-                tooltip: l.actionDelete,
-                visualDensity: VisualDensity.compact,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints.tightFor(
-                  width: 36,
-                  height: 36,
-                ),
-                onPressed: () => ref.read(securityGuardProvider).guard(
-                      context,
-                      SecurityKeys.invoicesDelete,
-                      () => _confirmDelete(context, ref, d),
-                    ),
-              ),
-            ],
-          ),
-        ),
     ];
   }
 
-  Future<void> _confirmDelete(
-    BuildContext context,
-    WidgetRef ref,
-    Document d,
-  ) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(AppLocalizations.of(context).deleteDocument),
-        content: Text(
-          AppLocalizations.of(context)
-              .confirmDeleteQuoted(_displayNumber(context, d)),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(AppLocalizations.of(context).actionCancel),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: ctx.dangerColor,
-              foregroundColor: ctx.onStatusColor,
-            ),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(AppLocalizations.of(context).actionDelete),
-          ),
-        ],
-      ),
-    );
+}
 
-    if (confirm == true && context.mounted) {
-      await _delete(context, ref, d, companyId);
-      onRefresh();
-    }
-  }
-
-  Future<void> _delete(
-    BuildContext context,
-    WidgetRef ref,
-    Document d,
-    int companyId,
-  ) async {
+/// Deletes one document, offline-first. Top-level rather than a method because
+/// both the screen's bulk delete and any future per-row path need it, and it
+/// already takes everything it uses as an argument.
+Future<void> _deleteDocument(
+  BuildContext context,
+  WidgetRef ref,
+  Document d,
+  int companyId,
+) async {
     final db = ref.read(appDatabaseProvider);
     try {
       // Offline-first: resolve the local row (by localId, else by serverId) and
@@ -1168,43 +1104,8 @@ class _DocumentTable extends ConsumerWidget {
       final data = e.response?.data;
       final msg = (data is Map ? data['message'] : data?.toString()) ??
           AppLocalizations.of(context).deleteFailed;
-      showAppSnackbar(context, ref, msg, isError: true);
-    }
+    showAppSnackbar(context, ref, msg, isError: true);
   }
 }
 
 /// TOTAL RESULTS, pinned to the trailing edge beside the search bar.
-class _ResultCount extends StatelessWidget {
-  const _ResultCount({required this.count, required this.label});
-
-  final int count;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.1,
-            color: cs.onSurfaceVariant,
-          ),
-        ),
-        Text(
-          '$count',
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.w900,
-            color: cs.primary,
-          ),
-        ),
-      ],
-    );
-  }
-}

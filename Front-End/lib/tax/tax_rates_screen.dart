@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
+import 'package:pos_app/core/ilyass_list_scaffold.dart';
+import 'package:pos_app/core/ilyass_table.dart';
+import 'package:pos_app/core/unified_search_bar.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/core/status_colors.dart';
@@ -10,7 +13,7 @@ import 'package:pos_app/tax/tax_provider.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
 
 // --- SCREEN ---
-class TaxRatesScreen extends ConsumerWidget {
+class TaxRatesScreen extends ConsumerStatefulWidget {
   /// Passed by ManagementLayout when the sidebar is hidden so the AppBar can
   /// show a menu icon rather than the default back arrow.
   final VoidCallback? onMenuPressed;
@@ -18,374 +21,302 @@ class TaxRatesScreen extends ConsumerWidget {
   const TaxRatesScreen({super.key, this.onMenuPressed});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final asyncTaxes = ref.watch(allTaxesProvider);
-    final company = ref.watch(selectedCompanyProvider);
-    final theme = Theme.of(context);
+  ConsumerState<TaxRatesScreen> createState() => _TaxRatesScreenState();
+}
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Text(AppLocalizations.of(context).taxRates),
-        centerTitle: false,
-        elevation: 0,
-        // Suppress the auto back-arrow — ManagementLayout controls navigation.
-        automaticallyImplyLeading: false,
-        leading: onMenuPressed != null
-            ? IconButton(
-                icon: const Icon(Icons.menu),
-                tooltip: AppLocalizations.of(context).showNavigation,
-                onPressed: onMenuPressed,
-              )
-            : null,
+class _TaxRatesScreenState extends ConsumerState<TaxRatesScreen> {
+  final _searchCtrl = TextEditingController();
+  String _query = '';
+
+  /// Ticked rows, by tax id.
+  final Set<int> _selectedIds = {};
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  void _setQuery(String value) {
+    setState(() {
+      _query = value;
+      // Selection is by id and survives filtering, so a row the search hid must
+      // drop out of it.
+      _selectedIds.clear();
+    });
+  }
+
+  List<Tax> _visible(List<Tax> all) {
+    final q = _query.trim().toLowerCase();
+    if (q.isEmpty) return all;
+    return all
+        .where((t) =>
+            t.name.toLowerCase().contains(q) ||
+            (t.code?.toLowerCase().contains(q) ?? false))
+        .toList();
+  }
+
+  Future<void> _openEditor(int companyId, [Tax? tax]) async {
+    await showDialog(
+      context: context,
+      builder: (_) => _TaxFormDialog(companyId: companyId, tax: tax),
+    );
+    ref.invalidate(allTaxesProvider);
+  }
+
+  Future<void> _bulkDelete(int companyId) async {
+    if (_selectedIds.isEmpty) return;
+    final l = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final all = ref.read(allTaxesProvider).value ?? const <Tax>[];
+    final targets = all.where((t) => _selectedIds.contains(t.id)).toList();
+    if (targets.isEmpty) return;
+
+    // ONE confirmation for the batch — looping the per-row dialog would put
+    // nine prompts in front of someone deleting nine rows.
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: theme.colorScheme.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: theme.colorScheme.error),
+            const SizedBox(width: 8),
+            Text(l.deleteTax),
+          ],
+        ),
+        content: Text(targets.length == 1
+            ? l.deleteTaxRateConfirm(targets.first.name)
+            : l.deleteProductsConfirm(targets.length)),
         actions: [
-          // Refresh
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: AppLocalizations.of(context).refresh,
-            onPressed: () => ref.invalidate(allTaxesProvider),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(l.actionCancel),
           ),
-          // Switch Taxes
-          IconButton(
-            icon: const Icon(Icons.swap_horiz),
-            tooltip: AppLocalizations.of(context).switchTaxes,
-            onPressed: company == null || asyncTaxes.value == null
-                ? null
-                : () async {
-                    await showDialog(
-                      context: context,
-                      builder: (_) => _SwitchTaxesDialog(
-                        taxes: asyncTaxes.value!,
-                        companyId: company.id,
-                      ),
-                    );
-                    ref.invalidate(allTaxesProvider);
-                  },
-          ),
-          // Add
-          Padding(
-            padding: const EdgeInsetsDirectional.only(end: 8.0),
-            child: IconButton(
-              icon: const Icon(Icons.add_circle_outline),
-              tooltip: AppLocalizations.of(context).newTaxRate,
-              color: theme.colorScheme.primary,
-              onPressed: company == null
-                  ? null
-                  : () async {
-                      await showDialog(
-                        context: context,
-                        builder: (_) => _TaxFormDialog(companyId: company.id),
-                      );
-                      ref.invalidate(allTaxesProvider);
-                    },
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.colorScheme.error,
+              foregroundColor: theme.colorScheme.onError,
             ),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(l.actionDelete),
           ),
         ],
       ),
+    );
+    if (confirm != true || !mounted) return;
+
+    for (final tax in targets) {
+      if (!mounted) return;
+      await _delete(context, ref, tax.id, companyId);
+    }
+    if (mounted) setState(_selectedIds.clear);
+  }
+
+  List<IlyassMenuAction> _menuActions(
+    BuildContext context,
+    int? companyId,
+    List<Tax>? taxes,
+  ) {
+    final l = AppLocalizations.of(context);
+    final hasSelection = _selectedIds.isNotEmpty;
+
+    return [
+      IlyassMenuAction(
+        icon: Icons.delete_outline_rounded,
+        label: hasSelection
+            ? l.deleteWithCount(_selectedIds.length)
+            : l.actionDelete,
+        color: hasSelection ? context.dangerColor : null,
+        enabled: hasSelection && companyId != null,
+        onSelected: () {
+          if (companyId != null) _bulkDelete(companyId);
+        },
+      ),
+      IlyassMenuAction(
+        icon: Icons.swap_horiz,
+        label: l.switchTaxes,
+        dividerBefore: true,
+        enabled: companyId != null && taxes != null,
+        onSelected: () async {
+          if (companyId == null || taxes == null) return;
+          await showDialog(
+            context: context,
+            builder: (_) =>
+                _SwitchTaxesDialog(taxes: taxes, companyId: companyId),
+          );
+          ref.invalidate(allTaxesProvider);
+        },
+      ),
+      IlyassMenuAction(
+        icon: Icons.refresh,
+        label: l.refresh,
+        onSelected: () => ref.invalidate(allTaxesProvider),
+      ),
+    ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final asyncTaxes = ref.watch(allTaxesProvider);
+    final company = ref.watch(selectedCompanyProvider);
+
+    return IlyassListScaffold(
+      title: l.taxRates,
+      onMenuPressed: widget.onMenuPressed,
+      searchBar: UnifiedSearchBar(
+        controller: _searchCtrl,
+        singleLine: true,
+        hintText: l.actionSearch,
+        chips: const [],
+        sectionsBuilder: (_) => const [],
+        onQueryChanged: _setQuery,
+        onClearAll: () {
+          _searchCtrl.clear();
+          _setQuery('');
+        },
+      ),
+      actions: _menuActions(context, company?.id, asyncTaxes.value),
+      fabLabel: l.newTaxRate,
+      onFabPressed: company == null ? null : () => _openEditor(company.id),
       body: asyncTaxes.when(
         loading: () => Center(
           child: CircularProgressIndicator(color: theme.colorScheme.primary),
         ),
         error: (e, _) => Center(
           child: Text(
-            AppLocalizations.of(context).errorLoadingTaxesMsg(e.toString()),
+            l.errorLoadingTaxesMsg(e.toString()),
             style: TextStyle(color: theme.colorScheme.error),
           ),
         ),
-        data: (taxes) {
+        data: (all) {
           if (company == null) {
             return Center(
               child: Text(
-                AppLocalizations.of(context).noCompanySelectedShort,
+                l.noCompanySelectedShort,
                 style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
               ),
             );
           }
-          final int companyId = company.id;
+          final companyId = company.id;
+          final taxes = _visible(all);
+          final selected =
+              _selectedIds.intersection(taxes.map((t) => t.id).toSet());
 
-          if (taxes.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.percent,
-                    size: 64,
-                    color: theme.colorScheme.onSurfaceVariant.withValues(
-                      alpha: 0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    AppLocalizations.of(context).noTaxRatesFound,
-                    style: TextStyle(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      fontSize: 18,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.add),
-                    label: Text(AppLocalizations.of(context).addFirstTaxRate),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: theme.colorScheme.primary,
-                      foregroundColor: theme.colorScheme.onPrimary,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
-                      ),
-                    ),
-                    onPressed: () async {
-                      await showDialog(
-                        context: context,
-                        builder: (_) => _TaxFormDialog(companyId: companyId),
-                      );
-                      ref.invalidate(allTaxesProvider);
-                    },
-                  ),
-                ],
+          return IlyassTable<Tax>(
+            tableId: 'taxRates',
+            rows: taxes,
+            rowHeight: 64,
+            onRowTap: (t) => _openEditor(companyId, t),
+            isRowSelected: (t) => selected.contains(t.id),
+            // A switched-off rate reads as switched off at a glance.
+            rowColor: (t) => t.isEnabled
+                ? null
+                : theme.disabledColor.withValues(alpha: 0.05),
+            columns: [
+              ilyassSelectionColumn<Tax, int>(
+                rows: taxes,
+                selected: selected,
+                idOf: (t) => t.id,
+                onChanged: (ids) => setState(() {
+                  _selectedIds
+                    ..clear()
+                    ..addAll(ids);
+                }),
               ),
-            );
-          }
-
-          // FULL SCREEN RESPONSIVE LAYOUT
-          return Container(
-            width: double.infinity,
-            height: double.infinity,
-            padding: const EdgeInsets.all(24.0),
-            child: Card(
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(
-                  color: theme.colorScheme.outlineVariant,
-                  width: 1,
+              IlyassColumn<Tax>(
+                key: 'name',
+                label: l.fieldName,
+                width: 240,
+                flexible: true,
+                cell: (context, t) => Text(
+                  t.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
               ),
-              clipBehavior: Clip.antiAlias,
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  return SingleChildScrollView(
-                    scrollDirection: Axis.vertical, // Scroll down if many rows
-                    child: SingleChildScrollView(
-                      scrollDirection:
-                          Axis.horizontal, // Scroll right if screen is narrow
-                      child: ConstrainedBox(
-                        // This forces the table to stretch to the edges of the card!
-                        constraints: BoxConstraints(
-                          minWidth: constraints.maxWidth,
-                        ),
-                        child: DataTable(
-                          headingRowColor: WidgetStateProperty.all(
-                            theme.colorScheme.surfaceContainerHighest,
-                          ),
-                          dataRowMaxHeight: 60,
-                          dataRowMinHeight: 60,
-                          columnSpacing:
-                              32, // Gives columns nice breathing room
-                          columns: [
-                            DataColumn(
-                              label: Text(
-                                AppLocalizations.of(context).fieldName,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ),
-                            DataColumn(
-                              label: Text(
-                                AppLocalizations.of(context).rateLabel,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                              numeric: true,
-                            ),
-                            DataColumn(
-                              label: Text(
-                                AppLocalizations.of(context).fieldCode,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ),
-                            DataColumn(
-                              label: Text(
-                                AppLocalizations.of(context).fixed,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ),
-                            DataColumn(
-                              label: Text(
-                                AppLocalizations.of(context).taxOnTotal,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ),
-                            DataColumn(
-                              label: Text(
-                                AppLocalizations.of(context).fieldEnabled,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ),
-                            DataColumn(
-                              label: Text(
-                                AppLocalizations.of(context).actions,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ),
-                          ],
-                          rows: taxes.map((t) {
-                            return DataRow(
-                              cells: [
-                                DataCell(
-                                  Text(
-                                    t.name,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                                DataCell(
-                                  Text(
-                                    "${t.isFixed ? '' : ''}${t.rate.toStringAsFixed(t.rate % 1 == 0 ? 0 : 2)}${t.isFixed ? '' : '%'}",
-                                    style: TextStyle(
-                                      color: theme.colorScheme.primary,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                DataCell(Text(t.code ?? '-')),
-                                DataCell(
-                                  _BoolIcon(value: t.isFixed, theme: theme),
-                                ),
-                                DataCell(
-                                  _BoolIcon(
-                                    value: t.isTaxOnTotal,
-                                    theme: theme,
-                                  ),
-                                ),
-                                DataCell(
-                                  _BoolIcon(value: t.isEnabled, theme: theme),
-                                ),
-                                DataCell(
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      IconButton(
-                                        icon: Icon(
-                                          Icons.edit,
-                                          color: theme.colorScheme.primary,
-                                          size: 20,
-                                        ),
-                                        tooltip: AppLocalizations.of(context).actionEdit,
-                                        splashRadius: 24,
-                                        onPressed: () async {
-                                          await showDialog(
-                                            context: context,
-                                            builder: (_) => _TaxFormDialog(
-                                              companyId: companyId,
-                                              tax: t,
-                                            ),
-                                          );
-                                          ref.invalidate(allTaxesProvider);
-                                        },
-                                      ),
-                                      IconButton(
-                                        icon: Icon(
-                                          Icons.delete_outline,
-                                          color: theme.colorScheme.error,
-                                          size: 20,
-                                        ),
-                                        tooltip: AppLocalizations.of(context).actionDelete,
-                                        splashRadius: 24,
-                                        onPressed: () async {
-                                          final confirm = await showDialog<bool>(
-                                            context: context,
-                                            builder: (ctx) => AlertDialog(
-                                              backgroundColor:
-                                                  theme.colorScheme.surface,
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(16),
-                                              ),
-                                              title: Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.warning_amber_rounded,
-                                                    color:
-                                                        theme.colorScheme.error,
-                                                  ),
-                                                  const SizedBox(width: 8),
-                                                  Text(AppLocalizations.of(context).deleteTax),
-                                                ],
-                                              ),
-                                              content: Text(
-                                                AppLocalizations.of(context)
-                                                    .deleteTaxRateConfirm(t.name),
-                                              ),
-                                              actions: [
-                                                TextButton(
-                                                  onPressed: () => Navigator.of(
-                                                    ctx,
-                                                  ).pop(false),
-                                                  child: Text(AppLocalizations.of(context).actionCancel),
-                                                ),
-                                                ElevatedButton(
-                                                  style:
-                                                      ElevatedButton.styleFrom(
-                                                        backgroundColor: theme
-                                                            .colorScheme
-                                                            .error,
-                                                        foregroundColor: theme
-                                                            .colorScheme
-                                                            .onError,
-                                                      ),
-                                                  onPressed: () => Navigator.of(
-                                                    ctx,
-                                                  ).pop(true),
-                                                  child: Text(AppLocalizations.of(context).actionDelete),
-                                                ),
-                                              ],
-                                            ),
-                                          );
-                                          if (confirm == true &&
-                                              context.mounted) {
-                                            await _delete(
-                                              context,
-                                              ref,
-                                              t.id,
-                                              companyId,
-                                            );
-                                          }
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            );
-                          }).toList(),
-                        ),
+              IlyassColumn<Tax>(
+                key: 'rate',
+                label: l.rateLabel,
+                width: 120,
+                numeric: true,
+                cell: (context, t) => Text(
+                  '${t.rate.toStringAsFixed(t.rate % 1 == 0 ? 0 : 2)}'
+                  '${t.isFixed ? '' : '%'}',
+                  style: TextStyle(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              IlyassColumn<Tax>(
+                key: 'code',
+                label: l.fieldCode,
+                width: 140,
+                cell: (context, t) => Text(t.code ?? '-',
+                    maxLines: 1, overflow: TextOverflow.ellipsis),
+              ),
+              IlyassColumn<Tax>(
+                key: 'fixed',
+                label: l.fixed,
+                width: 110,
+                cell: (context, t) => _BoolIcon(value: t.isFixed, theme: theme),
+              ),
+              IlyassColumn<Tax>(
+                key: 'taxOnTotal',
+                label: l.taxOnTotal,
+                width: 130,
+                cell: (context, t) =>
+                    _BoolIcon(value: t.isTaxOnTotal, theme: theme),
+              ),
+              IlyassColumn<Tax>(
+                key: 'enabled',
+                label: l.fieldEnabled,
+                width: 110,
+                cell: (context, t) =>
+                    _BoolIcon(value: t.isEnabled, theme: theme),
+              ),
+            ],
+            emptyState: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.percent,
+                        size: 64,
+                        color: theme.colorScheme.onSurfaceVariant
+                            .withValues(alpha: 0.5)),
+                    const SizedBox(height: 16),
+                    Text(
+                      all.isEmpty ? l.noTaxRatesFound : l.noResultsForFilters,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontSize: 18,
                       ),
                     ),
-                  );
-                },
+                    if (all.isEmpty) ...[
+                      const SizedBox(height: 24),
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.add),
+                        label: Text(l.addFirstTaxRate),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: theme.colorScheme.primary,
+                          foregroundColor: theme.colorScheme.onPrimary,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 12),
+                        ),
+                        onPressed: () => _openEditor(companyId),
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ),
           );

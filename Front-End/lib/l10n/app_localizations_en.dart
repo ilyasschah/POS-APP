@@ -6891,6 +6891,21 @@ class AppLocalizationsEn extends AppLocalizations {
       'Drag to change the order the cashier is asked.';
 
   @override
+  String get dragToReorderColumns => 'Drag to change the column order';
+
+  @override
+  String get noResultsForFilters => 'No results for these filters';
+
+  @override
+  String get colSelectionRule => 'Selection rule';
+
+  @override
+  String get posModifiers => 'Modifiers';
+
+  @override
+  String get setModifiersButton => 'Modifiers button';
+
+  @override
   String customizeItem(String name) {
     return 'Customize $name';
   }

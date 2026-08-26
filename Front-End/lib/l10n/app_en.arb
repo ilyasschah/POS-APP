@@ -3607,6 +3607,11 @@
   "noModifierGroupsExistYet": "You have not built any modifier groups yet. Create one in Management → Modifier Groups, then come back and attach it here.",
   "allModifierGroupsAttached": "Every group is already attached",
   "dragToReorderGroups": "Drag to change the order the cashier is asked.",
+  "dragToReorderColumns": "Drag to change the column order",
+  "noResultsForFilters": "No results for these filters",
+  "colSelectionRule": "Selection rule",
+  "posModifiers": "Modifiers",
+  "setModifiersButton": "Modifiers button",
   "customizeItem": "Customize {name}",
   "@customizeItem": {
     "placeholders": {

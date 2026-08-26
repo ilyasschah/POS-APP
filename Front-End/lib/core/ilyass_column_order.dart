@@ -237,6 +237,12 @@ class _IlyassColumnPickerDialogState
           // with the scroll.
           buildDefaultDragHandles: false,
           itemCount: shown.length,
+          // Deliberately the deprecated `onReorder`, not `onReorderItem`: the
+          // replacement pre-adjusts newIndex, which would double-correct the
+          // off-by-one that `reorderedForDrag` already handles for every
+          // reorderable list in the app. Both lists move to the new callback
+          // together or neither does.
+          // ignore: deprecated_member_use
           onReorder: (oldIndex, newIndex) =>
               _reorder(shown, oldIndex, newIndex),
           itemBuilder: (context, index) {

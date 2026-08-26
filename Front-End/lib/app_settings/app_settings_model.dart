@@ -424,6 +424,7 @@ class SettingKeys {
   static const showCustomerBtn = 'ButtonBar.ShowCustomer';
   static const showDiscountBtn = 'ButtonBar.ShowDiscount';
   static const showCommentBtn = 'ButtonBar.ShowComment';
+  static const showModifiersBtn = 'ButtonBar.ShowModifiers';
   static const showRefundBtn = 'ButtonBar.ShowRefund';
   static const showCashDrawerBtn = 'ButtonBar.ShowCashDrawer';
   static const showWarehouseBtn = 'ButtonBar.ShowWarehouse';
@@ -735,6 +736,7 @@ const Map<String, String> kSettingDefaults = {
   SettingKeys.showCustomerBtn: 'true',
   SettingKeys.showDiscountBtn: 'true',
   SettingKeys.showCommentBtn: 'true',
+  SettingKeys.showModifiersBtn: 'true',
   SettingKeys.showRefundBtn: 'true',
   SettingKeys.showCashDrawerBtn: 'true',
   SettingKeys.showWarehouseBtn: 'true',
