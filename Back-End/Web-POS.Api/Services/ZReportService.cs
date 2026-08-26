@@ -84,6 +84,8 @@ namespace Api.Services
                     // net takings less the tax they carry — the same identity the
                     // legacy path holds: taxable + tax == sales − returns.
                     decimal taxable = totalSales - totalReturns - totalTax;
+                    // Type 0 and type 1 only. Type 2 is the opening float, which
+                    // the session already carries — see StartingCash.StartingCashType.
                     decimal cashIn = movements.Where(m => m.StartingCashType == 0).Sum(m => m.Amount);
                     decimal cashOut = movements.Where(m => m.StartingCashType == 1).Sum(m => m.Amount);
 
@@ -262,6 +264,8 @@ namespace Api.Services
                         .Where(sc => sc.CompanyId == companyId && sc.ZReportNumber == null)
                         .ToListAsync();
 
+                    // Type 0 and type 1 only; type 2 (opening float) belongs to
+                    // the session, not to drawer movement.
                     decimal totalCashIn  = unreportedCash.Where(sc => sc.StartingCashType == 0).Sum(sc => sc.Amount);
                     decimal totalCashOut = unreportedCash.Where(sc => sc.StartingCashType == 1).Sum(sc => sc.Amount);
 

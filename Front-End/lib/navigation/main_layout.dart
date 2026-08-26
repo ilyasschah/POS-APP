@@ -124,6 +124,11 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
   // button) so the on-close backup + destroy only run once.
   bool _closing = false;
 
+  // Windows only: whether the window was maximized before it went fullscreen,
+  // so leaving fullscreen puts it back the way the cashier had it. See the
+  // full-screen button for why maximized has to be dropped first at all.
+  bool _wasMaximizedBeforeFullScreen = false;
+
   // Version already announced to the operator this session. The auto-check
   // repeats every 6 hours, so without this the same snackbar would reappear all
   // day for an update they have already decided not to install yet.
@@ -626,6 +631,29 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
                       onTap: () async {
                         _closeSidebar();
                         final full = await windowManager.isFullScreen();
+                        // 🚨 Windows only: window_manager enters fullscreen by
+                        // moving and resizing the window to the monitor rect,
+                        // and Windows ignores that on a MAXIMIZED (zoomed)
+                        // window — it keeps the maximized placement, so the
+                        // button did nothing at all on a till that boots
+                        // maximized. macOS uses the native fullscreen path and
+                        // was never affected, which is why it worked there.
+                        // Drop out of maximized first, and put it back on exit.
+                        if (defaultTargetPlatform == TargetPlatform.windows) {
+                          if (!full) {
+                            _wasMaximizedBeforeFullScreen =
+                                await windowManager.isMaximized();
+                            if (_wasMaximizedBeforeFullScreen) {
+                              await windowManager.unmaximize();
+                            }
+                          }
+                          await windowManager.setFullScreen(!full);
+                          if (full && _wasMaximizedBeforeFullScreen) {
+                            await windowManager.maximize();
+                            _wasMaximizedBeforeFullScreen = false;
+                          }
+                          return;
+                        }
                         await windowManager.setFullScreen(!full);
                       },
                     ),

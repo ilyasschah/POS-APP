@@ -6496,6 +6496,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get sessionClosedPosted => 'مغلقة ومُرحّلة';
 
   @override
+  String get showKeypad => 'لوحة الأرقام';
+
+  @override
+  String get hideKeypad => 'إخفاء لوحة الأرقام';
+
+  @override
   String get openingControl => 'مراقبة الافتتاح';
 
   @override

@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Api.Domain;
 using Api.DataBase;
 
@@ -107,7 +107,14 @@ public class PosSessionRepository(AppDbContext db)
         return rows.Select(r => (r.PaymentTypeId, r.Total)).ToList();
     }
 
-    /// <summary>Cash in (type 0) and cash out (type 1) for a session.</summary>
+    /// <summary>
+    /// Cash in (type 0) and cash out (type 1) for a session.
+    ///
+    /// ⚠️ Type 2 — the opening float — is deliberately in neither total. It is
+    /// already carried by the session's own StartingCash, so counting it here
+    /// would add the float twice. Both filters name their type explicitly; do
+    /// not rewrite either as "everything that is not the other".
+    /// </summary>
     public async Task<(decimal In, decimal Out)> GetCashMovementTotalsAsync(
         int sessionId, CancellationToken ct = default)
     {

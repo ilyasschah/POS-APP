@@ -13,6 +13,7 @@ import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/currency/currencies_provider.dart';
 import 'package:pos_app/customer/customer_model.dart';
 import 'package:pos_app/kitchen/printer_group_model.dart';
+import 'package:pos_app/modifier/modifier_models.dart';
 import 'package:pos_app/printer/cash_drawer_service.dart';
 import 'package:pos_app/printer/printer_config_model.dart';
 import 'package:pos_app/printer/printer_platform.dart';
@@ -595,24 +596,31 @@ class _RolePrinterTab extends ConsumerStatefulWidget {
   ConsumerState<_RolePrinterTab> createState() => _RolePrinterTabState();
 }
 
-class _RolePrinterTabState extends ConsumerState<_RolePrinterTab>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tc;
+class _RolePrinterTabState extends ConsumerState<_RolePrinterTab> {
   List<Printer> _printers = [];
   bool _loadingPrinters = true;
   bool _testPrinting = false;
 
+  /// Whether this printer is a kitchen station — the "Print kitchen ticket"
+  /// toggle is what opts a printer in, exactly as `PrinterRoutingService`
+  /// decides it. Not `role == 'Kitchen'`: a user-added printer can be a station
+  /// too, and the built-in Kitchen printer can be turned back into a receipt
+  /// printer.
+  ///
+  /// A station has no cash drawer and prints no customer barcode, so the whole
+  /// drawer sub-tab and the barcode switch come off the screen rather than
+  /// sitting there configurable and inert.
+  bool get _isKitchenStation =>
+      (ref.watch(appSettingsProvider)[
+                  SettingKeys.rolePrintKitchenTicket(widget.role)] ??
+              'false')
+          .toLowerCase() ==
+      'true';
+
   @override
   void initState() {
     super.initState();
-    _tc = TabController(length: 3, vsync: this);
     _loadPrinters();
-  }
-
-  @override
-  void dispose() {
-    _tc.dispose();
-    super.dispose();
   }
 
   Future<void> _loadPrinters() async {
@@ -630,6 +638,52 @@ class _RolePrinterTabState extends ConsumerState<_RolePrinterTab>
       if (mounted) setState(() => _loadingPrinters = false);
     }
   }
+
+  /// Demo lines for a kitchen ticket: what a station is actually asked to
+  /// print. Prices are irrelevant on a ticket, so the interesting content is
+  /// the quantities, the chosen options and the kitchen comments — the three
+  /// things a cook reads and the three a receipt would not have shown.
+  List<CartItem> _demoKitchenItems() => [
+        CartItem(
+          cartItemId: 'demo-k1',
+          posOrderId: 0,
+          productId: -1,
+          productName: 'Cheeseburger',
+          quantity: 2,
+          price: 55,
+          basePrice: 45,
+          appliedTaxes: const [],
+          isTaxInclusive: false,
+          selectedModifiers: const [
+            SelectedModifier(
+                groupName: 'Cooking', name: 'Well done', additionalPrice: 0),
+            SelectedModifier(
+                groupName: 'Extras', name: 'Extra cheese', additionalPrice: 10),
+          ],
+        ),
+        CartItem(
+          cartItemId: 'demo-k2',
+          posOrderId: 0,
+          productId: -2,
+          productName: 'Caesar salad',
+          quantity: 1,
+          price: 40,
+          basePrice: 40,
+          appliedTaxes: const [],
+          isTaxInclusive: false,
+        ),
+        CartItem(
+          cartItemId: 'demo-k3',
+          posOrderId: 0,
+          productId: -3,
+          productName: 'Espresso',
+          quantity: 3,
+          price: 12,
+          basePrice: 12,
+          appliedTaxes: const [],
+          isTaxInclusive: false,
+        ),
+      ];
 
   /// Prints a DEMO receipt with fake data (a 100 demo product, a taxed line, a
   /// demo customer) rendered with THIS printer's current settings — so the
@@ -702,6 +756,31 @@ class _RolePrinterTabState extends ConsumerState<_RolePrinterTab>
     }
 
     try {
+      // A kitchen station gets a kitchen ticket, not a receipt. Printing a
+      // customer receipt to test a kitchen printer proved nothing about the
+      // document that printer actually produces — the layout, the comment
+      // lines and the modifier lines are the whole point of the ticket, and
+      // none of them appear on a receipt.
+      if (_isKitchenStation) {
+        await ReceiptPrinterService().printKitchenTicket(
+          orderNumber: 'DEMO-000100',
+          cashierName:
+              ref.read(currentUserProvider)?.displayName ?? 'Demo cashier',
+          serviceType: AppLocalizations.of(context).posOrder,
+          tableName: 'Table 4',
+          printTime: DateTime.now(),
+          items: _demoKitchenItems(),
+          itemComments: const [
+            ['No onions', 'Allergy: peanuts'],
+            [],
+            ['Serve last'],
+          ],
+          roleSettings: settings,
+          role: widget.role,
+        );
+        return;
+      }
+
       await ReceiptPrinterService().printCartReceipt(
         company: company,
         cashier: ref.read(currentUserProvider),
@@ -734,8 +813,15 @@ class _RolePrinterTabState extends ConsumerState<_RolePrinterTab>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final kitchen = _isKitchenStation;
 
-    return Column(
+    // The sub-tab set depends on a setting the operator can flip while this
+    // screen is open, so the controller is rebuilt with it — a fixed-length
+    // TabController would throw the moment the count changed underneath it.
+    return DefaultTabController(
+      key: ValueKey(kitchen),
+      length: kitchen ? 2 : 3,
+      child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // ── Hardware selection card ──────────────────────────────────────────
@@ -766,7 +852,6 @@ class _RolePrinterTabState extends ConsumerState<_RolePrinterTab>
               ),
             ),
             child: TabBar(
-              controller: _tc,
               indicator: BoxDecoration(
                 color: theme.colorScheme.primary.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(9),
@@ -781,7 +866,8 @@ class _RolePrinterTabState extends ConsumerState<_RolePrinterTab>
               ),
               tabs: [
                 Tab(text: AppLocalizations.of(context).generalLabel),
-                Tab(text: AppLocalizations.of(context).setCashDrawer),
+                if (!kitchen)
+                  Tab(text: AppLocalizations.of(context).setCashDrawer),
                 Tab(text: AppLocalizations.of(context).categoryLabel),
               ],
             ),
@@ -791,15 +877,15 @@ class _RolePrinterTabState extends ConsumerState<_RolePrinterTab>
         // ── Sub-tab content ──────────────────────────────────────────────────
         Expanded(
           child: TabBarView(
-            controller: _tc,
             children: [
-              _GeneralSubTab(role: widget.role),
-              _CashDrawerSubTab(role: widget.role),
+              _GeneralSubTab(role: widget.role, isKitchen: kitchen),
+              if (!kitchen) _CashDrawerSubTab(role: widget.role),
               _CategorySubTab(role: widget.role),
             ],
           ),
         ),
       ],
+      ),
     );
   }
 }
@@ -1089,7 +1175,12 @@ class _HardwareCard extends ConsumerWidget {
 
 class _GeneralSubTab extends StatelessWidget {
   final String role;
-  const _GeneralSubTab({required this.role});
+
+  /// Hides the options a kitchen ticket has no use for. Passed down rather than
+  /// read here so the whole sub-tab set is decided in one place.
+  final bool isKitchen;
+
+  const _GeneralSubTab({required this.role, this.isKitchen = false});
 
   String _k(String s) => '$role.$s';
 
@@ -1167,10 +1258,13 @@ class _GeneralSubTab extends StatelessWidget {
           title: AppLocalizations.of(context).options,
           icon: Icons.tune_outlined,
           children: [
-            _PSSwitch(
-              settingKey: _k('PrintBarcode'),
-              label: AppLocalizations.of(context).printBarcode,
-            ),
+            // A kitchen ticket carries no customer-facing barcode — it never
+            // goes back over a counter to be scanned into a refund.
+            if (!isKitchen)
+              _PSSwitch(
+                settingKey: _k('PrintBarcode'),
+                label: AppLocalizations.of(context).printBarcode,
+              ),
             _PSSwitch(
               settingKey: _k('LogoFullWidth'),
               label: AppLocalizations.of(context).printLogoFullWidth,

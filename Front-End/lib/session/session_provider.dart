@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:pos_app/auth/auth_storage.dart';
+import 'package:pos_app/cash/cash_movement_kind.dart';
 import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/database/database_provider.dart';
@@ -143,6 +144,33 @@ class SessionNotifier extends Notifier<void> {
       openingNote: Value(openingNote),
       status: const Value(PosSessionStatus.opened),
     ));
+
+    // …and record it in the cash-movement ledger, so "where did the drawer
+    // start?" is answerable from the same list as every other movement. Written
+    // HERE and not in [openSession] because this is the counted figure; the one
+    // the session was created with is only an expectation.
+    //
+    // 🚨 Kind `opening`, never `in`. Expected cash is
+    // `openingCash + cashPayments + cashIn - cashOut` and `openingCash` is the
+    // session's own startingCash — a cash-IN row for the same money would be
+    // added a second time and every register would read over by the float.
+    // See CashMovementKind.
+    if (countedOpeningCash > 0) {
+      await _db.insertOfflineCashMovement(
+        StartingCashTableCompanion.insert(
+          localId: '', // the helper fills a UUID when blank
+          companyId: session.companyId,
+          userId: session.userId,
+          amount: countedOpeningCash,
+          type: CashMovementKind.opening,
+          note: Value(openingNote?.trim().isEmpty ?? true
+              ? null
+              : openingNote!.trim()),
+          createdAt: DateTime.now().toUtc(),
+          sessionLocalId: Value(localId),
+        ),
+      );
+    }
   }
 
   /// OPENED → CLOSING_CONTROL. Selling stops here, not at CLOSED, so a sale

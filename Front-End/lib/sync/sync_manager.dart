@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 
 import 'package:pos_app/auth/auth_storage.dart';
 import 'package:pos_app/app_settings/app_settings_model.dart';
+import 'package:pos_app/cash/cash_movement_kind.dart';
 import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/uom/unit_of_measure.dart';
 import 'package:pos_app/document/document_type_constants.dart';
@@ -831,18 +832,37 @@ class SyncManager {
     if (rows == null) return;
 
     await db.transaction(() async {
+      // Rows the operator has already deleted, whose DELETE has not been pushed
+      // yet. Re-inserting those from the server is how a deleted barcode came
+      // back on screen a second later — the local delete was still queued, and
+      // the pull answered with the row it was queued to remove.
+      final pendingDeletes = await (db.select(db.barcodesTable)
+            ..where((t) => t.companyId.equals(companyId))
+            ..where((t) => t.syncStatus.equals('pending_delete')))
+          .get();
+      final deletedIds =
+          pendingDeletes.map((r) => r.serverId).whereType<int>().toSet();
+      final deletedValues = pendingDeletes.map((r) => r.value).toSet();
+
       // Replace the synced cache; keep pending_create / pending_delete.
       await (db.delete(db.barcodesTable)
             ..where((t) => t.companyId.equals(companyId))
             ..where((t) => t.syncStatus.equals('synced')))
           .go();
       for (final b in rows.cast<Map<String, dynamic>>()) {
+        final serverId = (b['id'] as num?)?.toInt() ?? 0;
+        final value = b['value'] as String? ?? '';
+        // Matched by value as well as id, because the rows that provoked this
+        // are exactly the ones stored without an id.
+        if (deletedIds.contains(serverId) || deletedValues.contains(value)) {
+          continue;
+        }
         await db.into(db.barcodesTable).insert(BarcodesTableCompanion(
               localId: Value(const Uuid().v4()),
-              serverId: Value((b['id'] as num?)?.toInt() ?? 0),
+              serverId: Value(serverId),
               productId: Value((b['productId'] as num?)?.toInt() ?? 0),
               companyId: Value(companyId),
-              value: Value(b['value'] as String? ?? ''),
+              value: Value(value),
               syncStatus: const Value('synced'),
             ));
       }
@@ -2127,7 +2147,7 @@ class SyncManager {
             'amount': m.amount,
             // Drift stores 'in'/'out' as text for readability; the C# API
             // expects 0 (cash in) / 1 (cash out). Convert at the boundary.
-            'startingCashType': m.type == 'in' ? 0 : 1,
+            'startingCashType': CashMovementKind.toApi(m.type),
             if (m.note != null && m.note!.isNotEmpty) 'description': m.note,
             // The session that was trading when the drawer moved. Sent as the
             // client localId because a movement recorded offline belongs to a
@@ -2462,7 +2482,18 @@ class SyncManager {
               queryParameters: {'companyId': companyId},
               data: {'productId': b.productId, 'value': b.value},
             );
-            final serverId = (res.data is Map ? res.data['id'] : null) as int?;
+            // The id is nested under `data` — reading it off the root stored a
+            // synced row with no server id, which delete then mistook for a row
+            // that had never reached the server. See _barcodeIdFromResponse in
+            // products_screen.dart for the full story.
+            final body = res.data;
+            var serverId = (body is Map && body['id'] is num)
+                ? (body['id'] as num).toInt()
+                : null;
+            if (serverId == null && body is Map && body['data'] is Map) {
+              final nested = (body['data'] as Map)['id'];
+              if (nested is num) serverId = nested.toInt();
+            }
             await (db.update(
               db.barcodesTable,
             )..where((t) => t.localId.equals(b.localId))).write(
@@ -2473,10 +2504,31 @@ class SyncManager {
             );
 
           case 'pending_delete':
-            if (b.serverId != null) {
+            // A row stored without its server id still exists on the server, so
+            // dropping it locally would only mean the next pull fetched it back.
+            // Look the id up by value before giving up on the DELETE.
+            var deleteId = b.serverId;
+            if (deleteId == null || deleteId == 0) {
+              final lookup = await dio.get<List<dynamic>>(
+                '/Barcodes/GetByProductId',
+                queryParameters: {
+                  'productId': b.productId,
+                  'companyId': companyId,
+                },
+              );
+              for (final row in lookup.data ?? const []) {
+                if (row is Map &&
+                    (row['value'] as String?)?.trim() == b.value.trim() &&
+                    row['id'] is num) {
+                  deleteId = (row['id'] as num).toInt();
+                  break;
+                }
+              }
+            }
+            if (deleteId != null && deleteId != 0) {
               await dio.delete<dynamic>(
                 '/Barcodes/Delete',
-                queryParameters: {'id': b.serverId, 'companyId': companyId},
+                queryParameters: {'id': deleteId, 'companyId': companyId},
               );
             }
             await (db.delete(
@@ -4301,9 +4353,13 @@ class SyncManager {
         continue;
       }
 
-      // Map server fields → local schema: StartingCashType 0/1 → 'in'/'out',
-      // Description → note, DateCreated → createdAt, ZReportNumber → zReportNumber.
-      final type = (m['startingCashType'] as int? ?? 0) == 1 ? 'out' : 'in';
+      // Map server fields → local schema: StartingCashType 0/1/2 →
+      // 'in'/'out'/'opening', Description → note, DateCreated → createdAt,
+      // ZReportNumber → zReportNumber. The old `== 1 ? out : in` read every
+      // unknown value as a cash-IN, which would have turned an opening float
+      // pulled from another terminal into money the drawer was expected to
+      // hold twice over.
+      final type = CashMovementKind.fromApi(m['startingCashType'] as int?);
       toInsert.add(StartingCashTableCompanion.insert(
         localId: const Uuid().v4(),
         companyId: (m['companyId'] as int?) ?? companyId,

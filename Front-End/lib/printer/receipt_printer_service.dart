@@ -612,7 +612,10 @@ class ReceiptPrinterService {
             ],
 
             // ── Header ─────────────────────────────────────────────────────
-            center(headerText, size: 16, bold: true),
+            // With no logo the name IS the branding, so it prints at the size
+            // the logo would have occupied. A shop that never uploaded one was
+            // otherwise handing out receipts headed by 16pt body text.
+            center(headerText, size: logoBytes == null ? 24 : 16, bold: true),
             if (showCompanyTax && company.taxNumber?.isNotEmpty == true)
               center('${lbl(SettingKeys.labelCompanyTaxNumber, l.setTaxNo)}: ${company.taxNumber}', size: 9),
             if (showCompanyAddress && company.address?.isNotEmpty == true)
@@ -692,18 +695,28 @@ class ReceiptPrinterService {
                 layout: dir,
               );
 
-              // 1. Safely grab the unit (when the toggle is on). If it exists,
-              //    add a space before it (e.g. " Kg").
-              final unit =
-                  (printUnit &&
-                      item.measurementUnit != null &&
-                      item.measurementUnit!.trim().isNotEmpty)
-                  ? ' ${item.measurementUnit!.trim()}'
+              // The unit, when there is one to print. On a WEIGHED line it is
+              // not decoration and not optional: "0.125 x 50.00" does not say
+              // 0.125 of what, and kg / g / L are not interchangeable. So a
+              // weighed item always carries its unit; everything else stays
+              // behind the Receipt.PrintMeasurementUnit toggle.
+              final unitLabel = item.measurementUnit?.trim() ?? '';
+              final unit = (unitLabel.isNotEmpty && (printUnit || item.isToWeigh))
+                  ? ' $unitLabel'
                   : '';
 
-              // 2. Inject $unit right after $qty. The currency remains dynamic!
+              // A modifier's surcharge lives INSIDE `price` (see CartItem's
+              // basePrice invariant), so a 20.00 product with a 5.00 option
+              // printed as "1 x 25.00" — neither the shelf price nor the
+              // supplement was legible, only their sum. Print the product's own
+              // price here; each option prints its own "+ Name 5.00" line
+              // below, and the line total still carries the whole 25.00.
+              final surcharge = item.price - item.basePrice;
+              final shownUnitPrice =
+                  surcharge > 0 ? unitPrice - surcharge : unitPrice;
+
               final qtyPriceW = printedText(
-                '${rtl ? '' : '  '}$qty$unit x ${money(unitPrice)} $currencySymbol',
+                '${rtl ? '' : '  '}$qty$unit x ${money(shownUnitPrice)} $currencySymbol',
                 style: ts(10),
                 layout: dir,
               );
@@ -858,7 +871,13 @@ class ReceiptPrinterService {
               pw.Center(
                 child: pw.BarcodeWidget(
                   barcode: pw.Barcode.code128(),
-                  data: orderNumber,
+                  // The document number, not the order it came from. The
+                  // barcode exists so a returned receipt can be scanned back
+                  // into a refund, and refunds are looked up by document.
+                  // Orders are transient; documents are the permanent record.
+                  data: (documentNumber?.trim().isNotEmpty ?? false)
+                      ? documentNumber!.trim()
+                      : orderNumber,
                   width: 120,
                   height: 35,
                 ),
@@ -1098,6 +1117,15 @@ class ReceiptPrinterService {
     ZReportModel report,
     String currencySymbol, {
     required Map<String, String> roleSettings,
+    /// The float the register opened with, when this report closes a session.
+    ///
+    /// 🚨 Not part of [ZReportModel]: the opening float belongs to the SESSION,
+    /// not to the report row, and the server's Z-report DTO does not carry it.
+    /// It is printed rather than summed — `expectedCash` already adds it once
+    /// (`openingCash + cashPayments + cashIn - cashOut`), so recording it as a
+    /// cash-IN movement as well would count the same money twice. Null on a
+    /// company-wide End-of-Day report, which spans no single session.
+    double? openingCash,
     // Which configured printer this goes to. Defaults to the receipt printer —
     // a Z-report is an end-of-shift till roll, not a document.
     String role = 'Receipt',
@@ -1197,6 +1225,11 @@ class ReceiptPrinterService {
                       ? report.fromDocumentNumber!
                       : '${report.fromDocumentNumber} - ${report.toDocumentNumber}',
                 ),
+              if (openingCash != null)
+                zRow(
+                  '${l.sessionOpeningCash}:',
+                  '${openingCash.toStringAsFixed(2)} $currencySymbol',
+                ),
               zRow(
                 '${l.cashIn}:',
                 '${report.totalCashIn.toStringAsFixed(2)} $currencySymbol',
@@ -1291,10 +1324,11 @@ class ReceiptPrinterService {
     ZReportModel report,
     String currencySymbol, {
     required Map<String, String> roleSettings,
+    double? openingCash,
     String role = 'Receipt',
   }) async {
     final pdf = await buildZReport(report, currencySymbol,
-        roleSettings: roleSettings, role: role);
+        roleSettings: roleSettings, openingCash: openingCash, role: role);
     await _dispatch(pdf, 'Z_Report_${report.number}',
         _copies(roleSettings, role), roleSettings['$role.PrinterName']);
   }

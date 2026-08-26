@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:pos_app/cash/cash_movement_kind.dart';
 import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/auth/user_model.dart';
 import 'package:pos_app/core/responsive.dart';
@@ -1417,8 +1418,16 @@ class _MovementRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isIn = movement.type == 'in';
-    final color = isIn ? context.successColor : context.dangerColor;
+    // Three kinds, not two. `type == 'in'` alone made the opening float — which
+    // is neither an in nor an out — render as a cash OUT in red with a minus
+    // sign, i.e. as money taken from the drawer at the start of the shift.
+    final isOpening = movement.type == CashMovementKind.opening;
+    final isOut = movement.type == CashMovementKind.cashOut;
+    final color = isOpening
+        ? theme.colorScheme.onSurfaceVariant
+        : isOut
+            ? context.dangerColor
+            : context.successColor;
     final reason = (movement.note ?? movement.description ?? '').trim();
 
     return Padding(
@@ -1433,8 +1442,14 @@ class _MovementRow extends StatelessWidget {
               color: color.withValues(alpha: 0.14),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(isIn ? Icons.south_west : Icons.north_east,
-                size: 15, color: color),
+            child: Icon(
+                isOpening
+                    ? Icons.savings_outlined
+                    : isOut
+                        ? Icons.north_east
+                        : Icons.south_west,
+                size: 15,
+                color: color),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -1452,7 +1467,7 @@ class _MovementRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          Text('${isIn ? '+' : '−'} ${money(movement.amount)}',
+          Text('${isOut ? '−' : '+'} ${money(movement.amount)}',
               style: theme.textTheme.bodyMedium
                   ?.copyWith(fontWeight: FontWeight.bold, color: color)),
         ],

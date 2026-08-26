@@ -2020,6 +2020,8 @@
   "sessionInProgress": "En cours",
   "sessionClosingControl": "Contrôle de fermeture",
   "sessionClosedPosted": "Fermée et comptabilisée",
+  "showKeypad": "Clavier",
+  "hideKeypad": "Masquer le clavier",
   "openingControl": "Contrôle d'ouverture",
   "openingNote": "Note d'ouverture",
   "openingNoteHint": "Ajouter une note d'ouverture…",
