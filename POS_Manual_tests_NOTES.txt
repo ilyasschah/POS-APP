@@ -12,6 +12,9 @@ Items 5/7 need a DECISION from you. Items 8/9/10 need a
 HARDWARE/DEP answer. Items 11-15 are dev/build tasks, not
 screen tests. The rest you can test on the POS.
 
+the kitchen printer should not have cashdraw tab print barcode and also when i test demo it should generate kitchen demo with products and comments 
+
+
 --- NEWLY REPORTED (to do next) ---
 
 [38] IN PROGRESS - MODIFIERS. First thing you CAN press.
