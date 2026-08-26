@@ -1,11 +1,12 @@
 /// App-wide constants.
 ///
-/// Everything here is deliberately hardcoded per the product spec — there is
-/// no company switcher and no currency picker in this app.
+/// 🚨 The company id used to live here as `companyId = 25`, described as
+/// "single-tenant scope". It was applied to every request regardless of who
+/// signed in, so the dashboard reported company 25's figures to every account
+/// and a freshly created company looked like it had no access — the server was
+/// never asked about it. The tenant now comes from the login response
+/// (`user.companyId`) and travels on the API client. Currency is still fixed.
 abstract final class AppConfig {
-  /// Single-tenant scope. Every API call carries this as a query param.
-  static const int companyId = 25;
-
   /// Currency is always Moroccan dirham, suffixed after the number.
   /// e.g. "1,234.56 DH". Never user-configurable.
   static const String currencySuffix = 'DH';
@@ -26,9 +27,6 @@ abstract final class AppConfig {
   /// is fixed here by defaulting to Test.
   static const String defaultBaseUrl = testBaseUrl;
 
-  /// Pre-filled on the login screen for dev convenience, matching the iOS app.
-  static const String defaultEmail = 'ilyasschah18@gmail.com';
-
   /// Minimum length enforced client-side before an admin password reset is
   /// allowed to submit.
   static const int minPasswordLength = 6;
@@ -41,5 +39,13 @@ abstract final class PrefKeys {
   static const glassOpacity = 'glassTransparency';
   static const apiBaseUrl = 'apiBaseUrl';
   static const apiToken = 'apiToken';
+
+  /// The signed-in user's company, stored alongside [apiToken] and removed with
+  /// it. The two together are one session; either alone is a stale key.
+  static const companyId = 'companyId';
+
+  /// The address used for the last successful sign-in, so the login field can
+  /// be pre-filled with the operator's OWN account rather than a constant.
+  static const lastEmail = 'lastEmail';
   static const language = 'appLanguage';
 }
