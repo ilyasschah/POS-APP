@@ -12,8 +12,21 @@ Items 5/7 need a DECISION from you. Items 8/9/10 need a
 HARDWARE/DEP answer. Items 11-15 are dev/build tasks, not
 screen tests. The rest you can test on the POS.
 
-the kitchen printer should not have cashdraw tab print barcode and also when i test demo it should generate kitchen demo with products and comments 
 
+Reults of testing in Real POS and printer and cash drawer every thing work unless this things below : 
+the kitchen printer should not have cashdraw tab print barcode and also when i test demo it should generate kitchen demo with products and comments 
+the display customer display didnt work and also it in my POS setting it shows COM 10 but in the windows setting its showing only COM 1 _ 5 and a LPT1
+after i disabled show printing dailog from the setting and made a paiment the cash drawer opend bu the printer didnt print 
+also if there is no logo of the copany you should print a large COmpany Name insted of the Logo
+also the barcode is printed in the reciept should be the document barcode number not the order 
+also when i add a Modifier to a product its 20 + 5 in the reciept you should show the product price alon just 20 and under it the extra but inthe total show 25 
+the rapport z should be printed using the reciapt printer when we close a session its working from end of day sceen but not in POS session closing dailog 
+and also the cash in that i have saved when i opend a session did not saved in chash movment table and that caused the rapport z didnt know about the cash in taht i have puted in the start of the session 
+when i created prodcut A and give it barcode and sell it after i dcided to change it to sell by whieght i need to delete the old barcode 
+and give it a new one but when i delete the old one and add a new one the old one keep coming back i hit delete it gos for 1s and then back 
+in the reciept and also in the payment item list you should not only show 0.125 x 50.00dh it should be 0.125 kg x 50.00 dh like 0.125 what kg or g or L 
+also the web dashboard it not showing the correct data the that COmpanyafter i log in or the new company doesnt have access to dashoard i dont know its keep login back to another user of another company 
+also when i put the app in full screen from the sidebar button it doesnt work it work on macbook but not on this windows also the scale of this POS is 1366 x768 the cart it a little bit smalle we need to add a button to show or hide the key pad because the cart item list now almost fit 2 iteams per line
 
 --- NEWLY REPORTED (to do next) ---
 
