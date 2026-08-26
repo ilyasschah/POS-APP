@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
@@ -239,7 +239,15 @@ builder.Services.AddTransient(
     typeof(IPipelineBehavior<,>), typeof(Api.Behaviors.ValidationBehavior<,>));
 
 // ================== MVC / SWAGGER ==================
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    // Tenant isolation, enforced for every controller action rather than
+    // remembered at 251 call sites. `companyId` used to be taken from the query
+    // string on trust, so any signed-in user could read (or write) another
+    // company's data by editing the URL. Opt out with [AllowCrossCompany], and
+    // only for the control plane. See Filters/CompanyScopeFilter.cs.
+    options.Filters.Add<Api.Filters.CompanyScopeFilter>();
+});
 // Admin SaaS portal (server-rendered Razor Pages under /admin). It authenticates
 // with its own COOKIE scheme and per-user accounts (Api.Admin.AdminPortalAuth) —
 // not the JWT the POS clients carry, and no longer the shared ?key= secret.

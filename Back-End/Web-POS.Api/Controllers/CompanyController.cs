@@ -14,12 +14,25 @@ namespace Api.Controllers
     [ApiController]
     public class CompanyController(IMediator mediator) : ControllerBase
     {
+        /// <summary>
+        /// Every company on the account. ⚠️ Left OUT of the tenant filter on
+        /// purpose: master login lists the companies a terminal may sign in to,
+        /// and it runs before a company has been chosen, so scoping it to the
+        /// caller's current company would empty the picker. It carries no
+        /// companyId to check in any case. Narrowing this to the companies the
+        /// signed-in ACCOUNT owns is a real improvement and a separate change.
+        /// </summary>
+        [AllowCrossCompany]
         [HttpGet("[action]")]
         public async Task<ActionResult<List<CompanyDto>>> GetAll(CancellationToken ct = default)
         {
             var companies = await mediator.Send(new GetAllCompaniesQuery(), ct);
             return Ok(companies);
         }
+        // `id` here IS the company id. Named so, it is invisible to the tenant
+        // filter, which looks for `companyId` — everywhere else in this API a bare
+        // `id` is a product, a document or a user.
+        [CompanyScopedBy("id")]
         [HttpGet("[action]")]
         public async Task<ActionResult<CompanyDto>> GetById(int id, CancellationToken ct = default)
         {
@@ -36,6 +49,7 @@ namespace Api.Controllers
                 message = $"Company '{createdCompany.Name}' created successfully.",
             });
         }
+        [CompanyScopedBy("id")]
         [HttpPatch("[action]")]
         public async Task<ActionResult<CompanyDto>> Update([FromBody] UpdateCompanyRequest req, CancellationToken ct = default)
         {
@@ -44,6 +58,7 @@ namespace Api.Controllers
 
             return Ok(result);
         }
+        [CompanyScopedBy("id")]
         [HttpPut("[action]")]
         public async Task<ActionResult> UpdateLogo([FromBody] UpdateCompanyLogoRequest request, CancellationToken ct = default)
         {
@@ -54,6 +69,7 @@ namespace Api.Controllers
                 message = "Company logo updated successfully.",
             });
         }
+        [CompanyScopedBy("id")]
         [HttpDelete("[action]")]
         public async Task<ActionResult> Delete(int id, CancellationToken ct = default)
         {
