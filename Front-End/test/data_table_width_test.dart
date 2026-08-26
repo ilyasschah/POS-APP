@@ -1,5 +1,13 @@
 // Pins that the app's DataTable grids FILL their pane instead of leaving a dead
-// gap down the right-hand side (stock, documents, products, import preview).
+// gap down the right-hand side.
+//
+// 🚨 The screens this was written for — stock, documents, products — have since
+// moved to `IlyassTable`, which solves the same problem its own way (see
+// `ilyass_table_test.dart`). What still runs a DataTable, and so still depends
+// on the two behaviours below, is the IMPORT PREVIEW
+// (`product_import_screen`) and the SESSION LIST (`session_list_screen`) —
+// both of which use exactly the `IntrinsicColumnWidth(flex: 1)` +
+// `ConstrainedBox(minWidth: c.maxWidth)` pair this pins.
 //
 // Reported 2026-08-06 with a screenshot: the table hugged the left ~58% of the
 // window. Two independent causes, and fixing either alone leaves the gap:
@@ -210,10 +218,10 @@ void main() {
 
   // ── The same shape in the other grids ─────────────────────────────────────
   //
-  // documents_screen, products_screen and product_import_screen all put a
-  // DataTable inside a horizontal SingleChildScrollView. Two of them already had
-  // the ConstrainedBox (so they filled, but spread the slack evenly); the import
-  // preview had neither. These pin the two behaviours those fixes rely on.
+  // `product_import_screen` and `session_list_screen` both put a DataTable
+  // inside a horizontal SingleChildScrollView. These pin the two behaviours
+  // their fixes rely on: a numeric column must not steal the slack, and a
+  // single text column must absorb it.
 
   testWidgets('a numeric column never steals the slack from a text column',
       (tester) async {
@@ -221,7 +229,8 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
-    // products_screen's shape: mixed numeric/text, flex on the first text one.
+    // The import preview's shape: mixed numeric/text, flex on the first text
+    // column.
     Widget build({required bool flex}) => MaterialApp(
           home: Scaffold(
             body: SizedBox(

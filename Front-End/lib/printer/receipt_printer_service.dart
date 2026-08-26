@@ -9,6 +9,7 @@ import 'package:pos_app/cart/discount_display.dart';
 import 'package:pos_app/company/company_model.dart';
 import 'package:pos_app/customer/customer_model.dart';
 import 'package:pos_app/l10n/app_locale.dart';
+import 'package:pos_app/modifier/modifier_models.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:pos_app/printer/pdf_fonts.dart';
 import 'package:pos_app/printer/pdf_file_name.dart';
@@ -118,8 +119,12 @@ class ReceiptPrinterService {
 
   /// Merges identical cart lines into one (summing quantity) for the receipt
   /// display. Lines are "identical" only when every per-unit value matches
-  /// (product, price, discounts, taxes, unit, comment), so the line math stays
-  /// correct. Copies are made so the live cart is never mutated.
+  /// (product, price, discounts, taxes, unit, comment, MODIFIERS), so the line
+  /// math stays correct. Copies are made so the live cart is never mutated.
+  ///
+  /// 🚨 The modifier selection is part of the key. Without it a plain burger
+  /// and a burger with Extra Cheese collapse into "2 x Burger" — one printed
+  /// line for two different things the kitchen has to make differently.
   static List<CartItem> _mergeReceiptItems(List<CartItem> items) {
     final map = <String, CartItem>{};
     final order = <String>[];
@@ -132,6 +137,7 @@ class ReceiptPrinterService {
         it.measurementUnit ?? '',
         it.comment ?? '',
         it.appliedTaxes.map((t) => t.id).join(','),
+        modifierSelectionKey(it.selectedModifiers),
       ].join('|');
       final existing = map[key];
       if (existing == null) {
@@ -162,6 +168,11 @@ class ReceiptPrinterService {
           // Merged rows must keep the tax mode, or the printed line reverts to
           // the `true` default and an exclusive product prints the wrong total.
           isTaxInclusive: it.isTaxInclusive,
+          // 🚨 And the choices. A copy that drops them prints a plain burger
+          // for a line the cart, the kitchen and the customer all agree has
+          // Extra Cheese on it — and whose price already includes it.
+          selectedModifiers: it.selectedModifiers,
+          basePrice: it.basePrice,
         );
         order.add(key);
       } else {
@@ -465,12 +476,14 @@ class ReceiptPrinterService {
     // No hardcoded default — an empty footer simply prints nothing.
     final footerText = roleSettings['$role.Footer'] ?? '';
 
-    pw.TextStyle ts(double size, {bool bold = false}) => printedTextStyle(
+    pw.TextStyle ts(double size, {bool bold = false, bool italic = false}) =>
+        printedTextStyle(
           font: font,
           boldFont: boldFont,
           arabic: arabicRegular,
           arabicBold: arabicBold,
           bold: bold,
+          italic: italic,
           size: size * fontScale,
         );
 
@@ -710,6 +723,19 @@ class ReceiptPrinterService {
                     children: rtl
                         ? [lineTotalW, qtyPriceW]
                         : [qtyPriceW, lineTotalW],
+                  ),
+                  // Each choice on its own indented line, with what it added.
+                  // The surcharge is already inside the unit price above, so
+                  // this is the breakdown of a total the customer can otherwise
+                  // only take on trust.
+                  ...item.selectedModifiers.map(
+                    (m) => printedText(
+                      '${rtl ? '' : '    '}+ ${m.name}'
+                      '${m.additionalPrice == 0 ? '' : ' '
+                          '${money(m.additionalPrice)} $currencySymbol'}',
+                      style: ts(9, italic: true),
+                      layout: dir,
+                    ),
                   ),
                   pw.SizedBox(height: 3),
                 ],
@@ -1017,10 +1043,17 @@ class ReceiptPrinterService {
               final item = items[i];
               final qty = formatQuantityValue(item.quantity, item.uomId);
 
-              // Gather all comment lines for this item:
-              // 1. CartItem.comment split by newline (supports multi-line selections)
-              // 2. Extra structured comments from the caller's itemComments list
+              // Gather every instruction line for this item:
+              // 1. the chosen MODIFIERS — what the kitchen actually has to do
+              //    differently, and the reason this ticket exists
+              // 2. CartItem.comment split by newline (multi-line selections)
+              // 3. extra structured comments from the caller's itemComments
+              //
+              // 🚨 Modifiers first and without prices. A ticket is a work
+              // instruction, not a bill — "+ Extra Cheese" is the whole point,
+              // and "+3.00" on it is noise to whoever is at the grill.
               final commentLines = <String>[
+                for (final m in item.selectedModifiers) '+ ${m.name}',
                 if (item.comment?.isNotEmpty == true)
                   ...item.comment!
                       .split('\n')

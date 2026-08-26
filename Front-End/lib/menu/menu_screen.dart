@@ -385,6 +385,8 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
         settings[SettingKeys.showTaxBtn]?.toLowerCase() != 'false';
     final showCommentBtn =
         settings[SettingKeys.showCommentBtn]?.toLowerCase() != 'false';
+    final showModifiersBtn =
+        settings[SettingKeys.showModifiersBtn]?.toLowerCase() != 'false';
     // A sync can swap an offline-created table's temp id out from under an open
     // cart. This stream re-emits when that lands, so heal the cart's id then —
     // otherwise the header falls back to 'Table #-1784…' for the rest of the sale.
@@ -881,6 +883,16 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                                   );
                             },
                     ),
+                  if (showModifiersBtn)
+                    _MenuHeaderActionBtn(
+                      icon: Icons.tune,
+                      label: AppLocalizations.of(context).posModifiers,
+                      // Greyed out until a cart line is selected — modifiers
+                      // belong to one line. Same gating as Comment and Quantity.
+                      onTap: cartState.selectedCartItemId == null
+                          ? null
+                          : () => _editItemModifiers(context),
+                    ),
                   if (showTransferBtn)
                     _MenuHeaderActionBtn(
                       icon: Icons.swap_horiz,
@@ -1174,6 +1186,63 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
         ],
       ),
     );
+  }
+
+  /// Re-opens the customise sheet for the SELECTED cart line.
+  ///
+  /// The sheet is otherwise only shown on the way in, so a cashier who picked
+  /// the wrong sauce had to void the line and ring it again. It pre-selects
+  /// from the line ([showCustomizeItemSheet]'s `initial`), so this is an edit
+  /// rather than a fresh choice.
+  Future<void> _editItemModifiers(BuildContext context) async {
+    final cart = ref.read(cartProvider);
+    final item = cart.items
+        .where((i) => i.cartItemId == cart.selectedCartItemId)
+        .firstOrNull;
+    if (item == null) return;
+
+    // Read straight from Drift — see the note on the add-to-cart path. Going
+    // through the autoDispose family provider's `.future` resolves before the
+    // watch-stream emits, so a product WITH groups opens an empty sheet.
+    List<ModifierGroup> groups = const [];
+    try {
+      final rows = await ref
+          .read(appDatabaseProvider)
+          .modifierGroupsForProductDirect(
+            ref.read(selectedCompanyProvider)?.id ?? 0,
+            item.productId,
+          );
+      groups = modifierGroupsFromRows(rows);
+    } catch (_) {}
+
+    if (!context.mounted) return;
+    if (groups.isEmpty) {
+      // Nothing to choose. Say so rather than opening an empty sheet — the
+      // product simply has no groups attached in Management → Modifier Groups.
+      showAppSnackbar(
+        context,
+        ref,
+        AppLocalizations.of(context).noModifierGroupsExistYet,
+      );
+      return;
+    }
+
+    final result = await showCustomizeItemSheet(
+      context,
+      itemName: item.productName,
+      basePrice: item.basePrice,
+      groups: groups,
+      initial: item.selectedModifiers,
+      initialNote: item.comment,
+    );
+    // Null means backed out, and that must leave the line exactly as it was.
+    if (result == null) return;
+
+    ref.read(cartProvider.notifier).setItemModifiers(
+          item.cartItemId,
+          result.modifiers,
+          comment: result.note,
+        );
   }
 }
 

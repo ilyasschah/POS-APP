@@ -2701,6 +2701,8 @@ Two rules make the drag feel solid rather than glitchy, and both are load-bearin
 | `lib/session/session_screen.dart` | `_Row` alignment, `_StatGrid` fluid wrap, 1200px cap on both tabs |
 | `lib/document/documents_screen.dart` | `IlyassTable` with resizable columns, end-aligned TOTAL, tight ACTIONS. The 8 filters became the unified search bar (`lib/core/unified_search_bar.dart`) — its chip row and result-count header still follow rules 1–2. |
 | `lib/reports/sales_history_screen.dart` | Both master and detail tables are `IlyassTable` (15 and 11 columns, resizable, money end-aligned); `UnifiedSearchBar` carries the user + customer filters as chips; header and toolbar band size themselves from their own content minimums |
+| `lib/product/product_groups_screen.dart` | The group TREE inside an `IlyassTable`: the hierarchy became one indented Name column with an expand toggle, searching flattens it, and the old 340px-tree-plus-editor split gave way to `IlyassListScaffold` + a dialog editor |
+| `lib/reports/z_report_screen.dart` | End of Day is the Z-report history in an `IlyassTable` (11 columns, money end-aligned, 5 hidden by default) with `UnifiedSearchBar` + the app date-range picker as a period chip; Close Register left the app bar for a red FAB that exists ONLY while unreported payments do, and the old Current Shift tab became its confirmation sheet |
 | `lib/core/ilyass_table.dart` | The shared table + `ilyassColumnWidthsProvider` |
 | `lib/core/responsive.dart` | `kMaxReadableWidth` |
 

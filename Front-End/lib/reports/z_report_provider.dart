@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/reports/z_report_model.dart';
@@ -57,4 +58,27 @@ final allZReportsProvider =
       paymentSummaries: summaries,
     );
   }).toList();
+});
+
+/// Which columns the Z-report history table shows, keyed by the untranslated
+/// column id. The order here is the picker's starting order;
+/// `ilyassColumnOrderProvider` overrides it once anyone drags a row.
+///
+/// The five off by default are the ones a shop reads on the printed slip
+/// rather than on screen — they are one tick away, and leaving them on made an
+/// eleven-column table nobody could scan.
+final zReportVisibleColumnsProvider = StateProvider<Map<String, bool>>((ref) {
+  return {
+    'Number': true,
+    'Date': true,
+    'Documents': true,
+    'Range': true,
+    'Sales': true,
+    'Total': true,
+    'Returns': false,
+    'Discounts': false,
+    'Tax': false,
+    'Cash In': false,
+    'Cash Out': false,
+  };
 });

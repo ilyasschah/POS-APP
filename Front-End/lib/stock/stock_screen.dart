@@ -1,6 +1,10 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:pos_app/core/ilyass_list_scaffold.dart';
+import 'package:pos_app/stock/warehouse_model.dart';
+import 'package:pos_app/core/ilyass_table.dart';
+import 'package:pos_app/core/unified_search_bar.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:pos_app/uom/unit_of_measure.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -156,14 +160,6 @@ class _StockScreenState extends ConsumerState<StockScreen> {
       }).toList();
     }
     return items;
-  }
-
-  StockMasterItem? _findSelected(List<StockMasterItem> list) {
-    if (_selectedProductId == null) return null;
-    for (final i in list) {
-      if (i.product.id == _selectedProductId) return i;
-    }
-    return null;
   }
 
   // ── PDF Generation ──────────────────────────────────────────────────────────
@@ -590,34 +586,141 @@ class _StockScreenState extends ConsumerState<StockScreen> {
 
   // ── Build ───────────────────────────────────────────────────────────────────
 
-  @override
-  Widget build(BuildContext context) {
-    final asyncMaster = ref.watch(stockMasterProvider);
-    final asyncWarehouses = ref.watch(allWarehousesProvider);
-    final sym = ref.watch(currencySymbolProvider);
-    final theme = Theme.of(context);
+  // ── search & filters ──────────────────────────────────────────────────────
 
-    // Seed the rules map from Drift (offline-first) so filters/rows react to it.
-    _rules = ref.watch(stockControlsMapProvider).value ?? const {};
+  /// Every filter this screen carries, in the header's one bar: the typed
+  /// query, the warehouse, and the three flags. They were a 60px strip of
+  /// dropdowns and chips above the table, which cost that height on every
+  /// screen to state what three chips now say inside the bar.
+  Widget _buildSearchBar(BuildContext context, List<Warehouse> warehouses) {
+    final l = AppLocalizations.of(context);
+    final warehouse =
+        warehouses.where((w) => w.id == _selectedWarehouseId).firstOrNull;
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Text(AppLocalizations.of(context).inventoryMasterList),
-        // Suppress the auto back-arrow — ManagementLayout controls navigation.
-        automaticallyImplyLeading: false,
-        leading: widget.onMenuPressed != null
-            ? IconButton(
-                icon: const Icon(Icons.menu),
-                tooltip: AppLocalizations.of(context).showNavigation,
-                onPressed: widget.onMenuPressed,
-              )
-            : null,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.warehouse_outlined),
-            tooltip: AppLocalizations.of(context).manageWarehouses,
-            onPressed: () => ref.read(securityGuardProvider).guard(
+    void clearSelection() {
+      // Selection is by id and survives filtering, so a row a filter hid must
+      // not stay selected behind it.
+      _selectedProductId = null;
+    }
+
+    return UnifiedSearchBar(
+      controller: _searchCtrl,
+      singleLine: true,
+      hintText: l.searchProductNameOrCode,
+      chips: [
+        if (warehouse != null)
+          SearchBarChip(
+            id: 'warehouse',
+            label: warehouse.name,
+            icon: Icons.warehouse_outlined,
+            onRemove: () => setState(() {
+              _selectedWarehouseId = null;
+              clearSelection();
+            }),
+          ),
+        if (_showUnassigned)
+          SearchBarChip(
+            id: 'unassigned',
+            label: l.unassigned,
+            icon: Icons.warning_amber,
+            color: context.warningColor,
+            onRemove: () => setState(() => _showUnassigned = false),
+          ),
+        if (_showLowStock)
+          SearchBarChip(
+            id: 'low',
+            label: l.lowStock,
+            icon: Icons.trending_down,
+            color: context.dangerColor,
+            onRemove: () => setState(() => _showLowStock = false),
+          ),
+        if (_showReorder)
+          SearchBarChip(
+            id: 'reorder',
+            label: l.needsReorder,
+            icon: Icons.replay,
+            color: context.warningColor,
+            onRemove: () => setState(() => _showReorder = false),
+          ),
+      ],
+      sectionsBuilder: (_) => [
+        FilterMenuSection(
+          title: l.warehouse,
+          icon: Icons.warehouse_outlined,
+          options: [
+            FilterMenuOption(
+              label: l.allWarehousesCap,
+              icon: Icons.all_inbox,
+              selected: _selectedWarehouseId == null,
+              onSelected: () => setState(() {
+                _selectedWarehouseId = null;
+                clearSelection();
+              }),
+            ),
+            for (final w in warehouses)
+              FilterMenuOption(
+                label: w.name,
+                icon: Icons.warehouse_outlined,
+                selected: _selectedWarehouseId == w.id,
+                onSelected: () => setState(() {
+                  _selectedWarehouseId = w.id;
+                  clearSelection();
+                }),
+              ),
+          ],
+        ),
+        FilterMenuSection(
+          title: l.statusLabel,
+          icon: Icons.flag_outlined,
+          options: [
+            FilterMenuOption(
+              label: l.unassigned,
+              icon: Icons.warning_amber,
+              selected: _showUnassigned,
+              onSelected: () =>
+                  setState(() => _showUnassigned = !_showUnassigned),
+            ),
+            FilterMenuOption(
+              label: l.lowStock,
+              icon: Icons.trending_down,
+              selected: _showLowStock,
+              onSelected: () => setState(() => _showLowStock = !_showLowStock),
+            ),
+            FilterMenuOption(
+              label: l.needsReorder,
+              icon: Icons.replay,
+              selected: _showReorder,
+              onSelected: () => setState(() => _showReorder = !_showReorder),
+            ),
+          ],
+        ),
+      ],
+      onQueryChanged: (v) => setState(() {
+        _searchQuery = v;
+        clearSelection();
+      }),
+      onClearAll: () {
+        _searchCtrl.clear();
+        setState(() {
+          _searchQuery = '';
+          _selectedWarehouseId = null;
+          _showUnassigned = false;
+          _showLowStock = false;
+          _showReorder = false;
+          clearSelection();
+        });
+      },
+    );
+  }
+
+  List<IlyassMenuAction> _menuActions(BuildContext context) {
+    final l = AppLocalizations.of(context);
+
+    return [
+      IlyassMenuAction(
+        icon: Icons.warehouse_outlined,
+        label: l.manageWarehouses,
+        onSelected: () => ref.read(securityGuardProvider).guard(
               context,
               SecurityKeys.warehouses,
               () async {
@@ -630,396 +733,265 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                 ref.invalidate(stockMasterProvider);
               },
             ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.picture_as_pdf_outlined),
-            tooltip: AppLocalizations.of(context).printStockReportPdf,
-            onPressed: () => _withReportArgs(_printPdf),
-          ),
-          IconButton(
-            icon: const Icon(Icons.save_alt),
-            tooltip: AppLocalizations.of(context).saveStockReportPdf,
-            onPressed: () => _withReportArgs(_savePdf),
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () => ref.invalidate(stockMasterProvider),
-          ),
-        ],
       ),
+      IlyassMenuAction(
+        icon: Icons.picture_as_pdf_outlined,
+        label: l.printStockReportPdf,
+        dividerBefore: true,
+        onSelected: () => _withReportArgs(_printPdf),
+      ),
+      IlyassMenuAction(
+        icon: Icons.save_alt,
+        label: l.saveStockReportPdf,
+        onSelected: () => _withReportArgs(_savePdf),
+      ),
+      IlyassMenuAction(
+        icon: Icons.refresh,
+        label: l.refresh,
+        onSelected: () => ref.invalidate(stockMasterProvider),
+      ),
+    ];
+  }
+
+  /// 🚨 The details are a MODAL now, not a 340px pane welded to the right of
+  /// the table. The pane cost that width on every screen whether or not a
+  /// product was selected, which is the whole reason the table had nowhere to
+  /// put its columns.
+  void _showDetails(StockMasterItem item) {
+    setState(() => _selectedProductId = item.product.id);
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => Dialog(
+        clipBehavior: Clip.antiAlias,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: 420,
+            maxHeight: MediaQuery.sizeOf(dialogContext).height * 0.85,
+          ),
+          child: _ProductDetailPanel(
+            item: item,
+            warehouseId: _selectedWarehouseId,
+            onClose: () => Navigator.of(dialogContext).maybePop(),
+            onRefresh: () => ref.invalidate(stockMasterProvider),
+            onShowAssignDialog: () =>
+                _showAssignDialog(context, item.product),
+            onShowControlDialog: () =>
+                _showStockControlDialog(context, item.product),
+          ),
+        ),
+      ),
+    ).then((_) {
+      if (mounted) setState(() => _selectedProductId = null);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final asyncMaster = ref.watch(stockMasterProvider);
+    final warehouses = ref.watch(allWarehousesProvider).value ?? const [];
+    final sym = ref.watch(currencySymbolProvider);
+    final theme = Theme.of(context);
+
+    // Seed the rules map from Drift (offline-first) so filters/rows react to it.
+    _rules = ref.watch(stockControlsMapProvider).value ?? const {};
+
+    return IlyassListScaffold(
+      title: l.inventoryMasterList,
+      onMenuPressed: widget.onMenuPressed,
+      searchBar: _buildSearchBar(context, warehouses),
+      actions: _menuActions(context),
       body: asyncMaster.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text(AppLocalizations.of(context).errorWithMessage(e.toString()))),
+        error: (e, _) =>
+            Center(child: Text(l.errorWithMessage(e.toString()))),
         data: (masterList) {
           final filtered = _applyFilters(masterList);
-          final selectedItem = _findSelected(masterList);
 
-          return Column(
-            children: [
-              // ── Filter bar ─────────────────────────────────────────
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surface,
-                  border: Border(
-                      bottom: BorderSide(color: theme.dividerColor)),
-                ),
-                child: Row(
-                  children: [
-                    // Search
-                    Expanded(
-                      flex: 2,
-                      child: TextField(
-                        controller: _searchCtrl,
-                        decoration: InputDecoration(
-                          hintText: AppLocalizations.of(context).searchProductNameOrCode,
-                          prefixIcon: const Icon(Icons.search, size: 20),
-                          isDense: true,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 10),
-                        ),
-                        onChanged: (v) =>
-                            setState(() => _searchQuery = v),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-
-                    // Warehouse dropdown
-                    asyncWarehouses.when(
-                      loading: () => const SizedBox(
-                          width: 200,
-                          child: LinearProgressIndicator()),
-                      error: (_, __) => const SizedBox.shrink(),
-                      data: (warehouses) => DropdownMenu<int?>(
-                        key: ValueKey(_selectedWarehouseId),
-                        initialSelection: _selectedWarehouseId,
-                        width: 210,
-                        leadingIcon: const Icon(
-                            Icons.warehouse_outlined,
-                            size: 18),
-                        label: Text(AppLocalizations.of(context).warehouse),
-                        onSelected: (v) => setState(
-                            () => _selectedWarehouseId = v),
-                        dropdownMenuEntries: [
-                          DropdownMenuEntry<int?>(
-                              value: null,
-                              label: AppLocalizations.of(context).allWarehousesCap),
-                          ...warehouses.map((w) =>
-                              DropdownMenuEntry<int?>(
-                                  value: w.id, label: w.name)),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-
-                    // Filter chips
-                    FilterChip(
-                      label: Text(AppLocalizations.of(context).unassigned),
-                      selected: _showUnassigned,
-                      onSelected: (v) =>
-                          setState(() => _showUnassigned = v),
-                      selectedColor:
-                          context.warningColor.withValues(alpha: 0.2),
-                      checkmarkColor: context.warningColor,
-                    ),
-                    const SizedBox(width: 8),
-                    FilterChip(
-                      label: Text(AppLocalizations.of(context).lowStock),
-                      selected: _showLowStock,
-                      onSelected: (v) =>
-                          setState(() => _showLowStock = v),
-                      selectedColor:
-                          context.dangerColor.withValues(alpha: 0.2),
-                      checkmarkColor: context.dangerColor,
-                    ),
-                    const SizedBox(width: 8),
-                    FilterChip(
-                      label: Text(AppLocalizations.of(context).needsReorder),
-                      selected: _showReorder,
-                      onSelected: (v) =>
-                          setState(() => _showReorder = v),
-                      selectedColor:
-                          context.warningColor.withValues(alpha: 0.2),
-                      checkmarkColor: context.warningColor,
-                    ),
-                  ],
-                ),
+          return IlyassTable<StockMasterItem>(
+            tableId: 'stock',
+            rows: filtered,
+            rowHeight: 64,
+            onRowTap: _showDetails,
+            isRowSelected: (item) => item.product.id == _selectedProductId,
+            columns: [
+              IlyassColumn<StockMasterItem>(
+                key: 'product',
+                label: l.productLabel,
+                width: 300,
+                // The one column that absorbs surplus — a product name varies
+                // far more than a code or a quantity does.
+                flexible: true,
+                cell: (context, item) => _productCell(context, item.product),
               ),
-
-              // ── Content row ────────────────────────────────────────
-              Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // ── Table ─────────────────────────────────────────
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.surface,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black
-                                    .withValues(alpha: 0.05),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          // 🚨 A horizontal SingleChildScrollView hands its child
-                          // UNBOUNDED width, so the DataTable sized itself to its
-                          // intrinsic content and left a dead gap down the right
-                          // of the pane. Two things are needed to fix that, and
-                          // neither works alone:
-                          //
-                          //  1. `minWidth: c.maxWidth` — tell the table it may be
-                          //     as wide as the pane (still unbounded above, so a
-                          //     narrow window/tablet keeps scrolling horizontally
-                          //     instead of overflowing).
-                          //  2. a FLEX column. Per DataTable's own rule, a column
-                          //     only stretches when it is the single text column
-                          //     (all others `numeric`); every column here is text,
-                          //     so all five got a plain `IntrinsicColumnWidth()`
-                          //     and the table stayed hugged to its content no
-                          //     matter what width it was offered. The product name
-                          //     absorbs the slack — the other four are short,
-                          //     fixed-shape values that look wrong stretched.
-                          child: LayoutBuilder(
-                            builder: (context, c) => SingleChildScrollView(
-                              child: SingleChildScrollView(
-                                scrollDirection: Axis.horizontal,
-                                child: ConstrainedBox(
-                                  constraints:
-                                      BoxConstraints(minWidth: c.maxWidth),
-                                  child: DataTable(
-                              showCheckboxColumn: false,
-                              headingRowColor: WidgetStateProperty.all(
-                                theme.colorScheme
-                                    .surfaceContainerHighest,
-                              ),
-                              columnSpacing: 12,
-                              horizontalMargin: 12,
-                              columns: [
-                                DataColumn(
-                                  label: Text(AppLocalizations.of(context).productLabel),
-                                  // Intrinsic width is the FLOOR, flex takes the
-                                  // rest — so a long product name is never
-                                  // truncated to make room for the gap.
-                                  columnWidth:
-                                      const IntrinsicColumnWidth(flex: 1),
-                                ),
-                                DataColumn(label: Text(AppLocalizations.of(context).fieldCode)),
-                                DataColumn(label: Text(AppLocalizations.of(context).fieldQuantity)),
-                                DataColumn(
-                                    label: Text(AppLocalizations.of(context).valueTotal)),
-                                DataColumn(label: Text(AppLocalizations.of(context).actions)),
-                              ],
-                              rows: filtered
-                                  .map((item) => _buildRow(
-                                      context, item, sym))
-                                  .toList(),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    // ── Detail panel ──────────────────────────────────
-                    if (selectedItem != null)
-                      _ProductDetailPanel(
-                        key: ValueKey(_selectedProductId),
-                        item: selectedItem,
-                        warehouseId: _selectedWarehouseId,
-                        onClose: () =>
-                            setState(() => _selectedProductId = null),
-                        onRefresh: () =>
-                            ref.invalidate(stockMasterProvider),
-                        onShowAssignDialog: () => _showAssignDialog(
-                            context, selectedItem.product),
-                        onShowControlDialog: () =>
-                            _showStockControlDialog(
-                                context, selectedItem.product),
-                      ),
-                  ],
-                ),
+              IlyassColumn<StockMasterItem>(
+                key: 'code',
+                label: l.fieldCode,
+                width: 140,
+                cell: (context, item) => Text(item.product.code ?? '-',
+                    maxLines: 1, overflow: TextOverflow.ellipsis),
+              ),
+              IlyassColumn<StockMasterItem>(
+                key: 'quantity',
+                label: l.fieldQuantity,
+                width: 200,
+                cell: (context, item) => _quantityCell(context, item),
+              ),
+              IlyassColumn<StockMasterItem>(
+                key: 'value',
+                label: l.valueTotal,
+                width: 150,
+                numeric: true,
+                cell: (context, item) =>
+                    Text('${_totalValue(item).toStringAsFixed(2)} $sym'),
               ),
             ],
+            emptyState: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.inventory_2_outlined,
+                        size: 64,
+                        color: theme.disabledColor.withValues(alpha: 0.3)),
+                    const SizedBox(height: 16),
+                    Text(
+                      masterList.isEmpty
+                          ? l.noProductsFound
+                          : l.noResultsForFilters,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: theme.hintColor, fontSize: 16),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           );
         },
       ),
     );
   }
 
-  DataRow _buildRow(
-      BuildContext context, StockMasterItem item, String sym) {
+  /// The stock rows for one product under the active warehouse filter.
+  List<StockItem> _stocksOf(StockMasterItem item) => _selectedWarehouseId == null
+      ? item.stocks
+      : item.stocks
+          .where((s) => s.warehouseId == _selectedWarehouseId)
+          .toList();
+
+  double _totalQty(StockMasterItem item) =>
+      _stocksOf(item).fold(0, (sum, s) => sum + s.quantity);
+
+  /// Priced per SALE unit, counted in the STOCK unit — see the note in the
+  /// report builder. 0.400 kg of a 30 MAD/g product is 12 000 MAD.
+  double _totalValue(StockMasterItem item) =>
+      _totalQty(item) *
+      pricePerReferenceUnit(item.product.price, item.product.uomId);
+
+  Widget _productCell(BuildContext context, Product product) => Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // FileImage → MemoryImage → placeholder. FileImage is cached by path
+          // so the avatar decodes once per product per session.
+          product.imageFile != null
+              ? CircleAvatar(
+                  radius: 14, backgroundImage: FileImage(product.imageFile!))
+              : product.imageBytes != null
+                  ? CircleAvatar(
+                      radius: 14,
+                      backgroundImage: MemoryImage(product.imageBytes!))
+                  : const CircleAvatar(
+                      radius: 14, child: Icon(Icons.inventory_2, size: 14)),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              product.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.w500),
+            ),
+          ),
+          if (product.isService) ...[
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              decoration: BoxDecoration(
+                color: context.infoColor.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(AppLocalizations.of(context).colSvc,
+                  style: TextStyle(
+                      color: context.infoColor,
+                      fontSize: 8,
+                      fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ],
+      );
+
+  Widget _quantityCell(BuildContext context, StockMasterItem item) {
     final product = item.product;
-    final stocks = _selectedWarehouseId == null
-        ? item.stocks
-        : item.stocks
-            .where((s) => s.warehouseId == _selectedWarehouseId)
-            .toList();
-    final double totalQty = stocks.fold(0, (sum, s) => sum + s.quantity);
-    // Priced per SALE unit, counted in the STOCK unit — see the note in the
-    // report builder above. 0.400 kg of a 30 MAD/g product is 12 000 MAD.
-    final double totalValue =
-        totalQty * pricePerReferenceUnit(product.price, product.uomId);
-    final bool isSelected = _selectedProductId == product.id;
+    final stocks = _stocksOf(item);
+    final totalQty = _totalQty(item);
 
     // Stock-control rule status (offline-first, from _rules).
     final rule = _rules[product.id];
-    final bool isLow = rule != null && rule.isLowStockAt(totalQty);
-    final bool needsReorder = rule != null && rule.needsReorderAt(totalQty);
+    final isLow = rule != null && rule.isLowStockAt(totalQty);
+    final needsReorder = rule != null && rule.needsReorderAt(totalQty);
 
-    return DataRow(
-      selected: isSelected,
-      onSelectChanged: (_) =>
-          setState(() => _selectedProductId =
-              isSelected ? null : product.id),
-      color: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) {
-          return Theme.of(context)
-              .colorScheme
-              .primaryContainer
-              .withValues(alpha: 0.4);
-        }
-        if (states.contains(WidgetState.hovered)) {
-          return Theme.of(context)
-              .colorScheme
-              .surfaceContainerHighest
-              .withValues(alpha: 0.5);
-        }
-        return null;
-      }),
-      cells: [
-        DataCell(
-          Row(
-            children: [
-              // FileImage → MemoryImage → placeholder. FileImage is cached
-              // by path so the avatar decodes once per product per session.
-              product.imageFile != null
-                  ? CircleAvatar(
-                      radius: 14,
-                      backgroundImage: FileImage(product.imageFile!),
-                    )
-                  : product.imageBytes != null
-                      ? CircleAvatar(
-                          radius: 14,
-                          backgroundImage: MemoryImage(product.imageBytes!),
-                        )
-                      : const CircleAvatar(
-                          radius: 14,
-                          child: Icon(Icons.inventory_2, size: 14),
-                        ),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  product.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w500),
-                ),
-              ),
-              if (product.isService) ...[
-                const SizedBox(width: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 4, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: context.infoColor.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(AppLocalizations.of(context).colSvc,
-                      style: TextStyle(
-                          color: context.infoColor,
-                          fontSize: 8,
-                          fontWeight: FontWeight.bold)),
-                ),
-              ],
-            ],
+    if (stocks.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: context.dangerColor.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(6),
+          border:
+              Border.all(color: context.dangerColor.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.warning_amber, size: 14, color: context.dangerColor),
+            const SizedBox(width: 4),
+            Text(AppLocalizations.of(context).unassigned,
+                style: TextStyle(
+                    color: context.dangerColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12)),
+          ],
+        ),
+      );
+    }
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Flexible(
+          child: Text(
+            '${formatQuantityValue(totalQty, product.stockUom.id)} '
+            '${product.stockUom.code}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: isLow
+                  ? context.dangerColor
+                  : needsReorder
+                      ? context.warningColor
+                      : context.successColor,
+            ),
           ),
         ),
-        DataCell(Text(product.code ?? "-")),
-        DataCell(
-          stocks.isEmpty
-              ? Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: context.dangerColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(
-                        color: context.dangerColor.withValues(alpha: 0.3)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.warning_amber,
-                          size: 14, color: context.dangerColor),
-                      const SizedBox(width: 4),
-                      Text(AppLocalizations.of(context).unassigned,
-                          style: TextStyle(
-                              color: context.dangerColor,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12)),
-                    ],
-                  ),
-                )
-              : Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      '${formatQuantityValue(totalQty, product.stockUom.id)} ${product.stockUom.code}',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: isLow
-                            ? Colors.red
-                            : needsReorder
-                                ? Colors.orange
-                                : Colors.green,
-                      ),
-                    ),
-                    if (isLow || needsReorder) ...[
-                      const SizedBox(width: 6),
-                      _StockFlag(
-                        label: isLow
-                            ? AppLocalizations.of(context).flagLow
-                            : AppLocalizations.of(context).flagReorder,
-                        color: isLow ? Colors.red : Colors.orange,
-                      ),
-                    ],
-                  ],
-                ),
-        ),
-        DataCell(
-            Text("${totalValue.toStringAsFixed(2)} $sym")),
-        DataCell(
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _tblBtn(
-                  Icons.add_box,
-                  context.successColor,
-                  AppLocalizations.of(context).assignAddStock,
-                  () => _showAssignDialog(context, product)),
-              const SizedBox(width: 4),
-              _tblBtn(
-                  Icons.tune,
-                  context.warningColor,
-                  AppLocalizations.of(context).stockControlRules,
-                  () => _showStockControlDialog(context, product)),
-            ],
+        if (isLow || needsReorder) ...[
+          const SizedBox(width: 6),
+          _StockFlag(
+            label: isLow
+                ? AppLocalizations.of(context).flagLow
+                : AppLocalizations.of(context).flagReorder,
+            color: isLow ? context.dangerColor : context.warningColor,
           ),
-        ),
+        ],
       ],
     );
   }
@@ -1050,20 +1022,6 @@ class _StockScreenState extends ConsumerState<StockScreen> {
     );
   }
 
-  Widget _tblBtn(IconData icon, Color color, String tooltip,
-      VoidCallback onPressed) {
-    return Tooltip(
-      message: tooltip,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(6),
-        child: Padding(
-          padding: const EdgeInsets.all(6),
-          child: Icon(icon, size: 20, color: color),
-        ),
-      ),
-    );
-  }
 }
 
 // ── Small low-stock / reorder flag chip ───────────────────────────────────────
@@ -1434,8 +1392,10 @@ class _ProductDetailPanel extends ConsumerStatefulWidget {
   final VoidCallback onShowAssignDialog;
   final VoidCallback onShowControlDialog;
 
+  // No `key`: the panel used to be a persistent pane that had to be rebuilt
+  // when the selected product changed. Each one is its own dialog now, so it
+  // is fresh by construction.
   const _ProductDetailPanel({
-    super.key,
     required this.item,
     required this.warehouseId,
     required this.onClose,
@@ -1551,19 +1511,10 @@ class _ProductDetailPanelState
         ref.watch(stockControlByProductIdProvider(product.id));
 
     return Container(
-      width: 340,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        border:
-            BorderDirectional(start: BorderSide(color: theme.dividerColor)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.07),
-            blurRadius: 14,
-            offset: const Offset(-4, 0),
-          ),
-        ],
-      ),
+      // No width, border or drop shadow: those dressed this as a pane welded to
+      // the right edge of the table. It is a dialog now — the Dialog draws the
+      // surface and caps the width, and this fills it.
+      decoration: BoxDecoration(color: theme.colorScheme.surface),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

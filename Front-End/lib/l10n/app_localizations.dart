@@ -12410,6 +12410,36 @@ abstract class AppLocalizations {
   /// **'Drag to change the order the cashier is asked.'**
   String get dragToReorderGroups;
 
+  /// No description provided for @dragToReorderColumns.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag to change the column order'**
+  String get dragToReorderColumns;
+
+  /// No description provided for @noResultsForFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'No results for these filters'**
+  String get noResultsForFilters;
+
+  /// No description provided for @colSelectionRule.
+  ///
+  /// In en, this message translates to:
+  /// **'Selection rule'**
+  String get colSelectionRule;
+
+  /// No description provided for @posModifiers.
+  ///
+  /// In en, this message translates to:
+  /// **'Modifiers'**
+  String get posModifiers;
+
+  /// No description provided for @setModifiersButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Modifiers button'**
+  String get setModifiersButton;
+
   /// No description provided for @customizeItem.
   ///
   /// In en, this message translates to:

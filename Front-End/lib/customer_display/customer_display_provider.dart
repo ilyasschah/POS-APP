@@ -124,8 +124,16 @@ class CustomerDisplayNotifier extends Notifier<CustomerDisplayState> {
 
   /// Called when the payment dialog is cancelled — returns to cart view
   /// (or idle if cart was somehow cleared) instead of staying on paymentPending.
+  ///
+  /// 🚨 Guarded on `ref.mounted`, because the only caller DEFERS it: the dialog's
+  /// `dispose` cannot mutate provider state inline, so it hands this to a
+  /// microtask. If the scope goes away before that microtask runs — the app
+  /// closing on an open payment dialog, or a test tearing its container down —
+  /// the notifier is already disposed and writing `state` throws. The timer is
+  /// still cancelled either way; there is simply no display left to tell.
   void cancelPayment() {
     _resetTimer?.cancel();
+    if (!ref.mounted) return;
     if (state.items.isNotEmpty) {
       state = state.copyWith(status: CustomerDisplayStatus.cartActive);
       _broadcast();

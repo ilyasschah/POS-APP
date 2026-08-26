@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:uuid/uuid.dart';
+
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
@@ -128,6 +130,18 @@ final kitchenStatusWatcherProvider = Provider<void>((ref) {
 /// Caller MUST have established the row is server-authoritative
 /// (`syncStatus == 'synced'`): this deletes the local lines outright, so running
 /// it against an order with unpushed local edits would destroy them.
+///
+/// 🚨 The chosen MODIFIERS are carried across by hand, because the server has
+/// no column for them.
+///
+/// `pos_order_item_modifiers` rows hang off a LINE's `localId`, and every line
+/// here is deleted and reinserted with a brand new one. Without the carry, this
+/// function orphaned every snapshot it touched — and since it runs on a 10s
+/// background tick the moment an order reaches `synced`, a burger saved with
+/// Extra Cheese silently became a plain burger a few seconds later. The money
+/// stayed right (the surcharge is already inside `unitPrice`) while the cart,
+/// the kitchen ticket and the guest check all lost the instruction, which is
+/// the worst shape this can fail in because nothing looks broken.
 Future<void> _pullOrderItems(
   AppDatabase db,
   int companyId,
@@ -138,7 +152,25 @@ Future<void> _pullOrderItems(
 ) async {
   final rows = await api.getOrderItems(companyId, serverId);
 
+  // Snapshot what the local lines were customised with, keyed by product and
+  // kept in line order — the server response carries no line identity we could
+  // match on, so position within a product is the best link available.
+  final previousModifiers = await db.orderItemModifiersByLine(orderLocalId);
+  final previousLines = await (db.select(db.posOrderItemsTable)
+        ..where((t) => t.orderId.equals(orderLocalId)))
+      .get();
+  final carried = <int, List<List<PosOrderItemModifiersTableData>>>{};
+  for (final line in previousLines) {
+    final mods = previousModifiers[line.localId];
+    if (mods == null || mods.isEmpty) continue;
+    (carried[line.productId] ??= []).add(mods);
+  }
+
   await db.transaction(() async {
+    // Before the lines go, or this looks up ids that no longer exist and
+    // leaves the rows behind forever.
+    await db.deleteOrderItemModifiers(orderLocalId);
+
     await (db.delete(db.posOrderItemsTable)
           ..where((t) => t.orderId.equals(orderLocalId)))
         .go();
@@ -146,6 +178,9 @@ Future<void> _pullOrderItems(
     for (var i = 0; i < rows.length; i++) {
       final it = rows[i] as Map<String, dynamic>;
       final itemServerId = (it['id'] ?? it['Id']) as int?;
+      final productId = (it['productId'] ?? it['ProductId']) as int? ?? 0;
+      final itemLocalId =
+          itemServerId != null ? 'svri_$itemServerId' : '${orderLocalId}_$i';
 
       // taxesJson is read back by loadOrderFromLocal for the tax IDS only — it
       // re-derives rate/isFixed from the local taxes cache, so a stale rate
@@ -161,11 +196,9 @@ Future<void> _pullOrderItems(
 
       await db.into(db.posOrderItemsTable).insert(
             PosOrderItemsTableCompanion(
-              localId: Value(
-                itemServerId != null ? 'svri_$itemServerId' : '${orderLocalId}_$i',
-              ),
+              localId: Value(itemLocalId),
               orderId: Value(orderLocalId),
-              productId: Value((it['productId'] ?? it['ProductId']) as int? ?? 0),
+              productId: Value(productId),
               quantity:
                   Value(((it['quantity'] ?? it['Quantity']) as num?)?.toDouble() ?? 0),
               unitPrice:
@@ -189,6 +222,26 @@ Future<void> _pullOrderItems(
               syncStatus: const Value('synced'),
             ),
           );
+
+      // Re-attach this product's next snapshot to the line's NEW localId.
+      final queue = carried[productId];
+      if (queue != null && queue.isNotEmpty) {
+        final mods = queue.removeAt(0);
+        await db.batch((b) {
+          b.insertAll(db.posOrderItemModifiersTable, [
+            for (final m in mods)
+              PosOrderItemModifiersTableCompanion(
+                localId: Value(const Uuid().v4()),
+                orderItemLocalId: Value(itemLocalId),
+                modifierOptionId: Value(m.modifierOptionId),
+                groupName: Value(m.groupName),
+                name: Value(m.name),
+                additionalPrice: Value(m.additionalPrice),
+                rank: Value(m.rank),
+              ),
+          ]);
+        });
+      }
     }
   });
 }

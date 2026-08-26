@@ -11,7 +11,11 @@ import 'package:pos_app/api/api_client.dart';
 import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/app_settings/app_settings_provider.dart';
 import 'package:pos_app/company/company_provider.dart';
+import 'package:pos_app/core/ilyass_column_order.dart';
+import 'package:pos_app/core/ilyass_list_scaffold.dart';
+import 'package:pos_app/core/ilyass_table.dart';
 import 'package:pos_app/core/status_colors.dart';
+import 'package:pos_app/core/unified_search_bar.dart';
 import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/product/product_group_assignment.dart';
@@ -60,7 +64,58 @@ List<_TreeNode> _buildTree(List<ProductGroup> flat) {
 // ---------------------------------------------------------------------------
 // Main Screen
 // ---------------------------------------------------------------------------
+
+/// One flattened line of the group tree, as [IlyassTable] wants it.
+///
+/// The nesting is real — a sub-group inherits its parent's place on the till's
+/// category bar — but a table wants ROWS, so the tree is flattened on every
+/// build and the depth travels with the row. The Name cell indents by it and
+/// hangs the expand toggle off it, which is how a tree survives inside a flat,
+/// resizable, horizontally scrolling grid.
+@immutable
+class _GroupRow {
+  const _GroupRow({
+    required this.group,
+    required this.depth,
+    required this.hasChildren,
+    required this.expanded,
+  });
+
+  final ProductGroup group;
+  final int depth;
+  final bool hasChildren;
+  final bool expanded;
+}
+
+/// Display label for a `productGroupVisibleColumnsProvider` key.
+///
+/// 🚨 The keys (`'Name'`, `'Parent'`, …) are the map's **identity** — they gate
+/// every column and are what the picker writes back. Translating the map itself
+/// would break the grid the moment the language changed, exactly as in
+/// `payment_types_screen._paymentColumnLabel`.
+String _groupColumnLabel(BuildContext context, String id) {
+  final l10n = AppLocalizations.of(context);
+  switch (id) {
+    case 'Name':
+      return l10n.fieldName;
+    case 'Parent':
+      return l10n.parentFolder;
+    case 'Products':
+      return l10n.products;
+    case 'Rank':
+      return l10n.fieldRank;
+    case 'Color':
+      return l10n.setColor;
+    case 'Actions':
+      return l10n.actions;
+    default:
+      return id;
+  }
+}
+
 class ProductGroupsScreen extends ConsumerStatefulWidget {
+  /// Passed by ManagementLayout when the sidebar is hidden, so the AppBar shows
+  /// a menu icon rather than a back arrow.
   final VoidCallback? onMenuPressed;
   const ProductGroupsScreen({super.key, this.onMenuPressed});
 
@@ -70,243 +125,446 @@ class ProductGroupsScreen extends ConsumerStatefulWidget {
 }
 
 class _ProductGroupsScreenState extends ConsumerState<ProductGroupsScreen> {
-  // null = nothing selected, non-null = group being edited
-  ProductGroup? _editingGroup;
-  // true = panel / dialog should be visible
-  bool _panelOpen = false;
-  // true = creating a new group (editingGroup will be null)
-  bool _creatingNew = false;
-  // Mirrors the body LayoutBuilder's wide/narrow decision so the AppBar button
-  // (built outside that LayoutBuilder) can pick the matching create path.
-  bool _isWide = false;
+  final _searchCtrl = TextEditingController();
+  String _query = '';
 
-  void _openNew() => setState(() {
-        _editingGroup = null;
-        _creatingNew = true;
-        _panelOpen = true;
-      });
+  /// Ticked rows, by group id.
+  final Set<int> _selectedIds = {};
 
-  /// Create flow that works regardless of layout/empty state: on a wide screen
-  /// it opens the inline right-hand editor panel; otherwise (narrow, or the
-  /// empty state where no inline panel is rendered) it opens the editor dialog.
-  void _createGroup() {
-    if (_isWide) {
-      _openNew();
-    } else {
-      showDialog(
-        context: context,
-        builder: (_) => _GroupEditorDialog(onSaved: () {}),
-      );
-    }
+  /// Groups whose children are hidden. Held as COLLAPSED rather than expanded
+  /// so a group pulled down by the next sync appears where it belongs instead
+  /// of staying invisible until somebody thinks to open its parent.
+  final Set<int> _collapsed = {};
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
   }
 
-  void _openEdit(ProductGroup group) => setState(() {
-        _editingGroup = group;
-        _creatingNew = false;
-        _panelOpen = true;
+  void _setQuery(String value) {
+    setState(() {
+      _query = value;
+      // Selection is by id and survives filtering, so a row the search hid must
+      // drop out of it.
+      _selectedIds.clear();
+    });
+  }
+
+  void _toggleExpanded(int groupId) => setState(() {
+        if (!_collapsed.remove(groupId)) _collapsed.add(groupId);
       });
 
-  void _closePanel() => setState(() => _panelOpen = false);
-
-  Future<void> _attemptDelete(ProductGroup group) async {
-    final ctx = context;
-    final db = ref.read(appDatabaseProvider);
-
-    // Check for children and assigned products locally (works offline).
-    final childCount = await (db.select(db.productGroupsTable)
-          ..where((t) => t.parentGroupId.equals(group.id))
-          ..where((t) => t.syncStatus.isNotIn(['pending_delete'])))
-        .get()
-        .then((r) => r.length);
-
-    final productCount = await (db.select(db.productsTable)
-          ..where((t) => t.productGroupId.equals(group.id))
-          ..where((t) => t.syncStatus.isNotIn(['pending_delete'])))
-        .get()
-        .then((r) => r.length);
-
-    if (childCount > 0 || productCount > 0) {
-      if (ctx.mounted) {
-        showDialog(
-          context: ctx,
-          builder: (c) => AlertDialog(
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            title: Row(children: [
-              Icon(Icons.warning_amber_rounded, color: c.warningColor),
-              const SizedBox(width: 8),
-              Text(AppLocalizations.of(context).cannotDelete),
-            ]),
-            content: Text(
-                AppLocalizations.of(context).groupHasChildrenCannotDelete),
-            actions: [
-              TextButton(
-                  onPressed: () => Navigator.pop(c),
-                  child: Text(AppLocalizations.of(context).actionOk))
-            ],
-          ),
-        );
-      }
-      return;
+  /// The rows the table renders: the tree flattened, or — while searching — a
+  /// flat list of matches. A filtered tree has to go flat: a match three levels
+  /// down must be reachable without first guessing which parent to open.
+  List<_GroupRow> _rowsFor(List<ProductGroup> groups) {
+    final q = _query.trim().toLowerCase();
+    if (q.isNotEmpty) {
+      return [
+        for (final g in groups)
+          if (g.name.toLowerCase().contains(q))
+            _GroupRow(group: g, depth: 0, hasChildren: false, expanded: false),
+      ];
     }
 
-    if (!ctx.mounted) return;
-    final confirm = await showDialog<bool>(
-      context: ctx,
-      builder: (c) => AlertDialog(
-        title: Text(AppLocalizations.of(context).deleteGroup),
-        content: Text(
-            AppLocalizations.of(context).deleteGroupConfirm(group.name)),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(c, false),
-              child: Text(AppLocalizations.of(context).actionCancel)),
-          ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(c).colorScheme.error,
-                foregroundColor: Theme.of(c).colorScheme.onError,
-              ),
-              onPressed: () => Navigator.pop(c, true),
-              child: Text(AppLocalizations.of(context).actionDelete)),
-        ],
+    final rows = <_GroupRow>[];
+    void walk(List<_TreeNode> nodes, int depth) {
+      for (final node in nodes) {
+        final hasChildren = node.children.isNotEmpty;
+        final expanded = !_collapsed.contains(node.group.id);
+        rows.add(_GroupRow(
+          group: node.group,
+          depth: depth,
+          hasChildren: hasChildren,
+          expanded: expanded,
+        ));
+        if (hasChildren && expanded) walk(node.children, depth + 1);
+      }
+    }
+
+    walk(_buildTree(groups), 0);
+    return rows;
+  }
+
+  /// The editor is a dialog at every width now. It used to be a permanent
+  /// right-hand panel beside a 340px tree, which spent most of the screen on a
+  /// group nobody was editing — the same trade `modifier_groups_screen` made.
+  void _openEditor([ProductGroup? group]) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogCtx) => _GroupEditorDialog(
+        existingGroup: group,
+        onDelete: group == null
+            ? null
+            : () {
+                // Close the editor FIRST: confirming on top of it would leave a
+                // dialog describing a group that no longer exists.
+                Navigator.pop(dialogCtx);
+                _confirmDelete(group);
+              },
+        onSaved: () {},
       ),
     );
+  }
 
-    if (confirm != true) return;
+  void _showColumnPicker() {
+    final catalogue =
+        ref.read(productGroupVisibleColumnsProvider).keys.toList();
+
+    showIlyassColumnPicker(
+      context: context,
+      tableId: 'productGroups',
+      columns: [
+        for (final key in catalogue)
+          IlyassPickerColumn(
+            key: key,
+            label: _groupColumnLabel(context, key),
+            // The name IS the row — hiding it leaves an unreadable grid.
+            mandatory: key == 'Name',
+          ),
+      ],
+      isVisible: (key) =>
+          ref.read(productGroupVisibleColumnsProvider)[key] ?? false,
+      onVisibleChanged: (key, value) {
+        final updated = Map<String, bool>.from(
+            ref.read(productGroupVisibleColumnsProvider));
+        updated[key] = value;
+        ref.read(productGroupVisibleColumnsProvider.notifier).state = updated;
+      },
+    );
+  }
+
+  /// True when the group still holds products or sub-groups. Answered from the
+  /// local database so it works offline, and asked BEFORE the confirm prompt so
+  /// an operator is never asked to confirm something the server will refuse.
+  Future<bool> _isBlocked(ProductGroup group) async {
+    final db = ref.read(appDatabaseProvider);
+
+    final children = await (db.select(db.productGroupsTable)
+          ..where((t) => t.parentGroupId.equals(group.id))
+          ..where((t) => t.syncStatus.isNotIn(['pending_delete'])))
+        .get();
+    if (children.isNotEmpty) return true;
+
+    final products = await (db.select(db.productsTable)
+          ..where((t) => t.productGroupId.equals(group.id))
+          ..where((t) => t.syncStatus.isNotIn(['pending_delete'])))
+        .get();
+    return products.isNotEmpty;
+  }
+
+  /// Deletes one group without prompting. Returns null on success, or the
+  /// reason the server refused. Callers must clear [_isBlocked] first.
+  Future<String?> _deleteOne(ProductGroup group) async {
+    final db = ref.read(appDatabaseProvider);
+    final l10n = AppLocalizations.of(context);
 
     if (group.isPendingCreate) {
       // Never reached the server — hard-delete locally.
       await (db.delete(db.productGroupsTable)
             ..where((t) => t.id.equals(group.id)))
           .go();
-    } else {
-      // Soft-delete so SyncManager can push it to the server on next sync.
-      await (db.update(db.productGroupsTable)
-            ..where((t) => t.id.equals(group.id)))
-          .write(const ProductGroupsTableCompanion(
-        syncStatus: Value('pending_delete'),
-      ));
-      // Try API inline while online.
-      try {
-        await ProductGroupService(createDio())
-            .delete(group.id, group.companyId);
-        await (db.delete(db.productGroupsTable)
-              ..where((t) => t.id.equals(group.id)))
-            .go();
-      } on DioException catch (e) {
-        final status = e.response?.statusCode ?? 0;
-        if (status >= 400 && status < 500) {
-          // The server refused (e.g. still referenced by products/sub-groups).
-          // Undo the local soft-delete so the group doesn't disappear from the
-          // tree only to reappear on the next sync, and say why.
-          final msg = parseApiError(e);
-          await (db.update(db.productGroupsTable)
-                ..where((t) => t.id.equals(group.id)))
-              .write(const ProductGroupsTableCompanion(
-            syncStatus: Value('synced'),
-          ));
-          if (ctx.mounted) {
-            showAppSnackbar(
-                ctx, ref,
-                AppLocalizations.of(ctx).couldNotDeleteNamed(group.name, msg),
-                isError: true);
-          }
-          return;
-        }
-        // Offline — row stays pending_delete; SyncManager retries later.
-      }
+      return null;
     }
 
-    if (_editingGroup?.id == group.id) _closePanel();
-    if (ctx.mounted) {
-      showAppSnackbar(ctx, ref, AppLocalizations.of(ctx).groupDeleted);
+    // Soft-delete so SyncManager can push it to the server on the next sync.
+    await (db.update(db.productGroupsTable)
+          ..where((t) => t.id.equals(group.id)))
+        .write(const ProductGroupsTableCompanion(
+      syncStatus: Value('pending_delete'),
+    ));
+
+    // Try the API inline while online.
+    try {
+      await ProductGroupService(createDio()).delete(group.id, group.companyId);
+      await (db.delete(db.productGroupsTable)
+            ..where((t) => t.id.equals(group.id)))
+          .go();
+    } on DioException catch (e) {
+      final status = e.response?.statusCode ?? 0;
+      if (status >= 400 && status < 500) {
+        // The server refused (e.g. still referenced by products/sub-groups).
+        // Undo the local soft-delete so the group doesn't disappear from the
+        // table only to reappear on the next sync, and say why.
+        final msg = parseApiError(e);
+        await (db.update(db.productGroupsTable)
+              ..where((t) => t.id.equals(group.id)))
+            .write(const ProductGroupsTableCompanion(
+          syncStatus: Value('synced'),
+        ));
+        return l10n.couldNotDeleteNamed(group.name, msg);
+      }
+      // Offline — the row stays pending_delete; SyncManager retries later.
     }
+    return null;
+  }
+
+  Future<void> _confirmDelete(ProductGroup group) async {
+    final l10n = AppLocalizations.of(context);
+
+    if (await _isBlocked(group)) {
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (c) => AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          title: Row(children: [
+            Icon(Icons.warning_amber_rounded, color: c.warningColor),
+            const SizedBox(width: 8),
+            Text(l10n.cannotDelete),
+          ]),
+          content: Text(l10n.groupHasChildrenCannotDelete),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(c), child: Text(l10n.actionOk)),
+          ],
+        ),
+      );
+      return;
+    }
+
+    if (!mounted) return;
+    final confirm = await _confirmDialog(l10n.deleteGroupConfirm(group.name));
+    if (confirm != true || !mounted) return;
+
+    final error = await _deleteOne(group);
+    if (!mounted) return;
+    setState(() => _selectedIds.remove(group.id));
+    showAppSnackbar(context, ref, error ?? l10n.groupDeleted,
+        isError: error != null);
+  }
+
+  Future<void> _bulkDelete() async {
+    if (_selectedIds.isEmpty) return;
+    final l10n = AppLocalizations.of(context);
+    final all =
+        ref.read(allProductGroupsProvider).value ?? const <ProductGroup>[];
+    final targets = all.where((g) => _selectedIds.contains(g.id)).toList();
+    if (targets.isEmpty) return;
+
+    // ONE confirmation for the batch — looping the per-row prompt would put
+    // nine dialogs in front of someone deleting nine groups.
+    final confirm = await _confirmDialog(
+        l10n.deleteGroupConfirm(targets.map((g) => g.name).join(', ')));
+    if (confirm != true || !mounted) return;
+
+    var blocked = 0;
+    String? firstError;
+    for (final group in targets) {
+      if (await _isBlocked(group)) {
+        // A parent and its child can both be ticked: deleting the child first
+        // frees the parent, so a blocked group is skipped, not fatal.
+        blocked++;
+        continue;
+      }
+      final error = await _deleteOne(group);
+      firstError ??= error;
+      if (!mounted) return;
+    }
+
+    if (!mounted) return;
+    setState(_selectedIds.clear);
+    showAppSnackbar(
+      context,
+      ref,
+      firstError ??
+          (blocked > 0 ? l10n.groupHasChildrenCannotDelete : l10n.groupDeleted),
+      isError: firstError != null || blocked > 0,
+    );
+  }
+
+  Future<bool?> _confirmDialog(String message) {
+    final l10n = AppLocalizations.of(context);
+    return showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: Text(l10n.deleteGroup),
+        content: Text(message),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(c, false),
+              child: Text(l10n.actionCancel)),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: c.dangerColor,
+              foregroundColor: c.onStatusColor,
+            ),
+            onPressed: () => Navigator.pop(c, true),
+            child: Text(l10n.actionDelete),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final asyncGroups = ref.watch(allProductGroupsProvider);
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
+    final asyncGroups = ref.watch(allProductGroupsProvider);
+    final visibleColumns = ref.watch(productGroupVisibleColumnsProvider);
+    final products =
+        ref.watch(allProductsListProvider).value ?? const <Product>[];
+    final hasSelection = _selectedIds.isNotEmpty;
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: theme.colorScheme.surface,
-        elevation: 0,
-        // Suppress the auto back-arrow — ManagementLayout controls navigation.
-        automaticallyImplyLeading: false,
-        leading: widget.onMenuPressed != null
-            ? IconButton(
-                icon: const Icon(Icons.menu),
-                onPressed: widget.onMenuPressed,
-              )
-            : null,
-        title: Text(AppLocalizations.of(context).productGroups),
-        actions: [
-          Padding(
-            padding: const EdgeInsetsDirectional.only(end: 12),
-            child: FilledButton.icon(
-              onPressed: _createGroup,
-              icon: const Icon(Icons.add, size: 18),
-              label: Text(AppLocalizations.of(context).newGroup),
-            ),
-          ),
-        ],
+    return IlyassListScaffold(
+      title: l10n.productGroups,
+      onMenuPressed: widget.onMenuPressed,
+      searchBar: UnifiedSearchBar(
+        controller: _searchCtrl,
+        singleLine: true,
+        hintText: l10n.actionSearch,
+        chips: const [],
+        sectionsBuilder: (_) => const [],
+        onQueryChanged: _setQuery,
+        onClearAll: () {
+          _searchCtrl.clear();
+          _setQuery('');
+        },
       ),
+      actions: [
+        IlyassMenuAction(
+          icon: Icons.delete_outline_rounded,
+          label: hasSelection
+              ? l10n.deleteWithCount(_selectedIds.length)
+              : l10n.actionDelete,
+          color: hasSelection ? context.dangerColor : null,
+          enabled: hasSelection,
+          onSelected: _bulkDelete,
+        ),
+        IlyassMenuAction(
+          icon: Icons.view_column_rounded,
+          label: l10n.columnsTooltip,
+          dividerBefore: true,
+          onSelected: _showColumnPicker,
+        ),
+      ],
+      fabLabel: l10n.newGroup,
+      onFabPressed: _openEditor,
       body: asyncGroups.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => _ErrorView(error: parseApiError(e)),
         data: (groups) {
-          final roots = _buildTree(groups);
-          return LayoutBuilder(builder: (context, constraints) {
-            final isWide = constraints.maxWidth >= 900;
-            // Cache for the AppBar "New Group" button, which lives outside this
-            // LayoutBuilder and so can't see `isWide` directly.
-            _isWide = isWide;
+          if (groups.isEmpty) return _EmptyView(onAdd: _openEditor);
 
-            // Empty state has no tree to render. On a wide screen we still let
-            // the inline create panel show once "New Group" is pressed
-            // (_panelOpen); otherwise fall back to the friendly empty view whose
-            // button routes through _createGroup (dialog on narrow).
-            if (groups.isEmpty && !(isWide && _panelOpen)) {
-              return _EmptyView(onAdd: _createGroup);
-            }
+          final rows = _rowsFor(groups);
+          final selected =
+              _selectedIds.intersection(rows.map((r) => r.group.id).toSet());
 
-            if (isWide) {
-              return _WideLayout(
-                roots: roots,
-                panelOpen: _panelOpen,
-                editingGroup: _editingGroup,
-                creatingNew: _creatingNew,
-                onSelect: _openEdit,
-                onDelete: _attemptDelete,
-                onClose: _closePanel,
-                onSaved: _closePanel,
-              );
-            } else {
-              return _NarrowLayout(
-                roots: roots,
-                onSelect: (group) {
-                  _openEdit(group);
-                  showDialog(
-                    context: context,
-                    builder: (_) => _GroupEditorDialog(
-                      existingGroup: group,
-                      onDelete: () => _attemptDelete(group),
-                      onSaved: () {},
-                    ),
-                  );
-                },
-                onAdd: () => showDialog(
-                  context: context,
-                  builder: (_) => _GroupEditorDialog(
-                    onSaved: () {},
-                  ),
+          // Parent NAMES: `parentGroupName` only ever arrives on JSON-sourced
+          // groups and this list is Drift-sourced, so the label is resolved
+          // from the very list the table is showing.
+          final names = {for (final g in groups) g.id: g.name};
+
+          final productCounts = <int, int>{};
+          for (final p in products) {
+            final id = p.productGroupId;
+            if (id != null) productCounts[id] = (productCounts[id] ?? 0) + 1;
+          }
+
+          // One entry per toggleable column, in the order the provider declares
+          // them — the picker reorders this list, so widths and cells live with
+          // their key rather than in a parallel chain.
+          final catalogue = <String, IlyassColumn<_GroupRow>>{
+            'Name': IlyassColumn<_GroupRow>(
+              key: 'Name',
+              label: _groupColumnLabel(context, 'Name'),
+              width: 300,
+              minWidth: 160,
+              flexible: true,
+              cell: (context, row) => _NameCell(
+                row: row,
+                onToggle: () => _toggleExpanded(row.group.id),
+              ),
+            ),
+            'Parent': IlyassColumn<_GroupRow>(
+              key: 'Parent',
+              label: _groupColumnLabel(context, 'Parent'),
+              width: 180,
+              cell: (context, row) => Text(
+                names[row.group.parentGroupId] ?? '-',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+              ),
+            ),
+            'Products': IlyassColumn<_GroupRow>(
+              key: 'Products',
+              label: _groupColumnLabel(context, 'Products'),
+              width: 120,
+              numeric: true,
+              cell: (context, row) =>
+                  Text('${productCounts[row.group.id] ?? 0}'),
+            ),
+            'Rank': IlyassColumn<_GroupRow>(
+              key: 'Rank',
+              label: _groupColumnLabel(context, 'Rank'),
+              width: 100,
+              numeric: true,
+              cell: (context, row) => Text('${row.group.rank}'),
+            ),
+            'Color': IlyassColumn<_GroupRow>(
+              key: 'Color',
+              label: _groupColumnLabel(context, 'Color'),
+              width: 100,
+              cell: (context, row) => Container(
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: row.group.flutterColor,
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: theme.colorScheme.outlineVariant),
                 ),
-                onDelete: _attemptDelete,
-              );
-            }
-          });
+              ),
+            ),
+          };
+
+          return IlyassTable<_GroupRow>(
+            tableId: 'productGroups',
+            rows: rows,
+            rowHeight: 56,
+            onRowTap: (row) => _openEditor(row.group),
+            isRowSelected: (row) => selected.contains(row.group.id),
+            columns: [
+              ilyassSelectionColumn<_GroupRow, int>(
+                rows: rows,
+                selected: selected,
+                idOf: (row) => row.group.id,
+                onChanged: (ids) => setState(() {
+                  _selectedIds
+                    ..clear()
+                    ..addAll(ids);
+                }),
+              ),
+              for (final entry in catalogue.entries)
+                if (visibleColumns[entry.key] == true) entry.value,
+              IlyassColumn<_GroupRow>(
+                key: 'Actions',
+                label: _groupColumnLabel(context, 'Actions'),
+                width: 80,
+                minWidth: 80,
+                resizable: false,
+                cell: (context, row) => IconButton(
+                  icon: const Icon(Icons.delete_outline, size: 20),
+                  color: theme.colorScheme.onSurfaceVariant,
+                  tooltip: l10n.actionDelete,
+                  onPressed: () => _confirmDelete(row.group),
+                ),
+              ),
+            ],
+            emptyState: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  l10n.noResultsForFilters,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: theme.hintColor, fontSize: 16),
+                ),
+              ),
+            ),
+          );
         },
       ),
     );
@@ -314,280 +572,78 @@ class _ProductGroupsScreenState extends ConsumerState<ProductGroupsScreen> {
 }
 
 // ---------------------------------------------------------------------------
-// Wide layout: tree left + editor right
+// Name cell: the tree, rendered inside one table column
 // ---------------------------------------------------------------------------
-class _WideLayout extends StatelessWidget {
-  final List<_TreeNode> roots;
-  final bool panelOpen;
-  final ProductGroup? editingGroup;
-  final bool creatingNew;
-  final void Function(ProductGroup) onSelect;
-  final void Function(ProductGroup) onDelete;
-  final VoidCallback onClose;
-  final VoidCallback onSaved;
+class _NameCell extends StatelessWidget {
+  const _NameCell({required this.row, required this.onToggle});
 
-  const _WideLayout({
-    required this.roots,
-    required this.panelOpen,
-    required this.editingGroup,
-    required this.creatingNew,
-    required this.onSelect,
-    required this.onDelete,
-    required this.onClose,
-    required this.onSaved,
-  });
+  final _GroupRow row;
+  final VoidCallback onToggle;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final group = row.group;
+
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      // The cell is laid out by an Align with loose constraints, so the Row
+      // sizes to its children and the NAME takes whatever is left.
+      mainAxisSize: MainAxisSize.min,
       children: [
-        // --- Left tree panel ---
-        Container(
-          width: 340,
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            border: Border(
-              right: BorderSide(
-                color: theme.colorScheme.outlineVariant,
-                width: 1,
-              ),
-            ),
-          ),
-          child: _TreePanel(
-            roots: roots,
-            selectedId: panelOpen ? editingGroup?.id : null,
-            onSelect: onSelect,
-            onDelete: onDelete,
-          ),
-        ),
-        // --- Right editor panel ---
-        Expanded(
-          child: panelOpen
-              ? _GroupEditorPanel(
-                  key: ValueKey(editingGroup?.id ?? 'new'),
-                  existingGroup: editingGroup,
-                  onClose: onClose,
-                  onDelete: editingGroup != null
-                      ? () => onDelete(editingGroup!)
-                      : null,
-                  onSaved: onSaved,
+        SizedBox(width: row.depth * 18.0),
+        SizedBox(
+          width: 26,
+          height: 26,
+          // The toggle sits deeper in the hit test than the row's own tap
+          // handler, so opening a branch never opens the editor.
+          child: row.hasChildren
+              ? IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  icon: Icon(
+                    row.expanded ? Icons.expand_more : Icons.chevron_right,
+                    size: 20,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  onPressed: onToggle,
                 )
-              : _SelectionPlaceholder(
-                  message: AppLocalizations.of(context).selectGroupToEdit),
+              : null,
         ),
-      ],
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Narrow layout: tree only, dialogs for edit
-// ---------------------------------------------------------------------------
-class _NarrowLayout extends StatelessWidget {
-  final List<_TreeNode> roots;
-  final void Function(ProductGroup) onSelect;
-  final void Function(ProductGroup) onDelete;
-  final VoidCallback onAdd;
-
-  const _NarrowLayout({
-    required this.roots,
-    required this.onSelect,
-    required this.onDelete,
-    required this.onAdd,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return _TreePanel(
-      roots: roots,
-      selectedId: null,
-      onSelect: onSelect,
-      onDelete: onDelete,
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Tree panel widget
-// ---------------------------------------------------------------------------
-class _TreePanel extends StatelessWidget {
-  final List<_TreeNode> roots;
-  final int? selectedId;
-  final void Function(ProductGroup) onSelect;
-  final void Function(ProductGroup) onDelete;
-
-  const _TreePanel({
-    required this.roots,
-    required this.selectedId,
-    required this.onSelect,
-    required this.onDelete,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      children: roots
-          .map((node) => _TreeNodeTile(
-                node: node,
-                depth: 0,
-                selectedId: selectedId,
-                onSelect: onSelect,
-                onDelete: onDelete,
-              ))
-          .toList(),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Recursive tree tile
-// ---------------------------------------------------------------------------
-class _TreeNodeTile extends StatefulWidget {
-  final _TreeNode node;
-  final int depth;
-  final int? selectedId;
-  final void Function(ProductGroup) onSelect;
-  final void Function(ProductGroup) onDelete;
-
-  const _TreeNodeTile({
-    required this.node,
-    required this.depth,
-    required this.selectedId,
-    required this.onSelect,
-    required this.onDelete,
-  });
-
-  @override
-  State<_TreeNodeTile> createState() => _TreeNodeTileState();
-}
-
-class _TreeNodeTileState extends State<_TreeNodeTile> {
-  bool _expanded = true;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final group = widget.node.group;
-    final hasChildren = widget.node.children.isNotEmpty;
-    final isSelected = widget.selectedId == group.id;
-    final groupColor = group.flutterColor;
-    final indent = widget.depth * 20.0;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Material(
-          color: isSelected
-              ? theme.colorScheme.primaryContainer
-              : Colors.transparent,
-          child: InkWell(
-            onTap: () => widget.onSelect(group),
-            child: Padding(
-              padding: EdgeInsets.only(
-                  left: 12 + indent, right: 8, top: 4, bottom: 4),
-              child: Row(
-                children: [
-                  // Expand/collapse toggle
-                  SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: hasChildren
-                        ? IconButton(
-                            padding: EdgeInsets.zero,
-                            icon: Icon(
-                              _expanded
-                                  ? Icons.expand_more
-                                  : Icons.chevron_right,
-                              size: 18,
-                              color: theme.colorScheme.onSurface
-                                  .withAlpha(160),
-                            ),
-                            onPressed: () =>
-                                setState(() => _expanded = !_expanded),
-                          )
-                        : null,
+        const SizedBox(width: 4),
+        // Drift groups keep the icon on disk (imageFile); base64 imageBytes
+        // only exists for API-sourced ones.
+        group.imageFile != null
+            ? ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: Image.file(group.imageFile!,
+                    width: 24, height: 24, fit: BoxFit.cover),
+              )
+            : group.imageBytes != null
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: Image.memory(group.imageBytes!,
+                        width: 24, height: 24, fit: BoxFit.cover),
+                  )
+                : Icon(
+                    row.hasChildren ? Icons.folder : Icons.folder_outlined,
+                    size: 22,
+                    color: group.flutterColor,
                   ),
-                  const SizedBox(width: 4),
-                  // Group icon — Drift groups keep the icon on disk
-                  // (imageFile); base64 imageBytes only exists for API-sourced.
-                  group.imageFile != null
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
-                          child: Image.file(group.imageFile!,
-                              width: 24, height: 24, fit: BoxFit.cover),
-                        )
-                      : group.imageBytes != null
-                          ? ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
-                              child: Image.memory(group.imageBytes!,
-                                  width: 24, height: 24, fit: BoxFit.cover),
-                            )
-                          : Icon(
-                              hasChildren
-                                  ? Icons.folder
-                                  : Icons.folder_outlined,
-                              size: 22,
-                              color: groupColor,
-                            ),
-                  const SizedBox(width: 10),
-                  // Name
-                  Expanded(
-                    child: Row(
-                      children: [
-                        if (group.isPendingSync)
-                          Padding(
-                            padding:
-                                const EdgeInsetsDirectional.only(end: 4),
-                            child: Icon(Icons.cloud_upload_outlined,
-                                size: 14,
-                                color: theme.colorScheme.tertiary),
-                          ),
-                        Flexible(
-                          child: Text(
-                            group.name,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: isSelected
-                                  ? FontWeight.w600
-                                  : FontWeight.normal,
-                              color: isSelected
-                                  ? theme.colorScheme.onPrimaryContainer
-                                  : theme.colorScheme.onSurface,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Delete button
-                  IconButton(
-                    icon: Icon(Icons.delete_outline,
-                        size: 18,
-                        color:
-                            theme.colorScheme.onSurface.withAlpha(100)),
-                    onPressed: () => widget.onDelete(group),
-                    tooltip: AppLocalizations.of(context).actionDelete,
-                    padding: const EdgeInsets.all(4),
-                    constraints: const BoxConstraints(),
-                  ),
-                ],
-              ),
-            ),
+        const SizedBox(width: 10),
+        if (group.isPendingSync)
+          Padding(
+            padding: const EdgeInsetsDirectional.only(end: 4),
+            child: Icon(Icons.cloud_upload_outlined,
+                size: 14, color: theme.colorScheme.tertiary),
+          ),
+        Flexible(
+          child: Text(
+            group.name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontWeight: FontWeight.w600),
           ),
         ),
-        // Children
-        if (hasChildren && _expanded)
-          ...widget.node.children.map((child) => _TreeNodeTile(
-                node: child,
-                depth: widget.depth + 1,
-                selectedId: widget.selectedId,
-                onSelect: widget.onSelect,
-                onDelete: widget.onDelete,
-              )),
       ],
     );
   }
@@ -603,7 +659,6 @@ class _GroupEditorPanel extends ConsumerStatefulWidget {
   final VoidCallback onSaved;
 
   const _GroupEditorPanel({
-    super.key,
     this.existingGroup,
     this.onClose,
     this.onDelete,
@@ -1496,8 +1551,10 @@ class _GroupEditorDialog extends ConsumerWidget {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
+        // Wider than the old narrow-only dialog: it is now the editor at EVERY
+        // width, and its Products tab is a checklist of the whole catalogue.
         constraints: BoxConstraints(
-          maxWidth: 520,
+          maxWidth: 640,
           maxHeight: MediaQuery.of(context).size.height * 0.9,
         ),
         child: _GroupEditorPanel(
@@ -1540,30 +1597,6 @@ InputDecoration _inputDecoration(BuildContext context, String? hint) {
     contentPadding:
         const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
   );
-}
-
-class _SelectionPlaceholder extends StatelessWidget {
-  final String message;
-  const _SelectionPlaceholder({required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.folder_open,
-              size: 72,
-              color: theme.colorScheme.primary.withAlpha(60)),
-          const SizedBox(height: 20),
-          Text(message,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                  color: theme.colorScheme.onSurface.withAlpha(128))),
-        ],
-      ),
-    );
-  }
 }
 
 class _EmptyView extends StatelessWidget {

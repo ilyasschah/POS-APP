@@ -29,6 +29,8 @@ import 'package:pos_app/product/product_provider.dart';
 import 'package:pos_app/tax/tax_model.dart';
 import 'package:pos_app/tax/tax_provider.dart';
 import 'package:pos_app/core/responsive.dart';
+import 'package:pos_app/core/ilyass_column_order.dart';
+import 'package:pos_app/core/ilyass_list_scaffold.dart';
 import 'package:pos_app/core/ilyass_table.dart';
 import 'package:pos_app/core/unified_search_bar.dart';
 import 'package:pos_app/modifier/modifier_models.dart';
@@ -510,46 +512,24 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
   }
 
   void _showColumnPicker(BuildContext context) {
-    showDialog(
+    final notifier = ref.read(productVisibleColumnsProvider.notifier);
+    showIlyassColumnPicker(
       context: context,
-      builder: (context) => Consumer(builder: (context, ref, _) {
-        final visible = ref.watch(productVisibleColumnsProvider);
-        final notifier = ref.read(productVisibleColumnsProvider.notifier);
-        return AlertDialog(
-          title: Text(AppLocalizations.of(context).showHideColumns),
-          content: SizedBox(
-            width: 320,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: kProductColumns.map((col) {
-                  final isOn = visible[col.key] ?? col.defaultVisible;
-                  return CheckboxListTile(
-                    dense: true,
-                    title: Text(productColumnLabel(context, col.key)),
-                    // Mandatory columns (Name) stay locked on.
-                    subtitle: col.mandatory ? Text(AppLocalizations.of(context).alwaysShown) : null,
-                    value: isOn,
-                    onChanged: col.mandatory
-                        ? null
-                        : (val) => notifier.setVisible(col.key, val ?? false),
-                  );
-                }).toList(),
-              ),
-            ),
+      // Same id the table registers under, so the picker and the grid are
+      // talking about one layout.
+      tableId: 'products',
+      columns: [
+        for (final col in kProductColumns)
+          IlyassPickerColumn(
+            key: col.key,
+            label: productColumnLabel(context, col.key),
+            // Name stays locked on — and stays draggable.
+            mandatory: col.mandatory,
           ),
-          actions: [
-            TextButton(
-              onPressed: () => notifier.resetToDefaults(),
-              child: Text(AppLocalizations.of(context).actionReset),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(AppLocalizations.of(context).actionClose),
-            ),
-          ],
-        );
-      }),
+      ],
+      isVisible: (key) => ref.read(productVisibleColumnsProvider)[key] ?? false,
+      onVisibleChanged: notifier.setVisible,
+      onReset: notifier.resetToDefaults,
     );
   }
 
@@ -748,135 +728,56 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
   /// Delete / Columns / Import / Export, which were four loose buttons eating
   /// the header. None of them is what an operator came to this screen to do —
   /// that is Add Product, and it is the FAB now.
-  Widget _buildActionsMenu(BuildContext context, ThemeData theme) {
+  List<IlyassMenuAction> _menuActions(BuildContext context) {
     final l = AppLocalizations.of(context);
     final hasSelection = _selectedIds.isNotEmpty;
 
-    Widget item(IconData icon, String label, {Color? color}) => Row(
-          children: [
-            Icon(icon, size: 20, color: color),
-            const SizedBox(width: 12),
-            Flexible(child: Text(label, style: TextStyle(color: color))),
-          ],
-        );
-
-    return PopupMenuButton<String>(
-      tooltip: l.actionsLabel,
-      position: PopupMenuPosition.under,
-      onSelected: (value) {
-        switch (value) {
-          case 'delete':
-            _bulkDelete();
-            break;
-          case 'columns':
-            _showColumnPicker(context);
-            break;
-          case 'import':
-            _openImport();
-            break;
-          case 'export':
-            _showExportDialog(context, ref);
-            break;
-        }
-      },
-      itemBuilder: (_) => [
-        PopupMenuItem<String>(
-          value: 'delete',
-          height: 52,
-          enabled: hasSelection,
-          child: item(
-            Icons.delete_rounded,
-            hasSelection
-                ? l.deleteWithCount(_selectedIds.length)
-                : l.actionDelete,
-            color: hasSelection ? context.dangerColor : theme.disabledColor,
-          ),
-        ),
-        const PopupMenuDivider(),
-        PopupMenuItem<String>(
-          value: 'columns',
-          height: 52,
-          child: item(Icons.view_column_rounded, l.columns),
-        ),
-        PopupMenuItem<String>(
-          value: 'import',
-          height: 52,
-          child: item(Icons.download_rounded, l.importLabel),
-        ),
-        PopupMenuItem<String>(
-          value: 'export',
-          height: 52,
-          child: item(Icons.upload_rounded, l.exportLabel),
-        ),
-      ],
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (!context.isCompact) ...[
-              Text(l.actionsLabel,
-                  style: theme.textTheme.labelLarge
-                      ?.copyWith(color: theme.colorScheme.onSurface)),
-              const SizedBox(width: 4),
-            ],
-            const Icon(Icons.more_vert, size: 22),
-          ],
-        ),
+    return [
+      IlyassMenuAction(
+        icon: Icons.delete_rounded,
+        label: hasSelection
+            ? l.deleteWithCount(_selectedIds.length)
+            : l.actionDelete,
+        color: hasSelection ? context.dangerColor : null,
+        enabled: hasSelection,
+        onSelected: _bulkDelete,
       ),
-    );
+      IlyassMenuAction(
+        icon: Icons.view_column_rounded,
+        label: l.columns,
+        dividerBefore: true,
+        onSelected: () => _showColumnPicker(context),
+      ),
+      IlyassMenuAction(
+        icon: Icons.download_rounded,
+        label: l.importLabel,
+        onSelected: _openImport,
+      ),
+      IlyassMenuAction(
+        icon: Icons.upload_rounded,
+        label: l.exportLabel,
+        onSelected: () => _showExportDialog(context, ref),
+      ),
+    ];
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final l = AppLocalizations.of(context);
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        // Taller than the 56px default: the bar carries chips and the scope
-        // toggles, and squeezing those into a standard toolbar is exactly what
-        // makes them mouse-sized.
-        toolbarHeight: 72,
-        titleSpacing: 12,
-        leading: widget.onMenuPressed != null
-            ? IconButton(
-                icon: const Icon(Icons.menu),
-                onPressed: widget.onMenuPressed,
-              )
-            : null,
-        backgroundColor: theme.colorScheme.surface,
-        title: Row(
-          children: [
-            // The title yields to the search bar first — on a narrow tablet the
-            // bar is the control and the word "Products" is decoration.
-            if (!context.isCompact) ...[
-              Text(l.products),
-              const SizedBox(width: 20),
-            ],
-            Expanded(child: _buildSearchBar(context)),
-          ],
-        ),
-        actions: [
-          _buildActionsMenu(context, theme),
-          const SizedBox(width: 8),
-        ],
-      ),
+    return IlyassListScaffold(
+      title: l.products,
+      onMenuPressed: widget.onMenuPressed,
+      searchBar: _buildSearchBar(context),
+      actions: _menuActions(context),
+      fabLabel: l.addProduct,
+      onFabPressed: _addProduct,
       // Full width — no sidebar, no drag handle, no reserved gutter.
       body: _ProductListContent(
         query: _query,
         scope: _scope,
         selectedIds: Set.from(_selectedIds),
         onSelectionChanged: _updateSelection,
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _addProduct,
-        icon: const Icon(Icons.add),
-        label: Text(l.addProduct),
-        backgroundColor: theme.colorScheme.primary,
-        foregroundColor: theme.colorScheme.onPrimary,
       ),
     );
   }
@@ -964,16 +865,6 @@ class _ProductListContent extends ConsumerWidget {
             groups.where((g) => g.id == p.productGroupId).firstOrNull?.name ??
             '-';
 
-        void toggle(int id, bool on) {
-          final next = Set<int>.from(selectedIds);
-          if (on) {
-            next.add(id);
-          } else {
-            next.remove(id);
-          }
-          onSelectionChanged(next);
-        }
-
         // Every product row opens the editor. The pencil column was a 40px
         // target on a screen driven by fingers; the row is 900 of them.
         void openEditor(Product p) => showDialog(
@@ -988,11 +879,11 @@ class _ProductListContent extends ConsumerWidget {
           // product thumbnail to sit in with air around it.
           rowHeight: 64,
           columns: [
-            _selectionColumn(
-              products: products,
+            ilyassSelectionColumn<Product, int>(
+              rows: products,
               selected: effectiveSelected,
-              onToggle: toggle,
-              onSelectAll: onSelectionChanged,
+              idOf: (p) => p.id,
+              onChanged: onSelectionChanged,
             ),
             for (final col in activeCols)
               IlyassColumn<Product>(
@@ -1041,61 +932,6 @@ class _ProductListContent extends ConsumerWidget {
             ),
           ),
         );
-      },
-    );
-  }
-
-  /// The checkbox column. Fixed width and not resizable — dragging it out is
-  /// pure dead space — and the whole 40×40 box is the target, not the 18px
-  /// tick in the middle of it.
-  ///
-  /// 🚨 The [GestureDetector] here is what keeps the ROW's tap from firing:
-  /// it sits deeper in the hit test than [IlyassTable]'s row handler, so it
-  /// wins the gesture arena and ticking a box never opens the editor.
-  IlyassColumn<Product> _selectionColumn({
-    required List<Product> products,
-    required Set<int> selected,
-    required void Function(int id, bool on) onToggle,
-    required ValueChanged<Set<int>> onSelectAll,
-  }) {
-    final allSelected =
-        products.isNotEmpty && selected.length == products.length;
-
-    Widget box({required bool? value, required VoidCallback onTap}) =>
-        GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: onTap,
-          child: SizedBox(
-            width: 40,
-            height: 40,
-            // The checkbox is painted, never tapped: one recognizer for the
-            // whole cell beats two competing for the same 40px.
-            child: IgnorePointer(
-              child: Checkbox(
-                tristate: true,
-                value: value,
-                onChanged: (_) {},
-              ),
-            ),
-          ),
-        );
-
-    return IlyassColumn<Product>(
-      key: 'select',
-      label: '',
-      width: 64,
-      minWidth: 64,
-      resizable: false,
-      // Tristate: all / none / some, so a partial selection is visible in the
-      // header rather than reading as "nothing is selected".
-      header: (context) => box(
-        value: allSelected ? true : (selected.isEmpty ? false : null),
-        onTap: () =>
-            onSelectAll(allSelected ? {} : products.map((p) => p.id).toSet()),
-      ),
-      cell: (context, p) {
-        final isOn = selected.contains(p.id);
-        return box(value: isOn, onTap: () => onToggle(p.id, !isOn));
       },
     );
   }

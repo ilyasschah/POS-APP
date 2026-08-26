@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:pos_app/core/ilyass_column_order.dart';
 import 'package:pos_app/settings/settings_provider.dart';
 
 /// The **Ilyass Style** data table: draggable column widths, hard-left labels,
@@ -243,8 +244,7 @@ class _IlyassTableState<T> extends ConsumerState<IlyassTable<T>> {
   /// engine was rebuilt to kill: the drag writes a width, the surplus rule
   /// overwrites it on the same frame, and the column sits there refusing to
   /// move no matter how far the handle is pulled.
-  List<double> _resolve(double paneWidth) {
-    final columns = widget.columns;
+  List<double> _resolve(double paneWidth, List<IlyassColumn<T>> columns) {
     final resolved = [for (final c in columns) _widths[c.key] ?? c.width];
 
     final flexIndex = columns.indexWhere((c) => c.flexible);
@@ -278,19 +278,23 @@ class _IlyassTableState<T> extends ConsumerState<IlyassTable<T>> {
   /// Merged into [_widths] rather than replacing it, so a column the operator
   /// sized and then hid in the column picker keeps its width for when it comes
   /// back.
+  ///
+  /// [columns] is the list AS RENDERED, which is the order the operator chose
+  /// — not `widget.columns`. `resolved` is indexed the same way, so freezing
+  /// against the declared order would hand every column its neighbour's width.
   void _beginResize(
     IlyassColumn<T> column,
+    List<IlyassColumn<T>> columns,
     List<double> resolved,
     DragStartDetails details,
   ) {
-    final index = widget.columns.indexWhere((c) => c.key == column.key);
+    final index = columns.indexWhere((c) => c.key == column.key);
     if (index < 0) return;
 
     setState(() {
       _widths = {
         ..._widths,
-        for (var i = 0; i < widget.columns.length; i++)
-          widget.columns[i].key: resolved[i],
+        for (var i = 0; i < columns.length; i++) columns[i].key: resolved[i],
       };
       _draggingKey = column.key;
       _dragStartWidth = resolved[index];
@@ -343,7 +347,16 @@ class _IlyassTableState<T> extends ConsumerState<IlyassTable<T>> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final columns = widget.columns;
+
+    // 🚨 Watched, not read: the order is changed from the column picker, which
+    // is a different route entirely. The table has to hear about that while it
+    // is off screen and rebuild in the new order the moment it comes back —
+    // and on the screen the picker was opened from, instantly underneath it.
+    final columns = ilyassApplyColumnOrder(
+      widget.columns,
+      ref.watch(ilyassColumnOrderProvider)[widget.tableId] ?? const <String>[],
+      (c) => c.key,
+    );
 
     if (widget.rows.isEmpty && widget.emptyState != null) {
       return widget.emptyState!;
@@ -355,7 +368,7 @@ class _IlyassTableState<T> extends ConsumerState<IlyassTable<T>> {
     // — the number the surplus rule is measured against — would be infinity.
     return LayoutBuilder(
       builder: (context, constraints) {
-        final effective = _resolve(constraints.maxWidth);
+        final effective = _resolve(constraints.maxWidth, columns);
         final columnsWidth = effective.fold<double>(0, (sum, w) => sum + w);
 
         // The canvas is free to be wider than the pane: a stretched column
@@ -377,7 +390,7 @@ class _IlyassTableState<T> extends ConsumerState<IlyassTable<T>> {
               width: canvasWidth,
               child: Column(
                 children: [
-                  _header(theme, effective),
+                  _header(theme, columns, effective),
                   Divider(height: 1, thickness: 1, color: theme.dividerColor),
                   // The header sits OUTSIDE this scroll view, so it stays put
                   // while the rows move — the whole point of a wide table.
@@ -390,6 +403,7 @@ class _IlyassTableState<T> extends ConsumerState<IlyassTable<T>> {
                         itemCount: widget.rows.length,
                         itemBuilder: (context, index) => _row(
                           theme,
+                          columns,
                           effective,
                           widget.rows[index],
                           index,
@@ -406,7 +420,11 @@ class _IlyassTableState<T> extends ConsumerState<IlyassTable<T>> {
     );
   }
 
-  Widget _header(ThemeData theme, List<double> effective) {
+  Widget _header(
+    ThemeData theme,
+    List<IlyassColumn<T>> columns,
+    List<double> effective,
+  ) {
     final style = theme.textTheme.labelMedium?.copyWith(
       fontWeight: FontWeight.bold,
       letterSpacing: 0.4,
@@ -418,20 +436,20 @@ class _IlyassTableState<T> extends ConsumerState<IlyassTable<T>> {
       color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
       child: Row(
         children: [
-          for (var i = 0; i < widget.columns.length; i++)
+          for (var i = 0; i < columns.length; i++)
             SizedBox(
               width: effective[i],
               child: Stack(
                 children: [
                   Align(
-                    alignment: widget.columns[i].numeric
+                    alignment: columns[i].numeric
                         ? AlignmentDirectional.centerEnd
                         : AlignmentDirectional.centerStart,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: widget.columns[i].header?.call(context) ??
+                      child: columns[i].header?.call(context) ??
                           Text(
-                            widget.columns[i].label,
+                            columns[i].label,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: style,
@@ -442,17 +460,18 @@ class _IlyassTableState<T> extends ConsumerState<IlyassTable<T>> {
                   // an operator reaches for to widen the table past the pane,
                   // and a fixed-width grid that scrolls has somewhere to put
                   // the result.
-                  if (widget.columns[i].resizable)
+                  if (columns[i].resizable)
                     PositionedDirectional(
                       end: 0,
                       top: 0,
                       bottom: 0,
                       child: _ResizeHandle(
-                        active: _draggingKey == widget.columns[i].key,
+                        active: _draggingKey == columns[i].key,
                         onStart: (details) =>
-                            _beginResize(widget.columns[i], effective, details),
+                            _beginResize(
+                                columns[i], columns, effective, details),
                         onUpdate: (details) =>
-                            _updateResize(widget.columns[i], details),
+                            _updateResize(columns[i], details),
                         onEnd: _endResize,
                       ),
                     ),
@@ -464,7 +483,13 @@ class _IlyassTableState<T> extends ConsumerState<IlyassTable<T>> {
     );
   }
 
-  Widget _row(ThemeData theme, List<double> effective, T row, int index) {
+  Widget _row(
+    ThemeData theme,
+    List<IlyassColumn<T>> columns,
+    List<double> effective,
+    T row,
+    int index,
+  ) {
     final selected = widget.isRowSelected?.call(row) ?? false;
     final tint = widget.rowColor?.call(row);
     return _HoverRow(
@@ -485,16 +510,16 @@ class _IlyassTableState<T> extends ConsumerState<IlyassTable<T>> {
         ),
         child: Row(
           children: [
-            for (var i = 0; i < widget.columns.length; i++)
+            for (var i = 0; i < columns.length; i++)
               SizedBox(
                 width: effective[i],
                 child: Align(
-                  alignment: widget.columns[i].numeric
+                  alignment: columns[i].numeric
                       ? AlignmentDirectional.centerEnd
                       : AlignmentDirectional.centerStart,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: widget.columns[i].cell(context, row),
+                    child: columns[i].cell(context, row),
                   ),
                 ),
               ),
