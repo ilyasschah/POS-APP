@@ -4,7 +4,11 @@ on:
   push:
     branches: [test]
     paths:
-      - "OCTOPUS_DASHBOARD_WEB/**"
+      # Must match the folder's real casing. GitHub evaluates path filters
+      # against the git tree, which is case-SENSITIVE, so the old
+      # "OCTOPUS_DASHBOARD_WEB/**" never matched octopus_dashboard_web/ and
+      # this workflow only ever ran when someone triggered it by hand.
+      - "octopus_dashboard_web/**"
       - ".github/workflows/deploy-dashboard-test.yml"
   workflow_dispatch:
 
@@ -18,7 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build Flutter Web (Release)
-        working-directory: ./OCTOPUS_DASHBOARD_WEB
+        working-directory: ./octopus_dashboard_web
         shell: powershell
         env:
           CI: true
@@ -38,7 +42,7 @@ jobs:
           
           if ($LASTEXITCODE -ne 0) { throw "flutter build web failed" }
           
-          $publishDir = Join-Path $env:GITHUB_WORKSPACE "OCTOPUS_DASHBOARD_WEB\build\web"
+          $publishDir = Join-Path $env:GITHUB_WORKSPACE "octopus_dashboard_web\build\web"
           echo "PUBLISH_DIR=$publishDir" >> $env:GITHUB_ENV
 
       - name: Replace site files
