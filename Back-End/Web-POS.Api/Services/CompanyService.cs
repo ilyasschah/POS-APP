@@ -1,4 +1,4 @@
-using Api.DataBase;
+﻿using Api.DataBase;
 using Api.Domain;
 using Api.Master.Services;
 using Api.Models;
@@ -167,6 +167,25 @@ public class CompanyService
         if (entityToUpdate == null)
             throw new InvalidOperationException($"A Company with the ID '{req.Id}' does not exist.");
         entityToUpdate.UpdateLogo(req.Logo);
+        await _companyRepository.UpdateAsync(entityToUpdate);
+        return true;
+    }
+
+    /// <summary>
+    /// Clears the company logo.
+    ///
+    /// Its own operation rather than an empty <see cref="Update_LogoAsync"/>:
+    /// that request validates Logo as NotNull().NotEmpty(), and relaxing it so
+    /// "empty means delete" would turn a truncated upload into a silent wipe of
+    /// the logo. Deleting is a thing you ask for, never something an upload
+    /// falls into.
+    /// </summary>
+    public async Task<bool> Delete_LogoAsync(int id)
+    {
+        var entityToUpdate = await _companyRepository.GetByIdAsync(id);
+        if (entityToUpdate == null)
+            throw new InvalidOperationException($"A Company with the ID '{id}' does not exist.");
+        entityToUpdate.UpdateLogo(null);
         await _companyRepository.UpdateAsync(entityToUpdate);
         return true;
     }

@@ -6502,6 +6502,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String get hideKeypad => 'إخفاء لوحة الأرقام';
 
   @override
+  String get removeLogo => 'إزالة الشعار';
+
+  @override
+  String get removeLogoConfirm =>
+      'سيطبع الإيصال اسم الشركة بدلاً من ذلك. يمكنك رفع شعار جديد في أي وقت.';
+
+  @override
+  String get logoRemoved => 'تمت إزالة الشعار';
+
+  @override
   String get openingControl => 'مراقبة الافتتاح';
 
   @override

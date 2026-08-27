@@ -13,6 +13,16 @@ class SelectedCompanyNotifier extends Notifier<Company?> {
     state = company;
   }
 
+  /// Drops the logo from the in-memory company, so the UI reflects a removal
+  /// before the next pull. `copyWith` cannot do it — a null there means "leave
+  /// it alone", which is exactly the ambiguity that makes clearing a nullable
+  /// field through copyWith impossible.
+  void clearLogo() {
+    final current = state;
+    if (current == null) return;
+    state = current.copyWith(logo: '');
+  }
+
   void updateLogo(String base64Logo) {
     final current = state;
     if (current == null) return;

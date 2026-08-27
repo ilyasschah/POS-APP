@@ -426,6 +426,13 @@ class SettingKeys {
   static const showCommentBtn = 'ButtonBar.ShowComment';
   static const showModifiersBtn = 'ButtonBar.ShowModifiers';
   static const showRefundBtn = 'ButtonBar.ShowRefund';
+  /// Show the green "Continue selling" floating button on the session screen.
+  static const showContinueSellingBtn = 'Pos.ShowContinueSellingBtn';
+
+  /// Show the red "Close Register" button — on the session screen AND in the
+  /// till header. One switch for one action, wherever it appears.
+  static const showCloseRegisterBtn = 'Pos.ShowCloseRegisterBtn';
+
   static const showCashDrawerBtn = 'ButtonBar.ShowCashDrawer';
   static const showWarehouseBtn = 'ButtonBar.ShowWarehouse';
   static const showBookingBtn = 'ButtonBar.ShowBooking';
@@ -738,6 +745,8 @@ const Map<String, String> kSettingDefaults = {
   SettingKeys.showCommentBtn: 'true',
   SettingKeys.showModifiersBtn: 'true',
   SettingKeys.showRefundBtn: 'true',
+  SettingKeys.showContinueSellingBtn: 'true',
+  SettingKeys.showCloseRegisterBtn: 'true',
   SettingKeys.showCashDrawerBtn: 'true',
   SettingKeys.showWarehouseBtn: 'true',
   SettingKeys.showBookingBtn: 'true',

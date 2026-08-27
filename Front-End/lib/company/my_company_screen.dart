@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
@@ -147,6 +148,70 @@ class _MyCompanyScreenState extends ConsumerState<MyCompanyScreen> {
     _bankAccountCtrl.dispose();
     _bankDetailsCtrl.dispose();
     super.dispose();
+  }
+
+  /// Removes the company logo.
+  ///
+  /// 🚨 Exists so "no logo" is a state you can actually REACH. Receipts fall
+  /// back to a large company name when a company has none, and there was no way
+  /// to get a company back into that state once a logo had been uploaded — so
+  /// the fallback could not be seen, on a real till or anywhere else.
+  ///
+  /// Its own endpoint rather than an empty upload: `UpdateLogo` validates the
+  /// payload as non-empty, and relaxing that so "empty means delete" would let a
+  /// truncated file wipe the logo by accident.
+  Future<void> _removeLogo() async {
+    final company = ref.read(selectedCompanyProvider);
+    if (company == null || _isUploadingLogo) return;
+
+    final l = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.removeLogo),
+        content: Text(l.removeLogoConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l.actionCancel),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: context.dangerColor,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l.removeLogo),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isUploadingLogo = true);
+    try {
+      await createDio().delete(
+        '/Company/DeleteLogo',
+        queryParameters: {'id': company.id},
+      );
+      ref.read(selectedCompanyProvider.notifier).clearLogo();
+      ref.invalidate(allCompaniesProvider);
+      if (mounted) {
+        setState(() => _selectedLogoBytes = null);
+        showAppSnackbar(context, ref, l.logoRemoved);
+      }
+    } on DioException catch (e) {
+      if (mounted) {
+        showAppSnackbar(
+          context,
+          ref,
+          e.response?.data?.toString() ?? l.failedToUploadLogo,
+          isError: true,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isUploadingLogo = false);
+    }
   }
 
   Future<void> _pickAndUploadLogo() async {
@@ -862,6 +927,13 @@ class _MyCompanyScreenState extends ConsumerState<MyCompanyScreen> {
                 end: 2,
                 child: _CameraButton(theme: theme, onTap: _pickAndUploadLogo),
               ),
+            // Only when there is one to remove.
+            if (!_isUploadingLogo && hasLogo)
+              PositionedDirectional(
+                bottom: 2,
+                start: 2,
+                child: _RemoveLogoButton(theme: theme, onTap: _removeLogo),
+              ),
           ],
         ),
         const SizedBox(height: 12),
@@ -881,6 +953,36 @@ class _MyCompanyScreenState extends ConsumerState<MyCompanyScreen> {
 }
 
 // ── Sub-widgets ──────────────────────────────────────────────────────────────
+
+class _RemoveLogoButton extends StatelessWidget {
+  final ThemeData theme;
+  final VoidCallback onTap;
+  const _RemoveLogoButton({required this.theme, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: theme.colorScheme.surface,
+      shape: const CircleBorder(),
+      elevation: 2,
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: Tooltip(
+          message: AppLocalizations.of(context).removeLogo,
+          child: Padding(
+            padding: const EdgeInsets.all(7),
+            child: Icon(
+              Icons.delete_outline_rounded,
+              size: 18,
+              color: context.dangerColor,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class _LogoPlaceholder extends StatelessWidget {
   final ThemeData theme;

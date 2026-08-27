@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:pos_app/session/session_screen.dart';
 import 'package:pos_app/barcode/scan_bus.dart';
 import 'dart:async';
 import 'dart:typed_data';
@@ -381,6 +382,8 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
         settings[SettingKeys.showKitchenBtn]?.toLowerCase() != 'false';
     final showAdditionBtn =
         settings[SettingKeys.showAdditionBtn]?.toLowerCase() != 'false';
+    final showCloseRegisterBtn =
+        settings[SettingKeys.showCloseRegisterBtn]?.toLowerCase() != 'false';
     final showTaxBtn =
         settings[SettingKeys.showTaxBtn]?.toLowerCase() != 'false';
     final showCommentBtn =
@@ -1057,6 +1060,17 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                       onTap: cartState.items.isEmpty
                           ? null
                           : () => _printAddition(context, ref),
+                    ),
+
+                  // Close the register from the till itself. Ending the day
+                  // used to mean leaving the POS, finding the session screen
+                  // and closing from there — three navigations for the last
+                  // thing a cashier does every single shift.
+                  if (showCloseRegisterBtn)
+                    _MenuHeaderActionBtn(
+                      icon: Icons.lock_outline,
+                      label: AppLocalizations.of(context).closeRegister,
+                      onTap: () => SessionScreen.show(context),
                     ),
           // --- Warehouse Switcher (centered picker, like the customer one) ---
           if (showWarehouseBtn)

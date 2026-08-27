@@ -4125,6 +4125,18 @@ class _GeneralTab extends ConsumerWidget {
                     label: AppLocalizations.of(context).setChangeQuantity,
                     icon: Icons.numbers,
                   ),
+                  // Governs the red button in BOTH places it appears — the till
+                  // header and the session screen. One action, one switch.
+                  (
+                    key: SettingKeys.showCloseRegisterBtn,
+                    label: AppLocalizations.of(context).closeRegister,
+                    icon: Icons.lock_outline,
+                  ),
+                  (
+                    key: SettingKeys.showContinueSellingBtn,
+                    label: AppLocalizations.of(context).continueSelling,
+                    icon: Icons.point_of_sale_outlined,
+                  ),
                 ];
 
                 return Wrap(

@@ -10,9 +10,9 @@ Status: `TODO` · `WIP` · `DONE`
 
 | # | Issue | Status |
 |---|---|---|
-| A4 | No company logo → print a **large company name** in its place. | TODO |
-| B1b | Z-report **dialog** shows `Cash In +0.00` and no opening float. The database row is correct and the session screen shows `+500.00` — only the dialog is wrong. | WIP |
-| G1 | **Continue selling** / **Close Register** should be floating buttons on the POS screen, in different colours. **Close Register** also belongs in the POS menu header, and both need show/hide switches in POS Settings. | TODO |
+| A4 | No company logo → print a **large company name** in its place. | READY TO TEST |
+| B1b | Z-report **dialog** shows `Cash In +0.00` and no opening float. The database row is correct and the session screen shows `+500.00` — only the dialog is wrong. | DONE |
+| G1 | **Continue selling** / **Close Register** should be floating buttons on the POS screen, in different colours. **Close Register** also belongs in the POS menu header, and both need show/hide switches in POS Settings. | DONE |
 
 ---
 
@@ -26,16 +26,19 @@ Fixed in `z_report_receipt_dialog.dart` — the dialog now renders `Opening cash
 
 ⚠️ The row only appears for a **session** Z-report. Opened from the Z-report list (End of Day, company-wide), there is no single session and therefore no single float, so the line is hidden rather than guessed at.
 
-### A4 — needs one detail before it can be fixed
+### A4 — you can now reach the "no logo" state
 
-The receipt path already does this: with no logo, the header prints at **24pt** instead of 16pt (`receipt_printer_service.dart`, `logoBytes == null ? 24 : 16`), and it shipped in v1.0.6.
+The receipt fallback already shipped in v1.0.6 (`logoBytes == null ? 24 : 16`). What was missing was any way to **test** it: once a company had a logo there was no way to take it off again.
 
-So either it is not the receipt you were looking at, or something else is going on. Two candidates:
+`My Company` now has a **Remove logo** button (the red bin, bottom-left of the logo circle), behind a confirm. It is its own endpoint — `DELETE /Company/DeleteLogo` — rather than an empty upload, because `UpdateLogo` validates the payload as non-empty and relaxing that would let a truncated file wipe a logo by accident.
 
-* **The A4 invoice/document PDF** (`invoice_pdf_service.dart`) — it prints `company.name` on the left at 12pt and simply omits the logo box on the right. Nothing is blank, but nothing is large either.
-* **The receipt with a `Header` text configured** — that header wins over the company name, so the big text is the header, not the name.
+Remove the logo, print a receipt, and the company name should come out at 24pt where the logo was. If a **Header** text is set in Printer Settings it wins over the company name — that is by design, but it is the likely reason a receipt shows something other than the name.
 
-Say which document and what you saw and it is a small fix either way.
+### G1 — done
+
+* **Session screen:** the two actions left the AppBar, where they were two identical grey buttons. They are now stacked floating buttons — **green** Continue selling, **red** Close Register. A blocked close goes grey, not a quieter red: a close that cannot happen must not look like one that can.
+* **Till header:** Close Register sits after Addition, so ending the day no longer means navigating away from the POS to find the session screen.
+* **Settings → POS buttons:** two new switches, `Close Register` and `Continue selling`. The Close Register switch governs the button in **both** places — one action, one switch.
 
 ---
 
