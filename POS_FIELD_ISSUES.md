@@ -1,61 +1,50 @@
 # Field test — Verteda POS, Test server
 
-First real-hardware run. Printer, cash drawer and scanning all work. Everything below is what broke.
+Round 2, tested on **v1.0.6**. Everything from round 1 passed except what is below.
 
 Status: `TODO` · `WIP` · `DONE`
 
 ---
 
-## A · Printing / receipt
+## Open
 
 | # | Issue | Status |
 |---|---|---|
-| A1 | Kitchen printer settings must not show the **Cash drawer** tab or **Print barcode** — neither applies to a kitchen ticket. | DONE |
-| A2 | Kitchen printer **Test demo** prints a receipt demo. It should print a kitchen-ticket demo: products + comments/modifiers. | DONE |
-| A3 | With **Show printing dialog** disabled, payment opens the drawer but **nothing prints**. Silent-print path is broken. | DONE |
-| A4 | No company logo → print a **large company name** in its place instead of nothing. | DONE |
-| A5 | Receipt barcode prints the **order id**; it must be the **document barcode number**. | DONE |
-| A6 | A product with a modifier prints as one merged `25.00`. Show the **base price alone (20.00)**, the extra on its own line beneath, and only the **line total (25.00)** in totals. Same in the payment item list. | DONE |
-| A7 | Quantity must carry its **unit**: `0.125 kg × 50.00 dh`, not `0.125 × 50.00 dh`. Receipt **and** payment item list. | DONE |
+| A4 | No company logo → print a **large company name** in its place. | TODO |
+| B1b | Z-report **dialog** shows `Cash In +0.00` and no opening float. The database row is correct and the session screen shows `+500.00` — only the dialog is wrong. | WIP |
+| G1 | **Continue selling** / **Close Register** should be floating buttons on the POS screen, in different colours. **Close Register** also belongs in the POS menu header, and both need show/hide switches in POS Settings. | TODO |
 
-## B · Cash session / Z-report
+---
 
-| # | Issue | Status |
-|---|---|---|
-| B1 | **Cash in** entered when opening a session is never written to the cash-movement table, so the Z-report has no opening float. | DONE |
+### B1b — what was actually wrong
 
-**B1 done.** Two halves. The Z-report prints an **Opening cash** line from the session's `startingCash`, and the float is now a real row in `starting_cash` under a **third kind** — `opening` locally, `StartingCashType = 2` on the wire. It is displayed and never summed: expected cash is `openingCash + cashPayments + cashIn - cashOut`, so a plain type-0 row would have added the float twice and every register would have read over by it. All four server sums and both client sums already name the kind they want (`== 0` / `== 1`), so the new kind falls through untouched — `CashMovementKind` documents why that must never be rewritten as "everything that is not out". Written at `confirmOpening`, i.e. the counted figure, not the expected one.
+B1 itself is fine: the float **is** written to `starting_cash` as kind `opening` / `StartingCashType = 2`, the session screen shows it (`Cash movements  + 500.00 MAD`, Session #19), and expected cash comes out right (`500 + 63 = 563`, difference `0.00`).
 
-| B2 | Z-report prints to the receipt printer from the **End of Day** screen, but not from the **POS session-closing dialog**. | DONE |
+The gap was display-only, and only in one place. The **printed** Z-report gained an `Opening cash` line; `showZReportDialog` accepted the `openingCash` argument and passed it straight through to the printer **without ever rendering a row for it**. So the one screen the cashier actually reads showed `Cash In +0.00` and nothing else, while the money sat in the drawer and in the database.
 
-## C · Hardware
+Fixed in `z_report_receipt_dialog.dart` — the dialog now renders `Opening cash` above Cash In. It stays **out** of the Cash In total on purpose: the session's own `startingCash` already carries the float into expected cash, so adding it to Cash In would count it twice and every register would read over by its float.
 
-| # | Issue | Status |
-|---|---|---|
-| C1 | Customer display does not work. POS settings offer **COM10** while Windows only has **COM1–COM5 + LPT1** — the port list is not enumerated from the machine. Needs real port discovery, and LPT support. | DONE |
+⚠️ The row only appears for a **session** Z-report. Opened from the Z-report list (End of Day, company-wide), there is no single session and therefore no single float, so the line is hidden rather than guessed at.
 
-## D · Products
+### A4 — needs one detail before it can be fixed
 
-| # | Issue | Status |
-|---|---|---|
-| D1 | Deleting a product barcode does not stick — it disappears for ~1 s and comes back. Blocks switching a sold product over to sell-by-weight. | DONE |
+The receipt path already does this: with no logo, the header prints at **24pt** instead of 16pt (`receipt_printer_service.dart`, `logoBytes == null ? 24 : 16`), and it shipped in v1.0.6.
 
-## E · Layout
+So either it is not the receipt you were looking at, or something else is going on. Two candidates:
 
-| # | Issue | Status |
-|---|---|---|
-| E1 | Sidebar **full screen** button does nothing on Windows (works on macOS). | DONE |
-| E2 | At **1366×768** the cart is too tight — barely 2 items visible. Add a **show/hide keypad** toggle to give the cart its height back. | DONE |
+* **The A4 invoice/document PDF** (`invoice_pdf_service.dart`) — it prints `company.name` on the left at 12pt and simply omits the logo box on the right. Nothing is blank, but nothing is large either.
+* **The receipt with a `Header` text configured** — that header wins over the company name, so the big text is the header, not the name.
 
-## F · Web dashboard
+Say which document and what you saw and it is a small fix either way.
 
-| # | Issue | Status |
-|---|---|---|
-| F1 | After logging in as the new company, the dashboard shows another company's data and keeps falling back to a different user. New company appears to have no dashboard access. | DONE |
+---
 
-**F1 root cause.** `AppConfig.companyId = 25` was a compile-time constant applied to every request, so the dashboard reported company 25's figures whoever signed in, and a new company looked like it had "no access" because the server was never asked about it. Two smaller faults compounded it: the login field was pre-filled with a hardcoded developer address, and the bearer token was persisted (despite a comment claiming it was not) without the company it belonged to, so a reload came back up under the previous session. The tenant now comes from `user.companyId` in the login response, is stored and cleared with the token, and the API client refuses to build a scoped request without one.
+## Closed in round 1
 
-**Cross-tenant hole — CLOSED.** It was not the dashboard endpoint alone: tenant scope was carried by a `companyId` in the query string or body on ~250 endpoints and never once compared to the caller's token, so documents, payments, cash movements, customers and users were readable and writable the same way. Fixed globally with `Filters/CompanyScopeFilter.cs`, registered in `Program.cs` — fail closed, opt out with `[AllowCrossCompany]`. Exemptions are exactly three: `Master.Provision` (the company being created), `Master.CheckDevice` (master login, before a company is chosen) and `Company.GetAll` (the master-login picker). A test asserts that list stays at three.
+A1 A2 A3 A5 A6 A7 · B1 B2 · C1 · D1 · E1 E2 · F1 — all verified on v1.0.6.
 
-**Still open, same family:** `Master/Tenants`, `Master/Subscriptions` and `Master/Devices` take no `companyId`, so the tenant filter does not apply — any authenticated user can list every tenant on the platform. That needs a control-plane role, not a tenant check, and is a separate decision.
+Also closed alongside F1:
 
+* **Cross-tenant hole.** `companyId` came from the query string or body on ~250 endpoints and was never compared to the caller's token, so any signed-in user could read or write another company's documents, payments, cash and users by editing the URL. Closed globally by `CompanyScopeFilter`; three deliberate exemptions, asserted by a test.
+* **Control plane.** `Master/Tenants`, `Subscriptions` and `Devices` carry no `companyId`, so the tenant filter cannot help them — every cashier's token could list every tenant on the platform. They now require the admin portal's operator identity (`[ControlPlane]`).
+* **Dashboard deploy never fired.** Its workflow filtered on `OCTOPUS_DASHBOARD_WEB/**` while the folder is `octopus_dashboard_web`; GitHub path filters are case-sensitive, so pushing to `test` never triggered it and it had only ever run by hand.

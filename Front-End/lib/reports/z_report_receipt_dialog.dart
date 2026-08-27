@@ -143,6 +143,19 @@ Future<void> showZReportDialog(
               const SizedBox(height: 8),
               Divider(color: theme.colorScheme.outlineVariant),
               const SizedBox(height: 8),
+              // 🚨 The float, on screen as well as on paper. The printed slip
+              // gained this line and the dialog did not, so closing a session
+              // that opened with 500.00 showed "Cash In +0.00" and nothing else
+              // — the money was in the database and in the drawer, and the one
+              // screen the cashier actually reads denied it existed. It is NOT
+              // part of Cash In on purpose: the session's own startingCash
+              // already carries it into expected cash.
+              if (openingCash != null)
+                _row(
+                  l.sessionOpeningCash,
+                  "${openingCash.toStringAsFixed(2)} $sym",
+                  theme,
+                ),
               _row(
                 l.cashIn,
                 "+${report.totalCashIn.toStringAsFixed(2)} $sym",
