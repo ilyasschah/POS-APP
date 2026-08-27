@@ -609,11 +609,19 @@ class _RolePrinterTabState extends ConsumerState<_RolePrinterTab> {
   ///
   /// A station has no cash drawer and prints no customer barcode, so the whole
   /// drawer sub-tab and the barcode switch come off the screen rather than
-  /// sitting there configurable and inert.
-  bool get _isKitchenStation =>
-      (ref.watch(appSettingsProvider)[
-                  SettingKeys.rolePrintKitchenTicket(widget.role)] ??
-              'false')
+  /// sitting there configurable and inert — and its test print is a kitchen
+  /// ticket, not a receipt.
+  ///
+  /// 🚨 Takes the settings map instead of reading a provider itself. It used to
+  /// call `ref.watch`, which is correct inside `build` and WRONG in the
+  /// test-print callback: watching outside a build asserts in debug and is
+  /// simply undefined in release, where asserts are compiled out. So the
+  /// screen (built with watch) and the print button (running in a callback)
+  /// could disagree about the very same printer — the tabs hid themselves like
+  /// a kitchen station while the test button printed a receipt. Build passes
+  /// `ref.watch`, callbacks pass `ref.read`, and there is one answer.
+  bool _isKitchenStationIn(Map<String, String> settings) =>
+      (settings[SettingKeys.rolePrintKitchenTicket(widget.role)] ?? 'false')
           .toLowerCase() ==
       'true';
 
@@ -761,7 +769,7 @@ class _RolePrinterTabState extends ConsumerState<_RolePrinterTab> {
       // document that printer actually produces — the layout, the comment
       // lines and the modifier lines are the whole point of the ticket, and
       // none of them appear on a receipt.
-      if (_isKitchenStation) {
+      if (_isKitchenStationIn(settings)) {
         await ReceiptPrinterService().printKitchenTicket(
           orderNumber: 'DEMO-000100',
           cashierName:
@@ -813,7 +821,7 @@ class _RolePrinterTabState extends ConsumerState<_RolePrinterTab> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final kitchen = _isKitchenStation;
+    final kitchen = _isKitchenStationIn(ref.watch(appSettingsProvider));
 
     // The sub-tab set depends on a setting the operator can flip while this
     // screen is open, so the controller is rebuilt with it — a fixed-length
@@ -833,6 +841,7 @@ class _RolePrinterTabState extends ConsumerState<_RolePrinterTab> {
             printers: _printers,
             loadingPrinters: _loadingPrinters,
             testPrinting: _testPrinting,
+            isKitchen: kitchen,
             onRefresh: _loadPrinters,
             onTestPage: _printers.isEmpty ? null : _printTestPage,
           ),
@@ -900,6 +909,12 @@ class _HardwareCard extends ConsumerWidget {
   final List<Printer> printers;
   final bool loadingPrinters;
   final bool testPrinting;
+
+  /// Drives the test button's tooltip, so which document it will produce is
+  /// visible BEFORE paper comes out. Diagnosing "the demo printed the wrong
+  /// thing" by reading the paper is how a settings difference between two
+  /// machines turns into an afternoon.
+  final bool isKitchen;
   final VoidCallback onRefresh;
   final VoidCallback? onTestPage;
 
@@ -909,6 +924,7 @@ class _HardwareCard extends ConsumerWidget {
     required this.printers,
     required this.loadingPrinters,
     required this.testPrinting,
+    required this.isKitchen,
     required this.onRefresh,
     required this.onTestPage,
   });
@@ -1143,18 +1159,31 @@ class _HardwareCard extends ConsumerWidget {
                                 ),
                               )
                             : Icon(
-                                Icons.print_outlined,
+                                isKitchen
+                                    ? Icons.soup_kitchen_outlined
+                                    : Icons.print_outlined,
                                 size: 26,
                                 color: onTestPage != null
                                     ? theme.colorScheme.primary
                                     : theme.disabledColor,
                               ),
-                        tooltip: AppLocalizations.of(context).printDemoReceipt,
+                        // Names the document this button will actually
+                        // produce. A printer configured as a kitchen station
+                        // prints a TICKET, everything else prints a receipt —
+                        // and until the button said so, the only way to find
+                        // out was to read the paper afterwards, which is how a
+                        // settings difference between two machines turns into
+                        // an afternoon.
+                        tooltip: isKitchen
+                            ? AppLocalizations.of(context).printKitchenTicket
+                            : AppLocalizations.of(context).printDemoReceipt,
                       ),
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      AppLocalizations.of(context).printDemoReceipt,
+                      isKitchen
+                          ? AppLocalizations.of(context).printKitchenTicket
+                          : AppLocalizations.of(context).printDemoReceipt,
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 10, color: theme.hintColor),
                     ),

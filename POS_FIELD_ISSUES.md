@@ -16,8 +16,20 @@ Status: `TODO` · `WIP` · `DONE`
 | H1 | Closing a session throws the Z-report on screen unasked. Show it only from the **Z-Report button**. | DONE |
 | H2 | **Print** in the Z-report dialog does nothing, with no error. | DONE |
 | H3 | A Z-report printed from **End of Day** shows no opening cash — the same report showed it at session close. | DONE |
+| H4 | On the real POS, A1 (hidden kitchen tabs) works but A2 (kitchen demo ticket) does not — same build, works on the dev desk. | DONE |
 
 ---
+
+### H4 — why one fix landed and its twin did not
+
+Both read the same flag, `<role>.PrintKitchenTicket`, through one getter. The getter used `ref.watch`.
+
+* **A1** is evaluated inside `build()`. `ref.watch` there is correct, so hiding the Cash drawer tab and the barcode switch worked everywhere.
+* **A2** is evaluated inside the test-print **callback**. `ref.watch` outside a build is not allowed: it asserts in debug, and in release — where asserts are compiled out — it is simply undefined. So the same screen could hide its tabs like a kitchen station and then print a receipt.
+
+That is the whole split, and it is why it survived a dev machine: nothing about it depends on the machine, only on whether a given install happens to have the widget's dependency in the state the callback needs. A fresh install lands on the wrong side of it more often.
+
+The check now takes the settings map as an argument — `build` passes `ref.watch`, callbacks pass `ref.read` — so there is one answer to one question. And the test button now names the document it will produce (**Print kitchen ticket** vs **Print demo receipt**, with a matching icon), so the next time two machines disagree it is visible before any paper comes out.
 
 ### H1 / H2 / H3 — the Z-report, round 2
 
