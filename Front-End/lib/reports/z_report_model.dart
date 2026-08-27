@@ -46,6 +46,13 @@ class ZReportModel {
   final double grandTotal;
   final double totalCashIn;
   final double totalCashOut;
+
+  /// The float the register opened with, when this report covers one.
+  ///
+  /// Null means "not applicable" — a company-wide report spanning no single
+  /// session, or a report pulled from a server that does not carry the field.
+  /// Never 0.00, which would read as "the drawer opened empty".
+  final double? openingCash;
   final List<ZReportPaymentSummaryModel> paymentSummaries;
 
   ZReportModel({
@@ -66,6 +73,7 @@ class ZReportModel {
     required this.grandTotal,
     this.totalCashIn = 0.0,
     this.totalCashOut = 0.0,
+    this.openingCash,
     required this.paymentSummaries,
   });
 
@@ -85,6 +93,7 @@ class ZReportModel {
       grandTotal: (json['grandTotal'] as num?)?.toDouble() ?? 0.0,
       totalCashIn: (json['totalCashIn'] as num?)?.toDouble() ?? 0.0,
       totalCashOut: (json['totalCashOut'] as num?)?.toDouble() ?? 0.0,
+      openingCash: (json['openingCash'] as num?)?.toDouble(),
       paymentSummaries: (json['paymentSummaries'] as List?)
               ?.map((x) => ZReportPaymentSummaryModel.fromJson(x))
               .toList() ??

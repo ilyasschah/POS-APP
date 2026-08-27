@@ -11,6 +11,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:pos_app/utils/snackbar_helper.dart';
 import 'package:pos_app/app_settings/app_settings_provider.dart';
 import 'package:pos_app/currency/currencies_provider.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
@@ -25,12 +26,8 @@ import 'package:pos_app/reports/z_report_model.dart';
 Future<void> showZReportDialog(
   BuildContext context,
   WidgetRef ref,
-  ZReportModel report, {
-  /// The float the register opened with, printed on the slip when this report
-  /// closes a session. Null for the company-wide End-of-Day report, which spans
-  /// no single session and therefore no single opening float.
-  double? openingCash,
-}) {
+  ZReportModel report,
+) {
   final sym = ref.read(currencySymbolProvider);
   final theme = Theme.of(context);
   final l = AppLocalizations.of(context);
@@ -150,10 +147,10 @@ Future<void> showZReportDialog(
               // screen the cashier actually reads denied it existed. It is NOT
               // part of Cash In on purpose: the session's own startingCash
               // already carries it into expected cash.
-              if (openingCash != null)
+              if (report.openingCash != null)
                 _row(
                   l.sessionOpeningCash,
-                  "${openingCash.toStringAsFixed(2)} $sym",
+                  "${report.openingCash!.toStringAsFixed(2)} $sym",
                   theme,
                 ),
               _row(
@@ -230,13 +227,31 @@ Future<void> showZReportDialog(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           ),
           onPressed: () async {
-            Navigator.of(ctx).pop();
-            await ReceiptPrinterService().printZReport(
-              report,
-              sym,
-              roleSettings: ref.read(appSettingsProvider),
-              openingCash: openingCash,
-            );
+            // 🚨 Print FIRST, close after — and say so when it fails. The old
+            // order popped the dialog and then awaited an unguarded print, so
+            // any failure (no printer chosen for the Receipt role, a queue that
+            // is gone, a PDF that will not build) landed on a torn-down route
+            // as an unhandled future: the dialog vanished, no paper came out,
+            // and nothing anywhere said why. "I clicked print and I don't know
+            // why it doesn't work" is that bug, exactly.
+            final navigator = Navigator.of(ctx);
+            final messengerContext = ctx;
+            try {
+              await ReceiptPrinterService().printZReport(
+                report,
+                sym,
+                roleSettings: ref.read(appSettingsProvider),
+              );
+              if (navigator.mounted) navigator.pop();
+            } catch (e) {
+              if (!messengerContext.mounted) return;
+              showAppSnackbar(
+                messengerContext,
+                ref,
+                AppLocalizations.of(messengerContext).printFailed(e.toString()),
+                isError: true,
+              );
+            }
           },
         ),
       ],

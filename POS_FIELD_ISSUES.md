@@ -11,10 +11,25 @@ Status: `TODO` · `WIP` · `DONE`
 | # | Issue | Status |
 |---|---|---|
 | A4 | No company logo → print a **large company name** in its place. | READY TO TEST |
-| B1b | Z-report **dialog** shows `Cash In +0.00` and no opening float. The database row is correct and the session screen shows `+500.00` — only the dialog is wrong. | DONE |
-| G1 | **Continue selling** / **Close Register** should be floating buttons on the POS screen, in different colours. **Close Register** also belongs in the POS menu header, and both need show/hide switches in POS Settings. | DONE |
+| B1b | Z-report **dialog** showed `Cash In +0.00` and no opening float. | DONE |
+| G1 | **Continue selling** / **Close Register** as coloured floating buttons, Close Register in the till header, show/hide switches. | DONE |
+| H1 | Closing a session throws the Z-report on screen unasked. Show it only from the **Z-Report button**. | DONE |
+| H2 | **Print** in the Z-report dialog does nothing, with no error. | DONE |
+| H3 | A Z-report printed from **End of Day** shows no opening cash — the same report showed it at session close. | DONE |
 
 ---
+
+### H1 / H2 / H3 — the Z-report, round 2
+
+**H1 — no more unasked modal.** The report is still generated and persisted at close; it is simply not thrown on screen. A modal nobody asked for, in front of a cashier who has just finished counting and wants the till back, gets dismissed rather than read. It is one tap away under the Z-Report button.
+
+**H2 — print failed silently.** The button popped the dialog and *then* awaited an unguarded print, so any failure — no printer chosen for the Receipt role, a queue that no longer exists, a PDF that will not build — landed on a torn-down route as an unhandled future. The dialog vanished, no paper came out, nothing said why. It now prints first, closes only on success, and shows the real error otherwise. That error will tell us which of those it actually was.
+
+**H3 — the float now lives on the report.** It was an argument that only the session-closing screen passed in, so the identical report printed from End of Day had nothing to show. There was no way to recover it either: `z_reports` has no session column, and the `zReportNumber` stamped on cash movements is an optimistic `-1` placeholder until the server answers, so neither could be matched on.
+
+`z_reports` gained an `openingCash` column (local schema **v64**), summed from the `opening`-kind cash rows the report covers and written at generation. The report is self-describing now, so the dialog and the printer read the same number wherever they are opened from. Null — not `0.00` — when the report covers no float: "not applicable" and "the drawer opened empty" are different statements.
+
+⚠️ Only reports generated **from now on** carry it. Existing rows, including Z-Report #4, stay null and will print without the line.
 
 ### B1b — what was actually wrong
 

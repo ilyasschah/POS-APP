@@ -1117,15 +1117,6 @@ class ReceiptPrinterService {
     ZReportModel report,
     String currencySymbol, {
     required Map<String, String> roleSettings,
-    /// The float the register opened with, when this report closes a session.
-    ///
-    /// 🚨 Not part of [ZReportModel]: the opening float belongs to the SESSION,
-    /// not to the report row, and the server's Z-report DTO does not carry it.
-    /// It is printed rather than summed — `expectedCash` already adds it once
-    /// (`openingCash + cashPayments + cashIn - cashOut`), so recording it as a
-    /// cash-IN movement as well would count the same money twice. Null on a
-    /// company-wide End-of-Day report, which spans no single session.
-    double? openingCash,
     // Which configured printer this goes to. Defaults to the receipt printer —
     // a Z-report is an end-of-shift till roll, not a document.
     String role = 'Receipt',
@@ -1225,10 +1216,15 @@ class ReceiptPrinterService {
                       ? report.fromDocumentNumber!
                       : '${report.fromDocumentNumber} - ${report.toDocumentNumber}',
                 ),
-              if (openingCash != null)
+              // 🚨 Read off the REPORT, not passed in by whoever happened to
+              // print it. It used to be an argument only the session-closing
+              // screen supplied, so the identical report printed from End of
+              // Day came out with no opening cash at all. Printed, never summed:
+              // expectedCash already adds the float once.
+              if (report.openingCash != null)
                 zRow(
                   '${l.sessionOpeningCash}:',
-                  '${openingCash.toStringAsFixed(2)} $currencySymbol',
+                  '${report.openingCash!.toStringAsFixed(2)} $currencySymbol',
                 ),
               zRow(
                 '${l.cashIn}:',
@@ -1324,11 +1320,10 @@ class ReceiptPrinterService {
     ZReportModel report,
     String currencySymbol, {
     required Map<String, String> roleSettings,
-    double? openingCash,
     String role = 'Receipt',
   }) async {
     final pdf = await buildZReport(report, currencySymbol,
-        roleSettings: roleSettings, openingCash: openingCash, role: role);
+        roleSettings: roleSettings, role: role);
     await _dispatch(pdf, 'Z_Report_${report.number}',
         _copies(roleSettings, role), roleSettings['$role.PrinterName']);
   }
