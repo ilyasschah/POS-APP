@@ -2828,19 +2828,9 @@ List<SearchableSetting> _kSearchableSettings(
     title: AppLocalizations.of(context).setComPort,
     tabName: 'Customer Display',
     tabIndex: 4,
-    trailingBuilder: (_) =>
-        const _DropdownControl(SettingKeys.customerDisplayPort, [
-          'COM1',
-          'COM2',
-          'COM3',
-          'COM4',
-          'COM5',
-          'COM6',
-          'COM7',
-          'COM8',
-          'COM9',
-          'COM10',
-        ]),
+    // Real ports, same source as the Customer Display tab — a hardcoded list
+    // let a terminal be configured on a port its Windows does not have.
+    trailingBuilder: (_) => const _CustomerDisplayPortControl(),
   ),
   SearchableSetting(
     title: AppLocalizations.of(context).setBitsPerSecond,
@@ -5360,6 +5350,23 @@ class _ScaleLiveTest extends ConsumerWidget {
 }
 
 // ── Customer Display ──────────────────────────────────────────────────────────
+/// The COM/LPT dropdown for the search results, reading the machine's real
+/// ports. A plain [_DropdownControl] cannot: the searchable-settings builder is
+/// handed the tab opener, not a WidgetRef, and the saved port has to be folded
+/// into the options or an unplugged one would vanish from its own field.
+class _CustomerDisplayPortControl extends ConsumerWidget {
+  const _CustomerDisplayPortControl();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => _DropdownControl(
+        SettingKeys.customerDisplayPort,
+        CustomerDisplayService.availablePorts(
+          saved:
+              ref.watch(appSettingsProvider)[SettingKeys.customerDisplayPort],
+        ),
+      );
+}
+
 class _CustomerDisplayTab extends ConsumerStatefulWidget {
   const _CustomerDisplayTab();
 
@@ -5400,13 +5407,19 @@ class _CustomerDisplayTabState extends ConsumerState<_CustomerDisplayTab> {
 
   Future<void> _testDisplay() async {
     final settings = ref.read(appSettingsProvider);
-    await CustomerDisplayService.showWelcome(settings: settings);
-    if (mounted) {
-      showAppSnackbar(
-        context,
-        ref,
-        AppLocalizations.of(context).testMessageSent,
-      );
+    try {
+      await CustomerDisplayService.testWrite(settings: settings);
+      if (mounted) {
+        showAppSnackbar(
+          context,
+          ref,
+          AppLocalizations.of(context).testMessageSent,
+        );
+      }
+    } on CustomerDisplayException catch (e) {
+      // The old version reported "test message sent" whatever happened, so a
+      // wrong port looked exactly like a working display.
+      if (mounted) showAppSnackbar(context, ref, e.message, isError: true);
     }
   }
 
@@ -5478,18 +5491,14 @@ class _CustomerDisplayTabState extends ConsumerState<_CustomerDisplayTab> {
                             child: _SettingDropdown(
                               settingKey: SettingKeys.customerDisplayPort,
                               label: AppLocalizations.of(context).setComPort,
-                              options: const [
-                                'COM1',
-                                'COM2',
-                                'COM3',
-                                'COM4',
-                                'COM5',
-                                'COM6',
-                                'COM7',
-                                'COM8',
-                                'COM9',
-                                'COM10',
-                              ],
+                              // The ports this machine actually has. The list
+                              // used to be a hardcoded COM1–COM10, so a till
+                              // whose Windows only exposes COM1–COM5 could sit
+                              // configured on COM10 and write to nothing.
+                              options: CustomerDisplayService.availablePorts(
+                                saved: ref.watch(appSettingsProvider)[
+                                    SettingKeys.customerDisplayPort],
+                              ),
                             ),
                           ),
                           const SizedBox(width: 12),

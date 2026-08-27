@@ -6462,6 +6462,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sessionClosedPosted => 'Closed & Posted';
 
   @override
+  String get showKeypad => 'Keypad';
+
+  @override
+  String get hideKeypad => 'Hide keypad';
+
+  @override
   String get openingControl => 'Opening Control';
 
   @override

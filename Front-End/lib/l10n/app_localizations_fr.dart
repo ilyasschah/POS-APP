@@ -6538,6 +6538,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get sessionClosedPosted => 'Fermée et comptabilisée';
 
   @override
+  String get showKeypad => 'Clavier';
+
+  @override
+  String get hideKeypad => 'Masquer le clavier';
+
+  @override
   String get openingControl => 'Contrôle d\'ouverture';
 
   @override

@@ -41,6 +41,7 @@ import 'dart:convert';
 
 import 'package:drift/drift.dart' show Value;
 
+import 'package:pos_app/cash/cash_movement_kind.dart';
 import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/reports/z_report_model.dart';
 
@@ -113,9 +114,12 @@ abstract final class ZReportService {
     double totalCashIn = 0;
     double totalCashOut = 0;
     for (final c in cashRows) {
-      if (c.type == 'in') {
+      // 🚨 Named kinds, never `else`. An `opening` row is in this list and is
+      // NOT drawer movement — the session's startingCash already carries it, so
+      // folding it into either total counts the float twice.
+      if (c.type == CashMovementKind.cashIn) {
         totalCashIn += c.amount;
-      } else if (c.type == 'out') {
+      } else if (c.type == CashMovementKind.cashOut) {
         totalCashOut += c.amount;
       }
     }
@@ -225,9 +229,12 @@ abstract final class ZReportService {
     double totalCashIn = 0;
     double totalCashOut = 0;
     for (final c in cashRows) {
-      if (c.type == 'in') {
+      // 🚨 Named kinds, never `else`. An `opening` row is in this list and is
+      // NOT drawer movement — the session's startingCash already carries it, so
+      // folding it into either total counts the float twice.
+      if (c.type == CashMovementKind.cashIn) {
         totalCashIn += c.amount;
-      } else if (c.type == 'out') {
+      } else if (c.type == CashMovementKind.cashOut) {
         totalCashOut += c.amount;
       }
     }

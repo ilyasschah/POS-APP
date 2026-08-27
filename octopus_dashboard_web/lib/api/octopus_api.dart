@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 
-import '../core/constants.dart';
 import '../core/formatters.dart';
 import '../core/json_utils.dart';
 import '../models/dashboard.dart';
@@ -13,11 +12,29 @@ import 'api_exception.dart';
 
 /// Result of `POST /Auth/Login`.
 class LoginResult {
-  const LoginResult({required this.success, this.token, this.message});
+  const LoginResult({
+    required this.success,
+    this.token,
+    this.message,
+    this.companyId,
+    this.userId,
+  });
 
   final bool success;
   final String? token;
   final String? message;
+
+  /// The company the signed-in user belongs to, from `user.companyId` in the
+  /// login response.
+  ///
+  /// 🚨 This is what scopes every subsequent request. It used to be the
+  /// compile-time constant `AppConfig.companyId` (25), so whoever signed in,
+  /// the dashboard reported company 25's sales — and a newly created company
+  /// looked like it had "no access" when in fact it was never being asked
+  /// about.
+  final int? companyId;
+
+  final int? userId;
 }
 
 /// Typed client for the Octopus backend.
@@ -30,8 +47,12 @@ class LoginResult {
 /// users list at `GetAllUsers` while everything else lists at `GetAll`.
 /// These are not typos to "fix" — getting them wrong 404s.
 class OctopusApi {
-  OctopusApi({required String baseUrl, String? token, this.onTokenExpired})
-    : _dio = Dio(
+  OctopusApi({
+    required String baseUrl,
+    String? token,
+    this.companyId,
+    this.onTokenExpired,
+  }) : _dio = Dio(
         BaseOptions(
           baseUrl: normalizeBaseUrl(baseUrl),
           connectTimeout: const Duration(seconds: 20),
@@ -45,6 +66,12 @@ class OctopusApi {
       );
 
   final Dio _dio;
+
+  /// The tenant every request is scoped to — the signed-in user's own company,
+  /// carried from the login response. Null only before sign-in, when the sole
+  /// legal call is [login] itself.
+  final int? companyId;
+
   final void Function()? onTokenExpired;
 
   /// Trims stray whitespace and trailing slashes so a user-typed URL like
@@ -57,7 +84,20 @@ class OctopusApi {
     return url;
   }
 
-  static const _companyQuery = {'companyId': AppConfig.companyId};
+  /// `companyId` for the query string of every scoped call.
+  ///
+  /// Throws rather than falling back to a default: a request that quietly went
+  /// out under the wrong tenant is how this app showed one company's figures to
+  /// another, and a hard failure here is a bug report instead of a silent lie.
+  Map<String, dynamic> get _companyQuery {
+    final id = companyId;
+    if (id == null || id <= 0) {
+      throw const ApiException(
+        'Not signed in to a company. Sign in again.',
+      );
+    }
+    return {'companyId': id};
+  }
 
   // --- Auth ---------------------------------------------------------------
 
@@ -89,10 +129,20 @@ class OctopusApi {
       // Accept either casing for the token, matching the iOS client.
       final token = asStringOrNull(json['token'] ?? json['Token']);
       final success = asBool(json['success'] ?? json['Success'], token != null);
+
+      // `user.companyId` is the tenant this session may see. Same either-casing
+      // tolerance as the token: the server serialises PascalCase today, and the
+      // client should not break the day that changes.
+      final rawUser = json['user'] ?? json['User'];
+      final user = rawUser is Map ? Map<String, dynamic>.from(rawUser) : null;
+      int? asIntOrNull(dynamic v) => v is num ? v.toInt() : null;
+
       return LoginResult(
         success: success && token != null,
         token: token,
         message: asStringOrNull(json['message'] ?? json['Message']),
+        companyId: asIntOrNull(user?['companyId'] ?? user?['CompanyId']),
+        userId: asIntOrNull(user?['id'] ?? user?['Id']),
       );
     });
   }

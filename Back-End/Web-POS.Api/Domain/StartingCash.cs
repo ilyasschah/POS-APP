@@ -20,6 +20,20 @@ namespace Api.Domain
 
         public string? Description { get; set; }
 
+        /// <summary>
+        /// What kind of row this is: <b>0 = cash in</b>, <b>1 = cash out</b>,
+        /// <b>2 = opening float</b>.
+        ///
+        /// 🚨 Kind 2 is displayed, never summed. Expected cash is
+        /// <c>openingCash + cashPayments + cashIn - cashOut</c>, and
+        /// <c>openingCash</c> already comes from the session's own
+        /// <c>StartingCash</c> — so folding an opening-float row into either
+        /// total counts the same money twice and every register reads over by
+        /// its float. Every consumer here filters for <c>== 0</c> or
+        /// <c>== 1</c> explicitly for exactly that reason
+        /// (<c>PosSessionRepository.GetCashMovementTotalsAsync</c>,
+        /// <c>ZReportService</c>): never sum by "not 1".
+        /// </summary>
         public int StartingCashType { get; set; } = 0;
 
         public int? ZReportNumber { get; set; }

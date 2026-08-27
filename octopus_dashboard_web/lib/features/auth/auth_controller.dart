@@ -33,6 +33,7 @@ class AuthState {
     required this.baseUrl,
     required this.email,
     this.token,
+    this.companyId,
     this.isLoading = false,
     this.errorMessage,
   });
@@ -40,19 +41,31 @@ class AuthState {
   final String baseUrl;
   final String email;
 
-  /// Opaque bearer token. Held in memory only — deliberately not persisted, so
-  /// a browser reload requires signing in again.
+  /// Opaque bearer token, persisted so a browser reload does not sign the user
+  /// out mid-task.
   final String? token;
+
+  /// The company the token belongs to. Persisted WITH the token and cleared
+  /// with it — the two are one session, and a token restored without knowing
+  /// whose company it is was the bug: the dashboard came back up scoped to
+  /// whatever company the constant said, under someone else's session.
+  final int? companyId;
 
   final bool isLoading;
   final String? errorMessage;
 
-  bool get isAuthenticated => token != null && token!.isNotEmpty;
+  /// A session is only usable when BOTH halves survived. A token with no
+  /// company cannot scope a single request, so it is not a signed-in state —
+  /// it is a stale key, and treating it as a session is what put another
+  /// company's data on screen.
+  bool get isAuthenticated =>
+      token != null && token!.isNotEmpty && (companyId ?? 0) > 0;
 
   AuthState copyWith({
     String? baseUrl,
     String? email,
     String? token,
+    int? companyId,
     bool? isLoading,
     String? errorMessage,
     bool clearError = false,
@@ -61,6 +74,7 @@ class AuthState {
     baseUrl: baseUrl ?? this.baseUrl,
     email: email ?? this.email,
     token: clearToken ? null : (token ?? this.token),
+    companyId: clearToken ? null : (companyId ?? this.companyId),
     isLoading: isLoading ?? this.isLoading,
     errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
   );
@@ -70,13 +84,26 @@ class AuthController extends Notifier<AuthState> {
   @override
   AuthState build() {
     final prefs = ref.read(sharedPreferencesProvider);
+    // Both halves of the session or neither. A token whose company is missing
+    // cannot scope a request, and restoring it anyway is how the dashboard came
+    // back up under a previous user's session.
+    final token = prefs.getString(PrefKeys.apiToken);
+    final companyId = prefs.getInt(PrefKeys.companyId);
+    final sessionIntact =
+        token != null && token.isNotEmpty && (companyId ?? 0) > 0;
     return AuthState(
       // The last-used URL is remembered so a client doesn't retype it on
       // every visit; defaults to Test rather than the stale Dev IP the iOS
       // build shipped with.
       baseUrl: prefs.getString(PrefKeys.apiBaseUrl) ?? AppConfig.defaultBaseUrl,
-      email: AppConfig.defaultEmail,
-      token: prefs.getString(PrefKeys.apiToken),
+      // The LAST EMAIL SIGNED IN WITH, not a compile-time address. The field
+      // used to be pre-filled with a developer's own account, so signing in on
+      // a fresh browser with only a password typed logged you into somebody
+      // else's company — which is exactly what "it keeps logging back to
+      // another user" describes.
+      email: prefs.getString(PrefKeys.lastEmail) ?? '',
+      token: sessionIntact ? token : null,
+      companyId: sessionIntact ? companyId : null,
     );
   }
 
@@ -115,6 +142,20 @@ class AuthController extends Notifier<AuthState> {
         return false;
       }
 
+      // No company on the account means nothing can be scoped, so say so
+      // instead of signing in to a dashboard that would answer for the wrong
+      // tenant or fail on every panel.
+      final companyId = result.companyId ?? 0;
+      if (companyId <= 0) {
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage:
+              'This account is not attached to a company, so there is nothing '
+              'to show. Ask an administrator to assign it one.',
+        );
+        return false;
+      }
+
       // Remember the URL that actually worked. Best-effort: Safari in private
       // mode can refuse localStorage entirely, and failing to remember a
       // preference must never block an otherwise successful sign-in.
@@ -125,12 +166,20 @@ class AuthController extends Notifier<AuthState> {
         await ref
             .read(sharedPreferencesProvider)
             .setString(PrefKeys.apiToken, result.token!);
+        // Stored with the token, cleared with the token.
+        await ref
+            .read(sharedPreferencesProvider)
+            .setInt(PrefKeys.companyId, companyId);
+        await ref
+            .read(sharedPreferencesProvider)
+            .setString(PrefKeys.lastEmail, state.email.trim());
       } catch (_) {
         // Ignored on purpose.
       }
 
       state = state.copyWith(
         token: result.token,
+        companyId: companyId,
         baseUrl: baseUrl,
         isLoading: false,
         clearError: true,
@@ -155,6 +204,9 @@ class AuthController extends Notifier<AuthState> {
   void signOut() {
     try {
       ref.read(sharedPreferencesProvider).remove(PrefKeys.apiToken);
+      // The company goes with it. Leaving it behind meant the next sign-in
+      // started life already scoped to the previous user's tenant.
+      ref.read(sharedPreferencesProvider).remove(PrefKeys.companyId);
     } catch (_) {}
     state = state.copyWith(clearToken: true, clearError: true);
   }
@@ -166,6 +218,7 @@ typedef ApiFactory =
     OctopusApi Function({
       required String baseUrl,
       String? token,
+      int? companyId,
       void Function()? onTokenExpired,
     });
 
@@ -181,10 +234,13 @@ final authProvider = NotifierProvider<AuthController, AuthState>(
 /// (such as `isLoading` flipping during sign-in) don't needlessly rebuild the
 /// client or invalidate every screen that depends on it.
 final apiProvider = Provider<OctopusApi>((ref) {
-  final session = ref.watch(authProvider.select((s) => (s.baseUrl, s.token)));
+  final session = ref.watch(
+    authProvider.select((s) => (s.baseUrl, s.token, s.companyId)),
+  );
   final api = ref.read(apiFactoryProvider)(
     baseUrl: session.$1,
     token: session.$2,
+    companyId: session.$3,
     onTokenExpired: () {
       ref.read(authProvider.notifier).signOut();
     },

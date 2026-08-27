@@ -11654,6 +11654,18 @@ abstract class AppLocalizations {
   /// **'Closed & Posted'**
   String get sessionClosedPosted;
 
+  /// No description provided for @showKeypad.
+  ///
+  /// In en, this message translates to:
+  /// **'Keypad'**
+  String get showKeypad;
+
+  /// No description provided for @hideKeypad.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide keypad'**
+  String get hideKeypad;
+
   /// No description provided for @openingControl.
   ///
   /// In en, this message translates to:

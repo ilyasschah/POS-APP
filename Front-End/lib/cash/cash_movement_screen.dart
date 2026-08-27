@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
+import 'package:pos_app/cash/cash_movement_kind.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -94,7 +95,9 @@ class _CashMovementScreenState extends ConsumerState<CashMovementScreen> {
           companyId: company.id,
           userId: user.id,
           amount: amount,
-          type: _type == 0 ? 'in' : 'out',
+          type: _type == 0
+              ? CashMovementKind.cashIn
+              : CashMovementKind.cashOut,
           note: Value(_descCtrl.text.trim().isEmpty
               ? null
               : _descCtrl.text.trim()),
@@ -481,14 +484,26 @@ class _EntryTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs        = Theme.of(context).colorScheme;
-    final isCashOut = row.type == 'out';
-    final color     = isCashOut ? cs.error : context.navAccent;
+    final isCashOut = row.type == CashMovementKind.cashOut;
+    // The opening float is in the ledger but is NOT a movement during the
+    // shift: it is where the drawer started. Rendering it as a cash-in — which
+    // is what "anything that is not `out`" did — would have it read as money
+    // somebody added mid-shift, and read as counted twice by anyone adding the
+    // column up by eye.
+    final isOpening = row.type == CashMovementKind.opening;
+    final color     = isCashOut
+        ? cs.error
+        : isOpening
+            ? cs.onSurfaceVariant
+            : context.navAccent;
     final sign      = isCashOut ? '-' : '+';
     final desc      = row.note?.isNotEmpty == true
         ? row.note!
-        : (isCashOut
-            ? AppLocalizations.of(context).cashOut
-            : AppLocalizations.of(context).cashIn);
+        : isOpening
+            ? AppLocalizations.of(context).sessionOpeningCash
+            : (isCashOut
+                ? AppLocalizations.of(context).cashOut
+                : AppLocalizations.of(context).cashIn);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
@@ -496,7 +511,11 @@ class _EntryTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(
-            isCashOut ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+            isOpening
+                ? Icons.savings_outlined
+                : isCashOut
+                    ? Icons.arrow_upward_rounded
+                    : Icons.arrow_downward_rounded,
             color: color,
             size: 20,
           ),

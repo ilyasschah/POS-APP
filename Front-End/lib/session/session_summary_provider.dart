@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart' show OrderingTerm, leftOuterJoin;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:pos_app/cash/cash_movement_kind.dart';
 import 'package:pos_app/api/api_client.dart';
 import 'package:pos_app/app_settings/app_settings_provider.dart';
 import 'package:pos_app/company/company_provider.dart';
@@ -328,10 +329,10 @@ Future<SessionReconciliation> _buildSummary(
         ..where((t) => t.sessionLocalId.equals(session.localId)))
       .get();
   final cashIn = movements
-      .where((m) => m.type == 'in')
+      .where((m) => m.type == CashMovementKind.cashIn)
       .fold<double>(0, (s, m) => s + m.amount);
   final cashOut = movements
-      .where((m) => m.type == 'out')
+      .where((m) => m.type == CashMovementKind.cashOut)
       .fold<double>(0, (s, m) => s + m.amount);
 
   // 🚨 DOCUMENTS, not pos_orders. Checkout consumes the order row and produces

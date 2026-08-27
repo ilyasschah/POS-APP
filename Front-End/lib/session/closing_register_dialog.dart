@@ -129,8 +129,26 @@ class _ClosingRegisterDialogState extends ConsumerState<ClosingRegisterDialog> {
       final report = await _generateSessionZReport();
 
       if (!mounted) return;
+      // 🚨 Capture a context that OUTLIVES this dialog before popping it.
+      // `showZReportDialog(context, …)` ran on the closing dialog's own
+      // context, which is being torn down by the pop on the line above — so the
+      // Z-report slip never appeared and never reached the printer when a
+      // session was closed at the till. End of Day was unaffected because its
+      // screen stays mounted, which is exactly why it worked there and not here.
+      final rootContext = Navigator.of(context, rootNavigator: true).context;
       Navigator.pop(context, true);
-      if (report != null) await showZReportDialog(context, ref, report);
+      if (report != null && rootContext.mounted) {
+        await showZReportDialog(
+          rootContext,
+          ref,
+          report,
+          // The opening float belongs to the session, not to the report row —
+          // so the slip could not name the cash that was in the drawer before
+          // the first sale. It is printed, never summed: expectedCash already
+          // includes it.
+          openingCash: widget.session.startingCash,
+        );
+      }
     } catch (e) {
       if (mounted) setState(() => _error = '$e');
     } finally {
@@ -190,7 +208,12 @@ class _ClosingRegisterDialogState extends ConsumerState<ClosingRegisterDialog> {
         showAppSnackbar(context, ref, l.nothingToReport);
         return;
       }
-      await showZReportDialog(context, ref, report);
+      await showZReportDialog(
+        context,
+        ref,
+        report,
+        openingCash: widget.session.startingCash,
+      );
     } catch (e) {
       if (mounted) showAppSnackbar(context, ref, '$e', isError: true);
     } finally {

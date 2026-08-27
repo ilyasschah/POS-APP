@@ -2020,6 +2020,8 @@
   "sessionInProgress": "قيد التنفيذ",
   "sessionClosingControl": "مراقبة الإغلاق",
   "sessionClosedPosted": "مغلقة ومُرحّلة",
+  "showKeypad": "لوحة الأرقام",
+  "hideKeypad": "إخفاء لوحة الأرقام",
   "openingControl": "مراقبة الافتتاح",
   "openingNote": "ملاحظة الافتتاح",
   "openingNoteHint": "أضف ملاحظة افتتاح…",

@@ -1101,6 +1101,56 @@ class _ProductEditorDialog extends ConsumerStatefulWidget {
       _ProductEditorDialogState();
 }
 
+/// The barcode id out of a `/Barcodes/Add` response.
+///
+/// 🚨 The id is under `data`, not at the top level — the endpoint answers
+/// `{ message, data: { id, value, … } }`. Reading `id` off the root returned
+/// null every time, so a freshly added barcode was stored `synced` with **no
+/// server id**, and `BarcodeModel.id` (`serverId ?? 0`) then read 0. Delete
+/// treats 0 as "never synced" and hard-deletes it locally without telling the
+/// server — so the next `pullBarcodes` fetched it straight back. That is the
+/// barcode that reappears a second after you delete it, and it made a sold
+/// product impossible to switch over to sell-by-weight.
+///
+/// Both shapes are accepted so a server that later hoists `id` to the root
+/// keeps working.
+int? _barcodeIdFromResponse(dynamic body) {
+  if (body is! Map) return null;
+  final direct = body['id'];
+  if (direct is num) return direct.toInt();
+  final data = body['data'];
+  if (data is Map) {
+    final nested = data['id'] ?? data['Id'];
+    if (nested is num) return nested.toInt();
+  }
+  return null;
+}
+
+/// Looks a barcode's server id up by its value, for rows that were stored
+/// without one. Returns null when offline or when the server does not have it
+/// (in which case dropping the local row really is correct).
+Future<int?> _resolveBarcodeServerId({
+  required int productId,
+  required int companyId,
+  required String value,
+}) async {
+  try {
+    final res = await createDio().get<List<dynamic>>(
+      '/Barcodes/GetByProductId',
+      queryParameters: {'productId': productId, 'companyId': companyId},
+    );
+    for (final row in res.data ?? const []) {
+      if (row is Map && (row['value'] as String?)?.trim() == value.trim()) {
+        final id = row['id'];
+        if (id is num) return id.toInt();
+      }
+    }
+  } on DioException {
+    // Offline — leave it pending and let the sync push resolve it.
+  }
+  return null;
+}
+
 class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
   final _formKey = GlobalKey<FormState>();
 
@@ -2778,8 +2828,7 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                     final res = await dio.post('/Barcodes/Add',
                         queryParameters: {'companyId': companyId},
                         data: {'productId': productId, 'value': barcodeValue});
-                    final serverId =
-                        (res.data is Map ? res.data['id'] : null) as int?;
+                    final serverId = _barcodeIdFromResponse(res.data);
                     await (db.update(db.barcodesTable)
                           ..where((t) => t.localId.equals(localId)))
                         .write(BarcodesTableCompanion(
@@ -2842,27 +2891,46 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                             if (companyId == null) return;
                             final db = ref.read(appDatabaseProvider);
 
-                            if (b.id == 0) {
-                              // Never synced — hard-delete locally.
+                            // A row with no server id is only safe to drop
+                            // locally when it never reached the server. A
+                            // SYNCED row with no id is a row whose id we simply
+                            // failed to record — deleting it locally leaves it
+                            // on the server, and the next pull brings it back.
+                            // Ask the server for its id by value first.
+                            var serverId = b.id;
+                            if (serverId == 0 && !b.isPendingSync) {
+                              serverId = await _resolveBarcodeServerId(
+                                    productId: b.productId,
+                                    companyId: companyId,
+                                    value: b.value,
+                                  ) ??
+                                  0;
+                            }
+
+                            if (serverId == 0) {
+                              // Never reached the server — hard-delete locally.
                               await (db.delete(db.barcodesTable)
                                     ..where((t) =>
                                         t.localId.equals(b.localId)))
                                   .go();
                             } else {
                               // Soft-delete so SyncManager can push the
-                              // DELETE to the server on next sync.
+                              // DELETE to the server on next sync. The id we
+                              // just resolved is written back too, or the push
+                              // would hit the same missing-id path.
                               await (db.update(db.barcodesTable)
                                     ..where((t) =>
                                         t.localId.equals(b.localId)))
-                                  .write(const BarcodesTableCompanion(
-                                syncStatus: Value('pending_delete'),
+                                  .write(BarcodesTableCompanion(
+                                serverId: Value(serverId),
+                                syncStatus: const Value('pending_delete'),
                               ));
                               // Try API immediately while online.
                               try {
                                 final dio = createDio();
                                 await dio.delete('/Barcodes/Delete',
                                     queryParameters: {
-                                      'id': b.id,
+                                      'id': serverId,
                                       'companyId': companyId,
                                     });
                                 await (db.delete(db.barcodesTable)

@@ -17,8 +17,12 @@ Future<ProviderContainer> _container({Object? failWith}) async {
     overrides: [
       sharedPreferencesProvider.overrideWithValue(prefs),
       apiFactoryProvider.overrideWithValue(
-        ({required String baseUrl, String? token, onTokenExpired}) =>
-            FakeApi(failWith: failWith),
+        ({
+          required String baseUrl,
+          String? token,
+          int? companyId,
+          onTokenExpired,
+        }) => FakeApi(failWith: failWith),
       ),
     ],
   );
@@ -47,13 +51,83 @@ Future<void> _pumpLogin(
 }
 
 void main() {
-  testWidgets('renders the branding and a prefilled email', (tester) async {
+  testWidgets('renders the branding and an empty email on a fresh browser', (
+    tester,
+  ) async {
     await _pumpLogin(tester, await _container());
 
     expect(find.text('Octopus Owner'), findsOneWidget);
     expect(find.text('Business Dashboard'), findsOneWidget);
-    expect(find.text(AppConfig.defaultEmail), findsOneWidget);
+    // 🚨 Empty, not a hardcoded address. The field used to arrive pre-filled
+    // with a developer's own account, so typing only a password signed you into
+    // somebody else's company.
+    expect(find.text('ilyasschah18@gmail.com'), findsNothing);
     expect(find.text('Sign In'), findsOneWidget);
+  });
+
+  testWidgets('pre-fills the address of the last successful sign-in', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({
+      PrefKeys.lastEmail: 'owner@shop.ma',
+    });
+    final prefs = await SharedPreferences.getInstance();
+    final scope = ProviderContainer(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+        apiFactoryProvider.overrideWithValue(
+          ({
+            required String baseUrl,
+            String? token,
+            int? companyId,
+            onTokenExpired,
+          }) => FakeApi(),
+        ),
+      ],
+    );
+    await _pumpLogin(tester, scope);
+
+    expect(find.text('owner@shop.ma'), findsOneWidget);
+  });
+
+  testWidgets('a restored token with no company is not a session', (
+    tester,
+  ) async {
+    // The exact shape of the bug: the token outlived the company it belonged
+    // to, and the app came back up "signed in" and scoped to the wrong tenant.
+    SharedPreferences.setMockInitialValues({PrefKeys.apiToken: 'stale-token'});
+    final prefs = await SharedPreferences.getInstance();
+    final scope = ProviderContainer(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+        apiFactoryProvider.overrideWithValue(
+          ({
+            required String baseUrl,
+            String? token,
+            int? companyId,
+            onTokenExpired,
+          }) => FakeApi(),
+        ),
+      ],
+    );
+    addTearDown(scope.dispose);
+
+    expect(scope.read(authProvider).isAuthenticated, isFalse);
+    expect(scope.read(authProvider).token, isNull);
+  });
+
+  testWidgets('signing in adopts the company from the login response', (
+    tester,
+  ) async {
+    final scope = await _container();
+    addTearDown(scope.dispose);
+
+    final ok = await scope.read(authProvider.notifier).login('pw');
+
+    expect(ok, isTrue);
+    // FakeApi answers with company 7 — never the old hardcoded 25.
+    expect(scope.read(authProvider).companyId, 7);
+    expect(scope.read(authProvider).isAuthenticated, isTrue);
   });
 
   testWidgets('defaults to the Test environment, not the stale Dev IP', (

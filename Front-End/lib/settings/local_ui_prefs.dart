@@ -12,6 +12,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 const _kFontScaleKey = 'ui.fontScale';
 const _kCartWidthKey = 'ui.cartWidth';
+const _kCartKeypadVisibleKey = 'ui.cartKeypadVisible';
 
 const double kFontScaleDefault = 1.0;
 const double kFontScaleMin = 0.8;
@@ -74,6 +75,45 @@ class _CartWidthNotifier extends _LocalDoublePref {
   @override
   double clampValue(double v) => v < kCartWidthMin ? kCartWidthMin : v;
 }
+
+/// A locally-persisted `bool` preference, same contract as [_LocalDoublePref].
+abstract class _LocalBoolPref extends Notifier<bool> {
+  String get _key;
+  bool get _fallback;
+
+  @override
+  bool build() {
+    _load();
+    return _fallback;
+  }
+
+  Future<void> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final stored = prefs.getBool(_key);
+    if (stored != null) state = stored;
+  }
+
+  Future<void> toggle() async {
+    state = !state;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_key, state);
+  }
+}
+
+class _CartKeypadVisibleNotifier extends _LocalBoolPref {
+  @override
+  String get _key => _kCartKeypadVisibleKey;
+  @override
+  bool get _fallback => true;
+}
+
+/// Whether the cart keypad is shown. Local to this terminal, because it is a
+/// physical-screen decision: on a 1366×768 till the keypad eats the height the
+/// cart needs to show more than two lines, while a taller screen wants it up
+/// permanently. Defaults to shown — hiding it is opting out, not the norm.
+final cartKeypadVisibleProvider =
+    NotifierProvider<_CartKeypadVisibleNotifier, bool>(
+        _CartKeypadVisibleNotifier.new);
 
 /// Global font scale (1.0 = default), applied as a MediaQuery textScaler in
 /// main.dart. Local to this terminal.

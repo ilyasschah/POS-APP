@@ -25,8 +25,12 @@ import 'package:pos_app/reports/z_report_model.dart';
 Future<void> showZReportDialog(
   BuildContext context,
   WidgetRef ref,
-  ZReportModel report,
-) {
+  ZReportModel report, {
+  /// The float the register opened with, printed on the slip when this report
+  /// closes a session. Null for the company-wide End-of-Day report, which spans
+  /// no single session and therefore no single opening float.
+  double? openingCash,
+}) {
   final sym = ref.read(currencySymbolProvider);
   final theme = Theme.of(context);
   final l = AppLocalizations.of(context);
@@ -218,6 +222,7 @@ Future<void> showZReportDialog(
               report,
               sym,
               roleSettings: ref.read(appSettingsProvider),
+              openingCash: openingCash,
             );
           },
         ),

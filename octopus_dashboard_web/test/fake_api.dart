@@ -13,10 +13,15 @@ import 'package:octopus_dashboard_web/models/user.dart';
 /// product with no stock row — so layout tests exercise the cases most likely
 /// to overflow.
 class FakeApi implements OctopusApi {
-  FakeApi({this.failWith, this.onTokenExpired});
+  FakeApi({this.failWith, this.onTokenExpired, this.companyId = 7});
 
   /// When set, every call throws this instead of returning data.
   final Object? failWith;
+
+  /// The tenant a real client would scope its requests to.
+  @override
+  final int? companyId;
+
   @override
   final void Function()? onTokenExpired;
 
@@ -30,7 +35,11 @@ class FakeApi implements OctopusApi {
     required String email,
     required String password,
     CancelToken? cancelToken,
-  }) => _respond(const LoginResult(success: true, token: 'test-token'));
+  }) => _respond(
+        // A real login answers with the user's company; without one the
+        // controller refuses to sign in, which is the point of the change.
+        const LoginResult(success: true, token: 'test-token', companyId: 7),
+      );
 
   @override
   Future<DashboardData> fetchDashboard({

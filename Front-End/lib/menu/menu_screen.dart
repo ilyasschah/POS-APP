@@ -3126,6 +3126,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
     // What the keypad and the Client button act on.
     final selectedItem = _selectedItem(cartState);
     final selectedCustomer = cartState.selectedCustomer;
+    final keypadVisible = ref.watch(cartKeypadVisibleProvider);
 
     final discountTotal = cartNotifier.discountTotal;
     final grandTotal = cartNotifier.grandTotal;
@@ -3788,22 +3789,42 @@ class _CartSectionState extends ConsumerState<CartSection> {
                               ),
                             ),
                   ),
+                  const SizedBox(width: 8),
+                  // Give the cart its height back on a short screen.
+                  _CartToolButton(
+                    icon: keypadVisible
+                        ? Icons.keyboard_hide_outlined
+                        : Icons.dialpad,
+                    label: keypadVisible
+                        ? AppLocalizations.of(context).hideKeypad
+                        : AppLocalizations.of(context).showKeypad,
+                    active: !keypadVisible,
+                    onTap: () =>
+                        ref.read(cartKeypadVisibleProvider.notifier).toggle(),
+                  ),
                 ],
               ),
               const SizedBox(height: 8),
               // ── Keypad ──────────────────────────────────────────────────
-              CartKeypad(
-                mode: _keypadMode,
-                onModeChanged: _setKeypadMode,
-                onDigit: _onKeypadDigit,
-                onSignToggle: _onKeypadSign,
-                onBackspace: _onKeypadBackspace,
-                hasSelection: selectedItem != null,
-                priceChangeAllowed:
-                    selectedItem != null && _priceChangeAllowed(selectedItem),
-                priceEntersAmount:
-                    selectedItem != null && _isWeighedLine(selectedItem),
-              ),
+              // Collapsible, because the keypad and the item list compete for
+              // the same column. On a 1366×768 till the keypad leaves room for
+              // barely two lines of cart, and a shop that types quantities
+              // rarely would rather see the order. The choice is per-terminal
+              // (see cartKeypadVisibleProvider) — it is a property of the
+              // screen, not of the company.
+              if (keypadVisible)
+                CartKeypad(
+                  mode: _keypadMode,
+                  onModeChanged: _setKeypadMode,
+                  onDigit: _onKeypadDigit,
+                  onSignToggle: _onKeypadSign,
+                  onBackspace: _onKeypadBackspace,
+                  hasSelection: selectedItem != null,
+                  priceChangeAllowed:
+                      selectedItem != null && _priceChangeAllowed(selectedItem),
+                  priceEntersAmount:
+                      selectedItem != null && _isWeighedLine(selectedItem),
+                ),
               const SizedBox(height: 10),
               // ── Pay ─────────────────────────────────────────────────────
               SizedBox(

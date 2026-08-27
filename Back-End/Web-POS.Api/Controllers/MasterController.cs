@@ -1,3 +1,4 @@
+﻿using Api.Attributes;
 using Api.Master;
 using Api.Master.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -17,6 +18,7 @@ namespace Api.Controllers
     public class MasterController(MasterDbContext db, ITenantProvisioningService provisioning, LeaseKeyService leaseKeys, LeaseService leaseService, ICloneAuditService cloneAudit) : ControllerBase
     {
         /// <summary>Pillar 5 — flagged clone / duplicate transactions for a tenant.</summary>
+        [ControlPlane]
         [HttpGet("[action]")]
         public async Task<IActionResult> CloneAlerts([FromQuery] int companyId)
             => Ok(await cloneAudit.GetAlertsAsync(companyId));
@@ -47,14 +49,17 @@ namespace Api.Controllers
             return Ok(new { lease = await leaseService.IssueLeaseAsync(companyId) });
         }
 
+        [ControlPlane]
         [HttpGet("[action]")]
         public async Task<IActionResult> Tenants()
             => Ok(await db.Tenants.AsNoTracking().OrderBy(t => t.Id).ToListAsync());
 
+        [ControlPlane]
         [HttpGet("[action]")]
         public async Task<IActionResult> Subscriptions()
             => Ok(await db.Subscriptions.AsNoTracking().OrderBy(s => s.TenantId).ToListAsync());
 
+        [ControlPlane]
         [HttpGet("[action]")]
         public async Task<IActionResult> Devices([FromQuery] int? tenantId)
             => Ok(await db.Devices.AsNoTracking()
@@ -62,6 +67,10 @@ namespace Api.Controllers
                     .OrderBy(d => d.TenantId).ToListAsync());
 
         /// <summary>Manually provision (or no-op if it exists) a tenant + default subscription.</summary>
+        // Cross-company by definition: the companyId here is the tenant being
+        // CREATED, which cannot be the caller's own.
+        [ControlPlane]
+        [AllowCrossCompany]
         [HttpPost("[action]")]
         public async Task<IActionResult> Provision([FromQuery] int companyId, [FromQuery] string name, [FromQuery] int seats = 1)
         {
@@ -71,6 +80,11 @@ namespace Api.Controllers
         }
 
         /// <summary>Seat-cap check primitive (what the sync ingress will call in Pillar 4).</summary>
+        // Cross-company by necessity: master login asks about a seat in the
+        // company the terminal is about to sign in to, which is not yet the
+        // company on the token it is holding.
+        [ControlPlane]
+        [AllowCrossCompany]
         [HttpPost("[action]")]
         public async Task<IActionResult> CheckDevice([FromQuery] int companyId, [FromQuery] string deviceId, [FromQuery] string? deviceName)
         {

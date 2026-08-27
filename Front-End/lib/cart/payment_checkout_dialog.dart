@@ -31,6 +31,7 @@ import 'package:pos_app/printer/cash_drawer_service.dart';
 import 'package:pos_app/printer/receipt_printer_service.dart';
 import 'package:pos_app/printer/printer_routing_service.dart';
 import 'package:pos_app/cart/discount_display.dart';
+import 'package:pos_app/uom/unit_of_measure.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
 import 'package:pos_app/utils/customer_display_service.dart';
 import 'package:pos_app/customer_display/customer_display_provider.dart';
@@ -782,9 +783,15 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
         }
       }
 
-      if (autoprint) {
+      // The dialog toggle decides HOW the receipt is printed, not WHETHER.
+      // Turning "show printing dialog" off means "stop asking me" — so the
+      // receipt still prints, silently. Both switches default to false, so the
+      // old `autoprint || (dialog && …)` branch printed nothing at all on a
+      // fresh terminal: the drawer kicked, the sale banked, and no paper came
+      // out, which reads as a dead printer.
+      if (autoprint || !showPrintDialog) {
         doPrint();
-      } else if (showPrintDialog && ctx.mounted) {
+      } else if (ctx.mounted) {
         final choice = await showDialog<String>(
           context: ctx,
           barrierDismissible: false,
@@ -1101,8 +1108,18 @@ class _OrderSummaryColumn extends ConsumerWidget {
           ),
         );
 
-    String fmtQty(double q) =>
-        q % 1 == 0 ? q.toInt().toString() : q.toStringAsFixed(2);
+    // A weighed line reads `0.125 kg`, not `0.13` — the old two-decimal
+    // rounding turned a real 0.125 kg into a quantity the customer was not
+    // charged for, and `0.125 ×` on its own never said 0.125 of what.
+    String fmtQty(CartItem it) {
+      final label = (it.measurementUnit?.trim().isNotEmpty ?? false)
+          ? it.measurementUnit!.trim()
+          : uomById(it.uomId).code;
+      final value = formatQuantityValue(it.quantity, it.uomId);
+      return it.uomId == kUomPieces && (it.measurementUnit?.isEmpty ?? true)
+          ? value
+          : '$value $label';
+    }
     String fmtRate(double r) =>
         r % 1 == 0 ? r.toInt().toString() : r.toString();
 
@@ -1154,6 +1171,12 @@ class _OrderSummaryColumn extends ConsumerWidget {
                   final unitShown = taxIncluded && item.quantity > 0
                       ? item.price + lineTax / item.quantity
                       : item.price;
+                  // What the chosen options added, which `price` already
+                  // contains (CartItem's basePrice invariant). Split back out
+                  // so the line can show the product's own price with the
+                  // options itemised beneath it.
+                  final modifierSurcharge =
+                      (item.price - item.basePrice).clamp(0.0, double.infinity);
                   return Padding(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -1181,9 +1204,23 @@ class _OrderSummaryColumn extends ConsumerWidget {
                           ],
                         ),
                         Text(
-                          '${fmtQty(item.quantity)} × $sym ${unitShown.toStringAsFixed(2)}',
+                          '${fmtQty(item)} × $sym '
+                          '${(unitShown - modifierSurcharge).toStringAsFixed(2)}',
                           style:
                               theme.textTheme.bodySmall?.copyWith(color: muted),
+                        ),
+                        // Each chosen option on its own line. The surcharge is
+                        // already inside `price`, so the line above prints the
+                        // product's own price and these account for the rest —
+                        // a 20.00 product with a 5.00 option showed only 25.00
+                        // and neither number the customer asked about.
+                        ...item.selectedModifiers.map(
+                          (m) => detail(
+                            '+ ${m.name}',
+                            m.additionalPrice == 0
+                                ? ''
+                                : '$sym ${(m.additionalPrice * item.quantity).toStringAsFixed(2)}',
+                          ),
                         ),
                         // ── Per-item discounts ──
                         if (item.discount > 0)

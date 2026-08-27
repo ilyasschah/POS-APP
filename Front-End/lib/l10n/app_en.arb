@@ -3386,6 +3386,8 @@
   "sessionInProgress": "In Progress",
   "sessionClosingControl": "Closing Control",
   "sessionClosedPosted": "Closed & Posted",
+  "showKeypad": "Keypad",
+  "hideKeypad": "Hide keypad",
   "openingControl": "Opening Control",
   "openingNote": "Opening note",
   "openingNoteHint": "Add an opening note…",
