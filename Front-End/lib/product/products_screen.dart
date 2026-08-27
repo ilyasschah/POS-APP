@@ -2937,9 +2937,35 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                                       ..where((t) =>
                                           t.localId.equals(b.localId)))
                                     .go();
-                              } on DioException {
-                                // Offline — row stays pending_delete
-                                // (already hidden by the provider filter).
+                              } on DioException catch (e) {
+                                // 🚨 Say what happened. This used to be an
+                                // empty catch, so a server that REFUSED the
+                                // delete looked exactly like a server that
+                                // accepted it: the row vanished from the list
+                                // (the provider hides pending_delete) and came
+                                // back a second later when the next pull
+                                // fetched it again. "I delete it and it comes
+                                // back" is that silence, and no amount of
+                                // reading the code tells you which of the two
+                                // it was — only the server's answer does.
+                                //
+                                // Offline is not a failure: the row stays
+                                // pending_delete and the next sync pushes it.
+                                if (!context.mounted) return;
+                                final offline = e.type ==
+                                        DioExceptionType.connectionError ||
+                                    e.type == DioExceptionType.connectionTimeout ||
+                                    e.type == DioExceptionType.sendTimeout ||
+                                    e.type == DioExceptionType.receiveTimeout;
+                                if (offline) return;
+                                showAppSnackbar(
+                                  context,
+                                  ref,
+                                  '${AppLocalizations.of(context).deleteBarcode}: '
+                                  '${e.response?.statusCode ?? ''} '
+                                  '${e.response?.data ?? e.message ?? ''}',
+                                  isError: true,
+                                );
                               }
                             }
                           },
