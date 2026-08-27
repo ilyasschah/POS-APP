@@ -11666,6 +11666,24 @@ abstract class AppLocalizations {
   /// **'Hide keypad'**
   String get hideKeypad;
 
+  /// No description provided for @removeLogo.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove logo'**
+  String get removeLogo;
+
+  /// No description provided for @removeLogoConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'The receipt will print the company name instead. You can upload a new logo at any time.'**
+  String get removeLogoConfirm;
+
+  /// No description provided for @logoRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Logo removed'**
+  String get logoRemoved;
+
   /// No description provided for @openingControl.
   ///
   /// In en, this message translates to:

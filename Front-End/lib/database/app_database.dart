@@ -804,6 +804,21 @@ class ZReportsTable extends Table {
   IntColumn get documentCount => integer().nullable()();
   TextColumn get fromDocumentNumber => text().nullable()();
   TextColumn get toDocumentNumber => text().nullable()();
+
+  /// v64. The float the register opened with, recorded ON the report.
+  ///
+  /// 🚨 The report had no way back to its session — no session column, and the
+  /// `zReportNumber` stamped on cash movements is an optimistic placeholder
+  /// until the server answers, so it cannot be matched on either. That is why a
+  /// slip printed from End of Day showed no opening cash while the same report
+  /// showed it fine at session close: the float was passed in by the closing
+  /// screen and simply unavailable anywhere else. Recording it here makes the
+  /// report self-describing, so every screen and the printer agree.
+  ///
+  /// NULL for a company-wide report, which spans no single session and so has
+  /// no single float, and for reports pulled from a server that does not carry
+  /// the field. Null means "not applicable", never zero.
+  RealColumn get openingCash => real().nullable()();
 }
 
 /// One Close-Register snapshot, aggregated from the local DB by
@@ -1803,7 +1818,7 @@ class AppDatabase extends _$AppDatabase {
   /// Restore validation needs it before Drift is touched: a backup whose
   /// `user_version` is higher came from a newer build, and Drift migrates
   /// forward only, so opening it here would corrupt it.
-  static const int expectedSchemaVersion = 63;
+  static const int expectedSchemaVersion = 64;
 
   @override
   int get schemaVersion => expectedSchemaVersion;
@@ -1843,6 +1858,12 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(posOrderItemModifiersTable);
             await m.createTable(documentItemModifiersTable);
           }
+          if (from < 64) {
+            // Nullable: existing reports keep "not applicable" rather than a
+            // fabricated 0.00, which would read as "the drawer opened empty".
+            await m.addColumn(zReportsTable, zReportsTable.openingCash);
+          }
+
           if (from < 63) {
             // Nullable, so every existing group simply keeps the fallback icon.
             await m.addColumn(modifierGroupsTable, modifierGroupsTable.iconKey);

@@ -55,6 +55,7 @@ final allZReportsProvider =
       grandTotal: r.grandTotal ?? r.totalSales,
       totalCashIn: r.totalCashIn,
       totalCashOut: r.totalCashOut,
+      openingCash: r.openingCash,
       paymentSummaries: summaries,
     );
   }).toList();

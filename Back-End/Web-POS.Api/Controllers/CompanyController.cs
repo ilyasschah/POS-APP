@@ -69,6 +69,22 @@ namespace Api.Controllers
                 message = "Company logo updated successfully.",
             });
         }
+        /// <summary>
+        /// Removes the company logo, so receipts fall back to the printed
+        /// company name. Separate from UpdateLogo because that request requires
+        /// a non-empty payload, and "empty means delete" would let a truncated
+        /// upload wipe the logo by accident.
+        /// </summary>
+        [CompanyScopedBy("id")]
+        [HttpDelete("[action]")]
+        public async Task<ActionResult> DeleteLogo([FromQuery] int id, CancellationToken ct = default)
+        {
+            if (id <= 0) return BadRequest(new { success = false, message = "Company ID is required." });
+            var command = new DeleteCompanyLogoCommand(id);
+            await mediator.Send(command, ct);
+            return Ok(new { success = true, message = "Company logo removed." });
+        }
+
         [CompanyScopedBy("id")]
         [HttpDelete("[action]")]
         public async Task<ActionResult> Delete(int id, CancellationToken ct = default)

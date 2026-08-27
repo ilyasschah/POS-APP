@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:pos_app/app_settings/app_settings_provider.dart';
+import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/cash/cash_movement_kind.dart';
 import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/auth/user_model.dart';
@@ -96,7 +98,14 @@ class SessionScreen extends ConsumerWidget {
     }
 
     final blockers = ref.watch(closeBlockersProvider(session.localId));
-    final compact = context.isCompact;
+    final settings = ref.watch(appSettingsProvider);
+    final showContinueSelling =
+        (settings[SettingKeys.showContinueSellingBtn] ?? 'true')
+            .toLowerCase() !=
+        'false';
+    final showCloseRegister =
+        (settings[SettingKeys.showCloseRegisterBtn] ?? 'true').toLowerCase() !=
+        'false';
 
     // Three tabs, not one long scroll: the figures are what a close is signed
     // off against, while the document and payment lists are the evidence
@@ -126,34 +135,13 @@ class SessionScreen extends ConsumerWidget {
               SessionStatusPill(status: session.status),
             ],
           ),
-          // The two things you can DO with a session live in the header, where
-          // they are reachable from either tab and from any scroll position —
-          // rather than at the bottom of a list that grows with every payment.
-          actions: [
-            if (isLive && PosSessionStatus.canSell(session.status))
-              _HeaderAction(
-                icon: Icons.point_of_sale,
-                label: l.continueSelling,
-                compact: compact,
-                filled: true,
-                onPressed: () => _continueSelling(context, ref),
-              ),
-            if (isLive)
-              _HeaderAction(
-                icon: Icons.lock_outline,
-                label:
-                    blockers.isEmpty ? l.closeRegister : l.sessionCannotClose,
-                compact: compact,
-                onPressed: blockers.isEmpty
-                    // ⚠️ Blocked while the DEVICE knows about work the server
-                    // does not. Closing then would produce a Z-report missing
-                    // sales that really happened — requirement §14, and the
-                    // reason this check cannot live on the server.
-                    ? () => _startClosing(context, ref, session)
-                    : null,
-              ),
-            const SizedBox(width: 8),
-          ],
+          // 🚨 The two session actions are NOT here any more — they float over
+          // the body instead (see floatingActionButton below). In the header
+          // they were two grey buttons of identical weight, and "go back to
+          // selling" and "close the till for the day" are not actions anybody
+          // should be able to confuse at a glance. Colour is what tells them
+          // apart, and an AppBar action cannot carry it.
+          actions: const [SizedBox(width: 8)],
           bottom: TabBar(
             // Documents before Payments: it is the order the overview states
             // them in, and "what was sold" is the coarser question.
@@ -164,6 +152,52 @@ class SessionScreen extends ConsumerWidget {
             ],
           ),
         ),
+        // Green to go on selling, red to close the day. Stacked rather than
+        // side by side so the two never sit under one thumb, and extended so
+        // the label is always legible — a lock icon alone does not say whether
+        // it locks the drawer, the session or the app.
+        floatingActionButton: !isLive
+            ? null
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  if (PosSessionStatus.canSell(session.status) &&
+                      showContinueSelling)
+                    FloatingActionButton.extended(
+                      heroTag: 'session-continue',
+                      backgroundColor: context.successColor,
+                      foregroundColor: Colors.white,
+                      icon: const Icon(Icons.point_of_sale),
+                      label: Text(l.continueSelling),
+                      onPressed: () => _continueSelling(context, ref),
+                    ),
+                  if (PosSessionStatus.canSell(session.status) &&
+                      showContinueSelling && showCloseRegister)
+                    const SizedBox(height: 12),
+                  if (showCloseRegister)
+                    FloatingActionButton.extended(
+                      heroTag: 'session-close',
+                      // Disabled reads as grey, not as a quieter red: a close
+                      // that cannot happen must not look like one that can.
+                      backgroundColor: blockers.isEmpty
+                          ? context.dangerColor
+                          : theme.disabledColor,
+                      foregroundColor: Colors.white,
+                      icon: const Icon(Icons.lock_outline),
+                      label: Text(blockers.isEmpty
+                          ? l.closeRegister
+                          : l.sessionCannotClose),
+                      // ⚠️ Blocked while the DEVICE knows about work the server
+                      // does not. Closing then would produce a Z-report missing
+                      // sales that really happened — requirement §14, and the
+                      // reason this check cannot live on the server.
+                      onPressed: blockers.isEmpty
+                          ? () => _startClosing(context, ref, session)
+                          : null,
+                    ),
+                ],
+              ),
         // Capped and centred so an ultra-wide monitor does not stretch a
         // label to one edge and its amount to the other. Both tabs share the
         // cap, so switching between them does not shift the column width.
@@ -217,52 +251,6 @@ class SessionScreen extends ConsumerWidget {
   }
 }
 
-/// A header button that keeps its label on a roomy screen and drops to an icon
-/// on a tablet, where two labelled buttons would eat the title.
-class _HeaderAction extends StatelessWidget {
-  const _HeaderAction({
-    required this.icon,
-    required this.label,
-    required this.compact,
-    required this.onPressed,
-    this.filled = false,
-  });
-
-  final IconData icon;
-  final String label;
-  final bool compact;
-  final VoidCallback? onPressed;
-  final bool filled;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    if (compact) {
-      return IconButton(
-        icon: Icon(icon),
-        tooltip: label,
-        onPressed: onPressed,
-        style: filled
-            ? IconButton.styleFrom(
-                backgroundColor: theme.colorScheme.primary,
-                foregroundColor: theme.colorScheme.onPrimary,
-              )
-            : null,
-      );
-    }
-
-    final child = Text(label, maxLines: 1, overflow: TextOverflow.ellipsis);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: filled
-          ? FilledButton.icon(
-              onPressed: onPressed, icon: Icon(icon, size: 18), label: child)
-          : OutlinedButton.icon(
-              onPressed: onPressed, icon: Icon(icon, size: 18), label: child),
-    );
-  }
-}
 
 /// No live session — the register is not trading.
 class _NoSessionCard extends ConsumerStatefulWidget {

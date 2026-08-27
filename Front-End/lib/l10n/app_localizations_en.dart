@@ -6468,6 +6468,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get hideKeypad => 'Hide keypad';
 
   @override
+  String get removeLogo => 'Remove logo';
+
+  @override
+  String get removeLogoConfirm =>
+      'The receipt will print the company name instead. You can upload a new logo at any time.';
+
+  @override
+  String get logoRemoved => 'Logo removed';
+
+  @override
   String get openingControl => 'Opening Control';
 
   @override

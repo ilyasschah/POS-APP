@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:pos_app/session/session_screen.dart';
 import 'package:pos_app/barcode/scan_bus.dart';
 import 'dart:async';
 import 'dart:typed_data';
@@ -381,6 +382,8 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
         settings[SettingKeys.showKitchenBtn]?.toLowerCase() != 'false';
     final showAdditionBtn =
         settings[SettingKeys.showAdditionBtn]?.toLowerCase() != 'false';
+    final showCloseRegisterBtn =
+        settings[SettingKeys.showCloseRegisterBtn]?.toLowerCase() != 'false';
     final showTaxBtn =
         settings[SettingKeys.showTaxBtn]?.toLowerCase() != 'false';
     final showCommentBtn =
@@ -1057,6 +1060,17 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                       onTap: cartState.items.isEmpty
                           ? null
                           : () => _printAddition(context, ref),
+                    ),
+
+                  // Close the register from the till itself. Ending the day
+                  // used to mean leaving the POS, finding the session screen
+                  // and closing from there — three navigations for the last
+                  // thing a cashier does every single shift.
+                  if (showCloseRegisterBtn)
+                    _MenuHeaderActionBtn(
+                      icon: Icons.lock_outline,
+                      label: AppLocalizations.of(context).closeRegister,
+                      onTap: () => SessionScreen.show(context),
                     ),
           // --- Warehouse Switcher (centered picker, like the customer one) ---
           if (showWarehouseBtn)
@@ -3791,11 +3805,19 @@ class _CartSectionState extends ConsumerState<CartSection> {
                   ),
                   const SizedBox(width: 8),
                   // Give the cart its height back on a short screen.
-                  _CartToolButton(
+                  //
+                  // 🚨 Icon-only and fixed-size, like the ⋮ beside it — NOT a
+                  // _CartToolButton. That one is a Row with a Flexible child, so
+                  // it needs a bounded width and only works wrapped in Expanded;
+                  // dropped bare into this Row it was handed an unbounded width
+                  // and blew up layout for the whole cart. The assertion that
+                  // catches it is debug-only, so a release build showed a blank
+                  // panel instead of an error.
+                  CartIconToggle(
                     icon: keypadVisible
                         ? Icons.keyboard_hide_outlined
                         : Icons.dialpad,
-                    label: keypadVisible
+                    tooltip: keypadVisible
                         ? AppLocalizations.of(context).hideKeypad
                         : AppLocalizations.of(context).showKeypad,
                     active: !keypadVisible,
@@ -4057,6 +4079,57 @@ class _CartToolButton extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Compact cart toggle ────────────────────────────────────────────────────
+// A fixed 44x44 icon button for the row beside the ⋮ menu. Deliberately holds
+// no flexible child, so it imposes no width requirement on its parent and can
+// sit in a Row without an Expanded around it.
+class CartIconToggle extends StatelessWidget {
+  const CartIconToggle({
+    super.key,
+    required this.icon,
+    required this.tooltip,
+    required this.active,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String tooltip;
+
+  /// Highlighted when the thing it controls is switched OFF, so the toggle
+  /// reads as "something is hidden" at a glance.
+  final bool active;
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Material(
+      color: active
+          ? cs.primary.withValues(alpha: 0.12)
+          : cs.surfaceContainerHighest.withValues(alpha: 0.6),
+      borderRadius: BorderRadius.circular(10),
+      clipBehavior: Clip.antiAlias,
+      child: Tooltip(
+        message: tooltip,
+        child: InkWell(
+          onTap: onTap,
+          child: SizedBox(
+            height: 44,
+            width: 44,
+            child: Icon(
+              icon,
+              size: 20,
+              color: active ? cs.primary : cs.onSurface,
+            ),
           ),
         ),
       ),

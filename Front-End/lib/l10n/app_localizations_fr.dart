@@ -6544,6 +6544,16 @@ class AppLocalizationsFr extends AppLocalizations {
   String get hideKeypad => 'Masquer le clavier';
 
   @override
+  String get removeLogo => 'Supprimer le logo';
+
+  @override
+  String get removeLogoConfirm =>
+      'Le ticket imprimera le nom de la societe a la place. Vous pouvez televerser un nouveau logo a tout moment.';
+
+  @override
+  String get logoRemoved => 'Logo supprime';
+
+  @override
   String get openingControl => 'Contrôle d\'ouverture';
 
   @override

@@ -24713,6 +24713,17 @@ class $ZReportsTableTable extends ZReportsTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _openingCashMeta = const VerificationMeta(
+    'openingCash',
+  );
+  @override
+  late final GeneratedColumn<double> openingCash = GeneratedColumn<double>(
+    'opening_cash',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     localId,
@@ -24738,6 +24749,7 @@ class $ZReportsTableTable extends ZReportsTable
     documentCount,
     fromDocumentNumber,
     toDocumentNumber,
+    openingCash,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -24941,6 +24953,15 @@ class $ZReportsTableTable extends ZReportsTable
         ),
       );
     }
+    if (data.containsKey('opening_cash')) {
+      context.handle(
+        _openingCashMeta,
+        openingCash.isAcceptableOrUnknown(
+          data['opening_cash']!,
+          _openingCashMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -25042,6 +25063,10 @@ class $ZReportsTableTable extends ZReportsTable
         DriftSqlType.string,
         data['${effectivePrefix}to_document_number'],
       ),
+      openingCash: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}opening_cash'],
+      ),
     );
   }
 
@@ -25076,6 +25101,21 @@ class ZReportsTableData extends DataClass
   final int? documentCount;
   final String? fromDocumentNumber;
   final String? toDocumentNumber;
+
+  /// v64. The float the register opened with, recorded ON the report.
+  ///
+  /// 🚨 The report had no way back to its session — no session column, and the
+  /// `zReportNumber` stamped on cash movements is an optimistic placeholder
+  /// until the server answers, so it cannot be matched on either. That is why a
+  /// slip printed from End of Day showed no opening cash while the same report
+  /// showed it fine at session close: the float was passed in by the closing
+  /// screen and simply unavailable anywhere else. Recording it here makes the
+  /// report self-describing, so every screen and the printer agree.
+  ///
+  /// NULL for a company-wide report, which spans no single session and so has
+  /// no single float, and for reports pulled from a server that does not carry
+  /// the field. Null means "not applicable", never zero.
+  final double? openingCash;
   const ZReportsTableData({
     required this.localId,
     this.serverId,
@@ -25100,6 +25140,7 @@ class ZReportsTableData extends DataClass
     this.documentCount,
     this.fromDocumentNumber,
     this.toDocumentNumber,
+    this.openingCash,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -25154,6 +25195,9 @@ class ZReportsTableData extends DataClass
     }
     if (!nullToAbsent || toDocumentNumber != null) {
       map['to_document_number'] = Variable<String>(toDocumentNumber);
+    }
+    if (!nullToAbsent || openingCash != null) {
+      map['opening_cash'] = Variable<double>(openingCash);
     }
     return map;
   }
@@ -25211,6 +25255,9 @@ class ZReportsTableData extends DataClass
       toDocumentNumber: toDocumentNumber == null && nullToAbsent
           ? const Value.absent()
           : Value(toDocumentNumber),
+      openingCash: openingCash == null && nullToAbsent
+          ? const Value.absent()
+          : Value(openingCash),
     );
   }
 
@@ -25247,6 +25294,7 @@ class ZReportsTableData extends DataClass
         json['fromDocumentNumber'],
       ),
       toDocumentNumber: serializer.fromJson<String?>(json['toDocumentNumber']),
+      openingCash: serializer.fromJson<double?>(json['openingCash']),
     );
   }
   @override
@@ -25276,6 +25324,7 @@ class ZReportsTableData extends DataClass
       'documentCount': serializer.toJson<int?>(documentCount),
       'fromDocumentNumber': serializer.toJson<String?>(fromDocumentNumber),
       'toDocumentNumber': serializer.toJson<String?>(toDocumentNumber),
+      'openingCash': serializer.toJson<double?>(openingCash),
     };
   }
 
@@ -25303,6 +25352,7 @@ class ZReportsTableData extends DataClass
     Value<int?> documentCount = const Value.absent(),
     Value<String?> fromDocumentNumber = const Value.absent(),
     Value<String?> toDocumentNumber = const Value.absent(),
+    Value<double?> openingCash = const Value.absent(),
   }) => ZReportsTableData(
     localId: localId ?? this.localId,
     serverId: serverId.present ? serverId.value : this.serverId,
@@ -25337,6 +25387,7 @@ class ZReportsTableData extends DataClass
     toDocumentNumber: toDocumentNumber.present
         ? toDocumentNumber.value
         : this.toDocumentNumber,
+    openingCash: openingCash.present ? openingCash.value : this.openingCash,
   );
   ZReportsTableData copyWithCompanion(ZReportsTableCompanion data) {
     return ZReportsTableData(
@@ -25393,6 +25444,9 @@ class ZReportsTableData extends DataClass
       toDocumentNumber: data.toDocumentNumber.present
           ? data.toDocumentNumber.value
           : this.toDocumentNumber,
+      openingCash: data.openingCash.present
+          ? data.openingCash.value
+          : this.openingCash,
     );
   }
 
@@ -25421,7 +25475,8 @@ class ZReportsTableData extends DataClass
           ..write('grandTotal: $grandTotal, ')
           ..write('documentCount: $documentCount, ')
           ..write('fromDocumentNumber: $fromDocumentNumber, ')
-          ..write('toDocumentNumber: $toDocumentNumber')
+          ..write('toDocumentNumber: $toDocumentNumber, ')
+          ..write('openingCash: $openingCash')
           ..write(')'))
         .toString();
   }
@@ -25451,6 +25506,7 @@ class ZReportsTableData extends DataClass
     documentCount,
     fromDocumentNumber,
     toDocumentNumber,
+    openingCash,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -25478,7 +25534,8 @@ class ZReportsTableData extends DataClass
           other.grandTotal == this.grandTotal &&
           other.documentCount == this.documentCount &&
           other.fromDocumentNumber == this.fromDocumentNumber &&
-          other.toDocumentNumber == this.toDocumentNumber);
+          other.toDocumentNumber == this.toDocumentNumber &&
+          other.openingCash == this.openingCash);
 }
 
 class ZReportsTableCompanion extends UpdateCompanion<ZReportsTableData> {
@@ -25505,6 +25562,7 @@ class ZReportsTableCompanion extends UpdateCompanion<ZReportsTableData> {
   final Value<int?> documentCount;
   final Value<String?> fromDocumentNumber;
   final Value<String?> toDocumentNumber;
+  final Value<double?> openingCash;
   final Value<int> rowid;
   const ZReportsTableCompanion({
     this.localId = const Value.absent(),
@@ -25530,6 +25588,7 @@ class ZReportsTableCompanion extends UpdateCompanion<ZReportsTableData> {
     this.documentCount = const Value.absent(),
     this.fromDocumentNumber = const Value.absent(),
     this.toDocumentNumber = const Value.absent(),
+    this.openingCash = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ZReportsTableCompanion.insert({
@@ -25556,6 +25615,7 @@ class ZReportsTableCompanion extends UpdateCompanion<ZReportsTableData> {
     this.documentCount = const Value.absent(),
     this.fromDocumentNumber = const Value.absent(),
     this.toDocumentNumber = const Value.absent(),
+    this.openingCash = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : localId = Value(localId),
        companyId = Value(companyId),
@@ -25589,6 +25649,7 @@ class ZReportsTableCompanion extends UpdateCompanion<ZReportsTableData> {
     Expression<int>? documentCount,
     Expression<String>? fromDocumentNumber,
     Expression<String>? toDocumentNumber,
+    Expression<double>? openingCash,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -25617,6 +25678,7 @@ class ZReportsTableCompanion extends UpdateCompanion<ZReportsTableData> {
       if (fromDocumentNumber != null)
         'from_document_number': fromDocumentNumber,
       if (toDocumentNumber != null) 'to_document_number': toDocumentNumber,
+      if (openingCash != null) 'opening_cash': openingCash,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -25645,6 +25707,7 @@ class ZReportsTableCompanion extends UpdateCompanion<ZReportsTableData> {
     Value<int?>? documentCount,
     Value<String?>? fromDocumentNumber,
     Value<String?>? toDocumentNumber,
+    Value<double?>? openingCash,
     Value<int>? rowid,
   }) {
     return ZReportsTableCompanion(
@@ -25671,6 +25734,7 @@ class ZReportsTableCompanion extends UpdateCompanion<ZReportsTableData> {
       documentCount: documentCount ?? this.documentCount,
       fromDocumentNumber: fromDocumentNumber ?? this.fromDocumentNumber,
       toDocumentNumber: toDocumentNumber ?? this.toDocumentNumber,
+      openingCash: openingCash ?? this.openingCash,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -25749,6 +25813,9 @@ class ZReportsTableCompanion extends UpdateCompanion<ZReportsTableData> {
     if (toDocumentNumber.present) {
       map['to_document_number'] = Variable<String>(toDocumentNumber.value);
     }
+    if (openingCash.present) {
+      map['opening_cash'] = Variable<double>(openingCash.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -25781,6 +25848,7 @@ class ZReportsTableCompanion extends UpdateCompanion<ZReportsTableData> {
           ..write('documentCount: $documentCount, ')
           ..write('fromDocumentNumber: $fromDocumentNumber, ')
           ..write('toDocumentNumber: $toDocumentNumber, ')
+          ..write('openingCash: $openingCash, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -52773,6 +52841,7 @@ typedef $$ZReportsTableTableCreateCompanionBuilder =
       Value<int?> documentCount,
       Value<String?> fromDocumentNumber,
       Value<String?> toDocumentNumber,
+      Value<double?> openingCash,
       Value<int> rowid,
     });
 typedef $$ZReportsTableTableUpdateCompanionBuilder =
@@ -52800,6 +52869,7 @@ typedef $$ZReportsTableTableUpdateCompanionBuilder =
       Value<int?> documentCount,
       Value<String?> fromDocumentNumber,
       Value<String?> toDocumentNumber,
+      Value<double?> openingCash,
       Value<int> rowid,
     });
 
@@ -52924,6 +52994,11 @@ class $$ZReportsTableTableFilterComposer
 
   ColumnFilters<String> get toDocumentNumber => $composableBuilder(
     column: $table.toDocumentNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get openingCash => $composableBuilder(
+    column: $table.openingCash,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -53051,6 +53126,11 @@ class $$ZReportsTableTableOrderingComposer
     column: $table.toDocumentNumber,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<double> get openingCash => $composableBuilder(
+    column: $table.openingCash,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ZReportsTableTableAnnotationComposer
@@ -53160,6 +53240,11 @@ class $$ZReportsTableTableAnnotationComposer
     column: $table.toDocumentNumber,
     builder: (column) => column,
   );
+
+  GeneratedColumn<double> get openingCash => $composableBuilder(
+    column: $table.openingCash,
+    builder: (column) => column,
+  );
 }
 
 class $$ZReportsTableTableTableManager
@@ -53220,6 +53305,7 @@ class $$ZReportsTableTableTableManager
                 Value<int?> documentCount = const Value.absent(),
                 Value<String?> fromDocumentNumber = const Value.absent(),
                 Value<String?> toDocumentNumber = const Value.absent(),
+                Value<double?> openingCash = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ZReportsTableCompanion(
                 localId: localId,
@@ -53245,6 +53331,7 @@ class $$ZReportsTableTableTableManager
                 documentCount: documentCount,
                 fromDocumentNumber: fromDocumentNumber,
                 toDocumentNumber: toDocumentNumber,
+                openingCash: openingCash,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -53272,6 +53359,7 @@ class $$ZReportsTableTableTableManager
                 Value<int?> documentCount = const Value.absent(),
                 Value<String?> fromDocumentNumber = const Value.absent(),
                 Value<String?> toDocumentNumber = const Value.absent(),
+                Value<double?> openingCash = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ZReportsTableCompanion.insert(
                 localId: localId,
@@ -53297,6 +53385,7 @@ class $$ZReportsTableTableTableManager
                 documentCount: documentCount,
                 fromDocumentNumber: fromDocumentNumber,
                 toDocumentNumber: toDocumentNumber,
+                openingCash: openingCash,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

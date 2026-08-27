@@ -113,14 +113,19 @@ abstract final class ZReportService {
         : await db.getActiveStartingCash(companyId);
     double totalCashIn = 0;
     double totalCashOut = 0;
+    double openingCash = 0;
     for (final c in cashRows) {
       // 🚨 Named kinds, never `else`. An `opening` row is in this list and is
       // NOT drawer movement — the session's startingCash already carries it, so
-      // folding it into either total counts the float twice.
+      // folding it into either total counts the float twice. It gets its own
+      // running total instead, recorded ON the report, so a slip printed later
+      // from End of Day can still name the cash the drawer started with.
       if (c.type == CashMovementKind.cashIn) {
         totalCashIn += c.amount;
       } else if (c.type == CashMovementKind.cashOut) {
         totalCashOut += c.amount;
+      } else if (c.type == CashMovementKind.opening) {
+        openingCash += c.amount;
       }
     }
 
@@ -166,6 +171,9 @@ abstract final class ZReportService {
         taxableTotal: Value(totals.taxableTotal),
         totalTax: Value(totals.totalTax),
         grandTotal: Value(totals.grandTotal),
+        // Null, not 0.00, when the report covers no float: "not applicable" and
+        // "the drawer opened empty" are different statements.
+        openingCash: Value(openingCash > 0 ? openingCash : null),
       ),
     );
 
@@ -198,6 +206,7 @@ abstract final class ZReportService {
       grandTotal: totals.grandTotal,
       totalCashIn: totalCashIn,
       totalCashOut: totalCashOut,
+      openingCash: openingCash > 0 ? openingCash : null,
       paymentSummaries: summaries,
     );
   }
@@ -228,14 +237,19 @@ abstract final class ZReportService {
     final cashRows = await db.getActiveSessionStartingCash(sessionLocalId);
     double totalCashIn = 0;
     double totalCashOut = 0;
+    double openingCash = 0;
     for (final c in cashRows) {
       // 🚨 Named kinds, never `else`. An `opening` row is in this list and is
       // NOT drawer movement — the session's startingCash already carries it, so
-      // folding it into either total counts the float twice.
+      // folding it into either total counts the float twice. It gets its own
+      // running total instead, recorded ON the report, so a slip printed later
+      // from End of Day can still name the cash the drawer started with.
       if (c.type == CashMovementKind.cashIn) {
         totalCashIn += c.amount;
       } else if (c.type == CashMovementKind.cashOut) {
         totalCashOut += c.amount;
+      } else if (c.type == CashMovementKind.opening) {
+        openingCash += c.amount;
       }
     }
 
@@ -260,6 +274,7 @@ abstract final class ZReportService {
       grandTotal: totals.grandTotal,
       totalCashIn: totalCashIn,
       totalCashOut: totalCashOut,
+      openingCash: openingCash > 0 ? openingCash : null,
       paymentSummaries: byType.entries
           .map((e) => ZReportPaymentSummaryModel(
                 id: 0,
