@@ -35,3 +35,10 @@ SECRETS.local.txt
 **/xcuserdata/
 **/*.xcuserstate
 **/DerivedData/
+
+# The redirected build output. `dotnet build` cannot write to the API's normal
+# bin/ while the app is running under the VS debugger (MSB3021, the exe is
+# locked), so builds are pointed at /build via BaseOutputPath. It is ~300MB of
+# artifacts and it carries COPIES of appsettings.Local.json - ignored by name
+# above, but there is no reason for any of it to be near the index.
+/build/
