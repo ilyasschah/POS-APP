@@ -432,3 +432,98 @@ details > summary > span[aria-hidden] {
 .plan-cta:active {
   background: var(--accent-hover);
 }
+
+/* ============================================================================
+   Hero — art beside the copy
+   ========================================================================== */
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: clamp(2rem, 5vw, 4rem);
+  align-items: center;
+}
+
+@media (max-width: 900px) {
+  .hero-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  /* Below the fold on a phone the mark is decoration, and it pushes the stats
+     off the first screen. Drop it rather than shrink it. */
+  .hero-art {
+    display: none;
+  }
+}
+
+/* ============================================================================
+   Language switcher
+   ========================================================================== */
+.langbar {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.langbtn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  padding: 0.35rem 0.6rem;
+  cursor: pointer;
+  transition:
+    background-color 120ms var(--ease-out),
+    color 120ms var(--ease-out);
+}
+
+.langbtn + .langbtn {
+  border-inline-start: 1px solid var(--border);
+}
+
+.langbtn[aria-pressed="true"] {
+  background: var(--accent-strong);
+  color: #fff;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .langbtn:not([aria-pressed="true"]):hover {
+    background: var(--surface-high);
+    color: var(--text);
+  }
+}
+
+/* ============================================================================
+   RTL — logical properties do most of the work; these are the leftovers.
+   ========================================================================== */
+[dir="rtl"] .eyebrow,
+[dir="rtl"] h1,
+[dir="rtl"] h2,
+[dir="rtl"] h3,
+[dir="rtl"] p,
+[dir="rtl"] li {
+  text-align: right;
+}
+
+[dir="rtl"] .plan-cta,
+[dir="rtl"] .card[style*="center"] h2,
+[dir="rtl"] .card[style*="center"] p {
+  text-align: center;
+}
+
+/* Arabic needs a little more leading than Latin at the same size. */
+[dir="rtl"] body,
+[dir="rtl"] p,
+[dir="rtl"] li {
+  line-height: 1.85;
+}
+
+/* The tight negative tracking tuned for Latin display type makes Arabic
+   letterforms collide, so it is neutralised rather than inherited. */
+[dir="rtl"] h1,
+[dir="rtl"] h2,
+[dir="rtl"] h3 {
+  letter-spacing: normal;
+}
