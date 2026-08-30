@@ -41,6 +41,7 @@ export type Dict = {
   contact: { h2: string; lede: string; cta: string; cta2: string };
   demo: {
     eyebrow: string; h2: string; lede: string;
+    currency: string;
     items: { id: string; name: string; emoji: string; cents: number }[];
     online: string; offline: string; queued: string; cut: string; restore: string;
     empty: string; subtotal: string; tax: string; total: string;
@@ -117,15 +118,16 @@ const en: Dict = {
     cta: "Book a demo", cta2: "Ask a question",
   },
   demo: {
+    currency: "DH",
     eyebrow: "Try it", h2: "Ring a sale yourself.",
     lede: "A working miniature of the till. Add a few items, take payment, print the receipt — then cut the connection and watch it carry on.",
     items: [
-      { id: "esp", name: "Espresso", emoji: "\u2615", cents: 220 },
-      { id: "cro", name: "Croissant", emoji: "\u{1F950}", cents: 310 },
-      { id: "brg", name: "Burger", emoji: "\u{1F354}", cents: 890 },
-      { id: "sal", name: "Salad", emoji: "\u{1F957}", cents: 640 },
-      { id: "bev", name: "Lemonade", emoji: "\u{1F379}", cents: 380 },
-      { id: "cak", name: "Cheesecake", emoji: "\u{1F370}", cents: 450 },
+      { id: "esp", name: "Espresso", emoji: "\u2615", cents: 1200 },
+      { id: "cro", name: "Croissant", emoji: "\u{1F950}", cents: 800 },
+      { id: "brg", name: "Burger", emoji: "\u{1F354}", cents: 5500 },
+      { id: "sal", name: "Salad", emoji: "\u{1F957}", cents: 4000 },
+      { id: "bev", name: "Lemonade", emoji: "\u{1F379}", cents: 2000 },
+      { id: "cak", name: "Cheesecake", emoji: "\u{1F370}", cents: 3500 },
     ],
     online: "Online", offline: "Offline", queued: "{n} queued",
     cut: "Cut the connection", restore: "Reconnect",
@@ -205,15 +207,16 @@ const fr: Dict = {
     cta: "Réserver une démo", cta2: "Poser une question",
   },
   demo: {
+    currency: "DH",
     eyebrow: "Essayez", h2: "Encaissez vous-même.",
     lede: "Une miniature fonctionnelle de la caisse. Ajoutez des articles, encaissez, imprimez le ticket — puis coupez la connexion et regardez-la continuer.",
     items: [
-      { id: "esp", name: "Espresso", emoji: "\u2615", cents: 220 },
-      { id: "cro", name: "Croissant", emoji: "\u{1F950}", cents: 310 },
-      { id: "brg", name: "Burger", emoji: "\u{1F354}", cents: 890 },
-      { id: "sal", name: "Salade", emoji: "\u{1F957}", cents: 640 },
-      { id: "bev", name: "Limonade", emoji: "\u{1F379}", cents: 380 },
-      { id: "cak", name: "Cheesecake", emoji: "\u{1F370}", cents: 450 },
+      { id: "esp", name: "Espresso", emoji: "\u2615", cents: 1200 },
+      { id: "cro", name: "Croissant", emoji: "\u{1F950}", cents: 800 },
+      { id: "brg", name: "Burger", emoji: "\u{1F354}", cents: 5500 },
+      { id: "sal", name: "Salade", emoji: "\u{1F957}", cents: 4000 },
+      { id: "bev", name: "Limonade", emoji: "\u{1F379}", cents: 2000 },
+      { id: "cak", name: "Cheesecake", emoji: "\u{1F370}", cents: 3500 },
     ],
     online: "En ligne", offline: "Hors ligne", queued: "{n} en attente",
     cut: "Couper la connexion", restore: "Reconnecter",
@@ -293,15 +296,16 @@ const ar: Dict = {
     cta: "احجز عرضًا", cta2: "اطرح سؤالًا",
   },
   demo: {
+    currency: "د.م.",
     eyebrow: "جرّبه", h2: "سجّل عملية بيع بنفسك.",
     lede: "نموذج مصغّر يعمل فعلًا. أضف بعض الأصناف، استلم الدفع، اطبع الإيصال — ثم اقطع الاتصال وشاهده يواصل العمل.",
     items: [
-      { id: "esp", name: "إسبريسو", emoji: "\u2615", cents: 220 },
-      { id: "cro", name: "كرواسون", emoji: "\u{1F950}", cents: 310 },
-      { id: "brg", name: "برغر", emoji: "\u{1F354}", cents: 890 },
-      { id: "sal", name: "سلطة", emoji: "\u{1F957}", cents: 640 },
-      { id: "bev", name: "ليموناضة", emoji: "\u{1F379}", cents: 380 },
-      { id: "cak", name: "تشيزكيك", emoji: "\u{1F370}", cents: 450 },
+      { id: "esp", name: "إسبريسو", emoji: "\u2615", cents: 1200 },
+      { id: "cro", name: "كرواسون", emoji: "\u{1F950}", cents: 800 },
+      { id: "brg", name: "برغر", emoji: "\u{1F354}", cents: 5500 },
+      { id: "sal", name: "سلطة", emoji: "\u{1F957}", cents: 4000 },
+      { id: "bev", name: "ليموناضة", emoji: "\u{1F379}", cents: 2000 },
+      { id: "cak", name: "تشيزكيك", emoji: "\u{1F370}", cents: 3500 },
     ],
     online: "متصل", offline: "غير متصل", queued: "{n} في الطابور",
     cut: "اقطع الاتصال", restore: "أعد الاتصال",

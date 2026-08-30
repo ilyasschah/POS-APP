@@ -17,8 +17,19 @@ import type { Dict } from "../i18n";
 type Line = { id: string; name: string; cents: number; qty: number };
 type Stage = "ringing" | "paying" | "receipt";
 
-const money = (cents: number, locale: string) =>
-  new Intl.NumberFormat(locale, { style: "currency", currency: "EUR" }).format(cents / 100);
+/**
+ * Formats the NUMBER through Intl — so decimal separators and digit grouping
+ * follow the locale — then appends the currency label from the dictionary.
+ *
+ * Intl's own currency mode is not used for MAD: it renders "MAD 12.00" in
+ * English and "12,00 MAD" in French, and the ask was for "DH". The label is
+ * therefore translated ("DH", "د.م.") rather than derived.
+ */
+const money = (centimes: number, locale: string, unit: string) =>
+  `${new Intl.NumberFormat(locale, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(centimes / 100)} ${unit}`;
 
 export default function PosDemo({ d, locale }: { d: Dict["demo"]; locale: string }) {
   const [lines, setLines] = useState<Line[]>([]);
@@ -27,6 +38,7 @@ export default function PosDemo({ d, locale }: { d: Dict["demo"]; locale: string
   const [queued, setQueued] = useState(0);
 
   const items = d.items;
+  const unit = d.currency;
   const subtotal = lines.reduce((n, l) => n + l.cents * l.qty, 0);
   const tax = Math.round(subtotal * 0.2);
   const total = subtotal + tax;
@@ -96,7 +108,7 @@ export default function PosDemo({ d, locale }: { d: Dict["demo"]; locale: string
             >
               <span className="tile-emoji" aria-hidden="true">{p.emoji}</span>
               <span className="tile-name">{p.name}</span>
-              <span className="tile-price">{money(p.cents, locale)}</span>
+              <span className="tile-price">{money(p.cents, locale, unit)}</span>
             </button>
           ))}
         </div>
@@ -113,13 +125,13 @@ export default function PosDemo({ d, locale }: { d: Dict["demo"]; locale: string
                 {lines.map((l) => (
                   <li key={l.id}>
                     <span>{l.qty}× {l.name}</span>
-                    <span>{money(l.cents * l.qty, locale)}</span>
+                    <span>{money(l.cents * l.qty, locale, unit)}</span>
                   </li>
                 ))}
               </ul>
               <div className="receipt-tot">
                 <span>{d.total}</span>
-                <span>{money(total, locale)}</span>
+                <span>{money(total, locale, unit)}</span>
               </div>
               <p className="receipt-note">
                 {online ? d.synced : d.savedLocally}
@@ -137,15 +149,15 @@ export default function PosDemo({ d, locale }: { d: Dict["demo"]; locale: string
                     <button type="button" className="qty" onClick={() => dec(l.id)} aria-label={`− ${l.name}`}>−</button>
                     <span className="cart-qty">{l.qty}</span>
                     <span className="cart-name">{l.name}</span>
-                    <span className="cart-cost">{money(l.cents * l.qty, locale)}</span>
+                    <span className="cart-cost">{money(l.cents * l.qty, locale, unit)}</span>
                   </div>
                 ))}
               </div>
 
               <div className="cart-foot">
-                <div className="cart-row"><span>{d.subtotal}</span><span>{money(subtotal, locale)}</span></div>
-                <div className="cart-row"><span>{d.tax}</span><span>{money(tax, locale)}</span></div>
-                <div className="cart-row cart-total"><span>{d.total}</span><span>{money(total, locale)}</span></div>
+                <div className="cart-row"><span>{d.subtotal}</span><span>{money(subtotal, locale, unit)}</span></div>
+                <div className="cart-row"><span>{d.tax}</span><span>{money(tax, locale, unit)}</span></div>
+                <div className="cart-row cart-total"><span>{d.total}</span><span>{money(total, locale, unit)}</span></div>
                 <button
                   type="button"
                   className="paybtn"
