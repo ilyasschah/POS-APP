@@ -22,6 +22,14 @@ export type Dict = {
   pricing: { eyebrow: string; h2: string; lede: string; tiers: Tier[]; cta: string };
   faq: { eyebrow: string; h2: string; items: Faq[] };
   contact: { h2: string; lede: string; cta: string; cta2: string };
+  demo: {
+    eyebrow: string; h2: string; lede: string;
+    items: { id: string; name: string; emoji: string; cents: number }[];
+    online: string; offline: string; queued: string; cut: string; restore: string;
+    empty: string; subtotal: string; tax: string; total: string;
+    pay: string; paying: string; receipt: string; synced: string;
+    savedLocally: string; newSale: string;
+  };
   footer: { tagline: string };
 };
 
@@ -91,6 +99,26 @@ const en: Dict = {
     lede: "A short walkthrough on your own menu and floor plan — including pulling the network cable mid-sale, which is the part worth watching.",
     cta: "Book a demo", cta2: "Ask a question",
   },
+  demo: {
+    eyebrow: "Try it", h2: "Ring a sale yourself.",
+    lede: "A working miniature of the till. Add a few items, take payment, print the receipt — then cut the connection and watch it carry on.",
+    items: [
+      { id: "esp", name: "Espresso", emoji: "\u2615", cents: 220 },
+      { id: "cro", name: "Croissant", emoji: "\u{1F950}", cents: 310 },
+      { id: "brg", name: "Burger", emoji: "\u{1F354}", cents: 890 },
+      { id: "sal", name: "Salad", emoji: "\u{1F957}", cents: 640 },
+      { id: "bev", name: "Lemonade", emoji: "\u{1F379}", cents: 380 },
+      { id: "cak", name: "Cheesecake", emoji: "\u{1F370}", cents: 450 },
+    ],
+    online: "Online", offline: "Offline", queued: "{n} queued",
+    cut: "Cut the connection", restore: "Reconnect",
+    empty: "Tap a product to start a sale.",
+    subtotal: "Subtotal", tax: "VAT 20%", total: "Total",
+    pay: "Take payment", paying: "Processing…",
+    receipt: "Receipt", synced: "Synced to the server.",
+    savedLocally: "No connection — saved on this terminal and queued.",
+    newSale: "New sale",
+  },
   footer: { tagline: "Built for counters that can’t afford to stop." },
 };
 
@@ -159,6 +187,26 @@ const fr: Dict = {
     lede: "Une démonstration courte sur votre propre carte et votre plan de salle — y compris le débranchement du réseau en pleine vente, qui est le moment à voir.",
     cta: "Réserver une démo", cta2: "Poser une question",
   },
+  demo: {
+    eyebrow: "Essayez", h2: "Encaissez vous-même.",
+    lede: "Une miniature fonctionnelle de la caisse. Ajoutez des articles, encaissez, imprimez le ticket — puis coupez la connexion et regardez-la continuer.",
+    items: [
+      { id: "esp", name: "Espresso", emoji: "\u2615", cents: 220 },
+      { id: "cro", name: "Croissant", emoji: "\u{1F950}", cents: 310 },
+      { id: "brg", name: "Burger", emoji: "\u{1F354}", cents: 890 },
+      { id: "sal", name: "Salade", emoji: "\u{1F957}", cents: 640 },
+      { id: "bev", name: "Limonade", emoji: "\u{1F379}", cents: 380 },
+      { id: "cak", name: "Cheesecake", emoji: "\u{1F370}", cents: 450 },
+    ],
+    online: "En ligne", offline: "Hors ligne", queued: "{n} en attente",
+    cut: "Couper la connexion", restore: "Reconnecter",
+    empty: "Touchez un produit pour commencer.",
+    subtotal: "Sous-total", tax: "TVA 20 %", total: "Total",
+    pay: "Encaisser", paying: "Traitement…",
+    receipt: "Ticket", synced: "Synchronisé avec le serveur.",
+    savedLocally: "Pas de connexion — enregistré sur ce terminal et mis en attente.",
+    newSale: "Nouvelle vente",
+  },
   footer: { tagline: "Conçu pour les comptoirs qui ne peuvent pas s’arrêter." },
 };
 
@@ -226,6 +274,26 @@ const ar: Dict = {
     h2: "شاهده وهو يعمل.",
     lede: "جولة قصيرة على قائمتك ومخطط قاعتك — بما في ذلك فصل كابل الشبكة أثناء عملية بيع، وهو الجزء الذي يستحق المشاهدة.",
     cta: "احجز عرضًا", cta2: "اطرح سؤالًا",
+  },
+  demo: {
+    eyebrow: "جرّبه", h2: "سجّل عملية بيع بنفسك.",
+    lede: "نموذج مصغّر يعمل فعلًا. أضف بعض الأصناف، استلم الدفع، اطبع الإيصال — ثم اقطع الاتصال وشاهده يواصل العمل.",
+    items: [
+      { id: "esp", name: "إسبريسو", emoji: "\u2615", cents: 220 },
+      { id: "cro", name: "كرواسون", emoji: "\u{1F950}", cents: 310 },
+      { id: "brg", name: "برغر", emoji: "\u{1F354}", cents: 890 },
+      { id: "sal", name: "سلطة", emoji: "\u{1F957}", cents: 640 },
+      { id: "bev", name: "ليموناضة", emoji: "\u{1F379}", cents: 380 },
+      { id: "cak", name: "تشيزكيك", emoji: "\u{1F370}", cents: 450 },
+    ],
+    online: "متصل", offline: "غير متصل", queued: "{n} في الطابور",
+    cut: "اقطع الاتصال", restore: "أعد الاتصال",
+    empty: "اضغط على منتج لبدء عملية بيع.",
+    subtotal: "المجموع الفرعي", tax: "ضريبة ٢٠٪", total: "الإجمالي",
+    pay: "استلام الدفع", paying: "جارٍ المعالجة…",
+    receipt: "إيصال", synced: "تمت المزامنة مع الخادم.",
+    savedLocally: "لا يوجد اتصال — حُفظ على هذا الجهاز وأُضيف إلى الطابور.",
+    newSale: "عملية بيع جديدة",
   },
   footer: { tagline: "مصمّم لصناديق لا تحتمل التوقف." },
 };

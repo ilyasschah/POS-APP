@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Reveal from "./components/Reveal";
+import PosDemo from "./components/PosDemo";
 import { DICTS, LANGS, dirOf, type Lang } from "./i18n";
 
 export default function Home() {
@@ -82,7 +83,7 @@ export default function Home() {
                   </p>
                   <div style={{ display: "flex", gap: "0.875rem", marginTop: "2.5rem", flexWrap: "wrap" }}>
                     <a href="#contact" className="btn btn-primary">{t.hero.cta}</a>
-                    <a href="#features" className="btn btn-secondary">{t.hero.cta2}</a>
+                    <a href="#demo" className="btn btn-secondary">{t.hero.cta2}</a>
                   </div>
                 </Reveal>
               </div>
@@ -116,6 +117,22 @@ export default function Home() {
                   <Stat key={s.label} value={s.value} label={s.label} sub={s.sub} />
                 ))}
               </dl>
+            </Reveal>
+          </div>
+        </section>
+
+        {/* ---------------- Interactive demo ---------------- */}
+        <section id="demo" className="section" style={{ background: "var(--surface)" }}>
+          <div className="shell">
+            <Reveal>
+              <p className="eyebrow">{t.demo.eyebrow}</p>
+              <h2 className="measure">{t.demo.h2}</h2>
+              <p className="lede measure" style={{ marginTop: "1.25rem" }}>{t.demo.lede}</p>
+            </Reveal>
+            <Reveal delay={80}>
+              <div style={{ marginTop: "2.5rem" }}>
+                <PosDemo d={t.demo} locale={lang} />
+              </div>
             </Reveal>
           </div>
         </section>

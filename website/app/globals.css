@@ -527,3 +527,199 @@ details > summary > span[aria-hidden] {
 [dir="rtl"] h3 {
   letter-spacing: normal;
 }
+
+/* ============================================================================
+   Interactive till demo
+   ========================================================================== */
+.demo {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+
+.demo-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  flex-wrap: wrap;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+
+.chip .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.chip-on { color: var(--success); border-color: color-mix(in srgb, var(--success) 35%, transparent); }
+.chip-off { color: var(--warning); border-color: color-mix(in srgb, var(--warning) 45%, transparent); }
+.chip-queue { color: var(--accent-ink); border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
+
+.linkbtn {
+  margin-inline-start: auto;
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--ground);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.8125rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 120ms var(--ease-out), color 120ms var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .linkbtn:hover { border-color: var(--accent); color: var(--text); }
+}
+
+.demo-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  min-height: 340px;
+}
+
+@media (max-width: 760px) {
+  .demo-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ---- product pad ---- */
+.demo-pad {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+  padding: 1rem;
+}
+
+@media (max-width: 520px) {
+  .demo-pad { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.tile {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--ground);
+  border-radius: 12px;
+  padding: 0.85rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  cursor: pointer;
+  font: inherit;
+  color: var(--text);
+  transition: transform 120ms var(--ease-out), border-color 120ms var(--ease-out);
+}
+
+.tile:active { transform: scale(0.97); }
+
+@media (hover: hover) and (pointer: fine) {
+  .tile:hover { border-color: var(--accent); }
+}
+
+.tile-emoji { font-size: 1.6rem; line-height: 1; }
+.tile-name { font-size: 0.8125rem; font-weight: 500; }
+.tile-price { font-size: 0.75rem; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+
+/* ---- cart ---- */
+.demo-cart {
+  border-inline-start: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+}
+
+@media (max-width: 760px) {
+  .demo-cart { border-inline-start: 0; border-top: 1px solid var(--border); }
+}
+
+.cart-lines { flex: 1; padding: 1rem; display: grid; gap: 0.5rem; align-content: start; }
+.cart-empty { color: var(--text-faint); font-size: 0.875rem; }
+
+.cart-line {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.qty {
+  appearance: none;
+  width: 22px; height: 22px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--ground);
+  color: var(--text-muted);
+  cursor: pointer;
+  font: inherit;
+  line-height: 1;
+}
+
+.cart-qty { font-variant-numeric: tabular-nums; color: var(--text-faint); }
+.cart-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cart-cost { font-variant-numeric: tabular-nums; }
+
+.cart-foot { border-top: 1px solid var(--border); padding: 1rem; display: grid; gap: 0.4rem; }
+.cart-row { display: flex; justify-content: space-between; font-size: 0.875rem; color: var(--text-muted); }
+.cart-row span:last-child { font-variant-numeric: tabular-nums; }
+.cart-total { color: var(--text); font-weight: 600; font-size: 1rem; }
+
+.paybtn {
+  margin-top: 0.6rem;
+  appearance: none;
+  border: 0;
+  width: 100%;
+  background: var(--accent-strong);
+  color: #fff;
+  font: inherit;
+  font-weight: 500;
+  padding: 0.8rem;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 140ms var(--ease-out), transform 120ms var(--ease-out);
+}
+
+.paybtn:disabled { opacity: 0.45; cursor: not-allowed; }
+.paybtn:not(:disabled):active { transform: scale(0.98); }
+
+@media (hover: hover) and (pointer: fine) {
+  .paybtn:not(:disabled):hover { background: var(--accent-hover); }
+}
+
+/* ---- receipt ---- */
+.receipt {
+  padding: 1.1rem;
+  display: grid;
+  gap: 0.6rem;
+  align-content: start;
+  /* Enters from just above with a slight scale — a receipt emerging, never
+     scale(0), because nothing in the real world appears from nothing. */
+  animation: receipt-out 320ms var(--ease-out) both;
+}
+
+@keyframes receipt-out {
+  from { opacity: 0; transform: translateY(-10px) scale(0.98); }
+  to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .receipt { animation: none; }
+}
+
+.receipt-head { display: flex; justify-content: space-between; font-size: 0.8125rem; color: var(--text-muted); }
+.receipt ul { list-style: none; margin: 0; padding: 0.6rem 0; display: grid; gap: 0.35rem; border-block: 1px dashed var(--border); }
+.receipt li { display: flex; justify-content: space-between; font-size: 0.8125rem; font-variant-numeric: tabular-nums; }
+.receipt-tot { display: flex; justify-content: space-between; font-weight: 600; font-variant-numeric: tabular-nums; }
+.receipt-note { font-size: 0.78rem; color: var(--text-faint); }
+.demo-reset { width: 100%; justify-content: center; }

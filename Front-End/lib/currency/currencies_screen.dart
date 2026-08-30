@@ -118,7 +118,8 @@ class CurrenciesScreen extends ConsumerWidget {
                       style: const TextStyle(
                           fontWeight: FontWeight.bold, fontSize: 16)),
                   subtitle: Text(AppLocalizations.of(context).codeValueLabel(currency.code ?? 'N/A'),
-                      style: TextStyle(color: Colors.grey[600])),
+                      style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant)),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
