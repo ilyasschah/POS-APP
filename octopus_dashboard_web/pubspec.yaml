@@ -40,7 +40,10 @@ dependencies:
   dio: ^5.11.0
   shared_preferences: ^2.5.5
   fl_chart: ^1.2.0
-  intl: 0.20.2
+  # Caret, not an exact pin. flutter_localizations from the SDK requires
+  # intl ^0.20.3 as of Flutter 3.47, and an exact 0.20.2 made the two
+  # unsolvable — pub get failed outright. Front-End already uses a caret here.
+  intl: ^0.20.3
   flutter_gen: ^5.15.0
 
 dev_dependencies:
