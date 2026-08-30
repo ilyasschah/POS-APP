@@ -4,6 +4,11 @@ import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/product/product_comment_model.dart';
 
+/// ⚠️ RETIRED with the comment catalogue (backlog 38, phase 6) — nothing in the
+/// app reads this any more. Kept for one release, with `pullProductComments`,
+/// so `RetireProductComments_2026-08-29.sql` can be verified against real data
+/// before the table is dropped. Do not wire anything new to it.
+///
 /// Streams comment suggestions for a specific product from the local Drift
 /// `product_comments` table. Read on every product tap by the menu grid —
 /// instant (microseconds) whether the device is online or offline.

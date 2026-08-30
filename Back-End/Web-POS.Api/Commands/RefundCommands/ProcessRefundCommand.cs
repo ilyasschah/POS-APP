@@ -32,6 +32,42 @@ namespace Api.Commands.RefundCommands
             _logger = logger;
         }
 
+        /// <summary>
+        /// Books the refund into the session it was handed out of, so the
+        /// closing count deducts it. Mirrors the checkout path
+        /// (<c>PosOrderCheckoutService</c>): a refund landing after its session
+        /// closed KEEPS that session and flags it, because moving it would
+        /// corrupt two reports and dropping it would lose the money.
+        /// </summary>
+        private async Task AttachRefundToSessionAsync(
+            int companyId,
+            string? sessionLocalId,
+            Document refundDoc,
+            Payment payment,
+            CancellationToken ct)
+        {
+            if (string.IsNullOrWhiteSpace(sessionLocalId)) return;
+
+            var localId = sessionLocalId.Trim();
+            var session = await _db.Shifts.FirstOrDefaultAsync(
+                s => s.CompanyId == companyId && s.LocalId == localId, ct);
+            if (session is null)
+            {
+                // Ordering should prevent this (sessions push before sales), but
+                // a refund must never be lost to a race. Bank it unattached and
+                // say so — the link is reporting metadata, not the money.
+                _logger.LogWarning(
+                    "Refund references unknown session {LocalId}; banking it unattached.",
+                    localId);
+                return;
+            }
+
+            var arrivedAfterClose = session.Status == PosSessionStatus.Closed;
+            refundDoc.AttachToSession(session.Id, arrivedAfterClose);
+            payment.AttachToSession(session.Id);
+            if (arrivedAfterClose) session.MarkLateArrival();
+        }
+
         /// Server fallback refund number (YY-220-NNNNNN). Used only when the
         /// client did NOT send a device-local number — offline-first clients
         /// always do, so this is the online/legacy path.
@@ -179,6 +215,23 @@ namespace Api.Commands.RefundCommands
                     _db.Documents.Add(refundDoc);
                     await _db.SaveChangesAsync(cancellationToken);
 
+                    // What those lines were SOLD with, so the refund reads like
+                    // the sale it reverses. Loaded once for the whole original
+                    // document rather than per refunded line.
+                    //
+                    // 🚨 A refund names a PRODUCT, not a line — so the copy
+                    // below inherits the ambiguity the price already has: it
+                    // follows the same `First(ProductId)` the line total is
+                    // taken from. Refunding the money off one line and the
+                    // choices off another is the one outcome that must not
+                    // happen, and sharing the resolution is what prevents it.
+                    var originalItemIds = originalItems.Select(i => i.Id).ToList();
+                    var originalModifiers = await _db.Set<DocumentItemModifier>()
+                        .Where(m => originalItemIds.Contains(m.DocumentItemId)
+                                 && m.CompanyId == command.CompanyId)
+                        .OrderBy(m => m.Rank)
+                        .ToListAsync(cancellationToken);
+
                     // 8. Create DocumentItems + explicit stock reversal
                     foreach (var ri in refundItems)
                     {
@@ -206,6 +259,19 @@ namespace Api.Commands.RefundCommands
                         );
                         _db.DocumentItems.Add(docItem);
                         await _db.SaveChangesAsync(cancellationToken);
+
+                        var rank = 0;
+                        foreach (var mod in originalModifiers.Where(m => m.DocumentItemId == orig.Id))
+                        {
+                            _db.Add(DocumentItemModifier.Create(
+                                companyId: command.CompanyId,
+                                documentItemId: docItem.Id,
+                                modifierOptionId: mod.ModifierOptionId,
+                                name: mod.Name,
+                                additionalPrice: mod.AdditionalPrice,
+                                groupName: mod.GroupName,
+                                rank: rank++));
+                        }
 
                         // Explicit stock reversal for non-service products.
                         // Note: if DocumentItem_Insert_Trigger already handles stock direction
@@ -244,6 +310,10 @@ namespace Api.Commands.RefundCommands
                         userId:        command.UserId
                     );
                     _db.Payments.Add(payment);
+
+                    await AttachRefundToSessionAsync(
+                        command.CompanyId, req.SessionLocalId,
+                        refundDoc, payment, cancellationToken);
 
                     await _db.SaveChangesAsync(cancellationToken);
                     await tx.CommitAsync(cancellationToken);
@@ -383,6 +453,11 @@ namespace Api.Commands.RefundCommands
                 userId:        command.UserId
             );
             _db.Payments.Add(payment);
+
+            await AttachRefundToSessionAsync(
+                command.CompanyId, req.SessionLocalId,
+                refundDoc, payment, cancellationToken);
+
             await _db.SaveChangesAsync(cancellationToken);
 
             return new ProcessRefundResponse

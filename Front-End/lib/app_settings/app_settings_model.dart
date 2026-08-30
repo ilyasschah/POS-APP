@@ -102,6 +102,13 @@ class SettingKeys {
   static const customerDisplayStopBits = 'CustomerDisplay.StopBits';
   static const customerDisplayFlowControl = 'CustomerDisplay.FlowControl';
   static const customerDisplayNumChars = 'CustomerDisplay.NumChars';
+
+  /// Which codepage the pole display's firmware decodes bytes with.
+  ///
+  /// Describes the HARDWARE, not the app's language — see [DisplayCharset].
+  /// Device-scoped: the display bolted to this counter is not the one on the
+  /// next terminal.
+  static const customerDisplayCharset = 'CustomerDisplay.Charset';
   static const customerDisplayWelcomeMessage =
       'CustomerDisplay.WelcomeMessage'; // top line
   static const customerDisplayWelcomeBottom = 'CustomerDisplay.WelcomeBottom';
@@ -161,6 +168,15 @@ class SettingKeys {
 
   /// Authoritative list of PaymentType ids that come out of the cash drawer.
   static const cashPaymentTypeIds = 'PosSession.CashPaymentTypeIds';
+
+  /// The REGISTER this terminal is working — Odoo's `pos.config`. See
+  /// `session/register_identity.dart`. DEVICE-SCOPED, and it is the one setting
+  /// that MUST differ between terminals sharing an account: cloud-syncing it
+  /// would drag every device onto whichever till was configured last. Empty
+  /// falls back to this terminal's own device GUID, which is how every install
+  /// behaved before registers existed.
+  static const registerUid = 'PosSession.RegisterUid';
+  static const registerName = 'PosSession.RegisterName';
   static const dbBackupOnStart = 'Database.Backup.OnStart';
   static const dbBackupOnClose = 'Database.Backup.OnClose';
   static const dbBackupIntervalHours = 'Database.Backup.IntervalHours';
@@ -307,6 +323,25 @@ class SettingKeys {
   // ── Printer Role Settings ────────────────────────────────────────────────
   // Keys are dynamically prefixed: 'Receipt.<suffix>' or 'Kitchen.<suffix>'
   static String rolePrinterName(String role) => '$role.PrinterName';
+
+  /// How the JOB reaches this printer — `'system'` | `'network'`.
+  ///
+  /// 🚨 On Android there is no `'system'`. `Printing.listPrinters()` has no
+  /// implementation and `directPrintPdf` reports `directPrint: false`, so the
+  /// system route can only ever open the OS print dialog — a modal in the
+  /// middle of closing a sale. `'network'` is the only silent path a tablet
+  /// has. See `printer/printer_platform.dart` and `printer/escpos_job.dart`.
+  ///
+  /// Device-scoped, like every other wiring key: the Windows till drives a USB
+  /// queue and the tablet drives the same printer over the LAN, and neither
+  /// answer is right for the other.
+  static String roleConnection(String role) => '$role.Connection';
+
+  /// IP address or hostname, when [roleConnection] is `'network'`.
+  static String roleHost(String role) => '$role.Host';
+
+  /// RAW/JetDirect port. 9100 unless the venue has moved it.
+  static String roleTcpPort(String role) => '$role.TcpPort';
   static String rolePaperSize(String role) => '$role.PaperSize';
   static String roleCopies(String role) => '$role.Copies';
   static String roleMarginTop(String role) => '$role.MarginTop';
@@ -504,6 +539,7 @@ const Map<String, String> kSettingDefaults = {
   SettingKeys.customerDisplayStopBits: '1',
   SettingKeys.customerDisplayFlowControl: 'None',
   SettingKeys.customerDisplayNumChars: '20',
+  SettingKeys.customerDisplayCharset: 'ascii',
   SettingKeys.customerDisplayWelcomeMessage: 'WELCOME!',
   SettingKeys.customerDisplayWelcomeBottom: '',
   SettingKeys.customerDisplayThankYouMessage: '',
@@ -538,6 +574,9 @@ const Map<String, String> kSettingDefaults = {
   SettingKeys.requireOpenSession: 'true',
   SettingKeys.maxCashDifference: '10',
   SettingKeys.cashPaymentTypeIds: '',
+  // Empty = "this terminal is its own register" (the device-GUID fallback).
+  SettingKeys.registerUid: '',
+  SettingKeys.registerName: '',
   SettingKeys.dbBackupOnStart: 'false',
   SettingKeys.dbBackupOnClose: 'false',
   SettingKeys.dbBackupIntervalHours: '0',
@@ -673,6 +712,13 @@ const Map<String, String> kSettingDefaults = {
   'Receipt.RightToLeft': 'false',
   'Receipt.FontFamily': '(None)',
   'Receipt.FontSize': '100',
+  // 'system' everywhere by default: a Windows till keeps working exactly as
+  // it did, and a tablet shows the dialog it always showed until someone
+  // enters an address. Defaulting to 'network' with no host would turn every
+  // print into an error.
+  'Receipt.Connection': 'system',
+  'Receipt.Host': '',
+  'Receipt.TcpPort': '9100',
   'Receipt.CashDrawer.Enabled': 'false',
   'Receipt.CashDrawer.Command': r'\x1B\x70\x00\x19\xFA',
   'Receipt.CashDrawer.Transport': 'printer',
@@ -771,6 +817,9 @@ const Map<String, String> kSettingDefaults = {
   'Kitchen.RightToLeft': 'false',
   'Kitchen.FontFamily': '(None)',
   'Kitchen.FontSize': '100',
+  'Kitchen.Connection': 'system',
+  'Kitchen.Host': '',
+  'Kitchen.TcpPort': '9100',
   'Kitchen.CashDrawer.Enabled': 'false',
   'Kitchen.CashDrawer.Command': r'\x1B\x70\x00\x19\xFA',
   'Kitchen.CashDrawer.Transport': 'printer',

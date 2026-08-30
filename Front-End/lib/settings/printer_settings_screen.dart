@@ -8,6 +8,10 @@ import 'package:uuid/uuid.dart';
 import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/app_settings/app_settings_provider.dart';
 import 'package:pos_app/auth/auth_provider.dart';
+// The machine's serial-port list. Lives beside the scale, but is not
+// scale-specific: it is the device map unioned with libserialport.
+import 'package:pos_app/scale/scale_service.dart' show availableSerialPortsProvider;
+import 'package:pos_app/utils/windows_ports.dart';
 import 'package:pos_app/cart/checkout_models.dart';
 import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/currency/currencies_provider.dart';
@@ -843,7 +847,14 @@ class _RolePrinterTabState extends ConsumerState<_RolePrinterTab> {
             testPrinting: _testPrinting,
             isKitchen: kitchen,
             onRefresh: _loadPrinters,
-            onTestPage: _printers.isEmpty ? null : _printTestPage,
+            // A network printer needs no system queue, so the button must
+            // stay live where it matters most: on a tablet `_printers` is
+            // ALWAYS empty, which disabled the one control that proves the
+            // address is right.
+            onTestPage: (_printers.isEmpty &&
+                    !printerIsNetwork(ref.watch(appSettingsProvider), widget.role))
+                ? null
+                : _printTestPage,
           ),
         ),
 
@@ -938,6 +949,8 @@ class _HardwareCard extends ConsumerWidget {
     final settings = ref.watch(appSettingsProvider);
     final selectedName = settings[_k('PrinterName')] ?? '';
     final paperSize = settings[_k('PaperSize')] ?? '80mm';
+    final isNetwork = printerIsNetwork(settings, role);
+    final prefix = role;
 
     final printerNames = printers.map((p) => p.name).toList();
     final safeSelected =
@@ -1026,6 +1039,24 @@ class _HardwareCard extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // HOW the job reaches this printer. On Android there is
+                      // only one honest answer, so the picker says so rather
+                      // than offering a route that can only open a dialog.
+                      _ConnectionPicker(prefix: prefix),
+                      const SizedBox(height: 12),
+
+                      if (isNetwork) ...[
+                        _PSTextField(
+                          settingKey: _k('Host'),
+                          label: AppLocalizations.of(context).printerHost,
+                          hint: '192.168.1.50',
+                        ),
+                        _PSTextField(
+                          settingKey: _k('TcpPort'),
+                          label: AppLocalizations.of(context).printerTcpPort,
+                          hint: '9100',
+                        ),
+                      ] else ...[
                       // Printer type
                       Text(
                         AppLocalizations.of(context).printerType,
@@ -1092,6 +1123,7 @@ class _HardwareCard extends ConsumerWidget {
                           },
                           theme: theme,
                         ),
+                      ],
 
                       const SizedBox(height: 12),
 
@@ -1563,11 +1595,7 @@ class _CashDrawerSubTab extends ConsumerWidget {
                 ),
               ],
               if (transport == CashDrawerTransport.serial) ...[
-                _PSTextField(
-                  settingKey: _k('CashDrawer.SerialPort'),
-                  label: l10n.cashDrawerSerialPortLabel,
-                  hint: 'COM3',
-                ),
+                _CashDrawerSerialPortField(settingKey: _k('CashDrawer.SerialPort')),
                 _PSTextField(
                   settingKey: _k('CashDrawer.BaudRate'),
                   label: l10n.cashDrawerBaudRate,
@@ -2131,6 +2159,88 @@ class _PSSwitch extends ConsumerWidget {
 
 // ── Dropdown — saves immediately ──────────────────────────────────────────────
 
+/// The drawer's COM port, over the ports this machine is actually reporting.
+///
+/// It was a free-text box hinting `COM3`. A typed port is a port nobody
+/// verified: `COM3` on a machine that has only `COM1` writes into the void, and
+/// a drawer that does not open looks like a wiring fault rather than a
+/// mis-typed setting — the same failure that had the customer display written
+/// off as broken hardware. See `utils/windows_ports.dart`.
+///
+/// COM only, no LPT: [availableSerialPortsProvider] is the machine's serial
+/// list (device map ∪ libserialport) and is not scale-specific despite where it
+/// lives. A drawer daisy-chained off a printer uses the `printer` transport
+/// instead, and a parallel port is not one of this transport's answers.
+class _CashDrawerSerialPortField extends ConsumerWidget {
+  const _CashDrawerSerialPortField({required this.settingKey});
+
+  final String settingKey;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final detected = ref.watch(availableSerialPortsProvider);
+    final saved = ref.watch(appSettingsProvider)[settingKey];
+    final options = mergePortLists(detected: [detected], saved: saved);
+
+    return _PSDropdown(
+      settingKey: settingKey,
+      label: l10n.cashDrawerSerialPortLabel,
+      options: options,
+      // A port the machine stopped reporting stays selectable — a cable out for
+      // the afternoon must not silently re-point the drawer at another device —
+      // but it is named as absent rather than sitting there looking real.
+      optionLabel: (port) =>
+          detected.contains(port) ? port : l10n.portNotDetected(port),
+      emptyHint: l10n.portNoneDetectedHint,
+      onRefresh: () => ref.invalidate(availableSerialPortsProvider),
+    );
+  }
+}
+
+/// True when this printer is wired to the LAN rather than an OS print queue.
+///
+/// One place, because three of them read it: the settings UI, the dispatcher
+/// and the test button. A fourth reader spelling `'network'` slightly
+/// differently is how a printer ends up half-configured.
+bool printerIsNetwork(Map<String, String> settings, String role) =>
+    (settings[SettingKeys.roleConnection(role)] ?? '').trim().toLowerCase() ==
+    'network';
+
+/// How the job reaches this printer.
+///
+/// 🚨 On Android the system route is not a route. `Printing.listPrinters()` has
+/// no implementation and `directPrintPdf` reports `directPrint: false`, so
+/// choosing it can only ever open the OS print dialog mid-sale. The picker says
+/// that in the option itself rather than letting an operator pick it and
+/// discover the modal at the till.
+class _ConnectionPicker extends ConsumerWidget {
+  const _ConnectionPicker({required this.prefix});
+
+  final String prefix;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final canSystem = PrinterPlatform.canPrintSilently;
+    return _PSDropdown(
+      settingKey: SettingKeys.roleConnection(prefix),
+      label: l10n.printerConnection,
+      options: const ['system', 'network'],
+      labels: {
+        'system': canSystem
+            ? l10n.printerConnectionSystem
+            : l10n.printerConnectionSystemUnavailable,
+        'network': l10n.printerConnectionNetwork,
+      },
+      helper: canSystem
+          ? l10n.printerConnectionHint
+          : l10n.printerConnectionHintMobile,
+      helperIsWarning: !canSystem,
+    );
+  }
+}
+
 class _PSDropdown extends ConsumerWidget {
   final String settingKey;
   final String label;
@@ -2156,11 +2266,73 @@ class _PSDropdown extends ConsumerWidget {
     this.labels,
     this.helper,
     this.helperIsWarning = false,
+    this.emptyHint,
+    this.optionLabel,
+    this.onRefresh,
   });
+
+  /// Shown in place of the dropdown when [options] is empty.
+  ///
+  /// 🚨 Both the missing-setting fallback and `safeValue` end in
+  /// `options.first`, so an empty list red-screened this widget. Harmless while
+  /// every list was written down here in the source; a live hazard now that the
+  /// serial-port list comes from the machine, where "none" is a normal answer.
+  final String? emptyHint;
+
+  /// Overrides how one option is printed — used to mark a saved port the
+  /// machine is no longer reporting.
+  final String Function(String)? optionLabel;
+
+  /// Rebuilds the option list, when it comes from hardware discovery.
+  final VoidCallback? onRefresh;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+
+    final labelWidget = Text(
+      label,
+      style: TextStyle(
+        fontSize: 11,
+        fontWeight: FontWeight.w600,
+        color: theme.hintColor,
+        letterSpacing: 0.3,
+      ),
+    );
+
+    if (options.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            labelWidget,
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    emptyHint ?? AppLocalizations.of(context).portNoneDetected,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+                if (onRefresh != null)
+                  IconButton(
+                    icon: const Icon(Icons.refresh, size: 18),
+                    tooltip: AppLocalizations.of(context).portRefresh,
+                    onPressed: onRefresh,
+                  ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
     final current =
         ref.watch(appSettingsProvider)[settingKey] ??
         kSettingDefaults[settingKey] ??
@@ -2173,14 +2345,17 @@ class _PSDropdown extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: theme.hintColor,
-              letterSpacing: 0.3,
-            ),
+          Row(
+            children: [
+              Expanded(child: labelWidget),
+              if (onRefresh != null)
+                IconButton(
+                  icon: const Icon(Icons.refresh, size: 18),
+                  tooltip: AppLocalizations.of(context).portRefresh,
+                  visualDensity: VisualDensity.compact,
+                  onPressed: onRefresh,
+                ),
+            ],
           ),
           const SizedBox(height: 6),
           _StyledDropdown<String>(
@@ -2190,7 +2365,7 @@ class _PSDropdown extends ConsumerWidget {
                   (o) => DropdownMenuItem(
                     value: o,
                     child: Text(
-                      labels?[o] ?? o,
+                      optionLabel?.call(o) ?? labels?[o] ?? o,
                       style: const TextStyle(fontSize: 13),
                       overflow: TextOverflow.ellipsis,
                     ),

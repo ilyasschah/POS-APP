@@ -9,7 +9,7 @@ import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/cart/payment_type_provider.dart';
 import 'package:pos_app/session/pos_session_status.dart';
-import 'package:pos_app/session/session_provider.dart';
+import 'package:pos_app/session/register_identity.dart';
 import 'package:pos_app/session/session_reconciliation.dart';
 import 'package:pos_app/settings/device_identity.dart';
 
@@ -136,11 +136,15 @@ final remoteSessionSummaryProvider =
 });
 
 /// The active session row, split out so the summary can depend on it without
-/// re-running the whole device lookup.
+/// re-running the whole register lookup.
+///
+/// Keyed on the REGISTER's uid, in step with `activeSessionProvider` — a
+/// terminal joining a shared till must reconcile the session it is actually
+/// selling into, not the one it happened to open itself.
 final activeSessionRowProvider = StreamProvider<ShiftsTableData?>((ref) {
   final db = ref.watch(appDatabaseProvider);
   final companyId = ref.watch(selectedCompanyProvider)?.id;
-  final uid = ref.watch(deviceUidProvider).value;
+  final uid = ref.watch(registerUidProvider).value;
   if (companyId == null || uid == null) return Stream.value(null);
 
   return (db.select(db.shiftsTable)

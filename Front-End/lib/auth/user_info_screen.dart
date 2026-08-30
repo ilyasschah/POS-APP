@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:pos_app/core/ilyass_screen.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/api/api_client.dart';
@@ -299,13 +300,10 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        leading: widget.onMenuPressed != null
-            ? IconButton(
-                icon: const Icon(Icons.menu),
-                tooltip: AppLocalizations.of(context).menuLabel,
-                onPressed: widget.onMenuPressed,
-              )
-            : null,
+        // Hamburger as a tab, back arrow when pushed — the mounting decides.
+        // See `lib/core/ilyass_screen.dart`.
+        leading: IlyassLeading.maybe(context, widget.onMenuPressed,
+            iconSize: 24),
         title: Text(AppLocalizations.of(context).userInfoSecurity),
         backgroundColor: theme.colorScheme.surface,
         elevation: 1,

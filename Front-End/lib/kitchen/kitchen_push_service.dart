@@ -221,6 +221,10 @@ class KitchenSyncService {
       final items = await (db.select(db.posOrderItemsTable)
             ..where((t) => t.orderId.equals(o.localId)))
           .get();
+      // What each line was customised with. The display is a work instruction:
+      // a burger with Extra Cheese that reaches the pass as a plain burger is
+      // the same failure as a kitchen ticket printed without it.
+      final modifiersByLine = await db.orderItemModifiersByLine(o.localId);
 
       result.add(_KOrder(
         meta: {
@@ -243,6 +247,11 @@ class KitchenSyncService {
                         'Product #${it.productId}',
                     'quantity': it.quantity,
                     'comment': it.comment,
+                    // Names only — no prices on a work instruction.
+                    'modifiers': [
+                      for (final m in modifiersByLine[it.localId] ?? const [])
+                        m.name,
+                    ],
                   },
                 ))
             .toList(),

@@ -1,4 +1,6 @@
+using Api.Admin;
 using Api.Commands.CompanyCommands.Add;
+using Api.Commands.CompanyCommands.Update;
 using Api.Commands.UserCommands.Add;
 using Api.Models;
 using Api.Queries.CountryQuery.Get;
@@ -16,6 +18,11 @@ public class CreateModel : PageModel
     public List<CountryDto> Countries { get; private set; } = new();
 
     [BindProperty] public InputModel Input { get; set; } = new();
+
+    /// Optional. Applied after the company exists, through the same
+    /// UpdateCompanyLogoCommand the Edit page uses — CreateCompanyRequest
+    /// carries no logo and does not need to.
+    [BindProperty] public IFormFile? Logo { get; set; }
 
     public class InputModel
     {
@@ -40,7 +47,11 @@ public class CreateModel : PageModel
         public string? FirstName { get; set; }
         public string? LastName { get; set; }
         public string? UserEmail { get; set; }
-        public int AccessLevel { get; set; } = 1;
+        // The FIRST user of a brand-new company: an admin, because there is
+        // nobody else to grant them anything. It read 1 — which is Cashier —
+        // so every company provisioned here started with no administrator at
+        // all, and the only way in was to fix the row by hand.
+        public int AccessLevel { get; set; } = Api.Domain.AccessLevels.Admin;
     }
 
     public async Task OnGetAsync() => await LoadCountriesAsync();
@@ -50,6 +61,16 @@ public class CreateModel : PageModel
         if (string.IsNullOrWhiteSpace(Input.Name))
         {
             TempData["Error"] = "Company name is required.";
+            await LoadCountriesAsync();
+            return Page();
+        }
+
+        // Read the logo BEFORE anything is created. Validating it afterwards
+        // would leave a company provisioned but logo-less on a bad file, and
+        // the admin re-submitting the form would create a second one.
+        if (!CompanyLogoFile.TryRead(Logo, out var logoBytes, out var logoError))
+        {
+            TempData["Error"] = logoError;
             await LoadCountriesAsync();
             return Page();
         }
@@ -69,6 +90,24 @@ public class CreateModel : PageModel
                 SeatAllowance = Input.SeatAllowance,
                 SubscriptionDays = Input.SubscriptionDays,
             }));
+
+            if (logoBytes is not null)
+            {
+                // A failure here must not read as "company not created" — it
+                // is, and everything else about it is fine.
+                try
+                {
+                    await _mediator.Send(new UpdateCompanyLogoCommand(
+                        new UpdateCompanyLogoRequest { Id = company.Id, Logo = logoBytes }));
+                }
+                catch (Exception ex)
+                {
+                    // The success line below already says the company exists,
+                    // so this only has to report the part that did not.
+                    TempData["Warning"] =
+                        $"The logo did not save ({ex.Message}). Add it from Edit.";
+                }
+            }
 
             if (Input.CreateFirstUser)
             {

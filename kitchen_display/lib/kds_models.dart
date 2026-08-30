@@ -7,6 +7,18 @@ class KitchenItem {
   final String name;
   final double quantity;
   final String? comment;
+
+  /// The chosen options, NAMES ONLY ("Extra Cheese", "No Sugar").
+  ///
+  /// 🚨 No prices, deliberately: this screen is a work instruction, not a bill.
+  /// What the option cost is the cashier's business and "+3.00" beside it is
+  /// noise to whoever is at the grill — the same rule the printed kitchen
+  /// ticket follows.
+  ///
+  /// Empty from a POS that predates modifiers, so an older till pairs with a
+  /// newer display without either of them noticing.
+  final List<String> modifiers;
+
   bool isDone;
 
   KitchenItem({
@@ -14,6 +26,7 @@ class KitchenItem {
     required this.name,
     required this.quantity,
     this.comment,
+    this.modifiers = const [],
     this.isDone = false,
   });
 
@@ -22,6 +35,10 @@ class KitchenItem {
         name: (j['productName'] ?? j['name'] ?? 'Unknown Item') as String,
         quantity: ((j['quantity'] ?? 1) as num).toDouble(),
         comment: j['comment'] as String?,
+        modifiers: [
+          for (final m in (j['modifiers'] as List?) ?? const [])
+            if (m is String && m.trim().isNotEmpty) m.trim(),
+        ],
       );
 
   Map<String, dynamic> toJson() => {
@@ -29,6 +46,7 @@ class KitchenItem {
         'productName': name,
         'quantity': quantity,
         'comment': comment,
+        'modifiers': modifiers,
       };
 }
 

@@ -26,6 +26,10 @@ namespace Api.Models
         public DateTime DateCreated { get; set; }
         public string? Bundle { get; set; }
         public List<PosOrderItemTaxDto> Taxes { get; set; } = new List<PosOrderItemTaxDto>();
+
+        /// The chosen modifier options, in the order the cashier was asked.
+        /// Empty on a line that has none — which is most of them.
+        public List<ModifierSnapshotDto> Modifiers { get; set; } = new();
     }
     public class PosOrderItemTaxDto
     {
@@ -82,6 +86,12 @@ namespace Api.Models
         // client so BatchSync can pass them to CheckoutItemDto.Taxes and create
         // DocumentItemTax rows server-side.
         public List<BatchSyncItemTaxDto> Taxes { get; set; } = new List<BatchSyncItemTaxDto>();
+
+        /// The chosen modifier options for this line, snapshotted by the client.
+        /// Persisted as PosOrderItemModifier rows so a parked order opened on
+        /// ANOTHER till still knows what it is making — without them the second
+        /// device sees the right price and a plain burger.
+        public List<ModifierSnapshotDto> Modifiers { get; set; } = new();
     }
 
     public class UpdatePosOrderItemRequest

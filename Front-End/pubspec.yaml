@@ -84,6 +84,12 @@ dependencies:
   # imports them, and a transitive path is not a promise.
   ffi: ^2.1.0
   win32: ^5.5.0
+  # Reads HKLM\HARDWARE\DEVICEMAP, which is where Windows itself records the
+  # COM and LPT ports a machine actually has — the same key .NET's
+  # SerialPort.GetPortNames() reads, so `utils/windows_ports.dart` offers the
+  # operator the same list every other POS on the till does. Transitive via
+  # path_provider_windows; declared for the same reason as ffi/win32 above.
+  win32_registry: ^2.1.0
   audioplayers: ^6.8.1
 
 dependency_overrides:

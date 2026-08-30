@@ -1,6 +1,7 @@
 # Field test — Verteda POS, Test server
 
-Round 2, tested on **v1.0.6**. Everything from round 1 passed except what is below.
+Rounds 1 and 2 are closed. **Two things are left**, and they are related: one of
+them can make the other look broken when it is not.
 
 Status: `TODO` · `WIP` · `DONE`
 
@@ -10,71 +11,83 @@ Status: `TODO` · `WIP` · `DONE`
 
 | # | Issue | Status |
 |---|---|---|
-| A4 | No company logo → print a **large company name** in its place. | READY TO TEST |
-| B1b | Z-report **dialog** showed `Cash In +0.00` and no opening float. | DONE |
-| G1 | **Continue selling** / **Close Register** as coloured floating buttons, Close Register in the till header, show/hide switches. | DONE |
-| H1 | Closing a session throws the Z-report on screen unasked. Show it only from the **Z-Report button**. | DONE |
-| H2 | **Print** in the Z-report dialog does nothing, with no error. | DONE |
-| H3 | A Z-report printed from **End of Day** shows no opening cash — the same report showed it at session close. | DONE |
-| H4 | On the real POS, A1 (hidden kitchen tabs) works but A2 (kitchen demo ticket) does not — same build, works on the dev desk. | DONE |
+| I1 | **Customer display** does nothing. POS settings offered COM10 while Windows only has COM1–COM5 and LPT1. | FIXED IN CODE — needs a test on the real till |
+| I2 | A new version is installed but **the fixes are not in the app**. | NEEDS A DIAGNOSIS ON THE TILL |
 
 ---
 
-### H4 — why one fix landed and its twin did not
+### I1 — customer display / the COM port that does not exist
 
-Both read the same flag, `<role>.PrintKitchenTicket`, through one getter. The getter used `ref.watch`.
+**Fixed in code; never tested on your hardware.** Three separate things were
+wrong, and the first two are why it looked like a hardware fault:
 
-* **A1** is evaluated inside `build()`. `ref.watch` there is correct, so hiding the Cash drawer tab and the barcode switch worked everywhere.
-* **A2** is evaluated inside the test-print **callback**. `ref.watch` outside a build is not allowed: it asserts in debug, and in release — where asserts are compiled out — it is simply undefined. So the same screen could hide its tabs like a kitchen station and then print a receipt.
+* **The port list was invented.** The picker offered a hardcoded COM1–COM10
+  regardless of what the machine had, so a till whose Windows only has COM1–COM5
+  could sit configured on COM10, writing to nothing, forever. It now enumerates
+  the ports the machine actually has (`libserialport`) and appends **LPT1–LPT3**
+  by hand — a pole display on a parallel port is still a display, and
+  `libserialport` only enumerates serial devices. A saved port that is currently
+  unplugged is folded back in, so opening Settings never silently resets your
+  choice.
+* **The Test button always claimed success.** It wrote and then announced
+  "sent" unconditionally, so the commonest setup mistake in the world — the
+  wrong COM port — was indistinguishable from a working display. It now reports
+  the real failure: which port, and that something else may be holding it open.
+* **`mode` was run against LPT.** `mode LPT1: BAUD=…` is an error, and it ran
+  before every single write — so a *working* parallel display was turned silent
+  by its own configuration step. LPT ports are now left alone.
 
-That is the whole split, and it is why it survived a dev machine: nothing about it depends on the machine, only on whether a given install happens to have the widget's dependency in the state the callback needs. A fresh install lands on the wrong side of it more often.
+**On the till:** Settings → Customer Display → pick the port that is actually in
+Device Manager → **Test**. If nothing appears, the message now tells you why;
+send it to me verbatim. ⚠️ Do this on a build that contains the fix — see I2.
 
-The check now takes the settings map as an argument — `build` passes `ref.watch`, callbacks pass `ref.read` — so there is one answer to one question. And the test button now names the document it will produce (**Print kitchen ticket** vs **Print demo receipt**, with a matching icon), so the next time two machines disagree it is visible before any paper comes out.
+### I2 — "I installed the new version and the fixes are not there"
 
-### H1 / H2 / H3 — the Z-report, round 2
+Not one bug but a question with three possible answers, and it has bitten twice
+already (Windows on 2026-08-16, and the tablets run an old APK to this day).
 
-**H1 — no more unasked modal.** The report is still generated and persisted at close; it is simply not thrown on screen. A modal nobody asked for, in front of a cashier who has just finished counting and wants the till back, gets dismissed rather than read. It is one tap away under the Z-Report button.
+**Answer it before reporting anything else as broken**, because a stale install
+makes every fix in this file look like it failed:
 
-**H2 — print failed silently.** The button popped the dialog and *then* awaited an unguarded print, so any failure — no printer chosen for the Receipt role, a queue that no longer exists, a PDF that will not build — landed on a torn-down route as an unhandled future. The dialog vanished, no paper came out, nothing said why. It now prints first, closes only on success, and shows the real error otherwise. That error will tell us which of those it actually was.
+1. **Ask the app what it is.** Settings → About shows the running version —
+   read out of the bundle by `PackageInfo`, not a string someone typed, so it
+   cannot flatter you. Today's source is **1.0.8+11**. If About says less than
+   the release you installed, the app on screen is not the app you installed.
+2. **Ask Windows what it has.** Check the date on
+   `C:\Program Files (x86)\Octopus POS\pos_app.exe`. Last time this happened the
+   installed exe was **two days older** than the build being tested — the
+   installer had not replaced a running executable, and Windows said nothing.
+   Close the POS completely (check Task Manager) before installing.
+3. **Ask which app you opened.** A second copy — a desktop shortcut to an old
+   build folder, or a `flutter run` build left in `build\windows\` — will happily
+   run beside the installed one.
 
-**H3 — the float now lives on the report.** It was an argument that only the session-closing screen passed in, so the identical report printed from End of Day had nothing to show. There was no way to recover it either: `z_reports` has no session column, and the `zReportNumber` stamped on cash movements is an optimistic `-1` placeholder until the server answers, so neither could be matched on.
-
-`z_reports` gained an `openingCash` column (local schema **v64**), summed from the `opening`-kind cash rows the report covers and written at generation. The report is self-describing now, so the dialog and the printer read the same number wherever they are opened from. Null — not `0.00` — when the report covers no float: "not applicable" and "the drawer opened empty" are different statements.
-
-⚠️ Only reports generated **from now on** carry it. Existing rows, including Z-Report #4, stay null and will print without the line.
-
-### B1b — what was actually wrong
-
-B1 itself is fine: the float **is** written to `starting_cash` as kind `opening` / `StartingCashType = 2`, the session screen shows it (`Cash movements  + 500.00 MAD`, Session #19), and expected cash comes out right (`500 + 63 = 563`, difference `0.00`).
-
-The gap was display-only, and only in one place. The **printed** Z-report gained an `Opening cash` line; `showZReportDialog` accepted the `openingCash` argument and passed it straight through to the printer **without ever rendering a row for it**. So the one screen the cashier actually reads showed `Cash In +0.00` and nothing else, while the money sat in the drawer and in the database.
-
-Fixed in `z_report_receipt_dialog.dart` — the dialog now renders `Opening cash` above Cash In. It stays **out** of the Cash In total on purpose: the session's own `startingCash` already carries the float into expected cash, so adding it to Cash In would count it twice and every register would read over by its float.
-
-⚠️ The row only appears for a **session** Z-report. Opened from the Z-report list (End of Day, company-wide), there is no single session and therefore no single float, so the line is hidden rather than guessed at.
-
-### A4 — you can now reach the "no logo" state
-
-The receipt fallback already shipped in v1.0.6 (`logoBytes == null ? 24 : 16`). What was missing was any way to **test** it: once a company had a logo there was no way to take it off again.
-
-`My Company` now has a **Remove logo** button (the red bin, bottom-left of the logo circle), behind a confirm. It is its own endpoint — `DELETE /Company/DeleteLogo` — rather than an empty upload, because `UpdateLogo` validates the payload as non-empty and relaxing that would let a truncated file wipe a logo by accident.
-
-Remove the logo, print a receipt, and the company name should come out at 24pt where the logo was. If a **Header** text is set in Printer Settings it wins over the company name — that is by design, but it is the likely reason a receipt shows something other than the name.
-
-### G1 — done
-
-* **Session screen:** the two actions left the AppBar, where they were two identical grey buttons. They are now stacked floating buttons — **green** Continue selling, **red** Close Register. A blocked close goes grey, not a quieter red: a close that cannot happen must not look like one that can.
-* **Till header:** Close Register sits after Addition, so ending the day no longer means navigating away from the POS to find the session screen.
-* **Settings → POS buttons:** two new switches, `Close Register` and `Continue selling`. The Close Register switch governs the button in **both** places — one action, one switch.
+🚨 **The tablets are a known case of this**, not a mystery: `flutter build apk`
+is blocked on this machine (needs JDK 21, see backlog 14), so every Android
+device is running an old APK by definition. Check the APK date before reporting
+an Android bug.
 
 ---
 
-## Closed in round 1
+## Closed
 
-A1 A2 A3 A5 A6 A7 · B1 B2 · C1 · D1 · E1 E2 · F1 — all verified on v1.0.6.
+**Round 1 (v1.0.6):** A1 A2 A3 A5 A6 A7 · B1 B2 · C1 · D1 · E1 E2 · F1.
+Alongside F1: the cross-tenant `companyId` hole (closed globally by
+`CompanyScopeFilter`), the control-plane lockdown (`[ControlPlane]`), and the
+dashboard deploy that never fired (a case-sensitive path filter).
 
-Also closed alongside F1:
+**Round 2 (v1.0.6 → 1.0.8):** A4 (large company name when there is no logo, plus
+a **Remove logo** button so the state is reachable at all) · B1b (the Z-report
+dialog now renders the opening float) · G1 (coloured session buttons, Close
+Register in the till header, show/hide switches) · H1 (no unasked Z-report
+modal) · H2 (Print reports its real error instead of failing silently) · H3
+(`z_reports.openingCash`, so the report is self-describing wherever it is opened
+from) · H4 (`ref.watch` in a callback — the reason A1 landed and its twin A2 did
+not).
 
-* **Cross-tenant hole.** `companyId` came from the query string or body on ~250 endpoints and was never compared to the caller's token, so any signed-in user could read or write another company's documents, payments, cash and users by editing the URL. Closed globally by `CompanyScopeFilter`; three deliberate exemptions, asserted by a test.
-* **Control plane.** `Master/Tenants`, `Subscriptions` and `Devices` carry no `companyId`, so the tenant filter cannot help them — every cashier's token could list every tenant on the platform. They now require the admin portal's operator identity (`[ControlPlane]`).
-* **Dashboard deploy never fired.** Its workflow filtered on `OCTOPUS_DASHBOARD_WEB/**` while the folder is `octopus_dashboard_web`; GitHub path filters are case-sensitive, so pushing to `test` never triggered it and it had only ever run by hand.
+⚠️ Two carry-overs from those fixes, both by design: Z-reports generated
+**before** H3 stay null and print without the opening-cash line, and the line is
+hidden entirely on a company-wide report, where there is no single session and
+therefore no single float to show.
+
+The full reasoning for each is in `handoff.md`; it is not repeated here.

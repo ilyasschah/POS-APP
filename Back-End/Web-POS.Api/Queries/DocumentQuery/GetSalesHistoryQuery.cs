@@ -175,6 +175,7 @@ namespace Api.Queries.DocumentQuery
                         DocumentTypeId           = d.DocumentTypeId,
                         WarehouseId              = d.WarehouseId,
                         UserId                   = d.UserId,
+                        SessionId                = d.SessionId,
                         PaymentSummary           = docPays.Count > 0
                             ? string.Join(" / ", docPays
                                 .Select(p => p.PaymentType?.Name)

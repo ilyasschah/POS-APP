@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:pos_app/core/ilyass_screen.dart';
 import 'package:pos_app/barcode/barcode_debug_widget.dart';
 import 'package:pos_app/barcode/global_scan_listener.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
@@ -61,6 +62,35 @@ final mainNavigationIndexProvider = StateProvider<int>(
   (ref) => resolveDefaultScreenIndex(ref.read(appSettingsProvider)),
 );
 
+/// The MainLayout tab indices, one per sidebar destination.
+///
+/// 🚨 Every screen the sidebar reaches is a TAB, never a `Navigator.push` — see
+/// the Ilyass Screen contract in `lib/core/ilyass_screen.dart`. Pushing one
+/// stacked it ON TOP of the shell it belongs to, which is what left Cash In/Out
+/// wearing a back arrow instead of the hamburger.
+///
+/// Indices are append-only: several screens set the provider by literal (0 for
+/// POS, 4 for Tables), and a stale value can also arrive from settings, so
+/// renumbering silently sends operators to the wrong screen.
+///
+/// Management is the one deliberate exception. It is a shell of its own, with
+/// its own sidebar and its own tabs, so it is pushed as a route and its back
+/// arrow is correct.
+abstract final class PosTab {
+  static const pos = 0;
+  static const openOrders = 1;
+  static const bookings = 2;
+  static const bookingHistory = 3;
+  static const floorPlan = 4;
+  static const endOfDay = 5;
+  static const userInfo = 6;
+  static const salesHistory = 7;
+  static const shiftManagement = 8;
+  static const posSession = 9;
+  static const cashInOut = 10;
+  static const creditPayments = 11;
+}
+
 /// Resolves the configured default landing screen to a MainLayout tab index,
 /// validated against the feature flags so we never route to a disabled (and
 /// therefore empty `SizedBox.shrink`) screen — the cause of the post-checkout
@@ -73,9 +103,9 @@ int resolveDefaultScreenIndex(Map<String, String> settings) {
   final floorPlanEnabled =
       settings[SettingKeys.featureFloorPlanEnabled]?.toLowerCase() == 'true';
 
-  if (pref == 'booking' && bookingEnabled) return 2;
-  if (pref == 'tables' && floorPlanEnabled) return 4;
-  return 0; // POS Menu — always valid.
+  if (pref == 'booking' && bookingEnabled) return PosTab.bookings;
+  if (pref == 'tables' && floorPlanEnabled) return PosTab.floorPlan;
+  return PosTab.pos; // POS Menu — always valid.
 }
 
 /// Small pill showing how many open orders the kitchen has marked ready.
@@ -160,9 +190,17 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
     // initialIndex — and it's deferred to after the first frame because
     // modifying a provider during initState/build is disallowed by Riverpod.
     final settings = ref.read(appSettingsProvider);
+    // Cash.ShowOnStart used to PUSH the cash screen over the shell after the
+    // first frame, which is how it ended up with a back arrow and a Cancel
+    // button that had to navigate. It is a tab like every other sidebar
+    // destination now, so "show it on start" is just where we land.
+    final showCashOnStart =
+        settings[SettingKeys.showCashInOnStart]?.toLowerCase() == 'true';
     final landingIndex = widget.initialIndex != 0
         ? widget.initialIndex
-        : resolveDefaultScreenIndex(settings);
+        : (showCashOnStart
+              ? PosTab.cashInOut
+              : resolveDefaultScreenIndex(settings));
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -171,12 +209,6 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
       // keyboard / tables / booking) now that a company + its settings exist.
       // Best-effort + idempotent — a no-op when nothing was parked.
       ref.read(onboardingFeatureSeedProvider.notifier).applyToCompanySettings();
-      if (settings[SettingKeys.showCashInOnStart]?.toLowerCase() == 'true') {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const CashMovementScreen()),
-        );
-      }
     });
 
     // Desktop only: intercept the window close button so an on-close DB backup
@@ -338,13 +370,20 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
     // — the body would paint nothing (the "black screen"). Clamp to POS (0),
     // which is always renderable.
     bool isRenderable(int i) {
-      if (i == 2 || i == 3) return bookingEnabled;
-      if (i == 4) return floorPlanEnabled;
+      if (i == PosTab.bookings || i == PosTab.bookingHistory) {
+        return bookingEnabled;
+      }
+      if (i == PosTab.floorPlan) return floorPlanEnabled;
       return true;
     }
 
-    final renderIndex = isRenderable(selectedIndex) ? selectedIndex : 0;
+    final renderIndex = isRenderable(selectedIndex)
+        ? selectedIndex
+        : PosTab.pos;
 
+    // One entry per PosTab, in index order. Each is handed `_openSidebar`,
+    // which is what puts a hamburger — and not a back arrow — in its top-left
+    // corner: see the Ilyass Screen contract in `lib/core/ilyass_screen.dart`.
     final List<Widget> screens = [
       MenuScreen(showAppBarNavigation: true, onToggleSidebar: _openSidebar),
       OpenOrdersScreen(onMenuPressed: _openSidebar),
@@ -359,6 +398,11 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
           : const SizedBox.shrink(),
       EndOfDayScreen(onMenuPressed: _openSidebar),
       UserInfoScreen(onMenuPressed: _openSidebar),
+      SalesHistoryScreen(onMenuPressed: _openSidebar),
+      ShiftManagementScreen(onMenuPressed: _openSidebar),
+      SessionListScreen(onMenuPressed: _openSidebar),
+      CashMovementScreen(onMenuPressed: _openSidebar),
+      CreditPaymentsScreen(onMenuPressed: _openSidebar),
     ];
 
     void handleNavTap(int index) {
@@ -403,31 +447,25 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
                     NavItem(
                       icon: Icons.point_of_sale,
                       label: AppLocalizations.of(context).posLabel,
-                      isActive: selectedIndex == 0,
-                      onTap: () => handleNavTap(0),
+                      isActive: selectedIndex == PosTab.pos,
+                      onTap: () => handleNavTap(PosTab.pos),
                     ),
                     NavItem(
                       icon: Icons.receipt_long,
                       label: AppLocalizations.of(context).viewSalesHistory,
-                      isActive: selectedIndex == 99,
-                      onTap: () => ref.read(securityGuardProvider).guard(
-                        context,
-                        SecurityKeys.salesHistory,
-                        () {
-                          _closeSidebar();
-                          Navigator.push(
+                      isActive: selectedIndex == PosTab.salesHistory,
+                      onTap: () => ref
+                          .read(securityGuardProvider)
+                          .guard(
                             context,
-                            MaterialPageRoute(
-                              builder: (_) => const SalesHistoryScreen(),
-                            ),
-                          );
-                        },
-                      ),
+                            SecurityKeys.salesHistory,
+                            () => handleNavTap(PosTab.salesHistory),
+                          ),
                     ),
                     NavItem(
                       icon: Icons.layers,
                       label: AppLocalizations.of(context).viewOpenSales,
-                      isActive: selectedIndex == 1,
+                      isActive: selectedIndex == PosTab.openOrders,
                       trailing: readyCount > 0
                           ? _ReadyCountBadge(readyCount)
                           : null,
@@ -436,33 +474,33 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
                           .guard(
                             context,
                             SecurityKeys.openOrders,
-                            () => handleNavTap(1),
+                            () => handleNavTap(PosTab.openOrders),
                           ),
                     ),
                     if (bookingEnabled)
                       NavItem(
                         icon: Icons.calendar_month,
                         label: AppLocalizations.of(context).posBookings,
-                        isActive: selectedIndex == 2,
+                        isActive: selectedIndex == PosTab.bookings,
                         onTap: () => ref
                             .read(securityGuardProvider)
                             .guard(
                               context,
                               SecurityKeys.bookings,
-                              () => handleNavTap(2),
+                              () => handleNavTap(PosTab.bookings),
                             ),
                       ),
                     if (bookingEnabled)
                       NavItem(
                         icon: Icons.history,
                         label: AppLocalizations.of(context).bookingHistory,
-                        isActive: selectedIndex == 3,
+                        isActive: selectedIndex == PosTab.bookingHistory,
                         onTap: () => ref
                             .read(securityGuardProvider)
                             .guard(
                               context,
                               SecurityKeys.bookingHistory,
-                              () => handleNavTap(3),
+                              () => handleNavTap(PosTab.bookingHistory),
                             ),
                       ),
                     if (floorPlanEnabled)
@@ -470,81 +508,69 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
                         icon: Icons.grid_view,
                         label:
                             settings[SettingKeys.tablesButtonLabel] ??
-                      AppLocalizations.of(context).tablesLabel,
-                        isActive: selectedIndex == 4,
+                            AppLocalizations.of(context).tablesLabel,
+                        isActive: selectedIndex == PosTab.floorPlan,
                         onTap: () => ref
                             .read(securityGuardProvider)
                             .guard(
                               context,
                               SecurityKeys.floorPlanView,
-                              () => handleNavTap(4),
+                              () => handleNavTap(PosTab.floorPlan),
                             ),
                       ),
 
                     NavItem(
                       icon: Icons.schedule,
                       label: AppLocalizations.of(context).shiftManagement,
-                      onTap: () => ref.read(securityGuardProvider).guard(
-                        context,
-                        SecurityKeys.shiftManagement,
-                        () {
-                          _closeSidebar();
-                          Navigator.push(
+                      isActive: selectedIndex == PosTab.shiftManagement,
+                      onTap: () => ref
+                          .read(securityGuardProvider)
+                          .guard(
                             context,
-                            MaterialPageRoute(
-                              builder: (_) => const ShiftManagementScreen(),
-                            ),
-                          );
-                        },
-                      ),
+                            SecurityKeys.shiftManagement,
+                            () => handleNavTap(PosTab.shiftManagement),
+                          ),
                     ),
                     NavItem(
                       icon: Icons.point_of_sale_outlined,
                       label: AppLocalizations.of(context).posSession,
-                      onTap: () {
-                        _closeSidebar();
-                        SessionListScreen.show(context);
-                      },
+                      isActive: selectedIndex == PosTab.posSession,
+                      onTap: () => handleNavTap(PosTab.posSession),
                     ),
                     NavItem(
                       icon: Icons.download,
                       label: AppLocalizations.of(context).cashInOut,
-                      onTap: () => ref.read(securityGuardProvider).guard(
-                        context,
-                        SecurityKeys.cashMovement,
-                        () {
-                          _closeSidebar();
-                          Navigator.push(
+                      isActive: selectedIndex == PosTab.cashInOut,
+                      onTap: () => ref
+                          .read(securityGuardProvider)
+                          .guard(
                             context,
-                            MaterialPageRoute(
-                              builder: (_) => const CashMovementScreen(),
-                            ),
-                          );
-                        },
-                      ),
+                            SecurityKeys.cashMovement,
+                            () => handleNavTap(PosTab.cashInOut),
+                          ),
                     ),
                     NavItem(
                       icon: Icons.credit_card,
                       label: AppLocalizations.of(context).creditPayments,
-                      onTap: () => ref.read(securityGuardProvider).guard(
-                        context,
-                        SecurityKeys.creditPayments,
-                        () {
-                          _closeSidebar();
-                          CreditPaymentsScreen.show(context);
-                        },
-                      ),
+                      isActive: selectedIndex == PosTab.creditPayments,
+                      onTap: () => ref
+                          .read(securityGuardProvider)
+                          .guard(
+                            context,
+                            SecurityKeys.creditPayments,
+                            () => handleNavTap(PosTab.creditPayments),
+                          ),
                     ),
                     NavItem(
                       icon: Icons.directions_run,
                       label: AppLocalizations.of(context).endOfDayLower,
-                      isActive: selectedIndex == 5,
+                      isActive: selectedIndex == PosTab.endOfDay,
                       onTap: () => ref
                           .read(securityGuardProvider)
                           .guard(
                             context,
                             SecurityKeys.endOfDay,
-                            () => handleNavTap(5),
+                            () => handleNavTap(PosTab.endOfDay),
                           ),
                     ),
 
@@ -557,13 +583,13 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
                     NavItem(
                       icon: Icons.person_outline,
                       label: AppLocalizations.of(context).userInfo,
-                      isActive: selectedIndex == 6,
+                      isActive: selectedIndex == PosTab.userInfo,
                       onTap: () => ref
                           .read(securityGuardProvider)
                           .guard(
                             context,
                             SecurityKeys.userProfile,
-                            () => handleNavTap(6),
+                            () => handleNavTap(PosTab.userInfo),
                           ),
                     ),
                     NavItem(
@@ -641,8 +667,8 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
                         // Drop out of maximized first, and put it back on exit.
                         if (defaultTargetPlatform == TargetPlatform.windows) {
                           if (!full) {
-                            _wasMaximizedBeforeFullScreen =
-                                await windowManager.isMaximized();
+                            _wasMaximizedBeforeFullScreen = await windowManager
+                                .isMaximized();
                             if (_wasMaximizedBeforeFullScreen) {
                               await windowManager.unmaximize();
                             }
@@ -692,7 +718,13 @@ class _MainLayoutState extends ConsumerState<MainLayout> with WindowListener {
       // already on. It renders nothing at all while developer mode is off.
       body: Stack(
         children: [
-          LazyIndexedStack(index: renderIndex, children: screens),
+          // IlyassShell marks this subtree as HOSTED: it is what tells each
+          // tab to wear a hamburger rather than a back arrow, and what stops
+          // `ilyassLeave` popping MainLayout itself — which would drop the
+          // cashier on the login screen. See `lib/core/ilyass_screen.dart`.
+          IlyassShell(
+            child: LazyIndexedStack(index: renderIndex, children: screens),
+          ),
           // Wedge scans, wherever the operator happens to be. Renders nothing;
           // it only watches the keyboard.
           const GlobalScanListener(),

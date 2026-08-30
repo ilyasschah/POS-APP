@@ -94,15 +94,57 @@ public class UserRepository
         return true;
     }
 
+    /// <summary>
+    /// Deletes a user and the device PINs that belong to them.
+    ///
+    /// 🚨 The PINs have to go FIRST. `UserDevicePins.UserId` carries a real FK
+    /// (`FK_UserDevicePins_User`) and the live database declares it NO ACTION —
+    /// the EF migration that created the table asked for Cascade, but the table
+    /// in `web-pos` was built by hand and does not match. So SQL Server refuses
+    /// the delete, and because the row EF is removing is the User, it surfaces
+    /// as the same error code (547) a real sales record produces. That is how
+    /// "this user has a document related to their name" came to be shown for a
+    /// user who had nothing but a till PIN.
+    ///
+    /// A PIN is a per-terminal CREDENTIAL, not history: it is how that person
+    /// unlocked a till, and it means nothing once the person is gone. Sales,
+    /// payments, bookings and voids are the opposite — those still block the
+    /// delete, on purpose.
+    ///
+    /// ⚠️ Both statements share ONE transaction. Deleting the PINs first and
+    /// letting the User delete fail on its own would log the person out of
+    /// every terminal they use and then report that nothing was deleted.
+    /// </summary>
     public async Task<bool> DeleteAsync(int id, int companyId)
     {
-        var entity = await GetByIdAsync(id, companyId);
-        if (entity == null)
+        if (await GetByIdAsync(id, companyId) == null)
         {
             throw new InvalidOperationException("User not found.");
         }
-        _db.Users.Remove(entity);
-        await _db.SaveChangesAsync();
+
+        var strategy = _db.Database.CreateExecutionStrategy();
+        await strategy.ExecuteAsync(async () =>
+        {
+            // Re-read inside the strategy: on a retry the tracked instance from
+            // the failed attempt is stale, and Remove() on it would replay the
+            // old state.
+            _db.ChangeTracker.Clear();
+
+            await using var tx = await _db.Database.BeginTransactionAsync();
+
+            var entity = await GetByIdAsync(id, companyId)
+                ?? throw new InvalidOperationException("User not found.");
+
+            await _db.UserDevicePins
+                .Where(p => p.UserId == id && p.CompanyId == companyId)
+                .ExecuteDeleteAsync();
+
+            _db.Users.Remove(entity);
+            await _db.SaveChangesAsync();
+
+            await tx.CommitAsync();
+        });
+
         return true;
     }
 }

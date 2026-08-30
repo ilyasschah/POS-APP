@@ -2694,6 +2694,68 @@ Two rules make the drag feel solid rather than glitchy, and both are load-bearin
   a right edge visibly slides the left half of the table. It still fills a wider
   pane afterwards — the surplus rule adds to the pinned value.
 
+## 5. Ilyass Screen — the shape of a navigation destination
+
+_Added 2026-08-29, extracted from End of Day._
+
+Say **"make it an Ilyass Screen"** and this is the contract. It is about
+NAVIGATION — where a screen lives and how you get out of it — where rules 1–4
+are about layout. The widget is `IlyassScreen` in `lib/core/ilyass_screen.dart`.
+
+**A sidebar destination is a TAB, never a pushed route.** It renders inside the
+shell's `LazyIndexedStack`, so it keeps its scroll position and its filters,
+switching to it costs no route animation, and it never stacks *on top of* the
+shell it belongs to. Add an index to `PosTab` (`lib/navigation/main_layout.dart`)
+and an entry to `screens` — those indices are **append-only**, because several
+screens set the nav provider by literal and a stale one can arrive from settings.
+
+Management is the one deliberate exception: it is a shell of its own, with its
+own sidebar and its own tabs, so it is pushed as a route and its back arrow is
+correct.
+
+**The top-left control is decided by how the screen is MOUNTED, not by the
+screen.** That is the whole reason the file exists — Cash In/Out shipped a back
+arrow while it was a shell tab, pointing at a route that was not there. Never
+write `leading:` by hand; hand it to `IlyassLeading`:
+
+| Mounting | Control |
+|---|---|
+| Hosted, `onMenuPressed` given | ☰ hamburger, opens the sidebar |
+| Hosted, no `onMenuPressed` (desktop management: permanent rail) | nothing |
+| Pushed as a route | ← back arrow, pops |
+
+🚨 **Hosted-ness cannot be inferred from `Navigator.canPop()`.** Both shells are
+themselves pushed over the login screen, so `canPop()` is `true` inside every
+tab. The shells wrap their stack in an `IlyassShell` inherited widget and
+`IlyassLeading` reads that. A route pushed *from* a tab is built under the
+Navigator — an ancestor of the shell — so it correctly finds no `IlyassShell`
+and gets its back arrow.
+
+**There is no "leave" button.** The sidebar is the way out of every destination,
+so Cancel cancels the *work*; it does not navigate. When a screen genuinely must
+hand control back after a commit, it calls `ilyassLeave(context,
+onReturnToShell: ...)` — which pops when pushed and switches the shell to the POS
+tab when hosted. A bare `Navigator.pop()` from a tab pops the shell and signs the
+cashier out mid-shift.
+
+Everything else is the End of Day header: search bar **in the header** (a search
+row in the body costs a full strip of height on a 10-inch tablet), secondary
+actions behind a single ⋮, the primary action as a bottom-trailing FAB, and the
+title yielding to the search bar when the screen is narrow.
+
+```dart
+IlyassScreen(
+  title: l.cashInOut,
+  onMenuPressed: widget.onMenuPressed,   // from the shell; null when pushed
+  maxContentWidth: 480,                  // forms only — never a data table
+  body: form,
+  footer: actionBar,                     // full-bleed bar, cap its contents
+)
+```
+
+`IlyassListScaffold` is this with the list-screen defaults already set (no width
+cap — tables scroll instead), and is what the twelve management list screens use.
+
 ## Where it is applied
 
 | Screen | What |
@@ -2704,6 +2766,9 @@ Two rules make the drag feel solid rather than glitchy, and both are load-bearin
 | `lib/product/product_groups_screen.dart` | The group TREE inside an `IlyassTable`: the hierarchy became one indented Name column with an expand toggle, searching flattens it, and the old 340px-tree-plus-editor split gave way to `IlyassListScaffold` + a dialog editor |
 | `lib/reports/z_report_screen.dart` | End of Day is the Z-report history in an `IlyassTable` (11 columns, money end-aligned, 5 hidden by default) with `UnifiedSearchBar` + the app date-range picker as a period chip; Close Register left the app bar for a red FAB that exists ONLY while unreported payments do, and the old Current Shift tab became its confirmation sheet |
 | `lib/core/ilyass_table.dart` | The shared table + `ilyassColumnWidthsProvider` |
+| `lib/core/ilyass_screen.dart` | `IlyassScreen`, `IlyassLeading`, `IlyassShell`, `ilyassLeave` — the navigation-destination contract |
+| `lib/navigation/main_layout.dart` | `PosTab` indices; Sales History, Shift Management, POS Session, Cash In/Out and Credit Payments became TABS instead of pushed routes, and `Cash.ShowOnStart` now lands on the cash tab instead of pushing it over the shell |
+| `lib/cash/cash_movement_screen.dart` | The screen that named the rule: hamburger instead of a back arrow, Save/Cancel through `ilyassLeave`, form capped at 480px under a full-bleed action bar |
 | `lib/core/responsive.dart` | `kMaxReadableWidth` |
 
 Still on the old pattern, and the obvious next candidates: the products list,

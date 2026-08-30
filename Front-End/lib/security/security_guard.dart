@@ -6,6 +6,7 @@ import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/app_settings/app_settings_provider.dart';
 import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/auth/user_model.dart';
+import 'package:pos_app/navigation/nav_widgets.dart';
 import 'package:pos_app/security/security_key_model.dart';
 import 'package:pos_app/security/security_key_provider.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
@@ -75,6 +76,53 @@ class SecurityGuard {
       isError: true,
       duration: _duration,
       position: _position,
+    );
+  }
+
+  /// [guard], but a refusal is a dialog the cashier has to dismiss instead of a
+  /// toast that slides away.
+  ///
+  /// Use it where the denied action has NO other visible effect and the cashier
+  /// is standing in front of a customer waiting for something to happen — the
+  /// cash drawer being the case this was written for. A toast next to a drawer
+  /// that did not move reads as "the hardware is broken"; a dialog saying to
+  /// fetch a manager tells them what to actually do. Everywhere the refusal is
+  /// self-evident (a screen that simply does not open), keep using [guard].
+  Future<void> guardWithDialog(
+    BuildContext context,
+    String keyName,
+    VoidCallback onAllowed,
+  ) async {
+    if (canAccess(keyName)) {
+      onAllowed();
+      return;
+    }
+    final l10n = AppLocalizations.of(context);
+    final cs = Theme.of(context).colorScheme;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: ctx.navSidebarBg,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: ctx.navDivider, width: 1),
+        ),
+        icon: Icon(Icons.lock_outline, color: cs.error, size: 32),
+        title: Text(l10n.accessDenied),
+        content: Text(
+          rulesUnavailable ? l10n.accessRulesNotSynced : l10n.accessDeniedAskAdmin,
+          style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(
+            color: ctx.navMuted,
+          ),
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(l10n.actionOk),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -36,6 +36,7 @@ abstract final class SecurityKeys {
   static const applyDiscount   = 'Payment.Discount';
   static const taxOverride     = 'Payment.TaxOverride';
   static const refund          = 'Refund';
+  static const cashDrawerOpen  = 'CashDrawer.Open';
   static const invoicesDelete  = 'Invoices.Delete';
   static const reprintReceipt  = 'SalesHistory.Receipt';
   static const floorPlanDesign = 'FloorPlans.Design';

@@ -12,29 +12,35 @@ import 'package:pos_app/core/app_date_picker.dart';
 import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/navigation/nav_widgets.dart';
 import 'package:pos_app/shift/shift_provider.dart';
+import 'package:pos_app/core/ilyass_screen.dart';
 import 'package:pos_app/time_clock/time_clock_provider.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
 
+/// Shift Management — an Ilyass Screen (`lib/core/ilyass_screen.dart`): a
+/// sidebar tab with a hamburger, not a route pushed over the shell.
 class ShiftManagementScreen extends ConsumerWidget {
-  const ShiftManagementScreen({super.key});
+  /// Opens the POS navigation drawer. Supplied by MainLayout; null when the
+  /// screen is pushed standalone, which turns the hamburger into a back arrow.
+  final VoidCallback? onMenuPressed;
+
+  const ShiftManagementScreen({super.key, this.onMenuPressed});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return DefaultTabController(
       length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(AppLocalizations.of(context).shiftManagement),
-          bottom: TabBar(
-            tabs: [
-              Tab(
-                  icon: const Icon(Icons.timer_outlined),
-                  text: AppLocalizations.of(context).myShift),
-              Tab(
-                  icon: const Icon(Icons.bar_chart_outlined),
-                  text: AppLocalizations.of(context).hoursReport),
-            ],
-          ),
+      child: IlyassScreen(
+        title: AppLocalizations.of(context).shiftManagement,
+        onMenuPressed: onMenuPressed,
+        bottom: TabBar(
+          tabs: [
+            Tab(
+                icon: const Icon(Icons.timer_outlined),
+                text: AppLocalizations.of(context).myShift),
+            Tab(
+                icon: const Icon(Icons.bar_chart_outlined),
+                text: AppLocalizations.of(context).hoursReport),
+          ],
         ),
         body: const TabBarView(
           children: [

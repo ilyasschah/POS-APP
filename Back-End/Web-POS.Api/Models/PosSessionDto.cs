@@ -11,6 +11,16 @@ public class PosSessionDto
     /// <summary>The register's name ("POS1"). Needed so a device can render
     /// ANOTHER register's sessions in the list without a second lookup.</summary>
     public string? PosDeviceName { get; set; }
+
+    /// <summary>
+    /// The REGISTER's uid — the value a terminal matches against its own
+    /// `PosSession.RegisterUid` to decide "this is the session I am working".
+    ///
+    /// 🚨 Without it a session opened on another terminal arrives with no way
+    /// to tell whether it belongs to this register, so a second device could
+    /// never join it — it saw a list entry and nothing more.
+    /// </summary>
+    public string? PosDeviceUid { get; set; }
     public int OpenedByUserId { get; set; }
     public DateTime OpenedAt { get; set; }
     public int? ClosedByUserId { get; set; }
@@ -82,10 +92,15 @@ public class OpenPosSessionRequest
     /// <summary>Client UUID — the idempotency key for an offline open.</summary>
     public string? LocalId { get; set; }
 
-    /// <summary>The terminal's stable GUID (same value as `X-Device-Id`).</summary>
+    /// <summary>
+    /// The REGISTER this session belongs to. Historically the terminal's own
+    /// GUID — which is why one device got one register — but any stable uid the
+    /// operator's chosen register carries. Two terminals sending the same value
+    /// are working the same till and share its session.
+    /// </summary>
     public string DeviceUid { get; set; } = string.Empty;
 
-    /// <summary>Display name / numbering prefix, e.g. "POS1".</summary>
+    /// <summary>The register's display name, e.g. "Front Till".</summary>
     public string? DeviceName { get; set; }
 
     public int UserId { get; set; }
@@ -164,4 +179,38 @@ public class SyncPosSessionRequest
     public string? OpeningNote { get; set; }
 
     public List<PosSessionCountInput>? Counts { get; set; }
+}
+
+/// <summary>
+/// A REGISTER — Odoo's `pos.config`. One named till with one drawer and one
+/// session at a time; any number of terminals may work it at once.
+///
+/// 🚨 Stored in the `PosDevice` table, whose name predates the concept. It was
+/// keyed by the terminal's own GUID, which is exactly why a session could not
+/// be shared: every device silently created a register of its own. The uid is
+/// now the REGISTER's, and an existing row is simply a register that happens to
+/// be named after the one terminal that ever used it.
+/// </summary>
+public class PosRegisterDto
+{
+    public int Id { get; set; }
+    public string Uid { get; set; } = string.Empty;
+    public string? Name { get; set; }
+    public DateTime LastSeenAt { get; set; }
+
+    /// <summary>Live session on this register right now, if any — so the
+    /// picker can say "Front Till · trading since 09:00" instead of a bare
+    /// name, and a terminal joining knows what it is joining.</summary>
+    public int? LiveSessionId { get; set; }
+    public int? LiveSessionStatus { get; set; }
+}
+
+/// <summary>Create or rename a register.</summary>
+public class UpsertPosRegisterRequest
+{
+    /// <summary>Stable id the terminals match on. Minted once, by whichever
+    /// terminal first creates the register.</summary>
+    public string Uid { get; set; } = string.Empty;
+
+    public string? Name { get; set; }
 }

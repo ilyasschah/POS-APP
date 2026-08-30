@@ -286,6 +286,12 @@ namespace Api.Commands.PosOrderCommands.BatchSync
                             TaxId  = t.TaxId,
                             Amount = t.Amount,
                         }).ToList(),
+                        // Carried straight through to DocumentItemModifier. A
+                        // sale rung up offline reaches the server ONLY down this
+                        // path, so dropping them here would mean the choices
+                        // existed on the till and nowhere else the moment the
+                        // order was banked.
+                        Modifiers = i.Modifiers,
                     };
                 }).ToList();
             }

@@ -301,6 +301,21 @@ namespace Api.Commands.PosOrderItemCommands.Add
                             _db.Set<PosOrderItemTax>().RemoveRange(oldTaxes);
                         }
 
+                        // Same replace-wholesale treatment as the taxes above,
+                        // and for the same reason: this command receives the
+                        // order's COMPLETE line list, so anything still attached
+                        // to a line that survived belongs to the previous
+                        // version of it. Editing a line's choices would
+                        // otherwise leave the old ones beside the new.
+                        var oldModifiers = await _db.Set<PosOrderItemModifier>()
+                            .Where(m => currentItemIds.Contains(m.PosOrderItemId))
+                            .ToListAsync(cancellationToken);
+
+                        if (oldModifiers.Any())
+                        {
+                            _db.Set<PosOrderItemModifier>().RemoveRange(oldModifiers);
+                        }
+
                         // Positional within the ProductId group, exactly as above:
                         // FirstOrDefault attached BOTH lines' taxes to the same row when
                         // a product occupied two, leaving the other row untaxed.
@@ -329,6 +344,30 @@ namespace Api.Commands.PosOrderItemCommands.Add
                                         CompanyId = command.CompanyId
                                     };
                                     _db.Set<PosOrderItemTax>().Add(newTax);
+                                }
+                            }
+
+                            // The chosen options, snapshotted. Rides the SAME
+                            // positional slot as the taxes: a product on two
+                            // lines is two different orders of food, and
+                            // matching by ProductId alone would put both lines'
+                            // choices on the first one — the bug the tax slot
+                            // above already exists to prevent.
+                            if (savedItem != null && req.Modifiers != null && req.Modifiers.Any())
+                            {
+                                var rank = 0;
+                                foreach (var mod in req.Modifiers)
+                                {
+                                    if (string.IsNullOrWhiteSpace(mod.Name)) continue;
+                                    _db.Set<PosOrderItemModifier>().Add(
+                                        PosOrderItemModifier.Create(
+                                            companyId: command.CompanyId,
+                                            posOrderItemId: savedItem.Id,
+                                            modifierOptionId: mod.ModifierOptionId,
+                                            name: mod.Name,
+                                            additionalPrice: mod.AdditionalPrice,
+                                            groupName: mod.GroupName,
+                                            rank: rank++));
                                 }
                             }
                         }

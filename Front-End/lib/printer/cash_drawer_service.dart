@@ -289,11 +289,17 @@ bool shouldOpenDrawerForSale({
 }) =>
     paymentTypeOpensDrawer || !anyPaymentTypeOpensDrawer;
 
-/// Fires every enabled drawer after a sale. **Never throws** — the sale is
-/// already banked by the time this runs and a jammed drawer must not turn a
-/// completed transaction into an error. Returns the failure messages so the
-/// caller can surface them without blocking.
-Future<List<String>> openDrawersAfterSale(Map<String, String> settings) async {
+/// Fires every enabled drawer on this terminal. **Never throws** — its two
+/// callers both need that. After a sale the money is already banked and a
+/// jammed drawer must not turn a completed transaction into an error; behind
+/// the till's "Open Drawer" button a thrown exception would reach the cashier
+/// as a crash instead of a sentence. Returns the failure messages so the caller
+/// can surface them without blocking.
+///
+/// An empty [enabledCashDrawers] returns no failures — nothing was attempted.
+/// The manual button checks for that case itself, because "no drawer is set up"
+/// and "the drawer opened" must not look the same to the operator.
+Future<List<String>> openEnabledDrawers(Map<String, String> settings) async {
   final failures = <String>[];
   for (final drawer in enabledCashDrawers(settings)) {
     try {

@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/app_settings/app_settings_provider.dart';
 import 'package:pos_app/scale/scale_weight_parser.dart';
+import 'package:pos_app/utils/windows_ports.dart';
 
 /// Whether this device can talk to a serial weighing scale at all.
 ///
@@ -20,8 +21,23 @@ final bool kScaleSupported = Platform.isWindows;
 ///
 /// Empty off Windows: enumerating would load the native library on a platform
 /// where it cannot work.
-List<String> availableSerialPorts() =>
-    kScaleSupported ? SerialPort.availablePorts : const [];
+///
+/// Unions Windows' own device map with `libserialport`'s Ports-class walk
+/// because neither is a superset of the other — see `utils/windows_ports.dart`.
+/// Parallel ports are deliberately NOT included: a scale streams, and nothing
+/// streams down an LPT line.
+List<String> availableSerialPorts() => kScaleSupported
+    ? mergePortLists(detected: [WindowsPorts.serial(), _libSerialPorts()])
+    : const [];
+
+List<String> _libSerialPorts() {
+  try {
+    return SerialPort.availablePorts;
+  } catch (_) {
+    // Native library missing or unloadable. The device map still answered.
+    return const [];
+  }
+}
 
 /// The scale could not be reached. Carries a message fit to show a cashier.
 class ScaleException implements Exception {

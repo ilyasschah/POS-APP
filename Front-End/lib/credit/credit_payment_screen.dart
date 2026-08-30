@@ -1,5 +1,7 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
+import 'package:pos_app/navigation/main_layout.dart';
+import 'package:pos_app/core/ilyass_screen.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -54,13 +56,17 @@ class _UnpaidDoc {
 // ---------------------------------------------------------------------------
 // Screen entry point
 // ---------------------------------------------------------------------------
+/// Credit Payments — an Ilyass Screen (`lib/core/ilyass_screen.dart`): a
+/// sidebar tab with a hamburger, not a route stacked on top of the shell.
 class CreditPaymentsScreen extends ConsumerStatefulWidget {
-  const CreditPaymentsScreen({super.key});
+  /// Opens the POS navigation drawer. Supplied by MainLayout; null if this is
+  /// ever pushed as a route, which turns the hamburger into a back arrow.
+  final VoidCallback? onMenuPressed;
 
-  // Updated to push a route instead of showing a dialog
-  static Future<void> show(BuildContext context) => Navigator.of(
-    context,
-  ).push(MaterialPageRoute(builder: (_) => const CreditPaymentsScreen()));
+  const CreditPaymentsScreen({super.key, this.onMenuPressed});
+
+  // The old `show()` route-pusher is gone: the sidebar reaches this as a tab
+  // now, and nothing else opened it.
 
   @override
   ConsumerState<CreditPaymentsScreen> createState() =>
@@ -349,13 +355,11 @@ class _CreditPaymentsScreenState extends ConsumerState<CreditPaymentsScreen> {
         children: [
           // ── Replaced Title Bar with PosTopBar ─────────────────────────────
           PosTopBar(
-            leading: IconButton(
-              icon: const Icon(
-                Icons.arrow_back,
-                size: 28,
-              ), // Larger icon for touch
-              tooltip: AppLocalizations.of(context).back,
-              onPressed: () => Navigator.pop(context),
+            // Hamburger as a tab, back arrow when pushed — the mounting
+            // decides, not this screen. See `lib/core/ilyass_screen.dart`.
+            leading: IlyassLeading(
+              onMenuPressed: widget.onMenuPressed,
+              iconSize: 28, // Larger icon for touch
             ),
             title: Text(
               AppLocalizations.of(context).creditPayments,
@@ -450,7 +454,15 @@ class _CreditPaymentsScreenState extends ConsumerState<CreditPaymentsScreen> {
             hasCustomer: _customerId != null,
             isSubmitting: _isSubmitting,
             onOk: _submit,
-            onCancel: () => Navigator.of(context).pop(),
+            // Cancel LEAVES this destination, so it goes through
+            // `ilyassLeave`: a bare pop would have popped the whole shell now
+            // that Credit Payments is a tab rather than a pushed route.
+            onCancel: () => ilyassLeave(
+              context,
+              onReturnToShell: () =>
+                  ref.read(mainNavigationIndexProvider.notifier).state =
+                      PosTab.pos,
+            ),
           ),
         ],
       ),

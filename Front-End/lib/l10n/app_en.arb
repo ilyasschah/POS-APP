@@ -1,5 +1,45 @@
 {
   "@@locale": "en",
+  "setSerialPort": "Serial port",
+  "setDisplayCharset": "Display character set",
+  "setDisplayCharsetHint": "What the display's firmware can render — this is about the hardware, not the app's language. Try Arabic (Windows-1256) first; only pick the reversed one if the display shows Arabic words backwards.",
+  "charsetAscii": "Plain (accents simplified)",
+  "charsetLatin1": "Western European (accents kept)",
+  "charsetArabic": "Arabic (Windows-1256)",
+  "charsetArabicVisual": "Arabic, reversed (only if words come out backwards)",
+  "printerConnection": "Connection",
+  "printerConnectionSystem": "This computer (Windows printer)",
+  "printerConnectionSystemUnavailable": "This device (opens the print dialog)",
+  "printerConnectionNetwork": "Network printer (Wi-Fi / LAN)",
+  "printerConnectionHint": "A network printer prints silently on tablets as well as on this computer.",
+  "printerConnectionHintMobile": "This device cannot print silently to a system printer — it can only open the print dialog. Choose Network printer and enter its address.",
+  "printerHost": "Printer address",
+  "printerTcpPort": "Port",
+  "poleDisplayTotalDue": "TOTAL DUE",
+  "poleDisplayWelcome": "WELCOME!",
+  "portNoneDetected": "None detected",
+  "portNoneDetectedHint": "This machine reports no COM or LPT port. Check the cable and Device Manager, then reopen this screen.",
+  "portNotDetected": "{port} (not detected)",
+  "@portNotDetected": {"placeholders": {"port": {"type": "String"}}},
+  "portRefresh": "Refresh ports",
+  "registerChoose": "Choose register",
+  "registerSubtitle": "The till this device is working. Devices on the same register share its open session, its documents and its drawer.",
+  "registerThisDeviceOnly": "This device only",
+  "registerThisDeviceOnlyHint": "Its own session, shared with nothing else.",
+  "registerTrading": "Session open now",
+  "registerIdle": "No open session",
+  "registerNew": "New register",
+  "registerNameHint": "e.g. Front Till",
+  "registerListOffline": "Registers could not be loaded. Choosing a shared register needs a connection.",
+  "registerSwitchBlocked": "Close this register's session before switching. Moving now would leave it open with no way back to it from here.",
+  "setRegister": "Register",
+  "sessionJoinRegister": "Sell in this session",
+  "sessionJoinTitle": "Work this register?",
+  "sessionJoinBody": "This device will start working {register}. Sales you ring go into session {session}, alongside every other terminal on it — and any of them can close it.",
+  "@sessionJoinBody": {"placeholders": {"register": {"type": "String"}, "session": {"type": "String"}}},
+  "sessionJoinBlocked": "This device already has its own session open. Close it before working another register, or it stays open with nothing able to reach it.",
+  "sessionJoinNoRegister": "This session has not finished syncing, so the register it belongs to is not known here yet. Sync and try again.",
+  "sessionJoinOpenElsewhere": "Another register already has a session open. Sell in that one instead of starting a second.",
   "actionCancel": "Cancel",
   "@actionCancel": {
     "description": "Dismisses a dialog without applying changes"
@@ -179,6 +219,31 @@
   "newPassword": "New Password",
   "newQuantity": "New Quantity",
   "noSecurityRules": "No security rules found.",
+  "securityRulesIntro": "Choose who may use each part of the POS. Cashier means everyone may; Admin means only an administrator — a cashier who tries is told to ask you.",
+  "securityRulesSummary": "{total} rules · {adminOnly} admin-only",
+  "@securityRulesSummary": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      },
+      "adminOnly": {
+        "type": "int"
+      }
+    }
+  },
+  "securityCategoryCount": "{count} · {restricted} admin-only",
+  "@securityCategoryCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "restricted": {
+        "type": "int"
+      }
+    }
+  },
+  "securityLevelCashierHint": "Cashiers and admins may do this",
+  "securityLevelAdminHint": "Only an administrator may do this",
   "noTaxShort": "No tax",
   "noneLabel": "None",
   "noteLabel": "Note",
@@ -2981,6 +3046,7 @@
   },
   "accessDenied": "Access Denied",
   "accessDeniedBody": "You do not have permission to view this section.\nChoose another section from the menu, or ask an administrator for access.",
+  "accessDeniedAskAdmin": "You do not have permission for this action.\nAsk an administrator to do it for you.",
   "checkingUpper": "CHECKING…",
   "chooseYourMenuLayout": "Choose your menu layout",
   "connectingEllipsis": "Connecting…",
@@ -3464,7 +3530,7 @@
   "sessionCashMovements": "Cash movements",
   "sessionNotes": "Notes",
   "cashDrawer": "Cash drawer",
-  "sessionRemoteFiguresOffline": "This session belongs to another register — its takings load from the server.",
+  "sessionRemoteFiguresOffline": "Server unreachable — these are only this terminal's figures. The register's full takings load from the server.",
   "sessionDocuments": "Documents",
   "sessionOverviewTab": "Overview",
   "sessionPaymentsTab": "Payments",
@@ -3521,6 +3587,8 @@
     }
   },
   "cashDrawerTransportUnavailable": "This connection is not available on this device.",
+  "cashDrawerNotConfigured": "No cash drawer is set up on this terminal. Turn one on in Settings → Printers → Cash Drawer.",
+  "posOpenDrawer": "Open Drawer",
   "setSounds": "Sounds",
   "setSoundsEnabled": "Enable sounds",
   "setSoundVolume": "Volume",
@@ -3652,5 +3720,157 @@
   "iconSauce": "Sauce",
   "iconDrink": "Drink",
   "iconDessert": "Dessert",
-  "iconSpice": "Spice"
+  "iconSpice": "Spice",
+  "rptTitleSalesByProduct": "SALES BY PRODUCT",
+  "rptTitleSalesByGroup": "SALES BY PRODUCT GROUPS",
+  "rptTitleSalesTax": "SALES TAX",
+  "rptTitleSalesByCustomer": "SALES BY CUSTOMER",
+  "rptTitlePaymentByCustomer": "PAYMENT TYPES BY CUSTOMERS",
+  "rptTitlePaymentByUser": "PAYMENT TYPES BY USERS",
+  "rptTitlePaymentTypes": "SALES BY PAYMENT TYPES",
+  "rptTitleItemList": "SALES ITEM LIST",
+  "rptTitleProfit": "PROFIT",
+  "rptTitleStockMovement": "STOCK MOVEMENT",
+  "rptTitleItemDiscounts": "ITEMS DISCOUNTS",
+  "rptTitleDiscountsBySource": "DISCOUNTS BY SOURCE",
+  "rptTitleDiscountsGranted": "DISCOUNTS GRANTED (AFTER TAX)",
+  "rptTitleVoidedItems": "VOIDED ITEMS",
+  "rptTitleStartingCash": "STARTING CASH ENTRIES",
+  "rptTitleUnpaidSales": "UNPAID SALES",
+  "rptTitleHourlyByGroup": "HOURLY SALES BY PRODUCT GROUPS",
+  "rptTitleByTable": "SALES BY TABLE / ORDER NUMBER",
+  "rptTitleHourlySales": "HOURLY SALES",
+  "rptTitleDailySales": "DAILY SALES",
+  "rptTitleInvoices": "INVOICES",
+  "rptTitleRefunds": "REFUNDS",
+  "rptTitleSalesByUsers": "SALES BY USERS",
+  "rptTitleUnpaidPurchase": "UNPAID PURCHASE",
+  "rptTitlePurchaseBySupplier": "PURCHASE BY SUPPLIER",
+  "rptTitlePurchaseByProduct": "PURCHASE BY PRODUCT",
+  "rptTitleExpirationDate": "EXPIRATION DATE",
+  "rptTitlePurchaseTax": "PURCHASE TAX",
+  "rptTitlePurchaseInvoices": "PURCHASE INVOICES",
+  "rptTitlePurchasedItemDiscounts": "PURCHASED ITEMS DISCOUNTS",
+  "rptTitlePurchaseDiscounts": "PURCHASE DISCOUNTS",
+  "rptTitleStockReturns": "STOCK RETURNS BY PRODUCT",
+  "rptTitleLossAndDamage": "LOSS AND DAMAGE BY PRODUCT",
+  "rptTitleReorderList": "REORDER PRODUCT LIST",
+  "rptTitleLowStock": "LOW STOCK WARNING",
+  "rptTitleTransactionHistory": "TRANSACTION HISTORY",
+  "rptTitleStockReport": "STOCK REPORT",
+  "rptColUom": "UOM",
+  "rptColTaxName": "Tax name",
+  "rptColRefNumber": "Ref. number",
+  "rptColRefShort": "Ref. #",
+  "rptColDocument": "Document",
+  "rptColDocumentShort": "Document #",
+  "rptColCustomerCode": "Customer code",
+  "rptColTotalTax": "Total tax",
+  "rptColCreateDate": "Create date",
+  "rptColProfit": "Profit",
+  "rptColMargin": "Margin",
+  "rptColNumSales": "Num. of sales",
+  "rptColNumberOfSales": "Number of sales",
+  "rptColSalesCount": "Sales count",
+  "rptColAverageSale": "Average sale",
+  "rptColTotalSales": "Total sales",
+  "rptColHours": "Hours",
+  "rptColTotalDiscount": "Total discount",
+  "rptColDiscountSource": "Discount source",
+  "rptColTotalBeforeDisc": "Total before disc.",
+  "rptColTotalAfterDisc": "Total after disc.",
+  "rptColDiscountGranted": "Discount granted",
+  "rptColBeforeDisc": "Before disc.",
+  "rptColAfterDisc": "After disc.",
+  "rptColTotalDisc": "Total disc.",
+  "rptColTotalPaid": "Total paid",
+  "rptColTotalUnpaid": "Total unpaid",
+  "rptColDueDate": "Due date",
+  "rptColVoidedBy": "Voided by",
+  "rptColVoided": "Voided",
+  "rptColCreated": "Created",
+  "rptColReason": "Reason",
+  "rptColQtyShort": "Qty.",
+  "rptColOrderNo": "Order #",
+  "rptColPaymentMethod": "Payment method",
+  "rptColPurchaseNumber": "Purchase number",
+  "rptColExpirationDate": "Expiration date",
+  "rptColProductName": "Product name",
+  "rptColOrderQty": "Order qty.",
+  "rptColCurrentStock": "Current stock",
+  "rptColWarningQty": "Warning qty.",
+  "rptColTransactionType": "Transaction type",
+  "rptColCredit": "Credit",
+  "rptColDebit": "Debit",
+  "rptColTableOrOrder": "Table / order number",
+  "rptColZReportNo": "Z-Report #",
+  "rptColCompany": "Company",
+  "rptColCostPrice": "Cost price",
+  "rptColCostBeforeTax": "Cost bef. tax",
+  "rptColCostInclTax": "Cost incl. tax",
+  "rptFastMoving": "Fast moving",
+  "rptSlowMoving": "Slow moving",
+  "rptStatusConfirmed": "Confirmed",
+  "rptStatusPending": "Pending",
+  "rptBusinessPartner": "Business partner",
+  "rptNetTotal": "Net Total",
+  "rptTotalsRow": "TOTALS",
+  "rptNoGroup": "(none)",
+  "rptNoDiscountsInPeriod": "No discounts in this period.",
+  "rptTotalNumberOfSales": "Total number of sales: {count}",
+  "@rptTotalNumberOfSales": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "rptAverageSalesPerItem": "Average number of sales per item: {count}",
+  "@rptAverageSalesPerItem": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "rptOrdersDiscounted": "Number of orders discounted: {count}",
+  "@rptOrdersDiscounted": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "rptTotalDiscounted": "Total discounted: {amount}",
+  "@rptTotalDiscounted": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "rptPageOf": "Page {page} / {total}",
+  "@rptPageOf": {
+    "placeholders": {
+      "page": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "rptProductCount": "{count, plural, =1{1 product} other{{count} products}}",
+  "@rptProductCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "rptColHourStart": "Hour start",
+  "rptColHourEnd": "Hour end",
+  "rptFavorites": "Favorites",
+  "rptColTotalBefTax": "Total bef. tax",
+  "saveStockReportTitle": "Save Stock Report"
 }

@@ -23,7 +23,7 @@
 
 <div class="page-body">
     <div class="container-xl">
-        <form method="post">
+        <form method="post" enctype="multipart/form-data">
             <div class="row row-cards">
 
                 <!-- Company Profile -->
@@ -78,6 +78,30 @@
                                     <label class="form-label">Tax / VAT Number</label>
                                     <input class="form-control" asp-for="Input.TaxNumber" placeholder="XX123456789" />
                                 </div>
+                                <div class="col-12">
+                                    <label class="form-label">Logo</label>
+                                    <div class="row g-2 align-items-center">
+                                        <div class="col-auto">
+                                            <span class="avatar avatar-md" id="logoPreview"
+                                                  style="background-image:none">
+                                                <span class="text-secondary" id="logoPreviewInitial">—</span>
+                                            </span>
+                                        </div>
+                                        <div class="col">
+                                            <input type="file" class="form-control" asp-for="Logo"
+                                                   accept="@Api.Admin.CompanyLogoFile.Accept"
+                                                   onchange="previewLogo(this)" />
+                                            @*  PNG/JPEG is not a stylistic choice: the till prints this
+                                                logo through a decoder that reads those two and nothing
+                                                else, so a WebP would look right here and print blank. *@
+                                            <small class="form-hint">
+                                                PNG or JPEG, up to @(Api.Admin.CompanyLogoFile.MaxBytes / 1024 / 1024) MB.
+                                                Printed on this company's receipts and invoices. Optional —
+                                                it can be added later from Edit.
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -131,8 +155,10 @@
                                 <div class="col-12 col-md-6 col-lg-4">
                                     <label class="form-label">Access Level</label>
                                     <select class="form-select" asp-for="Input.AccessLevel">
-                                        <option value="1">Admin</option>
-                                        <option value="0">Cashier</option>
+                                        @foreach (var (value, label) in Api.Domain.AccessLevels.Options)
+                                        {
+                                            <option value="@value">@label</option>
+                                        }
                                     </select>
                                 </div>
                                 <div class="col-12 col-md-6 col-lg-4">
@@ -188,4 +214,23 @@
         toggle.addEventListener("change", updateState);
         updateState(); // Initialize state on load
     });
+</script>
+
+<script>
+    function previewLogo(input) {
+        var box = document.getElementById('logoPreview');
+        var initial = document.getElementById('logoPreviewInitial');
+        var file = input.files && input.files[0];
+        if (!file) {
+            box.style.backgroundImage = 'none';
+            initial.style.display = '';
+            return;
+        }
+        var reader = new FileReader();
+        reader.onload = function (e) {
+            box.style.backgroundImage = 'url(' + e.target.result + ')';
+            initial.style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+    }
 </script>

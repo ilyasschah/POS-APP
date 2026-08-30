@@ -399,7 +399,8 @@ class InvoicePdfService {
                       pw.SizedBox(height: 4),
                       pw.Row(
                         children: [
-                          printedText('${l.setTaxNo}:', style: ts(9, bold: true)),
+                          printedText(l.setTaxNo, style: ts(9, bold: true)),
+                          printedText(':', style: ts(9, bold: true)),
                           pw.SizedBox(width: 6),
                           printedText(company.taxNumber!, style: ts(9)),
                         ],
@@ -445,9 +446,9 @@ class InvoicePdfService {
               pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  _metaRow('${l.invoiceNoLabel}:', invoiceNumber, ts: ts),
-                  _metaRow('${l.dateLabel}:', fmtDate(date), ts: ts),
-                  _metaRow('${l.dueDate}:', fmtDate(date), ts: ts),
+                  _metaRow(l.invoiceNoLabel, invoiceNumber, ts: ts),
+                  _metaRow(l.dateLabel, fmtDate(date), ts: ts),
+                  _metaRow(l.dueDate, fmtDate(date), ts: ts),
                   // Payment status row
                   pw.Padding(
                     padding: const pw.EdgeInsets.only(bottom: 3),
@@ -456,10 +457,12 @@ class InvoicePdfService {
                         pw.SizedBox(
                           width: 95,
                           child: printedText(
-                            '${l.paymentStatus}:',
+                            l.paymentStatus,
                             style: ts(10, color: _kOrange),
                           ),
                         ),
+                        printedText(':', style: ts(10, color: _kOrange)),
+                        pw.SizedBox(width: 6),
                         printedText(
                           isPaid ? l.paid : l.unpaid,
                           style: ts(
@@ -576,7 +579,13 @@ class InvoicePdfService {
                   if (showPaymentMethods &&
                       paymentSummary != null &&
                       paymentSummary.isNotEmpty) ...[
-                    printedText('${l.paymentMethod}:', style: ts(9, bold: true)),
+                    pw.Row(
+                      mainAxisSize: pw.MainAxisSize.min,
+                      children: [
+                        printedText(l.paymentMethod, style: ts(9, bold: true)),
+                        printedText(':', style: ts(9, bold: true)),
+                      ],
+                    ),
                     pw.SizedBox(height: 3),
                     _summaryRow(
                       paymentSummary,
@@ -585,17 +594,19 @@ class InvoicePdfService {
                     ),
                   ],
                   _summaryRow(
-                    '${l.paidAmount}:',
+                    l.paidAmount,
                     '$currencySymbol${_numFmt.format(paidAmount)}',
                     ts: ts,
                     bold: true,
+                    separator: ':',
                   ),
                   if (showOutstanding)
                     _summaryRow(
-                      '${l.amountDue}:',
+                      l.amountDue,
                       '$currencySymbol${_numFmt.format(amountDue)}',
                       ts: ts,
                       bold: true,
+                      separator: ':',
                     ),
                 ],
               ),
@@ -627,10 +638,15 @@ class InvoicePdfService {
     return parts.join(', ');
   }
 
+  /// 🚨 [separator] is its own run and [label] must arrive without one. A ':'
+  /// is a NEUTRAL character, so at the end of an Arabic label the bidi pass
+  /// moves it to that run's visual LEFT end and it prints detached on the far
+  /// side of the label. See printer/printed_text.dart.
   static pw.Widget _metaRow(
     String label,
     String value, {
     required pw.TextStyle Function(double, {bool bold, PdfColor? color}) ts,
+    String separator = ':',
   }) => pw.Padding(
     padding: const pw.EdgeInsets.only(bottom: 3),
     child: pw.Row(
@@ -639,6 +655,8 @@ class InvoicePdfService {
           width: 95,
           child: printedText(label, style: ts(10, color: _kOrange)),
         ),
+        if (separator.isNotEmpty)
+          printedText(separator, style: ts(10, color: _kOrange)),
         // An Arabic label draws right-aligned inside its fixed box, so without
         // this it ends flush against the value with no gap at all.
         pw.SizedBox(width: 6),
@@ -662,17 +680,29 @@ class InvoicePdfService {
     ),
   );
 
+  /// 🚨 [separator] is its own run and [label] must arrive without one. A ':'
+  /// is a NEUTRAL character, so at the end of an Arabic label the bidi pass
+  /// moves it to that run's visual LEFT end and it prints detached on the far
+  /// side of the label. See printer/printed_text.dart.
   static pw.Widget _summaryRow(
     String label,
     String value, {
     required pw.TextStyle Function(double, {bool bold, PdfColor? color}) ts,
     bool bold = false,
+    String separator = '',
   }) => pw.Padding(
     padding: const pw.EdgeInsets.symmetric(vertical: 2),
     child: pw.Row(
       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
       children: [
-        printedText(label, style: ts(9, bold: bold)),
+        pw.Row(
+          mainAxisSize: pw.MainAxisSize.min,
+          children: [
+            printedText(label, style: ts(9, bold: bold)),
+            if (separator.isNotEmpty)
+              printedText(separator, style: ts(9, bold: bold)),
+          ],
+        ),
         printedText(value, style: ts(9, bold: bold)),
       ],
     ),

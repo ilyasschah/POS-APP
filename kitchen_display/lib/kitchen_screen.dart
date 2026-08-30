@@ -346,6 +346,24 @@ class KitchenCard extends StatelessWidget {
                               ),
                             ],
                           ),
+                          // The choices, above any typed note: they are what
+                          // the cook has to DO differently, and a note is a
+                          // remark about it.
+                          ...item.modifiers.map(
+                            (m) => Padding(
+                              padding: const EdgeInsets.only(top: 4, left: 32),
+                              child: Text(
+                                '+ $m',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: item.isDone
+                                      ? Colors.grey.shade400
+                                      : Colors.black87,
+                                ),
+                              ),
+                            ),
+                          ),
                           if (item.comment != null && item.comment!.isNotEmpty)
                             Padding(
                               padding: const EdgeInsets.only(top: 4, left: 32),

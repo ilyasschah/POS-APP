@@ -39,6 +39,21 @@ namespace Api.Models
         /// <see cref="WarehouseId"/> — the pull previously stored 0.</summary>
         public int UserId { get; set; }
 
+        /// <summary>
+        /// The POS session this document was banked in.
+        ///
+        /// 🚨 The PAYMENT rows carried their SessionId from the start and the
+        /// document did not, which left the two halves of one sale arriving on
+        /// another terminal by different routes. The payment landed attached to
+        /// the session; the document had to be guessed back onto it by a local
+        /// repair that matches company + time window + number prefix
+        /// (`attachOrphanSalesToSession`). Any sale the guess missed showed up
+        /// in a session's Payments tab and NOT in its Documents tab — reported
+        /// on 2026-08-29 with a shared register, where the guess is at its
+        /// weakest because every document carries the other terminal's prefix.
+        /// </summary>
+        public int? SessionId { get; set; }
+
         // Populated only when the caller requests includeItems=true (the
         // offline sync pull). Empty for the normal sales-history screen so its
         // payload stays lean.

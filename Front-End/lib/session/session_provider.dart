@@ -8,6 +8,7 @@ import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/session/pos_session_status.dart';
+import 'package:pos_app/session/register_identity.dart';
 
 /// This terminal's stable GUID — the same value sent as `X-Device-Id` and the
 /// same one the server maps to a `PosDevice` row.
@@ -15,16 +16,28 @@ final deviceUidProvider = FutureProvider<String>((ref) async {
   return AuthStorage().getOrCreateDeviceId();
 });
 
-/// The session THIS register is currently running, if any.
+/// The session THIS REGISTER is currently running, if any.
 ///
-/// 🚨 Scoped by `posDeviceUid`, not by user. A session belongs to the register,
-/// and several cashiers ring into it — that is the whole difference between a
-/// session and the attendance shift stored in the same table. Attendance rows
-/// have a null `posDeviceUid` and can never be returned here.
+/// 🚨 Scoped by the REGISTER's uid, not by the terminal's and not by user. A
+/// session belongs to a till — several cashiers, and now several terminals,
+/// ring into it. That is the whole difference between a session and the
+/// attendance shift stored in the same table; attendance rows have a null
+/// `posDeviceUid` and can never be returned here.
+///
+/// 🚨 The register uid is what makes a session SHARED. It used to be this
+/// terminal's own device GUID, so device B could only ever look at device A's
+/// session in the list — it could never be device B's active one. Two terminals
+/// pointed at the same register now resolve the same row, and
+/// `SyncManager.pullSessions` is what puts device A's session into device B's
+/// Drift for this query to find. See `session/register_identity.dart`.
 final activeSessionProvider = StreamProvider<ShiftsTableData?>((ref) {
+  // 🚨 `.select`ed to the two ids the query needs. Watching the whole `Company`
+  // and the whole `AsyncValue` rebuilt this Drift stream whenever either object
+  // was merely re-created — and tearing down the stream makes the gate above
+  // read `unknown`, i.e. it blinks the "no session" screen for no reason.
   final db = ref.watch(appDatabaseProvider);
-  final companyId = ref.watch(selectedCompanyProvider)?.id;
-  final uid = ref.watch(deviceUidProvider).value;
+  final companyId = ref.watch(selectedCompanyProvider.select((c) => c?.id));
+  final uid = ref.watch(registerUidProvider.select((a) => a.value));
   if (companyId == null || uid == null) return Stream.value(null);
 
   return (db.select(db.shiftsTable)
@@ -34,6 +47,31 @@ final activeSessionProvider = StreamProvider<ShiftsTableData?>((ref) {
         ..orderBy([(t) => OrderingTerm.desc(t.openedAt)])
         ..limit(1))
       .watchSingleOrNull();
+});
+
+/// Live sessions on registers this terminal is NOT working.
+///
+/// 🚨 The answer to "there is no session here, so open one" when a session
+/// already exists on the shop's other till. Without this the only offer a
+/// blocked terminal could make was Open Register — a second session on a drawer
+/// that already had one, which is the very thing the register model exists to
+/// stop. Empty on a single-till shop, so nothing extra is ever shown there.
+final joinableSessionsProvider = StreamProvider<List<ShiftsTableData>>((ref) {
+  final db = ref.watch(appDatabaseProvider);
+  final companyId = ref.watch(selectedCompanyProvider)?.id;
+  final myRegister = ref.watch(registerUidProvider).value;
+  if (companyId == null) return Stream.value(const []);
+
+  return (db.select(db.shiftsTable)
+        ..where((t) => t.companyId.equals(companyId))
+        ..where((t) => t.posDeviceUid.isNotNull())
+        ..where((t) => t.status.isIn(PosSessionStatus.live))
+        ..orderBy([(t) => OrderingTerm.desc(t.openedAt)]))
+      .watch()
+      // Excluded here rather than in SQL because [myRegister] resolves
+      // asynchronously — filtering on a null uid would briefly hide every row.
+      .map((rows) =>
+          rows.where((r) => r.posDeviceUid != myRegister).toList());
 });
 
 /// Whether this register may take money right now.
@@ -91,6 +129,12 @@ class SessionNotifier extends Notifier<void> {
     String? deviceName,
     double openingCash = 0,
   }) async {
+    // [deviceUid] is the REGISTER's uid — see `register_identity.dart`. A
+    // second terminal working the same till must JOIN the live session, never
+    // open a parallel one: two sessions on one drawer means two Z-reports for
+    // one set of cash. The caller checks `activeSessionProvider` first and
+    // offers "Continue selling"; this is the backstop, and the server enforces
+    // the same rule in `PosSessionService.OpenAsync`.
     final existing = await _liveSessionFor(companyId, deviceUid);
     if (existing != null) {
       throw StateError(
@@ -251,10 +295,11 @@ class SessionNotifier extends Notifier<void> {
     return row;
   }
 
-  Future<ShiftsTableData?> _liveSessionFor(int companyId, String deviceUid) =>
+  /// The live session on a REGISTER (by its uid), whichever terminal opened it.
+  Future<ShiftsTableData?> _liveSessionFor(int companyId, String registerUid) =>
       (_db.select(_db.shiftsTable)
             ..where((t) => t.companyId.equals(companyId))
-            ..where((t) => t.posDeviceUid.equals(deviceUid))
+            ..where((t) => t.posDeviceUid.equals(registerUid))
             ..where((t) => t.status.isIn(PosSessionStatus.live))
             ..limit(1))
           .getSingleOrNull();

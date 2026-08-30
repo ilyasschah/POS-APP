@@ -7,6 +7,15 @@
 <div class="page-header d-print-none">
     <div class="container-xl">
         <div class="row g-2 align-items-center">
+            @* Same test the Logo handler applies — see Index.cshtml. *@
+            @if (Model.Company is not null
+                 && Api.Admin.CompanyLogoFile.ContentType(Model.Company.Logo) is not null)
+            {
+                <div class="col-auto">
+                    <span class="avatar avatar-lg"
+                          style="background-image:url('@Url.Page("Index", "Logo", new { id = Model.Company.Id })')"></span>
+                </div>
+            }
             <div class="col">
                 <div class="page-pretitle">Organization #@Model.Company?.Id</div>
                 <h2 class="page-title">@Model.Company?.Name</h2>
@@ -213,7 +222,7 @@
                                         <td data-label="Name">@(string.IsNullOrEmpty(u.FirstName) && string.IsNullOrEmpty(u.LastName) ? "—" : $"{u.FirstName} {u.LastName}")</td>
                                         <td class="text-secondary break-anywhere" data-label="Email">@(string.IsNullOrEmpty(u.Email) ? "—" : u.Email)</td>
                                         <td data-label="Role">
-                                            @if (u.AccessLevel == 1)
+                                            @if (u.AccessLevel == Api.Domain.AccessLevels.Admin)
                                             {
                                                 <span class="badge bg-primary-lt">Admin</span>
                                             }
@@ -277,8 +286,10 @@
                                 <div class="col-12 col-md-6 col-lg-4">
                                     <label class="form-label">Role</label>
                                     <select class="form-select" asp-for="NewUser.AccessLevel">
-                                        <option value="0">Cashier</option>
-                                        <option value="1">Admin</option>
+                                        @foreach (var (value, label) in Api.Domain.AccessLevels.Options)
+                                        {
+                                            <option value="@value">@label</option>
+                                        }
                                     </select>
                                 </div>
                                 <div class="col-12 col-md-6 col-lg-4">

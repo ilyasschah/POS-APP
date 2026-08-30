@@ -91,16 +91,24 @@ pw.TextStyle? styleForScript(pw.TextStyle? style, String text) {
 /// what makes the bug easy to miss.
 ///
 /// Two runs means each picks its own direction and neither touches the other.
+/// 🚨 Pass [separator] rather than writing the ':' into [label]. A colon is a
+/// NEUTRAL character: at the end of an Arabic label the bidi pass moves it to
+/// that run's visual LEFT end, so `'أمين الصندوق:'` prints as `:أمين الصندوق`
+/// — the colon detached on the far side of the label instead of introducing
+/// the value. As its own run it stays between the two in either script.
 pw.Widget printedPair(
   String label,
   String value, {
   pw.TextStyle? style,
   pw.TextDirection? layout,
+  String separator = '',
 }) =>
     pw.Row(
       mainAxisSize: pw.MainAxisSize.min,
       children: [
         printedText(label, style: style, layout: layout),
+        if (separator.isNotEmpty)
+          printedText(separator, style: style, layout: layout),
         pw.SizedBox(width: 3),
         pw.Flexible(child: printedText(value, style: style, layout: layout)),
       ],

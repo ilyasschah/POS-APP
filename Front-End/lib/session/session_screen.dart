@@ -17,6 +17,7 @@ import 'package:pos_app/navigation/main_layout.dart';
 import 'package:pos_app/session/closing_register_dialog.dart';
 import 'package:pos_app/session/opening_control_dialog.dart';
 import 'package:pos_app/session/pos_session_status.dart';
+import 'package:pos_app/session/register_identity.dart';
 import 'package:pos_app/session/session_list_screen.dart';
 import 'package:pos_app/session/session_provider.dart';
 import 'package:pos_app/session/session_reconciliation.dart';
@@ -77,6 +78,22 @@ class SessionScreen extends ConsumerWidget {
     // a closed session, another till's — is a record to read.
     final isLive =
         session != null && active != null && session.localId == active.localId;
+
+    // 🚨 …unless the terminal JOINS the register that session belongs to.
+    //
+    // Reading another till's session used to be the end of the road: the screen
+    // showed its figures and offered nothing, so a second device could only
+    // open a session of its own on a drawer that already had one. A register is
+    // worked by any number of terminals, so "sell in this session" is the
+    // missing half of that — it points this device at the session's register
+    // and lands on the POS.
+    //
+    // A session whose register uid has not reached this device yet cannot be
+    // joined (there is nothing to point at); the button says so rather than
+    // vanishing, because "no button" reads as "not allowed".
+    final joinable = session != null &&
+        !isLive &&
+        PosSessionStatus.isLive(session.status);
 
     if (session == null) {
       return Scaffold(
@@ -157,7 +174,20 @@ class SessionScreen extends ConsumerWidget {
         // the label is always legible — a lock icon alone does not say whether
         // it locks the drawer, the session or the app.
         floatingActionButton: !isLive
-            ? null
+            ? (joinable
+                ? FloatingActionButton.extended(
+                    heroTag: 'session-join',
+                    // The venue's accent, not the green "carry on" or the red
+                    // "close": joining is a change of what this terminal IS,
+                    // and it should not be mistaken for either of those.
+                    backgroundColor: theme.colorScheme.primary,
+                    foregroundColor: theme.colorScheme.onPrimary,
+                    icon: const Icon(Icons.login),
+                    label: Text(l.sessionJoinRegister),
+                    onPressed: () =>
+                        _joinRegister(context, ref, session, active),
+                  )
+                : null)
             : Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -227,6 +257,70 @@ class SessionScreen extends ConsumerWidget {
   void _continueSelling(BuildContext context, WidgetRef ref) {
     ref.read(mainNavigationIndexProvider.notifier).state = 0;
     Navigator.of(context).popUntil((route) => route.isFirst);
+  }
+
+  /// Points this terminal at the register [session] belongs to, then goes to
+  /// the POS — the "sell in this session" path for a second device.
+  ///
+  /// 🚨 Refused while this terminal has a live session of its own. Switching
+  /// then would leave that session open on a register nothing on this device
+  /// works any more: no close, no Z-report, and an expected-cash figure nobody
+  /// ever counts. Same rule as the picker in Settings, stated here because this
+  /// is where a cashier will actually hit it.
+  Future<void> _joinRegister(
+    BuildContext context,
+    WidgetRef ref,
+    ShiftsTableData session,
+    ShiftsTableData? active,
+  ) async {
+    final l = AppLocalizations.of(context);
+
+    if (active != null && PosSessionStatus.isLive(active.status)) {
+      showAppSnackbar(context, ref, l.sessionJoinBlocked, isError: true);
+      return;
+    }
+
+    // The uid arrives with the pull (`PosSessionDto.PosDeviceUid`). A row that
+    // predates that, or one that has not synced, has nothing to join to.
+    final registerUid = session.posDeviceUid?.trim() ?? '';
+    if (registerUid.isEmpty) {
+      showAppSnackbar(context, ref, l.sessionJoinNoRegister, isError: true);
+      return;
+    }
+    final registerName = (session.posDeviceName ?? '').trim().isEmpty
+        ? registerUid
+        : session.posDeviceName!.trim();
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Theme.of(ctx).cardColor,
+        icon: Icon(Icons.login, color: Theme.of(ctx).colorScheme.primary),
+        title: Text(l.sessionJoinTitle),
+        // Names both the register and the session, because the consequence of
+        // getting this wrong is a sale banked into the wrong drawer.
+        content: Text(l.sessionJoinBody(registerName, sessionDisplayId(session))),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l.actionCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l.actionConfirm),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+
+    try {
+      await RegisterIdentity.choose(ref, name: registerName, uid: registerUid);
+    } catch (e) {
+      if (context.mounted) showAppSnackbar(context, ref, '$e', isError: true);
+      return;
+    }
+    if (context.mounted) _continueSelling(context, ref);
   }
 
   /// Close Register → CLOSING_CONTROL (selling stops) → the counting dialog.
@@ -333,13 +427,23 @@ class _SessionDetail extends ConsumerWidget {
     final localSummary =
         ref.watch(sessionSummaryProvider(session.localId)).value;
 
-    // A session this terminal never ran has no orders or payments in local
-    // Drift, so its takings have to come from the server. Own sessions stay on
-    // local rows: complete, instant, and correct with the network down.
-    final ownedHere = session.posDeviceUid != null;
-    final remoteSummary = (!ownedHere && session.serverId != null)
-        ? ref.watch(remoteSessionSummaryProvider(session.serverId!)).value
-        : null;
+    // 🚨 The server's figures are preferred for ANY session that has reached it,
+    // not just another register's.
+    //
+    // The old rule — "a row carrying a `posDeviceUid` is mine, so use local
+    // Drift" — stopped being true when registers became shareable. Two
+    // terminals working one till each hold only the half of the session they
+    // rang themselves, and both rows now carry the register's uid. Trusting
+    // local arithmetic there reports a till that sold all day as having taken
+    // whatever THIS device happened to ring: a confident wrong number, which is
+    // worse than none.
+    //
+    // Falling back to [localSummary] keeps the offline guarantee intact —
+    // `remoteSessionSummaryProvider` returns null rather than throwing — and for
+    // a single-terminal register the two agree anyway.
+    final remoteSummary = session.serverId == null
+        ? null
+        : ref.watch(remoteSessionSummaryProvider(session.serverId!)).value;
     final base = remoteSummary ?? localSummary;
     // The counted drawer always comes off the session row — it is what was
     // signed off, and the server summary does not carry it.
@@ -447,7 +551,10 @@ class _SessionDetail extends ConsumerWidget {
                   label: l.sessionTotalTaken,
                   value: money(summary.totalTaken),
                   bold: true),
-              if (!ownedHere && remoteSummary == null) ...[
+              // The server has this session but we could not reach it, so
+              // what is on screen is only what THIS terminal rang. On a
+              // shared register that is half the till's day.
+              if (session.serverId != null && remoteSummary == null) ...[
                 const SizedBox(height: 10),
                 _Banner(
                   icon: Icons.cloud_off,

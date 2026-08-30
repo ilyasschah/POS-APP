@@ -5,8 +5,8 @@ import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/currency/currencies_provider.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
+import 'package:pos_app/session/register_identity.dart';
 import 'package:pos_app/session/session_provider.dart';
-import 'package:pos_app/settings/device_identity.dart';
 
 /// Odoo's **Opening Control**: confirm the float before the register trades.
 ///
@@ -46,7 +46,10 @@ class _OpeningControlDialogState extends ConsumerState<OpeningControlDialog> {
   Future<void> _open() async {
     final companyId = ref.read(selectedCompanyProvider)?.id;
     final userId = ref.read(currentUserProvider)?.id;
-    final uid = ref.read(deviceUidProvider).value;
+    // The REGISTER's uid, not this terminal's — that is what makes the session
+    // joinable by a second device. Unset falls back to the device GUID, so an
+    // install that never picked a register opens its own exactly as before.
+    final uid = ref.read(registerUidProvider).value;
     if (companyId == null || userId == null || uid == null) return;
 
     setState(() {
@@ -61,7 +64,7 @@ class _OpeningControlDialogState extends ConsumerState<OpeningControlDialog> {
         companyId: companyId,
         userId: userId,
         deviceUid: uid,
-        deviceName: await getDeviceName(),
+        deviceName: await getRegisterName(),
         openingCash: opening,
       );
       // The float the operator just entered IS the opening control, so the

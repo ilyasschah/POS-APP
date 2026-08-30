@@ -22,6 +22,11 @@
         public decimal Total { get; set; }
         public decimal TotalAfterDocumentDiscount { get; set; }
         public bool DiscountApplyRule { get; set; }
+
+        /// The modifier options this line was sold with, snapshotted at the
+        /// time of sale. Empty on every line that has none, and on every
+        /// document that predates modifiers.
+        public List<ModifierSnapshotDto> Modifiers { get; set; } = new();
     }
 
     public class CreateDocumentItemRequest

@@ -46,6 +46,31 @@ public class PosSessionRepository(AppDbContext db)
         return device;
     }
 
+    /// <summary>
+    /// Every register the company has. Drives the picker on each terminal —
+    /// which is the whole point of the register concept: a device chooses which
+    /// till it is working instead of silently being one of its own.
+    /// </summary>
+    public Task<List<PosDevice>> GetRegistersAsync(
+        int companyId, CancellationToken ct = default) =>
+        db.PosDevices
+            .Where(d => d.CompanyId == companyId)
+            .OrderBy(d => d.Name)
+            .ThenBy(d => d.Id)
+            .ToListAsync(ct);
+
+    /// <summary>
+    /// Every register's live session in one query, so the picker can say what a
+    /// terminal would be joining rather than making it find out by joining.
+    /// </summary>
+    public Task<List<Shift>> GetLiveSessionsAsync(
+        int companyId, CancellationToken ct = default) =>
+        db.Shifts
+            .Where(s => s.CompanyId == companyId
+                     && s.PosDeviceId != null
+                     && PosSessionStatus.Live.Contains(s.Status))
+            .ToListAsync(ct);
+
     // ── Sessions ──────────────────────────────────────────────────────────────
 
     /// <summary>The session a register is currently running, if any.</summary>

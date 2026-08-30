@@ -1,5 +1,45 @@
 {
   "@@locale": "fr",
+  "setSerialPort": "Port série",
+  "setDisplayCharset": "Jeu de caractères de l'afficheur",
+  "setDisplayCharsetHint": "Ce que le micrologiciel de l'afficheur sait afficher — il s'agit du matériel, pas de la langue de l'application. Essayez d'abord Arabe (Windows-1256) ; ne choisissez l'option inversée que si l'afficheur écrit les mots arabes à l'envers.",
+  "charsetAscii": "Simple (accents simplifiés)",
+  "charsetLatin1": "Europe de l'Ouest (accents conservés)",
+  "charsetArabic": "Arabe (Windows-1256)",
+  "charsetArabicVisual": "Arabe, inversé (seulement si les mots sont à l'envers)",
+  "printerConnection": "Connexion",
+  "printerConnectionSystem": "Cet ordinateur (imprimante Windows)",
+  "printerConnectionSystemUnavailable": "Cet appareil (ouvre la boîte de dialogue d'impression)",
+  "printerConnectionNetwork": "Imprimante réseau (Wi-Fi / LAN)",
+  "printerConnectionHint": "Une imprimante réseau imprime sans boîte de dialogue, sur les tablettes comme sur cet ordinateur.",
+  "printerConnectionHintMobile": "Cet appareil ne peut pas imprimer directement sur une imprimante système — il ne peut qu'ouvrir la boîte de dialogue. Choisissez Imprimante réseau et saisissez son adresse.",
+  "printerHost": "Adresse de l'imprimante",
+  "printerTcpPort": "Port",
+  "poleDisplayTotalDue": "TOTAL A PAYER",
+  "poleDisplayWelcome": "BIENVENUE !",
+  "portNoneDetected": "Aucun détecté",
+  "portNoneDetectedHint": "Cette machine ne signale aucun port COM ou LPT. Vérifiez le câble et le Gestionnaire de périphériques, puis rouvrez cet écran.",
+  "portNotDetected": "{port} (non détecté)",
+  "@portNotDetected": {"placeholders": {"port": {"type": "String"}}},
+  "portRefresh": "Actualiser les ports",
+  "registerChoose": "Choisir la caisse",
+  "registerSubtitle": "La caisse que cet appareil utilise. Les appareils sur la même caisse partagent sa session ouverte, ses documents et son tiroir.",
+  "registerThisDeviceOnly": "Cet appareil uniquement",
+  "registerThisDeviceOnlyHint": "Sa propre session, partagée avec rien d’autre.",
+  "registerTrading": "Session ouverte",
+  "registerIdle": "Aucune session ouverte",
+  "registerNew": "Nouvelle caisse",
+  "registerNameHint": "ex. Caisse principale",
+  "registerListOffline": "Impossible de charger les caisses. Choisir une caisse partagée nécessite une connexion.",
+  "registerSwitchBlocked": "Fermez la session de cette caisse avant de changer. Partir maintenant la laisserait ouverte, sans moyen d’y revenir d’ici.",
+  "setRegister": "Caisse",
+  "sessionJoinRegister": "Vendre dans cette session",
+  "sessionJoinTitle": "Utiliser cette caisse ?",
+  "sessionJoinBody": "Cet appareil va travailler sur {register}. Les ventes que vous saisissez iront dans la session {session}, avec tous les autres terminaux — et n’importe lequel peut la fermer.",
+  "@sessionJoinBody": {"placeholders": {"register": {"type": "String"}, "session": {"type": "String"}}},
+  "sessionJoinBlocked": "Cet appareil a déjà sa propre session ouverte. Fermez-la avant de passer à une autre caisse, sinon elle reste ouverte sans que rien ne puisse l’atteindre.",
+  "sessionJoinNoRegister": "Cette session n’a pas fini de se synchroniser : la caisse à laquelle elle appartient n’est pas encore connue ici. Synchronisez puis réessayez.",
+  "sessionJoinOpenElsewhere": "Une autre caisse a déjà une session ouverte. Vendez dans celle-là plutôt que d’en démarrer une seconde.",
   "actionCancel": "Annuler",
   "actionSave": "Enregistrer",
   "actionSaveChanges": "Enregistrer les modifications",
@@ -143,6 +183,11 @@
   "newPassword": "Nouveau mot de passe",
   "newQuantity": "Nouvelle quantité",
   "noSecurityRules": "Aucune règle de sécurité trouvée.",
+  "securityRulesIntro": "Choisissez qui peut utiliser chaque partie du POS. Caissier : tout le monde ; Admin : uniquement un administrateur — un caissier qui essaie est invité à vous demander.",
+  "securityRulesSummary": "{total} règles · {adminOnly} réservées à l'admin",
+  "securityCategoryCount": "{count} · {restricted} réservées à l'admin",
+  "securityLevelCashierHint": "Les caissiers et les admins peuvent le faire",
+  "securityLevelAdminHint": "Seul un administrateur peut le faire",
   "noTaxShort": "Aucune taxe",
   "noneLabel": "Aucun",
   "noteLabel": "Note",
@@ -1801,6 +1846,7 @@
   "voidReasonPrompt": "Saisissez ou sélectionnez un motif d'annulation pour « {number} »",
   "accessDenied": "Accès refusé",
   "accessDeniedBody": "Vous n'avez pas l'autorisation de consulter cette section.\nChoisissez une autre section dans le menu ou demandez l'accès à un administrateur.",
+  "accessDeniedAskAdmin": "Vous n'avez pas l'autorisation d'effectuer cette action.\nDemandez à un administrateur de la faire pour vous.",
   "checkingUpper": "VÉRIFICATION…",
   "chooseYourMenuLayout": "Choisissez la disposition de votre menu",
   "connectingEllipsis": "Connexion…",
@@ -2068,7 +2114,7 @@
   "sessionCashMovements": "Mouvements de caisse",
   "sessionNotes": "Notes",
   "cashDrawer": "Caisse",
-  "sessionRemoteFiguresOffline": "Cette session appartient à une autre caisse — ses encaissements viennent du serveur.",
+  "sessionRemoteFiguresOffline": "Serveur injoignable — voici uniquement les chiffres de ce terminal. Les encaissements complets de la caisse viennent du serveur.",
   "sessionDocuments": "Documents",
   "sessionOverviewTab": "Aperçu",
   "sessionPaymentsTab": "Paiements",
@@ -2108,6 +2154,8 @@
     }
   },
   "cashDrawerTransportUnavailable": "Cette connexion n’est pas disponible sur cet appareil.",
+  "cashDrawerNotConfigured": "Aucun tiroir-caisse n'est configuré sur ce terminal. Activez-en un dans Réglages → Imprimantes → Tiroir-caisse.",
+  "posOpenDrawer": "Ouvrir le tiroir",
   "setSounds": "Sons",
   "setSoundsEnabled": "Activer les sons",
   "setSoundVolume": "Volume",
@@ -2184,5 +2232,157 @@
   "iconSauce": "Sauce",
   "iconDrink": "Boisson",
   "iconDessert": "Dessert",
-  "iconSpice": "Piquant"
+  "iconSpice": "Piquant",
+  "rptTitleSalesByProduct": "VENTES PAR PRODUIT",
+  "rptTitleSalesByGroup": "VENTES PAR GROUPE DE PRODUITS",
+  "rptTitleSalesTax": "TAXES SUR LES VENTES",
+  "rptTitleSalesByCustomer": "VENTES PAR CLIENT",
+  "rptTitlePaymentByCustomer": "MODES DE PAIEMENT PAR CLIENT",
+  "rptTitlePaymentByUser": "MODES DE PAIEMENT PAR UTILISATEUR",
+  "rptTitlePaymentTypes": "VENTES PAR MODE DE PAIEMENT",
+  "rptTitleItemList": "LISTE DES ARTICLES VENDUS",
+  "rptTitleProfit": "BÉNÉFICE",
+  "rptTitleStockMovement": "MOUVEMENT DE STOCK",
+  "rptTitleItemDiscounts": "REMISES SUR ARTICLES",
+  "rptTitleDiscountsBySource": "REMISES PAR ORIGINE",
+  "rptTitleDiscountsGranted": "REMISES ACCORDÉES (TTC)",
+  "rptTitleVoidedItems": "ARTICLES ANNULÉS",
+  "rptTitleStartingCash": "ENTRÉES DE FONDS DE CAISSE",
+  "rptTitleUnpaidSales": "VENTES IMPAYÉES",
+  "rptTitleHourlyByGroup": "VENTES HORAIRES PAR GROUPE DE PRODUITS",
+  "rptTitleByTable": "VENTES PAR TABLE / N° DE COMMANDE",
+  "rptTitleHourlySales": "VENTES HORAIRES",
+  "rptTitleDailySales": "VENTES QUOTIDIENNES",
+  "rptTitleInvoices": "FACTURES",
+  "rptTitleRefunds": "REMBOURSEMENTS",
+  "rptTitleSalesByUsers": "VENTES PAR UTILISATEUR",
+  "rptTitleUnpaidPurchase": "ACHATS IMPAYÉS",
+  "rptTitlePurchaseBySupplier": "ACHATS PAR FOURNISSEUR",
+  "rptTitlePurchaseByProduct": "ACHATS PAR PRODUIT",
+  "rptTitleExpirationDate": "DATES D'EXPIRATION",
+  "rptTitlePurchaseTax": "TAXES SUR LES ACHATS",
+  "rptTitlePurchaseInvoices": "FACTURES D'ACHAT",
+  "rptTitlePurchasedItemDiscounts": "REMISES SUR ARTICLES ACHETÉS",
+  "rptTitlePurchaseDiscounts": "REMISES SUR ACHATS",
+  "rptTitleStockReturns": "RETOURS DE STOCK PAR PRODUIT",
+  "rptTitleLossAndDamage": "PERTES ET CASSE PAR PRODUIT",
+  "rptTitleReorderList": "LISTE DE RÉAPPROVISIONNEMENT",
+  "rptTitleLowStock": "ALERTE DE STOCK BAS",
+  "rptTitleTransactionHistory": "HISTORIQUE DES TRANSACTIONS",
+  "rptTitleStockReport": "RAPPORT DE STOCK",
+  "rptColUom": "UdM",
+  "rptColTaxName": "Nom de la taxe",
+  "rptColRefNumber": "N° de réf.",
+  "rptColRefShort": "N° réf.",
+  "rptColDocument": "Document",
+  "rptColDocumentShort": "N° document",
+  "rptColCustomerCode": "Code client",
+  "rptColTotalTax": "Total des taxes",
+  "rptColCreateDate": "Date de création",
+  "rptColProfit": "Bénéfice",
+  "rptColMargin": "Marge",
+  "rptColNumSales": "Nb de ventes",
+  "rptColNumberOfSales": "Nombre de ventes",
+  "rptColSalesCount": "Nombre de ventes",
+  "rptColAverageSale": "Vente moyenne",
+  "rptColTotalSales": "Total des ventes",
+  "rptColHours": "Heures",
+  "rptColTotalDiscount": "Total des remises",
+  "rptColDiscountSource": "Origine de la remise",
+  "rptColTotalBeforeDisc": "Total avant remise",
+  "rptColTotalAfterDisc": "Total après remise",
+  "rptColDiscountGranted": "Remise accordée",
+  "rptColBeforeDisc": "Avant remise",
+  "rptColAfterDisc": "Après remise",
+  "rptColTotalDisc": "Total remise",
+  "rptColTotalPaid": "Total payé",
+  "rptColTotalUnpaid": "Total impayé",
+  "rptColDueDate": "Date d'échéance",
+  "rptColVoidedBy": "Annulé par",
+  "rptColVoided": "Annulé le",
+  "rptColCreated": "Créé le",
+  "rptColReason": "Motif",
+  "rptColQtyShort": "Qté",
+  "rptColOrderNo": "N° commande",
+  "rptColPaymentMethod": "Mode de paiement",
+  "rptColPurchaseNumber": "Numéro d'achat",
+  "rptColExpirationDate": "Date d'expiration",
+  "rptColProductName": "Nom du produit",
+  "rptColOrderQty": "Qté à commander",
+  "rptColCurrentStock": "Stock actuel",
+  "rptColWarningQty": "Seuil d'alerte",
+  "rptColTransactionType": "Type de transaction",
+  "rptColCredit": "Crédit",
+  "rptColDebit": "Débit",
+  "rptColTableOrOrder": "Table / n° de commande",
+  "rptColZReportNo": "N° rapport Z",
+  "rptColCompany": "Société",
+  "rptColCostPrice": "Prix de revient",
+  "rptColCostBeforeTax": "Coût HT",
+  "rptColCostInclTax": "Coût TTC",
+  "rptFastMoving": "Rotation rapide",
+  "rptSlowMoving": "Rotation lente",
+  "rptStatusConfirmed": "Confirmé",
+  "rptStatusPending": "En attente",
+  "rptBusinessPartner": "Partenaire commercial",
+  "rptNetTotal": "Total net",
+  "rptTotalsRow": "TOTAUX",
+  "rptNoGroup": "(aucun)",
+  "rptNoDiscountsInPeriod": "Aucune remise sur cette période.",
+  "rptTotalNumberOfSales": "Nombre total de ventes : {count}",
+  "@rptTotalNumberOfSales": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "rptAverageSalesPerItem": "Nombre moyen de ventes par article : {count}",
+  "@rptAverageSalesPerItem": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "rptOrdersDiscounted": "Nombre de commandes remisées : {count}",
+  "@rptOrdersDiscounted": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "rptTotalDiscounted": "Total remisé : {amount}",
+  "@rptTotalDiscounted": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "rptPageOf": "Page {page} / {total}",
+  "@rptPageOf": {
+    "placeholders": {
+      "page": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "rptProductCount": "{count, plural, =1{1 produit} other{{count} produits}}",
+  "@rptProductCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "rptColHourStart": "Heure de début",
+  "rptColHourEnd": "Heure de fin",
+  "rptFavorites": "Favoris",
+  "rptColTotalBefTax": "Total HT",
+  "saveStockReportTitle": "Enregistrer le rapport de stock"
 }

@@ -95,7 +95,30 @@
                                 <tr>
                                     <td class="text-secondary" data-label="ID">#@c.Id</td>
                                     <td class="cell-title">
-                                        <a class="text-reset fw-bold text-decoration-none" asp-page="Details" asp-route-id="@c.Id">@c.Name</a>
+                                        @*  The logo rides in the name cell rather than a column of its
+                                            own: it identifies the same thing the name does, and an
+                                            extra column would sit empty for every tenant without one. *@
+                                        <div class="d-flex align-items-center gap-2">
+                                            @*  Asks the same question the Logo handler does, not just
+                                                "are there bytes". The API's UpdateLogo endpoint accepts
+                                                any content, so a company provisioned before this page
+                                                existed may hold a format the handler refuses — showing
+                                                an <img> for it would render a broken-image icon. *@
+                                            @if (Api.Admin.CompanyLogoFile.ContentType(c.Logo) is not null)
+                                            {
+                                                <span class="avatar avatar-sm"
+                                                      style="background-image:url('@Url.Page("Index", "Logo", new { id = c.Id })')"
+                                                      title="@c.Name"></span>
+                                            }
+                                            else
+                                            {
+                                                @*  Initials, not a placeholder image — it still tells the
+                                                    rows apart at a glance, and reads as "no logo yet"
+                                                    rather than as a broken one. *@
+                                                <span class="avatar avatar-sm">@Initials(c.Name)</span>
+                                            }
+                                            <a class="text-reset fw-bold text-decoration-none" asp-page="Details" asp-route-id="@c.Id">@c.Name</a>
+                                        </div>
                                     </td>
                                     <td data-label="Location"><span class="badge bg-secondary-lt">@c.CountryName</span></td>
                                     <td class="text-secondary break-anywhere" data-label="Email">@(string.IsNullOrEmpty(c.Email) ? "—" : c.Email)</td>
@@ -123,3 +146,19 @@
         }
     </div>
 </div>
+
+@functions {
+    /// Up to two initials for the no-logo avatar. Falls back to '?' so a
+    /// company named only in punctuation still renders a round chip.
+    static string Initials(string? name)
+    {
+        var words = (name ?? string.Empty)
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(w => char.IsLetterOrDigit(w[0]))
+            .Take(2)
+            .ToList();
+        if (words.Count == 0) return "?";
+        return string.Concat(words.Select(w => char.ToUpperInvariant(w[0])));
+    }
+}
+

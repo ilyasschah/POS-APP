@@ -19,6 +19,31 @@ public class PosSessionController(
     PosSessionService sessions,
     ILogger<PosSessionController> logger) : ControllerBase
 {
+    /// <summary>
+    /// Every register in the company, with whatever session it is running.
+    /// The terminal's register picker reads this.
+    /// </summary>
+    [HttpGet("[action]")]
+    public async Task<ActionResult<List<PosRegisterDto>>> Registers(
+        [FromQuery] int companyId,
+        CancellationToken ct = default)
+    {
+        if (companyId <= 0) return BadRequest("Company ID is required.");
+        return Ok(await sessions.GetRegistersAsync(companyId, ct));
+    }
+
+    /// <summary>Create a register, or rename one. Idempotent on Uid.</summary>
+    [HttpPost("[action]")]
+    public async Task<ActionResult<PosRegisterDto>> Register(
+        [FromBody] UpsertPosRegisterRequest request,
+        [FromQuery] int companyId,
+        CancellationToken ct = default)
+    {
+        if (companyId <= 0) return BadRequest("Company ID is required.");
+        return Ok(await sessions.UpsertRegisterAsync(
+            companyId, request.Uid, request.Name, ct));
+    }
+
     /// <summary>Open (or re-attach to) a session. Idempotent on LocalId.</summary>
     [HttpPost("[action]")]
     public async Task<ActionResult<PosSessionDto>> Open(
@@ -49,8 +74,12 @@ public class PosSessionController(
     }
 
     /// <summary>
-    /// The session this register is currently running, if any. Drives the
+    /// The session this REGISTER is currently running, if any. Drives the
     /// "Open Register" vs "Continue Selling" choice on the client.
+    ///
+    /// 🚨 <paramref name="deviceUid"/> is the REGISTER's uid, not the terminal's.
+    /// That is the whole of the sharing change: two terminals working one till
+    /// pass the same value and are told about the same session.
     /// </summary>
     [HttpGet("[action]")]
     public async Task<ActionResult<PosSessionDto?>> Current(
@@ -178,6 +207,7 @@ public class PosSessionController(
         CompanyId = s.CompanyId,
         PosDeviceId = s.PosDeviceId,
         PosDeviceName = s.PosDevice?.Name,
+        PosDeviceUid = s.PosDevice?.DeviceUid,
         OpenedByUserId = s.UserId,
         OpenedAt = s.OpenedAt,
         ClosedByUserId = s.ClosedByUserId,

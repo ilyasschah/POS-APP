@@ -9,6 +9,136 @@ class AppLocalizationsAr extends AppLocalizations {
   AppLocalizationsAr([String locale = 'ar']) : super(locale);
 
   @override
+  String get setSerialPort => 'المنفذ التسلسلي';
+
+  @override
+  String get setDisplayCharset => 'مجموعة أحرف شاشة العميل';
+
+  @override
+  String get setDisplayCharsetHint =>
+      'ما تستطيع شاشة العميل عرضه فعلياً — يتعلق الأمر بالجهاز لا بلغة التطبيق. جرّب \"عربي (Windows-1256)\" أولاً، ولا تختر الخيار المعكوس إلا إذا ظهرت الكلمات مقلوبة على الشاشة.';
+
+  @override
+  String get charsetAscii => 'بسيط (بدون حركات)';
+
+  @override
+  String get charsetLatin1 => 'أوروبا الغربية (مع الحركات)';
+
+  @override
+  String get charsetArabic => 'عربي (Windows-1256)';
+
+  @override
+  String get charsetArabicVisual => 'عربي معكوس (فقط إذا ظهرت الكلمات مقلوبة)';
+
+  @override
+  String get printerConnection => 'الاتصال';
+
+  @override
+  String get printerConnectionSystem => 'هذا الحاسوب (طابعة Windows)';
+
+  @override
+  String get printerConnectionSystemUnavailable =>
+      'هذا الجهاز (يفتح مربع حوار الطباعة)';
+
+  @override
+  String get printerConnectionNetwork => 'طابعة شبكية (Wi-Fi / LAN)';
+
+  @override
+  String get printerConnectionHint =>
+      'الطابعة الشبكية تطبع مباشرة دون مربع حوار، على الأجهزة اللوحية وعلى هذا الحاسوب.';
+
+  @override
+  String get printerConnectionHintMobile =>
+      'لا يستطيع هذا الجهاز الطباعة مباشرة على طابعة النظام — يفتح مربع حوار الطباعة فقط. اختر \"طابعة شبكية\" وأدخل عنوانها.';
+
+  @override
+  String get printerHost => 'عنوان الطابعة';
+
+  @override
+  String get printerTcpPort => 'المنفذ';
+
+  @override
+  String get poleDisplayTotalDue => 'المبلغ المستحق';
+
+  @override
+  String get poleDisplayWelcome => 'أهلا وسهلا';
+
+  @override
+  String get portNoneDetected => 'لم يتم العثور على أي منفذ';
+
+  @override
+  String get portNoneDetectedHint =>
+      'لا يُبلّغ هذا الجهاز عن أي منفذ COM أو LPT. تحقق من الكابل ومن إدارة الأجهزة ثم أعد فتح هذه الشاشة.';
+
+  @override
+  String portNotDetected(String port) {
+    return '$port (غير موجود)';
+  }
+
+  @override
+  String get portRefresh => 'تحديث المنافذ';
+
+  @override
+  String get registerChoose => 'اختيار الصندوق';
+
+  @override
+  String get registerSubtitle =>
+      'الصندوق الذي يعمل عليه هذا الجهاز. الأجهزة على الصندوق نفسه تتشارك جلسته المفتوحة ومستنداته ودرجه.';
+
+  @override
+  String get registerThisDeviceOnly => 'هذا الجهاز فقط';
+
+  @override
+  String get registerThisDeviceOnlyHint =>
+      'جلسة خاصة به، غير مشتركة مع أي جهاز آخر.';
+
+  @override
+  String get registerTrading => 'جلسة مفتوحة الآن';
+
+  @override
+  String get registerIdle => 'لا توجد جلسة مفتوحة';
+
+  @override
+  String get registerNew => 'صندوق جديد';
+
+  @override
+  String get registerNameHint => 'مثال: الصندوق الأمامي';
+
+  @override
+  String get registerListOffline =>
+      'تعذّر تحميل الصناديق. اختيار صندوق مشترك يتطلب اتصالاً.';
+
+  @override
+  String get registerSwitchBlocked =>
+      'أغلق جلسة هذا الصندوق قبل التبديل. المغادرة الآن ستتركها مفتوحة دون طريقة للعودة إليها من هنا.';
+
+  @override
+  String get setRegister => 'الصندوق';
+
+  @override
+  String get sessionJoinRegister => 'البيع في هذه الجلسة';
+
+  @override
+  String get sessionJoinTitle => 'العمل على هذا الصندوق؟';
+
+  @override
+  String sessionJoinBody(String register, String session) {
+    return 'سيبدأ هذا الجهاز العمل على $register. المبيعات التي تسجّلها ستدخل في الجلسة $session، مع بقية الأجهزة العاملة عليها — ويمكن لأيٍّ منها إغلاقها.';
+  }
+
+  @override
+  String get sessionJoinBlocked =>
+      'هذا الجهاز لديه جلسة مفتوحة خاصة به. أغلقها قبل العمل على صندوق آخر، وإلا بقيت مفتوحة دون أن يصل إليها شيء.';
+
+  @override
+  String get sessionJoinNoRegister =>
+      'لم تكتمل مزامنة هذه الجلسة، لذا الصندوق الذي تنتمي إليه غير معروف هنا بعد. زامن ثم أعد المحاولة.';
+
+  @override
+  String get sessionJoinOpenElsewhere =>
+      'يوجد صندوق آخر لديه جلسة مفتوحة. بِع فيها بدل بدء جلسة ثانية.';
+
+  @override
   String get actionCancel => 'إلغاء';
 
   @override
@@ -456,6 +586,26 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get noSecurityRules => 'لم يتم العثور على قواعد أمان.';
+
+  @override
+  String get securityRulesIntro =>
+      'اختر من يمكنه استخدام كل جزء من نقطة البيع. الكاشير يعني الجميع؛ المسؤول يعني المسؤول وحده — والكاشير الذي يحاول يُطلب منه أن يسألك.';
+
+  @override
+  String securityRulesSummary(int total, int adminOnly) {
+    return '$total قاعدة · $adminOnly للمسؤول فقط';
+  }
+
+  @override
+  String securityCategoryCount(int count, int restricted) {
+    return '$count · $restricted للمسؤول فقط';
+  }
+
+  @override
+  String get securityLevelCashierHint => 'يمكن للكاشير والمسؤول القيام بذلك';
+
+  @override
+  String get securityLevelAdminHint => 'المسؤول وحده يمكنه القيام بذلك';
 
   @override
   String get noTaxShort => 'بدون ضريبة';
@@ -5825,6 +5975,10 @@ class AppLocalizationsAr extends AppLocalizations {
       'ليس لديك إذن لعرض هذا القسم.\nاختر قسمًا آخر من القائمة، أو اطلب الإذن من المسؤول.';
 
   @override
+  String get accessDeniedAskAdmin =>
+      'ليس لديك إذن لتنفيذ هذا الإجراء.\nاطلب من المسؤول القيام به نيابة عنك.';
+
+  @override
   String get checkingUpper => 'جارٍ التحقق…';
 
   @override
@@ -6650,7 +6804,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get sessionRemoteFiguresOffline =>
-      'هذه الجلسة تخص صندوقًا آخر — تُحمَّل مبالغها من الخادم.';
+      'الخادم غير متاح — هذه أرقام هذا الجهاز فقط. تُحمَّل مبالغ الصندوق الكاملة من الخادم.';
 
   @override
   String get sessionDocuments => 'المستندات';
@@ -6760,6 +6914,13 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get cashDrawerTransportUnavailable =>
       'هذا الاتصال غير متاح على هذا الجهاز.';
+
+  @override
+  String get cashDrawerNotConfigured =>
+      'لا يوجد درج نقد مُعدّ على هذه النقطة. فعّل واحدًا من الإعدادات ← الطابعات ← درج النقد.';
+
+  @override
+  String get posOpenDrawer => 'فتح الدرج';
 
   @override
   String get setSounds => 'الأصوات';
@@ -7022,4 +7183,347 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get iconSpice => 'حار';
+
+  @override
+  String get rptTitleSalesByProduct => 'المبيعات حسب المنتج';
+
+  @override
+  String get rptTitleSalesByGroup => 'المبيعات حسب مجموعة المنتجات';
+
+  @override
+  String get rptTitleSalesTax => 'ضريبة المبيعات';
+
+  @override
+  String get rptTitleSalesByCustomer => 'المبيعات حسب العميل';
+
+  @override
+  String get rptTitlePaymentByCustomer => 'طرق الدفع حسب العملاء';
+
+  @override
+  String get rptTitlePaymentByUser => 'طرق الدفع حسب المستخدمين';
+
+  @override
+  String get rptTitlePaymentTypes => 'المبيعات حسب طريقة الدفع';
+
+  @override
+  String get rptTitleItemList => 'قائمة أصناف المبيعات';
+
+  @override
+  String get rptTitleProfit => 'الربح';
+
+  @override
+  String get rptTitleStockMovement => 'حركة المخزون';
+
+  @override
+  String get rptTitleItemDiscounts => 'خصومات الأصناف';
+
+  @override
+  String get rptTitleDiscountsBySource => 'الخصومات حسب المصدر';
+
+  @override
+  String get rptTitleDiscountsGranted => 'الخصومات الممنوحة (بعد الضريبة)';
+
+  @override
+  String get rptTitleVoidedItems => 'الأصناف الملغاة';
+
+  @override
+  String get rptTitleStartingCash => 'حركات النقد الافتتاحي';
+
+  @override
+  String get rptTitleUnpaidSales => 'المبيعات غير المدفوعة';
+
+  @override
+  String get rptTitleHourlyByGroup => 'المبيعات بالساعة حسب مجموعة المنتجات';
+
+  @override
+  String get rptTitleByTable => 'المبيعات حسب الطاولة / رقم الطلب';
+
+  @override
+  String get rptTitleHourlySales => 'المبيعات بالساعة';
+
+  @override
+  String get rptTitleDailySales => 'المبيعات اليومية';
+
+  @override
+  String get rptTitleInvoices => 'الفواتير';
+
+  @override
+  String get rptTitleRefunds => 'المرتجعات';
+
+  @override
+  String get rptTitleSalesByUsers => 'المبيعات حسب المستخدم';
+
+  @override
+  String get rptTitleUnpaidPurchase => 'المشتريات غير المدفوعة';
+
+  @override
+  String get rptTitlePurchaseBySupplier => 'المشتريات حسب المورّد';
+
+  @override
+  String get rptTitlePurchaseByProduct => 'المشتريات حسب المنتج';
+
+  @override
+  String get rptTitleExpirationDate => 'تواريخ انتهاء الصلاحية';
+
+  @override
+  String get rptTitlePurchaseTax => 'ضريبة المشتريات';
+
+  @override
+  String get rptTitlePurchaseInvoices => 'فواتير الشراء';
+
+  @override
+  String get rptTitlePurchasedItemDiscounts => 'خصومات الأصناف المشتراة';
+
+  @override
+  String get rptTitlePurchaseDiscounts => 'خصومات المشتريات';
+
+  @override
+  String get rptTitleStockReturns => 'مرتجعات المخزون حسب المنتج';
+
+  @override
+  String get rptTitleLossAndDamage => 'التوالف والخسائر حسب المنتج';
+
+  @override
+  String get rptTitleReorderList => 'قائمة إعادة الطلب';
+
+  @override
+  String get rptTitleLowStock => 'تنبيه انخفاض المخزون';
+
+  @override
+  String get rptTitleTransactionHistory => 'سجل المعاملات';
+
+  @override
+  String get rptTitleStockReport => 'تقرير المخزون';
+
+  @override
+  String get rptColUom => 'وحدة القياس';
+
+  @override
+  String get rptColTaxName => 'اسم الضريبة';
+
+  @override
+  String get rptColRefNumber => 'الرقم المرجعي';
+
+  @override
+  String get rptColRefShort => 'المرجع';
+
+  @override
+  String get rptColDocument => 'المستند';
+
+  @override
+  String get rptColDocumentShort => 'رقم المستند';
+
+  @override
+  String get rptColCustomerCode => 'رمز العميل';
+
+  @override
+  String get rptColTotalTax => 'إجمالي الضريبة';
+
+  @override
+  String get rptColCreateDate => 'تاريخ الإنشاء';
+
+  @override
+  String get rptColProfit => 'الربح';
+
+  @override
+  String get rptColMargin => 'الهامش';
+
+  @override
+  String get rptColNumSales => 'عدد المبيعات';
+
+  @override
+  String get rptColNumberOfSales => 'عدد المبيعات';
+
+  @override
+  String get rptColSalesCount => 'عدد المبيعات';
+
+  @override
+  String get rptColAverageSale => 'متوسط البيع';
+
+  @override
+  String get rptColTotalSales => 'إجمالي المبيعات';
+
+  @override
+  String get rptColHours => 'الساعات';
+
+  @override
+  String get rptColTotalDiscount => 'إجمالي الخصم';
+
+  @override
+  String get rptColDiscountSource => 'مصدر الخصم';
+
+  @override
+  String get rptColTotalBeforeDisc => 'الإجمالي قبل الخصم';
+
+  @override
+  String get rptColTotalAfterDisc => 'الإجمالي بعد الخصم';
+
+  @override
+  String get rptColDiscountGranted => 'الخصم الممنوح';
+
+  @override
+  String get rptColBeforeDisc => 'قبل الخصم';
+
+  @override
+  String get rptColAfterDisc => 'بعد الخصم';
+
+  @override
+  String get rptColTotalDisc => 'إجمالي الخصم';
+
+  @override
+  String get rptColTotalPaid => 'إجمالي المدفوع';
+
+  @override
+  String get rptColTotalUnpaid => 'إجمالي غير المدفوع';
+
+  @override
+  String get rptColDueDate => 'تاريخ الاستحقاق';
+
+  @override
+  String get rptColVoidedBy => 'ألغاه';
+
+  @override
+  String get rptColVoided => 'تاريخ الإلغاء';
+
+  @override
+  String get rptColCreated => 'تاريخ الإنشاء';
+
+  @override
+  String get rptColReason => 'السبب';
+
+  @override
+  String get rptColQtyShort => 'الكمية';
+
+  @override
+  String get rptColOrderNo => 'رقم الطلب';
+
+  @override
+  String get rptColPaymentMethod => 'طريقة الدفع';
+
+  @override
+  String get rptColPurchaseNumber => 'رقم الشراء';
+
+  @override
+  String get rptColExpirationDate => 'تاريخ انتهاء الصلاحية';
+
+  @override
+  String get rptColProductName => 'اسم المنتج';
+
+  @override
+  String get rptColOrderQty => 'كمية الطلب';
+
+  @override
+  String get rptColCurrentStock => 'المخزون الحالي';
+
+  @override
+  String get rptColWarningQty => 'حد التنبيه';
+
+  @override
+  String get rptColTransactionType => 'نوع المعاملة';
+
+  @override
+  String get rptColCredit => 'دائن';
+
+  @override
+  String get rptColDebit => 'مدين';
+
+  @override
+  String get rptColTableOrOrder => 'الطاولة / رقم الطلب';
+
+  @override
+  String get rptColZReportNo => 'رقم تقرير Z';
+
+  @override
+  String get rptColCompany => 'الشركة';
+
+  @override
+  String get rptColCostPrice => 'سعر التكلفة';
+
+  @override
+  String get rptColCostBeforeTax => 'التكلفة قبل الضريبة';
+
+  @override
+  String get rptColCostInclTax => 'التكلفة بعد الضريبة';
+
+  @override
+  String get rptFastMoving => 'سريع الحركة';
+
+  @override
+  String get rptSlowMoving => 'بطيء الحركة';
+
+  @override
+  String get rptStatusConfirmed => 'مؤكد';
+
+  @override
+  String get rptStatusPending => 'قيد الانتظار';
+
+  @override
+  String get rptBusinessPartner => 'الشريك التجاري';
+
+  @override
+  String get rptNetTotal => 'الإجمالي الصافي';
+
+  @override
+  String get rptTotalsRow => 'الإجماليات';
+
+  @override
+  String get rptNoGroup => '(بدون)';
+
+  @override
+  String get rptNoDiscountsInPeriod => 'لا توجد خصومات في هذه الفترة.';
+
+  @override
+  String rptTotalNumberOfSales(String count) {
+    return 'إجمالي عدد المبيعات: $count';
+  }
+
+  @override
+  String rptAverageSalesPerItem(String count) {
+    return 'متوسط عدد المبيعات لكل صنف: $count';
+  }
+
+  @override
+  String rptOrdersDiscounted(String count) {
+    return 'عدد الطلبات المخصومة: $count';
+  }
+
+  @override
+  String rptTotalDiscounted(String amount) {
+    return 'إجمالي المبلغ المخصوم: $amount';
+  }
+
+  @override
+  String rptPageOf(String page, String total) {
+    return 'صفحة $page / $total';
+  }
+
+  @override
+  String rptProductCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count منتج',
+      many: '$count منتجًا',
+      few: '$count منتجات',
+      two: 'منتجان',
+      one: 'منتج واحد',
+      zero: 'لا منتجات',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get rptColHourStart => 'ساعة البداية';
+
+  @override
+  String get rptColHourEnd => 'ساعة النهاية';
+
+  @override
+  String get rptFavorites => 'المفضلة';
+
+  @override
+  String get rptColTotalBefTax => 'الإجمالي قبل الضريبة';
+
+  @override
+  String get saveStockReportTitle => 'حفظ تقرير المخزون';
 }

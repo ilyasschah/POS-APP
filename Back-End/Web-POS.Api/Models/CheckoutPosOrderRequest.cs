@@ -44,6 +44,12 @@
         // sync). It also disambiguates duplicate-product lines from each other.
         public string? LineLocalId { get; set; }
         public List<CheckoutItemTaxDto> Taxes { get; set; } = new List<CheckoutItemTaxDto>();
+
+        /// The modifier options this line was sold with, snapshotted by the
+        /// client. Persisted as DocumentItemModifier rows against the created
+        /// line. Empty for every caller that predates modifiers, which is why
+        /// nothing here is required.
+        public List<ModifierSnapshotDto> Modifiers { get; set; } = new();
     }
 
     /// Result of a checkout: the created Document's id plus a map of each item's

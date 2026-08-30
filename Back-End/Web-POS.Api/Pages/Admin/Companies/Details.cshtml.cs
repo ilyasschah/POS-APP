@@ -47,7 +47,11 @@ public class DetailsModel : PageModel
         public string? FirstName { get; set; }
         public string? LastName { get; set; }
         public string? Email { get; set; }
-        public int AccessLevel { get; set; } = 1;
+        // Adding a user to a company that already has an admin: Cashier is the
+        // safe default. The NUMBER is unchanged — 1 was always Cashier — but
+        // the form beside it used to label 1 as "Admin", so this default was
+        // read as the opposite of what it did.
+        public int AccessLevel { get; set; } = Api.Domain.AccessLevels.Cashier;
     }
 
     public async Task<IActionResult> OnGetAsync(int id)

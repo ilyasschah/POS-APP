@@ -8,6 +8,7 @@ import 'package:gap/gap.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pos_app/printer/pdf_fonts.dart';
+import 'package:pos_app/printer/printed_text.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:pos_app/auth/auth_provider.dart';
@@ -317,6 +318,9 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
 
   Future<void> _exportCsv() async {
     if (_selectedReportType == null) return;
+    // Read before the first await: the column names are needed all the way
+    // down and `context` must not be touched across an async gap.
+    final l = AppLocalizations.of(context);
     final filter = _filter;
     final reportId = _selectedReportType!.id;
     final buf = StringBuffer();
@@ -325,7 +329,14 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     try {
       if (reportId == 'sales_by_product') {
         final rows = await ref.read(salesByProductProvider(filter).future);
-        buf.writeln('Code,Product,Quantity,UOM,Total before tax,Total');
+        buf.writeln(_csvHeader([
+          l.fieldCode,
+          l.productLabel,
+          l.fieldQuantity,
+          l.rptColUom,
+          l.totalBeforeTax,
+          l.totalLabel,
+        ]));
         for (final r in rows) {
           buf.writeln(
             '"${r.code ?? ''}","${r.product}",${r.quantity},"${r.uom}",${r.totalBeforeTax},${r.total}',
@@ -337,7 +348,12 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         filename = 'SalesByProduct';
       } else if (reportId == 'sales_by_group') {
         final rows = await ref.read(salesByProductGroupProvider(filter).future);
-        buf.writeln('Product group,Quantity,Total before tax,Total');
+        buf.writeln(_csvHeader([
+          l.fieldProductGroup,
+          l.fieldQuantity,
+          l.totalBeforeTax,
+          l.totalLabel,
+        ]));
         for (final r in rows) {
           buf.writeln(
             '"${r.productGroup}",${r.quantity},${r.totalBeforeTax},${r.total}',
@@ -349,7 +365,11 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         filename = 'SalesByProductGroup';
       } else if (reportId == 'sales_by_customer') {
         final rows = await ref.read(salesByCustomerProvider(filter).future);
-        buf.writeln('Customer,Total before tax,Total');
+        buf.writeln(_csvHeader([
+          l.customerLabel,
+          l.totalBeforeTax,
+          l.totalLabel,
+        ]));
         for (final r in rows) {
           buf.writeln('"${r.customer}",${r.totalBeforeTax},${r.total}');
         }
@@ -359,7 +379,12 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         filename = 'SalesByCustomer';
       } else if (reportId == 'sales_tax') {
         final rows = await ref.read(salesByTaxProvider(filter).future);
-        buf.writeln('Tax name,Total before tax,Tax,Total');
+        buf.writeln(_csvHeader([
+          l.rptColTaxName,
+          l.totalBeforeTax,
+          l.fieldTax,
+          l.totalLabel,
+        ]));
         for (final r in rows) {
           buf.writeln(
             '"${r.taxName}",${r.totalBeforeTax},${r.taxAmount},${r.total}',
@@ -384,7 +409,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
               (pivot[r.customerName]![r.paymentTypeName] ?? 0) + r.amount;
         }
         buf.writeln(
-          ['Customer', ...paymentTypes, 'Total'].map((h) => '"$h"').join(','),
+          _csvHeader([l.customerLabel, ...paymentTypes, l.totalLabel]),
         );
         for (final c in customers) {
           final amounts = paymentTypes
@@ -418,7 +443,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
               (pivot[r.userName]![r.paymentTypeName] ?? 0) + r.amount;
         }
         buf.writeln(
-          ['User', ...paymentTypes, 'Total'].map((h) => '"$h"').join(','),
+          _csvHeader([l.userLabel, ...paymentTypes, l.totalLabel]),
         );
         for (final u in users) {
           final amounts = paymentTypes
@@ -451,7 +476,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         }
         final dateFmt2 = DateFormat('dd/MM/yyyy');
         buf.writeln(
-          ['Date', ...paymentTypes, 'Total'].map((h) => '"$h"').join(','),
+          _csvHeader([l.dateLabel, ...paymentTypes, l.totalLabel]),
         );
         for (final d in dates) {
           final amounts = paymentTypes
@@ -474,9 +499,20 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         filename = 'SalesByPaymentType';
       } else if (reportId == 'sales_refunds') {
         final rows = await ref.read(refundItemListProvider(filter).future);
-        buf.writeln(
-          'Document number,Ref. number,Date,Customer code,Customer,Code,Product,Quantity,UOM,Total before tax,Total tax,Total',
-        );
+        buf.writeln(_csvHeader([
+          l.documentNumber,
+          l.rptColRefNumber,
+          l.dateLabel,
+          l.rptColCustomerCode,
+          l.customerLabel,
+          l.fieldCode,
+          l.productLabel,
+          l.fieldQuantity,
+          l.rptColUom,
+          l.totalBeforeTax,
+          l.rptColTotalTax,
+          l.totalLabel,
+        ]));
         final dateFmt = DateFormat('dd/MM/yyyy');
         for (final r in rows) {
           buf.writeln(
@@ -495,7 +531,14 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         filename = 'Refunds';
       } else if (reportId == 'sales_invoice_list') {
         final rows = await ref.read(invoiceListProvider(filter).future);
-        buf.writeln('#,Date,Document number,Customer,Payment method,Total');
+        buf.writeln(_csvHeader([
+          '#',
+          l.dateLabel,
+          l.documentNumber,
+          l.customerLabel,
+          l.rptColPaymentMethod,
+          l.totalLabel,
+        ]));
         final dateFmt = DateFormat('dd/MM/yyyy');
         var i = 1;
         for (final r in rows) {
@@ -511,7 +554,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         filename = 'InvoiceList';
       } else if (reportId == 'sales_daily') {
         final rows = await ref.read(dailySalesProvider(filter).future);
-        buf.writeln('Date,Total');
+        buf.writeln(_csvHeader([l.dateLabel, l.totalLabel]));
         final dayFmt = DateFormat('dd/MM/yyyy (EEE)');
         for (final r in rows) {
           buf.writeln('"${dayFmt.format(r.date)}",${r.total}');
@@ -523,9 +566,14 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         final grandTotal = rows.fold(0.0, (s, r) => s + r.totalSales);
         final grandCount = rows.fold(0, (s, r) => s + r.salesCount);
         final timeFmt = DateFormat('h:mm a');
-        buf.writeln(
-          'Hour start,Hour end,Total sales,Sales count,Average sale,%',
-        );
+        buf.writeln(_csvHeader([
+          l.rptColHourStart,
+          l.rptColHourEnd,
+          l.rptColTotalSales,
+          l.rptColSalesCount,
+          l.rptColAverageSale,
+          '%',
+        ]));
         for (final r in rows) {
           final start = DateTime(2000, 1, 1, r.hour);
           final avg = r.salesCount > 0 ? r.totalSales / r.salesCount : 0.0;
@@ -552,9 +600,9 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             .toList();
         buf.writeln(
           [
-            'Product group',
+            l.fieldProductGroup,
             ...hourLabels,
-            'Total',
+            l.totalLabel,
           ].map((h) => '"$h"').join(','),
         );
         for (final g in groups) {
@@ -576,7 +624,11 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         filename = 'HourlySalesByGroup';
       } else if (reportId == 'sales_by_table') {
         final rows = await ref.read(salesByTableProvider(filter).future);
-        buf.writeln('Table / order number,Number of sales,Total');
+        buf.writeln(_csvHeader([
+          l.rptColTableOrOrder,
+          l.rptColNumberOfSales,
+          l.totalLabel,
+        ]));
         for (final r in rows) {
           buf.writeln('"${r.orderNumber}",${r.numberOfSales},${r.total}');
         }
@@ -587,7 +639,15 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         filename = 'SalesByTable';
       } else if (reportId == 'sales_profit') {
         final rows = await ref.read(profitProvider(filter).future);
-        buf.writeln('Code,Product,Quantity,Cost,Total,Profit,Margin');
+        buf.writeln(_csvHeader([
+          l.fieldCode,
+          l.productLabel,
+          l.fieldQuantity,
+          l.fieldCost,
+          l.totalLabel,
+          l.rptColProfit,
+          l.rptColMargin,
+        ]));
         for (final r in rows) {
           buf.writeln(
             '"${r.productCode ?? ''}","${r.productName}",${r.quantity},'
@@ -604,9 +664,15 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       } else if (reportId == 'sales_unpaid') {
         final rows = await ref.read(unpaidSalesProvider(filter).future);
         final dateFmt = DateFormat('dd/MM/yyyy');
-        buf.writeln(
-          'Customer,Document number,Date,Due date,Total,Total paid,Total unpaid',
-        );
+        buf.writeln(_csvHeader([
+          l.customerLabel,
+          l.documentNumber,
+          l.dateLabel,
+          l.rptColDueDate,
+          l.totalLabel,
+          l.rptColTotalPaid,
+          l.rptColTotalUnpaid,
+        ]));
         for (final r in rows) {
           buf.writeln(
             '"${r.customerName}","${r.documentNumber}",'
@@ -621,7 +687,14 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       } else if (reportId == 'sales_starting_cash') {
         final rows = await ref.read(startingCashReportProvider(filter).future);
         final dateFmt = DateFormat('dd/MM/yyyy HH:mm');
-        buf.writeln('User,Type,Description,Date,Amount,Z-Report #');
+        buf.writeln(_csvHeader([
+          l.userLabel,
+          l.typeLabel,
+          l.fieldDescription,
+          l.dateLabel,
+          l.amount,
+          l.rptColZReportNo,
+        ]));
         for (final r in rows) {
           buf.writeln(
             '"${r.userName ?? ''}","${r.isCashOut ? 'Cash Out' : 'Cash In'}",'
@@ -637,9 +710,15 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         final rows = await ref.read(stockMovementReportProvider(filter).future);
         final total = rows.fold(0.0, (s, r) => s + r.numSales);
         final average = rows.isEmpty ? 0.0 : total / rows.length;
-        buf.writeln('Category,Code,Product,Num. of sales');
+        buf.writeln(_csvHeader([
+          l.categoryLabel,
+          l.fieldCode,
+          l.productLabel,
+          l.rptColNumSales,
+        ]));
         for (final r in rows) {
-          final cat = r.numSales >= average ? 'Fast moving' : 'Slow moving';
+          final cat =
+              r.numSales >= average ? l.rptFastMoving : l.rptSlowMoving;
           buf.writeln(
             '"$cat","${r.productCode ?? ''}","${r.productName}",${r.numSales}',
           );
@@ -651,7 +730,11 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         final rows = await ref.read(
           itemsDiscountsReportProvider(filter).future,
         );
-        buf.writeln('Code,Product,Total discount');
+        buf.writeln(_csvHeader([
+          l.fieldCode,
+          l.productLabel,
+          l.rptColTotalDiscount,
+        ]));
         for (final r in rows) {
           buf.writeln(
             '"${r.productCode ?? ''}","${r.productName}",${r.totalDiscount}',
@@ -666,9 +749,15 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           discountsGrantedReportProvider(filter).future,
         );
         final dateFmt = DateFormat('dd/MM/yyyy');
-        buf.writeln(
-          'Customer,Document,Date,User,Total before disc.,Total after disc.,Discount granted',
-        );
+        buf.writeln(_csvHeader([
+          l.customerLabel,
+          l.rptColDocument,
+          l.dateLabel,
+          l.userLabel,
+          l.rptColTotalBeforeDisc,
+          l.rptColTotalAfterDisc,
+          l.rptColDiscountGranted,
+        ]));
         for (final r in rows) {
           buf.writeln(
             '"${r.customerName}","${r.documentNumber}",'
@@ -684,7 +773,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         final rows = await ref.read(
           discountsBySourceReportProvider(filter).future,
         );
-        buf.writeln('Discount source,Total');
+        buf.writeln(_csvHeader([l.rptColDiscountSource, l.totalLabel]));
         for (final r in rows) {
           buf.writeln('"${r.label}",${r.amount}');
         }
@@ -693,14 +782,24 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       } else if (reportId == 'sales_voided') {
         final rows = await ref.read(voidedItemsReportProvider(filter).future);
         final dtFmt = DateFormat('dd/MM/yyyy HH:mm:ss');
-        buf.writeln(
-          'Product,Voided by,Qty.,Price,Discount,Status,Order #,Created,Voided,Total,Reason',
-        );
+        buf.writeln(_csvHeader([
+          l.productLabel,
+          l.rptColVoidedBy,
+          l.rptColQtyShort,
+          l.priceLabel,
+          l.discountLabel,
+          l.statusLabel,
+          l.rptColOrderNo,
+          l.rptColCreated,
+          l.rptColVoided,
+          l.totalLabel,
+          l.rptColReason,
+        ]));
         for (final r in rows) {
           buf.writeln(
             '"${r.productName}","${r.voidedByName ?? ''}",'
             '${r.quantity},${r.price},"${r.discountDisplay}",'
-            '"${r.isConfirmed ? 'Confirmed' : 'Pending'}",'
+            '"${r.isConfirmed ? l.rptStatusConfirmed : l.rptStatusPending}",'
             '"${r.orderNumber}","${dtFmt.format(r.dateCreated)}",'
             '"${dtFmt.format(r.dateVoided)}",${r.total},'
             '"${r.reason ?? ''}"',
@@ -712,9 +811,23 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         filename = 'VoidedItems';
       } else if (reportId == 'sales_item_list') {
         final rows = await ref.read(salesItemListProvider(filter).future);
-        buf.writeln(
-          'Document type,Date,Create date,Document number,Ref. number,Customer code,Customer,Order number,Code,Product,Quantity,UOM,Total before tax,Total tax,Total',
-        );
+        buf.writeln(_csvHeader([
+          l.documentType,
+          l.dateLabel,
+          l.rptColCreateDate,
+          l.documentNumber,
+          l.rptColRefNumber,
+          l.rptColCustomerCode,
+          l.customerLabel,
+          l.orderNumberLabel,
+          l.fieldCode,
+          l.productLabel,
+          l.fieldQuantity,
+          l.rptColUom,
+          l.totalBeforeTax,
+          l.rptColTotalTax,
+          l.totalLabel,
+        ]));
         final dateFmt = DateFormat('dd/MM/yyyy');
         final dtFmt = DateFormat('dd/MM/yyyy HH:mm:ss');
         for (final r in rows) {
@@ -735,7 +848,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         filename = 'SalesItemList';
       } else if (reportId == 'sales_users') {
         final rows = await ref.read(salesByUserProvider(filter).future);
-        buf.writeln('User,Total before tax,Total');
+        buf.writeln(_csvHeader([l.userLabel, l.totalBeforeTax, l.totalLabel]));
         for (final r in rows) {
           buf.writeln('"${r.user}",${r.totalBeforeTax},${r.total}');
         }
@@ -746,9 +859,15 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       } else if (reportId == 'purchase_unpaid') {
         final rows = await ref.read(unpaidPurchaseProvider(filter).future);
         final dateFmt = DateFormat('dd/MM/yyyy');
-        buf.writeln(
-          'Supplier,Document number,Date,Due date,Total,Total paid,Total unpaid',
-        );
+        buf.writeln(_csvHeader([
+          l.supplier,
+          l.documentNumber,
+          l.dateLabel,
+          l.rptColDueDate,
+          l.totalLabel,
+          l.rptColTotalPaid,
+          l.rptColTotalUnpaid,
+        ]));
         for (final r in rows) {
           buf.writeln(
             '"${r.supplierName}","${r.documentNumber}",'
@@ -762,7 +881,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         filename = 'UnpaidPurchase';
       } else if (reportId == 'purchase_suppliers') {
         final rows = await ref.read(purchaseBySupplierProvider(filter).future);
-        buf.writeln('Supplier,Total before tax,Total');
+        buf.writeln(_csvHeader([l.supplier, l.totalBeforeTax, l.totalLabel]));
         for (final r in rows) {
           buf.writeln('"${r.supplier}",${r.totalBeforeTax},${r.total}');
         }
@@ -772,7 +891,14 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         filename = 'PurchaseBySupplier';
       } else if (reportId == 'purchase_products') {
         final rows = await ref.read(purchaseByProductProvider(filter).future);
-        buf.writeln('Code,Product,Quantity,UOM,Total before tax,Total');
+        buf.writeln(_csvHeader([
+          l.fieldCode,
+          l.productLabel,
+          l.fieldQuantity,
+          l.rptColUom,
+          l.totalBeforeTax,
+          l.totalLabel,
+        ]));
         for (final r in rows) {
           buf.writeln(
             '"${r.code ?? ''}","${r.product}",${r.quantity},"${r.uom}",${r.totalBeforeTax},${r.total}',
@@ -785,7 +911,14 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       } else if (reportId == 'purchase_invoice_list') {
         final rows = await ref.read(purchaseInvoiceListProvider(filter).future);
         final dateFmt = DateFormat('dd/MM/yyyy');
-        buf.writeln('#,Supplier,Purchase number,External document,Date,Total');
+        buf.writeln(_csvHeader([
+          '#',
+          l.supplier,
+          l.rptColPurchaseNumber,
+          l.externalDocument,
+          l.dateLabel,
+          l.totalLabel,
+        ]));
         var i = 1;
         for (final r in rows) {
           buf.writeln(
@@ -803,9 +936,20 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           purchaseItemsDiscountsProvider(filter).future,
         );
         final dateFmt = DateFormat('dd/MM/yyyy');
-        buf.writeln(
-          'Supplier,Document,Date,User,Code,Product,Qty,Cost,Before disc.,After disc.,Discount,Total disc.',
-        );
+        buf.writeln(_csvHeader([
+          l.supplier,
+          l.rptColDocument,
+          l.dateLabel,
+          l.userLabel,
+          l.fieldCode,
+          l.productLabel,
+          l.qtyShort,
+          l.fieldCost,
+          l.rptColBeforeDisc,
+          l.rptColAfterDisc,
+          l.discountLabel,
+          l.rptColTotalDisc,
+        ]));
         for (final r in rows) {
           buf.writeln(
             '"${r.supplierName}","${r.documentNumber}",'
@@ -823,9 +967,15 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       } else if (reportId == 'purchase_discounts') {
         final rows = await ref.read(purchaseDiscountsProvider(filter).future);
         final dateFmt = DateFormat('dd/MM/yyyy');
-        buf.writeln(
-          'Supplier,Document,Date,User,Total before disc.,Total after disc.,Discount granted',
-        );
+        buf.writeln(_csvHeader([
+          l.supplier,
+          l.rptColDocument,
+          l.dateLabel,
+          l.userLabel,
+          l.rptColTotalBeforeDisc,
+          l.rptColTotalAfterDisc,
+          l.rptColDiscountGranted,
+        ]));
         for (final r in rows) {
           buf.writeln(
             '"${r.supplierName}","${r.documentNumber}",'
@@ -839,7 +989,12 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         filename = 'PurchaseDiscounts';
       } else if (reportId == 'purchase_tax') {
         final rows = await ref.read(purchaseByTaxProvider(filter).future);
-        buf.writeln('Tax name,Total before tax,Tax,Total');
+        buf.writeln(_csvHeader([
+          l.rptColTaxName,
+          l.totalBeforeTax,
+          l.fieldTax,
+          l.totalLabel,
+        ]));
         for (final r in rows) {
           buf.writeln(
             '"${r.taxName}",${r.totalBeforeTax},${r.taxAmount},${r.total}',
@@ -854,7 +1009,14 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           purchaseExpirationDateProvider(filter).future,
         );
         final dateFmt = DateFormat('dd/MM/yyyy');
-        buf.writeln('#,Code,Product,Quantity,UOM,Expiration date');
+        buf.writeln(_csvHeader([
+          '#',
+          l.fieldCode,
+          l.productLabel,
+          l.fieldQuantity,
+          l.rptColUom,
+          l.rptColExpirationDate,
+        ]));
         var i = 1;
         for (final r in rows) {
           buf.writeln(
@@ -869,7 +1031,15 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           stockReturnByProductProvider(filter).future,
         );
         final dateFmt = DateFormat('dd/MM/yyyy');
-        buf.writeln('Date,Code,Product,Quantity,UOM,Total before tax,Total');
+        buf.writeln(_csvHeader([
+          l.dateLabel,
+          l.fieldCode,
+          l.productLabel,
+          l.fieldQuantity,
+          l.rptColUom,
+          l.totalBeforeTax,
+          l.totalLabel,
+        ]));
         for (final r in rows) {
           buf.writeln(
             '"${dateFmt.format(r.date)}","${r.code ?? ''}","${r.product}",${r.quantity},"${r.uom}",${r.totalBeforeTax},${r.total}',
@@ -884,7 +1054,15 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           lossAndDamageByProductProvider(filter).future,
         );
         final dateFmt = DateFormat('dd/MM/yyyy');
-        buf.writeln('Date,Code,Product,Quantity,UOM,Total before tax,Total');
+        buf.writeln(_csvHeader([
+          l.dateLabel,
+          l.fieldCode,
+          l.productLabel,
+          l.fieldQuantity,
+          l.rptColUom,
+          l.totalBeforeTax,
+          l.totalLabel,
+        ]));
         for (final r in rows) {
           buf.writeln(
             '"${dateFmt.format(r.date)}","${r.code ?? ''}","${r.product}",${r.quantity},"${r.uom}",${r.totalBeforeTax},${r.total}',
@@ -896,7 +1074,12 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         filename = 'LossAndDamageByProduct';
       } else if (reportId == 'reorder_list') {
         final rows = await ref.read(reorderProductListProvider(filter).future);
-        buf.writeln('Supplier,Product name,Order qty.,UOM');
+        buf.writeln(_csvHeader([
+          l.supplier,
+          l.rptColProductName,
+          l.rptColOrderQty,
+          l.rptColUom,
+        ]));
         for (final r in rows) {
           buf.writeln(
             '"${r.supplierName}","${r.productName}",${r.orderQuantity},"${r.uom}"',
@@ -905,9 +1088,14 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         filename = 'ReorderProductList';
       } else if (reportId == 'low_stock_warning') {
         final rows = await ref.read(lowStockWarningProvider(filter).future);
-        buf.writeln(
-          'Supplier,Product name,Current stock,Warning qty.,Order qty.,UOM',
-        );
+        buf.writeln(_csvHeader([
+          l.supplier,
+          l.rptColProductName,
+          l.rptColCurrentStock,
+          l.rptColWarningQty,
+          l.rptColOrderQty,
+          l.rptColUom,
+        ]));
         for (final r in rows) {
           buf.writeln(
             '"${r.supplierName}","${r.productName}",${r.currentStock},${r.lowStockWarningQuantity},${r.orderQuantity},"${r.uom}"',
@@ -918,7 +1106,14 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         if (filter.customerId == null) return;
         final rows = await ref.read(transactionHistoryProvider(filter).future);
         final dateFmt = DateFormat('dd/MM/yyyy');
-        buf.writeln('Date,Transaction type,Ref. number,Credit,Debit,Balance');
+        buf.writeln(_csvHeader([
+          l.dateLabel,
+          l.rptColTransactionType,
+          l.rptColRefNumber,
+          l.rptColCredit,
+          l.rptColDebit,
+          l.balanceLabel,
+        ]));
         for (final r in rows) {
           final dateStr = r.isPreviousBalance
               ? ''
@@ -1041,6 +1236,12 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
 }
 
 // ─── Tab chip ─────────────────────────────────────────────────────────────────
+
+/// One CSV header row. Every name is quoted and inner quotes doubled, because
+/// a translated column name may itself contain a comma ("Total, taxes
+/// comprises") which would otherwise shift every column in the sheet.
+String _csvHeader(List<String> columns) =>
+    columns.map((c) => '"${c.replaceAll('"', '""')}"').join(',');
 
 class _TabChip extends StatelessWidget {
   final String id;
@@ -1217,7 +1418,7 @@ class _HomeView extends StatelessWidget {
             for (final (section, reports) in _allSections)
               for (final r in reports)
                 if (_reportLabel(context, r.id).toLowerCase().contains(q) ||
-                    section.toLowerCase().contains(q))
+                    _sectionName(context, section).toLowerCase().contains(q))
                   (section, r),
           ];
 
@@ -1332,7 +1533,7 @@ class _HomeView extends StatelessWidget {
                           if (favoriteReports.isNotEmpty) ...[
                             _sectionLabel(
                               cs,
-                              'Favorites',
+                              AppLocalizations.of(context).rptFavorites,
                               trailing: TextButton(
                                 onPressed: onClearFavorites,
                                 style: TextButton.styleFrom(
@@ -1402,6 +1603,10 @@ class _TabPdfView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
+    // Every `_build*Pdf` takes this: the builders are top-level functions with
+    // no BuildContext of their own, so the strings they print have to be handed
+    // down from here.
+    final l = AppLocalizations.of(context);
     final company = ref.watch(selectedCompanyProvider);
     final customers = ref.watch(allCustomersProvider).value ?? [];
     final users = ref.watch(allUsersProvider).value ?? [];
@@ -1442,30 +1647,30 @@ class _TabPdfView extends ConsumerWidget {
     ];
 
     String customerLabel() {
-      if (tab.filter.customerId == null) return 'All';
+      if (tab.filter.customerId == null) return l.filterAll;
       return customers
               .where((c) => c.id == tab.filter.customerId)
               .map((c) => c.name)
               .firstOrNull ??
-          'All';
+          l.filterAll;
     }
 
     String userLabel() {
-      if (tab.filter.userId == null) return 'All';
+      if (tab.filter.userId == null) return l.filterAll;
       return users
               .where((u) => u.id == tab.filter.userId)
               .map((u) => '${u.firstName ?? ''} ${u.lastName ?? ''}'.trim())
               .firstOrNull ??
-          'All';
+          l.filterAll;
     }
 
     String productLabel() {
-      if (tab.filter.productId == null) return 'All';
+      if (tab.filter.productId == null) return l.filterAll;
       return products
               .where((p) => p.id == tab.filter.productId)
               .map((p) => p.name)
               .firstOrNull ??
-          'All';
+          l.filterAll;
     }
 
     if (tab.reportType.id == 'sales_by_product') {
@@ -1485,6 +1690,7 @@ class _TabPdfView extends ConsumerWidget {
           canDebug: false,
           allowSharing: false,
           build: (_) => _buildProductsPdf(
+            l: l,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -1514,6 +1720,7 @@ class _TabPdfView extends ConsumerWidget {
           canDebug: false,
           allowSharing: false,
           build: (_) => _buildProductGroupsPdf(
+            l: l,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -1543,6 +1750,7 @@ class _TabPdfView extends ConsumerWidget {
           canDebug: false,
           allowSharing: false,
           build: (_) => _buildCustomersPdf(
+            l: l,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -1572,6 +1780,7 @@ class _TabPdfView extends ConsumerWidget {
           canDebug: false,
           allowSharing: false,
           build: (_) => _buildTaxPdf(
+            l: l,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -1601,6 +1810,7 @@ class _TabPdfView extends ConsumerWidget {
           canDebug: false,
           allowSharing: false,
           build: (_) => _buildPaymentTypesByCustomerPdf(
+            l: l,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -1630,6 +1840,7 @@ class _TabPdfView extends ConsumerWidget {
           canDebug: false,
           allowSharing: false,
           build: (_) => _buildPaymentTypesByUserPdf(
+            l: l,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -1659,6 +1870,7 @@ class _TabPdfView extends ConsumerWidget {
           canDebug: false,
           allowSharing: false,
           build: (_) => _buildPaymentTypesPdf(
+            l: l,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -1688,6 +1900,7 @@ class _TabPdfView extends ConsumerWidget {
           canDebug: false,
           allowSharing: false,
           build: (_) => _buildRefundsPdf(
+            l: l,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -1717,6 +1930,7 @@ class _TabPdfView extends ConsumerWidget {
           canDebug: false,
           allowSharing: false,
           build: (_) => _buildInvoiceListPdf(
+            l: l,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -1745,6 +1959,7 @@ class _TabPdfView extends ConsumerWidget {
           canDebug: false,
           allowSharing: false,
           build: (_) => _buildDailySalesPdf(
+            l: l,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -1773,6 +1988,7 @@ class _TabPdfView extends ConsumerWidget {
           canDebug: false,
           allowSharing: false,
           build: (_) => _buildHourlySalesPdf(
+            l: l,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -1800,6 +2016,7 @@ class _TabPdfView extends ConsumerWidget {
           canDebug: false,
           allowSharing: false,
           build: (_) => _buildHourlySalesByGroupPdf(
+            l: l,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -1828,6 +2045,7 @@ class _TabPdfView extends ConsumerWidget {
           canDebug: false,
           allowSharing: false,
           build: (_) => _buildSalesByTablePdf(
+            l: l,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -1856,6 +2074,7 @@ class _TabPdfView extends ConsumerWidget {
           canDebug: false,
           allowSharing: false,
           build: (_) => _buildProfitPdf(
+            l: l,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -1885,6 +2104,7 @@ class _TabPdfView extends ConsumerWidget {
           canDebug: false,
           allowSharing: false,
           build: (_) => _buildUnpaidSalesPdf(
+            l: l,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -1913,6 +2133,7 @@ class _TabPdfView extends ConsumerWidget {
           canDebug: false,
           allowSharing: false,
           build: (_) => _buildStartingCashPdf(
+            l: l,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -1940,6 +2161,7 @@ class _TabPdfView extends ConsumerWidget {
           canDebug: false,
           allowSharing: false,
           build: (_) => _buildStockMovementPdf(
+            l: l,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -1968,6 +2190,7 @@ class _TabPdfView extends ConsumerWidget {
           canDebug: false,
           allowSharing: false,
           build: (_) => _buildItemsDiscountsPdf(
+            l: l,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -1997,6 +2220,7 @@ class _TabPdfView extends ConsumerWidget {
           canDebug: false,
           allowSharing: false,
           build: (_) => _buildDiscountsGrantedPdf(
+            l: l,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2025,6 +2249,7 @@ class _TabPdfView extends ConsumerWidget {
           canDebug: false,
           allowSharing: false,
           build: (_) => _buildDiscountsBySourcePdf(
+            l: l,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2051,6 +2276,7 @@ class _TabPdfView extends ConsumerWidget {
           canDebug: false,
           allowSharing: false,
           build: (_) => _buildVoidedItemsPdf(
+            l: l,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2079,6 +2305,7 @@ class _TabPdfView extends ConsumerWidget {
           canDebug: false,
           allowSharing: false,
           build: (_) => _buildItemListPdf(
+            l: l,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2108,6 +2335,7 @@ class _TabPdfView extends ConsumerWidget {
           canDebug: false,
           allowSharing: false,
           build: (_) => _buildUsersPdf(
+            l: l,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2137,6 +2365,7 @@ class _TabPdfView extends ConsumerWidget {
           canDebug: false,
           allowSharing: false,
           build: (_) => _buildUnpaidPurchasePdf(
+            l: l,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2165,6 +2394,7 @@ class _TabPdfView extends ConsumerWidget {
           canDebug: false,
           allowSharing: false,
           build: (_) => _buildPurchaseBySupplierPdf(
+            l: l,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2194,6 +2424,7 @@ class _TabPdfView extends ConsumerWidget {
           canDebug: false,
           allowSharing: false,
           build: (_) => _buildPurchaseByProductPdf(
+            l: l,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2223,6 +2454,7 @@ class _TabPdfView extends ConsumerWidget {
           canDebug: false,
           allowSharing: false,
           build: (_) => _buildPurchaseTaxPdf(
+            l: l,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2252,6 +2484,7 @@ class _TabPdfView extends ConsumerWidget {
           canDebug: false,
           allowSharing: false,
           build: (_) => _buildPurchaseExpirationDatePdf(
+            l: l,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2281,6 +2514,7 @@ class _TabPdfView extends ConsumerWidget {
           canDebug: false,
           allowSharing: false,
           build: (_) => _buildPurchaseInvoiceListPdf(
+            l: l,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2310,6 +2544,7 @@ class _TabPdfView extends ConsumerWidget {
           canDebug: false,
           allowSharing: false,
           build: (_) => _buildPurchaseItemsDiscountsPdf(
+            l: l,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2339,6 +2574,7 @@ class _TabPdfView extends ConsumerWidget {
           canDebug: false,
           allowSharing: false,
           build: (_) => _buildPurchaseDiscountsPdf(
+            l: l,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2367,6 +2603,7 @@ class _TabPdfView extends ConsumerWidget {
           canDebug: false,
           allowSharing: false,
           build: (_) => _buildStockReturnByProductPdf(
+            l: l,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2395,6 +2632,7 @@ class _TabPdfView extends ConsumerWidget {
           canDebug: false,
           allowSharing: false,
           build: (_) => _buildLossAndDamageByProductPdf(
+            l: l,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2423,6 +2661,7 @@ class _TabPdfView extends ConsumerWidget {
           canDebug: false,
           allowSharing: false,
           build: (_) => _buildReorderProductListPdf(
+            l: l,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2451,6 +2690,7 @@ class _TabPdfView extends ConsumerWidget {
           canDebug: false,
           allowSharing: false,
           build: (_) => _buildLowStockWarningPdf(
+            l: l,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2487,6 +2727,7 @@ class _TabPdfView extends ConsumerWidget {
           canDebug: false,
           allowSharing: false,
           build: (_) => _buildTransactionHistoryPdf(
+            l: l,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2508,7 +2749,95 @@ class _TabPdfView extends ConsumerWidget {
 
 // ─── PDF builder functions ────────────────────────────────────────────────────
 
+// ─── Fonts and text helpers for the report PDFs ───────────────────────────────
+
+/// The four faces every report draws with, plus the styles that carry them.
+///
+/// 🚨 The faces must be named in the STYLE, not only in the page theme. Arabic
+/// is shaped into presentation forms (U+FE70–FEFF) and those resolve correctly
+/// only when the Arabic face is the run's BASE font — which is the swap
+/// `styleForScript` performs, and it can only perform it if the style lists the
+/// Arabic face in `fontFallback`. A style that inherits its fonts from the
+/// theme leaves `fontFallback` empty, `styleForScript` returns it untouched,
+/// and the report prints Arabic as disconnected letters running backwards.
+/// See `printer/printed_text.dart` for the whole story.
+class _RptFonts {
+  final pw.Font latin;
+  final pw.Font latinBold;
+  final pw.Font arabic;
+  final pw.Font arabicBold;
+  const _RptFonts(this.latin, this.latinBold, this.arabic, this.arabicBold);
+
+  static Future<_RptFonts> load() async => _RptFonts(
+        await PdfFonts.latin(),
+        await PdfFonts.latin(bold: true),
+        await PdfFonts.arabic(),
+        await PdfFonts.arabic(bold: true),
+      );
+
+  pw.ThemeData get theme => pw.ThemeData.withFont(
+        base: latin,
+        bold: latinBold,
+        fontFallback: [arabic],
+      );
+
+  /// A style that names both faces at the weight asked for, so
+  /// [styleForScript] can promote the Arabic one for an Arabic run.
+  pw.TextStyle style({double size = 9, bool bold = false, PdfColor? color}) =>
+      pw.TextStyle(
+        font: bold ? latinBold : latin,
+        fontFallback: [bold ? arabicBold : arabic],
+        fontWeight: bold ? pw.FontWeight.bold : null,
+        fontSize: size,
+        color: color,
+      );
+}
+
+/// A label and its value as TWO runs rather than one.
+///
+/// 🚨 Replaces the `pw.RichText` + two `pw.TextSpan` the reports used to build.
+/// A TextSpan gets no direction of its own, so an Arabic label went unshaped;
+/// and a single run holding both scripts comes out with its Latin half
+/// reversed (`FUTUR3` → `3RUTUF`). Two runs means each picks its own.
+pw.Widget _hdrPair(
+  _RptFonts f,
+  String label,
+  String value, {
+  double size = 9,
+  bool boldLabel = true,
+  bool boldValue = false,
+  PdfColor? color,
+}) =>
+    pw.Row(
+      mainAxisSize: pw.MainAxisSize.min,
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        printedText(label, style: f.style(size: size, bold: boldLabel, color: color)),
+        // 🚨 The ':' is its own run, and the label must arrive WITHOUT one.
+        // A colon is a neutral character: left at the end of an Arabic label it
+        // is moved by the bidi pass to that run's visual LEFT end, so the pair
+        // printed as `:الشركة FUTUR3` — the colon detached on the far side of
+        // the label instead of introducing the value. On its own it stays
+        // between the two in either script.
+        printedText(': ', style: f.style(size: size, bold: boldLabel, color: color)),
+        pw.Flexible(
+          child: printedText(value,
+              style: f.style(size: size, bold: boldValue, color: color)),
+        ),
+      ],
+    );
+
+/// Table cells as WIDGETS.
+///
+/// `TableHelper.fromTextArray` renders a plain-string cell with a bare
+/// `pw.Text` and no direction, which is the unshaped-Arabic bug again. It uses
+/// a cell verbatim when it already is a widget, so every header and every data
+/// cell goes through [printedText] instead.
+List<pw.Widget> _cells(List<String> values, pw.TextStyle style) =>
+    [for (final v in values) printedText(v, style: style)];
+
 Future<Uint8List> _buildProductsPdf({
+  required AppLocalizations l,
   required List<SalesByProductRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -2521,21 +2850,22 @@ Future<Uint8List> _buildProductsPdf({
   final fmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfFonts.latin();
-  final bold = await PdfFonts.latin(bold: true);
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
+  final f = await _RptFonts.load();
+  final theme = f.theme;
 
   doc.addPage(
     pw.MultiPage(
       pageFormat: PdfPageFormat.a4.landscape,
       theme: theme,
       build: (ctx) => [
-        pw.Text(
-          'SALES BY PRODUCT',
-          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+        printedText(
+          l.rptTitleSalesByProduct,
+          style: f.style(size: 16, bold: true),
         ),
         pw.SizedBox(height: 8),
         _pdfHeader(
+          l,
+          f,
           dateFmt,
           filter,
           companyName,
@@ -2546,19 +2876,18 @@ Future<Uint8List> _buildProductsPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          headers: [
-            'Code',
-            'Product',
-            'Quantity',
-            'UOM',
-            'Total before tax',
-            'Total',
-          ],
-          headerStyle: pw.TextStyle(
-            fontWeight: pw.FontWeight.bold,
-            fontSize: 9,
-          ),
-          cellStyle: const pw.TextStyle(fontSize: 9),
+          cellBuilder: (i, v, r) =>
+              printedText('$v', style: f.style()),
+          headers: _cells([
+            l.fieldCode,
+            l.productLabel,
+            l.fieldQuantity,
+            l.rptColUom,
+            l.totalBeforeTax,
+            l.totalLabel,
+          ], f.style(bold: true)),
+          headerStyle: f.style(bold: true),
+          cellStyle: f.style(),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
           cellAlignments: {
             2: pw.Alignment.centerRight,
@@ -2578,7 +2907,7 @@ Future<Uint8List> _buildProductsPdf({
             ),
             [
               '',
-              'Total',
+              l.totalLabel,
               formatReportQuantity(rows.fold(0.0, (s, r) => s + r.quantity)),
               '',
               fmt.format(rows.fold(0.0, (s, r) => s + r.totalBeforeTax)),
@@ -2602,6 +2931,7 @@ Future<Uint8List> _buildProductsPdf({
 }
 
 Future<Uint8List> _buildProductGroupsPdf({
+  required AppLocalizations l,
   required List<SalesByProductGroupRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -2614,21 +2944,22 @@ Future<Uint8List> _buildProductGroupsPdf({
   final fmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfFonts.latin();
-  final bold = await PdfFonts.latin(bold: true);
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
+  final f = await _RptFonts.load();
+  final theme = f.theme;
 
   doc.addPage(
     pw.MultiPage(
       pageFormat: PdfPageFormat.a4.landscape,
       theme: theme,
       build: (ctx) => [
-        pw.Text(
-          'SALES BY PRODUCT GROUPS',
-          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+        printedText(
+          l.rptTitleSalesByGroup,
+          style: f.style(size: 16, bold: true),
         ),
         pw.SizedBox(height: 8),
         _pdfHeader(
+          l,
+          f,
           dateFmt,
           filter,
           companyName,
@@ -2639,12 +2970,11 @@ Future<Uint8List> _buildProductGroupsPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          headers: ['Product group', 'Quantity', 'Total before tax', 'Total'],
-          headerStyle: pw.TextStyle(
-            fontWeight: pw.FontWeight.bold,
-            fontSize: 9,
-          ),
-          cellStyle: const pw.TextStyle(fontSize: 9),
+          cellBuilder: (i, v, r) =>
+              printedText('$v', style: f.style()),
+          headers: _cells([l.fieldProductGroup, l.fieldQuantity, l.totalBeforeTax, l.totalLabel], f.style(bold: true)),
+          headerStyle: f.style(bold: true),
+          cellStyle: f.style(),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
           cellAlignments: {
             1: pw.Alignment.centerRight,
@@ -2661,7 +2991,7 @@ Future<Uint8List> _buildProductGroupsPdf({
               ],
             ),
             [
-              'Total',
+              l.totalLabel,
               formatReportQuantity(rows.fold(0.0, (s, r) => s + r.quantity)),
               fmt.format(rows.fold(0.0, (s, r) => s + r.totalBeforeTax)),
               fmt.format(rows.fold(0.0, (s, r) => s + r.total)),
@@ -2682,6 +3012,7 @@ Future<Uint8List> _buildProductGroupsPdf({
 }
 
 Future<Uint8List> _buildTaxPdf({
+  required AppLocalizations l,
   required List<SalesByTaxRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -2694,21 +3025,22 @@ Future<Uint8List> _buildTaxPdf({
   final fmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfFonts.latin();
-  final bold = await PdfFonts.latin(bold: true);
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
+  final f = await _RptFonts.load();
+  final theme = f.theme;
 
   doc.addPage(
     pw.MultiPage(
       pageFormat: PdfPageFormat.a4.landscape,
       theme: theme,
       build: (ctx) => [
-        pw.Text(
-          'SALES TAX',
-          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+        printedText(
+          l.rptTitleSalesTax,
+          style: f.style(size: 16, bold: true),
         ),
         pw.SizedBox(height: 8),
         _pdfHeader(
+          l,
+          f,
           dateFmt,
           filter,
           companyName,
@@ -2719,12 +3051,11 @@ Future<Uint8List> _buildTaxPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          headers: ['Tax name', 'Total before tax', 'Tax', 'Total'],
-          headerStyle: pw.TextStyle(
-            fontWeight: pw.FontWeight.bold,
-            fontSize: 9,
-          ),
-          cellStyle: const pw.TextStyle(fontSize: 9),
+          cellBuilder: (i, v, r) =>
+              printedText('$v', style: f.style()),
+          headers: _cells([l.rptColTaxName, l.totalBeforeTax, l.fieldTax, l.totalLabel], f.style(bold: true)),
+          headerStyle: f.style(bold: true),
+          cellStyle: f.style(),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
           cellAlignments: {
             1: pw.Alignment.centerRight,
@@ -2741,7 +3072,7 @@ Future<Uint8List> _buildTaxPdf({
               ],
             ),
             [
-              'Total',
+              l.totalLabel,
               fmt.format(rows.fold(0.0, (s, r) => s + r.totalBeforeTax)),
               fmt.format(rows.fold(0.0, (s, r) => s + r.taxAmount)),
               fmt.format(rows.fold(0.0, (s, r) => s + r.total)),
@@ -2762,6 +3093,7 @@ Future<Uint8List> _buildTaxPdf({
 }
 
 Future<Uint8List> _buildCustomersPdf({
+  required AppLocalizations l,
   required List<SalesByCustomerRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -2774,21 +3106,22 @@ Future<Uint8List> _buildCustomersPdf({
   final fmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfFonts.latin();
-  final bold = await PdfFonts.latin(bold: true);
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
+  final f = await _RptFonts.load();
+  final theme = f.theme;
 
   doc.addPage(
     pw.MultiPage(
       pageFormat: PdfPageFormat.a4.landscape,
       theme: theme,
       build: (ctx) => [
-        pw.Text(
-          'SALES BY CUSTOMER',
-          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+        printedText(
+          l.rptTitleSalesByCustomer,
+          style: f.style(size: 16, bold: true),
         ),
         pw.SizedBox(height: 8),
         _pdfHeader(
+          l,
+          f,
           dateFmt,
           filter,
           companyName,
@@ -2799,12 +3132,11 @@ Future<Uint8List> _buildCustomersPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          headers: ['Customer', 'Total before tax', 'Total'],
-          headerStyle: pw.TextStyle(
-            fontWeight: pw.FontWeight.bold,
-            fontSize: 9,
-          ),
-          cellStyle: const pw.TextStyle(fontSize: 9),
+          cellBuilder: (i, v, r) =>
+              printedText('$v', style: f.style()),
+          headers: _cells([l.customerLabel, l.totalBeforeTax, l.totalLabel], f.style(bold: true)),
+          headerStyle: f.style(bold: true),
+          cellStyle: f.style(),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
           cellAlignments: {
             1: pw.Alignment.centerRight,
@@ -2819,7 +3151,7 @@ Future<Uint8List> _buildCustomersPdf({
               ],
             ),
             [
-              'Total',
+              l.totalLabel,
               fmt.format(rows.fold(0.0, (s, r) => s + r.totalBeforeTax)),
               fmt.format(rows.fold(0.0, (s, r) => s + r.total)),
             ],
@@ -2838,6 +3170,7 @@ Future<Uint8List> _buildCustomersPdf({
 }
 
 Future<Uint8List> _buildPaymentTypesByCustomerPdf({
+  required AppLocalizations l,
   required List<PaymentTypesByCustomerRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -2850,9 +3183,8 @@ Future<Uint8List> _buildPaymentTypesByCustomerPdf({
   final fmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfFonts.latin();
-  final bold = await PdfFonts.latin(bold: true);
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
+  final f = await _RptFonts.load();
+  final theme = f.theme;
 
   final paymentTypes = rows.map((r) => r.paymentTypeName).toSet().toList()
     ..sort();
@@ -2882,12 +3214,14 @@ Future<Uint8List> _buildPaymentTypesByCustomerPdf({
       pageFormat: PdfPageFormat.a4.landscape,
       theme: theme,
       build: (ctx) => [
-        pw.Text(
-          'PAYMENT TYPES BY CUSTOMERS',
-          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+        printedText(
+          l.rptTitlePaymentByCustomer,
+          style: f.style(size: 16, bold: true),
         ),
         pw.SizedBox(height: 8),
         _pdfHeader(
+          l,
+          f,
           dateFmt,
           filter,
           companyName,
@@ -2898,12 +3232,11 @@ Future<Uint8List> _buildPaymentTypesByCustomerPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          headers: ['Customer', ...paymentTypes, 'Total'],
-          headerStyle: pw.TextStyle(
-            fontWeight: pw.FontWeight.bold,
-            fontSize: 9,
-          ),
-          cellStyle: const pw.TextStyle(fontSize: 9),
+          cellBuilder: (i, v, r) =>
+              printedText('$v', style: f.style()),
+          headers: _cells([l.customerLabel, ...paymentTypes, l.totalLabel], f.style(bold: true)),
+          headerStyle: f.style(bold: true),
+          cellStyle: f.style(),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
           cellAlignments: {
             for (var i = 1; i <= paymentTypes.length + 1; i++)
@@ -2918,7 +3251,7 @@ Future<Uint8List> _buildPaymentTypesByCustomerPdf({
               final rowTotal = amounts.fold(0.0, (s, a) => s + a);
               return [c, ...amounts.map(fmt.format), fmt.format(rowTotal)];
             }),
-            ['Total', ...grandAmounts.map(fmt.format), fmt.format(grandTotal)],
+            [l.totalLabel, ...grandAmounts.map(fmt.format), fmt.format(grandTotal)],
           ],
         ),
       ],
@@ -2929,6 +3262,7 @@ Future<Uint8List> _buildPaymentTypesByCustomerPdf({
 }
 
 Future<Uint8List> _buildPaymentTypesByUserPdf({
+  required AppLocalizations l,
   required List<PaymentTypesByUserRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -2941,9 +3275,8 @@ Future<Uint8List> _buildPaymentTypesByUserPdf({
   final fmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfFonts.latin();
-  final bold = await PdfFonts.latin(bold: true);
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
+  final f = await _RptFonts.load();
+  final theme = f.theme;
 
   final paymentTypes = rows.map((r) => r.paymentTypeName).toSet().toList()
     ..sort();
@@ -2973,12 +3306,14 @@ Future<Uint8List> _buildPaymentTypesByUserPdf({
       pageFormat: PdfPageFormat.a4.landscape,
       theme: theme,
       build: (ctx) => [
-        pw.Text(
-          'PAYMENT TYPES BY USERS',
-          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+        printedText(
+          l.rptTitlePaymentByUser,
+          style: f.style(size: 16, bold: true),
         ),
         pw.SizedBox(height: 8),
         _pdfHeader(
+          l,
+          f,
           dateFmt,
           filter,
           companyName,
@@ -2989,12 +3324,11 @@ Future<Uint8List> _buildPaymentTypesByUserPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          headers: ['', ...paymentTypes, 'Total'],
-          headerStyle: pw.TextStyle(
-            fontWeight: pw.FontWeight.bold,
-            fontSize: 9,
-          ),
-          cellStyle: const pw.TextStyle(fontSize: 9),
+          cellBuilder: (i, v, r) =>
+              printedText('$v', style: f.style()),
+          headers: _cells(['', ...paymentTypes, l.totalLabel], f.style(bold: true)),
+          headerStyle: f.style(bold: true),
+          cellStyle: f.style(),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
           cellAlignments: {
             for (var i = 1; i <= paymentTypes.length + 1; i++)
@@ -3009,7 +3343,7 @@ Future<Uint8List> _buildPaymentTypesByUserPdf({
               final rowTotal = amounts.fold(0.0, (s, a) => s + a);
               return [u, ...amounts.map(fmt.format), fmt.format(rowTotal)];
             }),
-            ['Total', ...grandAmounts.map(fmt.format), fmt.format(grandTotal)],
+            [l.totalLabel, ...grandAmounts.map(fmt.format), fmt.format(grandTotal)],
           ],
         ),
       ],
@@ -3020,6 +3354,7 @@ Future<Uint8List> _buildPaymentTypesByUserPdf({
 }
 
 Future<Uint8List> _buildPaymentTypesPdf({
+  required AppLocalizations l,
   required List<SalesByPaymentTypeRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -3032,9 +3367,8 @@ Future<Uint8List> _buildPaymentTypesPdf({
   final fmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfFonts.latin();
-  final bold = await PdfFonts.latin(bold: true);
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
+  final f = await _RptFonts.load();
+  final theme = f.theme;
 
   // Pivot data
   final paymentTypes = rows.map((r) => r.paymentTypeName).toSet().toList()
@@ -3067,12 +3401,14 @@ Future<Uint8List> _buildPaymentTypesPdf({
       pageFormat: PdfPageFormat.a4.landscape,
       theme: theme,
       build: (ctx) => [
-        pw.Text(
-          'SALES BY PAYMENT TYPES',
-          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+        printedText(
+          l.rptTitlePaymentTypes,
+          style: f.style(size: 16, bold: true),
         ),
         pw.SizedBox(height: 8),
         _pdfHeader(
+          l,
+          f,
           dateFmt,
           filter,
           companyName,
@@ -3083,12 +3419,11 @@ Future<Uint8List> _buildPaymentTypesPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          headers: ['Date', ...paymentTypes, 'Total'],
-          headerStyle: pw.TextStyle(
-            fontWeight: pw.FontWeight.bold,
-            fontSize: 9,
-          ),
-          cellStyle: const pw.TextStyle(fontSize: 9),
+          cellBuilder: (i, v, r) =>
+              printedText('$v', style: f.style()),
+          headers: _cells([l.dateLabel, ...paymentTypes, l.totalLabel], f.style(bold: true)),
+          headerStyle: f.style(bold: true),
+          cellStyle: f.style(),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
           cellAlignments: {
             for (var i = 1; i <= paymentTypes.length + 1; i++)
@@ -3119,6 +3454,7 @@ Future<Uint8List> _buildPaymentTypesPdf({
 }
 
 Future<Uint8List> _buildItemListPdf({
+  required AppLocalizations l,
   required List<SalesItemListRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -3132,9 +3468,8 @@ Future<Uint8List> _buildItemListPdf({
   final dateFmt = DateFormat('dd/MM/yyyy');
   final dtFmt = DateFormat('dd/MM/yyyy HH:mm:ss');
 
-  final regular = await PdfFonts.latin();
-  final bold = await PdfFonts.latin(bold: true);
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
+  final f = await _RptFonts.load();
+  final theme = f.theme;
 
   doc.addPage(
     pw.MultiPage(
@@ -3142,12 +3477,14 @@ Future<Uint8List> _buildItemListPdf({
       theme: theme,
       margin: const pw.EdgeInsets.all(20),
       build: (ctx) => [
-        pw.Text(
-          'SALES ITEM LIST',
-          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+        printedText(
+          l.rptTitleItemList,
+          style: f.style(size: 16, bold: true),
         ),
         pw.SizedBox(height: 8),
         _pdfHeader(
+          l,
+          f,
           dateFmt,
           filter,
           companyName,
@@ -3158,28 +3495,27 @@ Future<Uint8List> _buildItemListPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          headers: [
-            'Document type',
-            'Date',
-            'Create date',
-            'Document number',
-            'Ref. number',
-            'Customer code',
-            'Customer',
-            'Order number',
-            'Code',
-            'Product',
-            'Quantity',
-            'UOM',
-            'Total before tax',
-            'Total tax',
-            'Total',
-          ],
-          headerStyle: pw.TextStyle(
-            fontWeight: pw.FontWeight.bold,
-            fontSize: 7,
-          ),
-          cellStyle: const pw.TextStyle(fontSize: 7),
+          cellBuilder: (i, v, r) =>
+              printedText('$v', style: f.style(size: 7)),
+          headers: _cells([
+            l.documentType,
+            l.dateLabel,
+            l.rptColCreateDate,
+            l.documentNumber,
+            l.rptColRefNumber,
+            l.rptColCustomerCode,
+            l.customerLabel,
+            l.orderNumberLabel,
+            l.fieldCode,
+            l.productLabel,
+            l.fieldQuantity,
+            l.rptColUom,
+            l.totalBeforeTax,
+            l.rptColTotalTax,
+            l.totalLabel,
+          ], f.style(size: 7, bold: true)),
+          headerStyle: f.style(size: 7, bold: true),
+          cellStyle: f.style(size: 7),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
           cellAlignments: {
             10: pw.Alignment.centerRight,
@@ -3217,7 +3553,7 @@ Future<Uint8List> _buildItemListPdf({
               '',
               '',
               '',
-              'Total',
+              l.totalLabel,
               formatReportQuantity(rows.fold(0.0, (s, r) => s + r.quantity)),
               '',
               fmt.format(rows.fold(0.0, (s, r) => s + r.totalBeforeTax)),
@@ -3251,6 +3587,7 @@ Future<Uint8List> _buildItemListPdf({
 }
 
 Future<Uint8List> _buildProfitPdf({
+  required AppLocalizations l,
   required List<ProfitRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -3264,9 +3601,8 @@ Future<Uint8List> _buildProfitPdf({
   final pctFmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfFonts.latin();
-  final bold = await PdfFonts.latin(bold: true);
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
+  final f = await _RptFonts.load();
+  final theme = f.theme;
 
   final grandQty = rows.fold(0.0, (s, r) => s + r.quantity);
   final grandCost = rows.fold(0.0, (s, r) => s + r.cost);
@@ -3279,9 +3615,9 @@ Future<Uint8List> _buildProfitPdf({
       theme: theme,
       margin: const pw.EdgeInsets.all(20),
       build: (ctx) => [
-        pw.Text(
-          'PROFIT',
-          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+        printedText(
+          l.rptTitleProfit,
+          style: f.style(size: 16, bold: true),
         ),
         pw.SizedBox(height: 8),
         pw.Row(
@@ -3291,75 +3627,10 @@ Future<Uint8List> _buildProfitPdf({
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  pw.RichText(
-                    text: pw.TextSpan(
-                      children: [
-                        pw.TextSpan(
-                          text: 'Period:   ',
-                          style: pw.TextStyle(
-                            fontWeight: pw.FontWeight.bold,
-                            fontSize: 9,
-                          ),
-                        ),
-                        pw.TextSpan(
-                          text:
-                              '${dateFmt.format(filter.startDate)} - ${dateFmt.format(filter.endDate)}',
-                          style: const pw.TextStyle(fontSize: 9),
-                        ),
-                      ],
-                    ),
-                  ),
-                  pw.RichText(
-                    text: pw.TextSpan(
-                      children: [
-                        pw.TextSpan(
-                          text: 'Customer: ',
-                          style: pw.TextStyle(
-                            fontWeight: pw.FontWeight.bold,
-                            fontSize: 9,
-                          ),
-                        ),
-                        pw.TextSpan(
-                          text: customerLabel,
-                          style: const pw.TextStyle(fontSize: 9),
-                        ),
-                      ],
-                    ),
-                  ),
-                  pw.RichText(
-                    text: pw.TextSpan(
-                      children: [
-                        pw.TextSpan(
-                          text: 'User:     ',
-                          style: pw.TextStyle(
-                            fontWeight: pw.FontWeight.bold,
-                            fontSize: 9,
-                          ),
-                        ),
-                        pw.TextSpan(
-                          text: userLabel,
-                          style: const pw.TextStyle(fontSize: 9),
-                        ),
-                      ],
-                    ),
-                  ),
-                  pw.RichText(
-                    text: pw.TextSpan(
-                      children: [
-                        pw.TextSpan(
-                          text: 'Product:  ',
-                          style: pw.TextStyle(
-                            fontWeight: pw.FontWeight.bold,
-                            fontSize: 9,
-                          ),
-                        ),
-                        pw.TextSpan(
-                          text: productLabel,
-                          style: const pw.TextStyle(fontSize: 9),
-                        ),
-                      ],
-                    ),
-                  ),
+                  _hdrPair(f, l.periodLabel, '${dateFmt.format(filter.startDate)} - ${dateFmt.format(filter.endDate)}'),
+                  _hdrPair(f, l.customerLabel, customerLabel),
+                  _hdrPair(f, l.userLabel, userLabel),
+                  _hdrPair(f, l.productLabel, productLabel),
                 ],
               ),
             ),
@@ -3367,40 +3638,8 @@ Future<Uint8List> _buildProfitPdf({
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  pw.RichText(
-                    text: pw.TextSpan(
-                      children: [
-                        pw.TextSpan(
-                          text: 'Company: ',
-                          style: pw.TextStyle(
-                            fontWeight: pw.FontWeight.bold,
-                            fontSize: 9,
-                          ),
-                        ),
-                        pw.TextSpan(
-                          text: companyName ?? '',
-                          style: const pw.TextStyle(fontSize: 9),
-                        ),
-                      ],
-                    ),
-                  ),
-                  pw.RichText(
-                    text: pw.TextSpan(
-                      children: [
-                        pw.TextSpan(
-                          text: 'Address: ',
-                          style: pw.TextStyle(
-                            fontWeight: pw.FontWeight.bold,
-                            fontSize: 9,
-                          ),
-                        ),
-                        pw.TextSpan(
-                          text: companyAddress ?? '',
-                          style: const pw.TextStyle(fontSize: 9),
-                        ),
-                      ],
-                    ),
-                  ),
+                  _hdrPair(f, l.rptColCompany, companyName ?? ''),
+                  _hdrPair(f, l.setAddress, companyAddress ?? ''),
                 ],
               ),
             ),
@@ -3408,20 +3647,19 @@ Future<Uint8List> _buildProfitPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          headers: [
-            'Code',
-            'Product',
-            'Quantity',
-            'Cost',
-            'Total',
-            'Profit',
-            'Margin',
-          ],
-          headerStyle: pw.TextStyle(
-            fontWeight: pw.FontWeight.bold,
-            fontSize: 9,
-          ),
-          cellStyle: const pw.TextStyle(fontSize: 9),
+          cellBuilder: (i, v, r) =>
+              printedText('$v', style: f.style()),
+          headers: _cells([
+            l.fieldCode,
+            l.productLabel,
+            l.fieldQuantity,
+            l.fieldCost,
+            l.totalLabel,
+            l.rptColProfit,
+            l.rptColMargin,
+          ], f.style(bold: true)),
+          headerStyle: f.style(bold: true),
+          cellStyle: f.style(),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
           cellAlignments: {
             2: pw.Alignment.centerRight,
@@ -3470,6 +3708,7 @@ Future<Uint8List> _buildProfitPdf({
 }
 
 Future<Uint8List> _buildStockMovementPdf({
+  required AppLocalizations l,
   required List<StockMovementRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -3480,9 +3719,8 @@ Future<Uint8List> _buildStockMovementPdf({
   final doc = pw.Document();
   final hdrFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfFonts.latin();
-  final bold = await PdfFonts.latin(bold: true);
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
+  final f = await _RptFonts.load();
+  final theme = f.theme;
 
   final total = rows.fold(0.0, (s, r) => s + r.numSales);
   final average = rows.isEmpty ? 0.0 : total / rows.length;
@@ -3492,29 +3730,25 @@ Future<Uint8List> _buildStockMovementPdf({
   final slow = rows.where((r) => r.numSales < average).toList()
     ..sort((a, b) => b.numSales.compareTo(a.numSales));
 
-  pw.Widget hdrRow(String label, String value) => pw.RichText(
-    text: pw.TextSpan(
-      children: [
-        pw.TextSpan(
-          text: '$label  ',
-          style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9),
-        ),
-        pw.TextSpan(text: value, style: const pw.TextStyle(fontSize: 9)),
-      ],
-    ),
-  );
+  pw.Widget hdrRow(String label, String value) => _hdrPair(f, label, value);
 
+  // `isFast` used to be inferred by comparing the title against the literal
+  // 'Fast moving'; once that title is translated the comparison never matches
+  // and every section renders grey. The caller states it instead.
   pw.Widget sectionTable(
     String title,
-    List<StockMovementRow> items,
-  ) => pw.Column(
+    List<StockMovementRow> items, {
+    required bool isFast,
+  }) => pw.Column(
     children: [
       pw.TableHelper.fromTextArray(
-        headers: ['#', title, 'Num. of sales'],
-        headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8),
-        cellStyle: const pw.TextStyle(fontSize: 8),
+          cellBuilder: (i, v, r) =>
+              printedText('$v', style: f.style(size: 8)),
+        headers: _cells(['#', title, l.rptColNumSales], f.style(size: 8, bold: true)),
+        headerStyle: f.style(size: 8, bold: true),
+        cellStyle: f.style(size: 8),
         headerDecoration: pw.BoxDecoration(
-          color: title == 'Fast moving' ? PdfColors.red100 : PdfColors.grey200,
+          color: isFast ? PdfColors.red100 : PdfColors.grey200,
         ),
         cellAlignments: {
           0: pw.Alignment.centerRight,
@@ -3549,20 +3783,20 @@ Future<Uint8List> _buildStockMovementPdf({
       footer: (ctx) => pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Text(
+          printedText(
             DateFormat('dd/MM/yyyy HH:mm:ss').format(DateTime.now()),
-            style: const pw.TextStyle(fontSize: 8, color: PdfColors.red),
+            style: f.style(size: 8, color: PdfColors.red),
           ),
-          pw.Text(
-            'Page ${ctx.pageNumber}',
-            style: const pw.TextStyle(fontSize: 8),
+          printedText(
+            l.pageNumberLabel('${ctx.pageNumber}'),
+            style: f.style(size: 8),
           ),
         ],
       ),
       build: (ctx) => [
-        pw.Text(
-          'STOCK MOVEMENT',
-          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+        printedText(
+          l.rptTitleStockMovement,
+          style: f.style(size: 16, bold: true),
         ),
         pw.SizedBox(height: 8),
         pw.Row(
@@ -3572,12 +3806,11 @@ Future<Uint8List> _buildStockMovementPdf({
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  hdrRow(
-                    'Period:',
+                  hdrRow(l.periodLabel,
                     '${hdrFmt.format(filter.startDate)} - ${hdrFmt.format(filter.endDate)}',
                   ),
-                  hdrRow('User:', userLabel),
-                  hdrRow('Product:', productLabel),
+                  hdrRow(l.userLabel, userLabel),
+                  hdrRow(l.productLabel, productLabel),
                 ],
               ),
             ),
@@ -3585,8 +3818,8 @@ Future<Uint8List> _buildStockMovementPdf({
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  hdrRow('Company:', companyName ?? ''),
-                  hdrRow('Address:', companyAddress ?? ''),
+                  hdrRow(l.rptColCompany, companyName ?? ''),
+                  hdrRow(l.setAddress, companyAddress ?? ''),
                 ],
               ),
             ),
@@ -3599,21 +3832,21 @@ Future<Uint8List> _buildStockMovementPdf({
             pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.end,
               children: [
-                pw.Text(
-                  'Total number of sales: ${total.toStringAsFixed(0)}',
-                  style: const pw.TextStyle(fontSize: 9),
+                printedText(
+                  l.rptTotalNumberOfSales(total.toStringAsFixed(0)),
+                  style: f.style(),
                 ),
-                pw.Text(
-                  'Average number of sales per item: ${average.toStringAsFixed(0)}',
-                  style: const pw.TextStyle(fontSize: 9),
+                printedText(
+                  l.rptAverageSalesPerItem(average.toStringAsFixed(0)),
+                  style: f.style(),
                 ),
               ],
             ),
           ],
         ),
         pw.SizedBox(height: 10),
-        if (fast.isNotEmpty) sectionTable('Fast moving', fast),
-        if (slow.isNotEmpty) sectionTable('Slow moving', slow),
+        if (fast.isNotEmpty) sectionTable(l.rptFastMoving, fast, isFast: true),
+        if (slow.isNotEmpty) sectionTable(l.rptSlowMoving, slow, isFast: false),
       ],
     ),
   );
@@ -3622,6 +3855,7 @@ Future<Uint8List> _buildStockMovementPdf({
 }
 
 Future<Uint8List> _buildItemsDiscountsPdf({
+  required AppLocalizations l,
   required List<ItemsDiscountsRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -3634,23 +3868,12 @@ Future<Uint8List> _buildItemsDiscountsPdf({
   final fmt = NumberFormat('#,##0.00');
   final hdrFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfFonts.latin();
-  final bold = await PdfFonts.latin(bold: true);
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
+  final f = await _RptFonts.load();
+  final theme = f.theme;
 
   final grandTotal = rows.fold(0.0, (s, r) => s + r.totalDiscount);
 
-  pw.Widget hdrRow(String label, String value) => pw.RichText(
-    text: pw.TextSpan(
-      children: [
-        pw.TextSpan(
-          text: '$label  ',
-          style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9),
-        ),
-        pw.TextSpan(text: value, style: const pw.TextStyle(fontSize: 9)),
-      ],
-    ),
-  );
+  pw.Widget hdrRow(String label, String value) => _hdrPair(f, label, value);
 
   doc.addPage(
     pw.MultiPage(
@@ -3660,20 +3883,20 @@ Future<Uint8List> _buildItemsDiscountsPdf({
       footer: (ctx) => pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Text(
+          printedText(
             DateFormat('dd/MM/yyyy HH:mm:ss').format(DateTime.now()),
-            style: const pw.TextStyle(fontSize: 8, color: PdfColors.red),
+            style: f.style(size: 8, color: PdfColors.red),
           ),
-          pw.Text(
-            'Page ${ctx.pageNumber}',
-            style: const pw.TextStyle(fontSize: 8),
+          printedText(
+            l.pageNumberLabel('${ctx.pageNumber}'),
+            style: f.style(size: 8),
           ),
         ],
       ),
       build: (ctx) => [
-        pw.Text(
-          'ITEMS DISCOUNTS',
-          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+        printedText(
+          l.rptTitleItemDiscounts,
+          style: f.style(size: 16, bold: true),
         ),
         pw.SizedBox(height: 8),
         pw.Row(
@@ -3683,13 +3906,12 @@ Future<Uint8List> _buildItemsDiscountsPdf({
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  hdrRow(
-                    'Period:',
+                  hdrRow(l.periodLabel,
                     '${hdrFmt.format(filter.startDate)} - ${hdrFmt.format(filter.endDate)}',
                   ),
-                  hdrRow('Customer:', customerLabel),
-                  hdrRow('User:', userLabel),
-                  hdrRow('Product:', productLabel),
+                  hdrRow(l.customerLabel, customerLabel),
+                  hdrRow(l.userLabel, userLabel),
+                  hdrRow(l.productLabel, productLabel),
                 ],
               ),
             ),
@@ -3697,8 +3919,8 @@ Future<Uint8List> _buildItemsDiscountsPdf({
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  hdrRow('Company:', companyName ?? ''),
-                  hdrRow('Address:', companyAddress ?? ''),
+                  hdrRow(l.rptColCompany, companyName ?? ''),
+                  hdrRow(l.setAddress, companyAddress ?? ''),
                 ],
               ),
             ),
@@ -3706,12 +3928,11 @@ Future<Uint8List> _buildItemsDiscountsPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          headers: ['#', 'Code', 'Product', 'Total discount'],
-          headerStyle: pw.TextStyle(
-            fontWeight: pw.FontWeight.bold,
-            fontSize: 8,
-          ),
-          cellStyle: const pw.TextStyle(fontSize: 8),
+          cellBuilder: (i, v, r) =>
+              printedText('$v', style: f.style(size: 8)),
+          headers: _cells(['#', l.fieldCode, l.productLabel, l.rptColTotalDiscount], f.style(size: 8, bold: true)),
+          headerStyle: f.style(size: 8, bold: true),
+          cellStyle: f.style(size: 8),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
           cellAlignments: {
             0: pw.Alignment.centerRight,
@@ -3745,12 +3966,9 @@ Future<Uint8List> _buildItemsDiscountsPdf({
                 horizontal: 8,
                 vertical: 4,
               ),
-              child: pw.Text(
+              child: printedText(
                 fmt.format(grandTotal),
-                style: pw.TextStyle(
-                  fontWeight: pw.FontWeight.bold,
-                  fontSize: 9,
-                ),
+                style: f.style(bold: true),
               ),
             ),
           ],
@@ -3763,6 +3981,7 @@ Future<Uint8List> _buildItemsDiscountsPdf({
 }
 
 Future<Uint8List> _buildDiscountsBySourcePdf({
+  required AppLocalizations l,
   required List<DiscountBySourceRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -3772,9 +3991,8 @@ Future<Uint8List> _buildDiscountsBySourcePdf({
   final fmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfFonts.latin();
-  final bold = await PdfFonts.latin(bold: true);
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
+  final f = await _RptFonts.load();
+  final theme = f.theme;
 
   final grandTotal = rows.fold(0.0, (s, r) => s + r.amount);
 
@@ -3786,45 +4004,46 @@ Future<Uint8List> _buildDiscountsBySourcePdf({
       footer: (ctx) => pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Text(
+          printedText(
             DateFormat('dd/MM/yyyy HH:mm:ss').format(DateTime.now()),
-            style: const pw.TextStyle(fontSize: 8, color: PdfColors.red),
+            style: f.style(size: 8, color: PdfColors.red),
           ),
-          pw.Text(
-            'Page ${ctx.pageNumber}',
-            style: const pw.TextStyle(fontSize: 8),
+          printedText(
+            l.pageNumberLabel('${ctx.pageNumber}'),
+            style: f.style(size: 8),
           ),
         ],
       ),
       build: (ctx) => [
-        pw.Text(
-          'DISCOUNTS BY SOURCE',
-          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+        printedText(
+          l.rptTitleDiscountsBySource,
+          style: f.style(size: 16, bold: true),
         ),
         pw.SizedBox(height: 8),
         _pdfHeader(
+          l,
+          f,
           dateFmt,
           filter,
           companyName,
           companyAddress,
-          'All',
-          'All',
-          'All',
+          l.filterAll,
+          l.filterAll,
+          l.filterAll,
         ),
         pw.SizedBox(height: 12),
         if (rows.isEmpty)
-          pw.Text(
-            'No discounts in this period.',
-            style: const pw.TextStyle(fontSize: 10),
+          printedText(
+            l.rptNoDiscountsInPeriod,
+            style: f.style(size: 10),
           )
         else
           pw.TableHelper.fromTextArray(
-            headers: ['Discount source', 'Total'],
-            headerStyle: pw.TextStyle(
-              fontWeight: pw.FontWeight.bold,
-              fontSize: 9,
-            ),
-            cellStyle: const pw.TextStyle(fontSize: 9),
+          cellBuilder: (i, v, r) =>
+              printedText('$v', style: f.style()),
+            headers: _cells([l.rptColDiscountSource, l.totalLabel], f.style(bold: true)),
+            headerStyle: f.style(bold: true),
+            cellStyle: f.style(),
             headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
             cellAlignments: {
               0: pw.Alignment.centerLeft,
@@ -3836,7 +4055,7 @@ Future<Uint8List> _buildDiscountsBySourcePdf({
             },
             data: [
               for (final r in rows) [r.label, fmt.format(r.amount)],
-              ['Total', fmt.format(grandTotal)],
+              [l.totalLabel, fmt.format(grandTotal)],
             ],
           ),
       ],
@@ -3847,6 +4066,7 @@ Future<Uint8List> _buildDiscountsBySourcePdf({
 }
 
 Future<Uint8List> _buildDiscountsGrantedPdf({
+  required AppLocalizations l,
   required List<DiscountsGrantedRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -3859,9 +4079,8 @@ Future<Uint8List> _buildDiscountsGrantedPdf({
   final dateFmt = DateFormat('dd/MM/yyyy');
   final hdrFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfFonts.latin();
-  final bold = await PdfFonts.latin(bold: true);
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
+  final f = await _RptFonts.load();
+  final theme = f.theme;
 
   // Group by customer (order preserved from backend: alphabetical)
   final grouped = <String, List<DiscountsGrantedRow>>{};
@@ -3872,17 +4091,7 @@ Future<Uint8List> _buildDiscountsGrantedPdf({
   final grandTotal = rows.fold(0.0, (s, r) => s + r.discountGranted);
   final totalOrders = rows.length;
 
-  pw.Widget hdrRow(String label, String value) => pw.RichText(
-    text: pw.TextSpan(
-      children: [
-        pw.TextSpan(
-          text: '$label  ',
-          style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9),
-        ),
-        pw.TextSpan(text: value, style: const pw.TextStyle(fontSize: 9)),
-      ],
-    ),
-  );
+  pw.Widget hdrRow(String label, String value) => _hdrPair(f, label, value);
 
   const colWidths = {
     0: pw.FlexColumnWidth(1.5),
@@ -3901,20 +4110,20 @@ Future<Uint8List> _buildDiscountsGrantedPdf({
       footer: (ctx) => pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Text(
+          printedText(
             DateFormat('dd/MM/yyyy HH:mm:ss').format(DateTime.now()),
-            style: const pw.TextStyle(fontSize: 8, color: PdfColors.red),
+            style: f.style(size: 8, color: PdfColors.red),
           ),
-          pw.Text(
-            'Page ${ctx.pageNumber}',
-            style: const pw.TextStyle(fontSize: 8),
+          printedText(
+            l.pageNumberLabel('${ctx.pageNumber}'),
+            style: f.style(size: 8),
           ),
         ],
       ),
       build: (ctx) => [
-        pw.Text(
-          'DISCOUNTS GRANTED (AFTER TAX)',
-          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+        printedText(
+          l.rptTitleDiscountsGranted,
+          style: f.style(size: 16, bold: true),
         ),
         pw.SizedBox(height: 8),
         pw.Row(
@@ -3924,12 +4133,11 @@ Future<Uint8List> _buildDiscountsGrantedPdf({
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  hdrRow(
-                    'Period:',
+                  hdrRow(l.periodLabel,
                     '${hdrFmt.format(filter.startDate)} - ${hdrFmt.format(filter.endDate)}',
                   ),
-                  hdrRow('Customer:', customerLabel),
-                  hdrRow('User:', userLabel),
+                  hdrRow(l.customerLabel, customerLabel),
+                  hdrRow(l.userLabel, userLabel),
                 ],
               ),
             ),
@@ -3937,8 +4145,8 @@ Future<Uint8List> _buildDiscountsGrantedPdf({
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  hdrRow('Company:', companyName ?? ''),
-                  hdrRow('Address:', companyAddress ?? ''),
+                  hdrRow(l.rptColCompany, companyName ?? ''),
+                  hdrRow(l.setAddress, companyAddress ?? ''),
                 ],
               ),
             ),
@@ -3950,25 +4158,21 @@ Future<Uint8List> _buildDiscountsGrantedPdf({
             width: double.infinity,
             padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
             decoration: const pw.BoxDecoration(color: PdfColors.grey200),
-            child: pw.Text(
-              'Customer: ${entry.key}',
-              style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9),
-            ),
+            child: _hdrPair(f, l.customerLabel, entry.key, boldValue: true),
           ),
           pw.TableHelper.fromTextArray(
-            headers: [
-              'Document',
-              'Date',
-              'User',
-              'Total before disc.',
-              'Total after disc.',
-              'Discount granted',
-            ],
-            headerStyle: pw.TextStyle(
-              fontWeight: pw.FontWeight.bold,
-              fontSize: 7,
-            ),
-            cellStyle: const pw.TextStyle(fontSize: 7),
+          cellBuilder: (i, v, r) =>
+              printedText('$v', style: f.style(size: 7)),
+            headers: _cells([
+              l.rptColDocument,
+              l.dateLabel,
+              l.userLabel,
+              l.rptColTotalBeforeDisc,
+              l.rptColTotalAfterDisc,
+              l.rptColDiscountGranted,
+            ], f.style(size: 7, bold: true)),
+            headerStyle: f.style(size: 7, bold: true),
+            cellStyle: f.style(size: 7),
             headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
             cellAlignments: {
               3: pw.Alignment.centerRight,
@@ -4010,17 +4214,14 @@ Future<Uint8List> _buildDiscountsGrantedPdf({
             pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.end,
               children: [
-                pw.Text(
-                  'Number of orders discounted:  $totalOrders',
-                  style: const pw.TextStyle(fontSize: 9),
+                printedText(
+                  l.rptOrdersDiscounted('$totalOrders'),
+                  style: f.style(),
                 ),
                 pw.SizedBox(height: 2),
-                pw.Text(
-                  'Total discounted:  ${fmt.format(grandTotal)}',
-                  style: pw.TextStyle(
-                    fontSize: 9,
-                    fontWeight: pw.FontWeight.bold,
-                  ),
+                printedText(
+                  l.rptTotalDiscounted(fmt.format(grandTotal)),
+                  style: f.style(bold: true),
                 ),
               ],
             ),
@@ -4034,6 +4235,7 @@ Future<Uint8List> _buildDiscountsGrantedPdf({
 }
 
 Future<Uint8List> _buildVoidedItemsPdf({
+  required AppLocalizations l,
   required List<VoidedItemRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -4046,23 +4248,12 @@ Future<Uint8List> _buildVoidedItemsPdf({
   final dtFmt = DateFormat('dd/MM/yyyy HH:mm:ss');
   final hdrFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfFonts.latin();
-  final bold = await PdfFonts.latin(bold: true);
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
+  final f = await _RptFonts.load();
+  final theme = f.theme;
 
   final grandTotal = rows.fold(0.0, (s, r) => s + r.total);
 
-  pw.Widget hdrRow(String label, String value) => pw.RichText(
-    text: pw.TextSpan(
-      children: [
-        pw.TextSpan(
-          text: '$label  ',
-          style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9),
-        ),
-        pw.TextSpan(text: value, style: const pw.TextStyle(fontSize: 9)),
-      ],
-    ),
-  );
+  pw.Widget hdrRow(String label, String value) => _hdrPair(f, label, value);
 
   doc.addPage(
     pw.MultiPage(
@@ -4072,20 +4263,20 @@ Future<Uint8List> _buildVoidedItemsPdf({
       footer: (ctx) => pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Text(
+          printedText(
             DateFormat('dd/MM/yyyy HH:mm:ss').format(DateTime.now()),
-            style: const pw.TextStyle(fontSize: 8, color: PdfColors.red),
+            style: f.style(size: 8, color: PdfColors.red),
           ),
-          pw.Text(
-            'Page ${ctx.pageNumber}',
-            style: const pw.TextStyle(fontSize: 8),
+          printedText(
+            l.pageNumberLabel('${ctx.pageNumber}'),
+            style: f.style(size: 8),
           ),
         ],
       ),
       build: (ctx) => [
-        pw.Text(
-          'VOIDED ITEMS',
-          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+        printedText(
+          l.rptTitleVoidedItems,
+          style: f.style(size: 16, bold: true),
         ),
         pw.SizedBox(height: 8),
         pw.Row(
@@ -4095,12 +4286,11 @@ Future<Uint8List> _buildVoidedItemsPdf({
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  hdrRow(
-                    'Period:',
+                  hdrRow(l.periodLabel,
                     '${hdrFmt.format(filter.startDate)} - ${hdrFmt.format(filter.endDate)}',
                   ),
-                  hdrRow('User:', userLabel),
-                  hdrRow('Product:', productLabel),
+                  hdrRow(l.userLabel, userLabel),
+                  hdrRow(l.productLabel, productLabel),
                 ],
               ),
             ),
@@ -4108,8 +4298,8 @@ Future<Uint8List> _buildVoidedItemsPdf({
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  hdrRow('Company:', companyName ?? ''),
-                  hdrRow('Address:', companyAddress ?? ''),
+                  hdrRow(l.rptColCompany, companyName ?? ''),
+                  hdrRow(l.setAddress, companyAddress ?? ''),
                 ],
               ),
             ),
@@ -4117,24 +4307,23 @@ Future<Uint8List> _buildVoidedItemsPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          headers: [
-            'Product',
-            'Voided by',
-            'Qty.',
-            'Price',
-            'Discount',
-            'Status',
-            'Order #',
-            'Created',
-            'Voided',
-            'Total',
-            'Reason',
-          ],
-          headerStyle: pw.TextStyle(
-            fontWeight: pw.FontWeight.bold,
-            fontSize: 7,
-          ),
-          cellStyle: const pw.TextStyle(fontSize: 7),
+          cellBuilder: (i, v, r) =>
+              printedText('$v', style: f.style(size: 7)),
+          headers: _cells([
+            l.productLabel,
+            l.rptColVoidedBy,
+            l.rptColQtyShort,
+            l.priceLabel,
+            l.discountLabel,
+            l.statusLabel,
+            l.rptColOrderNo,
+            l.rptColCreated,
+            l.rptColVoided,
+            l.totalLabel,
+            l.rptColReason,
+          ], f.style(size: 7, bold: true)),
+          headerStyle: f.style(size: 7, bold: true),
+          cellStyle: f.style(size: 7),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
           cellAlignments: {
             2: pw.Alignment.centerRight,
@@ -4150,7 +4339,7 @@ Future<Uint8List> _buildVoidedItemsPdf({
                 r.quantity.toStringAsFixed(0),
                 fmt.format(r.price),
                 r.discountDisplay,
-                r.isConfirmed ? 'Confirmed' : 'Pending',
+                r.isConfirmed ? l.rptStatusConfirmed : l.rptStatusPending,
                 r.orderNumber,
                 dtFmt.format(r.dateCreated),
                 dtFmt.format(r.dateVoided),
@@ -4182,12 +4371,9 @@ Future<Uint8List> _buildVoidedItemsPdf({
                 horizontal: 8,
                 vertical: 4,
               ),
-              child: pw.Text(
+              child: printedText(
                 fmt.format(grandTotal),
-                style: pw.TextStyle(
-                  fontWeight: pw.FontWeight.bold,
-                  fontSize: 9,
-                ),
+                style: f.style(bold: true),
               ),
             ),
           ],
@@ -4200,6 +4386,7 @@ Future<Uint8List> _buildVoidedItemsPdf({
 }
 
 Future<Uint8List> _buildStartingCashPdf({
+  required AppLocalizations l,
   required List<StartingCashRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -4211,9 +4398,8 @@ Future<Uint8List> _buildStartingCashPdf({
   final dateFmt = DateFormat('dd/MM/yyyy HH:mm');
   final hdrFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfFonts.latin();
-  final bold = await PdfFonts.latin(bold: true);
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
+  final f = await _RptFonts.load();
+  final theme = f.theme;
 
   final totalCashIn = rows
       .where((r) => !r.isCashOut)
@@ -4229,9 +4415,9 @@ Future<Uint8List> _buildStartingCashPdf({
       theme: theme,
       margin: const pw.EdgeInsets.all(24),
       build: (ctx) => [
-        pw.Text(
-          'STARTING CASH ENTRIES',
-          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+        printedText(
+          l.rptTitleStartingCash,
+          style: f.style(size: 16, bold: true),
         ),
         pw.SizedBox(height: 8),
         pw.Row(
@@ -4241,41 +4427,8 @@ Future<Uint8List> _buildStartingCashPdf({
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  pw.RichText(
-                    text: pw.TextSpan(
-                      children: [
-                        pw.TextSpan(
-                          text: 'Period:  ',
-                          style: pw.TextStyle(
-                            fontWeight: pw.FontWeight.bold,
-                            fontSize: 9,
-                          ),
-                        ),
-                        pw.TextSpan(
-                          text:
-                              '${hdrFmt.format(filter.startDate)} – ${hdrFmt.format(filter.endDate)}',
-                          style: const pw.TextStyle(fontSize: 9),
-                        ),
-                      ],
-                    ),
-                  ),
-                  pw.RichText(
-                    text: pw.TextSpan(
-                      children: [
-                        pw.TextSpan(
-                          text: 'User:    ',
-                          style: pw.TextStyle(
-                            fontWeight: pw.FontWeight.bold,
-                            fontSize: 9,
-                          ),
-                        ),
-                        pw.TextSpan(
-                          text: userLabel,
-                          style: const pw.TextStyle(fontSize: 9),
-                        ),
-                      ],
-                    ),
-                  ),
+                  _hdrPair(f, l.periodLabel, '${hdrFmt.format(filter.startDate)} – ${hdrFmt.format(filter.endDate)}'),
+                  _hdrPair(f, l.userLabel, userLabel),
                 ],
               ),
             ),
@@ -4283,40 +4436,8 @@ Future<Uint8List> _buildStartingCashPdf({
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  pw.RichText(
-                    text: pw.TextSpan(
-                      children: [
-                        pw.TextSpan(
-                          text: 'Company: ',
-                          style: pw.TextStyle(
-                            fontWeight: pw.FontWeight.bold,
-                            fontSize: 9,
-                          ),
-                        ),
-                        pw.TextSpan(
-                          text: companyName ?? '',
-                          style: const pw.TextStyle(fontSize: 9),
-                        ),
-                      ],
-                    ),
-                  ),
-                  pw.RichText(
-                    text: pw.TextSpan(
-                      children: [
-                        pw.TextSpan(
-                          text: 'Address: ',
-                          style: pw.TextStyle(
-                            fontWeight: pw.FontWeight.bold,
-                            fontSize: 9,
-                          ),
-                        ),
-                        pw.TextSpan(
-                          text: companyAddress ?? '',
-                          style: const pw.TextStyle(fontSize: 9),
-                        ),
-                      ],
-                    ),
-                  ),
+                  _hdrPair(f, l.rptColCompany, companyName ?? ''),
+                  _hdrPair(f, l.setAddress, companyAddress ?? ''),
                 ],
               ),
             ),
@@ -4324,26 +4445,25 @@ Future<Uint8List> _buildStartingCashPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          headers: [
-            'User',
-            'Type',
-            'Description',
-            'Date',
-            'Amount',
-            'Z-Report #',
-          ],
-          headerStyle: pw.TextStyle(
-            fontWeight: pw.FontWeight.bold,
-            fontSize: 8,
-          ),
-          cellStyle: const pw.TextStyle(fontSize: 8),
+          cellBuilder: (i, v, r) =>
+              printedText('$v', style: f.style(size: 8)),
+          headers: _cells([
+            l.userLabel,
+            l.typeLabel,
+            l.fieldDescription,
+            l.dateLabel,
+            l.amount,
+            l.rptColZReportNo,
+          ], f.style(size: 8, bold: true)),
+          headerStyle: f.style(size: 8, bold: true),
+          cellStyle: f.style(size: 8),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
           cellAlignments: {4: pw.Alignment.centerRight},
           data: [
             ...rows.map(
               (r) => [
                 r.userName ?? '',
-                r.isCashOut ? 'Cash Out' : 'Cash In',
+                r.isCashOut ? l.cashOut : l.cashIn,
                 r.description ?? '',
                 dateFmt.format(r.dateCreated),
                 r.isCashOut ? '-${fmt.format(r.amount)}' : fmt.format(r.amount),
@@ -4372,60 +4492,9 @@ Future<Uint8List> _buildStartingCashPdf({
             pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.end,
               children: [
-                pw.RichText(
-                  text: pw.TextSpan(
-                    children: [
-                      const pw.TextSpan(
-                        text: 'Cash In:   ',
-                        style: pw.TextStyle(fontSize: 9),
-                      ),
-                      pw.TextSpan(
-                        text: fmt.format(totalCashIn),
-                        style: pw.TextStyle(
-                          fontSize: 9,
-                          fontWeight: pw.FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                pw.RichText(
-                  text: pw.TextSpan(
-                    children: [
-                      const pw.TextSpan(
-                        text: 'Cash Out:  ',
-                        style: pw.TextStyle(fontSize: 9),
-                      ),
-                      pw.TextSpan(
-                        text: '-${fmt.format(totalCashOut)}',
-                        style: pw.TextStyle(
-                          fontSize: 9,
-                          fontWeight: pw.FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                pw.RichText(
-                  text: pw.TextSpan(
-                    children: [
-                      pw.TextSpan(
-                        text: 'Net Total: ',
-                        style: pw.TextStyle(
-                          fontSize: 10,
-                          fontWeight: pw.FontWeight.bold,
-                        ),
-                      ),
-                      pw.TextSpan(
-                        text: fmt.format(netTotal),
-                        style: pw.TextStyle(
-                          fontSize: 10,
-                          fontWeight: pw.FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                _hdrPair(f, l.cashIn, fmt.format(totalCashIn), boldLabel: false, boldValue: true),
+                _hdrPair(f, l.cashOut, '-${fmt.format(totalCashOut)}', boldLabel: false, boldValue: true),
+                _hdrPair(f, l.rptNetTotal, fmt.format(netTotal), size: 10, boldValue: true),
               ],
             ),
           ],
@@ -4438,6 +4507,7 @@ Future<Uint8List> _buildStartingCashPdf({
 }
 
 Future<Uint8List> _buildUnpaidSalesPdf({
+  required AppLocalizations l,
   required List<UnpaidSalesRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -4450,9 +4520,8 @@ Future<Uint8List> _buildUnpaidSalesPdf({
   final dateFmt = DateFormat('dd/MM/yyyy');
   final hdrDatFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfFonts.latin();
-  final bold = await PdfFonts.latin(bold: true);
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
+  final f = await _RptFonts.load();
+  final theme = f.theme;
 
   // Group by customer (data already sorted by customerName from backend)
   final byCustomer = <String, List<UnpaidSalesRow>>{};
@@ -4468,9 +4537,9 @@ Future<Uint8List> _buildUnpaidSalesPdf({
       margin: const pw.EdgeInsets.all(20),
       build: (ctx) {
         final widgets = <pw.Widget>[
-          pw.Text(
-            'UNPAID SALES',
-            style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+          printedText(
+            l.rptTitleUnpaidSales,
+            style: f.style(size: 16, bold: true),
           ),
           pw.SizedBox(height: 8),
           pw.Row(
@@ -4480,58 +4549,9 @@ Future<Uint8List> _buildUnpaidSalesPdf({
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    pw.RichText(
-                      text: pw.TextSpan(
-                        children: [
-                          pw.TextSpan(
-                            text: 'Period:   ',
-                            style: pw.TextStyle(
-                              fontWeight: pw.FontWeight.bold,
-                              fontSize: 9,
-                            ),
-                          ),
-                          pw.TextSpan(
-                            text:
-                                '${hdrDatFmt.format(filter.startDate)} - ${hdrDatFmt.format(filter.endDate)}',
-                            style: const pw.TextStyle(fontSize: 9),
-                          ),
-                        ],
-                      ),
-                    ),
-                    pw.RichText(
-                      text: pw.TextSpan(
-                        children: [
-                          pw.TextSpan(
-                            text: 'Customer: ',
-                            style: pw.TextStyle(
-                              fontWeight: pw.FontWeight.bold,
-                              fontSize: 9,
-                            ),
-                          ),
-                          pw.TextSpan(
-                            text: customerLabel,
-                            style: const pw.TextStyle(fontSize: 9),
-                          ),
-                        ],
-                      ),
-                    ),
-                    pw.RichText(
-                      text: pw.TextSpan(
-                        children: [
-                          pw.TextSpan(
-                            text: 'User:     ',
-                            style: pw.TextStyle(
-                              fontWeight: pw.FontWeight.bold,
-                              fontSize: 9,
-                            ),
-                          ),
-                          pw.TextSpan(
-                            text: userLabel,
-                            style: const pw.TextStyle(fontSize: 9),
-                          ),
-                        ],
-                      ),
-                    ),
+                    _hdrPair(f, l.periodLabel, '${hdrDatFmt.format(filter.startDate)} - ${hdrDatFmt.format(filter.endDate)}'),
+                    _hdrPair(f, l.customerLabel, customerLabel),
+                    _hdrPair(f, l.userLabel, userLabel),
                   ],
                 ),
               ),
@@ -4539,40 +4559,8 @@ Future<Uint8List> _buildUnpaidSalesPdf({
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    pw.RichText(
-                      text: pw.TextSpan(
-                        children: [
-                          pw.TextSpan(
-                            text: 'Company: ',
-                            style: pw.TextStyle(
-                              fontWeight: pw.FontWeight.bold,
-                              fontSize: 9,
-                            ),
-                          ),
-                          pw.TextSpan(
-                            text: companyName ?? '',
-                            style: const pw.TextStyle(fontSize: 9),
-                          ),
-                        ],
-                      ),
-                    ),
-                    pw.RichText(
-                      text: pw.TextSpan(
-                        children: [
-                          pw.TextSpan(
-                            text: 'Address: ',
-                            style: pw.TextStyle(
-                              fontWeight: pw.FontWeight.bold,
-                              fontSize: 9,
-                            ),
-                          ),
-                          pw.TextSpan(
-                            text: companyAddress ?? '',
-                            style: const pw.TextStyle(fontSize: 9),
-                          ),
-                        ],
-                      ),
-                    ),
+                    _hdrPair(f, l.rptColCompany, companyName ?? ''),
+                    _hdrPair(f, l.setAddress, companyAddress ?? ''),
                   ],
                 ),
               ),
@@ -4593,31 +4581,24 @@ Future<Uint8List> _buildUnpaidSalesPdf({
                 horizontal: 6,
                 vertical: 3,
               ),
-              child: pw.Text(
-                'Customer: $customerName',
-                style: pw.TextStyle(
-                  fontWeight: pw.FontWeight.bold,
-                  fontSize: 9,
-                ),
-              ),
+              child: _hdrPair(f, l.customerLabel, customerName, boldValue: true),
             ),
           );
 
           widgets.add(
             pw.TableHelper.fromTextArray(
-              headers: [
-                'Document number',
-                'Date',
-                'Due date',
-                'Total',
-                'Total paid',
-                'Total unpaid',
-              ],
-              headerStyle: pw.TextStyle(
-                fontWeight: pw.FontWeight.bold,
-                fontSize: 8,
-              ),
-              cellStyle: const pw.TextStyle(fontSize: 8),
+          cellBuilder: (i, v, r) =>
+              printedText('$v', style: f.style(size: 8)),
+              headers: _cells([
+                l.documentNumber,
+                l.dateLabel,
+                l.rptColDueDate,
+                l.totalLabel,
+                l.rptColTotalPaid,
+                l.rptColTotalUnpaid,
+              ], f.style(size: 8, bold: true)),
+              headerStyle: f.style(size: 8, bold: true),
+              cellStyle: f.style(size: 8),
               headerDecoration: const pw.BoxDecoration(
                 color: PdfColors.grey300,
               ),
@@ -4662,20 +4643,8 @@ Future<Uint8List> _buildUnpaidSalesPdf({
           pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.end,
             children: [
-              pw.Text(
-                'Total:  ',
-                style: pw.TextStyle(
-                  fontWeight: pw.FontWeight.bold,
-                  fontSize: 10,
-                ),
-              ),
-              pw.Text(
-                fmt.format(grandTotal),
-                style: pw.TextStyle(
-                  fontWeight: pw.FontWeight.bold,
-                  fontSize: 10,
-                ),
-              ),
+              _hdrPair(f, l.totalLabel, fmt.format(grandTotal),
+                  size: 10, boldValue: true),
             ],
           ),
         ]);
@@ -4689,6 +4658,7 @@ Future<Uint8List> _buildUnpaidSalesPdf({
 }
 
 Future<Uint8List> _buildHourlySalesByGroupPdf({
+  required AppLocalizations l,
   required List<HourlySalesByGroupRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -4701,9 +4671,8 @@ Future<Uint8List> _buildHourlySalesByGroupPdf({
   final dateFmt = DateFormat('dd/MM/yyyy');
   final timeFmt = DateFormat('h:mm a');
 
-  final regular = await PdfFonts.latin();
-  final bold = await PdfFonts.latin(bold: true);
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
+  final f = await _RptFonts.load();
+  final theme = f.theme;
 
   final hours = rows.map((r) => r.hour).toSet().toList()..sort();
   final groups = rows.map((r) => r.productGroup).toSet().toList()..sort();
@@ -4728,9 +4697,9 @@ Future<Uint8List> _buildHourlySalesByGroupPdf({
       theme: theme,
       margin: const pw.EdgeInsets.all(20),
       build: (ctx) => [
-        pw.Text(
-          'HOURLY SALES BY PRODUCT GROUPS',
-          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+        printedText(
+          l.rptTitleHourlyByGroup,
+          style: f.style(size: 16, bold: true),
         ),
         pw.SizedBox(height: 8),
         pw.Row(
@@ -4739,40 +4708,8 @@ Future<Uint8List> _buildHourlySalesByGroupPdf({
             pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                pw.RichText(
-                  text: pw.TextSpan(
-                    children: [
-                      pw.TextSpan(
-                        text: 'Company: ',
-                        style: pw.TextStyle(
-                          fontWeight: pw.FontWeight.bold,
-                          fontSize: 9,
-                        ),
-                      ),
-                      pw.TextSpan(
-                        text: companyName ?? '',
-                        style: const pw.TextStyle(fontSize: 9),
-                      ),
-                    ],
-                  ),
-                ),
-                pw.RichText(
-                  text: pw.TextSpan(
-                    children: [
-                      pw.TextSpan(
-                        text: 'Address: ',
-                        style: pw.TextStyle(
-                          fontWeight: pw.FontWeight.bold,
-                          fontSize: 9,
-                        ),
-                      ),
-                      pw.TextSpan(
-                        text: companyAddress ?? '',
-                        style: const pw.TextStyle(fontSize: 9),
-                      ),
-                    ],
-                  ),
-                ),
+                _hdrPair(f, l.rptColCompany, companyName ?? ''),
+                _hdrPair(f, l.setAddress, companyAddress ?? ''),
               ],
             ),
           ],
@@ -4784,74 +4721,24 @@ Future<Uint8List> _buildHourlySalesByGroupPdf({
             pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                pw.RichText(
-                  text: pw.TextSpan(
-                    children: [
-                      pw.TextSpan(
-                        text: 'Period:   ',
-                        style: pw.TextStyle(
-                          fontWeight: pw.FontWeight.bold,
-                          fontSize: 9,
-                        ),
-                      ),
-                      pw.TextSpan(
-                        text:
-                            '${dateFmt.format(filter.startDate)} - ${dateFmt.format(filter.endDate)}',
-                        style: const pw.TextStyle(fontSize: 9),
-                      ),
-                    ],
-                  ),
-                ),
-                pw.RichText(
-                  text: pw.TextSpan(
-                    children: [
-                      pw.TextSpan(
-                        text: 'Product:  ',
-                        style: pw.TextStyle(
-                          fontWeight: pw.FontWeight.bold,
-                          fontSize: 9,
-                        ),
-                      ),
-                      pw.TextSpan(
-                        text: productLabel,
-                        style: const pw.TextStyle(fontSize: 9),
-                      ),
-                    ],
-                  ),
-                ),
-                pw.RichText(
-                  text: pw.TextSpan(
-                    children: [
-                      pw.TextSpan(
-                        text: 'Customer: ',
-                        style: pw.TextStyle(
-                          fontWeight: pw.FontWeight.bold,
-                          fontSize: 9,
-                        ),
-                      ),
-                      pw.TextSpan(
-                        text: customerLabel,
-                        style: const pw.TextStyle(fontSize: 9),
-                      ),
-                    ],
-                  ),
-                ),
+                _hdrPair(f, l.periodLabel, '${dateFmt.format(filter.startDate)} - ${dateFmt.format(filter.endDate)}'),
+                _hdrPair(f, l.productLabel, productLabel),
+                _hdrPair(f, l.customerLabel, customerLabel),
               ],
             ),
           ],
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          headers: [
+          cellBuilder: (i, v, r) =>
+              printedText('$v', style: f.style()),
+          headers: _cells([
             '',
             ...hours.map((h) => timeFmt.format(DateTime(2000, 1, 1, h))),
-            'Total',
-          ],
-          headerStyle: pw.TextStyle(
-            fontWeight: pw.FontWeight.bold,
-            fontSize: 9,
-          ),
-          cellStyle: const pw.TextStyle(fontSize: 9),
+            l.totalLabel,
+          ], f.style(bold: true)),
+          headerStyle: f.style(bold: true),
+          cellStyle: f.style(),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
           cellAlignments: {
             for (var i = 1; i <= hours.length + 1; i++)
@@ -4866,7 +4753,7 @@ Future<Uint8List> _buildHourlySalesByGroupPdf({
               ],
             ),
             [
-              'Total',
+              l.totalLabel,
               ...hours.map((h) => fmt.format(hourTotals[h] ?? 0.0)),
               fmt.format(grandTotal),
             ],
@@ -4880,6 +4767,7 @@ Future<Uint8List> _buildHourlySalesByGroupPdf({
 }
 
 Future<Uint8List> _buildSalesByTablePdf({
+  required AppLocalizations l,
   required List<SalesByTableRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -4891,9 +4779,8 @@ Future<Uint8List> _buildSalesByTablePdf({
   final fmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfFonts.latin();
-  final bold = await PdfFonts.latin(bold: true);
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
+  final f = await _RptFonts.load();
+  final theme = f.theme;
 
   final grandCount = rows.fold(0, (s, r) => s + r.numberOfSales);
   final grandTotal = rows.fold(0.0, (s, r) => s + r.total);
@@ -4904,9 +4791,9 @@ Future<Uint8List> _buildSalesByTablePdf({
       theme: theme,
       margin: const pw.EdgeInsets.all(20),
       build: (ctx) => [
-        pw.Text(
-          'SALES BY TABLE / ORDER NUMBER',
-          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+        printedText(
+          l.rptTitleByTable,
+          style: f.style(size: 16, bold: true),
         ),
         pw.SizedBox(height: 8),
         pw.Row(
@@ -4916,58 +4803,9 @@ Future<Uint8List> _buildSalesByTablePdf({
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  pw.RichText(
-                    text: pw.TextSpan(
-                      children: [
-                        pw.TextSpan(
-                          text: 'Period:   ',
-                          style: pw.TextStyle(
-                            fontWeight: pw.FontWeight.bold,
-                            fontSize: 9,
-                          ),
-                        ),
-                        pw.TextSpan(
-                          text:
-                              '${dateFmt.format(filter.startDate)} - ${dateFmt.format(filter.endDate)}',
-                          style: const pw.TextStyle(fontSize: 9),
-                        ),
-                      ],
-                    ),
-                  ),
-                  pw.RichText(
-                    text: pw.TextSpan(
-                      children: [
-                        pw.TextSpan(
-                          text: 'Customer: ',
-                          style: pw.TextStyle(
-                            fontWeight: pw.FontWeight.bold,
-                            fontSize: 9,
-                          ),
-                        ),
-                        pw.TextSpan(
-                          text: customerLabel,
-                          style: const pw.TextStyle(fontSize: 9),
-                        ),
-                      ],
-                    ),
-                  ),
-                  pw.RichText(
-                    text: pw.TextSpan(
-                      children: [
-                        pw.TextSpan(
-                          text: 'User:     ',
-                          style: pw.TextStyle(
-                            fontWeight: pw.FontWeight.bold,
-                            fontSize: 9,
-                          ),
-                        ),
-                        pw.TextSpan(
-                          text: userLabel,
-                          style: const pw.TextStyle(fontSize: 9),
-                        ),
-                      ],
-                    ),
-                  ),
+                  _hdrPair(f, l.periodLabel, '${dateFmt.format(filter.startDate)} - ${dateFmt.format(filter.endDate)}'),
+                  _hdrPair(f, l.customerLabel, customerLabel),
+                  _hdrPair(f, l.userLabel, userLabel),
                 ],
               ),
             ),
@@ -4975,40 +4813,8 @@ Future<Uint8List> _buildSalesByTablePdf({
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  pw.RichText(
-                    text: pw.TextSpan(
-                      children: [
-                        pw.TextSpan(
-                          text: 'Company: ',
-                          style: pw.TextStyle(
-                            fontWeight: pw.FontWeight.bold,
-                            fontSize: 9,
-                          ),
-                        ),
-                        pw.TextSpan(
-                          text: companyName ?? '',
-                          style: const pw.TextStyle(fontSize: 9),
-                        ),
-                      ],
-                    ),
-                  ),
-                  pw.RichText(
-                    text: pw.TextSpan(
-                      children: [
-                        pw.TextSpan(
-                          text: 'Address: ',
-                          style: pw.TextStyle(
-                            fontWeight: pw.FontWeight.bold,
-                            fontSize: 9,
-                          ),
-                        ),
-                        pw.TextSpan(
-                          text: companyAddress ?? '',
-                          style: const pw.TextStyle(fontSize: 9),
-                        ),
-                      ],
-                    ),
-                  ),
+                  _hdrPair(f, l.rptColCompany, companyName ?? ''),
+                  _hdrPair(f, l.setAddress, companyAddress ?? ''),
                 ],
               ),
             ),
@@ -5016,12 +4822,11 @@ Future<Uint8List> _buildSalesByTablePdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          headers: ['Table / order number', 'Number of sales', 'Total'],
-          headerStyle: pw.TextStyle(
-            fontWeight: pw.FontWeight.bold,
-            fontSize: 9,
-          ),
-          cellStyle: const pw.TextStyle(fontSize: 9),
+          cellBuilder: (i, v, r) =>
+              printedText('$v', style: f.style()),
+          headers: _cells([l.rptColTableOrOrder, l.rptColNumberOfSales, l.totalLabel], f.style(bold: true)),
+          headerStyle: f.style(bold: true),
+          cellStyle: f.style(),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
           cellAlignments: {
             1: pw.Alignment.centerRight,
@@ -5047,6 +4852,7 @@ Future<Uint8List> _buildSalesByTablePdf({
 }
 
 Future<Uint8List> _buildHourlySalesPdf({
+  required AppLocalizations l,
   required List<HourlySalesRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -5059,9 +4865,8 @@ Future<Uint8List> _buildHourlySalesPdf({
   final dateFmt = DateFormat('dd/MM/yyyy');
   final timeFmt = DateFormat('h:mm a');
 
-  final regular = await PdfFonts.latin();
-  final bold = await PdfFonts.latin(bold: true);
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
+  final f = await _RptFonts.load();
+  final theme = f.theme;
 
   final grandTotal = rows.fold(0.0, (s, r) => s + r.totalSales);
   final grandCount = rows.fold(0, (s, r) => s + r.salesCount);
@@ -5072,9 +4877,9 @@ Future<Uint8List> _buildHourlySalesPdf({
       theme: theme,
       margin: const pw.EdgeInsets.all(20),
       build: (ctx) => [
-        pw.Text(
-          'HOURLY SALES',
-          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+        printedText(
+          l.rptTitleHourlySales,
+          style: f.style(size: 16, bold: true),
         ),
         pw.SizedBox(height: 8),
         pw.Row(
@@ -5084,41 +4889,8 @@ Future<Uint8List> _buildHourlySalesPdf({
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  pw.RichText(
-                    text: pw.TextSpan(
-                      children: [
-                        pw.TextSpan(
-                          text: 'Period:   ',
-                          style: pw.TextStyle(
-                            fontWeight: pw.FontWeight.bold,
-                            fontSize: 9,
-                          ),
-                        ),
-                        pw.TextSpan(
-                          text:
-                              '${dateFmt.format(filter.startDate)} - ${dateFmt.format(filter.endDate)}',
-                          style: const pw.TextStyle(fontSize: 9),
-                        ),
-                      ],
-                    ),
-                  ),
-                  pw.RichText(
-                    text: pw.TextSpan(
-                      children: [
-                        pw.TextSpan(
-                          text: 'Customer: ',
-                          style: pw.TextStyle(
-                            fontWeight: pw.FontWeight.bold,
-                            fontSize: 9,
-                          ),
-                        ),
-                        pw.TextSpan(
-                          text: customerLabel,
-                          style: const pw.TextStyle(fontSize: 9),
-                        ),
-                      ],
-                    ),
-                  ),
+                  _hdrPair(f, l.periodLabel, '${dateFmt.format(filter.startDate)} - ${dateFmt.format(filter.endDate)}'),
+                  _hdrPair(f, l.customerLabel, customerLabel),
                 ],
               ),
             ),
@@ -5126,40 +4898,8 @@ Future<Uint8List> _buildHourlySalesPdf({
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  pw.RichText(
-                    text: pw.TextSpan(
-                      children: [
-                        pw.TextSpan(
-                          text: 'Company: ',
-                          style: pw.TextStyle(
-                            fontWeight: pw.FontWeight.bold,
-                            fontSize: 9,
-                          ),
-                        ),
-                        pw.TextSpan(
-                          text: companyName ?? '',
-                          style: const pw.TextStyle(fontSize: 9),
-                        ),
-                      ],
-                    ),
-                  ),
-                  pw.RichText(
-                    text: pw.TextSpan(
-                      children: [
-                        pw.TextSpan(
-                          text: 'Address: ',
-                          style: pw.TextStyle(
-                            fontWeight: pw.FontWeight.bold,
-                            fontSize: 9,
-                          ),
-                        ),
-                        pw.TextSpan(
-                          text: companyAddress ?? '',
-                          style: const pw.TextStyle(fontSize: 9),
-                        ),
-                      ],
-                    ),
-                  ),
+                  _hdrPair(f, l.rptColCompany, companyName ?? ''),
+                  _hdrPair(f, l.setAddress, companyAddress ?? ''),
                 ],
               ),
             ),
@@ -5167,19 +4907,18 @@ Future<Uint8List> _buildHourlySalesPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          headers: [
-            'Hours',
+          cellBuilder: (i, v, r) =>
+              printedText('$v', style: f.style()),
+          headers: _cells([
+            l.rptColHours,
             '',
-            'Total sales',
-            'Sales count',
-            'Average sale',
+            l.rptColTotalSales,
+            l.rptColSalesCount,
+            l.rptColAverageSale,
             '%',
-          ],
-          headerStyle: pw.TextStyle(
-            fontWeight: pw.FontWeight.bold,
-            fontSize: 9,
-          ),
-          cellStyle: const pw.TextStyle(fontSize: 9),
+          ], f.style(bold: true)),
+          headerStyle: f.style(bold: true),
+          cellStyle: f.style(),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
           cellAlignments: {
             2: pw.Alignment.centerRight,
@@ -5223,6 +4962,7 @@ Future<Uint8List> _buildHourlySalesPdf({
 }
 
 Future<Uint8List> _buildDailySalesPdf({
+  required AppLocalizations l,
   required List<DailySalesRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -5235,9 +4975,8 @@ Future<Uint8List> _buildDailySalesPdf({
   final dayFmt = DateFormat('dd/MM/yyyy (EEE)');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfFonts.latin();
-  final bold = await PdfFonts.latin(bold: true);
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
+  final f = await _RptFonts.load();
+  final theme = f.theme;
 
   doc.addPage(
     pw.MultiPage(
@@ -5245,9 +4984,9 @@ Future<Uint8List> _buildDailySalesPdf({
       theme: theme,
       margin: const pw.EdgeInsets.all(20),
       build: (ctx) => [
-        pw.Text(
-          'DAILY SALES',
-          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+        printedText(
+          l.rptTitleDailySales,
+          style: f.style(size: 16, bold: true),
         ),
         pw.SizedBox(height: 8),
         pw.Row(
@@ -5257,58 +4996,9 @@ Future<Uint8List> _buildDailySalesPdf({
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  pw.RichText(
-                    text: pw.TextSpan(
-                      children: [
-                        pw.TextSpan(
-                          text: 'Period:   ',
-                          style: pw.TextStyle(
-                            fontWeight: pw.FontWeight.bold,
-                            fontSize: 9,
-                          ),
-                        ),
-                        pw.TextSpan(
-                          text:
-                              '${dateFmt.format(filter.startDate)} - ${dateFmt.format(filter.endDate)}',
-                          style: const pw.TextStyle(fontSize: 9),
-                        ),
-                      ],
-                    ),
-                  ),
-                  pw.RichText(
-                    text: pw.TextSpan(
-                      children: [
-                        pw.TextSpan(
-                          text: 'Customer: ',
-                          style: pw.TextStyle(
-                            fontWeight: pw.FontWeight.bold,
-                            fontSize: 9,
-                          ),
-                        ),
-                        pw.TextSpan(
-                          text: customerLabel,
-                          style: const pw.TextStyle(fontSize: 9),
-                        ),
-                      ],
-                    ),
-                  ),
-                  pw.RichText(
-                    text: pw.TextSpan(
-                      children: [
-                        pw.TextSpan(
-                          text: 'User:     ',
-                          style: pw.TextStyle(
-                            fontWeight: pw.FontWeight.bold,
-                            fontSize: 9,
-                          ),
-                        ),
-                        pw.TextSpan(
-                          text: userLabel,
-                          style: const pw.TextStyle(fontSize: 9),
-                        ),
-                      ],
-                    ),
-                  ),
+                  _hdrPair(f, l.periodLabel, '${dateFmt.format(filter.startDate)} - ${dateFmt.format(filter.endDate)}'),
+                  _hdrPair(f, l.customerLabel, customerLabel),
+                  _hdrPair(f, l.userLabel, userLabel),
                 ],
               ),
             ),
@@ -5316,40 +5006,8 @@ Future<Uint8List> _buildDailySalesPdf({
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  pw.RichText(
-                    text: pw.TextSpan(
-                      children: [
-                        pw.TextSpan(
-                          text: 'Company: ',
-                          style: pw.TextStyle(
-                            fontWeight: pw.FontWeight.bold,
-                            fontSize: 9,
-                          ),
-                        ),
-                        pw.TextSpan(
-                          text: companyName ?? '',
-                          style: const pw.TextStyle(fontSize: 9),
-                        ),
-                      ],
-                    ),
-                  ),
-                  pw.RichText(
-                    text: pw.TextSpan(
-                      children: [
-                        pw.TextSpan(
-                          text: 'Address: ',
-                          style: pw.TextStyle(
-                            fontWeight: pw.FontWeight.bold,
-                            fontSize: 9,
-                          ),
-                        ),
-                        pw.TextSpan(
-                          text: companyAddress ?? '',
-                          style: const pw.TextStyle(fontSize: 9),
-                        ),
-                      ],
-                    ),
-                  ),
+                  _hdrPair(f, l.rptColCompany, companyName ?? ''),
+                  _hdrPair(f, l.setAddress, companyAddress ?? ''),
                 ],
               ),
             ),
@@ -5357,12 +5015,11 @@ Future<Uint8List> _buildDailySalesPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          headers: ['Date', 'Total'],
-          headerStyle: pw.TextStyle(
-            fontWeight: pw.FontWeight.bold,
-            fontSize: 9,
-          ),
-          cellStyle: const pw.TextStyle(fontSize: 9),
+          cellBuilder: (i, v, r) =>
+              printedText('$v', style: f.style()),
+          headers: _cells([l.dateLabel, l.totalLabel], f.style(bold: true)),
+          headerStyle: f.style(bold: true),
+          cellStyle: f.style(),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
           cellAlignments: {1: pw.Alignment.centerRight},
           data: [
@@ -5382,6 +5039,7 @@ Future<Uint8List> _buildDailySalesPdf({
 }
 
 Future<Uint8List> _buildInvoiceListPdf({
+  required AppLocalizations l,
   required List<InvoiceListRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -5393,9 +5051,8 @@ Future<Uint8List> _buildInvoiceListPdf({
   final fmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfFonts.latin();
-  final bold = await PdfFonts.latin(bold: true);
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
+  final f = await _RptFonts.load();
+  final theme = f.theme;
 
   doc.addPage(
     pw.MultiPage(
@@ -5403,9 +5060,9 @@ Future<Uint8List> _buildInvoiceListPdf({
       theme: theme,
       margin: const pw.EdgeInsets.all(20),
       build: (ctx) => [
-        pw.Text(
-          'INVOICES',
-          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+        printedText(
+          l.rptTitleInvoices,
+          style: f.style(size: 16, bold: true),
         ),
         pw.SizedBox(height: 8),
         pw.Row(
@@ -5415,58 +5072,9 @@ Future<Uint8List> _buildInvoiceListPdf({
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  pw.RichText(
-                    text: pw.TextSpan(
-                      children: [
-                        pw.TextSpan(
-                          text: 'Period:   ',
-                          style: pw.TextStyle(
-                            fontWeight: pw.FontWeight.bold,
-                            fontSize: 9,
-                          ),
-                        ),
-                        pw.TextSpan(
-                          text:
-                              '${dateFmt.format(filter.startDate)} - ${dateFmt.format(filter.endDate)}',
-                          style: const pw.TextStyle(fontSize: 9),
-                        ),
-                      ],
-                    ),
-                  ),
-                  pw.RichText(
-                    text: pw.TextSpan(
-                      children: [
-                        pw.TextSpan(
-                          text: 'Customer: ',
-                          style: pw.TextStyle(
-                            fontWeight: pw.FontWeight.bold,
-                            fontSize: 9,
-                          ),
-                        ),
-                        pw.TextSpan(
-                          text: customerLabel,
-                          style: const pw.TextStyle(fontSize: 9),
-                        ),
-                      ],
-                    ),
-                  ),
-                  pw.RichText(
-                    text: pw.TextSpan(
-                      children: [
-                        pw.TextSpan(
-                          text: 'User:     ',
-                          style: pw.TextStyle(
-                            fontWeight: pw.FontWeight.bold,
-                            fontSize: 9,
-                          ),
-                        ),
-                        pw.TextSpan(
-                          text: userLabel,
-                          style: const pw.TextStyle(fontSize: 9),
-                        ),
-                      ],
-                    ),
-                  ),
+                  _hdrPair(f, l.periodLabel, '${dateFmt.format(filter.startDate)} - ${dateFmt.format(filter.endDate)}'),
+                  _hdrPair(f, l.customerLabel, customerLabel),
+                  _hdrPair(f, l.userLabel, userLabel),
                 ],
               ),
             ),
@@ -5474,40 +5082,8 @@ Future<Uint8List> _buildInvoiceListPdf({
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  pw.RichText(
-                    text: pw.TextSpan(
-                      children: [
-                        pw.TextSpan(
-                          text: 'Company: ',
-                          style: pw.TextStyle(
-                            fontWeight: pw.FontWeight.bold,
-                            fontSize: 9,
-                          ),
-                        ),
-                        pw.TextSpan(
-                          text: companyName ?? '',
-                          style: const pw.TextStyle(fontSize: 9),
-                        ),
-                      ],
-                    ),
-                  ),
-                  pw.RichText(
-                    text: pw.TextSpan(
-                      children: [
-                        pw.TextSpan(
-                          text: 'Address: ',
-                          style: pw.TextStyle(
-                            fontWeight: pw.FontWeight.bold,
-                            fontSize: 9,
-                          ),
-                        ),
-                        pw.TextSpan(
-                          text: companyAddress ?? '',
-                          style: const pw.TextStyle(fontSize: 9),
-                        ),
-                      ],
-                    ),
-                  ),
+                  _hdrPair(f, l.rptColCompany, companyName ?? ''),
+                  _hdrPair(f, l.setAddress, companyAddress ?? ''),
                 ],
               ),
             ),
@@ -5515,19 +5091,18 @@ Future<Uint8List> _buildInvoiceListPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          headers: [
+          cellBuilder: (i, v, r) =>
+              printedText('$v', style: f.style(size: 8)),
+          headers: _cells([
             '#',
-            'Date',
-            'Document number',
-            'Customer',
-            'Payment method',
-            'Total',
-          ],
-          headerStyle: pw.TextStyle(
-            fontWeight: pw.FontWeight.bold,
-            fontSize: 8,
-          ),
-          cellStyle: const pw.TextStyle(fontSize: 8),
+            l.dateLabel,
+            l.documentNumber,
+            l.customerLabel,
+            l.rptColPaymentMethod,
+            l.totalLabel,
+          ], f.style(size: 8, bold: true)),
+          headerStyle: f.style(size: 8, bold: true),
+          cellStyle: f.style(size: 8),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
           cellAlignments: {
             0: pw.Alignment.centerRight,
@@ -5549,7 +5124,7 @@ Future<Uint8List> _buildInvoiceListPdf({
               '',
               '',
               '',
-              'Total',
+              l.totalLabel,
               fmt.format(rows.fold(0.0, (s, r) => s + r.total)),
             ],
           ],
@@ -5570,6 +5145,7 @@ Future<Uint8List> _buildInvoiceListPdf({
 }
 
 Future<Uint8List> _buildRefundsPdf({
+  required AppLocalizations l,
   required List<RefundItemListRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -5582,9 +5158,8 @@ Future<Uint8List> _buildRefundsPdf({
   final fmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfFonts.latin();
-  final bold = await PdfFonts.latin(bold: true);
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
+  final f = await _RptFonts.load();
+  final theme = f.theme;
 
   doc.addPage(
     pw.MultiPage(
@@ -5592,12 +5167,14 @@ Future<Uint8List> _buildRefundsPdf({
       theme: theme,
       margin: const pw.EdgeInsets.all(20),
       build: (ctx) => [
-        pw.Text(
-          'REFUNDS',
-          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+        printedText(
+          l.rptTitleRefunds,
+          style: f.style(size: 16, bold: true),
         ),
         pw.SizedBox(height: 8),
         _pdfHeader(
+          l,
+          f,
           dateFmt,
           filter,
           companyName,
@@ -5608,25 +5185,24 @@ Future<Uint8List> _buildRefundsPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          headers: [
-            'Document #',
-            'Ref. #',
-            'Date',
-            'Customer code',
-            'Customer',
-            'Code',
-            'Product',
-            'Quantity',
-            'UOM',
-            'Total before tax',
-            'Total tax',
-            'Total',
-          ],
-          headerStyle: pw.TextStyle(
-            fontWeight: pw.FontWeight.bold,
-            fontSize: 8,
-          ),
-          cellStyle: const pw.TextStyle(fontSize: 8),
+          cellBuilder: (i, v, r) =>
+              printedText('$v', style: f.style(size: 8)),
+          headers: _cells([
+            l.rptColDocumentShort,
+            l.rptColRefShort,
+            l.dateLabel,
+            l.rptColCustomerCode,
+            l.customerLabel,
+            l.fieldCode,
+            l.productLabel,
+            l.fieldQuantity,
+            l.rptColUom,
+            l.totalBeforeTax,
+            l.rptColTotalTax,
+            l.totalLabel,
+          ], f.style(size: 8, bold: true)),
+          headerStyle: f.style(size: 8, bold: true),
+          cellStyle: f.style(size: 8),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
           cellAlignments: {
             7: pw.Alignment.centerRight,
@@ -5658,7 +5234,7 @@ Future<Uint8List> _buildRefundsPdf({
               '',
               '',
               '',
-              'Total',
+              l.totalLabel,
               formatReportQuantity(rows.fold(0.0, (s, r) => s + r.quantity)),
               '',
               fmt.format(rows.fold(0.0, (s, r) => s + r.totalBeforeTax)),
@@ -5689,6 +5265,7 @@ Future<Uint8List> _buildRefundsPdf({
 }
 
 Future<Uint8List> _buildUsersPdf({
+  required AppLocalizations l,
   required List<SalesByUserRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -5701,21 +5278,22 @@ Future<Uint8List> _buildUsersPdf({
   final fmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfFonts.latin();
-  final bold = await PdfFonts.latin(bold: true);
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
+  final f = await _RptFonts.load();
+  final theme = f.theme;
 
   doc.addPage(
     pw.MultiPage(
       pageFormat: PdfPageFormat.a4.landscape,
       theme: theme,
       build: (ctx) => [
-        pw.Text(
-          'SALES BY USERS',
-          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+        printedText(
+          l.rptTitleSalesByUsers,
+          style: f.style(size: 16, bold: true),
         ),
         pw.SizedBox(height: 8),
         _pdfHeader(
+          l,
+          f,
           dateFmt,
           filter,
           companyName,
@@ -5726,12 +5304,11 @@ Future<Uint8List> _buildUsersPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          headers: ['User', 'Total before tax', 'Total'],
-          headerStyle: pw.TextStyle(
-            fontWeight: pw.FontWeight.bold,
-            fontSize: 9,
-          ),
-          cellStyle: const pw.TextStyle(fontSize: 9),
+          cellBuilder: (i, v, r) =>
+              printedText('$v', style: f.style()),
+          headers: _cells([l.userLabel, l.totalBeforeTax, l.totalLabel], f.style(bold: true)),
+          headerStyle: f.style(bold: true),
+          cellStyle: f.style(),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
           cellAlignments: {
             1: pw.Alignment.centerRight,
@@ -5746,7 +5323,7 @@ Future<Uint8List> _buildUsersPdf({
               ],
             ),
             [
-              'Total',
+              l.totalLabel,
               fmt.format(rows.fold(0.0, (s, r) => s + r.totalBeforeTax)),
               fmt.format(rows.fold(0.0, (s, r) => s + r.total)),
             ],
@@ -5765,6 +5342,7 @@ Future<Uint8List> _buildUsersPdf({
 }
 
 Future<Uint8List> _buildUnpaidPurchasePdf({
+  required AppLocalizations l,
   required List<UnpaidPurchaseRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -5777,9 +5355,8 @@ Future<Uint8List> _buildUnpaidPurchasePdf({
   final dateFmt = DateFormat('dd/MM/yyyy');
   final hdrDatFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfFonts.latin();
-  final bold = await PdfFonts.latin(bold: true);
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
+  final f = await _RptFonts.load();
+  final theme = f.theme;
 
   final bySupplier = <String, List<UnpaidPurchaseRow>>{};
   for (final r in rows) {
@@ -5795,21 +5372,21 @@ Future<Uint8List> _buildUnpaidPurchasePdf({
       footer: (ctx) => pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Text(
+          printedText(
             DateFormat('dd/MM/yyyy HH:mm:ss').format(DateTime.now()),
-            style: const pw.TextStyle(fontSize: 8),
+            style: f.style(size: 8),
           ),
-          pw.Text(
-            'Page ${ctx.pageNumber}',
-            style: const pw.TextStyle(fontSize: 8),
+          printedText(
+            l.pageNumberLabel('${ctx.pageNumber}'),
+            style: f.style(size: 8),
           ),
         ],
       ),
       build: (ctx) {
         final widgets = <pw.Widget>[
-          pw.Text(
-            'UNPAID PURCHASE',
-            style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+          printedText(
+            l.rptTitleUnpaidPurchase,
+            style: f.style(size: 16, bold: true),
           ),
           pw.SizedBox(height: 8),
           pw.Row(
@@ -5819,58 +5396,9 @@ Future<Uint8List> _buildUnpaidPurchasePdf({
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    pw.RichText(
-                      text: pw.TextSpan(
-                        children: [
-                          pw.TextSpan(
-                            text: 'Period:   ',
-                            style: pw.TextStyle(
-                              fontWeight: pw.FontWeight.bold,
-                              fontSize: 9,
-                            ),
-                          ),
-                          pw.TextSpan(
-                            text:
-                                '${hdrDatFmt.format(filter.startDate)} - ${hdrDatFmt.format(filter.endDate)}',
-                            style: const pw.TextStyle(fontSize: 9),
-                          ),
-                        ],
-                      ),
-                    ),
-                    pw.RichText(
-                      text: pw.TextSpan(
-                        children: [
-                          pw.TextSpan(
-                            text: 'Supplier: ',
-                            style: pw.TextStyle(
-                              fontWeight: pw.FontWeight.bold,
-                              fontSize: 9,
-                            ),
-                          ),
-                          pw.TextSpan(
-                            text: supplierLabel,
-                            style: const pw.TextStyle(fontSize: 9),
-                          ),
-                        ],
-                      ),
-                    ),
-                    pw.RichText(
-                      text: pw.TextSpan(
-                        children: [
-                          pw.TextSpan(
-                            text: 'User:     ',
-                            style: pw.TextStyle(
-                              fontWeight: pw.FontWeight.bold,
-                              fontSize: 9,
-                            ),
-                          ),
-                          pw.TextSpan(
-                            text: userLabel,
-                            style: const pw.TextStyle(fontSize: 9),
-                          ),
-                        ],
-                      ),
-                    ),
+                    _hdrPair(f, l.periodLabel, '${hdrDatFmt.format(filter.startDate)} - ${hdrDatFmt.format(filter.endDate)}'),
+                    _hdrPair(f, l.supplier, supplierLabel),
+                    _hdrPair(f, l.userLabel, userLabel),
                   ],
                 ),
               ),
@@ -5878,40 +5406,8 @@ Future<Uint8List> _buildUnpaidPurchasePdf({
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    pw.RichText(
-                      text: pw.TextSpan(
-                        children: [
-                          pw.TextSpan(
-                            text: 'Company: ',
-                            style: pw.TextStyle(
-                              fontWeight: pw.FontWeight.bold,
-                              fontSize: 9,
-                            ),
-                          ),
-                          pw.TextSpan(
-                            text: companyName ?? '',
-                            style: const pw.TextStyle(fontSize: 9),
-                          ),
-                        ],
-                      ),
-                    ),
-                    pw.RichText(
-                      text: pw.TextSpan(
-                        children: [
-                          pw.TextSpan(
-                            text: 'Address: ',
-                            style: pw.TextStyle(
-                              fontWeight: pw.FontWeight.bold,
-                              fontSize: 9,
-                            ),
-                          ),
-                          pw.TextSpan(
-                            text: companyAddress ?? '',
-                            style: const pw.TextStyle(fontSize: 9),
-                          ),
-                        ],
-                      ),
-                    ),
+                    _hdrPair(f, l.rptColCompany, companyName ?? ''),
+                    _hdrPair(f, l.setAddress, companyAddress ?? ''),
                   ],
                 ),
               ),
@@ -5932,31 +5428,24 @@ Future<Uint8List> _buildUnpaidPurchasePdf({
                 horizontal: 6,
                 vertical: 3,
               ),
-              child: pw.Text(
-                'Supplier: $supplierName',
-                style: pw.TextStyle(
-                  fontWeight: pw.FontWeight.bold,
-                  fontSize: 9,
-                ),
-              ),
+              child: _hdrPair(f, l.supplier, supplierName, boldValue: true),
             ),
           );
 
           widgets.add(
             pw.TableHelper.fromTextArray(
-              headers: [
-                'Document number',
-                'Date',
-                'Due date',
-                'Total',
-                'Total paid',
-                'Total unpaid',
-              ],
-              headerStyle: pw.TextStyle(
-                fontWeight: pw.FontWeight.bold,
-                fontSize: 8,
-              ),
-              cellStyle: const pw.TextStyle(fontSize: 8),
+          cellBuilder: (i, v, r) =>
+              printedText('$v', style: f.style(size: 8)),
+              headers: _cells([
+                l.documentNumber,
+                l.dateLabel,
+                l.rptColDueDate,
+                l.totalLabel,
+                l.rptColTotalPaid,
+                l.rptColTotalUnpaid,
+              ], f.style(size: 8, bold: true)),
+              headerStyle: f.style(size: 8, bold: true),
+              cellStyle: f.style(size: 8),
               headerDecoration: const pw.BoxDecoration(
                 color: PdfColors.grey300,
               ),
@@ -6001,20 +5490,8 @@ Future<Uint8List> _buildUnpaidPurchasePdf({
           pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.end,
             children: [
-              pw.Text(
-                'Total:  ',
-                style: pw.TextStyle(
-                  fontWeight: pw.FontWeight.bold,
-                  fontSize: 10,
-                ),
-              ),
-              pw.Text(
-                fmt.format(grandTotal),
-                style: pw.TextStyle(
-                  fontWeight: pw.FontWeight.bold,
-                  fontSize: 10,
-                ),
-              ),
+              _hdrPair(f, l.totalLabel, fmt.format(grandTotal),
+                  size: 10, boldValue: true),
             ],
           ),
         ]);
@@ -6028,6 +5505,7 @@ Future<Uint8List> _buildUnpaidPurchasePdf({
 }
 
 Future<Uint8List> _buildPurchaseBySupplierPdf({
+  required AppLocalizations l,
   required List<PurchaseBySupplierRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -6040,9 +5518,8 @@ Future<Uint8List> _buildPurchaseBySupplierPdf({
   final fmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfFonts.latin();
-  final bold = await PdfFonts.latin(bold: true);
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
+  final f = await _RptFonts.load();
+  final theme = f.theme;
 
   doc.addPage(
     pw.MultiPage(
@@ -6051,23 +5528,25 @@ Future<Uint8List> _buildPurchaseBySupplierPdf({
       footer: (ctx) => pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Text(
+          printedText(
             DateFormat('dd/MM/yyyy HH:mm:ss').format(DateTime.now()),
-            style: const pw.TextStyle(fontSize: 8),
+            style: f.style(size: 8),
           ),
-          pw.Text(
-            'Page ${ctx.pageNumber}',
-            style: const pw.TextStyle(fontSize: 8),
+          printedText(
+            l.pageNumberLabel('${ctx.pageNumber}'),
+            style: f.style(size: 8),
           ),
         ],
       ),
       build: (ctx) => [
-        pw.Text(
-          'PURCHASE BY SUPPLIER',
-          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+        printedText(
+          l.rptTitlePurchaseBySupplier,
+          style: f.style(size: 16, bold: true),
         ),
         pw.SizedBox(height: 8),
         _pdfHeader(
+          l,
+          f,
           dateFmt,
           filter,
           companyName,
@@ -6075,16 +5554,15 @@ Future<Uint8List> _buildPurchaseBySupplierPdf({
           supplierLabel,
           userLabel,
           productLabel,
-          customerRowLabel: 'Supplier',
+          customerRowLabel: l.supplier,
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          headers: ['Supplier', 'Total before tax', 'Total'],
-          headerStyle: pw.TextStyle(
-            fontWeight: pw.FontWeight.bold,
-            fontSize: 9,
-          ),
-          cellStyle: const pw.TextStyle(fontSize: 9),
+          cellBuilder: (i, v, r) =>
+              printedText('$v', style: f.style()),
+          headers: _cells([l.supplier, l.totalBeforeTax, l.totalLabel], f.style(bold: true)),
+          headerStyle: f.style(bold: true),
+          cellStyle: f.style(),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
           cellAlignments: {
             1: pw.Alignment.centerRight,
@@ -6099,7 +5577,7 @@ Future<Uint8List> _buildPurchaseBySupplierPdf({
               ],
             ),
             [
-              'Total',
+              l.totalLabel,
               fmt.format(rows.fold(0.0, (s, r) => s + r.totalBeforeTax)),
               fmt.format(rows.fold(0.0, (s, r) => s + r.total)),
             ],
@@ -6118,6 +5596,7 @@ Future<Uint8List> _buildPurchaseBySupplierPdf({
 }
 
 Future<Uint8List> _buildPurchaseByProductPdf({
+  required AppLocalizations l,
   required List<PurchaseByProductRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -6130,9 +5609,8 @@ Future<Uint8List> _buildPurchaseByProductPdf({
   final fmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfFonts.latin();
-  final bold = await PdfFonts.latin(bold: true);
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
+  final f = await _RptFonts.load();
+  final theme = f.theme;
 
   doc.addPage(
     pw.MultiPage(
@@ -6141,23 +5619,25 @@ Future<Uint8List> _buildPurchaseByProductPdf({
       footer: (ctx) => pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Text(
+          printedText(
             DateFormat('dd/MM/yyyy HH:mm:ss').format(DateTime.now()),
-            style: const pw.TextStyle(fontSize: 8),
+            style: f.style(size: 8),
           ),
-          pw.Text(
-            'Page ${ctx.pageNumber}',
-            style: const pw.TextStyle(fontSize: 8),
+          printedText(
+            l.pageNumberLabel('${ctx.pageNumber}'),
+            style: f.style(size: 8),
           ),
         ],
       ),
       build: (ctx) => [
-        pw.Text(
-          'PURCHASE BY PRODUCT',
-          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+        printedText(
+          l.rptTitlePurchaseByProduct,
+          style: f.style(size: 16, bold: true),
         ),
         pw.SizedBox(height: 8),
         _pdfHeader(
+          l,
+          f,
           dateFmt,
           filter,
           companyName,
@@ -6165,23 +5645,22 @@ Future<Uint8List> _buildPurchaseByProductPdf({
           supplierLabel,
           userLabel,
           productLabel,
-          customerRowLabel: 'Supplier',
+          customerRowLabel: l.supplier,
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          headers: [
-            'Code',
-            'Product',
-            'Quantity',
-            'UOM',
-            'Total before tax',
-            'Total',
-          ],
-          headerStyle: pw.TextStyle(
-            fontWeight: pw.FontWeight.bold,
-            fontSize: 9,
-          ),
-          cellStyle: const pw.TextStyle(fontSize: 9),
+          cellBuilder: (i, v, r) =>
+              printedText('$v', style: f.style()),
+          headers: _cells([
+            l.fieldCode,
+            l.productLabel,
+            l.fieldQuantity,
+            l.rptColUom,
+            l.totalBeforeTax,
+            l.totalLabel,
+          ], f.style(bold: true)),
+          headerStyle: f.style(bold: true),
+          cellStyle: f.style(),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
           cellAlignments: {
             2: pw.Alignment.centerRight,
@@ -6201,7 +5680,7 @@ Future<Uint8List> _buildPurchaseByProductPdf({
             ),
             [
               '',
-              'Total',
+              l.totalLabel,
               formatReportQuantity(rows.fold(0.0, (s, r) => s + r.quantity)),
               '',
               fmt.format(rows.fold(0.0, (s, r) => s + r.totalBeforeTax)),
@@ -6225,6 +5704,7 @@ Future<Uint8List> _buildPurchaseByProductPdf({
 }
 
 Future<Uint8List> _buildPurchaseExpirationDatePdf({
+  required AppLocalizations l,
   required List<PurchaseExpirationDateRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -6236,9 +5716,8 @@ Future<Uint8List> _buildPurchaseExpirationDatePdf({
   final doc = pw.Document();
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfFonts.latin();
-  final bold = await PdfFonts.latin(bold: true);
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
+  final f = await _RptFonts.load();
+  final theme = f.theme;
 
   doc.addPage(
     pw.MultiPage(
@@ -6247,23 +5726,25 @@ Future<Uint8List> _buildPurchaseExpirationDatePdf({
       footer: (ctx) => pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Text(
+          printedText(
             DateFormat('dd/MM/yyyy HH:mm:ss').format(DateTime.now()),
-            style: const pw.TextStyle(fontSize: 8, color: PdfColors.red),
+            style: f.style(size: 8, color: PdfColors.red),
           ),
-          pw.Text(
-            'Page ${ctx.pageNumber}',
-            style: const pw.TextStyle(fontSize: 8),
+          printedText(
+            l.pageNumberLabel('${ctx.pageNumber}'),
+            style: f.style(size: 8),
           ),
         ],
       ),
       build: (ctx) => [
-        pw.Text(
-          'EXPIRATION DATE',
-          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+        printedText(
+          l.rptTitleExpirationDate,
+          style: f.style(size: 16, bold: true),
         ),
         pw.SizedBox(height: 8),
         _pdfHeader(
+          l,
+          f,
           dateFmt,
           filter,
           companyName,
@@ -6274,19 +5755,18 @@ Future<Uint8List> _buildPurchaseExpirationDatePdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          headers: [
+          cellBuilder: (i, v, r) =>
+              printedText('$v', style: f.style()),
+          headers: _cells([
             '#',
-            'Code',
-            'Product',
-            'Quantity',
-            'UOM',
-            'Expiration date',
-          ],
-          headerStyle: pw.TextStyle(
-            fontWeight: pw.FontWeight.bold,
-            fontSize: 9,
-          ),
-          cellStyle: const pw.TextStyle(fontSize: 9),
+            l.fieldCode,
+            l.productLabel,
+            l.fieldQuantity,
+            l.rptColUom,
+            l.rptColExpirationDate,
+          ], f.style(bold: true)),
+          headerStyle: f.style(bold: true),
+          cellStyle: f.style(),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
           cellAlignments: {
             0: pw.Alignment.centerRight,
@@ -6323,6 +5803,7 @@ Future<Uint8List> _buildPurchaseExpirationDatePdf({
 }
 
 Future<Uint8List> _buildPurchaseTaxPdf({
+  required AppLocalizations l,
   required List<PurchaseByTaxRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -6335,9 +5816,8 @@ Future<Uint8List> _buildPurchaseTaxPdf({
   final fmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfFonts.latin();
-  final bold = await PdfFonts.latin(bold: true);
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
+  final f = await _RptFonts.load();
+  final theme = f.theme;
 
   doc.addPage(
     pw.MultiPage(
@@ -6346,23 +5826,25 @@ Future<Uint8List> _buildPurchaseTaxPdf({
       footer: (ctx) => pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Text(
+          printedText(
             DateFormat('dd/MM/yyyy HH:mm:ss').format(DateTime.now()),
-            style: const pw.TextStyle(fontSize: 8, color: PdfColors.red),
+            style: f.style(size: 8, color: PdfColors.red),
           ),
-          pw.Text(
-            'Page ${ctx.pageNumber}',
-            style: const pw.TextStyle(fontSize: 8),
+          printedText(
+            l.pageNumberLabel('${ctx.pageNumber}'),
+            style: f.style(size: 8),
           ),
         ],
       ),
       build: (ctx) => [
-        pw.Text(
-          'PURCHASE TAX',
-          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+        printedText(
+          l.rptTitlePurchaseTax,
+          style: f.style(size: 16, bold: true),
         ),
         pw.SizedBox(height: 8),
         _pdfHeader(
+          l,
+          f,
           dateFmt,
           filter,
           companyName,
@@ -6373,12 +5855,11 @@ Future<Uint8List> _buildPurchaseTaxPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          headers: ['Tax name', 'Total before tax', 'Tax', 'Total'],
-          headerStyle: pw.TextStyle(
-            fontWeight: pw.FontWeight.bold,
-            fontSize: 9,
-          ),
-          cellStyle: const pw.TextStyle(fontSize: 9),
+          cellBuilder: (i, v, r) =>
+              printedText('$v', style: f.style()),
+          headers: _cells([l.rptColTaxName, l.totalBeforeTax, l.fieldTax, l.totalLabel], f.style(bold: true)),
+          headerStyle: f.style(bold: true),
+          cellStyle: f.style(),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
           cellAlignments: {
             1: pw.Alignment.centerRight,
@@ -6416,6 +5897,7 @@ Future<Uint8List> _buildPurchaseTaxPdf({
 }
 
 Future<Uint8List> _buildPurchaseInvoiceListPdf({
+  required AppLocalizations l,
   required List<PurchaseInvoiceListRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -6428,9 +5910,8 @@ Future<Uint8List> _buildPurchaseInvoiceListPdf({
   final fmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfFonts.latin();
-  final bold = await PdfFonts.latin(bold: true);
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
+  final f = await _RptFonts.load();
+  final theme = f.theme;
 
   final grandTotal = rows.fold(0.0, (s, r) => s + r.total);
 
@@ -6441,23 +5922,25 @@ Future<Uint8List> _buildPurchaseInvoiceListPdf({
       footer: (ctx) => pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Text(
+          printedText(
             DateFormat('dd/MM/yyyy HH:mm:ss').format(DateTime.now()),
-            style: const pw.TextStyle(fontSize: 8, color: PdfColors.red),
+            style: f.style(size: 8, color: PdfColors.red),
           ),
-          pw.Text(
-            'Page ${ctx.pageNumber}',
-            style: const pw.TextStyle(fontSize: 8),
+          printedText(
+            l.pageNumberLabel('${ctx.pageNumber}'),
+            style: f.style(size: 8),
           ),
         ],
       ),
       build: (ctx) => [
-        pw.Text(
-          'PURCHASE INVOICES',
-          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+        printedText(
+          l.rptTitlePurchaseInvoices,
+          style: f.style(size: 16, bold: true),
         ),
         pw.SizedBox(height: 8),
         _pdfHeader(
+          l,
+          f,
           dateFmt,
           filter,
           companyName,
@@ -6465,23 +5948,22 @@ Future<Uint8List> _buildPurchaseInvoiceListPdf({
           supplierLabel,
           userLabel,
           productLabel,
-          customerRowLabel: 'Supplier',
+          customerRowLabel: l.supplier,
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          headers: [
+          cellBuilder: (i, v, r) =>
+              printedText('$v', style: f.style()),
+          headers: _cells([
             '#',
-            'Supplier',
-            'Purchase number',
-            'External document',
-            'Date',
-            'Total',
-          ],
-          headerStyle: pw.TextStyle(
-            fontWeight: pw.FontWeight.bold,
-            fontSize: 9,
-          ),
-          cellStyle: const pw.TextStyle(fontSize: 9),
+            l.supplier,
+            l.rptColPurchaseNumber,
+            l.externalDocument,
+            l.dateLabel,
+            l.totalLabel,
+          ], f.style(bold: true)),
+          headerStyle: f.style(bold: true),
+          cellStyle: f.style(),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
           cellAlignments: {
             0: pw.Alignment.centerRight,
@@ -6517,6 +5999,7 @@ Future<Uint8List> _buildPurchaseInvoiceListPdf({
 }
 
 Future<Uint8List> _buildPurchaseItemsDiscountsPdf({
+  required AppLocalizations l,
   required List<PurchaseItemsDiscountsRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -6529,9 +6012,8 @@ Future<Uint8List> _buildPurchaseItemsDiscountsPdf({
   final fmt = NumberFormat('#,##0.00');
   final hdrFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfFonts.latin();
-  final bold = await PdfFonts.latin(bold: true);
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
+  final f = await _RptFonts.load();
+  final theme = f.theme;
 
   // Group by supplier
   final grouped = <String, List<PurchaseItemsDiscountsRow>>{};
@@ -6541,17 +6023,7 @@ Future<Uint8List> _buildPurchaseItemsDiscountsPdf({
 
   final grandTotalDiscount = rows.fold(0.0, (s, r) => s + r.totalDiscount);
 
-  pw.Widget hdrRow(String label, String value) => pw.RichText(
-    text: pw.TextSpan(
-      children: [
-        pw.TextSpan(
-          text: '$label  ',
-          style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9),
-        ),
-        pw.TextSpan(text: value, style: const pw.TextStyle(fontSize: 9)),
-      ],
-    ),
-  );
+  pw.Widget hdrRow(String label, String value) => _hdrPair(f, label, value);
 
   const colWidths = {
     0: pw.FixedColumnWidth(14), // #
@@ -6573,21 +6045,21 @@ Future<Uint8List> _buildPurchaseItemsDiscountsPdf({
       footer: (ctx) => pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Text(
+          printedText(
             DateFormat('dd/MM/yyyy HH:mm:ss').format(DateTime.now()),
-            style: const pw.TextStyle(fontSize: 8, color: PdfColors.red),
+            style: f.style(size: 8, color: PdfColors.red),
           ),
-          pw.Text(
-            'Page ${ctx.pageNumber}',
-            style: const pw.TextStyle(fontSize: 8),
+          printedText(
+            l.pageNumberLabel('${ctx.pageNumber}'),
+            style: f.style(size: 8),
           ),
         ],
       ),
       build: (ctx) {
         final widgets = <pw.Widget>[
-          pw.Text(
-            'PURCHASED ITEMS DISCOUNTS',
-            style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+          printedText(
+            l.rptTitlePurchasedItemDiscounts,
+            style: f.style(size: 16, bold: true),
           ),
           pw.SizedBox(height: 8),
           pw.Row(
@@ -6597,13 +6069,12 @@ Future<Uint8List> _buildPurchaseItemsDiscountsPdf({
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    hdrRow(
-                      'Period:',
+                    hdrRow(l.periodLabel,
                       '${hdrFmt.format(filter.startDate)} - ${hdrFmt.format(filter.endDate)}',
                     ),
-                    hdrRow('Supplier:', supplierLabel),
-                    hdrRow('User:', userLabel),
-                    hdrRow('Product:', productLabel),
+                    hdrRow(l.supplier, supplierLabel),
+                    hdrRow(l.userLabel, userLabel),
+                    hdrRow(l.productLabel, productLabel),
                   ],
                 ),
               ),
@@ -6611,8 +6082,8 @@ Future<Uint8List> _buildPurchaseItemsDiscountsPdf({
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    hdrRow('Company:', companyName ?? ''),
-                    hdrRow('Address:', companyAddress ?? ''),
+                    hdrRow(l.rptColCompany, companyName ?? ''),
+                    hdrRow(l.setAddress, companyAddress ?? ''),
                   ],
                 ),
               ),
@@ -6636,35 +6107,28 @@ Future<Uint8List> _buildPurchaseItemsDiscountsPdf({
                 horizontal: 6,
                 vertical: 3,
               ),
-              child: pw.Text(
-                'Supplier: ${entry.key}',
-                style: pw.TextStyle(
-                  fontWeight: pw.FontWeight.bold,
-                  fontSize: 9,
-                ),
-              ),
+              child: _hdrPair(f, l.supplier, entry.key, boldValue: true),
             ),
           );
 
           var rowIndex = 1;
           widgets.add(
             pw.TableHelper.fromTextArray(
-              headers: [
+          cellBuilder: (i, v, r) =>
+              printedText('$v', style: f.style(size: 7)),
+              headers: _cells([
                 '#',
-                'Code',
-                'Product',
-                'Qty',
-                'Cost',
-                'Before disc.',
-                'After disc.',
-                'Discount',
-                'Total disc.',
-              ],
-              headerStyle: pw.TextStyle(
-                fontWeight: pw.FontWeight.bold,
-                fontSize: 7,
-              ),
-              cellStyle: const pw.TextStyle(fontSize: 7),
+                l.fieldCode,
+                l.productLabel,
+                l.qtyShort,
+                l.fieldCost,
+                l.rptColBeforeDisc,
+                l.rptColAfterDisc,
+                l.discountLabel,
+                l.rptColTotalDisc,
+              ], f.style(size: 7, bold: true)),
+              headerStyle: f.style(size: 7, bold: true),
+              cellStyle: f.style(size: 7),
               headerDecoration: const pw.BoxDecoration(
                 color: PdfColors.grey300,
               ),
@@ -6708,20 +6172,8 @@ Future<Uint8List> _buildPurchaseItemsDiscountsPdf({
           pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.end,
             children: [
-              pw.Text(
-                'Total discount:  ',
-                style: pw.TextStyle(
-                  fontWeight: pw.FontWeight.bold,
-                  fontSize: 10,
-                ),
-              ),
-              pw.Text(
-                fmt.format(grandTotalDiscount),
-                style: pw.TextStyle(
-                  fontWeight: pw.FontWeight.bold,
-                  fontSize: 10,
-                ),
-              ),
+              _hdrPair(f, l.rptColTotalDiscount, fmt.format(grandTotalDiscount),
+                  size: 10, boldValue: true),
             ],
           ),
         ]);
@@ -6735,6 +6187,7 @@ Future<Uint8List> _buildPurchaseItemsDiscountsPdf({
 }
 
 Future<Uint8List> _buildPurchaseDiscountsPdf({
+  required AppLocalizations l,
   required List<PurchaseDiscountsRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -6747,9 +6200,8 @@ Future<Uint8List> _buildPurchaseDiscountsPdf({
   final dateFmt = DateFormat('dd/MM/yyyy');
   final hdrFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfFonts.latin();
-  final bold = await PdfFonts.latin(bold: true);
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
+  final f = await _RptFonts.load();
+  final theme = f.theme;
 
   final grouped = <String, List<PurchaseDiscountsRow>>{};
   for (final r in rows) {
@@ -6759,17 +6211,7 @@ Future<Uint8List> _buildPurchaseDiscountsPdf({
   final grandTotal = rows.fold(0.0, (s, r) => s + r.discountGranted);
   final totalOrders = rows.length;
 
-  pw.Widget hdrRow(String label, String value) => pw.RichText(
-    text: pw.TextSpan(
-      children: [
-        pw.TextSpan(
-          text: '$label  ',
-          style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9),
-        ),
-        pw.TextSpan(text: value, style: const pw.TextStyle(fontSize: 9)),
-      ],
-    ),
-  );
+  pw.Widget hdrRow(String label, String value) => _hdrPair(f, label, value);
 
   const colWidths = {
     0: pw.FlexColumnWidth(1.5),
@@ -6788,20 +6230,20 @@ Future<Uint8List> _buildPurchaseDiscountsPdf({
       footer: (ctx) => pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Text(
+          printedText(
             DateFormat('dd/MM/yyyy HH:mm:ss').format(DateTime.now()),
-            style: const pw.TextStyle(fontSize: 8, color: PdfColors.red),
+            style: f.style(size: 8, color: PdfColors.red),
           ),
-          pw.Text(
-            'Page ${ctx.pageNumber}',
-            style: const pw.TextStyle(fontSize: 8),
+          printedText(
+            l.pageNumberLabel('${ctx.pageNumber}'),
+            style: f.style(size: 8),
           ),
         ],
       ),
       build: (ctx) => [
-        pw.Text(
-          'PURCHASE DISCOUNTS',
-          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+        printedText(
+          l.rptTitlePurchaseDiscounts,
+          style: f.style(size: 16, bold: true),
         ),
         pw.SizedBox(height: 8),
         pw.Row(
@@ -6811,12 +6253,11 @@ Future<Uint8List> _buildPurchaseDiscountsPdf({
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  hdrRow(
-                    'Period:',
+                  hdrRow(l.periodLabel,
                     '${hdrFmt.format(filter.startDate)} - ${hdrFmt.format(filter.endDate)}',
                   ),
-                  hdrRow('Supplier:', supplierLabel),
-                  hdrRow('User:', userLabel),
+                  hdrRow(l.supplier, supplierLabel),
+                  hdrRow(l.userLabel, userLabel),
                 ],
               ),
             ),
@@ -6824,8 +6265,8 @@ Future<Uint8List> _buildPurchaseDiscountsPdf({
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  hdrRow('Company:', companyName ?? ''),
-                  hdrRow('Address:', companyAddress ?? ''),
+                  hdrRow(l.rptColCompany, companyName ?? ''),
+                  hdrRow(l.setAddress, companyAddress ?? ''),
                 ],
               ),
             ),
@@ -6837,25 +6278,21 @@ Future<Uint8List> _buildPurchaseDiscountsPdf({
             width: double.infinity,
             padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
             decoration: const pw.BoxDecoration(color: PdfColors.grey200),
-            child: pw.Text(
-              'Supplier: ${entry.key}',
-              style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9),
-            ),
+            child: _hdrPair(f, l.supplier, entry.key, boldValue: true),
           ),
           pw.TableHelper.fromTextArray(
-            headers: [
-              'Document',
-              'Date',
-              'User',
-              'Total before disc.',
-              'Total after disc.',
-              'Discount granted',
-            ],
-            headerStyle: pw.TextStyle(
-              fontWeight: pw.FontWeight.bold,
-              fontSize: 7,
-            ),
-            cellStyle: const pw.TextStyle(fontSize: 7),
+          cellBuilder: (i, v, r) =>
+              printedText('$v', style: f.style(size: 7)),
+            headers: _cells([
+              l.rptColDocument,
+              l.dateLabel,
+              l.userLabel,
+              l.rptColTotalBeforeDisc,
+              l.rptColTotalAfterDisc,
+              l.rptColDiscountGranted,
+            ], f.style(size: 7, bold: true)),
+            headerStyle: f.style(size: 7, bold: true),
+            cellStyle: f.style(size: 7),
             headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
             cellAlignments: {
               3: pw.Alignment.centerRight,
@@ -6896,20 +6333,14 @@ Future<Uint8List> _buildPurchaseDiscountsPdf({
             pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.end,
               children: [
-                pw.Text(
-                  'Number of orders discounted: $totalOrders',
-                  style: pw.TextStyle(
-                    fontWeight: pw.FontWeight.bold,
-                    fontSize: 9,
-                  ),
+                printedText(
+                  l.rptOrdersDiscounted('$totalOrders'),
+                  style: f.style(bold: true),
                 ),
                 pw.SizedBox(height: 2),
-                pw.Text(
-                  'Total discounted: ${fmt.format(grandTotal)}',
-                  style: pw.TextStyle(
-                    fontWeight: pw.FontWeight.bold,
-                    fontSize: 10,
-                  ),
+                printedText(
+                  l.rptTotalDiscounted(fmt.format(grandTotal)),
+                  style: f.style(size: 10, bold: true),
                 ),
               ],
             ),
@@ -6923,6 +6354,8 @@ Future<Uint8List> _buildPurchaseDiscountsPdf({
 }
 
 pw.Widget _pdfHeader(
+  AppLocalizations l,
+  _RptFonts f,
   DateFormat dateFmt,
   ReportFilter filter,
   String? companyName,
@@ -6930,15 +6363,19 @@ pw.Widget _pdfHeader(
   String customerLabel,
   String userLabel,
   String productLabel, {
-  String customerRowLabel = 'Customer',
+  /// Purchase reports label this row "Supplier"; pass `l.supplier` there.
+  String? customerRowLabel,
 }) {
-  const ts = pw.TextStyle(fontSize: 9);
-  final tb = pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold);
+  final ts = f.style();
+  final tb = f.style(bold: true);
 
+  // Three runs, not two: the ':' is neutral and would be dragged to the visual
+  // left end of an Arabic label if it were part of it. See _hdrPair.
   row(String lbl, String val) => pw.Row(
     children: [
-      pw.Text('$lbl: ', style: tb),
-      pw.Text(val, style: ts),
+      printedText(lbl, style: tb),
+      printedText(': ', style: tb),
+      pw.Flexible(child: printedText(val, style: ts)),
     ],
   );
 
@@ -6949,24 +6386,24 @@ pw.Widget _pdfHeader(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
           row(
-            'Period',
+            l.periodLabel,
             '${dateFmt.format(filter.startDate)} – ${dateFmt.format(filter.endDate)}',
           ),
           pw.SizedBox(height: 3),
-          row(customerRowLabel, customerLabel),
+          row(customerRowLabel ?? l.customerLabel, customerLabel),
           pw.SizedBox(height: 3),
-          row('User', userLabel),
+          row(l.userLabel, userLabel),
           pw.SizedBox(height: 3),
-          row('Product', productLabel),
+          row(l.productLabel, productLabel),
         ],
       ),
       pw.SizedBox(width: 48),
       pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
-          row('Company', companyName ?? ''),
+          row(l.rptColCompany, companyName ?? ''),
           pw.SizedBox(height: 3),
-          row('Address', companyAddress ?? ''),
+          row(l.setAddress, companyAddress ?? ''),
         ],
       ),
     ],
@@ -6974,6 +6411,7 @@ pw.Widget _pdfHeader(
 }
 
 Future<Uint8List> _buildStockReturnByProductPdf({
+  required AppLocalizations l,
   required List<StockReturnByProductRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -6985,9 +6423,8 @@ Future<Uint8List> _buildStockReturnByProductPdf({
   final fmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfFonts.latin();
-  final bold = await PdfFonts.latin(bold: true);
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
+  final f = await _RptFonts.load();
+  final theme = f.theme;
 
   doc.addPage(
     pw.MultiPage(
@@ -6996,47 +6433,48 @@ Future<Uint8List> _buildStockReturnByProductPdf({
       footer: (ctx) => pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Text(
+          printedText(
             DateFormat('dd/MM/yyyy HH:mm:ss').format(DateTime.now()),
-            style: const pw.TextStyle(fontSize: 8),
+            style: f.style(size: 8),
           ),
-          pw.Text(
-            'Page ${ctx.pageNumber}',
-            style: const pw.TextStyle(fontSize: 8),
+          printedText(
+            l.pageNumberLabel('${ctx.pageNumber}'),
+            style: f.style(size: 8),
           ),
         ],
       ),
       build: (ctx) => [
-        pw.Text(
-          'STOCK RETURNS BY PRODUCT',
-          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+        printedText(
+          l.rptTitleStockReturns,
+          style: f.style(size: 16, bold: true),
         ),
         pw.SizedBox(height: 8),
         _pdfHeader(
+          l,
+          f,
           dateFmt,
           filter,
           companyName,
           companyAddress,
-          'N/A',
+          l.notAvailableShort,
           userLabel,
           productLabel,
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          headers: [
-            'Date',
-            'Code',
-            'Product',
-            'Quantity',
-            'UOM',
-            'Total before tax',
-            'Total',
-          ],
-          headerStyle: pw.TextStyle(
-            fontWeight: pw.FontWeight.bold,
-            fontSize: 9,
-          ),
-          cellStyle: const pw.TextStyle(fontSize: 9),
+          cellBuilder: (i, v, r) =>
+              printedText('$v', style: f.style()),
+          headers: _cells([
+            l.dateLabel,
+            l.fieldCode,
+            l.productLabel,
+            l.fieldQuantity,
+            l.rptColUom,
+            l.totalBeforeTax,
+            l.totalLabel,
+          ], f.style(bold: true)),
+          headerStyle: f.style(bold: true),
+          cellStyle: f.style(),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
           cellAlignments: {
             3: pw.Alignment.centerRight,
@@ -7058,7 +6496,7 @@ Future<Uint8List> _buildStockReturnByProductPdf({
             [
               '',
               '',
-              'Total',
+              l.totalLabel,
               formatReportQuantity(rows.fold(0.0, (s, r) => s + r.quantity)),
               '',
               fmt.format(rows.fold(0.0, (s, r) => s + r.totalBeforeTax)),
@@ -7083,6 +6521,7 @@ Future<Uint8List> _buildStockReturnByProductPdf({
 }
 
 Future<Uint8List> _buildLossAndDamageByProductPdf({
+  required AppLocalizations l,
   required List<LossAndDamageByProductRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -7094,9 +6533,8 @@ Future<Uint8List> _buildLossAndDamageByProductPdf({
   final fmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfFonts.latin();
-  final bold = await PdfFonts.latin(bold: true);
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
+  final f = await _RptFonts.load();
+  final theme = f.theme;
 
   doc.addPage(
     pw.MultiPage(
@@ -7105,47 +6543,48 @@ Future<Uint8List> _buildLossAndDamageByProductPdf({
       footer: (ctx) => pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Text(
+          printedText(
             DateFormat('dd/MM/yyyy HH:mm:ss').format(DateTime.now()),
-            style: const pw.TextStyle(fontSize: 8),
+            style: f.style(size: 8),
           ),
-          pw.Text(
-            'Page ${ctx.pageNumber}',
-            style: const pw.TextStyle(fontSize: 8),
+          printedText(
+            l.pageNumberLabel('${ctx.pageNumber}'),
+            style: f.style(size: 8),
           ),
         ],
       ),
       build: (ctx) => [
-        pw.Text(
-          'LOSS AND DAMAGE BY PRODUCT',
-          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+        printedText(
+          l.rptTitleLossAndDamage,
+          style: f.style(size: 16, bold: true),
         ),
         pw.SizedBox(height: 8),
         _pdfHeader(
+          l,
+          f,
           dateFmt,
           filter,
           companyName,
           companyAddress,
-          'N/A',
+          l.notAvailableShort,
           userLabel,
           productLabel,
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          headers: [
-            'Date',
-            'Code',
-            'Product',
-            'Quantity',
-            'UOM',
-            'Total before tax',
-            'Total',
-          ],
-          headerStyle: pw.TextStyle(
-            fontWeight: pw.FontWeight.bold,
-            fontSize: 9,
-          ),
-          cellStyle: const pw.TextStyle(fontSize: 9),
+          cellBuilder: (i, v, r) =>
+              printedText('$v', style: f.style()),
+          headers: _cells([
+            l.dateLabel,
+            l.fieldCode,
+            l.productLabel,
+            l.fieldQuantity,
+            l.rptColUom,
+            l.totalBeforeTax,
+            l.totalLabel,
+          ], f.style(bold: true)),
+          headerStyle: f.style(bold: true),
+          cellStyle: f.style(),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
           cellAlignments: {
             3: pw.Alignment.centerRight,
@@ -7167,7 +6606,7 @@ Future<Uint8List> _buildLossAndDamageByProductPdf({
             [
               '',
               '',
-              'Total',
+              l.totalLabel,
               formatReportQuantity(rows.fold(0.0, (s, r) => s + r.quantity)),
               '',
               fmt.format(rows.fold(0.0, (s, r) => s + r.totalBeforeTax)),
@@ -7192,6 +6631,7 @@ Future<Uint8List> _buildLossAndDamageByProductPdf({
 }
 
 Future<Uint8List> _buildReorderProductListPdf({
+  required AppLocalizations l,
   required List<ReorderProductListRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -7202,9 +6642,8 @@ Future<Uint8List> _buildReorderProductListPdf({
   final doc = pw.Document();
   final fmt = NumberFormat('#,##0.00');
 
-  final regular = await PdfFonts.latin();
-  final bold = await PdfFonts.latin(bold: true);
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
+  final f = await _RptFonts.load();
+  final theme = f.theme;
 
   // Build grouped table data
   final tableData = <List<String>>[];
@@ -7226,39 +6665,40 @@ Future<Uint8List> _buildReorderProductListPdf({
       footer: (ctx) => pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Text(
+          printedText(
             DateFormat('dd/MM/yyyy HH:mm:ss').format(DateTime.now()),
-            style: const pw.TextStyle(fontSize: 8),
+            style: f.style(size: 8),
           ),
-          pw.Text(
-            'Page ${ctx.pageNumber}',
-            style: const pw.TextStyle(fontSize: 8),
+          printedText(
+            l.pageNumberLabel('${ctx.pageNumber}'),
+            style: f.style(size: 8),
           ),
         ],
       ),
       build: (ctx) => [
-        pw.Text(
-          'REORDER PRODUCT LIST',
-          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+        printedText(
+          l.rptTitleReorderList,
+          style: f.style(size: 16, bold: true),
         ),
         pw.SizedBox(height: 8),
         _pdfHeader(
+          l,
+          f,
           DateFormat('dd/MM/yyyy'),
           filter,
           companyName,
           companyAddress,
           supplierLabel,
-          'N/A',
+          l.notAvailableShort,
           productLabel,
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          headers: ['Product name', 'Order qty.', 'UOM'],
-          headerStyle: pw.TextStyle(
-            fontWeight: pw.FontWeight.bold,
-            fontSize: 9,
-          ),
-          cellStyle: const pw.TextStyle(fontSize: 9),
+          cellBuilder: (i, v, r) =>
+              printedText('$v', style: f.style()),
+          headers: _cells([l.rptColProductName, l.rptColOrderQty, l.rptColUom], f.style(bold: true)),
+          headerStyle: f.style(bold: true),
+          cellStyle: f.style(),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
           cellDecoration: (index, data, rowNum) => supplierRows.contains(rowNum)
               ? const pw.BoxDecoration(color: PdfColors.grey200)
@@ -7279,6 +6719,7 @@ Future<Uint8List> _buildReorderProductListPdf({
 }
 
 Future<Uint8List> _buildLowStockWarningPdf({
+  required AppLocalizations l,
   required List<LowStockWarningRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -7289,9 +6730,8 @@ Future<Uint8List> _buildLowStockWarningPdf({
   final doc = pw.Document();
   final fmt = NumberFormat('#,##0.00');
 
-  final regular = await PdfFonts.latin();
-  final bold = await PdfFonts.latin(bold: true);
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
+  final f = await _RptFonts.load();
+  final theme = f.theme;
 
   // Build grouped table data
   final tableData = <List<String>>[];
@@ -7319,45 +6759,46 @@ Future<Uint8List> _buildLowStockWarningPdf({
       footer: (ctx) => pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Text(
+          printedText(
             DateFormat('dd/MM/yyyy HH:mm:ss').format(DateTime.now()),
-            style: const pw.TextStyle(fontSize: 8),
+            style: f.style(size: 8),
           ),
-          pw.Text(
-            'Page ${ctx.pageNumber}',
-            style: const pw.TextStyle(fontSize: 8),
+          printedText(
+            l.pageNumberLabel('${ctx.pageNumber}'),
+            style: f.style(size: 8),
           ),
         ],
       ),
       build: (ctx) => [
-        pw.Text(
-          'LOW STOCK WARNING',
-          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+        printedText(
+          l.rptTitleLowStock,
+          style: f.style(size: 16, bold: true),
         ),
         pw.SizedBox(height: 8),
         _pdfHeader(
+          l,
+          f,
           DateFormat('dd/MM/yyyy'),
           filter,
           companyName,
           companyAddress,
           supplierLabel,
-          'N/A',
+          l.notAvailableShort,
           productLabel,
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          headers: [
-            'Product name',
-            'Current stock',
-            'Warning qty.',
-            'Order qty.',
-            'UOM',
-          ],
-          headerStyle: pw.TextStyle(
-            fontWeight: pw.FontWeight.bold,
-            fontSize: 9,
-          ),
-          cellStyle: const pw.TextStyle(fontSize: 9),
+          cellBuilder: (i, v, r) =>
+              printedText('$v', style: f.style()),
+          headers: _cells([
+            l.rptColProductName,
+            l.rptColCurrentStock,
+            l.rptColWarningQty,
+            l.rptColOrderQty,
+            l.rptColUom,
+          ], f.style(bold: true)),
+          headerStyle: f.style(bold: true),
+          cellStyle: f.style(),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
           cellDecoration: (index, data, rowNum) => supplierRows.contains(rowNum)
               ? const pw.BoxDecoration(color: PdfColors.grey200)
@@ -7384,6 +6825,7 @@ Future<Uint8List> _buildLowStockWarningPdf({
 }
 
 Future<Uint8List> _buildTransactionHistoryPdf({
+  required AppLocalizations l,
   required List<TransactionHistoryRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -7394,9 +6836,8 @@ Future<Uint8List> _buildTransactionHistoryPdf({
   final fmt = NumberFormat('#,##0.00');
   final dateFmt = DateFormat('dd/MM/yyyy');
 
-  final regular = await PdfFonts.latin();
-  final bold = await PdfFonts.latin(bold: true);
-  final theme = pw.ThemeData.withFont(base: regular, bold: bold, fontFallback: [await PdfFonts.arabic()]);
+  final f = await _RptFonts.load();
+  final theme = f.theme;
 
   doc.addPage(
     pw.MultiPage(
@@ -7405,52 +6846,46 @@ Future<Uint8List> _buildTransactionHistoryPdf({
       footer: (ctx) => pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Text(
+          printedText(
             DateFormat('dd/MM/yyyy HH:mm:ss').format(DateTime.now()),
-            style: const pw.TextStyle(fontSize: 8),
+            style: f.style(size: 8),
           ),
-          pw.Text(
-            'Page ${ctx.pageNumber}',
-            style: const pw.TextStyle(fontSize: 8),
+          printedText(
+            l.pageNumberLabel('${ctx.pageNumber}'),
+            style: f.style(size: 8),
           ),
         ],
       ),
       build: (ctx) => [
-        pw.Text(
-          'TRANSACTION HISTORY',
-          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+        printedText(
+          l.rptTitleTransactionHistory,
+          style: f.style(size: 16, bold: true),
         ),
         pw.SizedBox(height: 4),
-        pw.Text(
-          'Business partner: $partnerLabel',
-          style: const pw.TextStyle(fontSize: 10),
-        ),
+        _hdrPair(f, l.rptBusinessPartner, partnerLabel, size: 10),
         pw.SizedBox(height: 4),
-        pw.Text(
-          'Period: ${dateFmt.format(filter.startDate)} – ${dateFmt.format(filter.endDate)}',
-          style: const pw.TextStyle(fontSize: 10),
-        ),
+        _hdrPair(f, l.periodLabel,
+              '${dateFmt.format(filter.startDate)} – ${dateFmt.format(filter.endDate)}', size: 10),
         if (companyName != null) ...[
           pw.SizedBox(height: 4),
-          pw.Text(companyName, style: const pw.TextStyle(fontSize: 10)),
+          printedText(companyName, style: f.style(size: 10)),
           if (companyAddress != null)
-            pw.Text(companyAddress, style: const pw.TextStyle(fontSize: 10)),
+            printedText(companyAddress, style: f.style(size: 10)),
         ],
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          headers: [
-            'Date',
-            'Transaction type',
-            'Ref. number',
-            'Credit',
-            'Debit',
-            'Balance',
-          ],
-          headerStyle: pw.TextStyle(
-            fontWeight: pw.FontWeight.bold,
-            fontSize: 9,
-          ),
-          cellStyle: const pw.TextStyle(fontSize: 9),
+          cellBuilder: (i, v, r) =>
+              printedText('$v', style: f.style()),
+          headers: _cells([
+            l.dateLabel,
+            l.rptColTransactionType,
+            l.rptColRefNumber,
+            l.rptColCredit,
+            l.rptColDebit,
+            l.balanceLabel,
+          ], f.style(bold: true)),
+          headerStyle: f.style(bold: true),
+          cellStyle: f.style(),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
           cellAlignments: {
             3: pw.Alignment.centerRight,

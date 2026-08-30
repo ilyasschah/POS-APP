@@ -245,6 +245,27 @@ List<SelectedModifier> selectedModifiersFromRows(
         ),
     ];
 
+/// The same, for a BANKED line's snapshot rows.
+///
+/// A twin rather than one generic function because Drift generates two
+/// unrelated data classes with identical fields and Dart cannot type over that
+/// shape. Naming them after their two tables is also honest about what they
+/// are: working state and the permanent record, which is exactly why there are
+/// two tables (see `DocumentItemModifier`'s remarks).
+List<SelectedModifier> selectedModifiersFromDocumentRows(
+  List<DocumentItemModifiersTableData> rows,
+) =>
+    [
+      for (final r in rows)
+        SelectedModifier(
+          modifierOptionId: r.modifierOptionId,
+          groupName: r.groupName,
+          name: r.name,
+          additionalPrice: r.additionalPrice,
+          rank: r.rank,
+        ),
+    ];
+
 /// Composes what `AppDatabase.modifierGroupsForProductDirect` returns into the
 /// models the customise sheet takes.
 ///

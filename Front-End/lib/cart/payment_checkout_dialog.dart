@@ -489,11 +489,32 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
       // cartItemId → document_item localId, so discount_lines link to the
       // permanent document record (the source of truth for receipts/reports).
       final docItemLocalIds = <String, String>{};
+      // The choices, snapshotted onto the banked line. Same rows as the parked
+      // order carried, re-keyed to the DOCUMENT line — the open order and its
+      // lines are deleted the moment this sale is banked, so nothing survives
+      // to a reprint unless it is copied here.
+      final docItemModifiers = <DocumentItemModifiersTableCompanion>[];
       final docItems = _cartItems.map((item) {
         // Same id as this line's pos_order_item, so BatchSync can stamp the
         // returned DocumentItem serverId onto this exact row.
         final docItemLocalId = lineLocalIds[item.cartItemId]!;
         docItemLocalIds[item.cartItemId] = docItemLocalId;
+        for (var mi = 0; mi < item.selectedModifiers.length; mi++) {
+          final m = item.selectedModifiers[mi];
+          docItemModifiers.add(
+            DocumentItemModifiersTableCompanion(
+              localId: Value(const Uuid().v4()),
+              documentItemLocalId: Value(docItemLocalId),
+              // Nullable and unenforced: the snapshot is the record, the id
+              // only exists so reports can group by option.
+              modifierOptionId: Value(m.modifierOptionId),
+              groupName: Value(m.groupName),
+              name: Value(m.name),
+              additionalPrice: Value(m.additionalPrice),
+              rank: Value(mi),
+            ),
+          );
+        }
         final lineTotal =
             (item.price - item.discount - item.promotionalDiscount) *
             item.quantity;
@@ -590,6 +611,7 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
           dateCreated:   Value(now),
           sessionLocalId: Value(sessionLocalId),
         ),
+        itemModifiers: docItemModifiers,
       );
 
       // ── Phase 2: persist the normalized discount breakdown ────────────────
@@ -705,7 +727,7 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
         paymentTypeOpensDrawer: selectedPayType?.openCashDrawer == true,
         anyPaymentTypeOpensDrawer: payTypes.any((t) => t.openCashDrawer),
       )) {
-        unawaited(openDrawersAfterSale(appSettings).then((failures) {
+        unawaited(openEnabledDrawers(appSettings).then((failures) {
           if (failures.isEmpty || !ctx.mounted) return;
           showAppSnackbar(
             ctx,
@@ -756,7 +778,21 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
             pointsBalance: _pointsBalance,
             pointValue: _pointValue,
           )
-          .catchError((_) {});
+          // 🚨 Reported, not swallowed. This was `.catchError((_) {})`, which is
+          // the exact shape of the bug the first field test found: the sale
+          // banks, the drawer opens, and no paper comes out — with nothing said.
+          // A network printer that is switched off or on another subnet fails
+          // here every time, so silence would make "printing does not work on
+          // the tablets" permanent and unreportable.
+          //
+          // A snackbar, not a dialog: the sale is already banked and the
+          // cashier must not be blocked. It also carries the error tone, since
+          // `showAppSnackbar` is where that hook lives.
+          .catchError((Object e) {
+            if (ctx.mounted) {
+              showAppSnackbar(ctx, ref, '$e', isError: true);
+            }
+          });
 
       // Auto-fire the station kitchen tickets on sale completion, if THIS
       // terminal opted in (device-local toggle) and any printer is a kitchen
