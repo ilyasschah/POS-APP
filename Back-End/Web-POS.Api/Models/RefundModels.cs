@@ -24,6 +24,24 @@ namespace Api.Models
         /// The manager (accessLevel 0) whose PIN authorised a blind return.
         /// Logged for audit. Required by the client when IsBlind is true.
         public int? ApprovedByUserId { get; set; }
+
+        /// <summary>
+        /// The POS session the money came OUT of — the client's session localId,
+        /// same key a checkout sends.
+        ///
+        /// 🚨 A refund had no session field at all, so every refund Document and
+        /// its negative Payment landed with `SessionId = NULL`. The closing
+        /// count reads payments `WHERE SessionId = @id`, so the refunded cash
+        /// was never deducted: a session that refunded 44.60 still expected the
+        /// full takings, and the drawer came up 44.60 "short" at close through
+        /// nobody's fault. The client had always stamped its LOCAL rows — it
+        /// simply never told us. Reported 2026-08-29.
+        ///
+        /// Null is tolerated (a pre-session client, or a refund taken with the
+        /// session guard off): the refund is banked unattached rather than
+        /// refused, exactly as <c>PosSessionService.AttachSaleAsync</c> does.
+        /// </summary>
+        public string? SessionLocalId { get; set; }
     }
 
     public class RefundItemRequest

@@ -77,9 +77,20 @@ namespace Api.Services
             {
                 throw new KeyNotFoundException($"User with ID {id} not found.");
             }
+            // 547 is SQL Server's foreign-key violation. Every remaining
+            // referencer of User is business history — sales, payments,
+            // bookings, voids, starting cash — because the one thing that is
+            // NOT history, the user's device PINs, is removed with them by
+            // UserRepository.DeleteAsync. Before that, a user whose only tie
+            // was a till PIN was refused with this same sentence, which sent
+            // people hunting for a document that did not exist.
             catch (DbUpdateException ex) when (ex.InnerException is SqlException sqlEx && sqlEx.Number == 547)
             {
-                throw new InvalidOperationException("This user has a document related to their name, so you cannot delete it.");
+                throw new InvalidOperationException(
+                    "This user is named on sales history — orders, payments, bookings "
+                  + "or voids — which cannot be reassigned, so the account cannot be "
+                  + "deleted. Disable it instead: they keep their history and can no "
+                  + "longer sign in.");
             }
         }
     }

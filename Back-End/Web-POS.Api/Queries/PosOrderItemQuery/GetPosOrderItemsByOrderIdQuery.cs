@@ -4,6 +4,7 @@ using Api.Repository;
 using Api.Helpers;
 using Api.Models;
 using Api.DataBase;
+using Api.Domain;
 using Microsoft.EntityFrameworkCore;
 
 namespace Api.Queries.PosOrderItemQuery
@@ -48,8 +49,27 @@ namespace Api.Queries.PosOrderItemQuery
                     .Where(t => itemIds.Contains(t.PosOrderItemId) && t.CompanyId == request.CompanyId)
                     .ToListAsync(cancellationToken);
 
+                // The chosen options. One query for the whole order, then
+                // grouped in memory — a per-line query here would be N+1 on a
+                // list the floor plan reopens constantly.
+                var modifiers = await _db.Set<PosOrderItemModifier>()
+                    .Where(m => itemIds.Contains(m.PosOrderItemId) && m.CompanyId == request.CompanyId)
+                    .OrderBy(m => m.Rank)
+                    .ToListAsync(cancellationToken);
+
                 foreach (var dto in dtos)
                 {
+                    dto.Modifiers = modifiers
+                        .Where(m => m.PosOrderItemId == dto.Id)
+                        .Select(m => new ModifierSnapshotDto
+                        {
+                            ModifierOptionId = m.ModifierOptionId,
+                            GroupName = m.GroupName,
+                            Name = m.Name,
+                            AdditionalPrice = m.AdditionalPrice,
+                            Rank = m.Rank
+                        }).ToList();
+
                     dto.Taxes = taxes
                         .Where(t => t.PosOrderItemId == dto.Id)
                         .Select(t => new PosOrderItemTaxDto

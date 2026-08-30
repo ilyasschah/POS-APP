@@ -51,8 +51,10 @@
                         <label class="form-label">Role</label>
                         <!-- Converted numeric input to the intuitive Role dropdown -->
                         <select class="form-select" asp-for="Input.AccessLevel">
-                            <option value="0">Admin</option>
-                            <option value="1">Cashier</option>
+                            @foreach (var (value, label) in Api.Domain.AccessLevels.Options)
+                            {
+                                <option value="@value">@label</option>
+                            }
                         </select>
                     </div>
                     <div class="col-12">

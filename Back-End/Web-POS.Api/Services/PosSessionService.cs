@@ -29,6 +29,72 @@ public class PosSessionService(
     /// </summary>
     public const string CashPaymentTypeIdsSetting = "PosSession.CashPaymentTypeIds";
 
+    // ── Registers ─────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Every register in the company, each with the session it is running.
+    ///
+    /// 🚨 A REGISTER is not a terminal. It is Odoo's `pos.config`: one named
+    /// till, one drawer, one session at a time — and any number of terminals may
+    /// be working it at once. The rows live in `PosDevice` because that table
+    /// was originally keyed by the terminal's own GUID, which is precisely why
+    /// two devices could never share a session: each one quietly created a
+    /// register of its own on first open.
+    /// </summary>
+    public async Task<List<PosRegisterDto>> GetRegistersAsync(
+        int companyId, CancellationToken ct = default)
+    {
+        if (companyId <= 0) throw new InvalidOperationException("Company ID is required.");
+
+        var registers = await repo.GetRegistersAsync(companyId, ct);
+        var live = await repo.GetLiveSessionsAsync(companyId, ct);
+        var liveByDevice = live
+            .Where(s => s.PosDeviceId is not null)
+            .GroupBy(s => s.PosDeviceId!.Value)
+            .ToDictionary(g => g.Key, g => g.OrderByDescending(s => s.OpenedAt).First());
+
+        return registers.Select(d =>
+        {
+            liveByDevice.TryGetValue(d.Id, out var session);
+            return new PosRegisterDto
+            {
+                Id = d.Id,
+                Uid = d.DeviceUid,
+                Name = d.Name,
+                LastSeenAt = d.LastSeenAt,
+                LiveSessionId = session?.Id,
+                LiveSessionStatus = session?.Status,
+            };
+        }).ToList();
+    }
+
+    /// <summary>
+    /// Creates a register, or renames an existing one. Idempotent on
+    /// <paramref name="uid"/> — the same contract as the open path, because the
+    /// picker and an offline open can both reach the same register first.
+    /// </summary>
+    public async Task<PosRegisterDto> UpsertRegisterAsync(
+        int companyId, string uid, string? name, CancellationToken ct = default)
+    {
+        if (companyId <= 0) throw new InvalidOperationException("Company ID is required.");
+        if (string.IsNullOrWhiteSpace(uid))
+            throw new InvalidOperationException("A register id is required.");
+
+        var device = await repo.GetOrCreateDeviceAsync(companyId, uid, name, ct);
+        await repo.SaveChangesAsync(ct);
+
+        var live = await repo.GetLiveForDeviceAsync(device.Id, ct);
+        return new PosRegisterDto
+        {
+            Id = device.Id,
+            Uid = device.DeviceUid,
+            Name = device.Name,
+            LastSeenAt = device.LastSeenAt,
+            LiveSessionId = live?.Id,
+            LiveSessionStatus = live?.Status,
+        };
+    }
+
     // ── Open ──────────────────────────────────────────────────────────────────
 
     /// <summary>
@@ -73,11 +139,15 @@ public class PosSessionService(
 
         // One live session per register. Checked here AND enforced by the
         // partial unique index in the database, because two requests can race.
+        // One live session per REGISTER — unchanged, and now the rule it always
+        // meant to be. A second terminal working the same till must JOIN this
+        // session, never open a parallel one: two sessions on one drawer means
+        // two Z-reports for one set of cash.
         var live = await repo.GetLiveForDeviceAsync(device.Id, ct);
         if (live is not null)
         {
             throw new InvalidOperationException(
-                $"This device already has an open session (#{live.Id}, " +
+                $"This register already has an open session (#{live.Id}, " +
                 $"{PosSessionStatus.Name(live.Status)}). Continue selling in it, or close it first.");
         }
 

@@ -293,6 +293,37 @@ namespace Api.Services
                                 _db.Add(docTax);
                             }
                         }
+
+                        // The chosen modifiers, snapshotted onto the banked line.
+                        //
+                        // 🚨 Taken from the PAYLOAD, not looked up from the
+                        // catalogue by id: these are the name and price as the
+                        // cashier saw them, and an offline till may have rung the
+                        // sale up against a catalogue this server has not been
+                        // told about yet. The surcharge is already inside the
+                        // line price above — these rows are the breakdown a
+                        // reprint reads and the handle reports group by, never an
+                        // amount to add.
+                        if (frontendItem.Modifiers != null && frontendItem.Modifiers.Any())
+                        {
+                            var rank = 0;
+                            foreach (var mod in frontendItem.Modifiers)
+                            {
+                                if (string.IsNullOrWhiteSpace(mod.Name)) continue;
+                                _db.Add(DocumentItemModifier.Create(
+                                    companyId: companyId,
+                                    documentItemId: docItem.Id,
+                                    modifierOptionId: mod.ModifierOptionId,
+                                    name: mod.Name,
+                                    additionalPrice: mod.AdditionalPrice,
+                                    groupName: mod.GroupName,
+                                    // Renumbered from the payload's order rather
+                                    // than trusting Rank: a client that sends
+                                    // them all as 0 still prints in the order the
+                                    // cashier was asked.
+                                    rank: rank++));
+                            }
+                        }
                     }
 
                     await _db.SaveChangesAsync();
