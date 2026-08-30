@@ -10,6 +10,7 @@ import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/document/document_type_constants.dart';
+import 'package:pos_app/modifier/modifier_models.dart';
 import 'package:pos_app/session/session_provider.dart';
 import 'package:pos_app/settings/device_identity.dart';
 import 'package:pos_app/uom/unit_of_measure.dart';
@@ -28,12 +29,19 @@ class DocumentItemDto {
   final double price;
   final double total;
 
+  /// What was chosen on this line when it was SOLD, snapshotted onto the
+  /// banked document. Present only for a receipt found in the local store —
+  /// the API's document read carries no modifiers, so a refund verified
+  /// against the server alone refunds the right money with no breakdown.
+  final List<SelectedModifier> modifiers;
+
   const DocumentItemDto({
     required this.productId,
     required this.productName,
     required this.quantity,
     required this.price,
     required this.total,
+    this.modifiers = const [],
   });
 
   factory DocumentItemDto.fromJson(Map<String, dynamic> j) => DocumentItemDto(
@@ -150,6 +158,7 @@ class RefundService {
     final items = await (db.select(db.documentItemsTable)
           ..where((t) => t.documentId.equals(doc.localId)))
         .get();
+    final modifiersByLine = await db.documentItemModifiersByLine(doc.localId);
 
     final ids = items.map((i) => i.productId).toSet().toList();
     final products = ids.isEmpty
@@ -176,6 +185,8 @@ class RefundService {
                 // PriceBeforeTaxAfterDiscount used by the verified refund.
                 price: i.quantity != 0 ? i.total / i.quantity : i.unitPrice,
                 total: i.total,
+                modifiers: selectedModifiersFromDocumentRows(
+                    modifiersByLine[i.localId] ?? const []),
               ))
           .toList(),
     );
@@ -251,7 +262,17 @@ class RefundService {
       deviceName: deviceName,
       docTypeCode: DocumentTypes.refundCode,
     );
-    final data = {...payload.toJson(), 'clientDocumentNumber': refundNumber};
+    // 🚨 The session travels with the refund. It was already stamped on the
+    // LOCAL rows (`_saveRefundLocally`) and never sent, so the server booked
+    // every refund with `SessionId = NULL` — and the closing count, which reads
+    // payments by session, never deducted the money that went back out. The
+    // drawer then came up short by exactly the refunded amount.
+    final data = {
+      ...payload.toJson(),
+      'clientDocumentNumber': refundNumber,
+      if (_ref.read(activeSessionProvider).value?.localId != null)
+        'sessionLocalId': _ref.read(activeSessionProvider).value!.localId,
+    };
 
     final dio = createDio();
     final refundLocalId = const Uuid().v4();
@@ -325,16 +346,52 @@ class RefundService {
     // there's no source, so each item carries its own 'price' in the payload.
     final priceById = {for (final i in source?.items ?? const []) i.productId: i.price};
 
+    // What the original line was sold WITH, so the refund reads like the sale.
+    //
+    // 🚨 A refund is chosen by PRODUCT, not by line — so a product that
+    // occupied two lines with DIFFERENT choices cannot be resolved here: there
+    // is no way to know which of them came back. Those refund without a
+    // breakdown rather than guessing, which is why the map is keyed by
+    // signature and dropped when a product has more than one.
+    final modifiersByProduct = <int, List<SelectedModifier>>{};
+    final ambiguousProducts = <int>{};
+    for (final srcItem in source?.items ?? const <DocumentItemDto>[]) {
+      final existing = modifiersByProduct[srcItem.productId];
+      if (existing == null) {
+        if (!ambiguousProducts.contains(srcItem.productId)) {
+          modifiersByProduct[srcItem.productId] = srcItem.modifiers;
+        }
+      } else if (modifierSelectionKey(existing) !=
+          modifierSelectionKey(srcItem.modifiers)) {
+        modifiersByProduct.remove(srcItem.productId);
+        ambiguousProducts.add(srcItem.productId);
+      }
+    }
+
     double refundTotal = 0;
     final items = <DocumentItemsTableCompanion>[];
+    final itemModifiers = <DocumentItemModifiersTableCompanion>[];
     for (final raw in payload.items) {
       final productId = raw['productId'] as int;
       final qty = (raw['quantity'] as num).toDouble();
       final price = (raw['price'] as num?)?.toDouble() ?? priceById[productId] ?? 0;
       final lineTotal = price * qty;
       refundTotal += lineTotal;
+      final lineLocalId = const Uuid().v4();
+      final mods = modifiersByProduct[productId] ?? const <SelectedModifier>[];
+      for (var mi = 0; mi < mods.length; mi++) {
+        itemModifiers.add(DocumentItemModifiersTableCompanion(
+          localId: Value(const Uuid().v4()),
+          documentItemLocalId: Value(lineLocalId),
+          modifierOptionId: Value(mods[mi].modifierOptionId),
+          groupName: Value(mods[mi].groupName),
+          name: Value(mods[mi].name),
+          additionalPrice: Value(mods[mi].additionalPrice),
+          rank: Value(mi),
+        ));
+      }
       items.add(DocumentItemsTableCompanion(
-        localId:    Value(const Uuid().v4()),
+        localId:    Value(lineLocalId),
         documentId: Value(localId),
         productId:  Value(productId),
         quantity:   Value(-qty),
@@ -382,6 +439,7 @@ class RefundService {
         sessionLocalId: Value(sessionLocalId),
         syncStatus:    Value(status),
       ),
+      itemModifiers: itemModifiers,
     );
   }
 

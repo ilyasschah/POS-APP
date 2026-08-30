@@ -13,6 +13,7 @@ import 'package:pos_app/uom/unit_of_measure.dart';
 import 'package:pos_app/document/document_type_constants.dart';
 import 'package:pos_app/product/product_group_reconcile.dart';
 import 'package:pos_app/session/pos_session_status.dart';
+import 'package:pos_app/session/register_identity.dart';
 import 'package:pos_app/settings/device_identity.dart';
 import 'package:pos_app/sync/image_sync_helper.dart';
 import 'package:pos_app/sync/sync_status.dart';
@@ -1449,12 +1450,20 @@ class SyncManager {
     }
   }
 
-  /// Pulls every register's sessions so the session LIST is complete.
+  /// Pulls every register's sessions — the list, AND the live session of the
+  /// register this terminal is working.
   ///
-  /// 🚨 A device only ever creates its own sessions, so without this the list
-  /// would show one register's history and look like data loss on a two-till
-  /// shop. Read-only: rows from other devices arrive with a `srvs_<id>` local
-  /// id and are never pushed back — this terminal is not their owner.
+  /// 🚨 This is now load-bearing for SHARED sessions, not just for the history
+  /// list. A terminal only ever creates its own sessions, so device B learns
+  /// about the session device A opened on their shared register only from here.
+  /// The row carries the register's uid (`posDeviceUid`), which is what
+  /// `activeSessionProvider` matches on — so once it lands, B is selling into
+  /// A's session rather than looking at a history entry.
+  ///
+  /// A session opened elsewhere keeps its OPENER's `localId`, so every order B
+  /// rings into it points at the same identity A's orders do and the server
+  /// resolves both through `GetByLocalIdAsync`. Only a session with no localId
+  /// at all (created server-side) falls back to `srvs_<id>`.
   ///
   /// A row this device owns (its localId is already here) is only refreshed
   /// while it is `synced`. A local session with unpushed changes belongs to the
@@ -1483,6 +1492,12 @@ class SyncManager {
 
       DateTime? date(String? v) => v == null ? null : DateTime.tryParse(v);
 
+      final rawRegisterUid = (raw['posDeviceUid'] as String?)?.trim();
+      final pulledRegisterUid =
+          (rawRegisterUid == null || rawRegisterUid.isEmpty)
+              ? null
+              : rawRegisterUid;
+
       await db.into(db.shiftsTable).insertOnConflictUpdate(
             ShiftsTableCompanion.insert(
               localId: key,
@@ -1492,7 +1507,15 @@ class SyncManager {
               lastModified:
                   date(raw['lastModified'] as String?) ?? DateTime.now().toUtc(),
               serverId: Value(serverId),
-              posDeviceUid: Value(existing?.posDeviceUid),
+              // 🚨 The REGISTER's uid, taken from the server — NOT
+              // `existing?.posDeviceUid`, which was null for every session this
+              // terminal had not opened itself. That null is exactly why a
+              // second device could never join: `activeSessionProvider` matches
+              // on this column, so device A's live session arrived unlabelled
+              // and device B saw a history row instead of its own open till.
+              // Falls back to what is already stored so a row this device owns
+              // is never blanked by a server that omitted the field.
+              posDeviceUid: Value(pulledRegisterUid ?? existing?.posDeviceUid),
               posDeviceName: Value(raw['posDeviceName'] as String?),
               startingCash:
                   Value(((raw['openingCash'] as num?) ?? 0).toDouble()),
@@ -1545,7 +1568,10 @@ class SyncManager {
           data: {
             'localId': session.localId,
             'deviceUid': session.posDeviceUid,
-            'deviceName': await getDeviceName(),
+            // The REGISTER's name, never `getDeviceName()`. That one is this
+            // terminal's numbering prefix, and sending it would rename a shared
+            // till to "POS2" the moment the tablet pushed a close.
+            'deviceName': await getRegisterName(),
             'userId': session.userId,
             'openingCash': session.startingCash,
             'openedAt': session.openedAt.toIso8601String(),
@@ -1627,7 +1653,12 @@ class SyncManager {
     final orders = <Map<String, dynamic>>[];
     for (final o in pending) {
       final discounts = await db.getDiscountLinesForOrder(o.order.localId);
-      orders.add(_orderToBatchJson(o, discounts));
+      // The choices, keyed by the LINE's localId. A sale rung up offline
+      // reaches the server only down this path, so without them the server's
+      // copy of the sale — the one every report and every other device reads —
+      // says a plain burger was sold at the price of one with Extra Cheese.
+      final modifiers = await db.orderItemModifiersByLine(o.order.localId);
+      orders.add(_orderToBatchJson(o, discounts, modifiers));
     }
     final payload = {'orders': orders};
 
@@ -1756,6 +1787,7 @@ class SyncManager {
   Map<String, dynamic> _orderToBatchJson(
     PosOrderWithItems o,
     List<DiscountLinesTableData> discounts,
+    Map<String, List<PosOrderItemModifiersTableData>> modifiersByLine,
   ) {
     // Resolve item-level discount lines to their productId via the order items
     // (the local line stores productId only as sourceRefId for manual_item, not
@@ -1811,6 +1843,24 @@ class SyncManager {
           'bundle': null,
           'appliedTaxIds': appliedTaxIds,
           'taxes': taxes,
+          // Snapshots, not ids: the server stores exactly what the cashier saw,
+          // never today's catalogue row. Both casings, like every other key
+          // here — the API binds PascalCase and the local readers use camel.
+          'modifiers': [
+            for (final m in modifiersByLine[item.localId] ?? const [])
+              {
+                'modifierOptionId': m.modifierOptionId,
+                'ModifierOptionId': m.modifierOptionId,
+                'groupName': m.groupName,
+                'GroupName': m.groupName,
+                'name': m.name,
+                'Name': m.name,
+                'additionalPrice': m.additionalPrice,
+                'AdditionalPrice': m.additionalPrice,
+                'rank': m.rank,
+                'Rank': m.rank,
+              },
+          ],
         };
       }).toList(),
       'discounts': discounts.map((d) => {
@@ -1974,6 +2024,12 @@ class SyncManager {
         }
 
         if (o.items.isNotEmpty) {
+          // The choices this order was parked with. Sent so ANOTHER till that
+          // opens it prints the right kitchen ticket — the price alone is not
+          // enough, and a price that is right while the ticket is wrong is the
+          // failure mode nothing looks broken in.
+          final modifiersByLine =
+              await db.orderItemModifiersByLine(o.order.localId);
           final itemsJson = o.items.map((item) {
             final List<Map<String, dynamic>> taxEntries = item.taxesJson != null
                 ? (jsonDecode(item.taxesJson!) as List)
@@ -2010,6 +2066,21 @@ class SyncManager {
               'Bundle': null,
               'appliedTaxIds': appliedTaxIds,
               'AppliedTaxIds': appliedTaxIds,
+              'modifiers': [
+                for (final m in modifiersByLine[item.localId] ?? const [])
+                  {
+                    'modifierOptionId': m.modifierOptionId,
+                    'ModifierOptionId': m.modifierOptionId,
+                    'groupName': m.groupName,
+                    'GroupName': m.groupName,
+                    'name': m.name,
+                    'Name': m.name,
+                    'additionalPrice': m.additionalPrice,
+                    'AdditionalPrice': m.additionalPrice,
+                    'rank': m.rank,
+                    'Rank': m.rank,
+                  },
+              ],
             };
           }).toList();
 
@@ -4429,6 +4500,11 @@ class SyncManager {
             'approvedByUserId': doc.approvedByUserId,
           // Kept verbatim by the server so the offline number never changes.
           'clientDocumentNumber': doc.number,
+          // The session the refund came out of, read off the row the till
+          // already stamped. The offline path needs it as much as the online
+          // one — arguably more: a refund replayed hours later would otherwise
+          // be banked against no session at all.
+          if (doc.sessionLocalId != null) 'sessionLocalId': doc.sessionLocalId,
         };
 
         await dio.post<dynamic>(
@@ -4987,6 +5063,18 @@ class SyncManager {
             (d['documentTypeId'] as num?)?.toInt() ?? DocumentTypes.sales;
         final warehouseId = (d['warehouseId'] as num?)?.toInt() ?? 0;
         final userId = (d['userId'] as num?)?.toInt() ?? 0;
+        // 🚨 The session the SERVER says this document was banked in — the same
+        // translation its payments have always had, and the document never did.
+        //
+        // Without it a pulled document arrived with no session and had to be
+        // guessed back onto one locally by `attachOrphanSalesToSession`
+        // (company + time window + number prefix). Any sale that guess missed
+        // appeared in a session's PAYMENTS tab and not in its DOCUMENTS tab,
+        // because the payment came with the answer and the document did not.
+        // Null is legitimate — a sale banked with no session, or one belonging
+        // to a register this device has never pulled.
+        final docSessionLocalId =
+            sessionLocalIdByServerId[(d['sessionId'] as num?)?.toInt()];
         final rawItems =
             ((d['items'] as List?) ?? const []).cast<Map<String, dynamic>>();
         final rawPayments =
@@ -5072,6 +5160,19 @@ class SyncManager {
               ),
             );
           }
+          // Repairs a document pulled BEFORE this device knew the session —
+          // which is every one pulled before its `pullSessions` ran, and every
+          // one pulled by a build that did not carry the id at all. Only ever
+          // FILLS the link: a local stamp is never blanked by a server that has
+          // not caught up.
+          if (docSessionLocalId != null &&
+              existing.sessionLocalId != docSessionLocalId) {
+            await (db.update(db.documentsTable)
+                  ..where((t) => t.localId.equals(existing.localId)))
+                .write(DocumentsTableCompanion(
+              sessionLocalId: Value(docSessionLocalId),
+            ));
+          }
           if (rawItems.isNotEmpty &&
               !docsWithItems.contains(existing.localId)) {
             await db.batch((b) =>
@@ -5137,6 +5238,11 @@ class SyncManager {
               serverId:     Value(serverId),
               syncStatus:   const Value('synced'),
               lastModified: Value(date),
+              // Fill-only, same rule as Case 1 above: `absent` leaves whatever
+              // checkout already stamped on this local row untouched.
+              sessionLocalId: docSessionLocalId == null
+                  ? const Value.absent()
+                  : Value(docSessionLocalId),
             ));
             if (rawItems.isNotEmpty &&
                 !docsWithItems.contains(byNumber.localId)) {
@@ -5172,6 +5278,7 @@ class SyncManager {
             referenceDocumentNumber: Value(refOf),
             paidStatus: Value(paid),
             date: Value(date),
+            sessionLocalId: Value(docSessionLocalId),
             syncStatus: const Value('synced'),
             lastModified: Value(date),
           ),

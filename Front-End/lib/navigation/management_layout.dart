@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/core/ilyass_screen.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/security/security_guard.dart';
+import 'package:pos_app/security/security_rules_screen.dart';
 import 'package:pos_app/auth/users_screen.dart';
 import 'package:pos_app/cart/payment_types_screen.dart';
 import 'package:pos_app/company/my_company_screen.dart';
@@ -38,21 +40,25 @@ class _ManagementLayoutState extends ConsumerState<ManagementLayout> {
   /// Keep this in sync with that list — a missing/renamed key fails secure
   /// (cashier denied) because SecurityGuard treats unknown keys as admin-only.
   static const _tabKeys = <String>[
-    'Management.Dashboard',     // 0  Dashboard
-    'Management.Documents',     // 1  Documents
-    'Management.Products',      // 2  Products
+    'Management.Dashboard', // 0  Dashboard
+    'Management.Documents', // 1  Documents
+    'Management.Products', // 2  Products
     'Management.ProductGroups', // 3  Product Groups
-    'Management.Stock',         // 4  Stock
-    'Management.Reporting',     // 5  Reporting
-    'Management.Customers',     // 6  Customers & suppliers
-    'Management.Promotions',    // 7  Promotions
-    'Management.Security',      // 8  Users & security
-    'Management.PaymentTypes',  // 9  Payment types
-    'Management.TaxRates',      // 10 Tax rates
-    'Management.Company',       // 11 My company
-    'Management.VoidReasons',   // 12 Void reasons
-    'Management.LoyaltyCards',  // 13 Loyalty Cards
-    'Management.ModifierGroups',// 14 Modifier groups
+    'Management.Stock', // 4  Stock
+    'Management.Reporting', // 5  Reporting
+    'Management.Customers', // 6  Customers & suppliers
+    'Management.Promotions', // 7  Promotions
+    'Management.Security', // 8  Users
+    // 9 is the same key on purpose: Users and Security rules were one tabbed
+    // screen and are now two. Splitting the SCREEN is not splitting the
+    // permission — anyone who may manage staff may set what they can do.
+    'Management.Security', // 9  Security rules
+    'Management.PaymentTypes', // 10 Payment types
+    'Management.TaxRates', // 11 Tax rates
+    'Management.Company', // 12 My company
+    'Management.VoidReasons', // 13 Void reasons
+    'Management.LoyaltyCards', // 14 Loyalty Cards
+    'Management.ModifierGroups', // 15 Modifier groups
   ];
 
   @override
@@ -96,6 +102,7 @@ class _ManagementLayoutState extends ConsumerState<ManagementLayout> {
       CustomersScreen(onMenuPressed: screenMenu),
       PromotionsListScreen(onMenuPressed: screenMenu),
       UsersScreen(onMenuPressed: screenMenu),
+      SecurityRulesScreen(onMenuPressed: screenMenu),
       PaymentTypesScreen(onMenuPressed: screenMenu),
       TaxRatesScreen(onMenuPressed: screenMenu),
       MyCompanyScreen(onMenuPressed: screenMenu),
@@ -155,8 +162,13 @@ class _ManagementLayoutState extends ConsumerState<ManagementLayout> {
                         ),
                         if (isDesktop)
                           IconButton(
-                            icon: Icon(Icons.menu_open, color: context.navMuted),
-                            tooltip: AppLocalizations.of(context).collapseSidebar,
+                            icon: Icon(
+                              Icons.menu_open,
+                              color: context.navMuted,
+                            ),
+                            tooltip: AppLocalizations.of(
+                              context,
+                            ).collapseSidebar,
                             onPressed: () =>
                                 setState(() => _isSidebarExpanded = false),
                           ),
@@ -214,7 +226,9 @@ class _ManagementLayoutState extends ConsumerState<ManagementLayout> {
                     NavItem(
                       isMini: isMini,
                       icon: Icons.people,
-                      label: AppLocalizations.of(context).customersSuppliersLower,
+                      label: AppLocalizations.of(
+                        context,
+                      ).customersSuppliersLower,
                       isActive: _selectedIndex == 6,
                       onTap: () => handleNavTap(6),
                     ),
@@ -227,52 +241,59 @@ class _ManagementLayoutState extends ConsumerState<ManagementLayout> {
                     ),
                     NavItem(
                       isMini: isMini,
-                      icon: Icons.vpn_key,
-                      label: AppLocalizations.of(context).usersSecurityLower,
+                      icon: Icons.manage_accounts,
+                      label: AppLocalizations.of(context).users,
                       isActive: _selectedIndex == 8,
                       onTap: () => handleNavTap(8),
                     ),
                     NavItem(
                       isMini: isMini,
-                      icon: Icons.credit_card,
-                      label: AppLocalizations.of(context).paymentTypesLower,
+                      icon: Icons.vpn_key,
+                      label: AppLocalizations.of(context).securityRules,
                       isActive: _selectedIndex == 9,
                       onTap: () => handleNavTap(9),
                     ),
                     NavItem(
                       isMini: isMini,
-                      icon: Icons.percent,
-                      label: AppLocalizations.of(context).taxRatesLower,
+                      icon: Icons.credit_card,
+                      label: AppLocalizations.of(context).paymentTypesLower,
                       isActive: _selectedIndex == 10,
                       onTap: () => handleNavTap(10),
                     ),
                     NavItem(
                       isMini: isMini,
-                      icon: Icons.business,
-                      label: AppLocalizations.of(context).myCompanyLower,
+                      icon: Icons.percent,
+                      label: AppLocalizations.of(context).taxRatesLower,
                       isActive: _selectedIndex == 11,
                       onTap: () => handleNavTap(11),
                     ),
                     NavItem(
                       isMini: isMini,
-                      icon: Icons.block,
-                      label: AppLocalizations.of(context).voidReasonsLower,
+                      icon: Icons.business,
+                      label: AppLocalizations.of(context).myCompanyLower,
                       isActive: _selectedIndex == 12,
                       onTap: () => handleNavTap(12),
                     ),
                     NavItem(
                       isMini: isMini,
-                      icon: Icons.card_giftcard,
-                      label: AppLocalizations.of(context).loyaltyCards,
+                      icon: Icons.block,
+                      label: AppLocalizations.of(context).voidReasonsLower,
                       isActive: _selectedIndex == 13,
                       onTap: () => handleNavTap(13),
                     ),
                     NavItem(
                       isMini: isMini,
-                      icon: Icons.tune,
-                      label: AppLocalizations.of(context).modifierGroups,
+                      icon: Icons.card_giftcard,
+                      label: AppLocalizations.of(context).loyaltyCards,
                       isActive: _selectedIndex == 14,
                       onTap: () => handleNavTap(14),
+                    ),
+                    NavItem(
+                      isMini: isMini,
+                      icon: Icons.tune,
+                      label: AppLocalizations.of(context).modifierGroups,
+                      isActive: _selectedIndex == 15,
+                      onTap: () => handleNavTap(15),
                     ),
                     const SizedBox(height: 16),
                   ],
@@ -307,8 +328,11 @@ class _ManagementLayoutState extends ConsumerState<ManagementLayout> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.logout_rounded,
-                                color: cs.error, size: 20),
+                            Icon(
+                              Icons.logout_rounded,
+                              color: cs.error,
+                              size: 20,
+                            ),
                             // Mini rail: icon only — label collapses away.
                             if (!isMini) ...[
                               const SizedBox(width: 10),
@@ -356,14 +380,16 @@ class _ManagementLayoutState extends ConsumerState<ManagementLayout> {
           // before manual navigation), show an Access Denied panel instead of
           // the screen — defence in depth alongside the tap guard above.
           Expanded(
-            child: canViewSelected
-                ? LazyIndexedStack(
-                    index: _selectedIndex,
-                    children: screens,
-                  )
-                : _AccessDeniedPanel(
-                    onMenuPressed: screenMenu,
-                  ),
+            // IlyassShell marks this subtree as HOSTED, so a management screen
+            // knows it is a tab and not a pushed route. Without it every tab
+            // would sprout a back arrow on desktop (where `screenMenu` is null
+            // because the rail is permanent) that popped the whole management
+            // shell. See `lib/core/ilyass_screen.dart`.
+            child: IlyassShell(
+              child: canViewSelected
+                  ? LazyIndexedStack(index: _selectedIndex, children: screens)
+                  : _AccessDeniedPanel(onMenuPressed: screenMenu),
+            ),
           ),
         ],
       ),
@@ -386,10 +412,7 @@ class _AccessDeniedPanel extends StatelessWidget {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         leading: onMenuPressed != null
-            ? IconButton(
-                icon: const Icon(Icons.menu),
-                onPressed: onMenuPressed,
-              )
+            ? IconButton(icon: const Icon(Icons.menu), onPressed: onMenuPressed)
             : null,
         title: Text(AppLocalizations.of(context).restricted),
       ),
@@ -409,9 +432,9 @@ class _AccessDeniedPanel extends StatelessWidget {
               Text(
                 AppLocalizations.of(context).accessDeniedBody,
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: cs.onSurfaceVariant,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
               ),
             ],
           ),

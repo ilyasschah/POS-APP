@@ -2855,14 +2855,47 @@ class AppDatabase extends _$AppDatabase {
     required DocumentsTableCompanion document,
     required List<DocumentItemsTableCompanion> items,
     required PaymentsTableCompanion payment,
+    List<DocumentItemModifiersTableCompanion> itemModifiers = const [],
   }) {
     return transaction(() async {
       await into(documentsTable).insert(document);
       if (items.isNotEmpty) {
         await batch((b) { b.insertAll(documentItemsTable, items); });
       }
+      // The choices, snapshotted onto the banked line. Written here rather
+      // than left to the sync: a receipt reprinted five minutes after the sale
+      // reads THIS table (`documentItemModifiersByLine`), on a till that may
+      // never have been online. Without it a reprint shows a plain burger at
+      // the price of one with Extra Cheese — the exact shape the open-order
+      // audit called the worst, because the total is right and nothing looks
+      // broken.
+      if (itemModifiers.isNotEmpty) {
+        await batch((b) => b.insertAll(documentItemModifiersTable, itemModifiers));
+      }
       await into(paymentsTable).insert(payment);
     });
+  }
+
+  /// The modifiers sold on one banked document's lines, keyed by the line's
+  /// localId and ordered as the cashier was asked.
+  Future<Map<String, List<DocumentItemModifiersTableData>>>
+      documentItemModifiersByLine(String documentLocalId) async {
+    final lines = await (select(documentItemsTable)
+          ..where((t) => t.documentId.equals(documentLocalId)))
+        .get();
+    if (lines.isEmpty) return const {};
+
+    final rows = await (select(documentItemModifiersTable)
+          ..where((t) =>
+              t.documentItemLocalId.isIn(lines.map((l) => l.localId)))
+          ..orderBy([(t) => OrderingTerm(expression: t.rank)]))
+        .get();
+
+    final byLine = <String, List<DocumentItemModifiersTableData>>{};
+    for (final r in rows) {
+      byLine.putIfAbsent(r.documentItemLocalId, () => []).add(r);
+    }
+    return byLine;
   }
 
   /// Attaches sales that predate session stamping to the session that rang

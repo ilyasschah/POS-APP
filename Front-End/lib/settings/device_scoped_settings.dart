@@ -77,6 +77,49 @@ class DeviceScopedSettings {
     // manager's tablet, sharing the same account, should not — a cloud-synced
     // value would force one choice on every device in the venue.
     'Print.AutoKitchenOnCheckout',
+    // Whether completing a sale auto-prints the RECEIPT. Exactly the same
+    // argument as the line above, and it was missed: a tablet with no printer
+    // inherited "always print" from the till and threw a dialog at the end of
+    // every sale.
+    'Print.AutoPrint',
+
+    // ── The operator in front of THIS screen ──────────────────────────────
+    // Language, text direction and the on-screen keyboard describe the person
+    // and the hardware at one terminal, not the company. A French-speaking
+    // waiter's tablet and an Arabic front till are both correct at once, and a
+    // touch-only tablet needs the virtual keyboard that a Windows till with a
+    // real keyboard must never get. Cloud-synced, they fought: setting the
+    // language on the tablet re-languaged the till. Reported 2026-08-29.
+    //
+    // The cloud value still seeds a device that has never chosen — so a new
+    // terminal opens in the venue's language and only diverges once someone
+    // sets it here.
+    'Application.Language',
+    'App.WritingDirection',
+    'App.EnableVirtualKeyboard',
+
+
+    // The rest of the customer display was already per-terminal (`Enabled`,
+    // `Port`, the serial parameters). These two describe the SAME physical
+    // second screen — whether it is driven over the browser bridge, and how
+    // many characters its panel fits — so they belong with them.
+    'CustomerDisplay.WebEnabled',
+    'CustomerDisplay.NumChars',
+    'CustomerDisplay.Charset',
+
+    // WHICH REGISTER this terminal is working. The one setting that must
+    // differ between two terminals on the same account — that is the entire
+    // point of having more than one — so cloud-syncing it would drag every
+    // device onto whichever till was configured last, which is the opposite of
+    // the feature. See `session/register_identity.dart`.
+    'PosSession.RegisterUid',
+    'PosSession.RegisterName',
+
+    // Keyed BY `Kitchen.DisplayIps`, which is already per-terminal. Cloud-
+    // syncing the mapping while the IPs it refers to are local means a device
+    // holds group assignments for displays it cannot reach — and loses its own
+    // the moment another terminal saves.
+    'Kitchen.DisplayGroups',
   };
 
   /// Suffixes that make a key per-terminal whatever its role prefix.
@@ -94,6 +137,13 @@ class DeviceScopedSettings {
   /// those describe the printer model, which the venue does share.
   static const List<String> _suffixes = [
     '.PrinterName',
+    // How the JOB reaches the printer, and where. Same argument as the drawer
+    // below: the Windows till prints to a USB queue and the tablet prints to
+    // the very same printer over the LAN, and each answer is wrong on the
+    // other device.
+    '.Connection',
+    '.Host',
+    '.TcpPort',
     '.CashDrawer.Transport',
     '.CashDrawer.Host',
     '.CashDrawer.TcpPort',
@@ -187,6 +237,15 @@ class DeviceScopedSettings {
     // transport Android has turns the failure into the useful "enter the
     // printer IP address" instead of "this needs Windows".
     if (key.endsWith('.CashDrawer.Transport') && isMobile) return 'network';
+    // The same coercion for the printer itself, and for the same reason: a
+    // 'system' connection inherited from a Windows till can only ever open the
+    // Android print dialog. Pointing at 'network' turns a dead end into the
+    // actionable "enter the printer IP address".
+    if (key.endsWith('.Connection') &&
+        !key.contains('CashDrawer') &&
+        isMobile) {
+      return 'network';
+    }
     return value;
   }
 

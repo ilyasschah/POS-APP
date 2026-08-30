@@ -9,6 +9,137 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get setSerialPort => 'Serial port';
+
+  @override
+  String get setDisplayCharset => 'Display character set';
+
+  @override
+  String get setDisplayCharsetHint =>
+      'What the display\'s firmware can render — this is about the hardware, not the app\'s language. Try Arabic (Windows-1256) first; only pick the reversed one if the display shows Arabic words backwards.';
+
+  @override
+  String get charsetAscii => 'Plain (accents simplified)';
+
+  @override
+  String get charsetLatin1 => 'Western European (accents kept)';
+
+  @override
+  String get charsetArabic => 'Arabic (Windows-1256)';
+
+  @override
+  String get charsetArabicVisual =>
+      'Arabic, reversed (only if words come out backwards)';
+
+  @override
+  String get printerConnection => 'Connection';
+
+  @override
+  String get printerConnectionSystem => 'This computer (Windows printer)';
+
+  @override
+  String get printerConnectionSystemUnavailable =>
+      'This device (opens the print dialog)';
+
+  @override
+  String get printerConnectionNetwork => 'Network printer (Wi-Fi / LAN)';
+
+  @override
+  String get printerConnectionHint =>
+      'A network printer prints silently on tablets as well as on this computer.';
+
+  @override
+  String get printerConnectionHintMobile =>
+      'This device cannot print silently to a system printer — it can only open the print dialog. Choose Network printer and enter its address.';
+
+  @override
+  String get printerHost => 'Printer address';
+
+  @override
+  String get printerTcpPort => 'Port';
+
+  @override
+  String get poleDisplayTotalDue => 'TOTAL DUE';
+
+  @override
+  String get poleDisplayWelcome => 'WELCOME!';
+
+  @override
+  String get portNoneDetected => 'None detected';
+
+  @override
+  String get portNoneDetectedHint =>
+      'This machine reports no COM or LPT port. Check the cable and Device Manager, then reopen this screen.';
+
+  @override
+  String portNotDetected(String port) {
+    return '$port (not detected)';
+  }
+
+  @override
+  String get portRefresh => 'Refresh ports';
+
+  @override
+  String get registerChoose => 'Choose register';
+
+  @override
+  String get registerSubtitle =>
+      'The till this device is working. Devices on the same register share its open session, its documents and its drawer.';
+
+  @override
+  String get registerThisDeviceOnly => 'This device only';
+
+  @override
+  String get registerThisDeviceOnlyHint =>
+      'Its own session, shared with nothing else.';
+
+  @override
+  String get registerTrading => 'Session open now';
+
+  @override
+  String get registerIdle => 'No open session';
+
+  @override
+  String get registerNew => 'New register';
+
+  @override
+  String get registerNameHint => 'e.g. Front Till';
+
+  @override
+  String get registerListOffline =>
+      'Registers could not be loaded. Choosing a shared register needs a connection.';
+
+  @override
+  String get registerSwitchBlocked =>
+      'Close this register\'s session before switching. Moving now would leave it open with no way back to it from here.';
+
+  @override
+  String get setRegister => 'Register';
+
+  @override
+  String get sessionJoinRegister => 'Sell in this session';
+
+  @override
+  String get sessionJoinTitle => 'Work this register?';
+
+  @override
+  String sessionJoinBody(String register, String session) {
+    return 'This device will start working $register. Sales you ring go into session $session, alongside every other terminal on it — and any of them can close it.';
+  }
+
+  @override
+  String get sessionJoinBlocked =>
+      'This device already has its own session open. Close it before working another register, or it stays open with nothing able to reach it.';
+
+  @override
+  String get sessionJoinNoRegister =>
+      'This session has not finished syncing, so the register it belongs to is not known here yet. Sync and try again.';
+
+  @override
+  String get sessionJoinOpenElsewhere =>
+      'Another register already has a session open. Sell in that one instead of starting a second.';
+
+  @override
   String get actionCancel => 'Cancel';
 
   @override
@@ -455,6 +586,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noSecurityRules => 'No security rules found.';
+
+  @override
+  String get securityRulesIntro =>
+      'Choose who may use each part of the POS. Cashier means everyone may; Admin means only an administrator — a cashier who tries is told to ask you.';
+
+  @override
+  String securityRulesSummary(int total, int adminOnly) {
+    return '$total rules · $adminOnly admin-only';
+  }
+
+  @override
+  String securityCategoryCount(int count, int restricted) {
+    return '$count · $restricted admin-only';
+  }
+
+  @override
+  String get securityLevelCashierHint => 'Cashiers and admins may do this';
+
+  @override
+  String get securityLevelAdminHint => 'Only an administrator may do this';
 
   @override
   String get noTaxShort => 'No tax';
@@ -5782,6 +5933,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'You do not have permission to view this section.\nChoose another section from the menu, or ask an administrator for access.';
 
   @override
+  String get accessDeniedAskAdmin =>
+      'You do not have permission for this action.\nAsk an administrator to do it for you.';
+
+  @override
   String get checkingUpper => 'CHECKING…';
 
   @override
@@ -6617,7 +6772,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sessionRemoteFiguresOffline =>
-      'This session belongs to another register — its takings load from the server.';
+      'Server unreachable — these are only this terminal\'s figures. The register\'s full takings load from the server.';
 
   @override
   String get sessionDocuments => 'Documents';
@@ -6727,6 +6882,13 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get cashDrawerTransportUnavailable =>
       'This connection is not available on this device.';
+
+  @override
+  String get cashDrawerNotConfigured =>
+      'No cash drawer is set up on this terminal. Turn one on in Settings → Printers → Cash Drawer.';
+
+  @override
+  String get posOpenDrawer => 'Open Drawer';
 
   @override
   String get setSounds => 'Sounds';
@@ -6990,4 +7152,343 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get iconSpice => 'Spice';
+
+  @override
+  String get rptTitleSalesByProduct => 'SALES BY PRODUCT';
+
+  @override
+  String get rptTitleSalesByGroup => 'SALES BY PRODUCT GROUPS';
+
+  @override
+  String get rptTitleSalesTax => 'SALES TAX';
+
+  @override
+  String get rptTitleSalesByCustomer => 'SALES BY CUSTOMER';
+
+  @override
+  String get rptTitlePaymentByCustomer => 'PAYMENT TYPES BY CUSTOMERS';
+
+  @override
+  String get rptTitlePaymentByUser => 'PAYMENT TYPES BY USERS';
+
+  @override
+  String get rptTitlePaymentTypes => 'SALES BY PAYMENT TYPES';
+
+  @override
+  String get rptTitleItemList => 'SALES ITEM LIST';
+
+  @override
+  String get rptTitleProfit => 'PROFIT';
+
+  @override
+  String get rptTitleStockMovement => 'STOCK MOVEMENT';
+
+  @override
+  String get rptTitleItemDiscounts => 'ITEMS DISCOUNTS';
+
+  @override
+  String get rptTitleDiscountsBySource => 'DISCOUNTS BY SOURCE';
+
+  @override
+  String get rptTitleDiscountsGranted => 'DISCOUNTS GRANTED (AFTER TAX)';
+
+  @override
+  String get rptTitleVoidedItems => 'VOIDED ITEMS';
+
+  @override
+  String get rptTitleStartingCash => 'STARTING CASH ENTRIES';
+
+  @override
+  String get rptTitleUnpaidSales => 'UNPAID SALES';
+
+  @override
+  String get rptTitleHourlyByGroup => 'HOURLY SALES BY PRODUCT GROUPS';
+
+  @override
+  String get rptTitleByTable => 'SALES BY TABLE / ORDER NUMBER';
+
+  @override
+  String get rptTitleHourlySales => 'HOURLY SALES';
+
+  @override
+  String get rptTitleDailySales => 'DAILY SALES';
+
+  @override
+  String get rptTitleInvoices => 'INVOICES';
+
+  @override
+  String get rptTitleRefunds => 'REFUNDS';
+
+  @override
+  String get rptTitleSalesByUsers => 'SALES BY USERS';
+
+  @override
+  String get rptTitleUnpaidPurchase => 'UNPAID PURCHASE';
+
+  @override
+  String get rptTitlePurchaseBySupplier => 'PURCHASE BY SUPPLIER';
+
+  @override
+  String get rptTitlePurchaseByProduct => 'PURCHASE BY PRODUCT';
+
+  @override
+  String get rptTitleExpirationDate => 'EXPIRATION DATE';
+
+  @override
+  String get rptTitlePurchaseTax => 'PURCHASE TAX';
+
+  @override
+  String get rptTitlePurchaseInvoices => 'PURCHASE INVOICES';
+
+  @override
+  String get rptTitlePurchasedItemDiscounts => 'PURCHASED ITEMS DISCOUNTS';
+
+  @override
+  String get rptTitlePurchaseDiscounts => 'PURCHASE DISCOUNTS';
+
+  @override
+  String get rptTitleStockReturns => 'STOCK RETURNS BY PRODUCT';
+
+  @override
+  String get rptTitleLossAndDamage => 'LOSS AND DAMAGE BY PRODUCT';
+
+  @override
+  String get rptTitleReorderList => 'REORDER PRODUCT LIST';
+
+  @override
+  String get rptTitleLowStock => 'LOW STOCK WARNING';
+
+  @override
+  String get rptTitleTransactionHistory => 'TRANSACTION HISTORY';
+
+  @override
+  String get rptTitleStockReport => 'STOCK REPORT';
+
+  @override
+  String get rptColUom => 'UOM';
+
+  @override
+  String get rptColTaxName => 'Tax name';
+
+  @override
+  String get rptColRefNumber => 'Ref. number';
+
+  @override
+  String get rptColRefShort => 'Ref. #';
+
+  @override
+  String get rptColDocument => 'Document';
+
+  @override
+  String get rptColDocumentShort => 'Document #';
+
+  @override
+  String get rptColCustomerCode => 'Customer code';
+
+  @override
+  String get rptColTotalTax => 'Total tax';
+
+  @override
+  String get rptColCreateDate => 'Create date';
+
+  @override
+  String get rptColProfit => 'Profit';
+
+  @override
+  String get rptColMargin => 'Margin';
+
+  @override
+  String get rptColNumSales => 'Num. of sales';
+
+  @override
+  String get rptColNumberOfSales => 'Number of sales';
+
+  @override
+  String get rptColSalesCount => 'Sales count';
+
+  @override
+  String get rptColAverageSale => 'Average sale';
+
+  @override
+  String get rptColTotalSales => 'Total sales';
+
+  @override
+  String get rptColHours => 'Hours';
+
+  @override
+  String get rptColTotalDiscount => 'Total discount';
+
+  @override
+  String get rptColDiscountSource => 'Discount source';
+
+  @override
+  String get rptColTotalBeforeDisc => 'Total before disc.';
+
+  @override
+  String get rptColTotalAfterDisc => 'Total after disc.';
+
+  @override
+  String get rptColDiscountGranted => 'Discount granted';
+
+  @override
+  String get rptColBeforeDisc => 'Before disc.';
+
+  @override
+  String get rptColAfterDisc => 'After disc.';
+
+  @override
+  String get rptColTotalDisc => 'Total disc.';
+
+  @override
+  String get rptColTotalPaid => 'Total paid';
+
+  @override
+  String get rptColTotalUnpaid => 'Total unpaid';
+
+  @override
+  String get rptColDueDate => 'Due date';
+
+  @override
+  String get rptColVoidedBy => 'Voided by';
+
+  @override
+  String get rptColVoided => 'Voided';
+
+  @override
+  String get rptColCreated => 'Created';
+
+  @override
+  String get rptColReason => 'Reason';
+
+  @override
+  String get rptColQtyShort => 'Qty.';
+
+  @override
+  String get rptColOrderNo => 'Order #';
+
+  @override
+  String get rptColPaymentMethod => 'Payment method';
+
+  @override
+  String get rptColPurchaseNumber => 'Purchase number';
+
+  @override
+  String get rptColExpirationDate => 'Expiration date';
+
+  @override
+  String get rptColProductName => 'Product name';
+
+  @override
+  String get rptColOrderQty => 'Order qty.';
+
+  @override
+  String get rptColCurrentStock => 'Current stock';
+
+  @override
+  String get rptColWarningQty => 'Warning qty.';
+
+  @override
+  String get rptColTransactionType => 'Transaction type';
+
+  @override
+  String get rptColCredit => 'Credit';
+
+  @override
+  String get rptColDebit => 'Debit';
+
+  @override
+  String get rptColTableOrOrder => 'Table / order number';
+
+  @override
+  String get rptColZReportNo => 'Z-Report #';
+
+  @override
+  String get rptColCompany => 'Company';
+
+  @override
+  String get rptColCostPrice => 'Cost price';
+
+  @override
+  String get rptColCostBeforeTax => 'Cost bef. tax';
+
+  @override
+  String get rptColCostInclTax => 'Cost incl. tax';
+
+  @override
+  String get rptFastMoving => 'Fast moving';
+
+  @override
+  String get rptSlowMoving => 'Slow moving';
+
+  @override
+  String get rptStatusConfirmed => 'Confirmed';
+
+  @override
+  String get rptStatusPending => 'Pending';
+
+  @override
+  String get rptBusinessPartner => 'Business partner';
+
+  @override
+  String get rptNetTotal => 'Net Total';
+
+  @override
+  String get rptTotalsRow => 'TOTALS';
+
+  @override
+  String get rptNoGroup => '(none)';
+
+  @override
+  String get rptNoDiscountsInPeriod => 'No discounts in this period.';
+
+  @override
+  String rptTotalNumberOfSales(String count) {
+    return 'Total number of sales: $count';
+  }
+
+  @override
+  String rptAverageSalesPerItem(String count) {
+    return 'Average number of sales per item: $count';
+  }
+
+  @override
+  String rptOrdersDiscounted(String count) {
+    return 'Number of orders discounted: $count';
+  }
+
+  @override
+  String rptTotalDiscounted(String amount) {
+    return 'Total discounted: $amount';
+  }
+
+  @override
+  String rptPageOf(String page, String total) {
+    return 'Page $page / $total';
+  }
+
+  @override
+  String rptProductCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count products',
+      one: '1 product',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get rptColHourStart => 'Hour start';
+
+  @override
+  String get rptColHourEnd => 'Hour end';
+
+  @override
+  String get rptFavorites => 'Favorites';
+
+  @override
+  String get rptColTotalBefTax => 'Total bef. tax';
+
+  @override
+  String get saveStockReportTitle => 'Save Stock Report';
 }

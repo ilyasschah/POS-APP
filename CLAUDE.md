@@ -41,7 +41,24 @@ This repository contains three main directories. **You must ensure you are in th
       columns, surplus width to one `flexible` column, `numeric: true` (money,
       counts) end-aligned, actions fixed-width and `resizable: false`.
 
-6.  **API Client Handling:** When using Dio, catch `400 Bad Request` errors safely and return the JSON response `e.response?.data` to the UI instead of throwing a fatal exception, so the UI can show interactive dialogs.
+6.  **"Ilyass Screen" (say it and this is the contract):** the shape of a
+    NAVIGATION DESTINATION — `IlyassScreen` in `lib/core/ilyass_screen.dart`,
+    full spec in `PROJECT_DOCUMENTATION.md` §7.5 and `handoff.md` §0.5.
+    * **A sidebar destination is a TAB, never a pushed route.** Add a `PosTab`
+      index + a `screens` entry in `lib/navigation/main_layout.dart` (indices are
+      append-only). A pushed one stacks on top of the shell it belongs to.
+      Management is the exception — it is a shell of its own.
+    * **Never write `leading:` by hand.** `IlyassLeading` decides from the
+      MOUNTING: hamburger when hosted with an `onMenuPressed`, nothing when
+      hosted without one, back arrow only when actually pushed.
+    * 🚨 **Hosted-ness is NOT `Navigator.canPop()`** — both shells are pushed
+      over login, so `canPop()` is true inside every tab. The shells wrap their
+      stack in `IlyassShell`; that is what the check reads.
+    * **No "leave" button.** Cancel cancels the *work*. To hand control back
+      after a commit use `ilyassLeave(context, onReturnToShell: ...)` — a bare
+      `Navigator.pop()` from a tab pops the shell and signs the cashier out.
+
+7.  **API Client Handling:** When using Dio, catch `400 Bad Request` errors safely and return the JSON response `e.response?.data` to the UI instead of throwing a fatal exception, so the UI can show interactive dialogs.
 
 ---
 

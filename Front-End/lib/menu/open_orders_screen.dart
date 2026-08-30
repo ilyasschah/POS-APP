@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
+import 'package:pos_app/core/ilyass_screen.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
@@ -223,7 +224,45 @@ Future<void> _pullOrderItems(
             ),
           );
 
-      // Re-attach this product's next snapshot to the line's NEW localId.
+      // The choices. The SERVER's copy wins whenever it has one: it is the
+      // only version a till that never sold this order can have, and it is
+      // what makes a parked order's kitchen ticket right on a second device.
+      final serverMods =
+          (it['modifiers'] ?? it['Modifiers']) as List? ?? const [];
+      if (serverMods.isNotEmpty) {
+        await db.batch((b) {
+          b.insertAll(db.posOrderItemModifiersTable, [
+            for (var mi = 0; mi < serverMods.length; mi++)
+              PosOrderItemModifiersTableCompanion(
+                localId: Value(const Uuid().v4()),
+                orderItemLocalId: Value(itemLocalId),
+                modifierOptionId: Value((serverMods[mi]['modifierOptionId'] ??
+                    serverMods[mi]['ModifierOptionId']) as int?),
+                groupName: Value((serverMods[mi]['groupName'] ??
+                    serverMods[mi]['GroupName']) as String?),
+                name: Value((serverMods[mi]['name'] ??
+                        serverMods[mi]['Name']) as String? ??
+                    ''),
+                additionalPrice: Value(((serverMods[mi]['additionalPrice'] ??
+                            serverMods[mi]['AdditionalPrice'])
+                        as num?)
+                    ?.toDouble() ??
+                    0),
+                rank: Value((serverMods[mi]['rank'] ??
+                        serverMods[mi]['Rank']) as int? ??
+                    mi),
+              ),
+          ]);
+        });
+        carried[productId]?.removeAt(0);
+        continue;
+      }
+
+      // Otherwise re-attach this product's next LOCAL snapshot to the line's
+      // new localId. 🚨 Load-bearing against an API that predates modifiers:
+      // this pull replaces the lines wholesale, so without the carry-forward a
+      // 20-second poll would quietly strip the choices off an order this very
+      // till is in the middle of serving.
       final queue = carried[productId];
       if (queue != null && queue.isNotEmpty) {
         final mods = queue.removeAt(0);
@@ -755,12 +794,10 @@ class _OpenOrdersScreenState extends ConsumerState<OpenOrdersScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        leading: widget.onMenuPressed != null
-            ? IconButton(
-                icon: const Icon(Icons.menu),
-                onPressed: widget.onMenuPressed,
-              )
-            : null,
+        // Hamburger as a tab, back arrow when pushed — the mounting decides.
+        // See `lib/core/ilyass_screen.dart`.
+        leading: IlyassLeading.maybe(context, widget.onMenuPressed,
+            iconSize: 24),
         title: Text(AppLocalizations.of(context).openOrders),
         actions: [
           if (_syncing)

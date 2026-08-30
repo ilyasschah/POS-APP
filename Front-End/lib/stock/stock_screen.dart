@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pos_app/printer/pdf_fonts.dart';
+import 'package:pos_app/printer/printed_text.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:pos_app/app_settings/app_settings_model.dart';
@@ -94,6 +95,29 @@ final stockMasterProvider =
 });
 
 // ── Screen ────────────────────────────────────────────────────────────────────
+
+/// A bold label and its value as two runs, for the stock sheet's header.
+///
+/// One run holding an Arabic label and a Latin company name comes out with the
+/// Latin reversed; see printer/printed_text.dart.
+pw.Widget _sheetPair(
+  String label,
+  String value,
+  pw.TextStyle labelStyle,
+  pw.TextStyle valueStyle,
+) =>
+    pw.Row(
+      mainAxisSize: pw.MainAxisSize.min,
+      children: [
+        printedText(label, style: labelStyle),
+        // 🚨 The ':' is a separate run and [label] must arrive without one. A
+        // colon is neutral, so at the end of an Arabic label the bidi pass
+        // moves it to that run's visual LEFT end and it prints detached on the
+        // far side of the label (`:الشركة FUTUR3`).
+        printedText(': ', style: labelStyle),
+        pw.Flexible(child: printedText(value, style: valueStyle)),
+      ],
+    );
 
 class StockScreen extends ConsumerStatefulWidget {
   /// Passed by ManagementLayout when the sidebar is hidden so the AppBar can
@@ -187,6 +211,7 @@ class _StockScreenState extends ConsumerState<StockScreen> {
   /// Builds the stock sheet. Split from dispatch so Print and Save as PDF
   /// render byte-identical documents. Returns null when there is no company.
   Future<Uint8List?> _buildStockPdf(
+    AppLocalizations l,
     List<StockMasterItem> items,
     String? warehouseName,
   ) async {
@@ -210,6 +235,19 @@ class _StockScreenState extends ConsumerState<StockScreen> {
 
     final font      = await PdfFonts.latin();
     final bold      = await PdfFonts.latin(bold: true);
+    // Named per STYLE, not just in the page theme: Arabic shaping rewrites the
+    // text into presentation forms that resolve only when the Arabic face is
+    // the run's base font, and `styleForScript` can only swap it in if the
+    // style lists it. See printer/printed_text.dart.
+    final arabic    = await PdfFonts.arabic();
+    final arabicBold = await PdfFonts.arabic(bold: true);
+    pw.TextStyle sheetStyle({double size = 8, bool isBold = false}) =>
+        pw.TextStyle(
+          font: isBold ? bold : font,
+          fontFallback: [isBold ? arabicBold : arabic],
+          fontWeight: isBold ? pw.FontWeight.bold : null,
+          fontSize: size,
+        );
     final moneyFmt  = NumberFormat('#,##0.00');
     final now       = DateTime.now();
 
@@ -284,7 +322,7 @@ class _StockScreenState extends ConsumerState<StockScreen> {
       rows.add([
         '$num',
         p.code ?? '',
-        p.productGroupId != null ? (groupMap[p.productGroupId!] ?? '(none)') : '(none)',
+        p.productGroupId != null ? (groupMap[p.productGroupId!] ?? l.rptNoGroup) : l.rptNoGroup,
         p.name,
         formatQuantityValue(qty, referenceUomOf(uomById(p.uomId)).id),
         referenceUomOf(uomById(p.uomId)).code,
@@ -315,11 +353,10 @@ class _StockScreenState extends ConsumerState<StockScreen> {
     }) =>
         pw.Container(
           padding: const pw.EdgeInsets.symmetric(horizontal: 5, vertical: 4),
-          child: pw.Text(
+          child: printedText(
             text,
             textAlign: rightAlign ? pw.TextAlign.right : pw.TextAlign.left,
-            style: (style ?? pw.TextStyle(font: font, fontSize: 8))
-                .copyWith(color: color),
+            style: (style ?? sheetStyle()).copyWith(color: color),
             overflow: pw.TextOverflow.clip,
             maxLines: 2,
           ),
@@ -331,8 +368,7 @@ class _StockScreenState extends ConsumerState<StockScreen> {
       pw.TextStyle? style,
       bool isHeader = false,
     }) {
-      final s = style ??
-          pw.TextStyle(font: isHeader ? bold : font, fontSize: isHeader ? 7.5 : 8);
+      final s = style ?? sheetStyle(size: isHeader ? 7.5 : 8, isBold: isHeader);
       final fg = isHeader ? headerFg : null;
       return pw.TableRow(
         decoration: bg != null ? pw.BoxDecoration(color: bg) : null,
@@ -375,64 +411,34 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                   child: pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
-                      pw.Text(
-                        'STOCK REPORT',
-                        style: pw.TextStyle(
-                          font: bold,
-                          fontSize: 22,
-                          color: const PdfColor.fromInt(0xFF263238),
-                        ),
+                      printedText(
+                        l.rptTitleStockReport,
+                        style: sheetStyle(size: 22, isBold: true)
+                            .copyWith(color: const PdfColor.fromInt(0xFF263238)),
                       ),
                       pw.SizedBox(height: 6),
-                      pw.RichText(
-                        text: pw.TextSpan(children: [
-                          pw.TextSpan(
-                            text: 'Company:  ',
-                            style: pw.TextStyle(
-                                font: bold,
-                                fontSize: 9,
-                                color: PdfColors.grey700),
-                          ),
-                          pw.TextSpan(
-                            text: company.name,
-                            style: pw.TextStyle(
-                                font: font, fontSize: 9),
-                          ),
-                        ]),
+                      _sheetPair(
+                        l.rptColCompany,
+                        company.name,
+                        sheetStyle(size: 9, isBold: true)
+                            .copyWith(color: PdfColors.grey700),
+                        sheetStyle(size: 9),
                       ),
                       if (address.isNotEmpty)
-                        pw.RichText(
-                          text: pw.TextSpan(children: [
-                            pw.TextSpan(
-                              text: 'Address:  ',
-                              style: pw.TextStyle(
-                                  font: bold,
-                                  fontSize: 9,
-                                  color: PdfColors.grey700),
-                            ),
-                            pw.TextSpan(
-                              text: address,
-                              style: pw.TextStyle(
-                                  font: font, fontSize: 9),
-                            ),
-                          ]),
+                        _sheetPair(
+                          l.setAddress,
+                          address,
+                          sheetStyle(size: 9, isBold: true)
+                              .copyWith(color: PdfColors.grey700),
+                          sheetStyle(size: 9),
                         ),
                       if (warehouseName != null)
-                        pw.RichText(
-                          text: pw.TextSpan(children: [
-                            pw.TextSpan(
-                              text: 'Warehouse:  ',
-                              style: pw.TextStyle(
-                                  font: bold,
-                                  fontSize: 9,
-                                  color: PdfColors.grey700),
-                            ),
-                            pw.TextSpan(
-                              text: warehouseName,
-                              style: pw.TextStyle(
-                                  font: font, fontSize: 9),
-                            ),
-                          ]),
+                        _sheetPair(
+                          l.warehouse,
+                          warehouseName,
+                          sheetStyle(size: 9, isBold: true)
+                              .copyWith(color: PdfColors.grey700),
+                          sheetStyle(size: 9),
                         ),
                     ],
                   ),
@@ -440,19 +446,15 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                 pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.end,
                   children: [
-                    pw.Text(
+                    printedText(
                       DateFormat('dd/MM/yyyy').format(now),
-                      style: pw.TextStyle(
-                          font: bold,
-                          fontSize: 11,
-                          color: const PdfColor.fromInt(0xFF263238)),
+                      style: sheetStyle(size: 11, isBold: true)
+                          .copyWith(color: const PdfColor.fromInt(0xFF263238)),
                     ),
-                    pw.Text(
-                      '${rows.length} product${rows.length == 1 ? '' : 's'}',
-                      style: pw.TextStyle(
-                          font: font,
-                          fontSize: 9,
-                          color: PdfColors.grey600),
+                    printedText(
+                      l.rptProductCount(rows.length),
+                      style: sheetStyle(size: 9)
+                          .copyWith(color: PdfColors.grey600),
                     ),
                   ],
                 ),
@@ -490,10 +492,10 @@ class _StockScreenState extends ConsumerState<StockScreen> {
             children: [
               // Header
               buildRow(
-                ['#', 'Code', 'Product group', 'Product',
-                 'Qty.', 'UOM', 'Cost price',
-                 'Cost bef. tax', 'Cost incl. tax',
-                 'Total bef. tax', 'Total'],
+                ['#', l.fieldCode, l.fieldProductGroup, l.productLabel,
+                 l.rptColQtyShort, l.rptColUom, l.rptColCostPrice,
+                 l.rptColCostBeforeTax, l.rptColCostInclTax,
+                 l.rptColTotalBefTax, l.totalLabel],
                 bg: headerBg,
                 isHeader: true,
               ),
@@ -504,13 +506,13 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                   )),
               // Totals row
               buildRow(
-                ['', '', '', 'TOTALS', '', '', '',
+                ['', '', '', l.rptTotalsRow, '', '', '',
                  moneyFmt.format(totalCostBT),
                  moneyFmt.format(totalCostIT),
                  moneyFmt.format(totalSaleBT),
                  moneyFmt.format(totalSaleIT)],
                 bg: totalsBg,
-                style: pw.TextStyle(font: bold, fontSize: 8),
+                style: sheetStyle(isBold: true),
               ),
             ],
           ),
@@ -527,15 +529,15 @@ class _StockScreenState extends ConsumerState<StockScreen> {
           child: pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
-              pw.Text(
+              printedText(
                 DateFormat('dd/MM/yyyy HH:mm:ss').format(now),
-                style: pw.TextStyle(
-                    font: font, fontSize: 7.5, color: PdfColors.grey600),
+                style: sheetStyle(size: 7.5)
+                    .copyWith(color: PdfColors.grey600),
               ),
-              pw.Text(
-                'Page ${ctx.pageNumber} / ${ctx.pagesCount}',
-                style: pw.TextStyle(
-                    font: font, fontSize: 7.5, color: PdfColors.grey600),
+              printedText(
+                l.rptPageOf('${ctx.pageNumber}', '${ctx.pagesCount}'),
+                style: sheetStyle(size: 7.5)
+                    .copyWith(color: PdfColors.grey600),
               ),
             ],
           ),
@@ -550,7 +552,8 @@ class _StockScreenState extends ConsumerState<StockScreen> {
     List<StockMasterItem> items,
     String? warehouseName,
   ) async {
-    final bytes = await _buildStockPdf(items, warehouseName);
+    final bytes =
+        await _buildStockPdf(AppLocalizations.of(context), items, warehouseName);
     if (bytes == null) return;
     await Printing.layoutPdf(
       onLayout: (_) async => bytes,
@@ -565,13 +568,14 @@ class _StockScreenState extends ConsumerState<StockScreen> {
     List<StockMasterItem> items,
     String? warehouseName,
   ) async {
-    final bytes = await _buildStockPdf(items, warehouseName);
+    final l = AppLocalizations.of(context);
+    final bytes = await _buildStockPdf(l, items, warehouseName);
     if (bytes == null) return;
     try {
       final path = await savePdfAs(
         bytes: bytes,
         suggestedName: stockPdfName(DateTime.now()),
-        dialogTitle: 'Save Stock Report',
+        dialogTitle: l.saveStockReportTitle,
       );
       if (!mounted || path == null) return;
       showAppSnackbar(

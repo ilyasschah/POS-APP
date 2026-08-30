@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:pos_app/core/ilyass_screen.dart';
 import 'package:pos_app/session/session_screen.dart';
 import 'package:pos_app/barcode/scan_bus.dart';
 import 'dart:async';
@@ -48,8 +49,8 @@ import 'package:pos_app/sync/sync_provider.dart';
 import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/floor_plan/floor_plan_table.dart';
 import 'package:pos_app/auth/user_model.dart';
-import 'package:pos_app/product/product_comment_model.dart';
 // import 'package:pos_app/menu/open_orders_screen.dart';
+import 'package:pos_app/printer/cash_drawer_service.dart';
 import 'package:pos_app/printer/kitchen_ticket_data.dart';
 import 'package:pos_app/printer/receipt_printer_service.dart';
 import 'package:pos_app/printer/printer_routing_service.dart';
@@ -66,6 +67,8 @@ import 'package:pos_app/modifier/customize_item_sheet.dart';
 import 'package:pos_app/modifier/modifier_models.dart';
 import 'package:pos_app/uom/unit_of_measure.dart';
 import 'package:pos_app/customer_display/customer_display_provider.dart';
+import 'package:pos_app/customer_display/customer_display_state.dart';
+import 'package:pos_app/utils/customer_display_service.dart';
 import 'package:pos_app/stock/stock_provider.dart';
 import 'package:pos_app/stock/stock_control_provider.dart';
 import 'package:pos_app/stock/stock_control_model.dart';
@@ -372,6 +375,8 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
         settings[SettingKeys.showTransferBtn]?.toLowerCase() != 'false';
     final showRefundBtn =
         settings[SettingKeys.showRefundBtn]?.toLowerCase() != 'false';
+    final showCashDrawerBtn =
+        settings[SettingKeys.showCashDrawerBtn]?.toLowerCase() != 'false';
     final showWarehouseBtn =
         settings[SettingKeys.showWarehouseBtn]?.toLowerCase() != 'false';
     final showBookingBtn =
@@ -436,16 +441,12 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
       appBar: AppBar(
         toolbarHeight: 62,
         automaticallyImplyLeading: false,
-        leading: widget.showAppBarNavigation
-            ? IconButton(
-                icon: Icon(
-                  Icons.menu,
-                  size: 26,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-                onPressed: widget.onToggleSidebar,
-              )
-            : null,
+        // Hamburger as the shell's POS tab, back arrow if ever pushed — the
+        // mounting decides. See `lib/core/ilyass_screen.dart`.
+        leading: IlyassLeading.maybe(
+          context,
+          widget.showAppBarNavigation ? widget.onToggleSidebar : null,
+        ),
         titleSpacing: 0,
         centerTitle: false,
         // Order-control buttons live in the AppBar title slot (which, unlike
@@ -837,39 +838,14 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                                   )
                                   .firstOrNull;
                               if (item == null) return;
-                              // Offline-first, and a DIRECT Drift read on
-                              // purpose: productCommentsProvider is an
-                              // autoDispose .family stream, and awaiting its
-                              // `.future` with no active listener can resolve
-                              // before the watch emits — a product WITH
-                              // comments then looks like it has none.
-                              final db = ref.read(appDatabaseProvider);
-                              final companyId =
-                                  ref.read(selectedCompanyProvider)?.id ?? 0;
-                              final rows =
-                                  await (db.select(db.productCommentsTable)
-                                        ..where(
-                                          (t) => t.companyId.equals(companyId),
-                                        )
-                                        ..where(
-                                          (t) => t.productId.equals(
-                                            item.productId,
-                                          ),
-                                        )
-                                        ..where(
-                                          (t) => t.syncStatus.isNotIn([
-                                            'pending_delete',
-                                          ]),
-                                        ))
-                                      .get();
-                              if (!context.mounted) return;
+                              // Just the note now. The predefined-comment
+                              // catalogue this used to load is retired —
+                              // modifiers do that job with prices, rules and
+                              // reporting rows (backlog 38, phase 6).
                               final result = await showDialog<String?>(
                                 context: context,
-                                builder: (_) => _ProductCommentsDialog(
+                                builder: (_) => _ItemNoteDialog(
                                   productName: item.productName,
-                                  predefinedComments: rows
-                                      .map(ProductComment.fromDrift)
-                                      .toList(),
                                   initialComment: item.comment,
                                   confirmLabel:
                                       AppLocalizations.of(context).actionSave,
@@ -928,6 +904,22 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                               context: context,
                               builder: (_) => const RefundDialog(),
                             ),
+                          ),
+                    ),
+                  if (showCashDrawerBtn)
+                    _MenuHeaderActionBtn(
+                      icon: Icons.point_of_sale,
+                      label: AppLocalizations.of(context).posOpenDrawer,
+                      // Admin-only the moment the admin sets CashDrawer.Open to
+                      // level 1 in Users & Security; seeded at level 0, so out
+                      // of the box a cashier may still pop the drawer. Refused
+                      // with a DIALOG, not a toast — see guardWithDialog.
+                      onTap: () => ref
+                          .read(securityGuardProvider)
+                          .guardWithDialog(
+                            context,
+                            SecurityKeys.cashDrawerOpen,
+                            () => _openCashDrawerFromTill(context, ref),
                           ),
                     ),
 
@@ -2321,38 +2313,14 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
           price = p;
         }
 
-        String? comment;
-        try {
-          // Read the product's comment suggestions straight from Drift. Going
-          // through productCommentsProvider(...).future here was unreliable: it's
-          // an autoDispose .family StreamProvider, and reading `.future` with no
-          // active listener can resolve before the Drift watch-stream emits its
-          // first row — so a product that HAS comments looked like it had none
-          // and the modifier popup silently never showed. A direct query is
-          // deterministic and fully offline (the rows are pulled during sync).
-          final db = ref.read(appDatabaseProvider);
-          final companyId = ref.read(selectedCompanyProvider)?.id ?? 0;
-          final rows =
-              await (db.select(db.productCommentsTable)
-                    ..where((t) => t.companyId.equals(companyId))
-                    ..where((t) => t.productId.equals(product.id))
-                    ..where((t) => t.syncStatus.isNotIn(['pending_delete'])))
-                  .get();
-          final comments = rows.map(ProductComment.fromDrift).toList();
-          if (comments.isNotEmpty) {
-            if (!context.mounted) return;
-            final result = await showDialog<String?>(
-              context: context,
-              barrierDismissible: false,
-              builder: (ctx) => _ProductCommentsDialog(
-                productName: product.name,
-                predefinedComments: comments,
-              ),
-            );
-            if (result == null) return;
-            comment = result.trim().isEmpty ? null : result.trim();
-          }
-        } catch (_) {}
+        // 🚨 The comment prompt that used to fire here is GONE, not moved.
+        // A product with predefined comments interrupted every single tap with
+        // a switch list of them; the product's modifier groups now ask the same
+        // question properly, from the same tap, and a product with nothing to
+        // ask is added in ONE tap as it always should have been. The line's
+        // note is still reachable any time from the Comment button, and a group
+        // can ask for one itself (`allowsFreeText`) — which is what
+        // `modifierNote` below now is.
 
         // Load the product's assigned taxes (set in the product editor) so the
         // cart applies them. Without this the item is added with no tax even
@@ -2387,10 +2355,9 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
               .addItem(
                 menuProduct,
                 quantity: quantity,
-                // The modifier sheet's free-text note and the comment popup
-                // both land in the same column; whichever the operator
-                // actually filled in wins.
-                comment: comment ?? modifierNote,
+                // The sheet's free-text note, in the same column the retired
+                // comment popup wrote to. One note per line, one column.
+                comment: modifierNote,
                 measurementUnit: product.measurementUnit,
                 modifiers: chosenModifiers,
               );
@@ -3113,10 +3080,95 @@ class _CartSectionState extends ConsumerState<CartSection> {
   double _grossLineFullPrice(CartItem item) =>
       ref.read(cartProvider.notifier).grossLineFullPrice(item);
 
+  /// Mirrors the cart onto the SERIAL pole display, which until now lit up only
+  /// when the payment dialog opened.
+  ///
+  /// A customer watched a blank display through the entire scan and got one
+  /// number at the end — the moment it is too late to query an item. Showing
+  /// each line as it is rung is the whole reason the hardware is on the counter.
+  ///
+  /// Fire-and-forget on purpose: `_send` swallows its own errors on this path
+  /// (a dead display must never disturb a sale) and awaiting it would put a
+  /// serial write between the cashier's tap and the frame.
+  void _updatePoleDisplay(CartState? previous, CartState next, double total) {
+    // Work out WHAT to show now, while `previous` and `next` are still the two
+    // states this notification is about — but do the provider reads and the
+    // serial write on the next microtask.
+    //
+    // 🚨 A cart notification can be delivered inside a build. Reading a provider
+    // there can initialise it mid-build, and Riverpod turns that into
+    // `setState() called during build` in a stack that names some other widget
+    // entirely — an exception nobody would trace back to a pole display. The
+    // display is also fire-and-forget by design: a serial write has no business
+    // between a cashier's tap and the frame that answers it.
+    final changed = next.items.isEmpty
+        ? null
+        : _mostRecentlyChangedItem(previous?.items, next.items);
+    final isEmpty = next.items.isEmpty;
+    if (!isEmpty && changed == null) return; // not a change about a line
+
+    Future.microtask(() {
+      if (!mounted) return;
+      final settings = ref.read(appSettingsProvider);
+
+      // The payment dialog owns the display while it is open — it shows TOTAL
+      // DUE and restores the welcome message on close. Talking over it would
+      // flip the display back to a line item while the customer is being asked
+      // to pay.
+      final status = ref.read(customerDisplayProvider).status;
+      if (status == CustomerDisplayStatus.paymentPending ||
+          status == CustomerDisplayStatus.checkoutSuccess) {
+        return;
+      }
+
+      if (isEmpty) {
+        CustomerDisplayService.showWelcome(settings: settings);
+        return;
+      }
+      CustomerDisplayService.showLineItem(
+        settings: settings,
+        name: changed!.productName,
+        quantity: changed.quantity,
+        unitPrice: changed.price,
+        runningTotal: total,
+        unitLabel: changed.measurementUnit ?? '',
+      );
+    });
+  }
+
+  /// The line this cart change was about: a new line, or one whose quantity or
+  /// price moved.
+  ///
+  /// 🚨 Not `items.last`. With "separate row per item" OFF, re-scanning a
+  /// product MERGES into its existing line — which can sit anywhere in the list
+  /// — so the last row is somebody else's product and the display would name
+  /// the wrong thing at the moment the customer is watching it most closely.
+  static CartItem? _mostRecentlyChangedItem(
+    List<CartItem>? before,
+    List<CartItem> after,
+  ) {
+    if (after.isEmpty) return null;
+    if (before == null || before.isEmpty) return after.last;
+
+    final previous = {for (final i in before) i.cartItemId: i};
+    CartItem? newest;
+    for (final item in after) {
+      final was = previous[item.cartItemId];
+      if (was == null) {
+        newest = item; // a line that did not exist before
+      } else if (was.quantity != item.quantity || was.price != item.price) {
+        newest ??= item; // a merge or a quantity/price edit
+      }
+    }
+    // Nothing about a LINE changed (a discount, a customer, a table move).
+    // Leave whatever is on the display rather than picking a row at random.
+    return newest;
+  }
+
   @override
   Widget build(BuildContext context) {
     // Forward every cart change into the customer display state machine.
-    ref.listen<CartState>(cartProvider, (_, next) {
+    ref.listen<CartState>(cartProvider, (previous, next) {
       final n = ref.read(cartProvider.notifier);
       ref
           .read(customerDisplayProvider.notifier)
@@ -3130,6 +3182,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
             tax: n.taxTotal,
             total: n.grandTotal,
           );
+      _updatePoleDisplay(previous, next, n.grandTotal);
     });
 
     final cartState = ref.watch(cartProvider);
@@ -3947,6 +4000,40 @@ class _MenuActionVisual extends StatelessWidget {
 /// Unified, flat top-header action button: a centred icon over a small label,
 /// in a clean bounding box. Used for every order-control action so they share
 /// one consistent touch-sized style. Disabled (onTap == null) dims the tint.
+/// The till's "Open Drawer" button — the last piece of handoff.md ★8.
+///
+/// The hardware has been reachable since `cash_drawer_service.dart` landed; what
+/// was missing was a way to ask for it outside a sale (a customer wants change,
+/// the cashier drops a note in). Three outcomes, and they must never look alike
+/// on a screen next to a drawer that did not move:
+///
+/// * no station has its drawer switch on → say so and name the screen that
+///   fixes it, rather than sending a kick nobody wired and reporting success;
+/// * the kick went out → the usual confirmation;
+/// * a station refused → that station's own reason, verbatim.
+///
+/// Fires EVERY enabled station, like the end of a sale does: a till with two
+/// drawers is rare but real, and the operator pressed one button meaning "open
+/// the drawer", not "open the first one I happen to find".
+Future<void> _openCashDrawerFromTill(BuildContext context, WidgetRef ref) async {
+  final l10n = AppLocalizations.of(context);
+  final settings = ref.read(appSettingsProvider);
+  if (enabledCashDrawers(settings).isEmpty) {
+    showAppSnackbar(context, ref, l10n.cashDrawerNotConfigured, isError: true);
+    return;
+  }
+  final failures = await openEnabledDrawers(settings);
+  if (!context.mounted) return;
+  showAppSnackbar(
+    context,
+    ref,
+    failures.isEmpty
+        ? l10n.cashDrawerOpenedOk
+        : l10n.cashDrawerFailed(failures.first),
+    isError: failures.isNotEmpty,
+  );
+}
+
 class _MenuHeaderActionBtn extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -4396,55 +4483,39 @@ Future<bool> _showAgeRestrictionDialog(BuildContext context, int minAge) async {
   return result ?? false;
 }
 
-class _ProductCommentsDialog extends StatefulWidget {
+/// A free-text note on one cart line.
+///
+/// 🚨 What this REPLACED, and why the note itself survived it. This dialog used
+/// to render the product's predefined-comment catalogue as a list of switches,
+/// joined the chosen ones with ", " and stored the string. Modifiers do that
+/// job properly — priced, grouped, with pick-one/pick-many rules and their own
+/// reporting rows — so the catalogue is retired (backlog 38, phase 6).
+///
+/// The NOTE is not the catalogue and does not go with it: "allergic to nuts" is
+/// not a menu option anyone can enumerate in advance. It stays exactly where it
+/// was, in `CartItem.comment`, and still prints on the kitchen ticket under the
+/// choices. A group can also ask for one in the Customize sheet — see
+/// `ModifierGroup.allowsFreeText`.
+class _ItemNoteDialog extends StatefulWidget {
   final String productName;
-  final List<ProductComment> predefinedComments;
 
-  /// The line's current comment, when editing one already in the cart. Its parts
-  /// are matched back onto the predefined switches; anything unmatched is the
-  /// operator's own text and lands in the custom field.
+  /// The line's current note, when editing one already in the cart.
   final String? initialComment;
   final String confirmLabel;
 
-  const _ProductCommentsDialog({
+  const _ItemNoteDialog({
     required this.productName,
-    required this.predefinedComments,
     this.initialComment,
     this.confirmLabel = 'Add to Cart',
   });
 
   @override
-  State<_ProductCommentsDialog> createState() => _ProductCommentsDialogState();
+  State<_ItemNoteDialog> createState() => _ItemNoteDialogState();
 }
 
-class _ProductCommentsDialogState extends State<_ProductCommentsDialog> {
-  final Set<int> _selectedIds = {};
-  final TextEditingController _customController = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    // Re-hydrate an existing comment. It was stored as `parts.join(', ')`, so
-    // split on the separator and match each part back to a predefined comment;
-    // the remainder is free text. (A predefined comment containing ", " would
-    // split wrongly — the separator is the format's own limitation, not new.)
-    final raw = widget.initialComment?.trim() ?? '';
-    if (raw.isEmpty) return;
-    final idByText = {
-      for (final c in widget.predefinedComments) c.comment.trim(): c.id,
-    };
-    final leftovers = <String>[];
-    for (final part
-        in raw.split(',').map((p) => p.trim()).where((p) => p.isNotEmpty)) {
-      final id = idByText[part];
-      if (id != null) {
-        _selectedIds.add(id);
-      } else {
-        leftovers.add(part);
-      }
-    }
-    _customController.text = leftovers.join(', ');
-  }
+class _ItemNoteDialogState extends State<_ItemNoteDialog> {
+  late final TextEditingController _customController =
+      TextEditingController(text: widget.initialComment?.trim() ?? '');
 
   @override
   void dispose() {
@@ -4455,32 +4526,18 @@ class _ProductCommentsDialogState extends State<_ProductCommentsDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(AppLocalizations.of(context).commentsForProduct(widget.productName)),
+      title: Text(
+          AppLocalizations.of(context).commentsForProduct(widget.productName)),
       content: SizedBox(
         width: 360,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ...widget.predefinedComments.map(
-                (c) => SwitchListTile(
-                  title: Text(c.comment),
-                  value: _selectedIds.contains(c.id),
-                  onChanged: (val) => setState(() {
-                    val ? _selectedIds.add(c.id) : _selectedIds.remove(c.id);
-                  }),
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _customController,
-                decoration: InputDecoration(
-                  labelText: AppLocalizations.of(context).customComment,
-                  hintText: AppLocalizations.of(context).addANoteHint,
-                  prefixIcon: const Icon(Icons.edit_note),
-                ),
-              ),
-            ],
+        child: TextField(
+          controller: _customController,
+          autofocus: true,
+          maxLines: 3,
+          decoration: InputDecoration(
+            labelText: AppLocalizations.of(context).customComment,
+            hintText: AppLocalizations.of(context).addANoteHint,
+            prefixIcon: const Icon(Icons.edit_note),
           ),
         ),
       ),
@@ -4490,15 +4547,11 @@ class _ProductCommentsDialogState extends State<_ProductCommentsDialog> {
           child: Text(AppLocalizations.of(context).actionCancel),
         ),
         ElevatedButton(
-          onPressed: () {
-            final parts = widget.predefinedComments
-                .where((c) => _selectedIds.contains(c.id))
-                .map((c) => c.comment)
-                .toList();
-            final custom = _customController.text.trim();
-            if (custom.isNotEmpty) parts.add(custom);
-            Navigator.pop(context, parts.join(', '));
-          },
+          // Empty is a legitimate answer — it CLEARS the note. Returning null
+          // for it would be read as "cancelled" by both call sites and the old
+          // text would stay on the line.
+          onPressed: () =>
+              Navigator.pop(context, _customController.text.trim()),
           child: Text(widget.confirmLabel),
         ),
       ],

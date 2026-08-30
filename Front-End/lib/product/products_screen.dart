@@ -36,7 +36,6 @@ import 'package:pos_app/core/unified_search_bar.dart';
 import 'package:pos_app/modifier/modifier_models.dart';
 import 'package:pos_app/modifier/modifier_groups_screen.dart' show selectionRuleLabel;
 import 'package:pos_app/modifier/modifier_provider.dart';
-import 'package:pos_app/product/product_comment_provider.dart';
 import 'package:pos_app/sync/sync_provider.dart';
 import 'package:pos_app/barcode/barcode_provider.dart';
 import 'package:pos_app/barcode/nomenclature/barcode_rules_provider.dart';
@@ -1164,7 +1163,6 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
   final _rankCtrl = TextEditingController(text: '');
   final _ageRestrictionCtrl = TextEditingController();
   final _descriptionCtrl = TextEditingController();
-  final _newCommentCtrl = TextEditingController();
   final _newBarcodeCtrl = TextEditingController();
   // Toggles
   // Seeded from General.TaxIncludedByDefault in initState for NEW products —
@@ -1353,7 +1351,6 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
     _rankCtrl.dispose();
     _ageRestrictionCtrl.dispose();
     _descriptionCtrl.dispose();
-    _newCommentCtrl.dispose();
     _newBarcodeCtrl.dispose();
 
     super.dispose();
@@ -1684,11 +1681,11 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
     if (_isEditing || widget.isPostCreation) {
       dialogTabs.addAll([
         Tab(text: l10n.barcodesTab),
-        Tab(text: l10n.commentsTab),
+        Tab(text: l10n.posModifiers),
       ]);
       dialogTabViews.addAll([
         _buildBarcodesTab(),
-        _buildCommentsTab(),
+        _buildModifiersTab(),
       ]);
     }
 
@@ -2413,14 +2410,11 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
     );
   }
 
-  Widget _buildCommentsTab() {
-    final theme = Theme.of(context);
+  Widget _buildModifiersTab() {
     // Safety check - we know the product exists because this tab is only shown in Edit/Phase 2 mode!
     if (widget.existingProduct == null) return const SizedBox();
 
     final productId = widget.existingProduct!.id;
-    final asyncComments = ref.watch(productCommentsProvider(productId));
-    final companyId = ref.read(selectedCompanyProvider)?.id;
 
     // 🚨 Scrollable, and it has to be. This was a fixed Column with the comment
     // list in an Expanded, which works only while everything above it is short.
@@ -2432,153 +2426,22 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
         constraints: const BoxConstraints(maxWidth: kMaxReadableWidth),
         child: ListView(
         padding: const EdgeInsets.all(32.0),
+        // The picker carries its own heading and hint — a second title above
+        // it said the same thing twice, and the one it said was about the
+        // catalogue that is now gone.
         children: [
-          Text(AppLocalizations.of(context).productModifiersComments,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          Text(
-              AppLocalizations.of(context).modifiersHint,
-              style: TextStyle(color: theme.hintColor)),
-          const SizedBox(height: 24),
-
           // ── Modifier groups ──────────────────────────────────────────────
-          // The structured half, which supersedes the free-text list below it.
-          // Both are shown while the two coexist; the comment editor goes when
-          // the old catalogue is retired.
+          // 🚨 The free-text comment catalogue that used to sit under this is
+          // RETIRED (backlog 38, phase 6). It offered an unpriced, ungrouped,
+          // unruled list of strings that the till joined with ", " — modifiers
+          // answer the same question with prices, pick-one/pick-many rules and
+          // a reporting row per choice. Existing catalogues are converted to
+          // groups by `DataBase/SQL/RetireProductComments_2026-08-29.sql`.
+          //
+          // A per-line NOTE is not the catalogue and did not go with it: it is
+          // still on the till's Comment button, and a group can ask for one
+          // itself (`ModifierGroup.allowsFreeText`).
           _ProductModifierGroupsPicker(productId: productId),
-          const Divider(height: 40),
-
-          // INPUT ROW
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _newCommentCtrl,
-                  decoration: InputDecoration(
-                    labelText: AppLocalizations.of(context).newModifierComment,
-                    hintText: AppLocalizations.of(context).newModifierHint,
-                    filled: true,
-                    fillColor: theme.colorScheme.surface,
-                    border: const OutlineInputBorder(),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              ElevatedButton.icon(
-                  icon: const Icon(Icons.add),
-                  label: Text(AppLocalizations.of(context).actionAdd),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: theme.colorScheme.primary,
-                    foregroundColor: theme.colorScheme.onPrimary,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 20),
-                  ),
-                  onPressed: () async {
-                    if (_newCommentCtrl.text.trim().isEmpty ||
-                        companyId == null) {
-                      return;
-                    }
-
-                    try {
-                      final commentText = _newCommentCtrl.text.trim();
-                      // Offline-first: write to local Drift immediately (temp id
-                      // + pending_create). The menu's modifier popup sees it at
-                      // once, online or offline; the sync pushes it later and
-                      // swaps in the server id. Works even on an offline-created
-                      // product (its temp productId is remapped before the push).
-                      await ref
-                          .read(appDatabaseProvider)
-                          .createProductCommentLocal(
-                            companyId: companyId,
-                            productId: productId,
-                            comment: commentText,
-                          );
-                      _newCommentCtrl.clear();
-                      ref.invalidate(productCommentsProvider(productId));
-                      // Push promptly when online (no-op/queued when offline).
-                      unawaited(ref
-                          .read(syncManagerProvider)
-                          .sync(companyId)
-                          .catchError((Object _) => <String>[]));
-                    } catch (e) {
-                      if (mounted) {
-                        showAppSnackbar(context, ref, _parseApiError(context, e),
-                            isError: true);
-                      }
-                    }
-                  })
-            ],
-          ),
-
-          const SizedBox(height: 32),
-
-          // LIST OF COMMENTS
-          Builder(
-            builder: (context) => asyncComments.when(
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Center(
-                    child: Text(AppLocalizations.of(context).errorWithMessage(_parseApiError(context, e)),
-                        style: TextStyle(color: context.dangerColor))),
-                data: (comments) {
-                  if (comments.isEmpty) {
-                    return Center(
-                        child: Text(AppLocalizations.of(context).noCommentsYet,
-                            style:
-                                TextStyle(color: theme.hintColor, fontSize: 16)));
-                  }
-
-                  return Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: theme.dividerColor),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: ListView.separated(
-                      // Sized by its content now that the tab scrolls — a
-                      // nested scroller inside a scroller traps the drag.
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: comments.length,
-                      separatorBuilder: (_, __) => const Divider(height: 1),
-                      itemBuilder: (context, index) {
-                        final c = comments[index];
-                        return ListTile(
-                          leading:
-                              const Icon(Icons.comment, color: Colors.blueGrey),
-                          title: Text(c.comment,
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold)),
-                          trailing: IconButton(
-                            icon: Icon(Icons.delete, color: context.dangerColor),
-                            tooltip: AppLocalizations.of(context).deleteComment,
-                            onPressed: () async {
-                              if (companyId == null) return;
-                              try {
-                                // Offline-first: drop it locally now (temp rows
-                                // vanish; server rows are flagged pending_delete
-                                // and hidden from reads). The sync issues the
-                                // server DELETE when online.
-                                await ref
-                                    .read(appDatabaseProvider)
-                                    .deleteProductCommentLocal(c.id);
-                                ref.invalidate(
-                                    productCommentsProvider(productId));
-                                unawaited(ref
-                                    .read(syncManagerProvider)
-                                    .sync(companyId)
-                                    .catchError((Object _) => <String>[]));
-                              } catch (e) {
-                                if (context.mounted) {
-                                  showAppSnackbar(context, ref, _parseApiError(context, e),
-                                      isError: true);
-                                }
-                              }
-                            },
-                          ),
-                        );
-                      },
-                    ),
-                  );
-                }),
-          ),
         ],
         ),
       ),

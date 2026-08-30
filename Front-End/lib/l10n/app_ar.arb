@@ -1,5 +1,45 @@
 {
   "@@locale": "ar",
+  "setSerialPort": "المنفذ التسلسلي",
+  "setDisplayCharset": "مجموعة أحرف شاشة العميل",
+  "setDisplayCharsetHint": "ما تستطيع شاشة العميل عرضه فعلياً — يتعلق الأمر بالجهاز لا بلغة التطبيق. جرّب \"عربي (Windows-1256)\" أولاً، ولا تختر الخيار المعكوس إلا إذا ظهرت الكلمات مقلوبة على الشاشة.",
+  "charsetAscii": "بسيط (بدون حركات)",
+  "charsetLatin1": "أوروبا الغربية (مع الحركات)",
+  "charsetArabic": "عربي (Windows-1256)",
+  "charsetArabicVisual": "عربي معكوس (فقط إذا ظهرت الكلمات مقلوبة)",
+  "printerConnection": "الاتصال",
+  "printerConnectionSystem": "هذا الحاسوب (طابعة Windows)",
+  "printerConnectionSystemUnavailable": "هذا الجهاز (يفتح مربع حوار الطباعة)",
+  "printerConnectionNetwork": "طابعة شبكية (Wi-Fi / LAN)",
+  "printerConnectionHint": "الطابعة الشبكية تطبع مباشرة دون مربع حوار، على الأجهزة اللوحية وعلى هذا الحاسوب.",
+  "printerConnectionHintMobile": "لا يستطيع هذا الجهاز الطباعة مباشرة على طابعة النظام — يفتح مربع حوار الطباعة فقط. اختر \"طابعة شبكية\" وأدخل عنوانها.",
+  "printerHost": "عنوان الطابعة",
+  "printerTcpPort": "المنفذ",
+  "poleDisplayTotalDue": "المبلغ المستحق",
+  "poleDisplayWelcome": "أهلا وسهلا",
+  "portNoneDetected": "لم يتم العثور على أي منفذ",
+  "portNoneDetectedHint": "لا يُبلّغ هذا الجهاز عن أي منفذ COM أو LPT. تحقق من الكابل ومن إدارة الأجهزة ثم أعد فتح هذه الشاشة.",
+  "portNotDetected": "{port} (غير موجود)",
+  "@portNotDetected": {"placeholders": {"port": {"type": "String"}}},
+  "portRefresh": "تحديث المنافذ",
+  "registerChoose": "اختيار الصندوق",
+  "registerSubtitle": "الصندوق الذي يعمل عليه هذا الجهاز. الأجهزة على الصندوق نفسه تتشارك جلسته المفتوحة ومستنداته ودرجه.",
+  "registerThisDeviceOnly": "هذا الجهاز فقط",
+  "registerThisDeviceOnlyHint": "جلسة خاصة به، غير مشتركة مع أي جهاز آخر.",
+  "registerTrading": "جلسة مفتوحة الآن",
+  "registerIdle": "لا توجد جلسة مفتوحة",
+  "registerNew": "صندوق جديد",
+  "registerNameHint": "مثال: الصندوق الأمامي",
+  "registerListOffline": "تعذّر تحميل الصناديق. اختيار صندوق مشترك يتطلب اتصالاً.",
+  "registerSwitchBlocked": "أغلق جلسة هذا الصندوق قبل التبديل. المغادرة الآن ستتركها مفتوحة دون طريقة للعودة إليها من هنا.",
+  "setRegister": "الصندوق",
+  "sessionJoinRegister": "البيع في هذه الجلسة",
+  "sessionJoinTitle": "العمل على هذا الصندوق؟",
+  "sessionJoinBody": "سيبدأ هذا الجهاز العمل على {register}. المبيعات التي تسجّلها ستدخل في الجلسة {session}، مع بقية الأجهزة العاملة عليها — ويمكن لأيٍّ منها إغلاقها.",
+  "@sessionJoinBody": {"placeholders": {"register": {"type": "String"}, "session": {"type": "String"}}},
+  "sessionJoinBlocked": "هذا الجهاز لديه جلسة مفتوحة خاصة به. أغلقها قبل العمل على صندوق آخر، وإلا بقيت مفتوحة دون أن يصل إليها شيء.",
+  "sessionJoinNoRegister": "لم تكتمل مزامنة هذه الجلسة، لذا الصندوق الذي تنتمي إليه غير معروف هنا بعد. زامن ثم أعد المحاولة.",
+  "sessionJoinOpenElsewhere": "يوجد صندوق آخر لديه جلسة مفتوحة. بِع فيها بدل بدء جلسة ثانية.",
   "actionCancel": "إلغاء",
   "actionSave": "حفظ",
   "actionSaveChanges": "حفظ التغييرات",
@@ -143,6 +183,11 @@
   "newPassword": "كلمة مرور جديدة",
   "newQuantity": "الكمية الجديدة",
   "noSecurityRules": "لم يتم العثور على قواعد أمان.",
+  "securityRulesIntro": "اختر من يمكنه استخدام كل جزء من نقطة البيع. الكاشير يعني الجميع؛ المسؤول يعني المسؤول وحده — والكاشير الذي يحاول يُطلب منه أن يسألك.",
+  "securityRulesSummary": "{total} قاعدة · {adminOnly} للمسؤول فقط",
+  "securityCategoryCount": "{count} · {restricted} للمسؤول فقط",
+  "securityLevelCashierHint": "يمكن للكاشير والمسؤول القيام بذلك",
+  "securityLevelAdminHint": "المسؤول وحده يمكنه القيام بذلك",
   "noTaxShort": "بدون ضريبة",
   "noneLabel": "بدون",
   "noteLabel": "ملاحظة",
@@ -1801,6 +1846,7 @@
   "voidReasonPrompt": "أدخل أو اختر سبب إلغاء \"{number}\"",
   "accessDenied": "تم رفض الوصول",
   "accessDeniedBody": "ليس لديك إذن لعرض هذا القسم.\nاختر قسمًا آخر من القائمة، أو اطلب الإذن من المسؤول.",
+  "accessDeniedAskAdmin": "ليس لديك إذن لتنفيذ هذا الإجراء.\nاطلب من المسؤول القيام به نيابة عنك.",
   "checkingUpper": "جارٍ التحقق…",
   "chooseYourMenuLayout": "اختر تخطيط القائمة",
   "connectingEllipsis": "جارٍ الاتصال…",
@@ -2068,7 +2114,7 @@
   "sessionCashMovements": "حركات النقد",
   "sessionNotes": "ملاحظات",
   "cashDrawer": "درج النقد",
-  "sessionRemoteFiguresOffline": "هذه الجلسة تخص صندوقًا آخر — تُحمَّل مبالغها من الخادم.",
+  "sessionRemoteFiguresOffline": "الخادم غير متاح — هذه أرقام هذا الجهاز فقط. تُحمَّل مبالغ الصندوق الكاملة من الخادم.",
   "sessionDocuments": "المستندات",
   "sessionOverviewTab": "نظرة عامة",
   "sessionPaymentsTab": "المدفوعات",
@@ -2108,6 +2154,8 @@
     }
   },
   "cashDrawerTransportUnavailable": "هذا الاتصال غير متاح على هذا الجهاز.",
+  "cashDrawerNotConfigured": "لا يوجد درج نقد مُعدّ على هذه النقطة. فعّل واحدًا من الإعدادات ← الطابعات ← درج النقد.",
+  "posOpenDrawer": "فتح الدرج",
   "setSounds": "الأصوات",
   "setSoundsEnabled": "تفعيل الأصوات",
   "setSoundVolume": "مستوى الصوت",
@@ -2184,5 +2232,157 @@
   "iconSauce": "صلصة",
   "iconDrink": "مشروب",
   "iconDessert": "حلوى",
-  "iconSpice": "حار"
+  "iconSpice": "حار",
+  "rptTitleSalesByProduct": "المبيعات حسب المنتج",
+  "rptTitleSalesByGroup": "المبيعات حسب مجموعة المنتجات",
+  "rptTitleSalesTax": "ضريبة المبيعات",
+  "rptTitleSalesByCustomer": "المبيعات حسب العميل",
+  "rptTitlePaymentByCustomer": "طرق الدفع حسب العملاء",
+  "rptTitlePaymentByUser": "طرق الدفع حسب المستخدمين",
+  "rptTitlePaymentTypes": "المبيعات حسب طريقة الدفع",
+  "rptTitleItemList": "قائمة أصناف المبيعات",
+  "rptTitleProfit": "الربح",
+  "rptTitleStockMovement": "حركة المخزون",
+  "rptTitleItemDiscounts": "خصومات الأصناف",
+  "rptTitleDiscountsBySource": "الخصومات حسب المصدر",
+  "rptTitleDiscountsGranted": "الخصومات الممنوحة (بعد الضريبة)",
+  "rptTitleVoidedItems": "الأصناف الملغاة",
+  "rptTitleStartingCash": "حركات النقد الافتتاحي",
+  "rptTitleUnpaidSales": "المبيعات غير المدفوعة",
+  "rptTitleHourlyByGroup": "المبيعات بالساعة حسب مجموعة المنتجات",
+  "rptTitleByTable": "المبيعات حسب الطاولة / رقم الطلب",
+  "rptTitleHourlySales": "المبيعات بالساعة",
+  "rptTitleDailySales": "المبيعات اليومية",
+  "rptTitleInvoices": "الفواتير",
+  "rptTitleRefunds": "المرتجعات",
+  "rptTitleSalesByUsers": "المبيعات حسب المستخدم",
+  "rptTitleUnpaidPurchase": "المشتريات غير المدفوعة",
+  "rptTitlePurchaseBySupplier": "المشتريات حسب المورّد",
+  "rptTitlePurchaseByProduct": "المشتريات حسب المنتج",
+  "rptTitleExpirationDate": "تواريخ انتهاء الصلاحية",
+  "rptTitlePurchaseTax": "ضريبة المشتريات",
+  "rptTitlePurchaseInvoices": "فواتير الشراء",
+  "rptTitlePurchasedItemDiscounts": "خصومات الأصناف المشتراة",
+  "rptTitlePurchaseDiscounts": "خصومات المشتريات",
+  "rptTitleStockReturns": "مرتجعات المخزون حسب المنتج",
+  "rptTitleLossAndDamage": "التوالف والخسائر حسب المنتج",
+  "rptTitleReorderList": "قائمة إعادة الطلب",
+  "rptTitleLowStock": "تنبيه انخفاض المخزون",
+  "rptTitleTransactionHistory": "سجل المعاملات",
+  "rptTitleStockReport": "تقرير المخزون",
+  "rptColUom": "وحدة القياس",
+  "rptColTaxName": "اسم الضريبة",
+  "rptColRefNumber": "الرقم المرجعي",
+  "rptColRefShort": "المرجع",
+  "rptColDocument": "المستند",
+  "rptColDocumentShort": "رقم المستند",
+  "rptColCustomerCode": "رمز العميل",
+  "rptColTotalTax": "إجمالي الضريبة",
+  "rptColCreateDate": "تاريخ الإنشاء",
+  "rptColProfit": "الربح",
+  "rptColMargin": "الهامش",
+  "rptColNumSales": "عدد المبيعات",
+  "rptColNumberOfSales": "عدد المبيعات",
+  "rptColSalesCount": "عدد المبيعات",
+  "rptColAverageSale": "متوسط البيع",
+  "rptColTotalSales": "إجمالي المبيعات",
+  "rptColHours": "الساعات",
+  "rptColTotalDiscount": "إجمالي الخصم",
+  "rptColDiscountSource": "مصدر الخصم",
+  "rptColTotalBeforeDisc": "الإجمالي قبل الخصم",
+  "rptColTotalAfterDisc": "الإجمالي بعد الخصم",
+  "rptColDiscountGranted": "الخصم الممنوح",
+  "rptColBeforeDisc": "قبل الخصم",
+  "rptColAfterDisc": "بعد الخصم",
+  "rptColTotalDisc": "إجمالي الخصم",
+  "rptColTotalPaid": "إجمالي المدفوع",
+  "rptColTotalUnpaid": "إجمالي غير المدفوع",
+  "rptColDueDate": "تاريخ الاستحقاق",
+  "rptColVoidedBy": "ألغاه",
+  "rptColVoided": "تاريخ الإلغاء",
+  "rptColCreated": "تاريخ الإنشاء",
+  "rptColReason": "السبب",
+  "rptColQtyShort": "الكمية",
+  "rptColOrderNo": "رقم الطلب",
+  "rptColPaymentMethod": "طريقة الدفع",
+  "rptColPurchaseNumber": "رقم الشراء",
+  "rptColExpirationDate": "تاريخ انتهاء الصلاحية",
+  "rptColProductName": "اسم المنتج",
+  "rptColOrderQty": "كمية الطلب",
+  "rptColCurrentStock": "المخزون الحالي",
+  "rptColWarningQty": "حد التنبيه",
+  "rptColTransactionType": "نوع المعاملة",
+  "rptColCredit": "دائن",
+  "rptColDebit": "مدين",
+  "rptColTableOrOrder": "الطاولة / رقم الطلب",
+  "rptColZReportNo": "رقم تقرير Z",
+  "rptColCompany": "الشركة",
+  "rptColCostPrice": "سعر التكلفة",
+  "rptColCostBeforeTax": "التكلفة قبل الضريبة",
+  "rptColCostInclTax": "التكلفة بعد الضريبة",
+  "rptFastMoving": "سريع الحركة",
+  "rptSlowMoving": "بطيء الحركة",
+  "rptStatusConfirmed": "مؤكد",
+  "rptStatusPending": "قيد الانتظار",
+  "rptBusinessPartner": "الشريك التجاري",
+  "rptNetTotal": "الإجمالي الصافي",
+  "rptTotalsRow": "الإجماليات",
+  "rptNoGroup": "(بدون)",
+  "rptNoDiscountsInPeriod": "لا توجد خصومات في هذه الفترة.",
+  "rptTotalNumberOfSales": "إجمالي عدد المبيعات: {count}",
+  "@rptTotalNumberOfSales": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "rptAverageSalesPerItem": "متوسط عدد المبيعات لكل صنف: {count}",
+  "@rptAverageSalesPerItem": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "rptOrdersDiscounted": "عدد الطلبات المخصومة: {count}",
+  "@rptOrdersDiscounted": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "rptTotalDiscounted": "إجمالي المبلغ المخصوم: {amount}",
+  "@rptTotalDiscounted": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "rptPageOf": "صفحة {page} / {total}",
+  "@rptPageOf": {
+    "placeholders": {
+      "page": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "rptProductCount": "{count, plural, =0{لا منتجات} =1{منتج واحد} =2{منتجان} few{{count} منتجات} many{{count} منتجًا} other{{count} منتج}}",
+  "@rptProductCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "rptColHourStart": "ساعة البداية",
+  "rptColHourEnd": "ساعة النهاية",
+  "rptFavorites": "المفضلة",
+  "rptColTotalBefTax": "الإجمالي قبل الضريبة",
+  "saveStockReportTitle": "حفظ تقرير المخزون"
 }

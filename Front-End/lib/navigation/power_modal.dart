@@ -100,7 +100,10 @@ class PowerModal extends StatelessWidget {
             OutlinedButton.icon(
               onPressed: () => Navigator.pop(context),
               icon: Icon(Icons.close, color: cs.onSurface),
-              label: Text(AppLocalizations.of(context).actionCancel, style: TextStyle(color: cs.onSurface)),
+              label: Text(
+                AppLocalizations.of(context).actionCancel,
+                style: TextStyle(color: cs.onSurface),
+              ),
               style: OutlinedButton.styleFrom(
                 side: BorderSide(color: context.navDivider),
                 padding: const EdgeInsets.symmetric(

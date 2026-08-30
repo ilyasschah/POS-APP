@@ -19,7 +19,7 @@
 ; because it is obviously not a release — a hardcoded "1.0.0" here is exactly how
 ; the installer's number stopped matching the app's in the first place.
 #ifndef AppVersion
-  #define AppVersion "1.0.6"
+  #define AppVersion "1.0.9"
 #endif
 
 [Setup]

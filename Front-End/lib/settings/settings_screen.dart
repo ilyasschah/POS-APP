@@ -12,6 +12,8 @@ import 'package:path/path.dart' as p;
 import 'package:pos_app/database/database_provider.dart';
 import 'package:pos_app/database/backup_service.dart';
 import 'package:pos_app/utils/customer_display_service.dart';
+import 'package:pos_app/utils/pole_display_frame.dart';
+import 'package:pos_app/utils/windows_ports.dart';
 import 'package:pos_app/customer_display/customer_display_web_server.dart';
 import 'package:pos_app/customer_display/customer_display_screen.dart';
 import 'package:pos_app/core/app_theme.dart';
@@ -59,6 +61,8 @@ import 'package:pos_app/tax/tax_provider.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
 import 'package:pos_app/settings/device_identity.dart';
 import 'package:pos_app/settings/developer_mode.dart';
+import 'package:pos_app/session/register_identity.dart';
+import 'package:pos_app/session/register_picker.dart';
 import 'package:pos_app/session/session_summary_provider.dart';
 import 'package:pos_app/cart/payment_type_provider.dart';
 import 'package:pos_app/onboarding/onboarding_prefs.dart';
@@ -660,15 +664,59 @@ class _SettingDropdown extends ConsumerWidget {
   final String label;
   final List<String> options;
 
+  /// Shown in place of the dropdown when [options] is empty.
+  ///
+  /// 🚨 An empty list used to red-screen this widget: both the fallback for a
+  /// missing setting and `safeValue` end in `options.first`. That was survivable
+  /// only while every dropdown was fed a written-down list. Now that the port
+  /// pickers are fed by hardware discovery, "this machine has none" is an
+  /// ordinary answer — and it has to read as one, not as a crash and not as an
+  /// empty box the operator will tap at.
+  final String? emptyHint;
+
+  /// Overrides how one option is printed. Used by the port pickers to mark the
+  /// saved-but-absent port, which otherwise reads as available hardware.
+  final String Function(BuildContext, String)? optionLabel;
+
   const _SettingDropdown({
     required this.settingKey,
     required this.label,
     required this.options,
+    this.emptyHint,
+    this.optionLabel,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+
+    if (options.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        child: InputDecorator(
+          decoration: InputDecoration(
+            labelText: label,
+            filled: true,
+            fillColor: theme.colorScheme.surface,
+            border: const OutlineInputBorder(),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
+            isDense: true,
+            enabled: false,
+          ),
+          child: Text(
+            emptyHint ?? AppLocalizations.of(context).portNoneDetected,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ),
+      );
+    }
+
     final current =
         ref.watch(appSettingsProvider)[settingKey] ??
         kSettingDefaults[settingKey] ??
@@ -699,7 +747,7 @@ class _SettingDropdown extends ConsumerWidget {
                   .map(
                     (o) => DropdownMenuItem(
                       value: o,
-                      child: Text(_settingOptionLabel(context, o)),
+                      child: Text((optionLabel ?? _settingOptionLabel)(context, o)),
                     ),
                   )
                   .toList(),
@@ -1995,6 +2043,16 @@ class _DropdownControl extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Hardware-fed options can legitimately be empty — see _SettingDropdown.
+    if (options.isEmpty) {
+      return Text(
+        AppLocalizations.of(context).portNoneDetected,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontStyle: FontStyle.italic,
+            ),
+      );
+    }
     final current =
         ref.watch(appSettingsProvider)[settingKey] ??
         kSettingDefaults[settingKey] ??
@@ -4343,14 +4401,22 @@ class _OrderPaymentTab extends ConsumerWidget {
           ],
         ),
         // ── POS session ───────────────────────────────────────────────────
-        // 🚨 Both settings here decide what happens at CLOSING. Without the
-        // cash methods the till has to guess which tenders came out of the
-        // drawer, and a mis-guess moves money between "counted" and merely
-        // "confirmed" — which is why the session screen nags until this is set
-        // rather than quietly carrying on.
+        // 🚨 The register comes first because it decides WHOSE session the two
+        // below are describing. Point two terminals at one register and they
+        // share its open session, its documents and its drawer; leave it unset
+        // and each device is its own till, which is how this worked before
+        // registers existed.
+        //
+        // The other two decide what happens at CLOSING. Without the cash
+        // methods the till has to guess which tenders came out of the drawer,
+        // and a mis-guess moves money between "counted" and merely "confirmed" —
+        // which is why the session screen nags until this is set rather than
+        // quietly carrying on.
         _SettingsCard(
           title: AppLocalizations.of(context).setPosSession,
           children: const [
+            _RegisterSelector(),
+            Divider(height: 24),
             _CashPaymentMethodsSelector(),
             Divider(height: 24),
             _MaxCashDifferenceField(),
@@ -4815,6 +4881,37 @@ class _CashPaymentMethodsSelector extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Which REGISTER this terminal is working — the switch that makes a session
+/// shared between devices. See `session/register_picker.dart`.
+class _RegisterSelector extends ConsumerWidget {
+  const _RegisterSelector();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final explicit = ref.watch(registerIsExplicitProvider);
+    final name = ref.watch(registerNameProvider).value ?? '';
+
+    return ListTile(
+      leading: Icon(Icons.point_of_sale_outlined,
+          color: theme.colorScheme.onSurfaceVariant),
+      title: Text(l.setRegister, style: theme.textTheme.bodyMedium),
+      subtitle: Text(
+        // An unset register is not "none" — it is this device on its own, which
+        // is a real and often correct configuration. Saying "none" would read
+        // as broken.
+        explicit
+            ? (name.isEmpty ? l.registerChoose : name)
+            : l.registerThisDeviceOnly,
+        style: theme.textTheme.bodySmall,
+      ),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => RegisterPickerDialog.show(context),
     );
   }
 }
@@ -5284,7 +5381,8 @@ class _ScalePortDropdown extends ConsumerWidget {
         ) ??
         kSettingDefaults[SettingKeys.scalePort]!;
 
-    final options = <String>{...detected, saved}.toList()..sort();
+    // Natural order, not lexicographic: a plain sort puts COM10 above COM2.
+    final options = mergePortLists(detected: [detected], saved: saved);
 
     return Row(
       children: [
@@ -5292,9 +5390,13 @@ class _ScalePortDropdown extends ConsumerWidget {
           child: _SettingDropdown(
             settingKey: SettingKeys.scalePort,
             label: detected.isEmpty
-                ? 'Serial port (none detected)'
-                : 'Serial port',
+                ? '${AppLocalizations.of(context).setSerialPort} — '
+                    '${AppLocalizations.of(context).portNoneDetected}'
+                : AppLocalizations.of(context).setSerialPort,
             options: options,
+            optionLabel: (_, port) => detected.contains(port)
+                ? port
+                : AppLocalizations.of(context).portNotDetected(port),
           ),
         ),
         Padding(
@@ -5370,13 +5472,64 @@ class _CustomerDisplayPortControl extends ConsumerWidget {
   const _CustomerDisplayPortControl();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) => _DropdownControl(
-        SettingKeys.customerDisplayPort,
-        CustomerDisplayService.availablePorts(
-          saved:
-              ref.watch(appSettingsProvider)[SettingKeys.customerDisplayPort],
+  Widget build(BuildContext context, WidgetRef ref) {
+    final detected = ref.watch(customerDisplayPortsProvider);
+    final saved =
+        ref.watch(appSettingsProvider)[SettingKeys.customerDisplayPort];
+    return _DropdownControl(
+      SettingKeys.customerDisplayPort,
+      mergePortLists(detected: [detected], saved: saved),
+    );
+  }
+}
+
+/// The COM/LPT picker for the Customer Display tab, over the ports this machine
+/// is actually reporting.
+///
+/// 🚨 **Nothing in this list is written down.** It used to be a fixed
+/// `COM1`–`COM10` plus `LPT1`–`LPT3`, so a till with one real port offered
+/// thirteen and twelve of them wrote into the void — and a write to a port that
+/// is not there fails exactly the way a display with a loose cable does, which
+/// is why this took a field visit to find. See `utils/windows_ports.dart`.
+///
+/// A saved port the machine no longer reports is still offered — the operator's
+/// configuration is not ours to discard because a cable is out — but it is
+/// LABELLED as absent, because an unmarked phantom is the same lie in a
+/// shorter list.
+class _CustomerDisplayPortDropdown extends ConsumerWidget {
+  const _CustomerDisplayPortDropdown();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
+    final detected = ref.watch(customerDisplayPortsProvider);
+    final saved =
+        ref.watch(appSettingsProvider)[SettingKeys.customerDisplayPort];
+    final options = mergePortLists(detected: [detected], saved: saved);
+
+    return Row(
+      children: [
+        Expanded(
+          child: _SettingDropdown(
+            settingKey: SettingKeys.customerDisplayPort,
+            label: l.setComPort,
+            options: options,
+            emptyHint: l.portNoneDetectedHint,
+            optionLabel: (_, port) =>
+                detected.contains(port) ? port : l.portNotDetected(port),
+          ),
         ),
-      );
+        Padding(
+          padding: const EdgeInsets.only(right: 12),
+          child: IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: l.portRefresh,
+            onPressed: () => ref.invalidate(customerDisplayPortsProvider),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _CustomerDisplayTab extends ConsumerStatefulWidget {
@@ -5499,20 +5652,7 @@ class _CustomerDisplayTabState extends ConsumerState<_CustomerDisplayTab> {
                       ),
                       child: Row(
                         children: [
-                          Expanded(
-                            child: _SettingDropdown(
-                              settingKey: SettingKeys.customerDisplayPort,
-                              label: AppLocalizations.of(context).setComPort,
-                              // The ports this machine actually has. The list
-                              // used to be a hardcoded COM1–COM10, so a till
-                              // whose Windows only exposes COM1–COM5 could sit
-                              // configured on COM10 and write to nothing.
-                              options: CustomerDisplayService.availablePorts(
-                                saved: ref.watch(appSettingsProvider)[
-                                    SettingKeys.customerDisplayPort],
-                              ),
-                            ),
-                          ),
+                          const Expanded(child: _CustomerDisplayPortDropdown()),
                           const SizedBox(width: 12),
                           TextButton(
                             onPressed: () => setState(
@@ -5620,6 +5760,38 @@ class _CustomerDisplayTabState extends ConsumerState<_CustomerDisplayTab> {
                       settingKey: SettingKeys.customerDisplayNumChars,
                       min: 1,
                       max: 40,
+                    ),
+
+                    // What the DISPLAY's firmware can render — not the app's
+                    // language. Sending Arabic bytes to a Latin-only panel is
+                    // worse than the '?' it would otherwise show, so this is
+                    // opt-in and defaults to plain ASCII.
+                    _SettingDropdown(
+                      settingKey: SettingKeys.customerDisplayCharset,
+                      label: AppLocalizations.of(context).setDisplayCharset,
+                      options: DisplayCharset.values
+                          .map((c) => c.settingValue)
+                          .toList(),
+                      optionLabel: (ctx, value) => switch (
+                          DisplayCharset.fromSetting(value)) {
+                        DisplayCharset.ascii =>
+                          AppLocalizations.of(ctx).charsetAscii,
+                        DisplayCharset.latin1 =>
+                          AppLocalizations.of(ctx).charsetLatin1,
+                        DisplayCharset.cp1256 =>
+                          AppLocalizations.of(ctx).charsetArabic,
+                        DisplayCharset.cp1256Visual =>
+                          AppLocalizations.of(ctx).charsetArabicVisual,
+                      },
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+                      child: Text(
+                        AppLocalizations.of(context).setDisplayCharsetHint,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
                     ),
 
                     // Optional second welcome line for a 2-line pole display.

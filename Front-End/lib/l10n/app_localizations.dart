@@ -100,6 +100,234 @@ abstract class AppLocalizations {
     Locale('fr'),
   ];
 
+  /// No description provided for @setSerialPort.
+  ///
+  /// In en, this message translates to:
+  /// **'Serial port'**
+  String get setSerialPort;
+
+  /// No description provided for @setDisplayCharset.
+  ///
+  /// In en, this message translates to:
+  /// **'Display character set'**
+  String get setDisplayCharset;
+
+  /// No description provided for @setDisplayCharsetHint.
+  ///
+  /// In en, this message translates to:
+  /// **'What the display\'s firmware can render — this is about the hardware, not the app\'s language. Try Arabic (Windows-1256) first; only pick the reversed one if the display shows Arabic words backwards.'**
+  String get setDisplayCharsetHint;
+
+  /// No description provided for @charsetAscii.
+  ///
+  /// In en, this message translates to:
+  /// **'Plain (accents simplified)'**
+  String get charsetAscii;
+
+  /// No description provided for @charsetLatin1.
+  ///
+  /// In en, this message translates to:
+  /// **'Western European (accents kept)'**
+  String get charsetLatin1;
+
+  /// No description provided for @charsetArabic.
+  ///
+  /// In en, this message translates to:
+  /// **'Arabic (Windows-1256)'**
+  String get charsetArabic;
+
+  /// No description provided for @charsetArabicVisual.
+  ///
+  /// In en, this message translates to:
+  /// **'Arabic, reversed (only if words come out backwards)'**
+  String get charsetArabicVisual;
+
+  /// No description provided for @printerConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection'**
+  String get printerConnection;
+
+  /// No description provided for @printerConnectionSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'This computer (Windows printer)'**
+  String get printerConnectionSystem;
+
+  /// No description provided for @printerConnectionSystemUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This device (opens the print dialog)'**
+  String get printerConnectionSystemUnavailable;
+
+  /// No description provided for @printerConnectionNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Network printer (Wi-Fi / LAN)'**
+  String get printerConnectionNetwork;
+
+  /// No description provided for @printerConnectionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A network printer prints silently on tablets as well as on this computer.'**
+  String get printerConnectionHint;
+
+  /// No description provided for @printerConnectionHintMobile.
+  ///
+  /// In en, this message translates to:
+  /// **'This device cannot print silently to a system printer — it can only open the print dialog. Choose Network printer and enter its address.'**
+  String get printerConnectionHintMobile;
+
+  /// No description provided for @printerHost.
+  ///
+  /// In en, this message translates to:
+  /// **'Printer address'**
+  String get printerHost;
+
+  /// No description provided for @printerTcpPort.
+  ///
+  /// In en, this message translates to:
+  /// **'Port'**
+  String get printerTcpPort;
+
+  /// No description provided for @poleDisplayTotalDue.
+  ///
+  /// In en, this message translates to:
+  /// **'TOTAL DUE'**
+  String get poleDisplayTotalDue;
+
+  /// No description provided for @poleDisplayWelcome.
+  ///
+  /// In en, this message translates to:
+  /// **'WELCOME!'**
+  String get poleDisplayWelcome;
+
+  /// No description provided for @portNoneDetected.
+  ///
+  /// In en, this message translates to:
+  /// **'None detected'**
+  String get portNoneDetected;
+
+  /// No description provided for @portNoneDetectedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'This machine reports no COM or LPT port. Check the cable and Device Manager, then reopen this screen.'**
+  String get portNoneDetectedHint;
+
+  /// No description provided for @portNotDetected.
+  ///
+  /// In en, this message translates to:
+  /// **'{port} (not detected)'**
+  String portNotDetected(String port);
+
+  /// No description provided for @portRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh ports'**
+  String get portRefresh;
+
+  /// No description provided for @registerChoose.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose register'**
+  String get registerChoose;
+
+  /// No description provided for @registerSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The till this device is working. Devices on the same register share its open session, its documents and its drawer.'**
+  String get registerSubtitle;
+
+  /// No description provided for @registerThisDeviceOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'This device only'**
+  String get registerThisDeviceOnly;
+
+  /// No description provided for @registerThisDeviceOnlyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Its own session, shared with nothing else.'**
+  String get registerThisDeviceOnlyHint;
+
+  /// No description provided for @registerTrading.
+  ///
+  /// In en, this message translates to:
+  /// **'Session open now'**
+  String get registerTrading;
+
+  /// No description provided for @registerIdle.
+  ///
+  /// In en, this message translates to:
+  /// **'No open session'**
+  String get registerIdle;
+
+  /// No description provided for @registerNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New register'**
+  String get registerNew;
+
+  /// No description provided for @registerNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Front Till'**
+  String get registerNameHint;
+
+  /// No description provided for @registerListOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Registers could not be loaded. Choosing a shared register needs a connection.'**
+  String get registerListOffline;
+
+  /// No description provided for @registerSwitchBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Close this register\'s session before switching. Moving now would leave it open with no way back to it from here.'**
+  String get registerSwitchBlocked;
+
+  /// No description provided for @setRegister.
+  ///
+  /// In en, this message translates to:
+  /// **'Register'**
+  String get setRegister;
+
+  /// No description provided for @sessionJoinRegister.
+  ///
+  /// In en, this message translates to:
+  /// **'Sell in this session'**
+  String get sessionJoinRegister;
+
+  /// No description provided for @sessionJoinTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Work this register?'**
+  String get sessionJoinTitle;
+
+  /// No description provided for @sessionJoinBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This device will start working {register}. Sales you ring go into session {session}, alongside every other terminal on it — and any of them can close it.'**
+  String sessionJoinBody(String register, String session);
+
+  /// No description provided for @sessionJoinBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'This device already has its own session open. Close it before working another register, or it stays open with nothing able to reach it.'**
+  String get sessionJoinBlocked;
+
+  /// No description provided for @sessionJoinNoRegister.
+  ///
+  /// In en, this message translates to:
+  /// **'This session has not finished syncing, so the register it belongs to is not known here yet. Sync and try again.'**
+  String get sessionJoinNoRegister;
+
+  /// No description provided for @sessionJoinOpenElsewhere.
+  ///
+  /// In en, this message translates to:
+  /// **'Another register already has a session open. Sell in that one instead of starting a second.'**
+  String get sessionJoinOpenElsewhere;
+
   /// Dismisses a dialog without applying changes
   ///
   /// In en, this message translates to:
@@ -957,6 +1185,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No security rules found.'**
   String get noSecurityRules;
+
+  /// No description provided for @securityRulesIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose who may use each part of the POS. Cashier means everyone may; Admin means only an administrator — a cashier who tries is told to ask you.'**
+  String get securityRulesIntro;
+
+  /// No description provided for @securityRulesSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{total} rules · {adminOnly} admin-only'**
+  String securityRulesSummary(int total, int adminOnly);
+
+  /// No description provided for @securityCategoryCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} · {restricted} admin-only'**
+  String securityCategoryCount(int count, int restricted);
+
+  /// No description provided for @securityLevelCashierHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Cashiers and admins may do this'**
+  String get securityLevelCashierHint;
+
+  /// No description provided for @securityLevelAdminHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Only an administrator may do this'**
+  String get securityLevelAdminHint;
 
   /// No description provided for @noTaxShort.
   ///
@@ -10484,6 +10742,12 @@ abstract class AppLocalizations {
   /// **'You do not have permission to view this section.\nChoose another section from the menu, or ask an administrator for access.'**
   String get accessDeniedBody;
 
+  /// No description provided for @accessDeniedAskAdmin.
+  ///
+  /// In en, this message translates to:
+  /// **'You do not have permission for this action.\nAsk an administrator to do it for you.'**
+  String get accessDeniedAskAdmin;
+
   /// No description provided for @checkingUpper.
   ///
   /// In en, this message translates to:
@@ -11945,7 +12209,7 @@ abstract class AppLocalizations {
   /// No description provided for @sessionRemoteFiguresOffline.
   ///
   /// In en, this message translates to:
-  /// **'This session belongs to another register — its takings load from the server.'**
+  /// **'Server unreachable — these are only this terminal\'s figures. The register\'s full takings load from the server.'**
   String get sessionRemoteFiguresOffline;
 
   /// No description provided for @sessionDocuments.
@@ -12139,6 +12403,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This connection is not available on this device.'**
   String get cashDrawerTransportUnavailable;
+
+  /// No description provided for @cashDrawerNotConfigured.
+  ///
+  /// In en, this message translates to:
+  /// **'No cash drawer is set up on this terminal. Turn one on in Settings → Printers → Cash Drawer.'**
+  String get cashDrawerNotConfigured;
+
+  /// No description provided for @posOpenDrawer.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Drawer'**
+  String get posOpenDrawer;
 
   /// No description provided for @setSounds.
   ///
@@ -12601,6 +12877,648 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Spice'**
   String get iconSpice;
+
+  /// No description provided for @rptTitleSalesByProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'SALES BY PRODUCT'**
+  String get rptTitleSalesByProduct;
+
+  /// No description provided for @rptTitleSalesByGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'SALES BY PRODUCT GROUPS'**
+  String get rptTitleSalesByGroup;
+
+  /// No description provided for @rptTitleSalesTax.
+  ///
+  /// In en, this message translates to:
+  /// **'SALES TAX'**
+  String get rptTitleSalesTax;
+
+  /// No description provided for @rptTitleSalesByCustomer.
+  ///
+  /// In en, this message translates to:
+  /// **'SALES BY CUSTOMER'**
+  String get rptTitleSalesByCustomer;
+
+  /// No description provided for @rptTitlePaymentByCustomer.
+  ///
+  /// In en, this message translates to:
+  /// **'PAYMENT TYPES BY CUSTOMERS'**
+  String get rptTitlePaymentByCustomer;
+
+  /// No description provided for @rptTitlePaymentByUser.
+  ///
+  /// In en, this message translates to:
+  /// **'PAYMENT TYPES BY USERS'**
+  String get rptTitlePaymentByUser;
+
+  /// No description provided for @rptTitlePaymentTypes.
+  ///
+  /// In en, this message translates to:
+  /// **'SALES BY PAYMENT TYPES'**
+  String get rptTitlePaymentTypes;
+
+  /// No description provided for @rptTitleItemList.
+  ///
+  /// In en, this message translates to:
+  /// **'SALES ITEM LIST'**
+  String get rptTitleItemList;
+
+  /// No description provided for @rptTitleProfit.
+  ///
+  /// In en, this message translates to:
+  /// **'PROFIT'**
+  String get rptTitleProfit;
+
+  /// No description provided for @rptTitleStockMovement.
+  ///
+  /// In en, this message translates to:
+  /// **'STOCK MOVEMENT'**
+  String get rptTitleStockMovement;
+
+  /// No description provided for @rptTitleItemDiscounts.
+  ///
+  /// In en, this message translates to:
+  /// **'ITEMS DISCOUNTS'**
+  String get rptTitleItemDiscounts;
+
+  /// No description provided for @rptTitleDiscountsBySource.
+  ///
+  /// In en, this message translates to:
+  /// **'DISCOUNTS BY SOURCE'**
+  String get rptTitleDiscountsBySource;
+
+  /// No description provided for @rptTitleDiscountsGranted.
+  ///
+  /// In en, this message translates to:
+  /// **'DISCOUNTS GRANTED (AFTER TAX)'**
+  String get rptTitleDiscountsGranted;
+
+  /// No description provided for @rptTitleVoidedItems.
+  ///
+  /// In en, this message translates to:
+  /// **'VOIDED ITEMS'**
+  String get rptTitleVoidedItems;
+
+  /// No description provided for @rptTitleStartingCash.
+  ///
+  /// In en, this message translates to:
+  /// **'STARTING CASH ENTRIES'**
+  String get rptTitleStartingCash;
+
+  /// No description provided for @rptTitleUnpaidSales.
+  ///
+  /// In en, this message translates to:
+  /// **'UNPAID SALES'**
+  String get rptTitleUnpaidSales;
+
+  /// No description provided for @rptTitleHourlyByGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'HOURLY SALES BY PRODUCT GROUPS'**
+  String get rptTitleHourlyByGroup;
+
+  /// No description provided for @rptTitleByTable.
+  ///
+  /// In en, this message translates to:
+  /// **'SALES BY TABLE / ORDER NUMBER'**
+  String get rptTitleByTable;
+
+  /// No description provided for @rptTitleHourlySales.
+  ///
+  /// In en, this message translates to:
+  /// **'HOURLY SALES'**
+  String get rptTitleHourlySales;
+
+  /// No description provided for @rptTitleDailySales.
+  ///
+  /// In en, this message translates to:
+  /// **'DAILY SALES'**
+  String get rptTitleDailySales;
+
+  /// No description provided for @rptTitleInvoices.
+  ///
+  /// In en, this message translates to:
+  /// **'INVOICES'**
+  String get rptTitleInvoices;
+
+  /// No description provided for @rptTitleRefunds.
+  ///
+  /// In en, this message translates to:
+  /// **'REFUNDS'**
+  String get rptTitleRefunds;
+
+  /// No description provided for @rptTitleSalesByUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'SALES BY USERS'**
+  String get rptTitleSalesByUsers;
+
+  /// No description provided for @rptTitleUnpaidPurchase.
+  ///
+  /// In en, this message translates to:
+  /// **'UNPAID PURCHASE'**
+  String get rptTitleUnpaidPurchase;
+
+  /// No description provided for @rptTitlePurchaseBySupplier.
+  ///
+  /// In en, this message translates to:
+  /// **'PURCHASE BY SUPPLIER'**
+  String get rptTitlePurchaseBySupplier;
+
+  /// No description provided for @rptTitlePurchaseByProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'PURCHASE BY PRODUCT'**
+  String get rptTitlePurchaseByProduct;
+
+  /// No description provided for @rptTitleExpirationDate.
+  ///
+  /// In en, this message translates to:
+  /// **'EXPIRATION DATE'**
+  String get rptTitleExpirationDate;
+
+  /// No description provided for @rptTitlePurchaseTax.
+  ///
+  /// In en, this message translates to:
+  /// **'PURCHASE TAX'**
+  String get rptTitlePurchaseTax;
+
+  /// No description provided for @rptTitlePurchaseInvoices.
+  ///
+  /// In en, this message translates to:
+  /// **'PURCHASE INVOICES'**
+  String get rptTitlePurchaseInvoices;
+
+  /// No description provided for @rptTitlePurchasedItemDiscounts.
+  ///
+  /// In en, this message translates to:
+  /// **'PURCHASED ITEMS DISCOUNTS'**
+  String get rptTitlePurchasedItemDiscounts;
+
+  /// No description provided for @rptTitlePurchaseDiscounts.
+  ///
+  /// In en, this message translates to:
+  /// **'PURCHASE DISCOUNTS'**
+  String get rptTitlePurchaseDiscounts;
+
+  /// No description provided for @rptTitleStockReturns.
+  ///
+  /// In en, this message translates to:
+  /// **'STOCK RETURNS BY PRODUCT'**
+  String get rptTitleStockReturns;
+
+  /// No description provided for @rptTitleLossAndDamage.
+  ///
+  /// In en, this message translates to:
+  /// **'LOSS AND DAMAGE BY PRODUCT'**
+  String get rptTitleLossAndDamage;
+
+  /// No description provided for @rptTitleReorderList.
+  ///
+  /// In en, this message translates to:
+  /// **'REORDER PRODUCT LIST'**
+  String get rptTitleReorderList;
+
+  /// No description provided for @rptTitleLowStock.
+  ///
+  /// In en, this message translates to:
+  /// **'LOW STOCK WARNING'**
+  String get rptTitleLowStock;
+
+  /// No description provided for @rptTitleTransactionHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'TRANSACTION HISTORY'**
+  String get rptTitleTransactionHistory;
+
+  /// No description provided for @rptTitleStockReport.
+  ///
+  /// In en, this message translates to:
+  /// **'STOCK REPORT'**
+  String get rptTitleStockReport;
+
+  /// No description provided for @rptColUom.
+  ///
+  /// In en, this message translates to:
+  /// **'UOM'**
+  String get rptColUom;
+
+  /// No description provided for @rptColTaxName.
+  ///
+  /// In en, this message translates to:
+  /// **'Tax name'**
+  String get rptColTaxName;
+
+  /// No description provided for @rptColRefNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Ref. number'**
+  String get rptColRefNumber;
+
+  /// No description provided for @rptColRefShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Ref. #'**
+  String get rptColRefShort;
+
+  /// No description provided for @rptColDocument.
+  ///
+  /// In en, this message translates to:
+  /// **'Document'**
+  String get rptColDocument;
+
+  /// No description provided for @rptColDocumentShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Document #'**
+  String get rptColDocumentShort;
+
+  /// No description provided for @rptColCustomerCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer code'**
+  String get rptColCustomerCode;
+
+  /// No description provided for @rptColTotalTax.
+  ///
+  /// In en, this message translates to:
+  /// **'Total tax'**
+  String get rptColTotalTax;
+
+  /// No description provided for @rptColCreateDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create date'**
+  String get rptColCreateDate;
+
+  /// No description provided for @rptColProfit.
+  ///
+  /// In en, this message translates to:
+  /// **'Profit'**
+  String get rptColProfit;
+
+  /// No description provided for @rptColMargin.
+  ///
+  /// In en, this message translates to:
+  /// **'Margin'**
+  String get rptColMargin;
+
+  /// No description provided for @rptColNumSales.
+  ///
+  /// In en, this message translates to:
+  /// **'Num. of sales'**
+  String get rptColNumSales;
+
+  /// No description provided for @rptColNumberOfSales.
+  ///
+  /// In en, this message translates to:
+  /// **'Number of sales'**
+  String get rptColNumberOfSales;
+
+  /// No description provided for @rptColSalesCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Sales count'**
+  String get rptColSalesCount;
+
+  /// No description provided for @rptColAverageSale.
+  ///
+  /// In en, this message translates to:
+  /// **'Average sale'**
+  String get rptColAverageSale;
+
+  /// No description provided for @rptColTotalSales.
+  ///
+  /// In en, this message translates to:
+  /// **'Total sales'**
+  String get rptColTotalSales;
+
+  /// No description provided for @rptColHours.
+  ///
+  /// In en, this message translates to:
+  /// **'Hours'**
+  String get rptColHours;
+
+  /// No description provided for @rptColTotalDiscount.
+  ///
+  /// In en, this message translates to:
+  /// **'Total discount'**
+  String get rptColTotalDiscount;
+
+  /// No description provided for @rptColDiscountSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Discount source'**
+  String get rptColDiscountSource;
+
+  /// No description provided for @rptColTotalBeforeDisc.
+  ///
+  /// In en, this message translates to:
+  /// **'Total before disc.'**
+  String get rptColTotalBeforeDisc;
+
+  /// No description provided for @rptColTotalAfterDisc.
+  ///
+  /// In en, this message translates to:
+  /// **'Total after disc.'**
+  String get rptColTotalAfterDisc;
+
+  /// No description provided for @rptColDiscountGranted.
+  ///
+  /// In en, this message translates to:
+  /// **'Discount granted'**
+  String get rptColDiscountGranted;
+
+  /// No description provided for @rptColBeforeDisc.
+  ///
+  /// In en, this message translates to:
+  /// **'Before disc.'**
+  String get rptColBeforeDisc;
+
+  /// No description provided for @rptColAfterDisc.
+  ///
+  /// In en, this message translates to:
+  /// **'After disc.'**
+  String get rptColAfterDisc;
+
+  /// No description provided for @rptColTotalDisc.
+  ///
+  /// In en, this message translates to:
+  /// **'Total disc.'**
+  String get rptColTotalDisc;
+
+  /// No description provided for @rptColTotalPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Total paid'**
+  String get rptColTotalPaid;
+
+  /// No description provided for @rptColTotalUnpaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Total unpaid'**
+  String get rptColTotalUnpaid;
+
+  /// No description provided for @rptColDueDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Due date'**
+  String get rptColDueDate;
+
+  /// No description provided for @rptColVoidedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Voided by'**
+  String get rptColVoidedBy;
+
+  /// No description provided for @rptColVoided.
+  ///
+  /// In en, this message translates to:
+  /// **'Voided'**
+  String get rptColVoided;
+
+  /// No description provided for @rptColCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Created'**
+  String get rptColCreated;
+
+  /// No description provided for @rptColReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason'**
+  String get rptColReason;
+
+  /// No description provided for @rptColQtyShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Qty.'**
+  String get rptColQtyShort;
+
+  /// No description provided for @rptColOrderNo.
+  ///
+  /// In en, this message translates to:
+  /// **'Order #'**
+  String get rptColOrderNo;
+
+  /// No description provided for @rptColPaymentMethod.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment method'**
+  String get rptColPaymentMethod;
+
+  /// No description provided for @rptColPurchaseNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase number'**
+  String get rptColPurchaseNumber;
+
+  /// No description provided for @rptColExpirationDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Expiration date'**
+  String get rptColExpirationDate;
+
+  /// No description provided for @rptColProductName.
+  ///
+  /// In en, this message translates to:
+  /// **'Product name'**
+  String get rptColProductName;
+
+  /// No description provided for @rptColOrderQty.
+  ///
+  /// In en, this message translates to:
+  /// **'Order qty.'**
+  String get rptColOrderQty;
+
+  /// No description provided for @rptColCurrentStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Current stock'**
+  String get rptColCurrentStock;
+
+  /// No description provided for @rptColWarningQty.
+  ///
+  /// In en, this message translates to:
+  /// **'Warning qty.'**
+  String get rptColWarningQty;
+
+  /// No description provided for @rptColTransactionType.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction type'**
+  String get rptColTransactionType;
+
+  /// No description provided for @rptColCredit.
+  ///
+  /// In en, this message translates to:
+  /// **'Credit'**
+  String get rptColCredit;
+
+  /// No description provided for @rptColDebit.
+  ///
+  /// In en, this message translates to:
+  /// **'Debit'**
+  String get rptColDebit;
+
+  /// No description provided for @rptColTableOrOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Table / order number'**
+  String get rptColTableOrOrder;
+
+  /// No description provided for @rptColZReportNo.
+  ///
+  /// In en, this message translates to:
+  /// **'Z-Report #'**
+  String get rptColZReportNo;
+
+  /// No description provided for @rptColCompany.
+  ///
+  /// In en, this message translates to:
+  /// **'Company'**
+  String get rptColCompany;
+
+  /// No description provided for @rptColCostPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Cost price'**
+  String get rptColCostPrice;
+
+  /// No description provided for @rptColCostBeforeTax.
+  ///
+  /// In en, this message translates to:
+  /// **'Cost bef. tax'**
+  String get rptColCostBeforeTax;
+
+  /// No description provided for @rptColCostInclTax.
+  ///
+  /// In en, this message translates to:
+  /// **'Cost incl. tax'**
+  String get rptColCostInclTax;
+
+  /// No description provided for @rptFastMoving.
+  ///
+  /// In en, this message translates to:
+  /// **'Fast moving'**
+  String get rptFastMoving;
+
+  /// No description provided for @rptSlowMoving.
+  ///
+  /// In en, this message translates to:
+  /// **'Slow moving'**
+  String get rptSlowMoving;
+
+  /// No description provided for @rptStatusConfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirmed'**
+  String get rptStatusConfirmed;
+
+  /// No description provided for @rptStatusPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get rptStatusPending;
+
+  /// No description provided for @rptBusinessPartner.
+  ///
+  /// In en, this message translates to:
+  /// **'Business partner'**
+  String get rptBusinessPartner;
+
+  /// No description provided for @rptNetTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Net Total'**
+  String get rptNetTotal;
+
+  /// No description provided for @rptTotalsRow.
+  ///
+  /// In en, this message translates to:
+  /// **'TOTALS'**
+  String get rptTotalsRow;
+
+  /// No description provided for @rptNoGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'(none)'**
+  String get rptNoGroup;
+
+  /// No description provided for @rptNoDiscountsInPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'No discounts in this period.'**
+  String get rptNoDiscountsInPeriod;
+
+  /// No description provided for @rptTotalNumberOfSales.
+  ///
+  /// In en, this message translates to:
+  /// **'Total number of sales: {count}'**
+  String rptTotalNumberOfSales(String count);
+
+  /// No description provided for @rptAverageSalesPerItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Average number of sales per item: {count}'**
+  String rptAverageSalesPerItem(String count);
+
+  /// No description provided for @rptOrdersDiscounted.
+  ///
+  /// In en, this message translates to:
+  /// **'Number of orders discounted: {count}'**
+  String rptOrdersDiscounted(String count);
+
+  /// No description provided for @rptTotalDiscounted.
+  ///
+  /// In en, this message translates to:
+  /// **'Total discounted: {amount}'**
+  String rptTotalDiscounted(String amount);
+
+  /// No description provided for @rptPageOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Page {page} / {total}'**
+  String rptPageOf(String page, String total);
+
+  /// No description provided for @rptProductCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 product} other{{count} products}}'**
+  String rptProductCount(int count);
+
+  /// No description provided for @rptColHourStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Hour start'**
+  String get rptColHourStart;
+
+  /// No description provided for @rptColHourEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'Hour end'**
+  String get rptColHourEnd;
+
+  /// No description provided for @rptFavorites.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorites'**
+  String get rptFavorites;
+
+  /// No description provided for @rptColTotalBefTax.
+  ///
+  /// In en, this message translates to:
+  /// **'Total bef. tax'**
+  String get rptColTotalBefTax;
+
+  /// No description provided for @saveStockReportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Stock Report'**
+  String get saveStockReportTitle;
 }
 
 class _AppLocalizationsDelegate

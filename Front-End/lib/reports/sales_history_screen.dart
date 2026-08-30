@@ -14,6 +14,9 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:pos_app/api/api_client.dart';
 import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/app_settings/app_settings_provider.dart';
+import 'package:pos_app/database/app_database.dart';
+import 'package:pos_app/modifier/modifier_models.dart';
+import 'package:pos_app/core/ilyass_screen.dart';
 import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/core/app_date_picker.dart';
 import 'package:pos_app/core/ilyass_column_order.dart';
@@ -195,8 +198,14 @@ const double kSalesHistoryDividerHeight = 16.0;
 
 // ── Screen ────────────────────────────────────────────────────────────────────
 
+/// Sales History — an Ilyass Screen (`lib/core/ilyass_screen.dart`): a sidebar
+/// tab with a hamburger, not a route stacked on top of the shell.
 class SalesHistoryScreen extends ConsumerStatefulWidget {
-  const SalesHistoryScreen({super.key});
+  /// Opens the POS navigation drawer. Supplied by MainLayout; null when the
+  /// screen is pushed standalone, which turns the hamburger into a back arrow.
+  final VoidCallback? onMenuPressed;
+
+  const SalesHistoryScreen({super.key, this.onMenuPressed});
 
   @override
   ConsumerState<SalesHistoryScreen> createState() => _SalesHistoryScreenState();
@@ -655,10 +664,21 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     final taxRows = await db.select(db.taxesTable).get();
     final taxNameById = {for (final t in taxRows) t.id: t.name};
 
+    // The choices this sale was rung up with, snapshotted onto the banked line
+    // at checkout. A reprint REPLAYS what was sold: without these the receipt
+    // reads "Burger 25.00" for a line the customer was handed as
+    // "Burger 20.00 / + Extra Cheese 5.00", and the two documents disagree
+    // about the same sale.
+    final modifiersByLine = doc.localId == null
+        ? const <String, List<DocumentItemModifiersTableData>>{}
+        : await db.documentItemModifiersByLine(doc.localId!);
+
     final cartItems = <CartItem>[];
     for (int i = 0; i < items.length; i++) {
       final item = items[i];
       final unitTax = item.quantity > 0 ? item.taxAmount / item.quantity : 0.0;
+      final mods = selectedModifiersFromDocumentRows(
+          modifiersByLine[item.localId] ?? const []);
       cartItems.add(
         CartItem(
           cartItemId: '${item.productId}_$i',
@@ -689,6 +709,13 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
           // default would divide the tax back out of a price that never
           // contained it and under-report an already-closed sale.
           isTaxInclusive: false,
+          selectedModifiers: mods,
+          // 🚨 Derived by SUBTRACTION, never re-read from the product. The
+          // banked `price` already contains the surcharge (the CartItem
+          // invariant), the snapshots say how much of it was theirs, and the
+          // product's shelf price may have changed since. Getting this wrong
+          // does not move the total — it misprints the split under it.
+          basePrice: item.price - modifierSurcharge(mods),
         ),
       );
     }
@@ -939,13 +966,11 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       body: Column(
         children: [
           PosTopBar(
-            leading: IconButton(
-              icon: const Icon(
-                Icons.arrow_back,
-                size: 28,
-              ), // Larger icon for touch
-              tooltip: AppLocalizations.of(context).back,
-              onPressed: () => Navigator.pop(context),
+            // Hamburger as a tab, back arrow when pushed — the mounting
+            // decides, not this screen. See `lib/core/ilyass_screen.dart`.
+            leading: IlyassLeading(
+              onMenuPressed: widget.onMenuPressed,
+              iconSize: 28, // Larger icon for touch
             ),
             // Header: the title and the search bar. The search is what an
             // operator reaches for first, so it gets the most prominent slot
