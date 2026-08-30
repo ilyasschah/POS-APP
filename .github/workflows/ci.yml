@@ -73,10 +73,19 @@ jobs:
       # migrations. So the schema has to exist before the host boots.
       - name: Create POS database schema
         run: |
-          dotnet tool install --global dotnet-ef --version 10.0.*
+          set -euxo pipefail
+          # Pinned to the EF Core version the project references, so the tool and
+          # the runtime can never disagree about migration format.
+          dotnet tool install --global dotnet-ef --version 10.0.11
+          # `dotnet tool install --global` drops the shim in ~/.dotnet/tools, which
+          # is NOT on PATH on a GitHub runner — without this, `dotnet ef` is a
+          # command-not-found and the step dies in seconds.
+          export PATH="$PATH:$HOME/.dotnet/tools"
+          # Proves the tool resolves before the long step, so a PATH problem can
+          # never again look like a migration problem.
+          dotnet ef --version
           dotnet ef database update \
-            --project Back-End/Web-POS.Api/Web-POS.Api.csproj \
-            --configuration Release
+            --project Back-End/Web-POS.Api/Web-POS.Api.csproj
 
       - name: Restore
         run: dotnet restore Back-End/Web-POS.Api.Tests/Web-POS.Api.Tests.csproj
