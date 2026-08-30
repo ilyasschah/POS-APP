@@ -15,6 +15,8 @@ import 'package:pos_app/printer/pdf_fonts.dart';
 import 'package:pos_app/printer/pdf_file_name.dart';
 import 'package:pos_app/printer/printed_text.dart';
 import 'package:pos_app/printer/pdf_save_service.dart';
+import 'package:pos_app/printer/escpos_job.dart';
+import 'package:pos_app/printer/network_printer.dart';
 import 'package:pos_app/printer/printer_platform.dart';
 import 'package:pos_app/reports/z_report_model.dart';
 import 'package:printing/printing.dart';
@@ -212,13 +214,50 @@ class ReceiptPrinterService {
 
   // ── Print dispatcher ──────────────────────────────────────────────────────
 
+  /// Sends a finished document to whichever route this printer is wired for.
+  ///
+  /// Two routes, and the choice is per printer (`<Role>.Connection`):
+  ///
+  /// * **`network`** — rasterise and push ESC/POS down a TCP socket to port
+  ///   9100. 🚨 **On Android this is the only silent route that exists.**
+  ///   `Printing.listPrinters()` has no implementation there and
+  ///   `directPrintPdf` reports `directPrint: false`, so the system route can
+  ///   only ever open the OS print dialog — a modal in the middle of closing a
+  ///   sale, which is the concrete meaning of "printing does not work on the
+  ///   tablets". See `printer/escpos_job.dart`.
+  /// * **`system`** — the Windows/macOS/Linux print queue, unchanged. Still the
+  ///   default everywhere, so no existing till changes behaviour.
+  ///
+  /// ⚠️ A network failure THROWS. Callers decide who hears it, but none of them
+  /// may swallow it in silence: a printer that is switched off must not look
+  /// like a printer that printed. That failure already shipped once.
   static Future<void> _dispatch(
     pw.Document pdf,
     String name,
     int copies,
-    String? printerName,
+    Map<String, String> roleSettings,
+    String role,
   ) async {
     final bytes = await pdf.save();
+
+    final connection = (roleSettings[SettingKeys.roleConnection(role)] ?? '')
+        .trim()
+        .toLowerCase();
+    if (connection == 'network') {
+      await printPdfToNetworkPrinter(
+        pdfBytes: bytes,
+        host: roleSettings[SettingKeys.roleHost(role)] ?? '',
+        port: int.tryParse(
+              (roleSettings[SettingKeys.roleTcpPort(role)] ?? '').trim(),
+            ) ??
+            kDefaultPrinterTcpPort,
+        paperSize: roleSettings['$role.PaperSize'],
+        copies: copies,
+      );
+      return;
+    }
+
+    final printerName = roleSettings['$role.PrinterName'];
     Printer? target;
     // Gated: on Android `listPrinters()` has no implementation and throws, so
     // this used to run — and silently fail — on every single print. The saved
@@ -287,6 +326,7 @@ class ReceiptPrinterService {
     pw.Font? arabic,
     pw.Font? arabicBold,
     bool rtl = false,
+    String separator = '',
   }) {
     final size = fontSize * fontScale;
     final style = printedTextStyle(
@@ -305,11 +345,26 @@ class ReceiptPrinterService {
     // the width, so `POS1-200-000014` wraps mid-number next to a short label.
     // Flexible caps without reserving: each side takes what it needs and only
     // shrinks when the pair genuinely does not fit.
+    // 🚨 [separator] is a run of its own and [label] must arrive without one.
+    // A ':' is a NEUTRAL character: at the end of an Arabic label the bidi pass
+    // moves it to that run's visual LEFT end, so the row printed as
+    // `:أمين الصندوق          ilyass` — the colon stranded on the far side of
+    // the label instead of introducing the value. It also has to sit on the
+    // side FACING the value, which swaps with the layout.
+    final labelText = printedText(label,
+        style: style,
+        layout: dir,
+        textAlign: rtl ? pw.TextAlign.right : pw.TextAlign.left);
+    final sepW = printedText(separator, style: style, layout: dir);
     final labelW = pw.Flexible(
-      child: printedText(label,
-          style: style,
-          layout: dir,
-          textAlign: rtl ? pw.TextAlign.right : pw.TextAlign.left),
+      child: separator.isEmpty
+          ? labelText
+          : pw.Row(
+              mainAxisSize: pw.MainAxisSize.min,
+              children: rtl
+                  ? [sepW, pw.Flexible(child: labelText)]
+                  : [pw.Flexible(child: labelText), sepW],
+            ),
     );
     final valueW = pw.Flexible(
       child: printedText(value,
@@ -537,6 +592,7 @@ class ReceiptPrinterService {
       String v, {
       bool bold = false,
       double fontSize = 10,
+      String separator = ':',
     }) => _row(
       l,
       v,
@@ -548,6 +604,7 @@ class ReceiptPrinterService {
       arabic: arabicRegular,
       arabicBold: arabicBold,
       rtl: rtl,
+      separator: separator,
     );
 
     // Optional customer block — each line gated by its receiptCustomer* toggle,
@@ -558,7 +615,7 @@ class ReceiptPrinterService {
       final rows = <pw.Widget>[];
       void add(bool on, String label, String? val) {
         if (on && (val?.trim().isNotEmpty ?? false)) {
-          rows.add(rowW('$label:', val!.trim()));
+          rows.add(rowW(label, val!.trim()));
         }
       }
 
@@ -651,11 +708,11 @@ class ReceiptPrinterService {
 
             // ── Transaction info ───────────────────────────────────────────
             if (printOrderNumber)
-              rowW('${lbl(SettingKeys.labelReceiptNumber, l.receiptLabel)}:',
+              rowW(lbl(SettingKeys.labelReceiptNumber, l.receiptLabel),
                   shortNo(orderNumber)),
-            rowW('${l.dateLabel}:', _fmtDateTime(printTime)),
+            rowW(l.dateLabel, _fmtDateTime(printTime)),
             if (cashier != null)
-              rowW('${lbl(SettingKeys.labelUser, l.roleCashier)}:',
+              rowW(lbl(SettingKeys.labelUser, l.roleCashier),
                   cashier.displayName),
             pw.SizedBox(height: 4),
             pw.Divider(borderStyle: pw.BorderStyle.dashed),
@@ -759,49 +816,47 @@ class ReceiptPrinterService {
             pw.SizedBox(height: 4),
 
             // ── Totals ─────────────────────────────────────────────────────
-            rowW('${lbl(SettingKeys.labelSubtotal, l.subtotal)}:',
+            rowW(lbl(SettingKeys.labelSubtotal, l.subtotal),
                 '${money(subtotal)} $currencySymbol'),
             // Itemized discounts when available; otherwise the single merged row.
             if (discountLines.isNotEmpty)
               ...discountLines.map(
                 (d) => rowW(
-                  d.hint == null ? '${d.label}:' : '${d.label} (${d.hint}):',
+                  d.hint == null ? d.label : '${d.label} (${d.hint})',
                   '-${money(d.amount)} $currencySymbol',
                 ),
               )
             else if (totalDiscount > 0)
               rowW(
-                '${lbl(SettingKeys.labelDiscount, l.discountLabel)}:',
+                lbl(SettingKeys.labelDiscount, l.discountLabel),
                 '-${money(totalDiscount)} $currencySymbol',
               ),
             if (totalTax > 0 && printTaxTotals)
               if (printTaxName && taxByName.isNotEmpty)
                 ...taxByName.entries.map(
-                  (e) => rowW('${e.key}:', '${money(e.value)} $currencySymbol'),
+                  (e) => rowW(e.key, '${money(e.value)} $currencySymbol'),
                 )
               else
-                rowW('${lbl(SettingKeys.labelTaxRate, l.fieldTax)}:',
+                rowW(lbl(SettingKeys.labelTaxRate, l.fieldTax),
                     '${money(totalTax)} $currencySymbol'),
             pw.SizedBox(height: 4),
             pw.Divider(),
             pw.SizedBox(height: 4),
             rowW(
-              '${lbl(SettingKeys.labelTotal, l.grandTotalUpper)}:',
+              lbl(SettingKeys.labelTotal, l.grandTotalUpper),
               '${money(grandTotal)} $currencySymbol',
               bold: true,
               fontSize: 13,
             ),
             if (pointsUsed > 0) ...[
               pw.SizedBox(height: 2),
-              rowW(
-                '${l.pointsUsed}:',
-                '-${money(pointsUsed * pointValue)} $currencySymbol'
+              rowW(l.pointsUsed, '-${money(pointsUsed * pointValue)} $currencySymbol'
                     ' (${pointsUsed.toInt()} pts)',
               ),
               // The actual amount owed once points are applied — otherwise the
               // receipt printed GRAND TOTAL but the cashier collected less.
               rowW(
-                '${lbl(SettingKeys.labelAmountDue, l.amountDue)}:',
+                lbl(SettingKeys.labelAmountDue, l.amountDue),
                 '${money((grandTotal - pointsUsed * pointValue).clamp(0.0, double.infinity))} $currencySymbol',
                 bold: true,
               ),
@@ -819,6 +874,7 @@ class ReceiptPrinterService {
               rowW(
                 '',
                 '~ ${money(owedAmount * dualRate)} $dualSym',
+                separator: '',
               ),
             pw.Divider(),
             pw.SizedBox(height: 6),
@@ -826,7 +882,7 @@ class ReceiptPrinterService {
             // ── Payment ────────────────────────────────────────────────────
             if (!isGuestCheck && paymentTypeName != null) ...[
               rowW(
-                '$paymentTypeName:',
+                paymentTypeName,
                 '${money(amountPaid ?? grandTotal)} $currencySymbol',
               ),
               // Change due, so the receipt is self-explanatory at the till.
@@ -837,7 +893,7 @@ class ReceiptPrinterService {
                         double.infinity,
                       ))
                 rowW(
-                  '${lbl(SettingKeys.labelChange, l.change)}:',
+                  lbl(SettingKeys.labelChange, l.change),
                   '${money(amountPaid - (grandTotal - pointsUsed * pointValue).clamp(0.0, double.infinity))} $currencySymbol',
                 ),
             ],
@@ -847,17 +903,17 @@ class ReceiptPrinterService {
             // forces the row even when the sale is fully settled (balance 0).
             if (balanceDue > 0.005 || printBalance)
               rowW(
-                  '${lbl(SettingKeys.labelOutstandingBalance, l.balanceDue)}:',
+                  lbl(SettingKeys.labelOutstandingBalance, l.balanceDue),
                   '${money(balanceDue)} $currencySymbol',
                   bold: true),
             if (printItemsCount)
-              rowW('${lbl(SettingKeys.labelItemsCount, l.itemsLabel)}:',
+              rowW(lbl(SettingKeys.labelItemsCount, l.itemsLabel),
                   renderItems.length.toString()),
-            if (printTotalQty) rowW('${l.totalQty}:', itemCountStr),
+            if (printTotalQty) rowW(l.totalQty, itemCountStr),
             if (!isGuestCheck && pointsEarned > 0)
-              rowW('${l.pointsEarned}:', '+${pointsEarned.toInt()} ${l.ptsShort}'),
+              rowW(l.pointsEarned, '+${pointsEarned.toInt()} ${l.ptsShort}'),
             if (!isGuestCheck && (pointsEarned > 0 || pointsUsed > 0))
-              rowW('${l.pointsBalance}:', '${pointsBalance.toInt()} ${l.ptsShort}'),
+              rowW(l.pointsBalance, '${pointsBalance.toInt()} ${l.ptsShort}'),
             pw.SizedBox(height: 10),
             pw.Divider(borderStyle: pw.BorderStyle.dashed),
             pw.SizedBox(height: 6),
@@ -961,8 +1017,7 @@ class ReceiptPrinterService {
       );
       return;
     }
-    await _dispatch(pdf, name, _copies(roleSettings, role),
-        roleSettings['$role.PrinterName']);
+    await _dispatch(pdf, name, _copies(roleSettings, role), roleSettings, role);
   }
 
   // ── Kitchen Ticket ────────────────────────────────────────────────────────
@@ -1036,9 +1091,9 @@ class ReceiptPrinterService {
             // CartItem.roundNumber, so it printed a constant "1" on every
             // ticket and told the kitchen nothing. Reinstate it only alongside
             // real course tracking.
-            printedPair('${l.userLabel}:', cashierName, style: ts(10)),
-            printedPair('${l.posOrder}:', orderNumber, style: ts(10)),
-            printedPair('${l.timeLabel}:', _fmtDateTime(printTime), style: ts(10)),
+            printedPair(l.userLabel, cashierName, style: ts(10), separator: ':'),
+            printedPair(l.posOrder, orderNumber, style: ts(10), separator: ':'),
+            printedPair(l.timeLabel, _fmtDateTime(printTime), style: ts(10), separator: ':'),
             pw.SizedBox(height: 6),
 
             // ── Table + service type ──────────────────────────────────
@@ -1106,7 +1161,7 @@ class ReceiptPrinterService {
 
     // Always an order — a kitchen ticket prints long before the sale is banked.
     await _dispatch(pdf, orderPdfName(orderNumber, printTime),
-        _copies(roleSettings, role), roleSettings['$role.PrinterName']);
+        _copies(roleSettings, role), roleSettings, role);
   }
 
   // ── Z-Report ──────────────────────────────────────────────────────────────
@@ -1150,7 +1205,7 @@ class ReceiptPrinterService {
     // Same label/value row the receipt uses, so the two cannot drift — and so
     // the Z-report inherits its RTL handling and overflow protection.
     pw.Widget zRow(String label, String value,
-            {bool bold = false, double fontSize = 10}) =>
+            {bool bold = false, double fontSize = 10, String separator = ':'}) =>
         _row(
           label,
           value,
@@ -1162,6 +1217,7 @@ class ReceiptPrinterService {
           arabic: arabicRegular,
           arabicBold: arabicBold,
           rtl: rtl,
+          separator: separator,
         );
 
     pdf.addPage(
@@ -1189,11 +1245,32 @@ class ReceiptPrinterService {
                 textAlign: pw.TextAlign.center,
                 style: ts(12),
               ),
-              printedText(
-                '${l.dateLabel}: ${report.dateCreated.toIso8601String().split('T').first}'
-                '  ${l.timeLabel}: ${report.dateCreated.toIso8601String().split('T').last.split('.').first}',
-                textAlign: pw.TextAlign.center,
-                style: ts(10),
+              // Four runs, not one. As a single string the two Arabic labels
+              // and the two timestamps share one RTL run: the ':' separators
+              // drift to the run's visual left end and the date and time swap
+              // places. Each run picks its own direction instead.
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.center,
+                children: [
+                  printedText(l.dateLabel, style: ts(10)),
+                  printedText(': ', style: ts(10)),
+                  printedText(
+                    report.dateCreated.toIso8601String().split('T').first,
+                    style: ts(10),
+                  ),
+                  pw.SizedBox(width: 8),
+                  printedText(l.timeLabel, style: ts(10)),
+                  printedText(': ', style: ts(10)),
+                  printedText(
+                    report.dateCreated
+                        .toIso8601String()
+                        .split('T')
+                        .last
+                        .split('.')
+                        .first,
+                    style: ts(10),
+                  ),
+                ],
               ),
               pw.SizedBox(height: 8),
               pw.Divider(borderStyle: pw.BorderStyle.dashed),
@@ -1205,14 +1282,10 @@ class ReceiptPrinterService {
                 style: ts(12, bold: true),
               ),
               pw.SizedBox(height: 8),
-              zRow(
-                '${l.documents}:',
-                report.documentCount?.toString() ?? '-',
+              zRow(l.documents, report.documentCount?.toString() ?? '-',
               ),
               if (report.fromDocumentNumber != null)
-                zRow(
-                  '${l.rangeLabel}:',
-                  report.fromDocumentNumber == report.toDocumentNumber
+                zRow(l.rangeLabel, report.fromDocumentNumber == report.toDocumentNumber
                       ? report.fromDocumentNumber!
                       : '${report.fromDocumentNumber} - ${report.toDocumentNumber}',
                 ),
@@ -1222,38 +1295,22 @@ class ReceiptPrinterService {
               // Day came out with no opening cash at all. Printed, never summed:
               // expectedCash already adds the float once.
               if (report.openingCash != null)
-                zRow(
-                  '${l.sessionOpeningCash}:',
-                  '${report.openingCash!.toStringAsFixed(2)} $currencySymbol',
+                zRow(l.sessionOpeningCash, '${report.openingCash!.toStringAsFixed(2)} $currencySymbol',
                 ),
-              zRow(
-                '${l.cashIn}:',
-                '${report.totalCashIn.toStringAsFixed(2)} $currencySymbol',
+              zRow(l.cashIn, '${report.totalCashIn.toStringAsFixed(2)} $currencySymbol',
               ),
-              zRow(
-                '${l.cashOut}:',
-                '-${report.totalCashOut.toStringAsFixed(2)} $currencySymbol',
+              zRow(l.cashOut, '-${report.totalCashOut.toStringAsFixed(2)} $currencySymbol',
               ),
               pw.SizedBox(height: 4),
-              zRow(
-                '${l.totalSales}:',
-                '${report.totalSales.toStringAsFixed(2)} $currencySymbol',
+              zRow(l.totalSales, '${report.totalSales.toStringAsFixed(2)} $currencySymbol',
               ),
-              zRow(
-                '${l.totalReturns}:',
-                '${report.totalReturns.toStringAsFixed(2)} $currencySymbol',
+              zRow(l.totalReturns, '${report.totalReturns.toStringAsFixed(2)} $currencySymbol',
               ),
-              zRow(
-                '${l.discountsLabel}:',
-                '${report.discountsGranted.toStringAsFixed(2)} $currencySymbol',
+              zRow(l.discountsLabel, '${report.discountsGranted.toStringAsFixed(2)} $currencySymbol',
               ),
-              zRow(
-                '${l.taxableTotal}:',
-                '${report.taxableTotal.toStringAsFixed(2)} $currencySymbol',
+              zRow(l.taxableTotal, '${report.taxableTotal.toStringAsFixed(2)} $currencySymbol',
               ),
-              zRow(
-                '${l.totalTax}:',
-                '${report.totalTax.toStringAsFixed(2)} $currencySymbol',
+              zRow(l.totalTax, '${report.totalTax.toStringAsFixed(2)} $currencySymbol',
               ),
 
               pw.SizedBox(height: 8),
@@ -1282,6 +1339,7 @@ class ReceiptPrinterService {
                   (p) => zRow(
                     p.paymentTypeName ?? l.unknownLabel,
                     '${p.totalAmount.toStringAsFixed(2)} $currencySymbol',
+                    separator: '',
                   ),
                 ),
 
@@ -1289,9 +1347,7 @@ class ReceiptPrinterService {
               pw.Divider(borderStyle: pw.BorderStyle.dashed),
               pw.SizedBox(height: 8),
 
-              zRow(
-                '${l.grandTotalUpper}:',
-                '${report.grandTotal.toStringAsFixed(2)} $currencySymbol',
+              zRow(l.grandTotalUpper, '${report.grandTotal.toStringAsFixed(2)} $currencySymbol',
                 bold: true,
                 fontSize: 14,
               ),
@@ -1325,7 +1381,7 @@ class ReceiptPrinterService {
     final pdf = await buildZReport(report, currencySymbol,
         roleSettings: roleSettings, role: role);
     await _dispatch(pdf, 'Z_Report_${report.number}',
-        _copies(roleSettings, role), roleSettings['$role.PrinterName']);
+        _copies(roleSettings, role), roleSettings, role);
   }
 
 }
