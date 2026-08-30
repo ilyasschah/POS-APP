@@ -1,10 +1,27 @@
 export type Lang = "en" | "fr" | "ar";
 
-export const LANGS: { code: Lang; label: string; dir: "ltr" | "rtl" }[] = [
-  { code: "en", label: "EN", dir: "ltr" },
-  { code: "fr", label: "FR", dir: "ltr" },
-  { code: "ar", label: "ع", dir: "rtl" },
+export const LANGS: { code: Lang; label: string; name: string; dir: "ltr" | "rtl" }[] = [
+  { code: "en", label: "EN", name: "English", dir: "ltr" },
+  { code: "fr", label: "FR", name: "Français", dir: "ltr" },
+  { code: "ar", label: "ع", name: "العربية", dir: "rtl" },
 ];
+
+/**
+ * Picks a supported language from the browser's ordered preference list.
+ *
+ * Matches on the PRIMARY SUBTAG only: a visitor reporting "fr-CA" or "ar-MA"
+ * wants French or Arabic, and comparing whole tags would miss both and fall
+ * back to English. Order is respected, so the browser's first supported
+ * preference wins rather than whichever we happen to check first.
+ */
+export function detectLang(preferred: readonly string[]): Lang {
+  const supported = new Set<string>(LANGS.map((l) => l.code));
+  for (const tag of preferred) {
+    const primary = tag.toLowerCase().split("-")[0];
+    if (supported.has(primary)) return primary as Lang;
+  }
+  return "en";
+}
 
 export const dirOf = (l: Lang): "ltr" | "rtl" => (l === "ar" ? "rtl" : "ltr");
 
@@ -30,7 +47,7 @@ export type Dict = {
     pay: string; paying: string; receipt: string; synced: string;
     savedLocally: string; newSale: string;
   };
-  footer: { tagline: string };
+  footer: { tagline: string; language: string };
 };
 
 const en: Dict = {
@@ -119,7 +136,7 @@ const en: Dict = {
     savedLocally: "No connection — saved on this terminal and queued.",
     newSale: "New sale",
   },
-  footer: { tagline: "Built for counters that can’t afford to stop." },
+  footer: { tagline: "Built for counters that can’t afford to stop.", language: "Language" },
 };
 
 const fr: Dict = {
@@ -207,7 +224,7 @@ const fr: Dict = {
     savedLocally: "Pas de connexion — enregistré sur ce terminal et mis en attente.",
     newSale: "Nouvelle vente",
   },
-  footer: { tagline: "Conçu pour les comptoirs qui ne peuvent pas s’arrêter." },
+  footer: { tagline: "Conçu pour les comptoirs qui ne peuvent pas s’arrêter.", language: "Langue" },
 };
 
 const ar: Dict = {
@@ -295,7 +312,7 @@ const ar: Dict = {
     savedLocally: "لا يوجد اتصال — حُفظ على هذا الجهاز وأُضيف إلى الطابور.",
     newSale: "عملية بيع جديدة",
   },
-  footer: { tagline: "مصمّم لصناديق لا تحتمل التوقف." },
+  footer: { tagline: "مصمّم لصناديق لا تحتمل التوقف.", language: "اللغة" },
 };
 
 export const DICTS: Record<Lang, Dict> = { en, fr, ar };

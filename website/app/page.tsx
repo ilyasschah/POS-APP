@@ -1,21 +1,37 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Reveal from "./components/Reveal";
 import PosDemo from "./components/PosDemo";
-import { DICTS, LANGS, dirOf, type Lang } from "./i18n";
+import { DICTS, LANGS, dirOf, detectLang, type Lang } from "./i18n";
 
 export default function Home() {
-  // Session-scoped on purpose. Reading a saved language on mount would mean
-  // either a setState inside an effect (a cascading render) or a lazy
-  // initialiser that reads localStorage — which renders a different language on
-  // the client than the server sent, i.e. the hydration mismatch that already
-  // crashed this dev server once. Persisting it properly needs locale routes.
+  // Starts at English so the SSR'd HTML is deterministic — crawlers index the
+  // English copy, and server and client agree at hydration.
   const [lang, setLang] = useState<Lang>("en");
+  // Whether the visitor has chosen for themselves. Once they have, the browser
+  // preference must never overrule them.
+  const [chosen, setChosen] = useState(false);
+
+  useEffect(() => {
+    if (chosen) return;
+    const guess = detectLang(navigator.languages ?? [navigator.language]);
+    // Reading the browser's language IS synchronising with an external system,
+    // which is what an effect is for. It cannot move into a lazy initialiser:
+    // that runs during render and would produce different markup on the client
+    // than the server sent — the hydration mismatch that crashed this dev
+    // server once already.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (guess !== "en") setLang(guess);
+  }, [chosen]);
+
+  function pick(next: Lang) {
+    setChosen(true);
+    setLang(next);
+  }
   const t = DICTS[lang];
   const dir = dirOf(lang);
-  const rtl = dir === "rtl";
 
   return (
     <div dir={dir} lang={lang}>
@@ -48,21 +64,6 @@ export default function Home() {
             <a href="#features" className="nav-link">{t.nav.features}</a>
             <a href="#platforms" className="nav-link">{t.nav.platforms}</a>
             <a href="#pricing" className="nav-link">{t.nav.pricing}</a>
-
-            <div className="langbar" role="group" aria-label="Language">
-              {LANGS.map((l) => (
-                <button
-                  key={l.code}
-                  type="button"
-                  onClick={() => setLang(l.code)}
-                  className="langbtn"
-                  aria-pressed={lang === l.code}
-                  lang={l.code}
-                >
-                  {l.label}
-                </button>
-              ))}
-            </div>
 
             <a href="#contact" className="btn btn-primary">{t.nav.demo}</a>
           </div>
@@ -293,9 +294,23 @@ export default function Home() {
               © {new Date().getFullYear()} Octopus POS
             </span>
           </div>
-          <span style={{ color: "var(--text-faint)", fontSize: "0.875rem", textAlign: rtl ? "left" : "right" }}>
-            {t.footer.tagline}
-          </span>
+          <div style={{ display: "flex", alignItems: "center", gap: "1.25rem", flexWrap: "wrap" }}>
+            <label className="langpick">
+              <span className="sr-only">{t.footer.language}</span>
+              <select
+                value={lang}
+                onChange={(e) => pick(e.target.value as Lang)}
+                aria-label={t.footer.language}
+              >
+                {LANGS.map((l) => (
+                  <option key={l.code} value={l.code}>{l.name}</option>
+                ))}
+              </select>
+            </label>
+            <span style={{ color: "var(--text-faint)", fontSize: "0.875rem" }}>
+              {t.footer.tagline}
+            </span>
+          </div>
         </div>
       </footer>
     </div>
