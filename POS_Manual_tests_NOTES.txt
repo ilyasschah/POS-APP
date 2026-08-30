@@ -1,165 +1,710 @@
 POS NOTES
 =======================================================
-change pubspec to 1.0.3+5,
-commit, push,
-git tag v1.0.3 && git push origin v1.0.3
+Updated 2026-08-30.
+
+Numbers match the * NUMBERED BACKLOG in handoff.md 1-for-1.
+A number is NEVER reused: when an item is finished it is
+deleted from both files and its number retires with it.
+
+OPEN RIGHT NOW: 11, 13, 14, 15, 20, 35, 41, 42, 43, 44.
+(9 was built on 2026-08-30 - see B5 - and needs a real
+printer before it can be called done.)
+
+SIX LISTS BELOW - read them in this order:
+
+  A. DO NOW      - on your desk today, not a screen test
+  B. CHECK NOW   - built and waiting for you at the till
+  C. DECIDE      - I cannot move until you answer
+  D. LATER       - known, parked, nothing breaks meanwhile
+  E. PRODUCTION  - the ship checklist. NONE of it is done.
+  F. HOW-TO      - testing the pole display with no hardware
+
+Tell me "do 9" / "do 41" and I take the item.
+
 
 =======================================================
-BACKLOG — TEST GUIDE   (tell me "do 1" / "do 3", etc.)
+A.  DO NOW   (you, today - no code from me needed)
 =======================================================
-Numbers match the ⭐ NUMBERED BACKLOG in handoff.md 1-for-1.
-Items 5/7 need a DECISION from you. Items 8/9/10 need a
-HARDWARE/DEP answer. Items 11-15 are dev/build tasks, not
-screen tests. The rest you can test on the POS.
+
+[A1] RESTART THE API.
+     The modifiers endpoints and the session / refund work
+     are compiled but your running debugger still holds the
+     old build. I never restart it - that is your call.
+     ** NO SQL SCRIPT TO RUN. ** Your database already has
+     the modifier tables and the icon column.
+
+[A2] COMMIT AND TAG. 105 files are sitting uncommitted -
+     the reports translation, modifiers, shared registers,
+     the session and refund fixes, and the admin portal.
+       Front-End/pubspec.yaml -> 1.0.9+12
+       commit, push
+       git tag v1.0.9 && git push origin v1.0.9
+     Until this is done a crash report cannot be traced to
+     a build.
+
+[A3] FIX THE ADMIN USERS YOU ALREADY CREATED.   (item 40)
+     The portal's role dropdown was INVERTED on three forms:
+     picking "Admin" on Companies/Create and on
+     Companies/Details wrote a CASHIER - and the user list
+     on Details then displayed that cashier back to you as
+     an Admin. The forms are fixed. THE ROWS ARE NOT.
+     -> Open every company you provisioned from the portal.
+        Any user who cannot reach Management is a cashier.
+        Repair them in Users/Edit (that form was always
+        correct) or from the POS. The till was the only
+        surface ever telling you the truth.
+     -> Do this BEFORE re-testing 44 below. It may be the
+        whole of it.
+
+[A4] CHECK THE APK DATE BEFORE REPORTING AN ANDROID BUG.
+     The Android build is broken on this machine (item 14),
+     so the tablets are running an OLD apk. "Still broken on
+     Android" is usually just old code.
 
 
-Reults of testing in Real POS and printer and cash drawer every thing work unless this things below : 
-the kitchen printer should not have cashdraw tab print barcode and also when i test demo it should generate kitchen demo with products and comments 
-the display customer display didnt work and also it in my POS setting it shows COM 10 but in the windows setting its showing only COM 1 _ 5 and a LPT1
-after i disabled show printing dailog from the setting and made a paiment the cash drawer opend bu the printer didnt print 
-also if there is no logo of the copany you should print a large COmpany Name insted of the Logo
-also the barcode is printed in the reciept should be the document barcode number not the order 
-also when i add a Modifier to a product its 20 + 5 in the reciept you should show the product price alon just 20 and under it the extra but inthe total show 25 
-the rapport z should be printed using the reciapt printer when we close a session its working from end of day sceen but not in POS session closing dailog 
-and also the cash in that i have saved when i opend a session did not saved in chash movment table and that caused the rapport z didnt know about the cash in taht i have puted in the start of the session 
-when i created prodcut A and give it barcode and sell it after i dcided to change it to sell by whieght i need to delete the old barcode 
-and give it a new one but when i delete the old one and add a new one the old one keep coming back i hit delete it gos for 1s and then back 
-in the reciept and also in the payment item list you should not only show 0.125 x 50.00dh it should be 0.125 kg x 50.00 dh like 0.125 what kg or g or L 
-also the web dashboard it not showing the correct data the that COmpanyafter i log in or the new company doesnt have access to dashoard i dont know its keep login back to another user of another company 
-also when i put the app in full screen from the sidebar button it doesnt work it work on macbook but not on this windows also the scale of this POS is 1366 x768 the cart it a little bit smalle we need to add a button to show or hide the key pad because the cart item list now almost fit 2 iteams per line
+=======================================================
+B.  CHECK NOW   (built and tested by me, needs YOUR eyes)
+=======================================================
 
---- NEWLY REPORTED (to do next) ---
+[B0] THE THIRTEEN THINGS YOU FOUND ON THE VERTEDA TILL.
+     All thirteen are fixed (commit 88f314a) and NONE has
+     been seen by you since. Walk them once:
+     (a) Checkout with the print dialog turned OFF -> the
+         receipt PRINTS, silently. (It printed nothing at
+         all before: both switches default false and the
+         branch demanded one of them.)
+     (b) Delete a product barcode -> it STAYS deleted after
+         a sync. (It came back because /Barcodes/Add answers
+         {message, data:{id}} and the client read id off the
+         root, so every barcode was stored with server id 0
+         and delete took the "never synced" path.)
+     (c) Close a session -> the Z-report PRINTS from the
+         closing dialog, not only from End of Day.
+     (d) The opening float you type at session open now
+         appears as a cash movement of a THIRD kind
+         ("opening") and the Z-report knows about it.
+         CHECK THE ARITHMETIC: expected cash = opening +
+         cash payments + cash in - cash out, and the float
+         must be counted ONCE.
+     (e) A kitchen printer has NO cash-drawer tab and NO
+         barcode switch, and its test print is a real
+         kitchen ticket with products and comments.
+     (f) The receipt barcode is the DOCUMENT number (scan it
+         back into a refund to prove it).
+     (g) No company logo -> a large COMPANY NAME prints in
+         its place.
+     (h) A 20.00 product with a 5.00 option prints as 20.00
+         with "+ Extra 5.00" beneath, and the line total 25.
+     (i) A weighed line shows its UNIT: "0.125 kg x 50.00",
+         not "0.125 x 50.00" - on the receipt AND in the
+         payment item list.
+     (j) Customer display: its test button reports the REAL
+         failure now instead of always claiming success.
+         (The port LIST was only half fixed then - it still
+         appended LPT1-LPT3 and fell back to COM1-COM4.
+         Finished in B1 below; test it there.)
+     (k) Full screen from the sidebar works on Windows.
+     (l) The cart keypad can be HIDDEN - on the 1366x768
+         till the item list gets its width back.
 
-[38] IN PROGRESS - MODIFIERS. First thing you CAN press.
+[B1] PORT LISTS ARE NOW READ FROM THE MACHINE.
+     Every port picker offered a written-down COM1-COM10 plus
+     LPT1-LPT3 whether the machine had them or not. Yours has
+     ONE serial port and no parallel port at all - so twelve
+     of the thirteen choices wrote into the void, silently,
+     which is exactly why the customer display looked like
+     dead hardware. Aronium showed COM2 because Aronium asks
+     Windows. We ask Windows now too, from the same registry
+     key (HKLM\HARDWARE\DEVICEMAP), so the two lists agree.
+     Changed: Customer Display port, Scale port, and Printer
+     Settings -> Cash Drawer -> serial port (that one was a
+     free-text box you had to type into).
 
-     Structured, priced options on an item ("Extra Cheese" +12.00,
-     "No Sugar" +0.00), grouped, with pick-one / pick-many and
-     mandatory rules. Replaces the free-text Comments catalogue.
+     (a) Settings -> Customer Display -> COM port. The list
+         must contain ONLY the ports Device Manager shows.
+         No LPT unless you really have a parallel port.
+     (b) Same check on Settings -> Scale, and on Printer
+         Settings -> <station> -> Cash Drawer with transport
+         = Serial.
+     (c) Unplug a USB-serial adapter (or pick a port, then
+         disable it in Device Manager). The saved port stays
+         selected and is now labelled "(not detected)" - it
+         must NOT silently jump to another port.
+     (d) Press the refresh arrow next to the picker. Plug the
+         adapter back in, refresh, it reappears - without
+         restarting the app.
+     (e) Set the display to a port that is not there and hit
+         Test. It must name the real ports:
+         "COM3 is not on this machine. Ports detected: COM1."
+     (f) On a machine with no ports at all the field reads
+         "no COM or LPT port" instead of crashing. It used to
+         red-screen on an empty list.
 
-     Phases 1-4 of 6 are done. The CASHIER side works now: tap a
-     product that has groups attached and the Customize sheet
-     opens. What is NOT done yet is the kitchen ticket and the
-     receipt - they still print the line without its choices.
+     ** HOW TO TEST WITH NO POLE DISPLAY - see section F. **
 
-     WHAT TO TRY (Management -> Modifier Groups, new sidebar entry):
-     (a) New group -> name it "Toppings", set "may choose at most"
-         to 3, add three choices with prices -> Save. It appears in
-         the list reading "Optional - pick up to 3 - 3 choices".
-     (b) Set "must choose at least" to 1 -> the line changes to
-         "Required". Set it higher than the number of choices you
-         listed -> Save refuses and says so.
-     (c) Make a group Required with NO choices -> refused. A product
-         offering it could never be sold.
-     (d) Products -> open a product -> Modifiers tab -> Attach a
-         group. The arrows reorder them; that order is the order
-         the cashier will be asked. Detach with the X.
-     (e) Turn a group OFF instead of deleting it. Deleting works,
-         but only reaches other tills on a FULL sync - the dialog
-         says so when you try.
-     (f) Do all of the above with the NETWORK OFF -> it all saves.
-         Reconnect -> it syncs. Check a second till sees it.
-     (g) Dark mode + the 10-inch tablet: at tablet width the screen
-         becomes one pane and tapping a group opens it as a page.
+[B2] THE POLE DISPLAY NEVER WORKED. AT ALL. EVER.
+     Found from your "Could not write to COM8 ... errno 161"
+     screenshot, 30/08. That error was NOT com0com and NOT
+     your wiring - COM8 was present and writable at that
+     moment, and I wrote to it successfully from a test
+     program in the same minute.
 
-     AT THE TILL (new):
-     (h) Tap a product with groups -> "Customize <name>" opens.
-         Pick-one groups show radios, pick-many show checkboxes.
-     (i) A required group blocks "Add to order" until answered, and
-         names the group in red only AFTER you press it - not the
-         moment the sheet opens.
-     (j) On a pick-many group, choose up to the limit -> the rest
-         grey out, but the ones you already chose stay tappable so
-         you can change your mind.
-     (k) The button shows the running unit price as you tap.
-     (l) CANCEL -> nothing is added at all. Check the cart.
-     (m) Add a plain burger, then a burger with extra cheese ->
-         TWO separate lines at two different prices. They must not
-         merge. Add a second identical cheese burger -> that one
-         DOES merge, quantity 2.
-     (n) The cart line shows the choices indented underneath, with
-         their price. A free choice shows no price.
-     (o) Select a customised line, press PRICE on the keypad, type
-         a number -> the line becomes exactly that, and keeps its
-         choices.
-     (p) Turn on "Allow a typed note" for a group -> a note box
-         appears at the bottom of the sheet.
-     (q) ** NEEDS A SECOND SQL SCRIPT + API RESTART **
-         Modifier Groups -> edit a group -> new "Icon" row with
-         nine tiles: None first, then burger / pizza / meal / side
-         / sauce / drink / dessert / spice. Pick one, Save, then
-         tap that product at the till -> the icon is beside the
-         group name in the sheet. Pick None -> a neutral icon.
-         The icon is SAVED to the group, so it is the same in
-         English, French and Arabic - it is never guessed from the
-         group's name.
-           Back-End/Web-POS.Api/DataBase/SQL/AddModifierGroupIcon_2026-08-25.sql
+     dart:io's File cannot open a Windows DEVICE path. Not a
+     permission problem, not a port-in-use problem:
 
-     Phases 5-6, in order: kitchen ticket + receipt -> retiring
-     Comments.
+       File(r'\\.\COM8').openSync(write)  -> errno 161
+       CreateFile(r'\\.\COM8') + WriteFile -> works
 
-[35] NEW - the REPORTS are still English. Not a bug, a scope line.
-     Item 7 translated everything a CUSTOMER is handed: receipt,
-     addition, kitchen ticket, Z-report, invoice PDF. The reports
-     module (36 different report PDFs + the Stock Report) still has
-     English column headers - that is ~300 strings and a job of its
-     own. Say the word and I will do it in one pass; doing half of
-     them would look worse than leaving them all English.
+     File checks the path as a FILE path before it ever
+     reaches the device namespace, so \\.\anything is
+     refused on sight. The display was built on File. So the
+     serial pole display has never worked on any port, on
+     any machine, since the day it was written - and because
+     a dead display is deliberately swallowed during a sale
+     (it must never interrupt one), the only symptom was a
+     dark display. That is why it read as broken hardware.
+
+     Now it goes through Win32 directly, one mechanism for
+     COM and LPT alike.
+
+     (a) Set up com0com and the listener (section F), point
+         the POS at COM8, press TEST -> the welcome message
+         must appear in the listener window. THIS IS THE
+         WHOLE TEST. It has never passed before.
+     (b) Ring a sale, open the payment dialog -> TOTAL DUE
+         and the amount, updating as the total changes.
+     (c) Close the dialog -> back to the welcome message.
+     (d) Point it at a port that is not there and press TEST
+         -> "COM255 does not exist on this machine. Check
+         the port in Device Manager." Not errno 161.
+     (e) Leave the listener running and press TEST twice ->
+         the write counter goes to 2. If it never moves, the
+         POS is on a different port than the pair.
+
+[B3] THE DISPLAY NOW SHOWS EACH ITEM AS YOU RING IT.
+     It used to light up only when the payment dialog
+     opened: the customer watched a blank display through
+     the whole scan and got one number at the end - the
+     moment it is too late to query an item. Showing each
+     line as it is rung is the whole reason the hardware is
+     on the counter.
+
+     Line 1 is the product. Line 2 is what you rang on the
+     left and the RUNNING TOTAL on the right:
+
+         +--------------------+
+         | Cafe au lait       |
+         | 2 x 12.50     25.00|
+         +--------------------+
+
+     (a) With the listener running (section F), add products
+         one at a time -> each one appears with the total
+         growing. THIS IS THE NEW THING.
+     (b) Change a quantity on a line already in the cart ->
+         that line reappears with its new figures.
+     (c) With "separate row per item" OFF, scan the SAME
+         product twice -> the display names THAT product,
+         not whatever happens to be the last row of the
+         cart. (It merges into an existing line which can
+         sit anywhere in the list.)
+     (d) Empty the cart -> back to the welcome message.
+     (e) Open the payment dialog -> TOTAL DUE takes over and
+         the cart stops writing over it. Close it -> welcome.
+     (f) A weighed line shows its unit: "0.125 kg". At 20
+         characters the "x 50.00" is dropped rather than cut
+         in half - "x 50." would read as a price.
+     (g) The total is never shortened. Ring something big
+         enough to crowd the line and the money on the right
+         stays whole; the left gives way first.
+     (h) A French name shows as "Cafe Creme", not garbage -
+         accents fold to plain letters, because the wire
+         carries one byte per character.
+     (i) An Arabic product name shows "???" rather than
+         random Latin letters. A generic VFD cannot render
+         Arabic; "???" reads as "cannot show this" instead
+         of as a broken display.
+
+     You can drive all of this without the app:
+         dart run tool/probe_display.dart COM8
+     It composes the frames with the same code the till
+     uses and rings a whole sample sale.
+
+[B4] "TOTAL DUE" NOW FOLLOWS YOUR LANGUAGE - AND ARABIC
+     ON THE DISPLAY IS A HARDWARE SETTING.
+
+     Two separate things, and mixing them up is the trap:
+
+     1. THE LABEL. It was the last string on the display
+        still written into the source. Now:
+          EN  TOTAL DUE        WELCOME!
+          FR  TOTAL A PAYER    BIENVENUE !
+          AR  المبلغ المستحق    أهلا وسهلا
+        Your own welcome message still wins if you typed
+        one; only the fallback follows the language.
+
+     2. THE GLYPHS. You typed كرواسون and got ??????? -
+        that was correct behaviour, not a bug. A pole
+        display carries ONE BYTE per character and decodes
+        it with whatever codepage its firmware has. Ours
+        defaults to plain ASCII, which has no Arabic, so
+        every Arabic letter became '?'.
+
+        🚨 Switching the APP to Arabic does not give a
+        Latin-only display Arabic letters. Nothing in the
+        protocol lets us ask the display what it supports,
+        and guessing wrong is worse than '?' - you get
+        random Latin letters that look like a broken screen
+        instead of an honest "cannot show this".
+
+        So it is now a SETTING:
+          Settings -> Customer Display -> Display character set
+            Plain (accents simplified)   <- default, safe
+            Western European (accents kept)
+            Arabic (Windows-1256)
+            Arabic, reversed
+
+     (a) Set the app to French -> press TEST -> the display
+         reads TOTAL A PAYER. Switch to English -> TOTAL DUE.
+     (b) Leave the charset on Plain and ring an Arabic
+         product -> still ???????. That is correct.
+     (c) Switch the charset to Arabic (Windows-1256) and
+         RESTART YOUR LISTENER with the matching decoder:
+             .\tool\pole_display_listener.ps1 -Port COM9 -Charset cp1256
+         Ring the same product -> كرواسون appears.
+         🚨 The two must MATCH. Decode CP1256 bytes as
+         Latin-1 and you get unrelated Latin letters
+         (مرحبا -> ãÑÍÈÇ) that look exactly like the bug you
+         are trying to confirm is fixed. The listener now
+         counts non-ASCII bytes and warns you when its own
+         -Charset is the thing that is wrong - if the header
+         line does not show a charset, you are running an
+         old copy of the script.
+     (d) 🚨 USE PLAIN "Arabic (Windows-1256)" FOR THIS TEST,
+         not the reversed one. Your terminal does its own
+         right-to-left rendering, so "Arabic, reversed" will
+         read BACKWARDS in the listener - correctly, because
+         it is meant for a panel that cannot flip on its own.
+         Only switch to reversed if a REAL display shows the
+         words backwards. (This is what happened on 30/08:
+         reversed was selected, the listener was decoding
+         Latin-1, and the result looked like nothing worked.
+         The bytes were right the whole time.)
+     (e) Prices next to Arabic must NEVER be reversed. A
+         reversed number is not a rendering quirk, it is a
+         different number. Check 12.50 stays 12.50 in both
+         Arabic modes.
+     (f) Choose Western European and ring "Thé à la Menthe"
+         -> the accents survive instead of folding to
+         "The a la Menthe".
+
+     Drive the whole thing without the app:
+         dart run tool/probe_display.dart COM8 cp1256 ar
+         dart run tool/probe_display.dart COM8 ascii fr
+     (port, charset, language)
+
+     ⚠️ WHAT I COULD NOT VERIFY: whether a REAL pole display
+     renders any of this. I checked the bytes are exactly
+     the Windows-1256 values (against the codec itself, in
+     tests) and that they reach the port. Whether your panel
+     has the Arabic font is between you and the panel - the
+     setting exists so you can find out in one try instead
+     of needing a new build.
+
+[B5] ANDROID SILENT PRINTING - BUILT, NEEDS A REAL PRINTER.
+     Item 9, the biggest thing left. The tablets showed the
+     system print dialog on every print because that is the
+     ONLY thing Android could do: Printing.listPrinters()
+     has no Android implementation and directPrintPdf
+     reports directPrint:false. A modal asking which printer
+     to use, in the middle of closing a sale.
+
+     Now every printer has a CONNECTION setting:
+       Printer Settings -> <station> -> Connection
+         This computer (Windows printer)   <- default
+         Network printer (Wi-Fi / LAN)     <- new
+     Pick Network and enter the printer's IP and port
+     (9100). Receipts, kitchen tickets and Z-reports all go
+     that way - they share one dispatcher.
+
+     HOW IT PRINTS, and why it matters to you: the receipt
+     is NOT rebuilt as printer text commands. The PDF you
+     already get is rendered to pixels and sent as a bitmap.
+     That means the logo, the barcode, the margins and -
+     the one that decides it - the ARABIC comes out exactly
+     as the PDF shows it. A text-command printer uses its
+     own built-in font, which on almost every unit has no
+     Arabic at all.
+
+     (a) Printer Settings -> Receipt -> Connection ->
+         Network printer. Enter the IP, leave port 9100.
+     (b) Press TEST PRINT. A demo receipt must come out with
+         NO dialog. 🚨 On the tablet this button used to be
+         disabled whenever no Windows printer was found -
+         which on Android is always - so it could never be
+         pressed on the device that needed it.
+     (c) Ring a real sale -> the receipt prints silently.
+     (d) Turn the printer OFF and ring another sale. You must
+         get a message naming the address, e.g. "Could not
+         reach the printer at 192.168.1.50:9100". 🚨 This is
+         the important one: checkout used to swallow every
+         print error, so a dead printer looked exactly like
+         a printer that printed. That is the same bug you
+         found on the till in August.
+     (e) Type the address wrong on purpose - "192.168.1.50:9100"
+         in the address field, or "http://..." - it tells you
+         what is wrong instead of failing at DNS.
+     (f) Paper size 58mm vs 80mm: the test print is a ruler
+         the full width of the head. If the setting is wrong
+         the rule wraps and the comb shears - visible at a
+         glance, no measuring.
+     (g) On the WINDOWS till, leave Connection on "This
+         computer". Nothing about it should change. (Every
+         printer ships defaulted to it - a default of
+         Network with no address would break every existing
+         till on upgrade.)
+     (h) Set the till to Windows and the tablet to Network
+         for the SAME printer. Both must keep their own
+         answer - the connection, address and port are
+         per-terminal, like the cash-drawer wiring.
+
+     ⚠️ WHAT I COULD NOT TEST: a real thermal printer. There
+     is none here. What IS proven: the ESC/POS bytes are
+     encoded and decoded back to the exact image (27 tests),
+     and a 200KB job arrives whole and in order over a real
+     socket (10 tests). What no test can tell me is whether
+     YOUR printer likes the raster - if it prints garbage,
+     say so and the first thing to try is a smaller band
+     size.
+
+     NOT DONE YET: Bluetooth and USB-OTG. LAN first was the
+     plan; if your tablets' printers are not on the network,
+     tell me and that becomes the next piece.
+
+[35] THE REPORTS ARE TRANSLATED. One pass: all 36 report
+     PDFs, their CSV exports and the Stock Report now print
+     in English / French / Arabic. 106 new strings.
+     (a) Settings -> language French. Reports -> open any
+         report -> the PDF title, the Period / Customer /
+         User / Product header block and every column header
+         are French. Switch to Arabic, same report, same
+         check.
+     (b) Reports -> Sales -> Stock movement. "Fast moving"
+         keeps its RED header and "Slow moving" stays grey
+         in all three languages. (The colour used to be
+         chosen by comparing the title against the ENGLISH
+         text, so translating it would have turned both
+         grey - it is a flag now, not a string match.)
+     (c) Export CSV on any report -> open in Excel. Headers
+         translated, columns still line up. Every header is
+         quoted now, so a translated name containing a comma
+         cannot shift the sheet.
+     (d) Stock -> Stock Report -> Print AND Save as PDF:
+         title, Company / Address / Warehouse lines, the 11
+         column headers, the TOTALS row, the "N products"
+         count, the page footer.
+     (e) Reports home -> search. Typing a SECTION name in
+         French ("Achat") finds its reports - it used to
+         match only the English section name while showing
+         you the French one.
+     (f) ARABIC SHAPING. Headings used to print as
+         disconnected letters running backwards, because the
+         pdf package never shapes pw.Text. All 98 text runs,
+         53 label/value rows and 36 tables go through
+         printedText now. CHECK IN ARABIC: headings, table
+         headers, an Arabic product name, and a LATIN value
+         beside an Arabic label (company, user, address) -
+         the Latin half must NOT be reversed.
+     (g) COLONS AND MIXED LINES - this half touched ALL the
+         printed documents, not only reports: RECEIPT,
+         Z-REPORT and INVOICE PDF too. A ':' is a neutral
+         character and inside an Arabic label it jumps to
+         the visual LEFT. Labels now pass without the colon
+         and the helper adds it as its own run. In Arabic,
+         every "label: value" row must read label, colon,
+         value - and FUTUR3, an email, a cashier or supplier
+         name must NOT be reversed. In English and French
+         nothing should look different at all.
+     Not in this pass: the report NAMES in the sidebar and
+     the section headings - already translated before it.
+
+[38] MODIFIERS, all six phases. Structured priced options on
+     a line ("Extra Cheese" +12.00, "No Sugar" +0.00),
+     grouped, pick-one / pick-many, mandatory rules. It has
+     REPLACED the free-text Comments list.
+     (a) Tap a product with groups -> "Customize <name>".
+     (b) A required group blocks "Add to order" until it is
+         answered.
+     (c) Pick-many: at the limit the rest grey out, the ones
+         you already chose stay tappable.
+     (d) The button shows the running unit price as you tap.
+     (e) CANCEL -> nothing is added at all. Check the cart.
+     (f) Plain burger + cheese burger = TWO lines. A second
+         identical cheese burger MERGES to quantity 2.
+     (g) The cart line shows the choices indented underneath.
+     (h) PRICE on the keypad still overrides a customised
+         line.
+     (i) Park an order with choices on till A, open it on
+         till B -> B shows the CHOICES, not just the price.
+         (Both online, API restarted.)
+
+[40] SHARED REGISTERS - two devices, one till.
+     A session belongs to a REGISTER now, not to a terminal.
+     (a) Settings -> POS Session -> Register. Point the
+         Windows POS and the tablet at "Front Till".
+     (b) Sell on both -> both see the same session, the same
+         documents and the same payments, and EITHER can
+         close it.
+     (c) Document numbers must still differ per terminal
+         (POS1-... and POS2-...) even on one register.
+     (d) Try to switch register while a session is live ->
+         it must REFUSE. Moving away would strand a trading
+         till with no close and no Z-report.
+     (e) Language, writing direction and virtual keyboard
+         are PER DEVICE now: set the tablet to French and
+         the till to Arabic - they must not fight.
+
+[44] THE WEB DASHBOARD SHOWING THE WRONG COMPANY.
+     This is the ONE item of your fourteen that 88f314a did
+     not fix - it was never diagnosed. You reported: the
+     dashboard doesn't show that company's data after login,
+     or the new company has no access to the dashboard, and
+     it keeps logging back in as another company's user.
+     -> Do [A3] FIRST, then re-test. A user the portal
+        created as "Admin" was really a CASHIER, which fully
+        explains "the new company doesn't have access".
+     -> If it still happens to a user who is genuinely an
+        Admin, tell me and I go after the portal's own
+        cookie / company scoping - not the API.
 
 
---- NEED A HARDWARE / DEPENDENCY ANSWER ---
+=======================================================
+C.  DECIDE   (blocked on you - I will not guess)
+=======================================================
 
-[8] DONE - CASH DRAWER NOW ACTUALLY OPENS.
+[41] A REFUND GIVES BACK MORE THAN THE SALE TOOK. **MONEY**
+     Found on your live server, NOT fixed.
+       POS1-200-000014 : Document.Total     = 44.10
+                         DocumentItem.Total = 44.60
+       POS1-220-000001 : refunded             44.60
+     0.50 too much. Discount is 0 on both rows and the
+     product's list price is 42, so I do not yet know where
+     the 0.50 came from.
+     YOUR CALL: do I chase the source of the divergence
+     first (correct, slower), or make the refund read the
+     document total (fast, but it HIDES a write bug instead
+     of fixing it)? I recommend chasing it.
 
-    You never had to answer the wiring question - all three are
-    built and you PICK one on screen.
+[20] TWO TAXES CANNOT BOTH HAVE A BLANK CODE.
+     The 500 is already fixed - you get a clean message now
+     and the row parks instead of retrying a doomed request
+     forever. The underlying limit is real: SQL Server counts
+     an empty code as a value, so a company may hold only ONE
+     tax with no code.
+     YOUR CALL: the real fix is a filtered unique index
+     (WHERE Code IS NOT NULL AND Code <> ''). That is a
+     SCHEMA CHANGE and I will not touch it without you
+     saying so. The free alternative: make Code required in
+     the UI and give every tax one.
 
-    Settings -> Printers -> (tap a printer) -> Cash Drawer:
-      - turn "Open cash drawer" ON
-      - "How the drawer is connected":
-          * Through the receipt printer (RJ11)  <- start here, this
-            is how ~90% of drawers are wired. Nothing else to fill in.
-          * Network - printer or drawer IP      <- the ONLY one that
-            works on the Android tablets. Needs the IP + port 9100.
-          * Serial port (COM)                   <- COM3 + 9600, etc.
-      - press "Test Drawer Open".
+[43] DROP THE ProductComment TABLE.
+     The last piece of modifiers, held back on purpose for
+     one release so the conversion script could be checked
+     against a real catalogue. YOUR database has ZERO rows,
+     so nothing is at risk and nothing needs converting.
+     Say the word and the table, its endpoints and
+     pullProductComments go.
 
-    (a) The drawer opens. If it does not, the message now tells you
-        WHY (wrong printer, refused RAW job, host unreachable...).
-        Before today that button lied: it waited 0.7 s and said
-        "Test signal sent" without sending anything at all.
-    (b) Ring up a CASH sale -> the drawer pops the moment the sale
-        is banked, before the receipt prints.
-    (c) Ring up a CARD sale -> stays shut, PROVIDED you have ticked
-        "Open cash drawer" on at least one payment type (Settings ->
-        Payment Types). If you have ticked it on NONE, every sale
-        opens the drawer - deliberate, so the switch above works on
-        its own without you hunting through payment types.
-    (d) On the TABLET: pick Network and enter the printer's IP. The
-        other two options say they need Windows instead of failing
-        silently.
-    (e) Two tills, different wiring: the transport/IP/COM port are
-        stored PER TERMINAL, so the Windows till and the tablet do
-        not overwrite each other. The command bytes are shared.
+[9]  ANDROID SILENT PRINTING - LAN half is BUILT (see B5).
+     The question that is left is narrower than it was:
+     are your tablets' printers reachable over Wi-Fi / LAN?
+     If yes, B5 is the whole feature and this closes once
+     you have tested it on real hardware. If some printer is
+     Bluetooth or USB-only, say which and I build that
+     transport next - the dispatcher already routes per
+     printer, so it is a new arm rather than a rewrite.
 
-    KNOWN LIMIT: there is still no "Open drawer" BUTTON on the POS
-    screen. That switch (Settings -> POS Buttons -> Cash Drawer) is
-    one of ~14 button-bar toggles that nothing reads yet - a
-    separate job, say the word.
+[--] THE NO-SALE RULE IS STILL OFF, as you instructed.
+     canSellProvider gates nothing today. Switching it on
+     makes an OPEN SESSION MANDATORY before any sale can be
+     rung. That is policy, not a bug - tell me when you want
+     it live.
 
-[9] Silent printing on the Android tablets
-    Now: tablets show the system print dialog instead of printing silently.
-    This needs an ESC/POS network transport (LAN port 9100 first). Biggest item.
-    QUESTION: are the tablet's printers reachable over Wi-Fi/LAN (IP + port 9100)?
-    
---- DEV / BUILD / PRODUCTION (not a screen test) ---
 
-[11] Turn local database encryption back ON before production.
-[12] Lock down /api/Master/*, move the DB password out of the connection string,
-     put JWT + admin-portal secrets in the deploy server.
-[13] Switch the API address from the dev box (100.114.12.38) to the real host.
-[14] Fix Android build (needs Java/JDK 21 on this machine) — until then the
-     tablets run an OLD apk, so re-check the apk date before reporting Android bugs.
-     SAME TRAP ON WINDOWS (hit 2026-08-16): the installed
-     C:\Program Files (x86)\Octopus POS\pos_app.exe was 2 days old while
-     the code was current, so a fix looked "still not working". Before
-     reporting a Windows bug, check that exe's date against your last build.
+=======================================================
+D.  LATER   (known, parked, nothing breaks meanwhile)
+=======================================================
+
+[42] Two devices on ONE shared register can still open
+     PARALLEL sessions while offline. The server rejects the
+     second on push and that row parks at sync_failed, which
+     is terminal - the cashier's session is lost. The
+     pre-open refresh that would close the window is not
+     written. Only bites a venue running two tills on one
+     drawer with the internet down.
+
+[--] kitchen_display/ is NOT translated. Separate app, own
+     strings. You deferred it - but kitchen staff are the
+     likeliest Arabic-only readers in the building.
+
+[--] Settings that still do nothing: email / SMTP, date
+     format, timezone.
+
+[--] Dead or inconsistent settings keys (audited, unfixed):
+     Application.User.Email is editable and read by nothing;
+     Order.ShortcutKeysPaymentConfirmation is seeded with no
+     frontend constant at all; App.IndustryMode was removed
+     but stale rows survive in the DB; the seeder and the
+     client disagree on Order.NumberOfPaymentTypeRows (1 vs
+     0). Products.Sorting sorts only the POS menu grid, not
+     the products table.
+
+[--] Never met real hardware: the serial scale (Windows only
+     in any case - Android always takes the keypad path).
+     box / pack carry a nominal factor, not a real
+     per-product pack size.
+
+[--] Never probed: ProcessRefundCommand wonders in a comment
+     whether DocumentItem_Insert_Trigger already moves stock
+     for DocumentType 220, which would double count. The
+     error we saw was 100x, not 2x, so it evidently does not
+     - but nobody has checked against the live DB.
+
+
+=======================================================
+E.  PRODUCTION PHASE   (the ship checklist - NONE done)
+=======================================================
+
+Do these in order. 11, 13 and 14 are what make the shipped
+build different from the one you run today.
+
+[11] TURN LOCAL DATABASE ENCRYPTION BACK ON.
+     kPillar3Encryption = false in app_database.dart is a
+     dev toggle. Set it true, relaunch (it re-encrypts
+     itself, data preserved), then this must pass:
+       flutter test integration_test/cipher_test.dart -d windows
+     Shipping with it false puts every customer's sales on
+     disk in the clear.
+
+[13] POINT THE API AT PRODUCTION.
+     AppConfig.devBaseUrl is still
+     http://100.114.12.38:5002/api - your dev box. Switch it
+     to the hosted URL BEFORE building the release, or every
+     installed till phones home to this machine.
+
+[14] FIX THE ANDROID BUILD.
+     flutter build apk dies because Kotlin cannot parse
+     Java 25 ("IllegalArgumentException: 25.0.2"). Install a
+     JDK 21, then: flutter config --jdk-dir <path>
+     Until this is done there is no shippable tablet build
+     at all.
+
+[15] VERIFY THE Z-REPORT ENGINE ON THE SERVER.
+     ZReportService.GenerateZReportAsync was rewritten and
+     has NEVER EXECUTED. A wrong number here is SILENT -
+     nothing in the app reads it back. After an API restart:
+     ring a few sales, close a session, then read the ZReport
+     ROW IN SQL SERVER and check it by hand. Two known
+     hazards while you are in there:
+       - client and server scope different document sets;
+       - pullDocuments carries no item taxes, so a document
+         pulled from ANOTHER terminal shows no tax and adds
+         0 tax to this device's Z-report.
+
+[--] SET THE SECRETS IN THE DEPLOYMENT ENVIRONMENT.
+     Jwt__Secret and AdminPortal__AccessKey exist only as
+     setx variables on THIS machine. The API refuses to
+     start without them outside Development, so a deploy
+     without them is a dead server. Also decide whether to
+     scrub the old placeholder values out of git history.
+
+[--] STILL OWED ON SECURITY: a server-side per-user audit,
+     and a per-user salt on the local PIN.
+
+
+=======================================================
+F.  TESTING THE POLE DISPLAY WITHOUT A POLE DISPLAY
+=======================================================
+
+You do not need the hardware. com0com is ALREADY INSTALLED
+on this PC (C:\Program Files (x86)\com0com). It joins two
+COM ports back to back, so the POS writes into one end and
+you read the other:
+
+    [ POS APP ] --> COM8  ~~com0com~~  COM9 <-- [ listener ]
+
+STEP 1 - prove the listener itself works (no ports needed):
+
+    cd D:\POS-APP\Front-End
+    .	ool\pole_display_listener.ps1 -SelfTest
+
+  It decodes a synthetic frame and must print
+  "Self-test passed". If this fails, the fault is in the
+  script, not in the POS - do not go looking at wiring.
+
+STEP 2 - make the virtual pair. NEEDS AN ADMIN PROMPT
+  (right-click PowerShell -> Run as administrator):
+
+    cd "C:\Program Files (x86)\com0com"
+    .\setupc.exe install PortName=COM8 PortName=COM9
+    .\setupc.exe list
+
+  Then check Windows agrees:
+
+    [System.IO.Ports.SerialPort]::GetPortNames()
+
+  It must now list COM8 and COM9 beside your real port.
+
+STEP 3 - start the fake display on the FAR end:
+
+    cd D:\POS-APP\Front-End
+    .	ool\pole_display_listener.ps1 -Port COM9
+
+  A two-line display is drawn in the terminal. Leave it up.
+
+STEP 4 - point the POS at the NEAR end:
+
+    Settings -> Customer Display
+      - switch it ON
+      - COM port: COM8      <- it must be IN THE LIST. If
+        COM8 is missing, refresh; if still missing, step 2
+        did not take.
+      - characters per line: 20 (match the -Width you ran
+        the listener with)
+      - baud 9600, 8 data bits, no parity, 1 stop bit
+
+STEP 5 - watch it:
+
+    - Press TEST in Settings -> the welcome message appears
+      in the terminal box, padded to 20 characters.
+    - Ring a sale and open the payment dialog -> line 1
+      reads TOTAL DUE and line 2 the amount, and it updates
+      as the total changes.
+    - Close the payment dialog -> it goes back to the
+      welcome message.
+    - The "writes:" counter goes up on every write. If the
+      counter never moves, the POS is writing to a different
+      port than the one you paired - which is the whole bug
+      class this work removes.
+
+WHEN YOU ARE DONE (admin prompt):
+
+    cd "C:\Program Files (x86)\com0com"
+    .\setupc.exe remove 0
+
+TROUBLESHOOTING:
+  - "Could not open COM9" -> something else holds it open.
+    Close other terminals, or the POS itself if you pointed
+    it at COM9 by mistake (it must be COM8).
+  - Text appears but padding looks wrong -> -Width does not
+    match "characters per line" in Settings.
+  - Nothing at all, and Test says the port is not on this
+    machine -> that is the new error doing its job. Read the
+    port list it prints.
+
+SECOND, EVEN SIMPLER PATH - the WEB customer display:
+  Settings -> Customer Display -> the web display serves a
+  full customer-facing screen over HTTP on port 8181. Open
+  the URL it shows on your phone or a second browser tab and
+  you get the cart and total live, with no serial anything.
+  It does NOT exercise the COM path, so use it to check the
+  CONTENT and com0com to check the WIRING.
