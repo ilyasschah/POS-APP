@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/auth/user_model.dart';
 import 'package:pos_app/company/company_provider.dart';
+import 'package:pos_app/core/ilyass_screen.dart';
 import 'package:pos_app/core/responsive.dart';
 import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/database/app_database.dart';
@@ -35,18 +36,29 @@ final allSessionsProvider = StreamProvider<List<ShiftsTableData>>((ref) {
       // The discriminator: attendance shifts live in this table too and are a
       // different concept entirely. A POS session has either a device uid (this
       // terminal opened it) or a device name (it was pulled from another one).
-      .map((rows) => rows
-          .where((r) => r.posDeviceUid != null || r.posDeviceName != null)
-          .toList());
+      .map(
+        (rows) => rows
+            .where((r) => r.posDeviceUid != null || r.posDeviceName != null)
+            .toList(),
+      );
 });
 
 class SessionListScreen extends ConsumerStatefulWidget {
-  const SessionListScreen({super.key});
+  /// Opens the POS navigation drawer. Supplied by MainLayout when this is the
+  /// active tab; null when [show] pushes it as its own route, which turns the
+  /// hamburger into a back arrow. See `lib/core/ilyass_screen.dart`.
+  final VoidCallback? onMenuPressed;
 
+  const SessionListScreen({super.key, this.onMenuPressed});
+
+  /// Pushes the list as a route. Kept for the session gate, which asks for it
+  /// mid-flow (from a dialog, over whatever screen the operator was on) and
+  /// genuinely does want a back arrow. Reaching it from the SIDEBAR goes
+  /// through the tab instead — see MainLayout.
   static Future<void> show(BuildContext context) => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const SessionListScreen()),
-      );
+    context,
+    MaterialPageRoute(builder: (_) => const SessionListScreen()),
+  );
 
   @override
   ConsumerState<SessionListScreen> createState() => _SessionListScreenState();
@@ -71,47 +83,49 @@ class _SessionListScreenState extends ConsumerState<SessionListScreen> {
   void _showColumnPicker(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => Consumer(builder: (context, ref, _) {
-        final l = AppLocalizations.of(context);
-        final visible = ref.watch(sessionVisibleColumnsProvider);
-        final notifier = ref.read(sessionVisibleColumnsProvider.notifier);
-        return AlertDialog(
-          backgroundColor: Theme.of(context).cardColor,
-          title: Text(l.showHideColumns),
-          content: SizedBox(
-            width: 320,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: kSessionColumns.map((col) {
-                  final isOn = visible[col.key] ?? col.defaultVisible;
-                  return CheckboxListTile(
-                    dense: true,
-                    title: Text(sessionColumnLabel(context, col.key)),
-                    // The session id stays locked on: a row nothing identifies
-                    // is not a row anyone can act on.
-                    subtitle: col.mandatory ? Text(l.alwaysShown) : null,
-                    value: isOn,
-                    onChanged: col.mandatory
-                        ? null
-                        : (val) => notifier.setVisible(col.key, val ?? false),
-                  );
-                }).toList(),
+      builder: (context) => Consumer(
+        builder: (context, ref, _) {
+          final l = AppLocalizations.of(context);
+          final visible = ref.watch(sessionVisibleColumnsProvider);
+          final notifier = ref.read(sessionVisibleColumnsProvider.notifier);
+          return AlertDialog(
+            backgroundColor: Theme.of(context).cardColor,
+            title: Text(l.showHideColumns),
+            content: SizedBox(
+              width: 320,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: kSessionColumns.map((col) {
+                    final isOn = visible[col.key] ?? col.defaultVisible;
+                    return CheckboxListTile(
+                      dense: true,
+                      title: Text(sessionColumnLabel(context, col.key)),
+                      // The session id stays locked on: a row nothing identifies
+                      // is not a row anyone can act on.
+                      subtitle: col.mandatory ? Text(l.alwaysShown) : null,
+                      value: isOn,
+                      onChanged: col.mandatory
+                          ? null
+                          : (val) => notifier.setVisible(col.key, val ?? false),
+                    );
+                  }).toList(),
+                ),
               ),
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => notifier.resetToDefaults(),
-              child: Text(l.actionReset),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(l.actionClose),
-            ),
-          ],
-        );
-      }),
+            actions: [
+              TextButton(
+                onPressed: () => notifier.resetToDefaults(),
+                child: Text(l.actionReset),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(l.actionClose),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 
@@ -138,11 +152,13 @@ class _SessionListScreenState extends ConsumerState<SessionListScreen> {
     final rows = q.isEmpty
         ? all
         : all
-            .where((s) =>
-                sessionDisplayId(s).toLowerCase().contains(q) ||
-                (s.posDeviceName ?? '').toLowerCase().contains(q) ||
-                who(s.userId).toLowerCase().contains(q))
-            .toList();
+              .where(
+                (s) =>
+                    sessionDisplayId(s).toLowerCase().contains(q) ||
+                    (s.posDeviceName ?? '').toLowerCase().contains(q) ||
+                    who(s.userId).toLowerCase().contains(q),
+              )
+              .toList();
 
     // Only the columns this terminal has chosen to keep, in catalogue order.
     final activeCols = kSessionColumns
@@ -151,87 +167,85 @@ class _SessionListScreenState extends ConsumerState<SessionListScreen> {
 
     final compact = context.isCompact;
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: theme.colorScheme.surface,
-        title: Text(l.sessionsTitle),
-        actions: [
-          if (compact)
-            IconButton(
-              icon: const Icon(Icons.view_column_rounded),
-              tooltip: l.columns,
-              onPressed: () => _showColumnPicker(context),
-            )
-          else
-            TextButton.icon(
-              icon: const Icon(Icons.view_column_rounded),
-              label: Text(l.columns),
-              onPressed: () => _showColumnPicker(context),
-            ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Center(
-              child: Text(
-                l.sessionCountOf(rows.length, all.length),
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+    return IlyassScreen(
+      title: l.sessionsTitle,
+      onMenuPressed: widget.onMenuPressed,
+      // Displays, not actions: the count says how much of the list the search
+      // is hiding, which only means anything beside the search box.
+      trailing: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Center(
+            child: Text(
+              l.sessionCountOf(rows.length, all.length),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
           ),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(58),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-            child: TextField(
-              controller: _search,
-              onChanged: (v) => setState(() => _query = v),
-              decoration: InputDecoration(
-                hintText: l.sessionSearchHint,
-                prefixIcon: const Icon(Icons.search, size: 20),
-                filled: true,
-                fillColor: theme.colorScheme.surfaceContainer,
-                isDense: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide.none,
-                ),
-                suffixIcon: _query.isEmpty
-                    ? null
-                    : IconButton(
-                        icon: const Icon(Icons.close, size: 18),
-                        onPressed: () {
-                          _search.clear();
-                          setState(() => _query = '');
-                        },
-                      ),
+        ),
+      ],
+      actions: [
+        IlyassMenuAction(
+          icon: Icons.view_column_rounded,
+          label: l.columns,
+          onSelected: () => _showColumnPicker(context),
+        ),
+      ],
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(58),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+          child: TextField(
+            controller: _search,
+            onChanged: (v) => setState(() => _query = v),
+            decoration: InputDecoration(
+              hintText: l.sessionSearchHint,
+              prefixIcon: const Icon(Icons.search, size: 20),
+              filled: true,
+              fillColor: theme.colorScheme.surfaceContainer,
+              isDense: true,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide.none,
               ),
+              suffixIcon: _query.isEmpty
+                  ? null
+                  : IconButton(
+                      icon: const Icon(Icons.close, size: 18),
+                      onPressed: () {
+                        _search.clear();
+                        setState(() => _query = '');
+                      },
+                    ),
             ),
           ),
         ),
       ),
       body: rows.isEmpty
           ? Center(
-              child: Text(l.sessionNoHistory,
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+              child: Text(
+                l.sessionNoHistory,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
             )
           : LayoutBuilder(
               builder: (context, constraints) => compact
-                      ? _SessionCards(
-                          rows: rows,
-                          columns: activeCols,
-                          activeLocalId: activeLocalId,
-                          who: who,
-                        )
-                      : _SessionTable(
-                          rows: rows,
-                          columns: activeCols,
-                          activeLocalId: activeLocalId,
-                          who: who,
-                          maxWidth: constraints.maxWidth,
-                        ),
+                  ? _SessionCards(
+                      rows: rows,
+                      columns: activeCols,
+                      activeLocalId: activeLocalId,
+                      who: who,
+                    )
+                  : _SessionTable(
+                      rows: rows,
+                      columns: activeCols,
+                      activeLocalId: activeLocalId,
+                      who: who,
+                      maxWidth: constraints.maxWidth,
+                    ),
             ),
       // No "current session on this device" FAB: this register's live session
       // is already the top row of the list and carries its own marker, so the
@@ -275,30 +289,36 @@ class _SessionTable extends StatelessWidget {
             margin: EdgeInsets.zero,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
-              side:
-                  BorderSide(color: theme.dividerColor.withValues(alpha: 0.1)),
+              side: BorderSide(
+                color: theme.dividerColor.withValues(alpha: 0.1),
+              ),
             ),
             color: theme.cardColor,
             clipBehavior: Clip.antiAlias,
             child: DataTable(
               headingRowColor: WidgetStateProperty.all(
-                  theme.colorScheme.surfaceContainerHighest),
+                theme.colorScheme.surfaceContainerHighest,
+              ),
               showCheckboxColumn: false,
               dataRowMaxHeight: 56,
               // With no flex column `RenderTable` spreads the surplus width
               // EQUALLY, so a balance column stretches as far as a name. Give
               // the slack to the first TEXT column instead.
               columns: () {
-                final flexKey =
-                    columns.where((c) => !c.numeric).firstOrNull?.key;
+                final flexKey = columns
+                    .where((c) => !c.numeric)
+                    .firstOrNull
+                    ?.key;
                 return columns
-                    .map((c) => DataColumn(
-                          label: Text(sessionColumnLabel(context, c.key)),
-                          numeric: c.numeric,
-                          columnWidth: c.key == flexKey
-                              ? const IntrinsicColumnWidth(flex: 1)
-                              : null,
-                        ))
+                    .map(
+                      (c) => DataColumn(
+                        label: Text(sessionColumnLabel(context, c.key)),
+                        numeric: c.numeric,
+                        columnWidth: c.key == flexKey
+                            ? const IntrinsicColumnWidth(flex: 1)
+                            : null,
+                      ),
+                    )
                     .toList();
               }(),
               rows: [
@@ -309,13 +329,15 @@ class _SessionTable extends StatelessWidget {
                     onSelectChanged: (_) => SessionScreen.showFor(context, s),
                     cells: [
                       for (final c in columns)
-                        DataCell(_sessionCell(
-                          context,
-                          column: c,
-                          session: s,
-                          isActive: s.localId == activeLocalId,
-                          who: who,
-                        )),
+                        DataCell(
+                          _sessionCell(
+                            context,
+                            column: c,
+                            session: s,
+                            isActive: s.localId == activeLocalId,
+                            who: who,
+                          ),
+                        ),
                     ],
                   ),
               ],
@@ -350,8 +372,9 @@ class _SessionCards extends StatelessWidget {
 
     // The id and the status are the card's header, so they are not repeated as
     // rows in its body.
-    final bodyCols =
-        columns.where((c) => c.key != 'id' && c.key != 'status').toList();
+    final bodyCols = columns
+        .where((c) => c.key != 'id' && c.key != 'status')
+        .toList();
     final showsStatus = columns.any((c) => c.key == 'status');
 
     return ListView.builder(
@@ -387,16 +410,20 @@ class _SessionCards extends StatelessWidget {
                               child: Text(
                                 sessionDisplayId(s),
                                 overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.titleMedium
-                                    ?.copyWith(fontWeight: FontWeight.bold),
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                             if (isActive) ...[
                               const SizedBox(width: 6),
                               Tooltip(
                                 message: l.sessionCurrentOnThisDevice,
-                                child: Icon(Icons.circle,
-                                    size: 8, color: context.successColor),
+                                child: Icon(
+                                  Icons.circle,
+                                  size: 8,
+                                  color: context.successColor,
+                                ),
                               ),
                             ],
                           ],
@@ -416,7 +443,8 @@ class _SessionCards extends StatelessWidget {
                             child: Text(
                               sessionColumnLabel(context, c.key),
                               style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant),
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -460,25 +488,26 @@ Widget _sessionCell(
   String money(double? v) => v == null ? '—' : v.toStringAsFixed(2);
 
   Widget text(String value, {TextStyle? style}) => Text(
-        value,
-        textAlign: align,
-        overflow: TextOverflow.ellipsis,
-        style: style ?? theme.textTheme.bodyMedium,
-      );
+    value,
+    textAlign: align,
+    overflow: TextOverflow.ellipsis,
+    style: style ?? theme.textTheme.bodyMedium,
+  );
 
   switch (column.key) {
     case 'id':
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(sessionDisplayId(session),
-              style: const TextStyle(fontWeight: FontWeight.bold)),
+          Text(
+            sessionDisplayId(session),
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
           if (isActive) ...[
             const SizedBox(width: 6),
             Tooltip(
               message: l.sessionCurrentOnThisDevice,
-              child:
-                  Icon(Icons.circle, size: 8, color: context.successColor),
+              child: Icon(Icons.circle, size: 8, color: context.successColor),
             ),
           ],
         ],
@@ -490,16 +519,21 @@ Widget _sessionCell(
     case 'opening':
       return text(fmtSessionDate(session.openedAt));
     case 'closing':
-      return text(session.closedAt == null
-          ? '—'
-          : fmtSessionDate(session.closedAt!));
+      return text(
+        session.closedAt == null ? '—' : fmtSessionDate(session.closedAt!),
+      );
     case 'closedBy':
       return text(
-          session.closedByUserId == null ? '—' : who(session.closedByUserId));
+        session.closedByUserId == null ? '—' : who(session.closedByUserId),
+      );
     case 'duration':
-      return text(fmtSessionDuration(
-          (session.closedAt ?? DateTime.now().toUtc())
-              .difference(session.openedAt)));
+      return text(
+        fmtSessionDuration(
+          (session.closedAt ?? DateTime.now().toUtc()).difference(
+            session.openedAt,
+          ),
+        ),
+      );
     case 'starting':
       return text(money(session.startingCash));
     case 'ending':
@@ -545,8 +579,18 @@ String sessionDisplayId(ShiftsTableData s) {
 String fmtSessionDate(DateTime dt) {
   final d = dt.toLocal();
   const months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
   final h = d.hour % 12 == 0 ? 12 : d.hour % 12;
   final ampm = d.hour < 12 ? 'AM' : 'PM';
@@ -587,9 +631,13 @@ class SessionStatusPill extends StatelessWidget {
         color: color.withValues(alpha: 0.18),
         borderRadius: BorderRadius.circular(6),
       ),
-      child: Text(label,
-          style: theme.textTheme.labelSmall
-              ?.copyWith(color: color, fontWeight: FontWeight.bold)),
+      child: Text(
+        label,
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: color,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
     );
   }
 }
