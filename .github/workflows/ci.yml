@@ -24,16 +24,40 @@ jobs:
   backend:
     name: Backend · dotnet test
     runs-on: ubuntu-latest
+
+    # 195 of the 199 tests are hermetic. The other 4 exercise the admin portal's
+    # /admin/companies pages, which go through MediatR → CompanyQuery →
+    # AppDbContext — and AdminPortalFactory deliberately swaps ONLY
+    # MasterDbContext for in-memory SQLite, leaving AppDbContext on SQL Server.
+    # So those 4 have always needed a live, migrated POS database; it just never
+    # showed, because they only ever ran on machines that had one.
+    #
+    # Giving CI a real server is the fix that lets them run AS WRITTEN. Filtering
+    # them out would be disabling tests to get green, which is not a fix.
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: "Y"
+          # Throwaway credential for a container that exists for the length of
+          # one job and is never reachable from outside the runner.
+          MSSQL_SA_PASSWORD: "Str0ng_CI_Passw0rd!"
+        ports:
+          - 1433:1433
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'Str0ng_CI_Passw0rd!' -C -Q 'SELECT 1'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 20
+          --health-start-period 30s
+
     env:
       # ⚠️ Load-bearing, not decoration. AdminPortalFactory boots the real
       # Program.cs under the "IntegrationTest" environment, and
       # StartupConfigurationValidator is FATAL outside Development on a missing
       # connection string — so with this unset the host throws before a single
-      # test body runs. It never has to be reachable: MasterDbContext is swapped
-      # for in-memory SQLite by the factory, AppDbContext connects lazily, and
-      # DatabaseBootstrapper wraps CanConnect() in a try/catch. `Connect Timeout=1`
-      # keeps that failed probe from padding every boot.
-      ConnectionStrings__DefaultConnection: "Server=127.0.0.1,1433;Database=ci_placeholder;User Id=sa;Password=Placeholder_1;TrustServerCertificate=True;Connect Timeout=1;"
+      # test body runs.
+      ConnectionStrings__DefaultConnection: "Server=127.0.0.1,1433;Database=WebPos_CI;User Id=sa;Password=Str0ng_CI_Passw0rd!;TrustServerCertificate=True;Encrypt=False;"
       # The factory sets this itself when absent; setting it here too keeps any
       # test that reads configuration without the factory on the same secret.
       Jwt__Secret: "ci-only-signing-secret-that-is-long-enough-0123456789"
@@ -43,6 +67,16 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "10.0.x"
+
+      # DatabaseBootstrapper seeds but never CREATES: EnsureTenantDatabaseAsync
+      # returns early unless CanConnect() is already true, and there are 33
+      # migrations. So the schema has to exist before the host boots.
+      - name: Create POS database schema
+        run: |
+          dotnet tool install --global dotnet-ef --version 10.0.*
+          dotnet ef database update \
+            --project Back-End/Web-POS.Api/Web-POS.Api.csproj \
+            --configuration Release
 
       - name: Restore
         run: dotnet restore Back-End/Web-POS.Api.Tests/Web-POS.Api.Tests.csproj
