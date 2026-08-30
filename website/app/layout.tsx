@@ -49,17 +49,6 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <head>
-        {/* Opts the page into the hidden-then-revealed starting state, and only
-            when JS is actually running. Inline and render-blocking on purpose:
-            it must land before first paint, or elements flash visible and then
-            snap to hidden. Everything degrades to plain visible content. */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `document.documentElement.classList.add('js')`,
-          }}
-        />
-      </head>
       <body>{children}</body>
     </html>
   );

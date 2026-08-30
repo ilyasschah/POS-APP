@@ -233,7 +233,10 @@ class LicenseService {
       await _storage.saveLease(lease);
       final issuedAt = _decodeIssuedAt(lease);
       if (issuedAt != null) await _storage.recordServerTime(issuedAt);
-      return evaluate();
+      // await, not a bare return: without it a throw from evaluate()
+      // escapes past the catch below instead of degrading to null,
+      // which is the whole contract of this offline-tolerant refresh.
+      return await evaluate();
     } catch (e) {
       debugPrint('lease refresh skipped (offline?) — $e');
       return null;

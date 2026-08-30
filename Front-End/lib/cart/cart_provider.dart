@@ -1269,7 +1269,10 @@ class CartNotifier extends Notifier<CartState> {
               .getSingleOrNull();
 
       if (localRow != null) {
-        return loadOrderFromLocal(localRow.localId);
+        // await, not a bare return: without it this Future escapes the try
+        // and the catch below never clears isLoading, so a failed local
+        // load leaves the cart spinning forever.
+        return await loadOrderFromLocal(localRow.localId);
       }
       final order = await apiClient.getActiveOrderForTable(companyId, tableId);
       if (order == null) return false;
@@ -1823,7 +1826,10 @@ class CartNotifier extends Notifier<CartState> {
                 ..limit(1))
               .getSingleOrNull();
       if (localRow != null) {
-        return loadOrderFromLocal(localRow.localId);
+        // await, not a bare return: without it this Future escapes the try
+        // and the catch below never clears isLoading, so a failed local
+        // load leaves the cart spinning forever.
+        return await loadOrderFromLocal(localRow.localId);
       }
       final order = await apiClient.getPosOrderById(companyId, posOrderId);
       final orderNumber = order['number'] ?? order['Number'] ?? "ORD-TEMP";

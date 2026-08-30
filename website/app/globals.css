@@ -229,31 +229,38 @@ a {
    Scroll reveal. Enters from scale(0.98) + opacity 0 — never from scale(0),
    because nothing in the real world appears from nothing.
    ========================================================================== */
-/* Content is visible by DEFAULT. The hidden starting state is applied only once
-   an inline script has confirmed JS is running (html.js), so a crawler, a
-   failed hydration, or an IntersectionObserver that never fires leaves a fully
-   readable page rather than a blank one. The animation is an enhancement; the
-   copy is not. */
+/* Content is visible by DEFAULT. The hidden starting state applies only where
+   scripting is actually enabled, so a crawler, a failed hydration, or an
+   IntersectionObserver that never fires leaves a fully readable page rather
+   than a blank one. The animation is an enhancement; the copy is not.
+
+   `scripting: enabled` rather than a class stamped on <html> by an inline
+   script: that script necessarily runs BEFORE React hydrates, so the server
+   markup and the client DOM disagreed on <html> and Next's dev server treated
+   the hydration mismatch as fatal. A media query is evaluated by the browser
+   alone, so there is nothing for React to reconcile. Browsers without support
+   simply never match it and show the content — the safe direction. */
 .reveal {
   opacity: 1;
   transform: none;
 }
 
-.js .reveal {
-  opacity: 0;
-  transform: translateY(12px) scale(0.98);
-  transition:
-    opacity 260ms var(--ease-out),
-    transform 260ms var(--ease-out);
-}
+@media (scripting: enabled) {
+  .reveal {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+    transition:
+      opacity 260ms var(--ease-out),
+      transform 260ms var(--ease-out);
+  }
 
-.js .reveal[data-visible="true"] {
-  opacity: 1;
-  transform: none;
+  .reveal[data-visible="true"] {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .js .reveal,
   .reveal {
     opacity: 1;
     transform: none;
