@@ -797,3 +797,13 @@ details > summary > span[aria-hidden] {
   white-space: nowrap;
   border: 0;
 }
+
+/* The figure people actually compare — the largest thing in the card, and the
+   one place a 600 weight is louder than the 300 tier name above it. */
+.plan-head .price {
+  font-size: 2rem;
+  font-weight: 600;
+  line-height: 1;
+  margin-top: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}

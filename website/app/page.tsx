@@ -212,6 +212,7 @@ export default function Home() {
                     <div className="plan-head">
                       <div className="name">{tier.name}</div>
                       <div className="note">{tier.note}</div>
+                      <div className="price">{tier.price}</div>
                     </div>
                     <div className="plan-body">
                       <ul>

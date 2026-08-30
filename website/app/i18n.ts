@@ -28,7 +28,7 @@ export const dirOf = (l: Lang): "ltr" | "rtl" => (l === "ar" ? "rtl" : "ltr");
 type Feature = { title: string; body: string };
 type Platform = { name: string; detail: string };
 type Faq = { q: string; a: string };
-type Tier = { name: string; note: string; points: string[] };
+type Tier = { name: string; price: string; note: string; points: string[] };
 
 export type Dict = {
   nav: { features: string; platforms: string; pricing: string; demo: string };
@@ -97,9 +97,9 @@ const en: Dict = {
     lede: "No transaction fees and no cut of your takings.",
     cta: "Talk to us",
     tiers: [
-      { name: "Single", note: "One terminal", points: ["One Windows or Android terminal", "Kitchen display included", "Offline-first sync", "Email support"] },
-      { name: "Venue", note: "Up to 5 terminals", points: ["Everything in Single", "Up to five terminals", "Owner dashboard, web + iOS", "Floor plan & bookings", "Priority support"] },
-      { name: "Group", note: "Multi-location", points: ["Everything in Venue", "Unlimited terminals", "Multi-location reporting", "Per-warehouse stock control", "Onboarding & migration"] },
+      { name: "Single", price: "249 DH", note: "One terminal", points: ["One Windows or Android terminal", "Kitchen display included", "Offline-first sync", "Email support"] },
+      { name: "Venue", price: "199 DH", note: "Up to 5 terminals", points: ["Everything in Single", "Up to five terminals", "Owner dashboard, web + iOS", "Floor plan & bookings", "Priority support"] },
+      { name: "Group", price: "149 DH", note: "Multi-location", points: ["Everything in Venue", "Unlimited terminals", "Multi-location reporting", "Per-warehouse stock control", "Onboarding & migration"] },
     ],
   },
   faq: {
@@ -186,9 +186,9 @@ const fr: Dict = {
     lede: "Aucune commission et aucun prélèvement sur vos recettes.",
     cta: "Nous contacter",
     tiers: [
-      { name: "Single", note: "Un terminal", points: ["Un terminal Windows ou Android", "Écran cuisine inclus", "Synchronisation hors ligne d’abord", "Support par e-mail"] },
-      { name: "Venue", note: "Jusqu’à 5 terminaux", points: ["Tout Single", "Jusqu’à cinq terminaux", "Tableau de bord, web + iOS", "Plan de salle & réservations", "Support prioritaire"] },
-      { name: "Group", note: "Multi-sites", points: ["Tout Venue", "Terminaux illimités", "Rapports multi-sites", "Stock par entrepôt", "Mise en route & migration"] },
+      { name: "Single", price: "249 DH", note: "Un terminal", points: ["Un terminal Windows ou Android", "Écran cuisine inclus", "Synchronisation hors ligne d’abord", "Support par e-mail"] },
+      { name: "Venue", price: "199 DH", note: "Jusqu’à 5 terminaux", points: ["Tout Single", "Jusqu’à cinq terminaux", "Tableau de bord, web + iOS", "Plan de salle & réservations", "Support prioritaire"] },
+      { name: "Group", price: "149 DH", note: "Multi-sites", points: ["Tout Venue", "Terminaux illimités", "Rapports multi-sites", "Stock par entrepôt", "Mise en route & migration"] },
     ],
   },
   faq: {
@@ -275,9 +275,9 @@ const ar: Dict = {
     lede: "بلا رسوم على المعاملات وبلا نسبة من مبيعاتك.",
     cta: "تواصل معنا",
     tiers: [
-      { name: "Single", note: "طرفية واحدة", points: ["طرفية Windows أو Android واحدة", "شاشة المطبخ مشمولة", "مزامنة تعمل دون اتصال", "دعم عبر البريد"] },
-      { name: "Venue", note: "حتى ٥ طرفيات", points: ["كل مزايا Single", "حتى خمس طرفيات", "لوحة تحكم، ويب + iOS", "مخطط القاعة والحجوزات", "دعم ذو أولوية"] },
-      { name: "Group", note: "فروع متعددة", points: ["كل مزايا Venue", "طرفيات غير محدودة", "تقارير متعددة الفروع", "مخزون لكل مستودع", "تهيئة ونقل البيانات"] },
+      { name: "Single", price: "249 د.م.", note: "طرفية واحدة", points: ["طرفية Windows أو Android واحدة", "شاشة المطبخ مشمولة", "مزامنة تعمل دون اتصال", "دعم عبر البريد"] },
+      { name: "Venue", price: "199 د.م.", note: "حتى ٥ طرفيات", points: ["كل مزايا Single", "حتى خمس طرفيات", "لوحة تحكم، ويب + iOS", "مخطط القاعة والحجوزات", "دعم ذو أولوية"] },
+      { name: "Group", price: "149 د.م.", note: "فروع متعددة", points: ["كل مزايا Venue", "طرفيات غير محدودة", "تقارير متعددة الفروع", "مخزون لكل مستودع", "تهيئة ونقل البيانات"] },
     ],
   },
   faq: {
