@@ -448,68 +448,34 @@ export default function Home() {
                 },
               ].map((tier, i) => (
                 <Reveal key={tier.name} delay={i * 60}>
-                  <div
-                    className="card"
-                    style={{
-                      height: "100%",
-                      display: "flex",
-                      flexDirection: "column",
-                      borderColor: tier.featured
-                        ? "var(--accent)"
-                        : "var(--border)",
-                    }}
-                  >
-                    <h3>{tier.name}</h3>
-                    <p
-                      style={{
-                        fontSize: "2.5rem",
-                        fontWeight: 600,
-                        letterSpacing: "-0.02em",
-                        marginTop: "0.75rem",
-                        lineHeight: 1,
-                      }}
-                    >
-                      {tier.price}
-                    </p>
-                    <p
-                      style={{
-                        color: "var(--text-faint)",
-                        fontSize: "0.875rem",
-                        marginTop: "0.375rem",
-                      }}
-                    >
-                      {tier.note}
-                    </p>
-                    <ul
-                      style={{
-                        listStyle: "none",
-                        padding: 0,
-                        margin: "1.5rem 0 0",
-                        display: "grid",
-                        gap: "0.625rem",
-                        flex: 1,
-                      }}
-                    >
-                      {tier.points.map((pt) => (
-                        <li
-                          key={pt}
-                          style={{
-                            display: "flex",
-                            gap: "0.625rem",
-                            color: "var(--text-muted)",
-                            fontSize: "0.9375rem",
-                          }}
-                        >
-                          <Check />
-                          <span>{pt}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <a
-                      href="#contact"
-                      className={`btn ${tier.featured ? "btn-primary" : "btn-secondary"}`}
-                      style={{ marginTop: "1.75rem" }}
-                    >
+                  <div className="plan">
+                    <div className="plan-head">
+                      <div className="name">{tier.name}</div>
+                      <div className="note">{tier.note}</div>
+                      <div
+                        style={{
+                          fontSize: "2rem",
+                          fontWeight: 600,
+                          marginTop: "0.9rem",
+                          lineHeight: 1,
+                        }}
+                      >
+                        {tier.price}
+                      </div>
+                    </div>
+
+                    <div className="plan-body">
+                      <ul>
+                        {tier.points.map((pt, j) => (
+                          <li key={pt} className={j === 0 ? "strong" : undefined}>
+                            <Check />
+                            <span>{pt}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <a href="#contact" className="plan-cta">
                       Talk to us
                     </a>
                   </div>

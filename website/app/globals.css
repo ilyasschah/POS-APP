@@ -10,10 +10,10 @@
      The icon's navy is used as INK, not as ground: that is what ties a light
      page to a dark app mark without either looking arbitrary. */
   --ground: #ffffff;
-  --surface: #f6f7fb;
+  --surface: #fdf3f5;
   --surface-raised: #ffffff;
-  --surface-high: #eef0f7;
-  --border: #e4e6f0;
+  --surface-high: #f7edf0;
+  --border: #f1e6e9;
 
   /* Brand. Two tokens, deliberately:
      --accent is the icon's coral (#FF416C) and is only ever used as a SHAPE —
@@ -22,12 +22,16 @@
      #FF416C on white is only ~3.3:1, which fails WCAG AA for body copy, so
      using it for a sentence would be a real accessibility bug, not a nuance. */
   --accent: #ff416c;
-  --accent-hover: #ff4b2b;
+  /* Filled surfaces that carry WHITE text. White on --accent is only 3.37:1,
+     which fails AA for a 15px button label, so the fill darkens while the
+     brand coral stays the shape/border colour. */
+  --accent-strong: #d92150;   /* white on this = 4.90:1 */
+  --accent-hover: #c2103f;    /* white on this = 6.11:1 */
   --accent-ink: #c9184a;
   --accent-dim: #ffd3de;
 
   --text: #1a1a2e;
-  --text-muted: #4a4e69;
+  --text-muted: #4a4a5e;
   /* 5.10:1 on white. The lighter #7c819c this replaced measured 3.83:1,
      which fails AA for the captions and footer text that use it. */
   --text-faint: #686d85;
@@ -41,12 +45,12 @@
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 
   /* Softer than the dark build: a heavy shadow on a light ground reads as dirt. */
-  --shadow-sm: 0 1px 2px rgb(26 26 46 / 0.06);
-  --shadow-md: 0 4px 12px rgb(26 26 46 / 0.08);
-  --shadow-lg: 0 12px 32px rgb(26 26 46 / 0.12);
+  --shadow-sm: 0 2px 8px rgb(26 26 46 / 0.08);
+  --shadow-md: 0 8px 30px rgb(26 26 46 / 0.12);
+  --shadow-lg: 0 20px 60px rgb(26 26 46 / 0.18);
 
   --max-w: 1200px;
-  --measure: 68ch;
+  --measure: 65ch;
 
   color-scheme: light;
 }
@@ -84,14 +88,19 @@ h3 {
   font-weight: 600;
 }
 
+/* Weight-driven hierarchy: the headline is LIGHTER than the small uppercase
+   labels beside it. Hierarchy comes from weight contrast rather than size or
+   colour — the one genuinely portable move from the reference site. */
 h1 {
   font-size: clamp(2.5rem, 6vw, 4.5rem);
-  letter-spacing: -0.03em;
+  font-weight: 300;
+  letter-spacing: -0.02em;
 }
 
 h2 {
   font-size: clamp(1.75rem, 3.5vw, 2.75rem);
-  letter-spacing: -0.02em;
+  font-weight: 300;
+  letter-spacing: -0.015em;
 }
 
 h3 {
@@ -173,7 +182,7 @@ a {
 }
 
 .btn-primary {
-  background: var(--accent);
+  background: var(--accent-strong);
   color: #fff;
 }
 
@@ -335,4 +344,91 @@ details > summary > span[aria-hidden] {
   details > summary > span[aria-hidden] {
     transition: none;
   }
+}
+
+/* ============================================================================
+   Plan card — the page's one loud moment.
+   Everything else stays neutral-and-one-accent; this component is the single
+   saturated, rounded, shadowed element, and it earns attention precisely
+   because nothing around it competes.
+   ========================================================================== */
+.plan {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-raised);
+  border-radius: 15px;
+  box-shadow: var(--shadow-md);
+  overflow: hidden; /* lets the square CTA band sit inside the rounded card */
+  height: 100%;
+}
+
+/* Three stops, not two. Navy straight to coral crosses a wide hue distance and
+   blends through a muddy brown at the midpoint; the plum stop designs that
+   transition deliberately instead of letting it happen by accident. */
+.plan-head {
+  background: linear-gradient(-20deg, #1a1a2e 0%, #6b2447 55%, #ff416c 100%);
+  color: #fff;
+  padding: 1.75rem 1.5rem;
+}
+
+.plan-head .name {
+  font-size: 1.5rem;
+  font-weight: 300;
+  letter-spacing: -0.01em;
+}
+
+.plan-head .note {
+  font-size: 0.875rem;
+  opacity: 0.85;
+  margin-top: 0.25rem;
+}
+
+.plan-body {
+  padding: 1.5rem;
+  flex: 1;
+}
+
+.plan-body ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.7rem;
+}
+
+.plan-body li {
+  font-size: 0.9375rem;
+  color: var(--text-muted);
+  display: flex;
+  gap: 0.6rem;
+}
+
+/* Premium features read heavier — the reference differentiates tiers by weight
+   rather than by adding icons or dividers. */
+.plan-body li.strong {
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Square on purpose: a deliberate break from the card's own 15px rounding. */
+.plan-cta {
+  display: block;
+  background: var(--accent-strong);
+  color: #fff;
+  text-align: center;
+  padding: 1.15rem 1rem;
+  font-size: 1rem;
+  font-weight: 500;
+  border-radius: 0;
+  transition: background-color 160ms var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .plan-cta:hover {
+    background: var(--accent-hover);
+  }
+}
+
+.plan-cta:active {
+  background: var(--accent-hover);
 }
