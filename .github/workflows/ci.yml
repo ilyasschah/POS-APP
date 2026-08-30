@@ -1,0 +1,137 @@
+name: CI
+
+# The gate that was missing: every other workflow in this repo either deploys or
+# releases, so until now nothing ran on a pull request and `dotnet test` ran
+# nowhere at all. The suites already exist (164 backend facts, ~1,100 Dart tests)
+# — this only makes them count before a merge instead of after one.
+
+on:
+  pull_request:
+  push:
+    branches: [main, test]
+  workflow_dispatch:
+
+# A new push to the same PR makes the previous run irrelevant.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # ───────────────────────────────────────────────────────────────────────────
+  backend:
+    name: Backend · dotnet test
+    runs-on: ubuntu-latest
+    env:
+      # ⚠️ Load-bearing, not decoration. AdminPortalFactory boots the real
+      # Program.cs under the "IntegrationTest" environment, and
+      # StartupConfigurationValidator is FATAL outside Development on a missing
+      # connection string — so with this unset the host throws before a single
+      # test body runs. It never has to be reachable: MasterDbContext is swapped
+      # for in-memory SQLite by the factory, AppDbContext connects lazily, and
+      # DatabaseBootstrapper wraps CanConnect() in a try/catch. `Connect Timeout=1`
+      # keeps that failed probe from padding every boot.
+      ConnectionStrings__DefaultConnection: "Server=127.0.0.1,1433;Database=ci_placeholder;User Id=sa;Password=Placeholder_1;TrustServerCertificate=True;Connect Timeout=1;"
+      # The factory sets this itself when absent; setting it here too keeps any
+      # test that reads configuration without the factory on the same secret.
+      Jwt__Secret: "ci-only-signing-secret-that-is-long-enough-0123456789"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore
+        run: dotnet restore Back-End/Web-POS.Api.Tests/Web-POS.Api.Tests.csproj
+
+      - name: Build
+        run: dotnet build Back-End/Web-POS.Api.Tests/Web-POS.Api.Tests.csproj --no-restore --configuration Release
+
+      - name: Test
+        run: dotnet test Back-End/Web-POS.Api.Tests/Web-POS.Api.Tests.csproj --no-build --configuration Release --logger "trx;LogFileName=backend.trx" --results-directory TestResults
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-results
+          path: TestResults/
+          if-no-files-found: ignore
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # The POS app stays on Windows deliberately. release-windows.yml already runs
+  # `flutter analyze lib test` + `flutter test` there against this exact Flutter
+  # version, so it is the one configuration proven to pass. Front-End pulls
+  # sqlite3 with the SQLCipher native-assets hook, which has never been exercised
+  # on a Linux runner — moving this job to ubuntu to save minutes is a real
+  # change, not a free one, and should be its own PR that can go red on its own.
+  pos-app:
+    name: POS app · analyze + test
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: Front-End
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          # Same pin as release-windows.yml. These two must not drift: CI passing
+          # on a version the release never builds is worse than no CI.
+          flutter-version: "3.44.6"
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+      - run: flutter analyze lib test
+      - run: flutter test
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # The two smaller packages. Pure Dart/widget tests with no native dependency,
+  # so ubuntu is both cheaper and sufficient. Neither has ever run in CI.
+  companions:
+    name: ${{ matrix.package }} · analyze + test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false # one package failing should not hide the other's result
+      matrix:
+        package: [kitchen_display, octopus_dashboard_web]
+    defaults:
+      run:
+        working-directory: ${{ matrix.package }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.44.6"
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+      - run: flutter analyze lib test
+      - run: flutter test
+
+  # ───────────────────────────────────────────────────────────────────────────
+  website:
+    name: Website · lint + build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: website
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+
+      - run: npm ci
+      # `next lint` was removed in Next 16 — eslint is invoked directly.
+      - run: npx eslint app --max-warnings=0
+      - run: npm run build
