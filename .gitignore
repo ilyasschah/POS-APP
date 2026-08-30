@@ -42,3 +42,8 @@ SECRETS.local.txt
 # artifacts and it carries COPIES of appsettings.Local.json - ignored by name
 # above, but there is no reason for any of it to be near the index.
 /build/
+
+# Agent skills materialized by `npx skills add` (higgsfield-ai/skills et al).
+# Treated like node_modules: skills-lock.json is committed so the set is
+# reproducible, the unpacked skill files are not.
+/.agents/
