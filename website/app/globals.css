@@ -6,36 +6,49 @@
    product.
    ========================================================================== */
 :root {
-  --ground: #0f1720;
-  --surface: #15202b;
-  --surface-raised: #1c2333;
-  --surface-high: #263040;
-  --border: #283045;
+  /* Light palette built from the app icon (Front-End/assets/icon.svg).
+     The icon's navy is used as INK, not as ground: that is what ties a light
+     page to a dark app mark without either looking arbitrary. */
+  --ground: #ffffff;
+  --surface: #f6f7fb;
+  --surface-raised: #ffffff;
+  --surface-high: #eef0f7;
+  --border: #e4e6f0;
 
-  --accent: #2196f3;
-  --accent-hover: #42a5f5;
-  --accent-dim: #1565c0;
+  /* Brand. Two tokens, deliberately:
+     --accent is the icon's coral (#FF416C) and is only ever used as a SHAPE —
+     fills, buttons, borders, large type — where 3:1 is the bar and it passes.
+     --accent-ink is darkened to clear 4.5:1 on white, for links and small text.
+     #FF416C on white is only ~3.3:1, which fails WCAG AA for body copy, so
+     using it for a sentence would be a real accessibility bug, not a nuance. */
+  --accent: #ff416c;
+  --accent-hover: #ff4b2b;
+  --accent-ink: #c9184a;
+  --accent-dim: #ffd3de;
 
-  --text: #f2f5f8;
-  --text-muted: #9ba8b8;
-  --text-faint: #64748b;
+  --text: #1a1a2e;
+  --text-muted: #4a4e69;
+  /* 5.10:1 on white. The lighter #7c819c this replaced measured 3.83:1,
+     which fails AA for the captions and footer text that use it. */
+  --text-faint: #686d85;
 
-  --success: #34d399;
-  --warning: #fbbf24;
+  --success: #1b7a52;
+  --warning: #9a6700;
 
   /* Motion. Built-in CSS easings are too weak for UI; these are the curves from
      the animation skill. Never ease-in — it delays the moment the user watches. */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 
-  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.3);
-  --shadow-md: 0 4px 12px rgb(0 0 0 / 0.35);
-  --shadow-lg: 0 12px 32px rgb(0 0 0 / 0.45);
+  /* Softer than the dark build: a heavy shadow on a light ground reads as dirt. */
+  --shadow-sm: 0 1px 2px rgb(26 26 46 / 0.06);
+  --shadow-md: 0 4px 12px rgb(26 26 46 / 0.08);
+  --shadow-lg: 0 12px 32px rgb(26 26 46 / 0.12);
 
   --max-w: 1200px;
   --measure: 68ch;
 
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 * {
@@ -124,7 +137,9 @@ a {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: var(--accent);
+  /* --accent-ink, not --accent: this is SMALL text, and the icon's coral is
+     only ~3.3:1 on white, which fails WCAG AA for anything but large type. */
+  color: var(--accent-ink);
   margin-bottom: 1rem;
 }
 
@@ -175,7 +190,7 @@ a {
 
   .btn-secondary:hover {
     background: var(--surface-high);
-    border-color: var(--accent-dim);
+    border-color: var(--accent);
   }
 }
 
@@ -194,7 +209,7 @@ a {
 
 @media (hover: hover) and (pointer: fine) {
   .card-interactive:hover {
-    border-color: var(--accent-dim);
+    border-color: var(--accent);
     transform: translateY(-2px);
   }
 }

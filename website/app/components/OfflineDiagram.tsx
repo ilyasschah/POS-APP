@@ -64,7 +64,7 @@ export default function OfflineDiagram() {
           height="42"
           rx="8"
           fill="var(--surface-high)"
-          stroke="var(--accent-dim)"
+          stroke="var(--accent)"
         />
         <text x="56" y="132" fill="var(--text)" fontSize="13">
           Local database

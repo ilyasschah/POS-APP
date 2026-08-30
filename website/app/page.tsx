@@ -97,7 +97,9 @@ export default function Home() {
           top: 0,
           zIndex: 50,
           backdropFilter: "blur(12px)",
-          background: "rgb(15 23 32 / 0.8)",
+          // Tied to the token, not a literal: this used to hardcode the dark
+          // ground and would have stayed a dark bar on the light page.
+          background: "color-mix(in srgb, var(--ground) 80%, transparent)",
           borderBottom: "1px solid var(--border)",
         }}
       >
@@ -247,7 +249,8 @@ export default function Home() {
                       style={{
                         fontFamily: "ui-monospace, Menlo, monospace",
                         fontSize: "0.75rem",
-                        color: "var(--accent)",
+                        // small text -> the AA-safe ink, not the coral
+                        color: "var(--accent-ink)",
                       }}
                     >
                       0{i + 1}
@@ -452,7 +455,7 @@ export default function Home() {
                       display: "flex",
                       flexDirection: "column",
                       borderColor: tier.featured
-                        ? "var(--accent-dim)"
+                        ? "var(--accent)"
                         : "var(--border)",
                     }}
                   >
