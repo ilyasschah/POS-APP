@@ -84,7 +84,14 @@ jobs:
           # Proves the tool resolves before the long step, so a PATH problem can
           # never again look like a migration problem.
           dotnet ef --version
+          # --context is REQUIRED: the assembly holds two DbContexts
+          # (Api.DataBase.AppDbContext and Api.Master.MasterDbContext), so ef
+          # refuses to guess and fails with "More than one DbContext was found".
+          # AppDbContext is the POS database the four admin-portal tests need;
+          # MasterDbContext has no migrations at all (its schema comes from
+          # docs/sql/master-db-schema.sql) and the factory swaps it for SQLite.
           dotnet ef database update \
+            --context AppDbContext \
             --project Back-End/Web-POS.Api/Web-POS.Api.csproj
 
       - name: Restore
