@@ -11,37 +11,44 @@ Palette and surfaces are **derived from the product itself** — the dimmed them
 
 ## 1. Visual theme & atmosphere
 
-Serious software for people running a business, not a consumer app. Dark,
-dense, precise. The tone is **operator-grade**: this is a tool that runs the till
-during a Friday dinner rush, and the site should feel as dependable as that.
+Serious software for people running a business, not a consumer app. **Light,
+precise, and quiet**, so the brand coral does all the talking. The tone is
+**operator-grade**: this is a tool that runs the till during a Friday dinner
+rush, and the site should feel as dependable as that.
 
-- Dark ground by default. No light-mode toggle — the product's own dimmed theme is the identity.
+- Light ground by default. The product's own dark navy appears as **ink and as
+  one deliberate dark band**, never as the page background.
 - Restraint over decoration. Every element earns its place.
 - Density over airiness: real numbers, real screens, short sentences.
 - Never "playful startup". No gradients-as-personality, no floating 3D blobs.
 
 ## 2. Color palette & roles
 
-Taken from the app's dimmed theme so the two read as one product.
+Derived from the app icon (`Front-End/assets/icon.svg`), so the site and the POS
+read as one product. The icon's navy is used as **ink**, not as ground.
 
-| Token | Hex | Role |
-|---|---|---|
-| `--ground` | `#0F1720` | Page background, deepest layer |
-| `--surface` | `#15202B` | Section backgrounds (app `scaffoldBackgroundColor`) |
-| `--surface-raised` | `#1C2333` | Cards, panels (app `cardColor`) |
-| `--surface-high` | `#263040` | Hover states, nested panels |
-| `--border` | `#283045` | Hairlines, card edges |
-| `--accent` | `#2196F3` | Primary action, links, focus rings (app default seed) |
-| `--accent-hover` | `#42A5F5` | Accent hover |
-| `--accent-dim` | `#1565C0` | Pressed, accent borders |
-| `--text` | `#F2F5F8` | Headings, primary copy |
-| `--text-muted` | `#9BA8B8` | Body, secondary copy |
-| `--text-faint` | `#64748B` | Labels, captions, metadata |
-| `--success` | `#34D399` | Online / synced states |
-| `--warning` | `#FBBF24` | Offline / queued states |
+| Token | Hex | Contrast on white | Role |
+|---|---|---|---|
+| `--ground` | `#FFFFFF` | — | Page background |
+| `--surface` | `#F6F7FB` | — | Alternating sections |
+| `--surface-raised` | `#FFFFFF` | — | Cards, panels |
+| `--surface-high` | `#EEF0F7` | — | Hover states |
+| `--border` | `#E4E6F0` | — | Hairlines, card edges |
+| `--accent` | `#FF416C` | **3.37:1** | Fills, buttons, borders, LARGE type only |
+| `--accent-hover` | `#FF4B2B` | — | Accent hover (icon's warm end) |
+| `--accent-ink` | `#C9184A` | **5.66:1** | Links and SMALL text |
+| `--accent-dim` | `#FFD3DE` | — | Pale tint fills |
+| `--text` | `#1A1A2E` | 17.06:1 | Headings — the icon's own navy |
+| `--text-muted` | `#4A4E69` | 8.12:1 | Body |
+| `--text-faint` | `#686D85` | 5.10:1 | Captions, metadata |
 
-**Rule:** accent is for *action and state*, never for decoration. If a blue thing
-isn't clickable or reporting status, it shouldn't be blue.
+### 🚨 The one rule that is not negotiable
+
+**`--accent` (#FF416C) is a SHAPE colour, not a text colour.** At 3.37:1 it clears
+the 3:1 bar for large type and UI components, and **fails** the 4.5:1 bar for body
+copy. Any small text, label, or link uses **`--accent-ink`** instead.
+
+Ratios above are measured, not estimated. Re-measure before changing any of them.
 
 ## 3. Typography
 
@@ -87,13 +94,13 @@ bottom hairline appearing only after scroll.
 
 ## 6. Depth & elevation
 
-Borders carry hierarchy; shadows are near-invisible. On a dark ground a big soft
-shadow reads as mud.
+Borders carry hierarchy; shadows stay near-invisible. On a light ground a heavy
+shadow reads as dirt.
 
 ```css
---shadow-sm: 0 1px 2px rgb(0 0 0 / 0.3);
---shadow-md: 0 4px 12px rgb(0 0 0 / 0.35);
---shadow-lg: 0 12px 32px rgb(0 0 0 / 0.45);
+--shadow-sm: 0 1px 2px rgb(26 26 46 / 0.06);
+--shadow-md: 0 4px 12px rgb(26 26 46 / 0.08);
+--shadow-lg: 0 12px 32px rgb(26 26 46 / 0.12);
 ```
 
 Elevation ladder: `--ground` → `--surface` → `--surface-raised` → `--surface-high`.
@@ -139,13 +146,18 @@ Per the animation decision framework: **most things should not animate.**
 
 ## 9. Agent prompt guide
 
-> Build a section for the Octopus POS marketing site. Dark operator-grade
-> aesthetic on `#15202B`, cards `#1C2333` with `#283045` hairline borders, accent
-> `#2196F3` reserved for action and state only. System font stack, tight tracking
-> on large headings, prose capped at 68ch. Motion: `transform`/`opacity` only,
-> `cubic-bezier(0.23, 1, 0.32, 1)`, under 300ms, `prefers-reduced-motion`
-> honoured, hover gated behind `@media (hover: hover)`. No invented customers,
+> Build a section for the Octopus POS marketing site. Light operator-grade
+> aesthetic on `#FFFFFF` with `#F6F7FB` alternating sections, cards `#FFFFFF`
+> with `#E4E6F0` hairline borders, headings in the brand navy `#1A1A2E`. Accent
+> coral `#FF416C` is a SHAPE colour only — fills, buttons, borders, large type;
+> small text and links use `#C9184A`, which is the AA-safe ink. System font
+> stack, tight tracking on large headings, prose capped at 68ch. Motion:
+> `transform`/`opacity` only, `cubic-bezier(0.23, 1, 0.32, 1)`, under 300ms,
+> `prefers-reduced-motion` honoured, hover gated behind `@media (hover: hover)`.
+> Reveals are gated on `@media (scripting: enabled)` — never reintroduce an
+> inline `<html>` class script, it breaks hydration. No invented customers,
 > logos, or metrics.
 
-**Quick reference:** ground `#0F1720` · surface `#15202B` · raised `#1C2333` ·
-border `#283045` · accent `#2196F3` · text `#F2F5F8` · muted `#9BA8B8`
+**Quick reference:** ground `#FFFFFF` · surface `#F6F7FB` · border `#E4E6F0` ·
+accent `#FF416C` (shapes) · accent-ink `#C9184A` (text) · ink `#1A1A2E` ·
+muted `#4A4E69` · faint `#686D85`

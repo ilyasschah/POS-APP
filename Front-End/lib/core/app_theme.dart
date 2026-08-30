@@ -9,14 +9,20 @@ import 'package:pos_app/core/device_theme_mode_provider.dart';
 /// customer display (which mirrors the same colours). Keeping it in one place
 /// means the customer-facing screen can never drift from the operator's theme.
 
-/// Parses a `#RRGGBB` accent hex into a [Color], defaulting to blue.
+/// The product's own accent, taken from the octopus in `assets/icon.svg`
+/// (`#FF416C` → `#FF4B2B`). The lighter end of that gradient is the seed: it is
+/// the colour the mark reads as, and Material generates the rest of the scheme
+/// from it, so the app and its icon stop disagreeing.
+const Color kBrandAccent = Color(0xFFFF416C);
+
+/// Parses a `#RRGGBB` accent hex into a [Color], defaulting to the brand accent.
 Color parseAccentColor(String? hex) {
-  if (hex == null) return Colors.blue;
+  if (hex == null) return kBrandAccent;
   try {
     final clean = hex.replaceAll('#', '');
     return Color(int.parse('FF$clean', radix: 16));
   } catch (_) {
-    return Colors.blue;
+    return kBrandAccent;
   }
 }
 
