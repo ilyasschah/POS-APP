@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Image from "next/image";
 import Reveal from "./components/Reveal";
-import OfflineDiagram from "./components/OfflineDiagram";
 import { DICTS, LANGS, dirOf, type Lang } from "./i18n";
 
 export default function Home() {
@@ -45,7 +44,6 @@ export default function Home() {
           </a>
 
           <div style={{ display: "flex", alignItems: "center", gap: "1.25rem" }}>
-            <a href="#offline" className="nav-link">{t.nav.offline}</a>
             <a href="#features" className="nav-link">{t.nav.features}</a>
             <a href="#platforms" className="nav-link">{t.nav.platforms}</a>
             <a href="#pricing" className="nav-link">{t.nav.pricing}</a>
@@ -84,7 +82,7 @@ export default function Home() {
                   </p>
                   <div style={{ display: "flex", gap: "0.875rem", marginTop: "2.5rem", flexWrap: "wrap" }}>
                     <a href="#contact" className="btn btn-primary">{t.hero.cta}</a>
-                    <a href="#offline" className="btn btn-secondary">{t.hero.cta2}</a>
+                    <a href="#features" className="btn btn-secondary">{t.hero.cta2}</a>
                   </div>
                 </Reveal>
               </div>
@@ -119,37 +117,6 @@ export default function Home() {
                 ))}
               </dl>
             </Reveal>
-          </div>
-        </section>
-
-        {/* ---------------- Offline ---------------- */}
-        <section id="offline" className="section" style={{ background: "var(--surface)" }}>
-          <div className="shell">
-            <Reveal>
-              <p className="eyebrow">{t.offline.eyebrow}</p>
-              <h2 className="measure">{t.offline.h2}</h2>
-              <p className="lede measure" style={{ marginTop: "1.25rem" }}>{t.offline.lede}</p>
-            </Reveal>
-
-            <Reveal delay={80}>
-              <div style={{ marginTop: "3.5rem" }}>
-                <OfflineDiagram d={t.diagram} />
-              </div>
-            </Reveal>
-
-            <div className="grid grid-3" style={{ marginTop: "3.5rem" }}>
-              {t.offline.steps.map((s, i) => (
-                <Reveal key={s.t} delay={i * 60}>
-                  <div className="card" style={{ height: "100%" }}>
-                    <span style={{ fontFamily: "ui-monospace, Menlo, monospace", fontSize: "0.75rem", color: "var(--accent-ink)" }}>
-                      0{i + 1}
-                    </span>
-                    <h3 style={{ marginTop: "0.75rem" }}>{s.t}</h3>
-                    <p style={{ marginTop: "0.625rem", color: "var(--text-muted)", fontSize: "0.9375rem" }}>{s.d}</p>
-                  </div>
-                </Reveal>
-              ))}
-            </div>
           </div>
         </section>
 

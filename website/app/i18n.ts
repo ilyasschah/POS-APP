@@ -11,19 +11,12 @@ export const dirOf = (l: Lang): "ltr" | "rtl" => (l === "ar" ? "rtl" : "ltr");
 type Feature = { title: string; body: string };
 type Platform = { name: string; detail: string };
 type Faq = { q: string; a: string };
-type Step = { t: string; d: string };
 type Tier = { name: string; note: string; points: string[] };
 
 export type Dict = {
-  nav: { offline: string; features: string; platforms: string; pricing: string; demo: string };
+  nav: { features: string; platforms: string; pricing: string; demo: string };
   hero: { eyebrow: string; h1: string; lede: string; cta: string; cta2: string };
   stats: { value: string; label: string; sub: string }[];
-  offline: { eyebrow: string; h2: string; lede: string; steps: Step[] };
-  diagram: {
-    terminal: string; terminalSub: string; localDb: string; queue: string;
-    mayBeOffline: string; drains: string; server: string; serverSub1: string;
-    serverSub2: string; kds: string; alt: string;
-  };
   features: { eyebrow: string; h2: string; lede: string; items: Feature[] };
   platforms: { eyebrow: string; h2: string; items: Platform[]; floorTitle: string; floorBody: string };
   pricing: { eyebrow: string; h2: string; lede: string; tiers: Tier[]; cta: string };
@@ -33,7 +26,7 @@ export type Dict = {
 };
 
 const en: Dict = {
-  nav: { offline: "Offline", features: "Features", platforms: "Platforms", pricing: "Pricing", demo: "Book a demo" },
+  nav: { features: "Features", platforms: "Platforms", pricing: "Pricing", demo: "Book a demo" },
   hero: {
     eyebrow: "Offline-first point of sale",
     h1: "The till doesn’t stop when the internet does.",
@@ -47,24 +40,6 @@ const en: Dict = {
     { value: "3", label: "Languages", sub: "EN / FR / AR with RTL" },
     { value: "0", label: "Sales lost offline", sub: "Local-first writes" },
   ],
-  offline: {
-    eyebrow: "How it works",
-    h2: "Most POS systems treat the network as a given.",
-    lede: "Ours treats it as optional. The terminal owns its data. The server is where that data goes to be shared — not where it has to live for a cashier to take money.",
-    steps: [
-      { t: "Write locally", d: "A sale commits to the terminal’s own database the moment it is rung. No round trip, no spinner, no waiting on a link that may not be there." },
-      { t: "Queue the change", d: "Each write joins a durable outbound queue that survives the app closing, the tablet dying, and the terminal being unplugged mid-service." },
-      { t: "Reconcile on return", d: "When the connection comes back the queue drains in order. Stock movements apply as deltas, so nothing double-counts." },
-    ],
-  },
-  diagram: {
-    terminal: "Terminal", terminalSub: "Windows counter / Android tablet",
-    localDb: "Local database", queue: "Outbound queue",
-    mayBeOffline: "may be offline", drains: "drains in order when it returns",
-    server: "Hosted server", serverSub1: "Shared catalogue, reporting,", serverSub2: "multi-location consolidation",
-    kds: "Kitchen display — local network, no internet required",
-    alt: "Terminals write to their own local database and a durable queue; the queue syncs to the hosted server when a connection is available.",
-  },
   features: {
     eyebrow: "Features", h2: "Everything a service actually needs.",
     lede: "Built against real restaurant and retail workflows rather than a feature checklist.",
@@ -120,7 +95,7 @@ const en: Dict = {
 };
 
 const fr: Dict = {
-  nav: { offline: "Hors ligne", features: "Fonctions", platforms: "Plateformes", pricing: "Tarifs", demo: "Réserver une démo" },
+  nav: { features: "Fonctions", platforms: "Plateformes", pricing: "Tarifs", demo: "Réserver une démo" },
   hero: {
     eyebrow: "Point de vente hors ligne d’abord",
     h1: "La caisse ne s’arrête pas quand Internet s’arrête.",
@@ -133,24 +108,6 @@ const fr: Dict = {
     { value: "3", label: "Langues", sub: "EN / FR / AR avec RTL" },
     { value: "0", label: "Ventes perdues hors ligne", sub: "Écriture locale d’abord" },
   ],
-  offline: {
-    eyebrow: "Comment ça marche",
-    h2: "La plupart des caisses supposent que le réseau est acquis.",
-    lede: "La nôtre le considère comme optionnel. Le terminal possède ses données. Le serveur sert à les partager — pas à les héberger pour qu’un caissier puisse encaisser.",
-    steps: [
-      { t: "Écrire en local", d: "La vente est validée dans la base du terminal dès la saisie. Aucun aller-retour, aucun spinner, aucune attente d’un lien peut-être absent." },
-      { t: "Mettre en file", d: "Chaque écriture rejoint une file d’attente durable qui survit à la fermeture de l’application, à une tablette déchargée et à un terminal débranché en plein service." },
-      { t: "Réconcilier au retour", d: "Au retour de la connexion, la file se vide dans l’ordre. Les mouvements de stock s’appliquent en deltas, donc rien n’est compté deux fois." },
-    ],
-  },
-  diagram: {
-    terminal: "Terminal", terminalSub: "Comptoir Windows / tablette Android",
-    localDb: "Base locale", queue: "File sortante",
-    mayBeOffline: "peut être hors ligne", drains: "se vide dans l’ordre au retour",
-    server: "Serveur hébergé", serverSub1: "Catalogue partagé, rapports,", serverSub2: "consolidation multi-sites",
-    kds: "Écran cuisine — réseau local, aucun Internet requis",
-    alt: "Les terminaux écrivent dans leur base locale et une file durable ; la file se synchronise avec le serveur quand une connexion est disponible.",
-  },
   features: {
     eyebrow: "Fonctions", h2: "Tout ce dont un service a réellement besoin.",
     lede: "Conçu à partir de vrais flux de restauration et de commerce, pas d’une liste de cases à cocher.",
@@ -206,7 +163,7 @@ const fr: Dict = {
 };
 
 const ar: Dict = {
-  nav: { offline: "دون اتصال", features: "المزايا", platforms: "المنصات", pricing: "الأسعار", demo: "احجز عرضًا" },
+  nav: { features: "المزايا", platforms: "المنصات", pricing: "الأسعار", demo: "احجز عرضًا" },
   hero: {
     eyebrow: "نقطة بيع تعمل دون اتصال أولًا",
     h1: "الصندوق لا يتوقف عندما ينقطع الإنترنت.",
@@ -219,24 +176,6 @@ const ar: Dict = {
     { value: "٣", label: "لغات", sub: "الإنجليزية / الفرنسية / العربية" },
     { value: "٠", label: "مبيعات ضائعة دون اتصال", sub: "الكتابة محليًا أولًا" },
   ],
-  offline: {
-    eyebrow: "كيف يعمل",
-    h2: "معظم أنظمة نقاط البيع تفترض وجود الشبكة.",
-    lede: "نظامنا يعتبرها اختيارية. الجهاز يملك بياناته، والخادم مكان لمشاركتها — لا مكان يجب أن تعيش فيه حتى يستطيع الكاشير قبض المال.",
-    steps: [
-      { t: "الكتابة محليًا", d: "تُحفظ عملية البيع في قاعدة بيانات الجهاز لحظة تسجيلها. بلا انتظار، بلا مؤشر تحميل، وبلا اعتماد على اتصال قد لا يكون موجودًا." },
-      { t: "إضافة إلى الطابور", d: "كل عملية تنضم إلى طابور صادر دائم يبقى رغم إغلاق التطبيق أو نفاد بطارية الجهاز أو فصل الطرفية أثناء الخدمة." },
-      { t: "المزامنة عند العودة", d: "عند عودة الاتصال يُفرَّغ الطابور بالترتيب. تُطبَّق حركات المخزون كفروقات، فلا يُحتسب شيء مرتين." },
-    ],
-  },
-  diagram: {
-    terminal: "الطرفية", terminalSub: "حاسوب Windows / جهاز Android لوحي",
-    localDb: "قاعدة بيانات محلية", queue: "طابور صادر",
-    mayBeOffline: "قد يكون منقطعًا", drains: "يُفرَّغ بالترتيب عند العودة",
-    server: "الخادم المستضاف", serverSub1: "كتالوج مشترك، تقارير،", serverSub2: "تجميع متعدد الفروع",
-    kds: "شاشة المطبخ — شبكة محلية، دون حاجة إلى إنترنت",
-    alt: "تكتب الطرفيات في قاعدة بياناتها المحلية وفي طابور دائم، ويتزامن الطابور مع الخادم عند توفر الاتصال.",
-  },
   features: {
     eyebrow: "المزايا", h2: "كل ما تحتاجه الخدمة فعلًا.",
     lede: "مبني على سير عمل حقيقي في المطاعم والتجزئة، لا على قائمة مزايا.",
