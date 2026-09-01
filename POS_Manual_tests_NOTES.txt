@@ -35,12 +35,6 @@ A.  DO NOW   (you, today - no code from me needed)
      Until this is done a crash report cannot be traced to
      a build.
 
-[A4] CHECK THE APK DATE BEFORE REPORTING AN ANDROID BUG.
-     The Android build is broken on this machine (item 14),
-     so the tablets are running an OLD apk. "Still broken on
-     Android" is usually just old code.
-
-
 =======================================================
 B.  CHECK NOW   (built and tested by me, needs YOUR eyes)
 =======================================================
@@ -114,100 +108,6 @@ B.  CHECK NOW   (built and tested by me, needs YOUR eyes)
      NOT DONE YET: Bluetooth and USB-OTG. LAN first was the
      plan; if your tablets' printers are not on the network,
      tell me and that becomes the next piece.
-
-[35] THE REPORTS ARE TRANSLATED. One pass: all 36 report
-     PDFs, their CSV exports and the Stock Report now print
-     in English / French / Arabic. 106 new strings.
-     (a) Settings -> language French. Reports -> open any
-         report -> the PDF title, the Period / Customer /
-         User / Product header block and every column header
-         are French. Switch to Arabic, same report, same
-         check.
-     (b) Reports -> Sales -> Stock movement. "Fast moving"
-         keeps its RED header and "Slow moving" stays grey
-         in all three languages. (The colour used to be
-         chosen by comparing the title against the ENGLISH
-         text, so translating it would have turned both
-         grey - it is a flag now, not a string match.)
-     (c) Export CSV on any report -> open in Excel. Headers
-         translated, columns still line up. Every header is
-         quoted now, so a translated name containing a comma
-         cannot shift the sheet.
-     (d) Stock -> Stock Report -> Print AND Save as PDF:
-         title, Company / Address / Warehouse lines, the 11
-         column headers, the TOTALS row, the "N products"
-         count, the page footer.
-     (e) Reports home -> search. Typing a SECTION name in
-         French ("Achat") finds its reports - it used to
-         match only the English section name while showing
-         you the French one.
-     (f) ARABIC SHAPING. Headings used to print as
-         disconnected letters running backwards, because the
-         pdf package never shapes pw.Text. All 98 text runs,
-         53 label/value rows and 36 tables go through
-         printedText now. CHECK IN ARABIC: headings, table
-         headers, an Arabic product name, and a LATIN value
-         beside an Arabic label (company, user, address) -
-         the Latin half must NOT be reversed.
-     (g) COLONS AND MIXED LINES - this half touched ALL the
-         printed documents, not only reports: RECEIPT,
-         Z-REPORT and INVOICE PDF too. A ':' is a neutral
-         character and inside an Arabic label it jumps to
-         the visual LEFT. Labels now pass without the colon
-         and the helper adds it as its own run. In Arabic,
-         every "label: value" row must read label, colon,
-         value - and FUTUR3, an email, a cashier or supplier
-         name must NOT be reversed. In English and French
-         nothing should look different at all.
-     Not in this pass: the report NAMES in the sidebar and
-     the section headings - already translated before it.
-
-     🐛 CRASH FOUND AND FIXED 2026-09-01: clicking "Produits"
-     (or any of ~22 other reports - Product Groups, Hourly
-     Sales by Group, and 20 more through the shared
-     _pdfHeader helper) threw "Flex children have non-zero
-     flex but incoming width constraints are unbounded" and
-     red-screened instead of showing the PDF. Introduced by
-     this same pass: the Period/Customer/User/Product header
-     block's label:value layout (the colon fix in (g) above)
-     needs a BOUNDED width to size its value run against, and
-     three call sites left their Row's Column(s) un-Expanded,
-     so the value run got infinite width instead. Fixed in
-     reports_screen.dart - the shared header now routes
-     through the one working helper (_hdrPair) everywhere
-     instead of a second, unguarded copy of the same layout.
-     RE-TEST: the crash should be gone on every report, not
-     just Produits - if any report still red-screens the same
-     way, tell me which one.
-
-[40] SHARED REGISTERS - two devices, one till.
-     A session belongs to a REGISTER now, not to a terminal.
-     (a) Settings -> POS Session -> Register. Point the
-         Windows POS and the tablet at "Front Till".
-     (b) Sell on both -> both see the same session, the same
-         documents and the same payments, and EITHER can
-         close it.
-     (c) Document numbers must still differ per terminal
-         (POS1-... and POS2-...) even on one register.
-     (d) Try to switch register while a session is live ->
-         it must REFUSE. Moving away would strand a trading
-         till with no close and no Z-report.
-     (e) Language, writing direction and virtual keyboard
-         are PER DEVICE now: set the tablet to French and
-         the till to Arabic - they must not fight.
-
-[44] THE WEB DASHBOARD SHOWING THE WRONG COMPANY.
-     This is the ONE item of your fourteen that 88f314a did
-     not fix - it was never diagnosed. You reported: the
-     dashboard doesn't show that company's data after login,
-     or the new company has no access to the dashboard, and
-     it keeps logging back in as another company's user.
-     -> Do [A3] FIRST, then re-test. A user the portal
-        created as "Admin" was really a CASHIER, which fully
-        explains "the new company doesn't have access".
-     -> If it still happens to a user who is genuinely an
-        Admin, tell me and I go after the portal's own
-        cookie / company scoping - not the API.
 
 =======================================================
 C.  DECIDE   (blocked on you - I will not guess)
