@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:pos_app/database/app_database.dart' show kPillar3Encryption;
+import 'package:pos_app/database/db_location.dart';
 import 'package:pos_app/database/device_key_service.dart';
 import 'package:pos_app/database/restore_service.dart';
 
@@ -12,10 +13,11 @@ class BackupService {
   // ── Path helpers ──────────────────────────────────────────────────────────
 
   /// Absolute path of the live Drift SQLite file.
-  static Future<String> dbFilePath() async {
-    final dir = await getApplicationDocumentsDirectory();
-    return p.join(dir.path, 'pos_app.sqlite');
-  }
+  ///
+  /// Resolved through [posDatabaseFilePath] so the backup copies the database
+  /// Drift actually opens — the app-support directory, not Documents. See
+  /// `db_location.dart`.
+  static Future<String> dbFilePath() => posDatabaseFilePath();
 
   /// True when this platform has no operator-browsable filesystem for the
   /// operator to point a backup at. On Android every "folder" the system picker
@@ -27,33 +29,19 @@ class BackupService {
 
   /// Resolves the backup directory.
   ///
-  /// On Android/iOS a configured [backupDir] is deliberately IGNORED unless it
-  /// is a real path: the app's own external files directory is the only place
-  /// it can write without SAF plumbing, and it is still reachable over USB /
-  /// a file manager at `Android/data/<package>/files/POS_Backups`.
-  /// Elsewhere it falls back to `<Documents>/POS_Backups`.
-  /// A Windows-shaped location: `D:\x`, `C:/x` or a `\\server\share` UNC path.
-  static bool _isDesktopPath(String value) =>
-      value.startsWith(r'\\') || RegExp(r'^[A-Za-z]:[\\/]').hasMatch(value);
+  /// On Android/iOS a configured [backupDir] is honoured only when it sits
+  /// inside the app's own external files directory — the one place it can write
+  /// without SAF plumbing, reachable over USB / a file manager at
+  /// `Android/data/<package>/files/POS_Backups`. Anything else falls back to
+  /// that managed location. Elsewhere it falls back to `<Documents>/POS_Backups`.
 
   static Future<String> resolveBackupDir(String backupDir) async {
     final dir = backupDir.trim();
 
     if (usesManagedBackupDir) {
-      // A `content://` URI (or any non-path) can never be written to — drop it
-      // and use the managed location instead of failing the backup.
-      //
-      // 🚨 So can a WINDOWS path. `Database.BackupPath` used to be cloud-synced,
-      // so a Windows POS saving `D:\POS_Backups` pushed it to every tablet; this
-      // check passed it through (non-empty, no `://`) and `backupNow` then ran
-      // `Directory(r'D:\POS_Backups').createSync()` on Android, which either
-      // throws or silently creates a literal `D:\POS_Backups` folder name. That
-      // is why backups "did not work at all" on the tablets. The key is now
-      // device-scoped (see DeviceScopedSettings), and this is the belt-and-
-      // braces guard for a value already stored on an existing install.
-      if (dir.isNotEmpty && !dir.contains('://') && !_isDesktopPath(dir)) {
-        return dir;
-      }
+      // The one place this platform can write with no extra permission: the
+      // app's own external files dir (Android) / documents dir (iOS). Both the
+      // managed default and any operator override have to live under it.
       // getExternalStorageDirectory is Android-only and may be null; app
       // documents always exists and needs no permission on either platform.
       Directory? base;
@@ -65,7 +53,27 @@ class BackupService {
         }
       }
       base ??= await getApplicationDocumentsDirectory();
-      return p.join(base.path, 'POS_Backups');
+      final managed = p.join(base.path, 'POS_Backups');
+
+      // Accept a configured path ONLY when it sits inside that writable sandbox.
+      //
+      // 🚨 Everything else is a value that made sense wherever it was set and is
+      // unwritable here, so `Directory(...).createSync()` in `backupNow` throws
+      // and the backup fails silently. `p.isWithin` rejects all three at once:
+      //   • a Windows path (`D:\POS_Backups`) inherited from a POS till;
+      //   • a SAF `content://` URI the folder picker returned (not a path);
+      //   • a PUBLIC shared-storage path (`/storage/emulated/0/Documents`,
+      //     `/sdcard/…`) inherited from another device or left as a legacy
+      //     default — it needs MANAGE_EXTERNAL_STORAGE this app does not hold.
+      //     This last one used to slip through (non-empty, no `://`, not
+      //     Windows-shaped) and is the "Android path in the cloud settings" that
+      //     broke tablet backups outright.
+      // `Database.BackupPath` is device-scoped now (see DeviceScopedSettings),
+      // so new values never travel — this is the guard for one already stored.
+      if (dir.isNotEmpty && p.isWithin(base.path, dir)) {
+        return dir;
+      }
+      return managed;
     }
 
     if (dir.isNotEmpty) return dir;

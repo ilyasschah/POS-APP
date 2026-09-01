@@ -2,8 +2,9 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 import 'package:sqlite3/sqlite3.dart';
+
+import 'package:pos_app/database/db_location.dart';
 
 /// Why a chosen file cannot be restored. Kept as a type rather than a string so
 /// the UI can explain the *specific* problem — "this is from a newer version"
@@ -45,8 +46,11 @@ class RestoreService {
   /// restore that turns out to be the wrong file is still recoverable.
   static const _supersededName = 'pos_app.superseded.sqlite';
 
+  // The live database's directory — the app-support directory, resolved in one
+  // place so the staged-restore swap can never target a different folder than
+  // the one Drift opens. See `db_location.dart`.
   static Future<String> _dir() async =>
-      (await getApplicationDocumentsDirectory()).path;
+      (await posDatabaseDirectory()).path;
 
   static Future<File> liveFile() async =>
       File(p.join(await _dir(), 'pos_app.sqlite'));

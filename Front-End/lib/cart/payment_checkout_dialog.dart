@@ -77,9 +77,9 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
   late final double _totalDiscount;
   // Order-level discount components, captured so the summary can break them out
   // (item-level discounts are shown per item).
-  late final double _itemDiscount;     // manual item + promotion, per line
+  late final double _itemDiscount; // manual item + promotion, per line
   late final double _customerDiscount; // customer-profile discount
-  late final double _cartDiscount;     // whole-order manual discount
+  late final double _cartDiscount; // whole-order manual discount
   late final List<CartItem> _cartItems;
   late final String _sym;
 
@@ -105,8 +105,10 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
     _cartItems = List.unmodifiable(ref.read(cartProvider).items);
     _sym = ref.read(currencySymbolProvider);
     _paidNotifier.value = '0';
-    _pointValue = double.tryParse(
-            _settingsAtOpen[SettingKeys.loyaltyPointValue] ?? '1.0') ??
+    _pointValue =
+        double.tryParse(
+          _settingsAtOpen[SettingKeys.loyaltyPointValue] ?? '1.0',
+        ) ??
         1.0;
 
     // Show the order total on the customer display as soon as the dialog opens.
@@ -279,9 +281,7 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
             builder: (c) => AlertDialog(
               icon: Icon(Icons.block, color: context.dangerColor, size: 36),
               title: Text(AppLocalizations.of(context).transactionBlocked),
-              content: Text(
-                AppLocalizations.of(context).creditNeedsCustomer,
-              ),
+              content: Text(AppLocalizations.of(context).creditNeedsCustomer),
               actions: [
                 FilledButton(
                   onPressed: () => Navigator.pop(c),
@@ -373,14 +373,14 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
             .taxAmountsForItem(item)
             .map((t) => {'id': t.id, 'amount': t.amount})
             .toList();
-        final taxesJsonStr =
-            taxEntries.isEmpty ? null : jsonEncode(taxEntries);
+        final taxesJsonStr = taxEntries.isEmpty ? null : jsonEncode(taxEntries);
         // A %-entered item discount is stored as (type 0, the % value) rather
         // than its resolved money, so the saved document line reads "50%" not
         // "Fixed 5". Totals are identical — the backend BatchSync applies the
         // discount type-aware. Skipped when a promotion is mixed in, since one
         // discount field can't hold both a % and the promo's money.
-        final pctItemDiscount = item.discountInputType == 0 &&
+        final pctItemDiscount =
+            item.discountInputType == 0 &&
             item.discountInputValue != null &&
             item.promotionalDiscount == 0;
         return PosOrderItemsTableCompanion(
@@ -389,15 +389,18 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
           productId: Value(item.productId),
           quantity: Value(item.quantity),
           unitPrice: Value(item.price),
-          discount: Value(pctItemDiscount
-              ? item.discountInputValue!
-              : item.discount + item.promotionalDiscount),
+          discount: Value(
+            pctItemDiscount
+                ? item.discountInputValue!
+                : item.discount + item.promotionalDiscount,
+          ),
           discountType: Value(pctItemDiscount ? 0 : item.discountType),
           taxRate: Value(summedRate),
           taxesJson: Value(taxesJsonStr),
           comment: Value(item.comment),
-          warehouseId:
-              Value(item.warehouseId ?? cartNotifier.effectiveWarehouseId),
+          warehouseId: Value(
+            item.warehouseId ?? cartNotifier.effectiveWarehouseId,
+          ),
           syncStatus: const Value('pending'),
         );
       }).toList();
@@ -405,8 +408,9 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
       // The cart may have been opened on a table created offline, whose temp id
       // was swapped for a real one by a sync while this cart sat open. Checkout
       // is the last writer, so resolve before persisting or the dead id wins.
-      final resolvedTableId =
-          await db.resolveFloorPlanTableId(cartState.floorPlanTableId);
+      final resolvedTableId = await db.resolveFloorPlanTableId(
+        cartState.floorPlanTableId,
+      );
 
       if (existingLocalId != null) {
         // Existing open order (server-originated or previously synced) —
@@ -468,17 +472,19 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
       // offline-replay behaviour (BatchSync replays sales with AllowNegativeStock).
       await db.deductStockForCheckout(
         items: _cartItems
-            .map((item) => (
-                  productId:   item.productId,
-                  quantity:    item.quantity,
-                  // The line's own unit — a 100 g line takes 0.100 kg off the
-                  // shelf, and deductStockForCheckout does that conversion.
-                  uomId:       item.uomId,
-                  warehouseId: item.warehouseId ??
-                      cartNotifier.effectiveWarehouseId,
-                  isService:   item.isService,
-                  productName: item.productName,
-                ))
+            .map(
+              (item) => (
+                productId: item.productId,
+                quantity: item.quantity,
+                // The line's own unit — a 100 g line takes 0.100 kg off the
+                // shelf, and deductStockForCheckout does that conversion.
+                uomId: item.uomId,
+                warehouseId:
+                    item.warehouseId ?? cartNotifier.effectiveWarehouseId,
+                isService: item.isService,
+                productName: item.productName,
+              ),
+            )
             .toList(),
         allowNegative: true,
       );
@@ -532,21 +538,23 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
         final combinedRate = item.appliedTaxes
             .where((t) => !t.isFixed)
             .fold<double>(0, (s, t) => s + t.rate);
-        final firstTaxId =
-            item.appliedTaxes.isNotEmpty ? item.appliedTaxes.first.id : null;
+        final firstTaxId = item.appliedTaxes.isNotEmpty
+            ? item.appliedTaxes.first.id
+            : null;
         // Mirror the pos_order_items choice so local + pulled docs agree: keep a
         // %-entered discount as (type 0, the % value) instead of the resolved
         // money, so the Edit-Item dialog shows "50%". `total` (lineTotal) stays
         // authoritative and unchanged.
-        final pctItemDiscount = item.discountInputType == 0 &&
+        final pctItemDiscount =
+            item.discountInputType == 0 &&
             item.discountInputValue != null &&
             item.promotionalDiscount == 0;
         return DocumentItemsTableCompanion(
-          localId:      Value(docItemLocalId),
-          documentId:   Value(orderLocalId),
-          productId:    Value(item.productId),
-          quantity:     Value(item.quantity),
-          unitPrice:    Value(item.price),
+          localId: Value(docItemLocalId),
+          documentId: Value(orderLocalId),
+          productId: Value(item.productId),
+          quantity: Value(item.quantity),
+          unitPrice: Value(item.price),
           // The EX-TAX price, which for a tax-inclusive product is NOT
           // `item.price` — that already contains the tax. Writing the gross
           // figure here made the banked document claim a 90 MAD inclusive line
@@ -561,54 +569,55 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
           // promotion show twice (item "Item Disc." column + breakdown) and made
           // local docs disagree with pulled ones. `total`/`taxAmount` already net
           // out the promotion via `lineTotal`, so they're unaffected.
-          discount:     Value(pctItemDiscount
-              ? item.discountInputValue!
-              : item.discount),
+          discount: Value(
+            pctItemDiscount ? item.discountInputValue! : item.discount,
+          ),
           discountType: Value(pctItemDiscount ? 0 : item.discountType),
-          total:        Value(lineTotal),
-          taxAmount:    Value(taxAmt),
-          taxRate:      Value(combinedRate),
-          taxId:        Value(firstTaxId),
+          total: Value(lineTotal),
+          taxAmount: Value(taxAmt),
+          taxRate: Value(combinedRate),
+          taxId: Value(firstTaxId),
         );
       }).toList();
 
-      final markAsPaidFlag = (payTypes
-              .where((p) => p.id == _selectedPaymentTypeId)
-              .firstOrNull
-              ?.markAsPaid ??
-          true)
+      final markAsPaidFlag =
+          (payTypes
+                  .where((p) => p.id == _selectedPaymentTypeId)
+                  .firstOrNull
+                  ?.markAsPaid ??
+              true)
           ? 1
           : 0;
 
       await db.insertOfflineDocument(
         document: DocumentsTableCompanion(
-          localId:        Value(orderLocalId),
-          number:         Value(docNumber),
-          companyId:      Value(company.id),
-          userId:         Value(user.id),
-          warehouseId:    Value(cartNotifier.effectiveWarehouseId),
-          total:          Value(_effectiveTotal),
-          discount:       Value(cartState.manualCartDiscount),
-          discountType:   Value(cartState.manualCartDiscountType),
-          customerId:     Value(cartState.selectedCustomer?.id),
-          orderNumber:    Value(orderNum),
-          serviceType:    Value(cartState.serviceType),
-          paidStatus:     Value(markAsPaidFlag),
-          date:           Value(now),
+          localId: Value(orderLocalId),
+          number: Value(docNumber),
+          companyId: Value(company.id),
+          userId: Value(user.id),
+          warehouseId: Value(cartNotifier.effectiveWarehouseId),
+          total: Value(_effectiveTotal),
+          discount: Value(cartState.manualCartDiscount),
+          discountType: Value(cartState.manualCartDiscountType),
+          customerId: Value(cartState.selectedCustomer?.id),
+          orderNumber: Value(orderNum),
+          serviceType: Value(cartState.serviceType),
+          paidStatus: Value(markAsPaidFlag),
+          date: Value(now),
           sessionLocalId: Value(sessionLocalId),
-          syncStatus:     const Value('pending'),
-          lastModified:   Value(now),
+          syncStatus: const Value('pending'),
+          lastModified: Value(now),
         ),
         items: docItems,
         payment: PaymentsTableCompanion(
-          localId:       Value(const Uuid().v4()),
-          documentId:    Value(orderLocalId),
+          localId: Value(const Uuid().v4()),
+          documentId: Value(orderLocalId),
           paymentTypeId: Value(_selectedPaymentTypeId!),
-          amount:        Value(amountToSave.toDouble()),
-          userId:        Value(user.id),
-          date:          Value(now),
-          companyId:     Value(company.id),
-          dateCreated:   Value(now),
+          amount: Value(amountToSave.toDouble()),
+          userId: Value(user.id),
+          date: Value(now),
+          companyId: Value(company.id),
+          dateCreated: Value(now),
           sessionLocalId: Value(sessionLocalId),
         ),
         itemModifiers: docItemModifiers,
@@ -626,21 +635,23 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
         itemLocalIds: docItemLocalIds,
       );
       if (_pointsDiscount > 0) {
-        discountLines.add(DiscountLinesTableCompanion(
-          localId: Value(const Uuid().v4()),
-          companyId: Value(company.id),
-          orderLocalId: Value(orderLocalId),
-          documentLocalId: Value(orderLocalId),
-          source: const Value(DiscountSource.loyaltyPoints),
-          sourceRefId: Value(cartState.selectedCustomer?.id),
-          value: Value(_pointsUsed), // points redeemed
-          valueType: const Value(1), // resolved to money in `amount`
-          amount: Value(double.parse(_pointsDiscount.toStringAsFixed(4))),
-          sequence: Value(discountLines.length),
-          label: const Value('Loyalty points'),
-          syncStatus: const Value('pending'),
-          lastModified: Value(now),
-        ));
+        discountLines.add(
+          DiscountLinesTableCompanion(
+            localId: Value(const Uuid().v4()),
+            companyId: Value(company.id),
+            orderLocalId: Value(orderLocalId),
+            documentLocalId: Value(orderLocalId),
+            source: const Value(DiscountSource.loyaltyPoints),
+            sourceRefId: Value(cartState.selectedCustomer?.id),
+            value: Value(_pointsUsed), // points redeemed
+            valueType: const Value(1), // resolved to money in `amount`
+            amount: Value(double.parse(_pointsDiscount.toStringAsFixed(4))),
+            sequence: Value(discountLines.length),
+            label: const Value('Loyalty points'),
+            syncStatus: const Value('pending'),
+            lastModified: Value(now),
+          ),
+        );
       }
       await db.replaceDiscountLines(
         orderLocalId: orderLocalId,
@@ -677,25 +688,39 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
         try {
           await db.setBookingStatusLocal(paidBookingId, 4); // 4 = Completed
         } catch (e) {
-          debugPrint('mark booking $paidBookingId completed on pay failed — $e');
+          debugPrint(
+            'mark booking $paidBookingId completed on pay failed — $e',
+          );
         }
       }
 
       // ── Loyalty points: earn and deduct ──────────────────────────────────
       final loyaltyCustomer = cartState.selectedCustomer;
-      if (_settingsAtOpen[SettingKeys.loyaltyEnabled]?.toLowerCase() == 'true' &&
+      if (_settingsAtOpen[SettingKeys.loyaltyEnabled]?.toLowerCase() ==
+              'true' &&
           loyaltyCustomer != null &&
           loyaltyCustomer.code != 'C000') {
         final minAmt =
-            double.tryParse(_settingsAtOpen[SettingKeys.loyaltyMinAmount] ?? '100') ?? 100;
+            double.tryParse(
+              _settingsAtOpen[SettingKeys.loyaltyMinAmount] ?? '100',
+            ) ??
+            100;
         final ptsPerThreshold =
-            double.tryParse(_settingsAtOpen[SettingKeys.loyaltyPointsPerThreshold] ?? '10') ?? 10;
+            double.tryParse(
+              _settingsAtOpen[SettingKeys.loyaltyPointsPerThreshold] ?? '10',
+            ) ??
+            10;
         final earned = minAmt > 0
             ? ((_grandTotal / minAmt).floor() * ptsPerThreshold).toDouble()
             : 0.0;
         final loyaltyNotifier = ref.read(loyaltyCardNotifierProvider.notifier);
-        await loyaltyNotifier.adjustPoints(loyaltyCustomer.id, earned - _pointsUsed);
-        final updatedCard = await loyaltyNotifier.findByCustomerId(loyaltyCustomer.id);
+        await loyaltyNotifier.adjustPoints(
+          loyaltyCustomer.id,
+          earned - _pointsUsed,
+        );
+        final updatedCard = await loyaltyNotifier.findByCustomerId(
+          loyaltyCustomer.id,
+        );
         if (mounted) {
           setState(() {
             _pointsEarned = earned;
@@ -706,11 +731,13 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
 
       // Customer display: checkoutSuccess state shows cash+change for 5 s,
       // then the notifier auto-resets to idle.
-      ref.read(customerDisplayProvider.notifier).completeCheckout(
-        total: _effectiveTotal,
-        amountPaid: _paid,
-        changeDue: (_paid - _effectiveTotal).clamp(0.0, double.infinity),
-      );
+      ref
+          .read(customerDisplayProvider.notifier)
+          .completeCheckout(
+            total: _effectiveTotal,
+            amountPaid: _paid,
+            changeDue: (_paid - _effectiveTotal).clamp(0.0, double.infinity),
+          );
 
       if (!mounted) return;
 
@@ -727,15 +754,17 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
         paymentTypeOpensDrawer: selectedPayType?.openCashDrawer == true,
         anyPaymentTypeOpensDrawer: payTypes.any((t) => t.openCashDrawer),
       )) {
-        unawaited(openEnabledDrawers(appSettings).then((failures) {
-          if (failures.isEmpty || !ctx.mounted) return;
-          showAppSnackbar(
-            ctx,
-            ref,
-            AppLocalizations.of(ctx).cashDrawerFailed(failures.first),
-            isError: true,
-          );
-        }));
+        unawaited(
+          openEnabledDrawers(appSettings).then((failures) {
+            if (failures.isEmpty || !ctx.mounted) return;
+            showAppSnackbar(
+              ctx,
+              ref,
+              AppLocalizations.of(ctx).cashDrawerFailed(failures.first),
+              isError: true,
+            );
+          }),
+        );
       }
 
       // ── Resolve print settings ────────────────────────────────────
@@ -743,8 +772,8 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
           (appSettings[SettingKeys.autoprint] ?? '').toLowerCase() == 'true';
       final showPrintDialog =
           (appSettings[SettingKeys.displayReceiptPrintDialog] ?? '')
-                  .toLowerCase() ==
-              'true';
+              .toLowerCase() ==
+          'true';
 
       void doPrint({bool saveToFile = false}) => ReceiptPrinterService()
           .printCartReceipt(
@@ -909,8 +938,11 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
       if (mounted) {
         setState(() => _isProcessing = false);
         showAppSnackbar(
-            context, ref, AppLocalizations.of(context).checkoutError(e.toString()),
-            isError: true);
+          context,
+          ref,
+          AppLocalizations.of(context).checkoutError(e.toString()),
+          isError: true,
+        );
       }
     }
   }
@@ -981,97 +1013,128 @@ class _PaymentCheckoutDialogState extends ConsumerState<PaymentCheckoutDialog> {
             ?.toLowerCase() !=
         'false';
 
-    return Dialog(
-      insetPadding: const EdgeInsets.all(12),
-      backgroundColor: theme.colorScheme.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: SizedBox(
-        height: MediaQuery.of(context).size.height - 24,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // ── LEFT: Order Summary (conditionally shown) ─────────────────
-            if (showItems) ...[
-              _OrderSummaryColumn(
-                items: _cartItems,
-                subtotal: _subtotal,
-                taxTotal: _taxTotal,
-                itemDiscount: _itemDiscount,
-                customerDiscount: _customerDiscount,
-                cartDiscount: _cartDiscount,
-                grandTotal: _grandTotal,
-                pointsDiscount: _pointsDiscount,
-                sym: _sym,
+    // Order.ShortcutKeysPaymentConfirmation: lets Enter / Numpad-Enter confirm
+    // the sale, same guard as the Numpad's own Complete button, for tills
+    // driven by a physical keyboard or a keyboard-wedge barcode scanner.
+    final shortcutKeysEnabled =
+        ref
+            .read(
+              appSettingsProvider,
+            )[SettingKeys.shortcutKeysPaymentConfirmation]
+            ?.toLowerCase() ==
+        'true';
+
+    return Focus(
+      autofocus: true,
+      onKeyEvent: (node, event) {
+        if (!shortcutKeysEnabled || event is! KeyDownEvent) {
+          return KeyEventResult.ignored;
+        }
+        final isEnter =
+            event.logicalKey == LogicalKeyboardKey.enter ||
+            event.logicalKey == LogicalKeyboardKey.numpadEnter;
+        if (!isEnter || _selectedPaymentTypeId == null || _isProcessing) {
+          return KeyEventResult.ignored;
+        }
+        _complete(context);
+        return KeyEventResult.handled;
+      },
+      child: Dialog(
+        insetPadding: const EdgeInsets.all(12),
+        backgroundColor: theme.colorScheme.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: SizedBox(
+          height: MediaQuery.of(context).size.height - 24,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // ── LEFT: Order Summary (conditionally shown) ─────────────────
+              if (showItems) ...[
+                _OrderSummaryColumn(
+                  items: _cartItems,
+                  subtotal: _subtotal,
+                  taxTotal: _taxTotal,
+                  itemDiscount: _itemDiscount,
+                  customerDiscount: _customerDiscount,
+                  cartDiscount: _cartDiscount,
+                  grandTotal: _grandTotal,
+                  pointsDiscount: _pointsDiscount,
+                  sym: _sym,
+                ),
+                VerticalDivider(
+                  width: 1,
+                  color: theme.colorScheme.outlineVariant,
+                ),
+              ],
+
+              // ── CENTER: Payment Methods ────────────────────────────────────
+              _PaymentMethodsColumn(
+                payTypesAsync: payTypesAsync,
+                selectedId: _selectedPaymentTypeId,
+                onSelect: (id) => setState(() => _selectedPaymentTypeId = id),
               ),
               VerticalDivider(
                 width: 1,
                 color: theme.colorScheme.outlineVariant,
               ),
-            ],
 
-            // ── CENTER: Payment Methods ────────────────────────────────────
-            _PaymentMethodsColumn(
-              payTypesAsync: payTypesAsync,
-              selectedId: _selectedPaymentTypeId,
-              onSelect: (id) => setState(() => _selectedPaymentTypeId = id),
-            ),
-            VerticalDivider(width: 1, color: theme.colorScheme.outlineVariant),
-
-            // ── RIGHT: Numpad & Totals ─────────────────────────────────────
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Customer button bar
-                  _CustomerBar(
-                    customer: customer,
-                    allCustomersAsync: allCustomersAsync,
-                    onPick: _pickCustomer,
-                    onCancel: () =>
-                        Navigator.of(context, rootNavigator: true).pop(),
-                  ),
-                  const Divider(height: 1),
-
-                  // Totals display
-                  _TotalsDisplay(
-                    grandTotal: _effectiveTotal,
-                    sym: _sym,
-                    paidNotifier: _paidNotifier,
-                    markAsPaid: markAsPaid,
-                  ),
-                  const Divider(height: 1),
-
-                  // Rich customer card — only for real (non-walk-in) customers
-                  if (customer != null && customer.code != 'C000')
-                    _CustomerDetailCard(
+              // ── RIGHT: Numpad & Totals ─────────────────────────────────────
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Customer button bar
+                    _CustomerBar(
                       customer: customer,
-                      onRemove: _clearCustomer,
+                      allCustomersAsync: allCustomersAsync,
+                      onPick: _pickCustomer,
+                      onCancel: () =>
+                          Navigator.of(context, rootNavigator: true).pop(),
                     ),
+                    const Divider(height: 1),
 
-                  // Loyalty info row — visible when the customer has points
-                  if (_loyaltyCard != null)
-                    _LoyaltyInfoRow(
-                      card: _loyaltyCard!,
-                      pointValue: _pointValue,
-                      pointsUsed: _pointsUsed,
+                    // Totals display
+                    _TotalsDisplay(
+                      grandTotal: _effectiveTotal,
                       sym: _sym,
-                      onTap: () => _showLoyaltyDialog(context),
+                      paidNotifier: _paidNotifier,
+                      markAsPaid: markAsPaid,
                     ),
+                    const Divider(height: 1),
 
-                  _Numpad(
-                    onKey: _onKey,
-                    onComplete: _selectedPaymentTypeId != null && !_isProcessing
-                        ? () => _complete(context)
-                        : null,
-                    isProcessing: _isProcessing,
-                    paidNotifier: _paidNotifier,
-                    grandTotal: _effectiveTotal,
-                    markAsPaid: markAsPaid,
-                  ),
-                ],
+                    // Rich customer card — only for real (non-walk-in) customers
+                    if (customer != null && customer.code != 'C000')
+                      _CustomerDetailCard(
+                        customer: customer,
+                        onRemove: _clearCustomer,
+                      ),
+
+                    // Loyalty info row — visible when the customer has points
+                    if (_loyaltyCard != null)
+                      _LoyaltyInfoRow(
+                        card: _loyaltyCard!,
+                        pointValue: _pointValue,
+                        pointsUsed: _pointsUsed,
+                        sym: _sym,
+                        onTap: () => _showLoyaltyDialog(context),
+                      ),
+
+                    _Numpad(
+                      onKey: _onKey,
+                      onComplete:
+                          _selectedPaymentTypeId != null && !_isProcessing
+                          ? () => _complete(context)
+                          : null,
+                      isProcessing: _isProcessing,
+                      paidNotifier: _paidNotifier,
+                      grandTotal: _effectiveTotal,
+                      markAsPaid: markAsPaid,
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -1114,7 +1177,7 @@ class _OrderSummaryColumn extends ConsumerWidget {
     // fold tax in (mirrors the cart); otherwise tax is shown as its own line.
     final taxIncluded =
         settings[SettingKeys.displayAndPrintTaxIncluded]?.toLowerCase() !=
-            'false';
+        'false';
     // Subtotal incl. tax, already net of item-level discounts:
     //   grossSubtotal − customer − cart = grandTotal.
     final grossSubtotal = subtotal - itemDiscount + taxTotal;
@@ -1126,23 +1189,26 @@ class _OrderSummaryColumn extends ConsumerWidget {
 
     // One indented detail line under an item (a discount or a tax).
     Widget detail(String label, String value, {Color? color}) => Padding(
-          padding: const EdgeInsets.only(left: 4, top: 2),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Flexible(
-                child: Text(label,
-                    style: theme.textTheme.bodySmall?.copyWith(color: muted),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis),
-              ),
-              const SizedBox(width: 8),
-              Text(value,
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: color ?? muted)),
-            ],
+      padding: const EdgeInsets.only(left: 4, top: 2),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Flexible(
+            child: Text(
+              label,
+              style: theme.textTheme.bodySmall?.copyWith(color: muted),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
-        );
+          const SizedBox(width: 8),
+          Text(
+            value,
+            style: theme.textTheme.bodySmall?.copyWith(color: color ?? muted),
+          ),
+        ],
+      ),
+    );
 
     // A weighed line reads `0.125 kg`, not `0.13` — the old two-decimal
     // rounding turned a real 0.125 kg into a quantity the customer was not
@@ -1156,6 +1222,7 @@ class _OrderSummaryColumn extends ConsumerWidget {
           ? value
           : '$value $label';
     }
+
     String fmtRate(double r) =>
         r % 1 == 0 ? r.toInt().toString() : r.toString();
 
@@ -1191,11 +1258,13 @@ class _OrderSummaryColumn extends ConsumerWidget {
                   final lineNet = unitNet * item.quantity;
                   // Tax base mirrors the cart's rule: "Before tax" taxes the
                   // discounted price; "After tax" taxes the full price.
-                  final taxBase = (discountBeforeTax ? unitNet : item.price) *
+                  final taxBase =
+                      (discountBeforeTax ? unitNet : item.price) *
                       item.quantity;
                   final lineTax = item.appliedTaxes.fold<double>(
                     0,
-                    (s, t) => s +
+                    (s, t) =>
+                        s +
                         (t.isFixed
                             ? t.rate * item.quantity
                             : taxBase * (t.rate / 100)),
@@ -1211,11 +1280,15 @@ class _OrderSummaryColumn extends ConsumerWidget {
                   // contains (CartItem's basePrice invariant). Split back out
                   // so the line can show the product's own price with the
                   // options itemised beneath it.
-                  final modifierSurcharge =
-                      (item.price - item.basePrice).clamp(0.0, double.infinity);
+                  final modifierSurcharge = (item.price - item.basePrice).clamp(
+                    0.0,
+                    double.infinity,
+                  );
                   return Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -1225,8 +1298,9 @@ class _OrderSummaryColumn extends ConsumerWidget {
                             Expanded(
                               child: Text(
                                 item.productName,
-                                style: theme.textTheme.bodyMedium
-                                    ?.copyWith(fontWeight: FontWeight.w600),
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -1234,16 +1308,18 @@ class _OrderSummaryColumn extends ConsumerWidget {
                             const SizedBox(width: 8),
                             Text(
                               '$sym ${lineShown.toStringAsFixed(2)}',
-                              style: theme.textTheme.bodyMedium
-                                  ?.copyWith(fontWeight: FontWeight.bold),
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ],
                         ),
                         Text(
                           '${fmtQty(item)} × $sym '
                           '${(unitShown - modifierSurcharge).toStringAsFixed(2)}',
-                          style:
-                              theme.textTheme.bodySmall?.copyWith(color: muted),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: muted,
+                          ),
                         ),
                         // Each chosen option on its own line. The surcharge is
                         // already inside `price`, so the line above prints the
@@ -1268,7 +1344,10 @@ class _OrderSummaryColumn extends ConsumerWidget {
                         if (item.promotionalDiscount > 0)
                           detail(
                             item.promotionId != null
-                                ? (promoNames[item.promotionId] ?? AppLocalizations.of(context).promotionLabel)
+                                ? (promoNames[item.promotionId] ??
+                                      AppLocalizations.of(
+                                        context,
+                                      ).promotionLabel)
                                 : AppLocalizations.of(context).promotionLabel,
                             '- $sym ${(item.promotionalDiscount * item.quantity).toStringAsFixed(2)}',
                             color: context.successColor,
@@ -1281,9 +1360,13 @@ class _OrderSummaryColumn extends ConsumerWidget {
                           final name = t.isFixed
                               ? t.name
                               : '${t.name} (${fmtRate(t.rate)}%)';
-                          final label = taxIncluded ? AppLocalizations.of(context).inclPrefix(name) : name;
+                          final label = taxIncluded
+                              ? AppLocalizations.of(context).inclPrefix(name)
+                              : name;
                           return detail(
-                              label, '$sym ${amt.toStringAsFixed(2)}');
+                            label,
+                            '$sym ${amt.toStringAsFixed(2)}',
+                          );
                         }),
                       ],
                     ),
@@ -1307,31 +1390,75 @@ class _OrderSummaryColumn extends ConsumerWidget {
                 // AND is net of item-level discounts, so only order-level
                 // discounts are listed and tax is shown as an informational line.
                 if (taxIncluded) ...[
-                  _SummaryRow(AppLocalizations.of(context).subtotalInclTax, grossSubtotal, sym, theme),
+                  _SummaryRow(
+                    AppLocalizations.of(context).subtotalInclTax,
+                    grossSubtotal,
+                    sym,
+                    theme,
+                  ),
                   if (customerDiscount > 0)
                     _SummaryRow(
-                        AppLocalizations.of(context).customerDiscountLabel, -customerDiscount, sym, theme,
-                        color: context.successColor),
+                      AppLocalizations.of(context).customerDiscountLabel,
+                      -customerDiscount,
+                      sym,
+                      theme,
+                      color: context.successColor,
+                    ),
                   if (cartDiscount > 0)
-                    _SummaryRow(AppLocalizations.of(context).cartDiscountLabel, -cartDiscount, sym, theme,
-                        color: context.successColor),
+                    _SummaryRow(
+                      AppLocalizations.of(context).cartDiscountLabel,
+                      -cartDiscount,
+                      sym,
+                      theme,
+                      color: context.successColor,
+                    ),
                   if (taxTotal > 0)
-                    _SummaryRow(AppLocalizations.of(context).taxInclLabel, taxTotal, sym, theme,
-                        color: muted),
+                    _SummaryRow(
+                      AppLocalizations.of(context).taxInclLabel,
+                      taxTotal,
+                      sym,
+                      theme,
+                      color: muted,
+                    ),
                 ] else ...[
                   // Tax-exclusive: gross subtotal, then every discount, then tax.
-                  _SummaryRow(AppLocalizations.of(context).subtotalLabel, subtotal, sym, theme),
+                  _SummaryRow(
+                    AppLocalizations.of(context).subtotalLabel,
+                    subtotal,
+                    sym,
+                    theme,
+                  ),
                   if (itemDiscount > 0)
-                    _SummaryRow(AppLocalizations.of(context).itemDiscountsPlural, -itemDiscount, sym, theme,
-                        color: context.successColor),
+                    _SummaryRow(
+                      AppLocalizations.of(context).itemDiscountsPlural,
+                      -itemDiscount,
+                      sym,
+                      theme,
+                      color: context.successColor,
+                    ),
                   if (customerDiscount > 0)
                     _SummaryRow(
-                        AppLocalizations.of(context).customerDiscountLabel, -customerDiscount, sym, theme,
-                        color: context.successColor),
+                      AppLocalizations.of(context).customerDiscountLabel,
+                      -customerDiscount,
+                      sym,
+                      theme,
+                      color: context.successColor,
+                    ),
                   if (cartDiscount > 0)
-                    _SummaryRow(AppLocalizations.of(context).cartDiscountLabel, -cartDiscount, sym, theme,
-                        color: context.successColor),
-                  if (taxTotal > 0) _SummaryRow(AppLocalizations.of(context).taxesLabel, taxTotal, sym, theme),
+                    _SummaryRow(
+                      AppLocalizations.of(context).cartDiscountLabel,
+                      -cartDiscount,
+                      sym,
+                      theme,
+                      color: context.successColor,
+                    ),
+                  if (taxTotal > 0)
+                    _SummaryRow(
+                      AppLocalizations.of(context).taxesLabel,
+                      taxTotal,
+                      sym,
+                      theme,
+                    ),
                 ],
                 if (pointsDiscount > 0)
                   _SummaryRow(
@@ -1367,8 +1494,9 @@ class _OrderSummaryColumn extends ConsumerWidget {
                       Text(
                         '≈ ${((grandTotal - pointsDiscount) * dualRate).toStringAsFixed(2)} $dualSym',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.55),
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.55,
+                          ),
                         ),
                       ),
                     ],
@@ -1479,11 +1607,11 @@ class _PaymentMethodsColumn extends ConsumerWidget {
                             padding: const EdgeInsets.all(8),
                             gridDelegate:
                                 SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: gridCols,
-                              crossAxisSpacing: 6,
-                              mainAxisSpacing: 6,
-                              childAspectRatio: 2.4,
-                            ),
+                                  crossAxisCount: gridCols,
+                                  crossAxisSpacing: 6,
+                                  mainAxisSpacing: 6,
+                                  childAspectRatio: 2.4,
+                                ),
                             itemCount: enabled.length,
                             itemBuilder: (ctx, i) {
                               final t = enabled[i];
@@ -1506,14 +1634,16 @@ class _PaymentMethodsColumn extends ConsumerWidget {
                   child: ListView(
                     padding: const EdgeInsets.all(8),
                     children: [
-                      ...enabled.map((t) => Padding(
-                            padding: const EdgeInsets.only(bottom: 6),
-                            child: _PaymentTypeButton(
-                              type: t,
-                              isSelected: selectedId == t.id,
-                              onTap: () => onSelect(t.id),
-                            ),
-                          )),
+                      ...enabled.map(
+                        (t) => Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: _PaymentTypeButton(
+                            type: t,
+                            isSelected: selectedId == t.id,
+                            onTap: () => onSelect(t.id),
+                          ),
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       OutlinedButton.icon(
                         onPressed: () =>
@@ -1979,7 +2109,9 @@ class _CompleteButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Material(
-      color: canPay ? context.successColor : theme.colorScheme.surfaceContainerHighest,
+      color: canPay
+          ? context.successColor
+          : theme.colorScheme.surfaceContainerHighest,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onTap,
@@ -2073,8 +2205,9 @@ class _CustomerDetailCard extends StatelessWidget {
                 if (customer.taxNumber != null &&
                     customer.taxNumber!.isNotEmpty)
                   Text(
-                    AppLocalizations.of(context)
-                        .taxNoWithValue(customer.taxNumber!),
+                    AppLocalizations.of(
+                      context,
+                    ).taxNoWithValue(customer.taxNumber!),
                     style: TextStyle(
                       fontSize: 11,
                       color: cs.onSurface.withValues(alpha: 0.65),
@@ -2147,14 +2280,17 @@ class _LoyaltyInfoRow extends StatelessWidget {
                     '${card.points.toStringAsFixed(0)} pts'
                     ' = ${(card.points * pointValue).toStringAsFixed(2)} $sym',
                     style: const TextStyle(
-                        fontWeight: FontWeight.w600, fontSize: 13),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
                   ),
                   Text(
                     hasRedeemed
                         ? AppLocalizations.of(context).redeemingPoints(
                             pointsUsed.toStringAsFixed(0),
                             discount.toStringAsFixed(2),
-                            sym)
+                            sym,
+                          )
                         : AppLocalizations.of(context).tapToRedeemPoints,
                     style: TextStyle(
                       fontSize: 12,
@@ -2185,7 +2321,8 @@ class _LoyaltyPointsDialog extends StatefulWidget {
   final String customerName;
   final double currentPoints;
   final double pointValue;
-  final double maxUsable; // grand total cap — can't redeem more than the order total
+  final double
+  maxUsable; // grand total cap — can't redeem more than the order total
   final String sym;
 
   const _LoyaltyPointsDialog({
@@ -2207,7 +2344,9 @@ class _LoyaltyPointsDialogState extends State<_LoyaltyPointsDialog> {
     final maxByTotal = widget.pointValue > 0
         ? (widget.maxUsable / widget.pointValue).floor().toDouble()
         : widget.currentPoints;
-    return widget.currentPoints < maxByTotal ? widget.currentPoints : maxByTotal;
+    return widget.currentPoints < maxByTotal
+        ? widget.currentPoints
+        : maxByTotal;
   }
 
   double get _ptsEntered => double.tryParse(_ctrl.text) ?? 0;
@@ -2253,23 +2392,27 @@ class _LoyaltyPointsDialogState extends State<_LoyaltyPointsDialog> {
                 children: [
                   Text(
                     widget.customerName,
-                    style: theme.textTheme.titleSmall
-                        ?.copyWith(fontWeight: FontWeight.bold),
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     AppLocalizations.of(context).pointsBalanceWorth(
-                        widget.currentPoints.toStringAsFixed(0),
-                        (widget.currentPoints * widget.pointValue)
-                            .toStringAsFixed(2),
-                        widget.sym),
+                      widget.currentPoints.toStringAsFixed(0),
+                      (widget.currentPoints * widget.pointValue)
+                          .toStringAsFixed(2),
+                      widget.sym,
+                    ),
                     style: theme.textTheme.bodySmall,
                   ),
                   Text(
-                    AppLocalizations.of(context)
-                        .maxUsableThisOrder(max.toStringAsFixed(0)),
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: cs.onSurface.withValues(alpha: 0.6)),
+                    AppLocalizations.of(
+                      context,
+                    ).maxUsableThisOrder(max.toStringAsFixed(0)),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: cs.onSurface.withValues(alpha: 0.6),
+                    ),
                   ),
                 ],
               ),
@@ -2278,21 +2421,23 @@ class _LoyaltyPointsDialogState extends State<_LoyaltyPointsDialog> {
             // Points input
             TextField(
               controller: _ctrl,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: false),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: false,
+              ),
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               decoration: InputDecoration(
                 labelText: AppLocalizations.of(context).pointsToUse,
                 helperText: _discount > 0
                     ? AppLocalizations.of(context).discountWithAmount(
-                        _discount.toStringAsFixed(2), widget.sym)
+                        _discount.toStringAsFixed(2),
+                        widget.sym,
+                      )
                     : null,
                 suffixText: 'pts',
                 border: const OutlineInputBorder(),
-                errorText:
-                    entered > max && entered > 0
-                        ? AppLocalizations.of(context).exceedsMaximum
-                        : null,
+                errorText: entered > max && entered > 0
+                    ? AppLocalizations.of(context).exceedsMaximum
+                    : null,
               ),
               onChanged: (_) => setState(() {}),
             ),
@@ -2316,8 +2461,8 @@ class _LoyaltyPointsDialogState extends State<_LoyaltyPointsDialog> {
                   child: Text(
                     '${entered.toStringAsFixed(0)} pts',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 IconButton.outlined(
@@ -2339,7 +2484,11 @@ class _LoyaltyPointsDialogState extends State<_LoyaltyPointsDialog> {
                 setState(() {});
               },
               icon: const Icon(Icons.flash_on, size: 16),
-              label: Text(AppLocalizations.of(context).useMaxPoints(max.toStringAsFixed(0))),
+              label: Text(
+                AppLocalizations.of(
+                  context,
+                ).useMaxPoints(max.toStringAsFixed(0)),
+              ),
             ),
           ],
         ),

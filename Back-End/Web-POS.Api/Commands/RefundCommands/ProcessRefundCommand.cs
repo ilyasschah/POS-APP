@@ -68,6 +68,24 @@ namespace Api.Commands.RefundCommands
             if (arrivedAfterClose) session.MarkLateArrival();
         }
 
+        /// <summary>
+        /// What the customer actually paid per unit for this line.
+        ///
+        /// 🚨 Root-caused 2026-09-01 (POS_Manual_tests_NOTES.txt [41], live data:
+        /// POS1-200-000014 / POS1-220-000001, 44.60 refunded against a 44.10 sale).
+        /// <c>TotalAfterDocumentDiscount</c> — NOT <c>PriceBeforeTaxAfterDiscount</c> —
+        /// is what was paid: at checkout, <c>PosOrderCheckoutService.ApportionDocumentDiscount</c>
+        /// reconciles every line to the document's grand total (which equals
+        /// <c>Payment.Amount</c>), which is how an order-level reduction that isn't
+        /// the classic <c>Order.Discount</c> field — a promotion, loyalty points,
+        /// anything landing in <c>DiscountLine</c> instead — still lands on the
+        /// lines. <c>PriceBeforeTaxAfterDiscount</c> is the line's price BEFORE that
+        /// apportionment; refunding off it hands back the discount amount too.
+        /// Derived rather than stored, since DocumentItem has no PricePaidPerUnit column.
+        /// </summary>
+        private static decimal PricePaidPerUnit(DocumentItem orig) =>
+            orig.Quantity != 0 ? orig.TotalAfterDocumentDiscount / orig.Quantity : 0;
+
         /// Server fallback refund number (YY-220-NNNNNN). Used only when the
         /// client did NOT send a device-local number — offline-first clients
         /// always do, so this is the online/legacy path.
@@ -185,7 +203,7 @@ namespace Api.Commands.RefundCommands
                         var orig = originalItems.FirstOrDefault(i => i.ProductId == ri.ProductId)
                             ?? throw new InvalidOperationException(
                                 $"Product {ri.ProductId} was not in the original receipt.");
-                        totalRefunded += orig.PriceBeforeTaxAfterDiscount * ri.Quantity;
+                        totalRefunded += PricePaidPerUnit(orig) * ri.Quantity;
                     }
 
                     // 6. Refund document number. Offline-first clients send a
@@ -238,7 +256,7 @@ namespace Api.Commands.RefundCommands
                         var orig    = originalItems.First(i => i.ProductId == ri.ProductId);
                         var product = products.GetValueOrDefault(ri.ProductId);
 
-                        var lineTotal = orig.PriceBeforeTaxAfterDiscount * ri.Quantity;
+                        var lineTotal = PricePaidPerUnit(orig) * ri.Quantity;
 
                         var docItem = DocumentItem.Create(
                             companyId:                  command.CompanyId,
@@ -274,8 +292,11 @@ namespace Api.Commands.RefundCommands
                         }
 
                         // Explicit stock reversal for non-service products.
-                        // Note: if DocumentItem_Insert_Trigger already handles stock direction
-                        // for DocumentType 220, remove this block to avoid double-counting.
+                        // Confirmed against the live DB (2026-09-01): no "DocumentItem_Insert_Trigger"
+                        // exists — sys.triggers on DocumentItem is empty, and the only triggers in the
+                        // database are trg_Document_CompanyConsistency, trg_Barcode_CompanyMatch and
+                        // trg_FloorPlanTable_CompanyConsistency (none of which touch Stock). This block
+                        // is the ONLY thing that moves stock for a refund; there is no double-counting.
                         if (product != null && !product.IsService)
                         {
                             var stock = await _db.Stocks.FirstOrDefaultAsync(

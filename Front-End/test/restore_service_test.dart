@@ -10,9 +10,9 @@
 //     per device, so it simply cannot be read here.
 //
 // ⚠️ NOT covered here: the staged swap itself (`applyStagedRestore`). It
-// resolves paths through `getApplicationDocumentsDirectory`, which needs
-// platform channels a unit test does not have. It stays a manual check — see
-// POS_Manual_tests_NOTES item 28.
+// resolves paths through `posDatabaseDirectory` (the app-support directory —
+// see db_location.dart), which needs platform channels a unit test does not
+// have. It stays a manual check — see POS_Manual_tests_NOTES item 28.
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';

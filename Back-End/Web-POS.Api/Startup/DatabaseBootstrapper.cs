@@ -67,6 +67,13 @@ public static class DatabaseBootstrapper
             // keep decoding. Skips any company that already has rules.
             await Api.Services.BarcodeRuleSeeder.BackfillAsync(db);
             logger.LogDebug("Barcode rules verified/backfilled for existing companies.");
+
+            // Sweeps ApplicationProperty rows for settings that have since been
+            // fully retired from the app (e.g. App.IndustryMode) — SeedAsync only
+            // ever adds a missing key, so a removed one otherwise lingers forever
+            // for any company seeded before the removal.
+            await Api.Services.CompanyDefaultsSeeder.RemoveObsoletePropertiesAsync(db);
+            logger.LogDebug("Obsolete application properties swept.");
         }
         catch (Exception ex)
         {

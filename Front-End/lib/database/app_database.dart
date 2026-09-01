@@ -5,10 +5,10 @@ import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 import 'package:sqlite3/sqlite3.dart';
 import 'package:uuid/uuid.dart';
 
+import 'package:pos_app/database/db_location.dart';
 import 'package:pos_app/database/device_key_service.dart';
 import 'package:pos_app/database/restore_service.dart';
 import 'package:pos_app/document/document_type_constants.dart';
@@ -6493,14 +6493,22 @@ LazyDatabase _openConnection() {
     // The sqlite3 native-assets hook (see pubspec `hooks.user_defines`) bundles
     // a prebuilt SQLCipher library and resolves it for us — no manual library
     // loading / Android workaround needed.
-    // ⚠️ FIRST, before anything opens the file: swap in a database the operator
-    // staged for restore. Drift holds the live file open for the whole session
-    // and Windows will not let an open file be replaced, so a restore can only
-    // ever happen here — in the gap between process start and the first open.
-    // A no-op when nothing is staged, which is every normal boot.
+    // ⚠️ FIRST, before anything opens the file: relocate a database left in the
+    // old Documents location into the local app-support directory. Documents is
+    // OneDrive-synced on most managed machines, and a live SQLite file there
+    // stalls the UI isolate (which Drift runs on) whenever the cloud sync or a
+    // second instance holds the handle — the "hangs right after login" AppHang.
+    // A no-op once migrated, and on a fresh install. See `db_location.dart`.
+    await migrateDatabaseOutOfDocumentsIfNeeded();
+
+    // THEN swap in a database the operator staged for restore. Drift holds the
+    // live file open for the whole session and Windows will not let an open
+    // file be replaced, so a restore can only ever happen here — in the gap
+    // between process start and the first open. A no-op when nothing is staged,
+    // which is every normal boot.
     await RestoreService.applyStagedRestore();
 
-    final dir = await getApplicationDocumentsDirectory();
+    final dir = await posDatabaseDirectory();
     final file = File(p.join(dir.path, 'pos_app.sqlite'));
 
     // Pillar 3: hardware-bound key, derived (never hardcoded) per device.
@@ -6538,7 +6546,23 @@ LazyDatabase _openConnection() {
     // DBeaver / LINQPad while we confirm the offline-first writes look right.
     // Flip kPillar3Encryption back to true to restore encryption.
     await _decryptDbIfNeeded(file, key);
-    return NativeDatabase(file, logStatements: false);
+
+    // 🚨 Runs the database on a BACKGROUND ISOLATE, not the UI thread.
+    //
+    // Every query and — critically — every write of a login/pull sync executes
+    // off the UI isolate, so a large sync can no longer freeze the till right
+    // after the PIN ("Not Responding" until it finished). The same-isolate
+    // `NativeDatabase` above (kept for the encrypted branch) is what forced DB
+    // work onto the UI thread; it is only required there because SQLCipher's key
+    // has to be applied in a `setup` closure, and `createInBackground` sends
+    // `setup` to the other isolate where it cannot carry that state. With
+    // encryption disabled there is no key and no setup, so the background
+    // connection is safe — and it is the durable fix for the UI-thread stalls.
+    //
+    // The one-time migration/decrypt above already ran to completion on this
+    // isolate and closed their own sqlite3 handles, so nothing here races the
+    // background isolate opening the (now settled) file.
+    return NativeDatabase.createInBackground(file, logStatements: false);
   });
 }
 

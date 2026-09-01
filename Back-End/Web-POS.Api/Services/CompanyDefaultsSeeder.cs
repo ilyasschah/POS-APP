@@ -183,6 +183,41 @@ namespace Api.Services
         }
 
         /// <summary>
+        /// ApplicationProperty keys that used to be seeded and have since been
+        /// fully retired from the app (no frontend constant reads them, no
+        /// backend code writes them). <see cref="SeedAsync"/> only ever ADDS a
+        /// missing key, so removing one from <see cref="DefaultProperties"/>
+        /// never deletes the row for a company that was seeded before the
+        /// removal — that row is what <see cref="RemoveObsoletePropertiesAsync"/>
+        /// sweeps up. Add a name here whenever a setting is retired; never
+        /// reuse a retired name for something new without renaming it first.
+        /// </summary>
+        public static readonly string[] ObsoleteProperties =
+        {
+            // Removed from the app; stale rows survived from companies seeded
+            // before the removal (POS_Manual_tests_NOTES.txt, audited 2026-08-30).
+            "App.IndustryMode",
+        };
+
+        /// <summary>
+        /// Deletes any lingering rows for <see cref="ObsoleteProperties"/>, across
+        /// every company. Idempotent and non-fatal — safe to run on every startup
+        /// (mirrors <see cref="BackfillSecurityKeysAsync"/>), and a no-op once a
+        /// database has been swept once.
+        /// </summary>
+        public static async Task RemoveObsoletePropertiesAsync(AppDbContext db)
+        {
+            var stale = await db.ApplicationProperties
+                .Where(p => p.Name != null && ObsoleteProperties.Contains(p.Name))
+                .ToListAsync();
+
+            if (stale.Count == 0) return;
+
+            db.ApplicationProperties.RemoveRange(stale);
+            await db.SaveChangesAsync();
+        }
+
+        /// <summary>
         /// Baseline settings every company starts with. NOTE: a few values are
         /// environment/user-specific (Application.User.Email, Database.BackupPath,
         /// Kitchen.DisplayIps, Application.Api.BaseUrl) — adjust as needed.

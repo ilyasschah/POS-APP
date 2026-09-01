@@ -17,6 +17,7 @@ import 'package:pos_app/menu/open_orders_screen.dart';
 import 'package:pos_app/navigation/main_layout.dart';
 import 'package:pos_app/product/product_provider.dart';
 import 'package:pos_app/product/product_model.dart';
+import 'package:pos_app/product/product_sort.dart';
 import 'package:pos_app/session/session_gate.dart';
 import 'package:pos_app/product/product_search.dart';
 import 'package:pos_app/product/product_search_bar.dart';
@@ -132,10 +133,9 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
     } else if (companyId != null) {
       final user = ref.read(currentUserProvider);
       try {
-        await ref.read(cartProvider.notifier).saveAndSuspend(
-              companyId: companyId,
-              userId: user?.id ?? 0,
-            );
+        await ref
+            .read(cartProvider.notifier)
+            .saveAndSuspend(companyId: companyId, userId: user?.id ?? 0);
       } catch (e) {
         if (mounted) {
           showAppSnackbar(
@@ -204,7 +204,8 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
         printTime: DateTime.now(),
         items: cart.items,
         subtotal: notifier.subtotal,
-        totalDiscount: notifier.discountTotal +
+        totalDiscount:
+            notifier.discountTotal +
             notifier.customerDiscountAmount +
             notifier.manualCartDiscountAmount,
         totalTax: notifier.taxTotal,
@@ -456,669 +457,663 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
           scrollDirection: Axis.horizontal,
           child: Row(
             children: [
-                  if (showCustomerBtn)
-                    asyncCustomers.when(
-                      loading: () => const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+              if (showCustomerBtn)
+                asyncCustomers.when(
+                  loading: () => const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  error: (_, __) => const SizedBox.shrink(),
+                  data: (all) {
+                    final customers = all.where((c) => c.isCustomer).toList();
+                    return _MenuHeaderActionBtn(
+                      // Reflect live state: show the selected customer's
+                      // name (highlighted) instead of a generic label.
+                      icon: currentCustomer != null
+                          ? Icons.person
+                          : Icons.person_outline,
+                      label:
+                          currentCustomer?.name ??
+                          AppLocalizations.of(context).customerLabel,
+                      active: currentCustomer != null,
+                      onTap: () async {
+                        final selected = await showCustomerPickerDialog(
+                          context,
+                          customers,
+                          selectedId: ref
+                              .read(cartProvider)
+                              .selectedCustomer
+                              ?.id,
+                        );
+                        if (selected == null || !context.mounted) return;
+                        ref
+                            .read(currentCustomerProvider.notifier)
+                            .setCustomer(selected);
+                        final companyId = ref.read(selectedCompanyProvider)?.id;
+                        if (companyId != null) {
+                          ref
+                              .read(cartProvider.notifier)
+                              .setCustomer(companyId, selected);
+                        }
+                      },
+                    );
+                  },
+                ),
+              // ── Dynamic Order Type button (unified shape) ──────────
+              if (serviceTypeEnabled)
+                _MenuHeaderActionBtn(
+                  icon: Icons.restaurant_menu,
+                  label:
+                      customServiceTypes
+                          .where((t) => t.id == cartState.serviceType)
+                          .map((t) => t.name)
+                          .firstOrNull ??
+                      AppLocalizations.of(context).orderTypeLabel,
+                  customTint:
+                      _kOrderTypePalette[customServiceTypes
+                          .indexWhere((t) => t.id == cartState.serviceType)
+                          .clamp(0, _kOrderTypePalette.length - 1)],
+                  onTap: () async {
+                    final val = await showDialog<int>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: Text(
+                          AppLocalizations.of(context).selectOrderType,
+                        ),
+                        contentPadding: const EdgeInsets.fromLTRB(
+                          16,
+                          16,
+                          16,
+                          16,
+                        ),
+                        content: SizedBox(
+                          width: 500,
+                          child: Row(
+                            children: customServiceTypes
+                                .asMap()
+                                .entries
+                                .expand(
+                                  (e) => [
+                                    if (e.key > 0) const SizedBox(width: 12),
+                                    Expanded(
+                                      child: ElevatedButton(
+                                        onPressed: () =>
+                                            Navigator.pop(ctx, e.value.id),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor:
+                                              _kOrderTypePalette[e.key %
+                                                  _kOrderTypePalette.length],
+                                          minimumSize: const Size(0, 100),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 16,
+                                            horizontal: 8,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          e.value.name,
+                                          textAlign: TextAlign.center,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                )
+                                .toList(),
+                          ),
+                        ),
                       ),
-                      error: (_, __) => const SizedBox.shrink(),
-                      data: (all) {
-                        final customers = all
-                            .where((c) => c.isCustomer)
-                            .toList();
-                        return _MenuHeaderActionBtn(
-                          // Reflect live state: show the selected customer's
-                          // name (highlighted) instead of a generic label.
-                          icon: currentCustomer != null
-                              ? Icons.person
-                              : Icons.person_outline,
-                          label: currentCustomer?.name ??
-                              AppLocalizations.of(context).customerLabel,
-                          active: currentCustomer != null,
-                          onTap: () async {
-                            final selected = await showCustomerPickerDialog(
-                              context,
-                              customers,
-                              selectedId: ref
-                                  .read(cartProvider)
-                                  .selectedCustomer
-                                  ?.id,
-                            );
-                            if (selected == null || !context.mounted) return;
-                            ref
-                                .read(currentCustomerProvider.notifier)
-                                .setCustomer(selected);
-                            final companyId = ref
-                                .read(selectedCompanyProvider)
-                                ?.id;
-                            if (companyId != null) {
+                    );
+                    if (val == null) return;
+                    final companyId = ref.read(selectedCompanyProvider)?.id;
+                    if (val != 0) {
+                      if (companyId != null) {
+                        await ref
+                            .read(cartProvider.notifier)
+                            .clearFloorPlanTable(val, companyId: companyId);
+                      }
+                      if (ref.read(cartProvider).activePosOrderId == null) {
+                        final user = ref.read(currentUserProvider);
+                        if (companyId != null && user != null) {
+                          try {
+                            await ref
+                                .read(cartProvider.notifier)
+                                .startTablelessOrder(
+                                  ApiClient(),
+                                  companyId,
+                                  user.id,
+                                  val,
+                                );
+                          } catch (e) {
+                            if (context.mounted) {
+                              showAppSnackbar(
+                                context,
+                                ref,
+                                friendlyErrorMessage(e),
+                                isError: true,
+                              );
+                            }
+                          }
+                        }
+                      }
+                    } else {
+                      final cart = ref.read(cartProvider);
+                      final floorPlanOn =
+                          ref
+                              .read(
+                                appSettingsProvider,
+                              )[SettingKeys.featureFloorPlanEnabled]
+                              ?.toLowerCase() ==
+                          'true';
+
+                      if (cart.floorPlanTableId == null && floorPlanOn) {
+                        if (!context.mounted) return;
+                        final selectedSpace = await showDialog<FloorPlanTable>(
+                          context: context,
+                          builder: (_) => const _SelectAvailableSpaceDialog(),
+                        );
+                        if (selectedSpace == null) return;
+                        if (!context.mounted) return;
+
+                        final cId = ref.read(selectedCompanyProvider)?.id;
+                        final uId = ref.read(currentUserProvider)?.id ?? 0;
+                        if (cId == null) return;
+
+                        final newOrderNumber = 'ORD- ${selectedSpace.name}';
+
+                        await ApiClient().updatePosOrder(cId, {
+                          'id': cart.activePosOrderId,
+                          'userId': uId,
+                          'number': newOrderNumber,
+                          'floorPlanTableId': selectedSpace.id,
+                          'serviceType': 0,
+                          'serviceStatus': cart.serviceStatus,
+                          'discount': cart.manualCartDiscount,
+                          'discountType': cart.manualCartDiscountType,
+                          'total': ref.read(cartTotalProvider),
+                          'customerId': cart.selectedCustomer?.id,
+                          // Not `?? 1`: selectedWarehouseProvider is seeded
+                          // asynchronously, so substituting 1 mid-seed pins
+                          // the order to a warehouse the company may not own
+                          // (company 25 owns 17 and 20 — there is no 1) AND
+                          // outranks Order.DefaultWarehouseId, because
+                          // effectiveWarehouseId accepts any id > 0.
+                          'warehouseId': ref
+                              .read(cartProvider.notifier)
+                              .effectiveWarehouseId,
+                        });
+                        ref.read(kitchenSyncProvider).push();
+
+                        if (!context.mounted) return;
+
+                        ref
+                            .read(cartProvider.notifier)
+                            .setOrderContext(
+                              cart.activePosOrderId!,
                               ref
                                   .read(cartProvider.notifier)
-                                  .setCustomer(companyId, selected);
-                            }
-                          },
-                        );
-                      },
-                    ),
-                  // ── Dynamic Order Type button (unified shape) ──────────
-                  if (serviceTypeEnabled)
-                    _MenuHeaderActionBtn(
-                      icon: Icons.restaurant_menu,
-                      label:
-                          customServiceTypes
-                              .where((t) => t.id == cartState.serviceType)
-                              .map((t) => t.name)
-                              .firstOrNull ??
-                          AppLocalizations.of(context).orderTypeLabel,
-                      customTint:
-                          _kOrderTypePalette[customServiceTypes
-                              .indexWhere((t) => t.id == cartState.serviceType)
-                              .clamp(0, _kOrderTypePalette.length - 1)],
-                      onTap: () async {
-                        final val = await showDialog<int>(
-                          context: context,
-                          builder: (ctx) => AlertDialog(
-                            title: Text(AppLocalizations.of(context).selectOrderType),
-                            contentPadding: const EdgeInsets.fromLTRB(
-                              16,
-                              16,
-                              16,
-                              16,
+                                  .effectiveWarehouseId,
+                              tableId: selectedSpace.id,
+                              orderNumber: newOrderNumber,
+                            );
+                        ref
+                            .read(cartProvider.notifier)
+                            .setServiceType(0, regenerateOrderName: false);
+                      } else {
+                        ref.read(cartProvider.notifier).setServiceType(val);
+                      }
+                    }
+                  },
+                ),
+              // ── Dynamic Service Status button (unified shape) ──────
+              if (serviceStatusEnabled)
+                _MenuHeaderActionBtn(
+                  icon: Icons.label,
+                  label:
+                      customServiceStatuses
+                          .where((s) => s.id == cartState.serviceStatus)
+                          .map((s) => s.name)
+                          .firstOrNull ??
+                      'Status #${cartState.serviceStatus}',
+                  customTint:
+                      customServiceStatuses
+                          .where((s) => s.id == cartState.serviceStatus)
+                          .map((s) => s.color)
+                          .firstOrNull ??
+                      Theme.of(context).colorScheme.primary,
+                  onTap: () {
+                    showDialog<int>(
+                      context: context,
+                      builder: (ctx) {
+                        if (customServiceStatuses.isEmpty) {
+                          return AlertDialog(
+                            title: Text(
+                              AppLocalizations.of(context).serviceStatus,
                             ),
-                            content: SizedBox(
-                              width: 500,
-                              child: Row(
-                                children: customServiceTypes
-                                    .asMap()
-                                    .entries
-                                    .expand(
-                                      (e) => [
-                                        if (e.key > 0)
-                                          const SizedBox(width: 12),
-                                        Expanded(
-                                          child: ElevatedButton(
-                                            onPressed: () =>
-                                                Navigator.pop(ctx, e.value.id),
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor:
-                                                  _kOrderTypePalette[e.key %
-                                                      _kOrderTypePalette
-                                                          .length],
-                                              minimumSize: const Size(0, 100),
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                              ),
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    vertical: 16,
-                                                    horizontal: 8,
-                                                  ),
+                            content: Text(
+                              AppLocalizations.of(context).noServiceStatuses,
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx),
+                                child: Text(
+                                  AppLocalizations.of(context).actionClose,
+                                ),
+                              ),
+                            ],
+                          );
+                        }
+                        return AlertDialog(
+                          title: Text(
+                            AppLocalizations.of(context).selectServiceStatus,
+                          ),
+                          contentPadding: const EdgeInsets.fromLTRB(
+                            16,
+                            16,
+                            16,
+                            16,
+                          ),
+                          content: SizedBox(
+                            width: 500,
+                            child: Row(
+                              children: customServiceStatuses
+                                  .asMap()
+                                  .entries
+                                  .expand((e) {
+                                    final s = e.value;
+                                    return [
+                                      if (e.key > 0) const SizedBox(width: 12),
+                                      Expanded(
+                                        child: ElevatedButton(
+                                          onPressed: () =>
+                                              Navigator.pop(ctx, s.id),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: s.color,
+                                            minimumSize: const Size(0, 100),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
                                             ),
-                                            child: Text(
-                                              e.value.name,
-                                              textAlign: TextAlign.center,
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.bold,
-                                              ),
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 16,
+                                              horizontal: 8,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            s.name,
+                                            textAlign: TextAlign.center,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.bold,
                                             ),
                                           ),
                                         ),
-                                      ],
-                                    )
-                                    .toList(),
-                              ),
+                                      ),
+                                    ];
+                                  })
+                                  .toList(),
                             ),
                           ),
                         );
-                        if (val == null) return;
-                        final companyId = ref.read(selectedCompanyProvider)?.id;
-                        if (val != 0) {
-                          if (companyId != null) {
-                            await ref
-                                .read(cartProvider.notifier)
-                                .clearFloorPlanTable(val, companyId: companyId);
-                          }
-                          if (ref.read(cartProvider).activePosOrderId == null) {
-                            final user = ref.read(currentUserProvider);
-                            if (companyId != null && user != null) {
-                              try {
-                                await ref
-                                    .read(cartProvider.notifier)
-                                    .startTablelessOrder(
-                                      ApiClient(),
-                                      companyId,
-                                      user.id,
-                                      val,
-                                    );
-                              } catch (e) {
-                                if (context.mounted) {
-                                  showAppSnackbar(
-                                    context,
-                                    ref,
-                                    friendlyErrorMessage(e),
-                                    isError: true,
-                                  );
-                                }
-                              }
-                            }
-                          }
-                        } else {
-                          final cart = ref.read(cartProvider);
-                          final floorPlanOn =
-                              ref
-                                  .read(
-                                    appSettingsProvider,
-                                  )[SettingKeys.featureFloorPlanEnabled]
-                                  ?.toLowerCase() ==
-                              'true';
-
-                          if (cart.floorPlanTableId == null && floorPlanOn) {
-                            if (!context.mounted) return;
-                            final selectedSpace =
-                                await showDialog<FloorPlanTable>(
-                                  context: context,
-                                  builder: (_) =>
-                                      const _SelectAvailableSpaceDialog(),
-                                );
-                            if (selectedSpace == null) return;
-                            if (!context.mounted) return;
-
-                            final cId = ref.read(selectedCompanyProvider)?.id;
-                            final uId = ref.read(currentUserProvider)?.id ?? 0;
-                            if (cId == null) return;
-
-                            final newOrderNumber = 'ORD- ${selectedSpace.name}';
-
-                            await ApiClient().updatePosOrder(cId, {
-                              'id': cart.activePosOrderId,
-                              'userId': uId,
-                              'number': newOrderNumber,
-                              'floorPlanTableId': selectedSpace.id,
-                              'serviceType': 0,
-                              'serviceStatus': cart.serviceStatus,
-                              'discount': cart.manualCartDiscount,
-                              'discountType': cart.manualCartDiscountType,
-                              'total': ref.read(cartTotalProvider),
-                              'customerId': cart.selectedCustomer?.id,
-                              // Not `?? 1`: selectedWarehouseProvider is seeded
-                              // asynchronously, so substituting 1 mid-seed pins
-                              // the order to a warehouse the company may not own
-                              // (company 25 owns 17 and 20 — there is no 1) AND
-                              // outranks Order.DefaultWarehouseId, because
-                              // effectiveWarehouseId accepts any id > 0.
-                              'warehouseId': ref
-                                  .read(cartProvider.notifier)
-                                  .effectiveWarehouseId,
-                            });
-                            ref.read(kitchenSyncProvider).push();
-
-                            if (!context.mounted) return;
-
-                            ref
-                                .read(cartProvider.notifier)
-                                .setOrderContext(
-                                  cart.activePosOrderId!,
-                                  ref
-                                      .read(cartProvider.notifier)
-                                      .effectiveWarehouseId,
-                                  tableId: selectedSpace.id,
-                                  orderNumber: newOrderNumber,
-                                );
-                            ref
-                                .read(cartProvider.notifier)
-                                .setServiceType(0, regenerateOrderName: false);
-                          } else {
-                            ref.read(cartProvider.notifier).setServiceType(val);
-                          }
-                        }
                       },
-                    ),
-                  // ── Dynamic Service Status button (unified shape) ──────
-                  if (serviceStatusEnabled)
-                    _MenuHeaderActionBtn(
-                      icon: Icons.label,
-                      label:
-                          customServiceStatuses
-                              .where((s) => s.id == cartState.serviceStatus)
-                              .map((s) => s.name)
-                              .firstOrNull ??
-                          'Status #${cartState.serviceStatus}',
-                      customTint:
-                          customServiceStatuses
-                              .where((s) => s.id == cartState.serviceStatus)
-                              .map((s) => s.color)
-                              .firstOrNull ??
-                          Theme.of(context).colorScheme.primary,
-                      onTap: () {
-                        showDialog<int>(
+                    ).then((val) {
+                      if (val != null) {
+                        ref.read(cartProvider.notifier).setServiceStatus(val);
+                      }
+                    });
+                  },
+                ),
+              if (showDiscountBtn)
+                _MenuHeaderActionBtn(
+                  icon: Icons.percent,
+                  label: AppLocalizations.of(context).posDiscount,
+                  onTap: () => ref
+                      .read(securityGuardProvider)
+                      .guard(
+                        context,
+                        SecurityKeys.applyDiscount,
+                        () => showDialog(
                           context: context,
-                          builder: (ctx) {
-                            if (customServiceStatuses.isEmpty) {
-                              return AlertDialog(
-                                title: Text(AppLocalizations.of(context).serviceStatus),
-                                content: Text(
-                                  AppLocalizations.of(context).noServiceStatuses,
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(ctx),
-                                    child: Text(AppLocalizations.of(context).actionClose),
-                                  ),
-                                ],
-                              );
-                            }
-                            return AlertDialog(
-                              title: Text(AppLocalizations.of(context).selectServiceStatus),
-                              contentPadding: const EdgeInsets.fromLTRB(
-                                16,
-                                16,
-                                16,
-                                16,
-                              ),
-                              content: SizedBox(
-                                width: 500,
-                                child: Row(
-                                  children: customServiceStatuses
-                                      .asMap()
-                                      .entries
-                                      .expand((e) {
-                                        final s = e.value;
-                                        return [
-                                          if (e.key > 0)
-                                            const SizedBox(width: 12),
-                                          Expanded(
-                                            child: ElevatedButton(
-                                              onPressed: () =>
-                                                  Navigator.pop(ctx, s.id),
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor: s.color,
-                                                minimumSize: const Size(0, 100),
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                ),
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                      vertical: 16,
-                                                      horizontal: 8,
-                                                    ),
-                                              ),
-                                              child: Text(
-                                                s.name,
-                                                textAlign: TextAlign.center,
-                                                style: const TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 13,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ];
-                                      })
-                                      .toList(),
-                                ),
-                              ),
+                          builder: (_) => const DiscountDialog(),
+                        ),
+                      ),
+                ),
+              if (showTaxBtn)
+                _MenuHeaderActionBtn(
+                  icon: Icons.receipt,
+                  label: AppLocalizations.of(context).posTax,
+                  // Greyed out until a cart line is selected — the tax
+                  // override acts on one line, so there's nothing to change
+                  // otherwise. Same gating as Quantity and Comment (replaces
+                  // the old always-on button + "select an item" snackbar).
+                  onTap: cartState.selectedCartItemId == null
+                      ? null
+                      : () => ref.read(securityGuardProvider).guard(
+                          context,
+                          SecurityKeys.taxOverride,
+                          () {
+                            final cart = ref.read(cartProvider);
+                            final item = cart.items
+                                .where(
+                                  (i) =>
+                                      i.cartItemId == cart.selectedCartItemId,
+                                )
+                                .firstOrNull;
+                            if (item == null) return;
+                            showDialog(
+                              context: context,
+                              builder: (_) => _ItemTaxDialog(item: item),
                             );
                           },
-                        ).then((val) {
-                          if (val != null) {
-                            ref
-                                .read(cartProvider.notifier)
-                                .setServiceStatus(val);
-                          }
-                        });
-                      },
-                    ),
-                  if (showDiscountBtn)
-                    _MenuHeaderActionBtn(
-                      icon: Icons.percent,
-                      label: AppLocalizations.of(context).posDiscount,
-                      onTap: () => ref
-                          .read(securityGuardProvider)
-                          .guard(
-                            context,
-                            SecurityKeys.applyDiscount,
-                            () => showDialog(
-                              context: context,
-                              builder: (_) => const DiscountDialog(),
+                        ),
+                ),
+              if (showCommentBtn)
+                _MenuHeaderActionBtn(
+                  icon: Icons.comment_outlined,
+                  label: AppLocalizations.of(context).posComment,
+                  // Greyed out until a cart line is selected — a comment
+                  // belongs to one line, so there is nothing to edit
+                  // otherwise. Same gating as Quantity.
+                  onTap: cartState.selectedCartItemId == null
+                      ? null
+                      : () async {
+                          final cart = ref.read(cartProvider);
+                          final item = cart.items
+                              .where(
+                                (i) => i.cartItemId == cart.selectedCartItemId,
+                              )
+                              .firstOrNull;
+                          if (item == null) return;
+                          // Just the note now. The predefined-comment
+                          // catalogue this used to load is retired —
+                          // modifiers do that job with prices, rules and
+                          // reporting rows (backlog 38, phase 6).
+                          final result = await showDialog<String?>(
+                            context: context,
+                            builder: (_) => _ItemNoteDialog(
+                              productName: item.productName,
+                              initialComment: item.comment,
+                              confirmLabel: AppLocalizations.of(
+                                context,
+                              ).actionSave,
                             ),
-                          ),
-                    ),
-                  if (showTaxBtn)
-                    _MenuHeaderActionBtn(
-                      icon: Icons.receipt,
-                      label: AppLocalizations.of(context).posTax,
-                      // Greyed out until a cart line is selected — the tax
-                      // override acts on one line, so there's nothing to change
-                      // otherwise. Same gating as Quantity and Comment (replaces
-                      // the old always-on button + "select an item" snackbar).
-                      onTap: cartState.selectedCartItemId == null
-                          ? null
-                          : () => ref.read(securityGuardProvider).guard(
-                              context,
-                              SecurityKeys.taxOverride,
-                              () {
-                                final cart = ref.read(cartProvider);
-                                final item = cart.items
-                                    .where(
-                                      (i) =>
-                                          i.cartItemId ==
-                                          cart.selectedCartItemId,
-                                    )
-                                    .firstOrNull;
-                                if (item == null) return;
-                                showDialog(
-                                  context: context,
-                                  builder: (_) => _ItemTaxDialog(item: item),
-                                );
-                              },
-                            ),
-                    ),
-                  if (showCommentBtn)
-                    _MenuHeaderActionBtn(
-                      icon: Icons.comment_outlined,
-                      label: AppLocalizations.of(context).posComment,
-                      // Greyed out until a cart line is selected — a comment
-                      // belongs to one line, so there is nothing to edit
-                      // otherwise. Same gating as Quantity.
-                      onTap: cartState.selectedCartItemId == null
-                          ? null
-                          : () async {
-                              final cart = ref.read(cartProvider);
-                              final item = cart.items
-                                  .where(
-                                    (i) =>
-                                        i.cartItemId == cart.selectedCartItemId,
-                                  )
-                                  .firstOrNull;
-                              if (item == null) return;
-                              // Just the note now. The predefined-comment
-                              // catalogue this used to load is retired —
-                              // modifiers do that job with prices, rules and
-                              // reporting rows (backlog 38, phase 6).
-                              final result = await showDialog<String?>(
-                                context: context,
-                                builder: (_) => _ItemNoteDialog(
-                                  productName: item.productName,
-                                  initialComment: item.comment,
-                                  confirmLabel:
-                                      AppLocalizations.of(context).actionSave,
-                                ),
+                          );
+                          if (result == null) return;
+                          ref
+                              .read(cartProvider.notifier)
+                              .setItemComment(
+                                item.cartItemId,
+                                result.trim().isEmpty ? null : result.trim(),
                               );
-                              if (result == null) return;
-                              ref
-                                  .read(cartProvider.notifier)
-                                  .setItemComment(
-                                    item.cartItemId,
-                                    result.trim().isEmpty
-                                        ? null
-                                        : result.trim(),
-                                  );
-                            },
-                    ),
-                  if (showModifiersBtn)
-                    _MenuHeaderActionBtn(
-                      icon: Icons.tune,
-                      label: AppLocalizations.of(context).posModifiers,
-                      // Greyed out until a cart line is selected — modifiers
-                      // belong to one line. Same gating as Comment and Quantity.
-                      onTap: cartState.selectedCartItemId == null
-                          ? null
-                          : () => _editItemModifiers(context),
-                    ),
-                  if (showTransferBtn)
-                    _MenuHeaderActionBtn(
-                      icon: Icons.swap_horiz,
-                      label: AppLocalizations.of(context).posTransfer,
-                      onTap: cartState.activePosOrderId == null
-                          ? null
-                          : () => ref
-                                .read(securityGuardProvider)
-                                .guard(
-                                  context,
-                                  SecurityKeys.orderTransfer,
-                                  () => showDialog(
-                                    context: context,
-                                    builder: (_) => _TransferDialog(
-                                      cartState: ref.read(cartProvider),
-                                    ),
-                                  ),
+                        },
+                ),
+              if (showModifiersBtn)
+                _MenuHeaderActionBtn(
+                  icon: Icons.tune,
+                  label: AppLocalizations.of(context).posModifiers,
+                  // Greyed out until a cart line is selected — modifiers
+                  // belong to one line. Same gating as Comment and Quantity.
+                  onTap: cartState.selectedCartItemId == null
+                      ? null
+                      : () => _editItemModifiers(context),
+                ),
+              if (showTransferBtn)
+                _MenuHeaderActionBtn(
+                  icon: Icons.swap_horiz,
+                  label: AppLocalizations.of(context).posTransfer,
+                  onTap: cartState.activePosOrderId == null
+                      ? null
+                      : () => ref
+                            .read(securityGuardProvider)
+                            .guard(
+                              context,
+                              SecurityKeys.orderTransfer,
+                              () => showDialog(
+                                context: context,
+                                builder: (_) => _TransferDialog(
+                                  cartState: ref.read(cartProvider),
                                 ),
-                    ),
-                  if (showRefundBtn)
-                    _MenuHeaderActionBtn(
-                      icon: Icons.undo,
-                      label: AppLocalizations.of(context).posRefund,
-                      onTap: () => ref
-                          .read(securityGuardProvider)
-                          .guard(
-                            context,
-                            SecurityKeys.refund,
-                            () => showDialog(
-                              context: context,
-                              builder: (_) => const RefundDialog(),
+                              ),
                             ),
-                          ),
-                    ),
-                  if (showCashDrawerBtn)
-                    _MenuHeaderActionBtn(
-                      icon: Icons.point_of_sale,
-                      label: AppLocalizations.of(context).posOpenDrawer,
-                      // Admin-only the moment the admin sets CashDrawer.Open to
-                      // level 1 in Users & Security; seeded at level 0, so out
-                      // of the box a cashier may still pop the drawer. Refused
-                      // with a DIALOG, not a toast — see guardWithDialog.
-                      onTap: () => ref
-                          .read(securityGuardProvider)
-                          .guardWithDialog(
-                            context,
-                            SecurityKeys.cashDrawerOpen,
-                            () => _openCashDrawerFromTill(context, ref),
-                          ),
-                    ),
+                ),
+              if (showRefundBtn)
+                _MenuHeaderActionBtn(
+                  icon: Icons.undo,
+                  label: AppLocalizations.of(context).posRefund,
+                  onTap: () => ref
+                      .read(securityGuardProvider)
+                      .guard(
+                        context,
+                        SecurityKeys.refund,
+                        () => showDialog(
+                          context: context,
+                          builder: (_) => const RefundDialog(),
+                        ),
+                      ),
+                ),
+              if (showCashDrawerBtn)
+                _MenuHeaderActionBtn(
+                  icon: Icons.point_of_sale,
+                  label: AppLocalizations.of(context).posOpenDrawer,
+                  // Admin-only the moment the admin sets CashDrawer.Open to
+                  // level 1 in Users & Security; seeded at level 0, so out
+                  // of the box a cashier may still pop the drawer. Refused
+                  // with a DIALOG, not a toast — see guardWithDialog.
+                  onTap: () => ref
+                      .read(securityGuardProvider)
+                      .guardWithDialog(
+                        context,
+                        SecurityKeys.cashDrawerOpen,
+                        () => _openCashDrawerFromTill(context, ref),
+                      ),
+                ),
 
-                  if (showKitchenBtn)
-                    _MenuHeaderActionBtn(
-                      icon: Icons.soup_kitchen,
-                      label: AppLocalizations.of(context).posKitchen,
-                      onTap: cartState.items.isEmpty
-                          ? null
-                          : () async {
-                              try {
-                                final roleSettings = ref.read(
-                                  appSettingsProvider,
-                                );
-                                final cashier = ref.read(currentUserProvider);
-                                final cart = ref.read(cartProvider);
-                                final cartItems = cart.items;
-                                // 🚨 Was a hardcoded English switch
-                                // (0→"Dine In", 1→"Takeaway", _→"Order") that
-                                // ignored the venue's configured service types
-                                // entirely. It didn't even match the shipped
-                                // defaults ("Dine-In"), and every type beyond
-                                // the first two — Delivery, and anything the
-                                // operator added — reached the kitchen as the
-                                // meaningless word "Order".
-                                final serviceLabel =
-                                    KitchenTicketData.serviceLabel(
-                                  ref
-                                      .read(appSettingsProvider.notifier)
-                                      .customServiceTypes,
-                                  cart.serviceType,
-                                  fallback:
-                                      AppLocalizations.of(context).posOrder,
-                                );
-                                // The table, resolved to its NAME. Previously it
-                                // reached the kitchen only by accident, embedded
-                                // in the order number.
-                                final tableName = KitchenTicketData.tableName(
-                                  ref.read(allRoomsProvider).value ?? const [],
-                                  cart.floorPlanTableId,
-                                );
-                                final orderNo = cart.orderNumber ?? 'WALK-IN';
-                                final cashierName =
-                                    cashier?.displayName ?? 'Unknown';
+              if (showKitchenBtn)
+                _MenuHeaderActionBtn(
+                  icon: Icons.soup_kitchen,
+                  label: AppLocalizations.of(context).posKitchen,
+                  onTap: cartState.items.isEmpty
+                      ? null
+                      : () async {
+                          try {
+                            final roleSettings = ref.read(appSettingsProvider);
+                            final cashier = ref.read(currentUserProvider);
+                            final cart = ref.read(cartProvider);
+                            final cartItems = cart.items;
+                            // 🚨 Was a hardcoded English switch
+                            // (0→"Dine In", 1→"Takeaway", _→"Order") that
+                            // ignored the venue's configured service types
+                            // entirely. It didn't even match the shipped
+                            // defaults ("Dine-In"), and every type beyond
+                            // the first two — Delivery, and anything the
+                            // operator added — reached the kitchen as the
+                            // meaningless word "Order".
+                            final serviceLabel = KitchenTicketData.serviceLabel(
+                              ref
+                                  .read(appSettingsProvider.notifier)
+                                  .customServiceTypes,
+                              cart.serviceType,
+                              fallback: AppLocalizations.of(context).posOrder,
+                            );
+                            // The table, resolved to its NAME. Previously it
+                            // reached the kitchen only by accident, embedded
+                            // in the order number.
+                            final tableName = KitchenTicketData.tableName(
+                              ref.read(allRoomsProvider).value ?? const [],
+                              cart.floorPlanTableId,
+                            );
+                            final orderNo = cart.orderNumber ?? 'WALK-IN';
+                            final cashierName =
+                                cashier?.displayName ?? 'Unknown';
 
-                                // If any printer has "Print kitchen ticket" on,
-                                // split the order across those printers by
-                                // category (food→kitchen, drinks→bar). Otherwise
-                                // fall back to the legacy single all-items ticket
-                                // on the Kitchen printer — unchanged behaviour
-                                // until the operator opts printers in.
-                                final routing = ref.read(
-                                  printerRoutingProvider,
-                                );
-                                var printed = 0;
-                                var fellBack = false;
-                                if (routing.hasKitchenStations) {
-                                  printed = await routing.printStationTickets(
-                                    items: cartItems,
-                                    orderNumber: orderNo,
-                                    cashierName: cashierName,
-                                    serviceType: serviceLabel,
-                                    tableName: tableName,
-                                    printTime: DateTime.now(),
-                                  );
-                                  // 🚨 A station only prints the items matching
-                                  // its printer group, and skips the order
-                                  // entirely when none match. With stations
-                                  // configured but none covering this cart, the
-                                  // button previously did *nothing at all* — no
-                                  // ticket, no error, no message. Fall back to
-                                  // the full ticket so pressing Kitchen always
-                                  // produces one.
-                                  fellBack = printed == 0;
-                                }
-                                if (printed == 0) {
-                                  await ReceiptPrinterService()
-                                      .printKitchenTicket(
-                                        orderNumber: orderNo,
-                                        cashierName: cashierName,
-                                        serviceType: serviceLabel,
-                                        tableName: tableName,
-                                        printTime: DateTime.now(),
-                                        items: cartItems,
-                                        roleSettings: roleSettings,
-                                      );
-                                  printed = 1;
-                                }
-                                // Always confirm. Printing is fire-and-forget at
-                                // the dispatcher (a dead printer must never
-                                // crash a sale), so without this the operator
-                                // has no way to tell a sent ticket from a
-                                // silently dropped one.
-                                if (context.mounted) {
-                                  showAppSnackbar(
-                                    context,
-                                    ref,
-                                    fellBack
-                                        ? AppLocalizations.of(context)
-                                            .kitchenNoStationMatched
-                                        : AppLocalizations.of(context)
-                                            .kitchenTicketsPrinted(printed),
-                                  );
-                                }
-                              } catch (e) {
-                                if (context.mounted) {
-                                  showAppSnackbar(
-                                    context,
-                                    ref,
-                                    AppLocalizations.of(
-                                      context,
-                                    ).kitchenPrintError('$e'),
-                                    isError: true,
-                                  );
-                                }
-                              }
-                            },
-                    ),
+                            // If any printer has "Print kitchen ticket" on,
+                            // split the order across those printers by
+                            // category (food→kitchen, drinks→bar). Otherwise
+                            // fall back to the legacy single all-items ticket
+                            // on the Kitchen printer — unchanged behaviour
+                            // until the operator opts printers in.
+                            final routing = ref.read(printerRoutingProvider);
+                            var printed = 0;
+                            var fellBack = false;
+                            if (routing.hasKitchenStations) {
+                              printed = await routing.printStationTickets(
+                                items: cartItems,
+                                orderNumber: orderNo,
+                                cashierName: cashierName,
+                                serviceType: serviceLabel,
+                                tableName: tableName,
+                                printTime: DateTime.now(),
+                              );
+                              // 🚨 A station only prints the items matching
+                              // its printer group, and skips the order
+                              // entirely when none match. With stations
+                              // configured but none covering this cart, the
+                              // button previously did *nothing at all* — no
+                              // ticket, no error, no message. Fall back to
+                              // the full ticket so pressing Kitchen always
+                              // produces one.
+                              fellBack = printed == 0;
+                            }
+                            if (printed == 0) {
+                              await ReceiptPrinterService().printKitchenTicket(
+                                orderNumber: orderNo,
+                                cashierName: cashierName,
+                                serviceType: serviceLabel,
+                                tableName: tableName,
+                                printTime: DateTime.now(),
+                                items: cartItems,
+                                roleSettings: roleSettings,
+                              );
+                              printed = 1;
+                            }
+                            // Always confirm. Printing is fire-and-forget at
+                            // the dispatcher (a dead printer must never
+                            // crash a sale), so without this the operator
+                            // has no way to tell a sent ticket from a
+                            // silently dropped one.
+                            if (context.mounted) {
+                              showAppSnackbar(
+                                context,
+                                ref,
+                                fellBack
+                                    ? AppLocalizations.of(
+                                        context,
+                                      ).kitchenNoStationMatched
+                                    : AppLocalizations.of(
+                                        context,
+                                      ).kitchenTicketsPrinted(printed),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              showAppSnackbar(
+                                context,
+                                ref,
+                                AppLocalizations.of(
+                                  context,
+                                ).kitchenPrintError('$e'),
+                                isError: true,
+                              );
+                            }
+                          }
+                        },
+                ),
 
-                  // ── Addition (pre-bill / guest check) ─────────────────────
-                  // Prints what the customer OWES so they can settle up. It
-                  // banks nothing: no document, no payment, no stock movement,
-                  // no loyalty. That separation is the whole point — pressing it
-                  // twice must be harmless, and it must never look like a sale
-                  // in the reports.
-                  if (showAdditionBtn)
-                    _MenuHeaderActionBtn(
-                      icon: Icons.receipt_long,
-                      label: AppLocalizations.of(context).posAddition,
-                      onTap: cartState.items.isEmpty
-                          ? null
-                          : () => _printAddition(context, ref),
-                    ),
+              // ── Addition (pre-bill / guest check) ─────────────────────
+              // Prints what the customer OWES so they can settle up. It
+              // banks nothing: no document, no payment, no stock movement,
+              // no loyalty. That separation is the whole point — pressing it
+              // twice must be harmless, and it must never look like a sale
+              // in the reports.
+              if (showAdditionBtn)
+                _MenuHeaderActionBtn(
+                  icon: Icons.receipt_long,
+                  label: AppLocalizations.of(context).posAddition,
+                  onTap: cartState.items.isEmpty
+                      ? null
+                      : () => _printAddition(context, ref),
+                ),
 
-                  // Close the register from the till itself. Ending the day
-                  // used to mean leaving the POS, finding the session screen
-                  // and closing from there — three navigations for the last
-                  // thing a cashier does every single shift.
-                  if (showCloseRegisterBtn)
-                    _MenuHeaderActionBtn(
-                      icon: Icons.lock_outline,
-                      label: AppLocalizations.of(context).closeRegister,
-                      onTap: () => SessionScreen.show(context),
-                    ),
-          // --- Warehouse Switcher (centered picker, like the customer one) ---
-          if (showWarehouseBtn)
-            Consumer(
-              builder: (context, ref, child) {
-                final selectedWarehouse = ref.watch(selectedWarehouseProvider);
-                final warehousesAsync = ref.watch(allWarehousesProvider);
-
-                return _MenuHeaderActionBtn(
-                  icon: Icons.warehouse,
-                  label: selectedWarehouse?.name ??
-                      AppLocalizations.of(context).warehouse,
-                  active: selectedWarehouse != null,
-                  onTap: () async {
-                    final list = warehousesAsync.value ?? const <Warehouse>[];
-                    final selected = await showWarehousePickerDialog(
-                      context,
-                      list,
-                      selectedId: selectedWarehouse?.id,
+              // Close the register from the till itself. Ending the day
+              // used to mean leaving the POS, finding the session screen
+              // and closing from there — three navigations for the last
+              // thing a cashier does every single shift.
+              if (showCloseRegisterBtn)
+                _MenuHeaderActionBtn(
+                  icon: Icons.lock_outline,
+                  label: AppLocalizations.of(context).closeRegister,
+                  onTap: () => SessionScreen.show(context),
+                ),
+              // --- Warehouse Switcher (centered picker, like the customer one) ---
+              if (showWarehouseBtn)
+                Consumer(
+                  builder: (context, ref, child) {
+                    final selectedWarehouse = ref.watch(
+                      selectedWarehouseProvider,
                     );
-                    if (selected == null || !context.mounted) return;
-                    ref.read(selectedWarehouseProvider.notifier).state =
-                        selected;
+                    final warehousesAsync = ref.watch(allWarehousesProvider);
+
+                    return _MenuHeaderActionBtn(
+                      icon: Icons.warehouse,
+                      label:
+                          selectedWarehouse?.name ??
+                          AppLocalizations.of(context).warehouse,
+                      active: selectedWarehouse != null,
+                      onTap: () async {
+                        final list =
+                            warehousesAsync.value ?? const <Warehouse>[];
+                        final selected = await showWarehousePickerDialog(
+                          context,
+                          list,
+                          selectedId: selectedWarehouse?.id,
+                        );
+                        if (selected == null || !context.mounted) return;
+                        ref.read(selectedWarehouseProvider.notifier).state =
+                            selected;
+                      },
+                    );
                   },
-                );
-              },
-            ),
+                ),
 
-          if (bookingEnabled && showBookingBtn)
-            _MenuHeaderActionBtn(
-              icon: Icons.calendar_month,
-              label: AppLocalizations.of(context).posBookings,
-              // Index 2 is Bookings. Parks the order on the way out, same as
-              // Tables — it used to `clearCart()` outright, silently binning
-              // whatever the operator had rung up.
-              onTap: () => _leavePosFor(2),
-            ),
-          if (floorPlanEnabled && showTablesBtn)
-            _MenuHeaderActionBtn(
-              icon: Icons.grid_view,
-              label: settings[SettingKeys.tablesButtonLabel] ??
-                  AppLocalizations.of(context).tablesLabel,
-              onTap: () => _leavePosFor(4), // Index 4 is the floor plan
-            ),
+              if (bookingEnabled && showBookingBtn)
+                _MenuHeaderActionBtn(
+                  icon: Icons.calendar_month,
+                  label: AppLocalizations.of(context).posBookings,
+                  // Index 2 is Bookings. Parks the order on the way out, same as
+                  // Tables — it used to `clearCart()` outright, silently binning
+                  // whatever the operator had rung up.
+                  onTap: () => _leavePosFor(2),
+                ),
+              if (floorPlanEnabled && showTablesBtn)
+                _MenuHeaderActionBtn(
+                  icon: Icons.grid_view,
+                  label:
+                      settings[SettingKeys.tablesButtonLabel] ??
+                      AppLocalizations.of(context).tablesLabel,
+                  onTap: () => _leavePosFor(4), // Index 4 is the floor plan
+                ),
 
-          // Promotion — special override action, pinned to the far right. Amber
-          // star icon with a count badge.
-          if (_activePromos.isNotEmpty)
-            _MenuHeaderActionBtn(
-              icon: Icons.star,
-              label: AppLocalizations.of(context).posPromos,
-              iconColor: context.warningColor,
-              badgeCount: _activePromos.length,
-              onTap: () => _showActivePromosPopup(context),
-            ),
-          ],
+              // Promotion — special override action, pinned to the far right. Amber
+              // star icon with a count badge.
+              if (_activePromos.isNotEmpty)
+                _MenuHeaderActionBtn(
+                  icon: Icons.star,
+                  label: AppLocalizations.of(context).posPromos,
+                  iconColor: context.warningColor,
+                  badgeCount: _activePromos.length,
+                  onTap: () => _showActivePromosPopup(context),
+                ),
+            ],
           ),
         ),
         // Kitchen-ready notification stays pinned to the right, outside the
@@ -1244,7 +1239,9 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
     // Null means backed out, and that must leave the line exactly as it was.
     if (result == null) return;
 
-    ref.read(cartProvider.notifier).setItemModifiers(
+    ref
+        .read(cartProvider.notifier)
+        .setItemModifiers(
           item.cartItemId,
           result.modifiers,
           comment: result.note,
@@ -1272,6 +1269,7 @@ class BrowserSection extends ConsumerStatefulWidget {
 class _BrowserSectionState extends ConsumerState<BrowserSection> {
   // Current page in the paged Grid layout (ignored in the scrollable List one).
   int _currentPage = 0;
+
   /// Scans that did not arrive through the search field: the global keyboard
   /// listener, and the debug panel's simulator. Both are routed into
   /// [_handleBarcodeSubmit] — the same method the search field calls — so
@@ -1355,7 +1353,8 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
     // deterministic where a single pass would take whichever Drift returned
     // first when both kinds of match existed.
     final key = scan?.productKey ?? trimmed;
-    match = sellable
+    match =
+        sellable
             .where((p) => p.code?.toLowerCase() == key.toLowerCase())
             .firstOrNull ??
         findProductByBarcode(sellable, key, extraBarcodes: extraBarcodes);
@@ -1391,9 +1390,12 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
         final unitPrice = match.price;
         if (unitPrice <= 0) {
           if (mounted) {
-            showAppSnackbar(context, ref,
-                AppLocalizations.of(context).cannotCalcQuantity,
-                isError: true);
+            showAppSnackbar(
+              context,
+              ref,
+              AppLocalizations.of(context).cannotCalcQuantity,
+              isError: true,
+            );
           }
           return;
         }
@@ -1419,8 +1421,11 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
     if (quantity <= 0) {
       if (mounted) {
         showAppSnackbar(
-            context, ref, AppLocalizations.of(context).parsedQuantityZero,
-            isError: true);
+          context,
+          ref,
+          AppLocalizations.of(context).parsedQuantityZero,
+          isError: true,
+        );
       }
       return;
     }
@@ -1536,7 +1541,9 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
             .where((i) => i.productId == match!.id);
         final line = lines.isEmpty ? null : lines.last;
         if (line != null) {
-          ref.read(cartProvider.notifier).setItemDiscount(
+          ref
+              .read(cartProvider.notifier)
+              .setItemDiscount(
                 line.cartItemId,
                 match.price * (discountPercent / 100),
                 1,
@@ -1563,20 +1570,6 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
           isError: true,
         );
       }
-    }
-  }
-
-  void _sortProducts(List<Product> products, String sortBy) {
-    if (sortBy == 'Code') {
-      products.sort((a, b) => (a.code ?? '').compareTo(b.code ?? ''));
-    } else if (sortBy == 'Barcode') {
-      products.sort(
-        (a, b) => (a.barcodes.firstOrNull ?? '').compareTo(
-          b.barcodes.firstOrNull ?? '',
-        ),
-      );
-    } else {
-      products.sort((a, b) => a.name.compareTo(b.name));
     }
   }
 
@@ -1610,7 +1603,8 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
         .where((i) => i.productId == product.id)
         .fold(0.0, (sum, i) => sum + uomToReference(i.quantity, i.uomId));
     final projectedQuantity = snapToStorage(
-        currentStock - cartQty - uomToReference(quantity, product.uomId));
+      currentStock - cartQty - uomToReference(quantity, product.uomId),
+    );
 
     // Hard block — negative inventory is not permitted.
     final preventNegInv =
@@ -1653,7 +1647,9 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
           color: cs.error,
           size: 32,
         ),
-        title: Text(AppLocalizations.of(context).productRunningLow(product.name)),
+        title: Text(
+          AppLocalizations.of(context).productRunningLow(product.name),
+        ),
         content: Text(
           // The projection came out of the stock ledger, so it is named in the
           // STOCK unit — quoting the sale unit here would read "0.4 g" under a
@@ -1711,7 +1707,9 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
             color: cs.error,
             size: 32,
           ),
-          title: Text(AppLocalizations.of(context).productOutOfStock(product.name)),
+          title: Text(
+            AppLocalizations.of(context).productOutOfStock(product.name),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1730,7 +1728,10 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
                   style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
                 )
               else ...[
-                Text(AppLocalizations.of(context).availableIn, style: tt.labelLarge),
+                Text(
+                  AppLocalizations.of(context).availableIn,
+                  style: tt.labelLarge,
+                ),
                 const Gap(8),
                 ...fallbacks.map(
                   (e) => Card(
@@ -1750,9 +1751,12 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
                       ),
                       // Warehouse figures are stock-ledger figures: named in the
                       // reference unit, at that unit's precision.
-                      subtitle: Text(AppLocalizations.of(context).quantityInStock(
+                      subtitle: Text(
+                        AppLocalizations.of(context).quantityInStock(
                           '${formatQuantityValue(e.value, product.stockUom.id)} '
-                          '${product.stockUom.code}')),
+                          '${product.stockUom.code}',
+                        ),
+                      ),
                       trailing: FilledButton.tonal(
                         onPressed: () {
                           ref.read(cartProvider.notifier).setWarehouseId(e.key);
@@ -1855,16 +1859,18 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
       // offer a disabled product, while the Products management screen must be
       // able to find one. See the predicate's doc comment.
       final List<Product> filtered = allProducts
-          .where((p) =>
-              p.isEnabled &&
-              productMatchesSearch(
-                p,
-                searchQuery,
-                effectiveMode,
-                extraBarcodes: extraBarcodes[p.id] ?? const [],
-              ))
+          .where(
+            (p) =>
+                p.isEnabled &&
+                productMatchesSearch(
+                  p,
+                  searchQuery,
+                  effectiveMode,
+                  extraBarcodes: extraBarcodes[p.id] ?? const [],
+                ),
+          )
           .toList();
-      _sortProducts(filtered, sortBy);
+      sortProductsBy(filtered, sortBy);
       itemsToDisplay = filtered;
     } else {
       final visibleGroups = allGroups
@@ -1873,7 +1879,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
       final List<Product> visibleProducts = allProducts
           .where((p) => p.productGroupId == currentGroup?.id && p.isEnabled)
           .toList();
-      _sortProducts(visibleProducts, sortBy);
+      sortProductsBy(visibleProducts, sortBy);
       itemsToDisplay = [...visibleGroups, ...visibleProducts];
     }
 
@@ -2628,8 +2634,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
     final item = _selectedItem(ref.read(cartProvider));
     if (item == null) return;
 
-    final isSeparator = key != '0' &&
-        int.tryParse(key) == null; // ',' or '.'
+    final isSeparator = key != '0' && int.tryParse(key) == null; // ',' or '.'
     if (isSeparator && _keypadEntry.contains(RegExp(r'[.,]'))) return;
 
     setState(() => _keypadEntry += key);
@@ -2665,8 +2670,9 @@ class _CartSectionState extends ConsumerState<CartSection> {
     if (item == null) return;
 
     if (_keypadEntry.isNotEmpty) {
-      setState(() =>
-          _keypadEntry = _keypadEntry.substring(0, _keypadEntry.length - 1));
+      setState(
+        () => _keypadEntry = _keypadEntry.substring(0, _keypadEntry.length - 1),
+      );
       _applyKeypadEntry(item);
       return;
     }
@@ -2713,8 +2719,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
   /// line's own flag is the fallback for a product this terminal has not cached.
   bool _isWeighedLine(CartItem item) {
     final products = ref.read(allProductsListProvider).value ?? const [];
-    final product =
-        products.where((p) => p.id == item.productId).firstOrNull;
+    final product = products.where((p) => p.id == item.productId).firstOrNull;
     final weighed = product?.isToWeigh ?? item.isToWeigh;
     // A service has no weight to solve for, and the product editor already
     // refuses the combination — this is the belt to that's braces.
@@ -3287,8 +3292,7 @@ class _CartSectionState extends ConsumerState<CartSection> {
                         ),
                         if (staffName != null) ...[
                           TextSpan(
-                            text:
-                                AppLocalizations.of(context).staffPrefix,
+                            text: AppLocalizations.of(context).staffPrefix,
                             style: const TextStyle(
                               color: Colors.teal,
                               fontWeight: FontWeight.bold,
@@ -3363,8 +3367,9 @@ class _CartSectionState extends ConsumerState<CartSection> {
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 8,
                               ),
-                              backgroundColor:
-                                  Theme.of(context).colorScheme.primary,
+                              backgroundColor: Theme.of(
+                                context,
+                              ).colorScheme.primary,
                               foregroundColor: Colors.white,
                             ),
                           )
@@ -3374,8 +3379,9 @@ class _CartSectionState extends ConsumerState<CartSection> {
                                 : null,
                             style: ElevatedButton.styleFrom(
                               padding: EdgeInsets.zero,
-                              backgroundColor:
-                                  Theme.of(context).colorScheme.primary,
+                              backgroundColor: Theme.of(
+                                context,
+                              ).colorScheme.primary,
                               foregroundColor: Colors.white,
                             ),
                             child: Tooltip(
@@ -3487,171 +3493,181 @@ class _CartSectionState extends ConsumerState<CartSection> {
                             return Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                            Row(
-                              children: [
-                                // Quantity — fixed, so the names line up.
-                                SizedBox(
-                                  width: qtyWidth,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                      vertical: 3,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: cs.primary.withValues(alpha: 0.10),
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: FittedBox(
-                                      fit: BoxFit.scaleDown,
-                                      child: Text(
-                                        _formatCartQty(item),
-                                        maxLines: 1,
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                          color: cs.primary,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: gap),
-                                // Name + badges — takes whatever is left.
-                                Expanded(
-                                  child: Row(
-                                    children: [
-                                      Flexible(
-                                        child: Text(
-                                          item.productName,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                      if (showBadges) ...[
-                                        const SizedBox(width: 6),
-                                        if (item.appliedTaxes.isNotEmpty)
-                                          badge(
-                                            Icons.receipt_long,
-                                            'TAX',
-                                            context.infoColor,
-                                          ),
-                                        if (item.discount > 0) ...[
-                                          const SizedBox(width: 4),
-                                          badge(
-                                            Icons.sell,
-                                            "-${item.discountType == 0 ? item.discount.toInt() : item.discount.toStringAsFixed(1)}",
-                                            context.successColor,
-                                          ),
-                                        ],
-                                        if (item.promotionalDiscount > 0) ...[
-                                          const SizedBox(width: 4),
-                                          const Text(
-                                            '⭐',
-                                            style: TextStyle(fontSize: 12),
-                                          ),
-                                        ],
-                                      ],
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: gap),
-                                // Price — hard right, so a column of amounts
-                                // can be read down its last digits.
                                 Row(
-                                  mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    if (showOriginal) ...[
-                                      Text(
-                                        "${(taxIncluded ? _grossLineFullPrice(item) : item.price * item.quantity).toStringAsFixed(2)} $sym",
-                                        maxLines: 1,
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: cs.onSurfaceVariant,
-                                          decoration:
-                                              TextDecoration.lineThrough,
+                                    // Quantity — fixed, so the names line up.
+                                    SizedBox(
+                                      width: qtyWidth,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                          vertical: 3,
                                         ),
-                                      ),
-                                      const SizedBox(width: 6),
-                                    ],
-                                    ConstrainedBox(
-                                      constraints: const BoxConstraints(
-                                        maxWidth: priceWidth,
-                                      ),
-                                      child: FittedBox(
-                                        fit: BoxFit.scaleDown,
-                                        alignment:
-                                            AlignmentDirectional.centerEnd,
-                                        child: Text(
-                                          "${(taxIncluded ? _grossLineTotal(item) : (item.price - item.discount - item.promotionalDiscount) * item.quantity).toStringAsFixed(2)} $sym",
-                                          maxLines: 1,
-                                          style: TextStyle(
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.bold,
-                                            color: hasDiscount
-                                                ? context.successColor
-                                                : null,
+                                        decoration: BoxDecoration(
+                                          color: cs.primary.withValues(
+                                            alpha: 0.10,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            6,
+                                          ),
+                                        ),
+                                        child: FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          child: Text(
+                                            _formatCartQty(item),
+                                            maxLines: 1,
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                              color: cs.primary,
+                                            ),
                                           ),
                                         ),
                                       ),
                                     ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                            // The chosen modifiers, indented under the name.
-                            // Rendered from the line's own SNAPSHOTS, never
-                            // from the catalogue — a renamed or deleted option
-                            // must still print what was actually sold.
-                            if (item.selectedModifiers.isNotEmpty)
-                              Padding(
-                                padding: const EdgeInsetsDirectional.only(
-                                    start: qtyWidth + gap, top: 2),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    for (final m in item.selectedModifiers)
-                                      Row(
+                                    const SizedBox(width: gap),
+                                    // Name + badges — takes whatever is left.
+                                    Expanded(
+                                      child: Row(
                                         children: [
                                           Flexible(
-                                            flex: 3,
                                             child: Text(
-                                              '· ${m.name}',
+                                              item.productName,
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
-                                              style: TextStyle(
-                                                fontSize: 11,
-                                                color: cs.onSurfaceVariant,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
                                               ),
                                             ),
                                           ),
-                                          // A free choice prints no price:
-                                          // "+0.00" beside "No Sugar" is noise
-                                          // on every line of every receipt.
-                                          if (m.additionalPrice != 0) ...[
+                                          if (showBadges) ...[
                                             const SizedBox(width: 6),
-                                            Flexible(
-                                              flex: 2,
-                                              child: Text(
-                                                '${m.additionalPrice > 0 ? '+' : '−'}'
-                                                '${m.additionalPrice.abs().toStringAsFixed(2)}',
-                                                maxLines: 1,
-                                                overflow:
-                                                    TextOverflow.ellipsis,
-                                                style: TextStyle(
-                                                  fontSize: 11,
-                                                  color: cs.onSurfaceVariant,
-                                                ),
+                                            if (item.appliedTaxes.isNotEmpty)
+                                              badge(
+                                                Icons.receipt_long,
+                                                'TAX',
+                                                context.infoColor,
                                               ),
-                                            ),
+                                            if (item.discount > 0) ...[
+                                              const SizedBox(width: 4),
+                                              badge(
+                                                Icons.sell,
+                                                "-${item.discountType == 0 ? item.discount.toInt() : item.discount.toStringAsFixed(1)}",
+                                                context.successColor,
+                                              ),
+                                            ],
+                                            if (item.promotionalDiscount >
+                                                0) ...[
+                                              const SizedBox(width: 4),
+                                              const Text(
+                                                '⭐',
+                                                style: TextStyle(fontSize: 12),
+                                              ),
+                                            ],
                                           ],
                                         ],
                                       ),
+                                    ),
+                                    const SizedBox(width: gap),
+                                    // Price — hard right, so a column of amounts
+                                    // can be read down its last digits.
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        if (showOriginal) ...[
+                                          Text(
+                                            "${(taxIncluded ? _grossLineFullPrice(item) : item.price * item.quantity).toStringAsFixed(2)} $sym",
+                                            maxLines: 1,
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: cs.onSurfaceVariant,
+                                              decoration:
+                                                  TextDecoration.lineThrough,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 6),
+                                        ],
+                                        ConstrainedBox(
+                                          constraints: const BoxConstraints(
+                                            maxWidth: priceWidth,
+                                          ),
+                                          child: FittedBox(
+                                            fit: BoxFit.scaleDown,
+                                            alignment:
+                                                AlignmentDirectional.centerEnd,
+                                            child: Text(
+                                              "${(taxIncluded ? _grossLineTotal(item) : (item.price - item.discount - item.promotionalDiscount) * item.quantity).toStringAsFixed(2)} $sym",
+                                              maxLines: 1,
+                                              style: TextStyle(
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.bold,
+                                                color: hasDiscount
+                                                    ? context.successColor
+                                                    : null,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ],
                                 ),
-                              ),
+                                // The chosen modifiers, indented under the name.
+                                // Rendered from the line's own SNAPSHOTS, never
+                                // from the catalogue — a renamed or deleted option
+                                // must still print what was actually sold.
+                                if (item.selectedModifiers.isNotEmpty)
+                                  Padding(
+                                    padding: const EdgeInsetsDirectional.only(
+                                      start: qtyWidth + gap,
+                                      top: 2,
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        for (final m in item.selectedModifiers)
+                                          Row(
+                                            children: [
+                                              Flexible(
+                                                flex: 3,
+                                                child: Text(
+                                                  '· ${m.name}',
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    color: cs.onSurfaceVariant,
+                                                  ),
+                                                ),
+                                              ),
+                                              // A free choice prints no price:
+                                              // "+0.00" beside "No Sugar" is noise
+                                              // on every line of every receipt.
+                                              if (m.additionalPrice != 0) ...[
+                                                const SizedBox(width: 6),
+                                                Flexible(
+                                                  flex: 2,
+                                                  child: Text(
+                                                    '${m.additionalPrice > 0 ? '+' : '−'}'
+                                                    '${m.additionalPrice.abs().toStringAsFixed(2)}',
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style: TextStyle(
+                                                      fontSize: 11,
+                                                      color:
+                                                          cs.onSurfaceVariant,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ],
+                                          ),
+                                      ],
+                                    ),
+                                  ),
                               ],
                             );
                           },
@@ -3832,7 +3848,8 @@ class _CartSectionState extends ConsumerState<CartSection> {
                       icon: selectedCustomer != null
                           ? Icons.person
                           : Icons.person_outline,
-                      label: selectedCustomer?.name ??
+                      label:
+                          selectedCustomer?.name ??
                           AppLocalizations.of(context).customerLabel,
                       active: selectedCustomer != null,
                       onTap: () => _pickCartCustomer(context),
@@ -3845,16 +3862,18 @@ class _CartSectionState extends ConsumerState<CartSection> {
                   _CartActionsMenu(
                     onVoid: cartState.activePosOrderId == null
                         ? null
-                        : () => ref.read(securityGuardProvider).guard(
-                              context,
-                              SecurityKeys.orderVoid,
-                              () => _handleVoidOrder(
+                        : () => ref
+                              .read(securityGuardProvider)
+                              .guard(
                                 context,
-                                ref,
-                                cartState,
-                                cartItems,
+                                SecurityKeys.orderVoid,
+                                () => _handleVoidOrder(
+                                  context,
+                                  ref,
+                                  cartState,
+                                  cartItems,
+                                ),
                               ),
-                            ),
                   ),
                   const SizedBox(width: 8),
                   // Give the cart its height back on a short screen.
@@ -4015,7 +4034,10 @@ class _MenuActionVisual extends StatelessWidget {
 /// Fires EVERY enabled station, like the end of a sale does: a till with two
 /// drawers is rare but real, and the operator pressed one button meaning "open
 /// the drawer", not "open the first one I happen to find".
-Future<void> _openCashDrawerFromTill(BuildContext context, WidgetRef ref) async {
+Future<void> _openCashDrawerFromTill(
+  BuildContext context,
+  WidgetRef ref,
+) async {
   final l10n = AppLocalizations.of(context);
   final settings = ref.read(appSettingsProvider);
   if (enabledCashDrawers(settings).isEmpty) {
@@ -4382,7 +4404,10 @@ Future<double?> _showQuantityInputDialog(
         controller: controller,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
         autofocus: true,
-        decoration: InputDecoration(labelText: AppLocalizations.of(context).fieldQuantity, suffixText: unit),
+        decoration: InputDecoration(
+          labelText: AppLocalizations.of(context).fieldQuantity,
+          suffixText: unit,
+        ),
       ),
       actions: [
         TextButton(
@@ -4465,9 +4490,7 @@ Future<bool> _showAgeRestrictionDialog(BuildContext context, int minAge) async {
           Text(AppLocalizations.of(context).ageRestriction),
         ],
       ),
-      content: Text(
-        AppLocalizations.of(context).ageRestrictionBody(minAge),
-      ),
+      content: Text(AppLocalizations.of(context).ageRestrictionBody(minAge)),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(ctx, false),
@@ -4475,7 +4498,9 @@ Future<bool> _showAgeRestrictionDialog(BuildContext context, int minAge) async {
         ),
         ElevatedButton(
           onPressed: () => Navigator.pop(ctx, true),
-          child: Text(AppLocalizations.of(context).confirmMinimumAge(minAge.toString())),
+          child: Text(
+            AppLocalizations.of(context).confirmMinimumAge(minAge.toString()),
+          ),
         ),
       ],
     ),
@@ -4514,8 +4539,9 @@ class _ItemNoteDialog extends StatefulWidget {
 }
 
 class _ItemNoteDialogState extends State<_ItemNoteDialog> {
-  late final TextEditingController _customController =
-      TextEditingController(text: widget.initialComment?.trim() ?? '');
+  late final TextEditingController _customController = TextEditingController(
+    text: widget.initialComment?.trim() ?? '',
+  );
 
   @override
   void dispose() {
@@ -4527,7 +4553,8 @@ class _ItemNoteDialogState extends State<_ItemNoteDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(
-          AppLocalizations.of(context).commentsForProduct(widget.productName)),
+        AppLocalizations.of(context).commentsForProduct(widget.productName),
+      ),
       content: SizedBox(
         width: 360,
         child: TextField(
@@ -4631,7 +4658,9 @@ class _ItemTaxDialogState extends ConsumerState<_ItemTaxDialog> {
           ),
           error: (e, _) => Padding(
             padding: const EdgeInsets.all(16),
-            child: Text(AppLocalizations.of(context).errorWithMessage(e.toString())),
+            child: Text(
+              AppLocalizations.of(context).errorWithMessage(e.toString()),
+            ),
           ),
           data: (taxes) {
             if (taxes.isEmpty) {
@@ -4846,13 +4875,16 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
         // The server still decides: if it rejects, the catch below puts the
         // row back, so the optimism is never left standing on a failure.
         if (newTable != null) {
-          final localId = widget.cartState.existingLocalOrderId ??
+          final localId =
+              widget.cartState.existingLocalOrderId ??
               (await ref
                       .read(appDatabaseProvider)
                       .getOpenOrderByServerId(activePosOrderId))
                   ?.localId;
           if (localId != null) {
-            await ref.read(appDatabaseProvider).moveOrderToTable(
+            await ref
+                .read(appDatabaseProvider)
+                .moveOrderToTable(
                   localId: localId,
                   tableId: newTable.id,
                   orderName: destinationName,
@@ -4917,7 +4949,9 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
       // it does not belong and free a table that is still occupied.
       if (movedLocalId != null) {
         try {
-          await ref.read(appDatabaseProvider).moveOrderToTable(
+          await ref
+              .read(appDatabaseProvider)
+              .moveOrderToTable(
                 localId: movedLocalId,
                 tableId: oldTableId,
                 orderName: previousOrderNumber,
@@ -4925,7 +4959,9 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
               );
           final activePosOrderId = widget.cartState.activePosOrderId;
           if (activePosOrderId != null) {
-            ref.read(cartProvider.notifier).setOrderContext(
+            ref
+                .read(cartProvider.notifier)
+                .setOrderContext(
                   activePosOrderId,
                   ref.read(cartProvider.notifier).effectiveWarehouseId,
                   tableId: oldTableId,
@@ -4986,8 +5022,11 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                 // `enabled` while still being this order's assignee, and the
                 // helper unions them back in.
                 final enabled = users.where((u) => u.isEnabled).toList();
-                final opts =
-                    dropdownOptionsById(enabled, _selectedStaff, (u) => u.id);
+                final opts = dropdownOptionsById(
+                  enabled,
+                  _selectedStaff,
+                  (u) => u.id,
+                );
                 final unique = opts.options;
                 return DropdownButtonFormField<int?>(
                   initialValue: opts.value,
@@ -5009,7 +5048,9 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                     ),
                   ],
                   onChanged: (id) => setState(() {
-                    _selectedStaff = unique.where((u) => u.id == id).firstOrNull;
+                    _selectedStaff = unique
+                        .where((u) => u.id == id)
+                        .firstOrNull;
                   }),
                 );
               },
@@ -5036,14 +5077,19 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                   // reads as occupied because it is holding it, so the free
                   // list excludes it — and de-dupes, which covers the "2 or
                   // more" half of the same assert.
-                  final opts =
-                      dropdownOptionsById(freeRooms, _selectedRoom, (r) => r.id);
+                  final opts = dropdownOptionsById(
+                    freeRooms,
+                    _selectedRoom,
+                    (r) => r.id,
+                  );
                   final unique = opts.options;
 
                   return DropdownButtonFormField<int?>(
                     initialValue: opts.value,
                     decoration: InputDecoration(
-                      labelText: AppLocalizations.of(context).assignRoomOrResource,
+                      labelText: AppLocalizations.of(
+                        context,
+                      ).assignRoomOrResource,
                       prefixIcon: const Icon(Icons.meeting_room),
                       border: const OutlineInputBorder(),
                     ),
@@ -5063,7 +5109,9 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                     // downstream (_confirm's floorPlanTableId / name) works off
                     // the instance the user actually picked.
                     onChanged: (id) => setState(() {
-                      _selectedRoom = unique.where((r) => r.id == id).firstOrNull;
+                      _selectedRoom = unique
+                          .where((r) => r.id == id)
+                          .firstOrNull;
                     }),
                   );
                 },
@@ -5134,7 +5182,9 @@ class _SelectAvailableSpaceDialog extends ConsumerWidget {
         'Table';
 
     return AlertDialog(
-      title: Text(AppLocalizations.of(context).selectAvailableSpace(spaceLabel)),
+      title: Text(
+        AppLocalizations.of(context).selectAvailableSpace(spaceLabel),
+      ),
       contentPadding: const EdgeInsets.fromLTRB(0, 12, 0, 0),
       content: SizedBox(
         width: 380,
@@ -5165,8 +5215,9 @@ class _SelectAvailableSpaceDialog extends ConsumerWidget {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      AppLocalizations.of(context)
-                          .noFreeSpacesAvailable(spaceLabel.toLowerCase()),
+                      AppLocalizations.of(
+                        context,
+                      ).noFreeSpacesAvailable(spaceLabel.toLowerCase()),
                       style: TextStyle(
                         color: theme.colorScheme.onSurface.withValues(
                           alpha: 0.6,
@@ -5256,8 +5307,9 @@ class _VoidReasonDialogState extends ConsumerState<_VoidReasonDialog> {
           ),
           if (widget.orderNumber != null)
             Text(
-              AppLocalizations.of(context)
-                  .voidReasonPrompt(widget.orderNumber!),
+              AppLocalizations.of(
+                context,
+              ).voidReasonPrompt(widget.orderNumber!),
               style: TextStyle(
                 fontSize: 13,
                 color: cs.onSurfaceVariant,

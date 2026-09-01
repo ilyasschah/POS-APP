@@ -34,41 +34,76 @@ import 'package:pos_app/settings/settings_provider.dart';
 String _reportLabel(BuildContext context, String id) {
   final l = AppLocalizations.of(context);
   switch (id) {
-    case 'sales_by_product': case 'purchase_products':
-    case 'stock_return_products': case 'loss_and_damage_products':
+    case 'sales_by_product':
+    case 'purchase_products':
+    case 'stock_return_products':
+    case 'loss_and_damage_products':
       return l.rptSalesByProduct;
-    case 'sales_by_group': return l.rptSalesByGroup;
-    case 'sales_by_customer': return l.rptSalesByCustomer;
-    case 'sales_tax': case 'purchase_tax': return l.rptTaxRates;
-    case 'sales_users': return l.rptUsers;
-    case 'sales_item_list': return l.rptItemList;
-    case 'sales_payment_types': return l.rptPaymentTypes;
-    case 'sales_payment_by_user': return l.rptPaymentByUser;
-    case 'sales_payment_by_customer': return l.rptPaymentByCustomer;
-    case 'sales_refunds': return l.rptRefunds;
-    case 'sales_invoice_list': return l.rptInvoiceList;
-    case 'sales_daily': return l.rptDailySales;
-    case 'sales_hourly': return l.rptHourlySales;
-    case 'sales_hourly_group': return l.rptHourlyByGroup;
-    case 'sales_by_table': return l.rptByTable;
-    case 'sales_profit': return l.rptProfitMargin;
-    case 'sales_unpaid': return l.rptUnpaidSales;
-    case 'sales_starting_cash': return l.rptStartingCash;
-    case 'sales_voided': return l.rptVoidedItems;
-    case 'sales_discounts': return l.rptDiscountsGranted;
-    case 'sales_discounts_by_source': return l.rptDiscountsBySource;
-    case 'sales_item_discounts': return l.rptItemDiscounts;
-    case 'sales_stock_movement': return l.rptStockMovement;
-    case 'purchase_suppliers': return l.rptSuppliers;
-    case 'purchase_unpaid': return l.rptUnpaidPurchase;
-    case 'purchase_discounts': return l.rptPurchaseDiscounts;
-    case 'purchase_items_discounts': return l.rptPurchasedItemDiscounts;
-    case 'purchase_invoice_list': return l.rptPurchaseInvoiceList;
-    case 'purchase_expiration': return l.rptExpirationDate;
-    case 'reorder_list': return l.rptReorderList;
-    case 'low_stock_warning': return l.rptLowStockWarning;
-    case 'transaction_history': return l.rptTransactionHistory;
-    default: return id;
+    case 'sales_by_group':
+      return l.rptSalesByGroup;
+    case 'sales_by_customer':
+      return l.rptSalesByCustomer;
+    case 'sales_tax':
+    case 'purchase_tax':
+      return l.rptTaxRates;
+    case 'sales_users':
+      return l.rptUsers;
+    case 'sales_item_list':
+      return l.rptItemList;
+    case 'sales_payment_types':
+      return l.rptPaymentTypes;
+    case 'sales_payment_by_user':
+      return l.rptPaymentByUser;
+    case 'sales_payment_by_customer':
+      return l.rptPaymentByCustomer;
+    case 'sales_refunds':
+      return l.rptRefunds;
+    case 'sales_invoice_list':
+      return l.rptInvoiceList;
+    case 'sales_daily':
+      return l.rptDailySales;
+    case 'sales_hourly':
+      return l.rptHourlySales;
+    case 'sales_hourly_group':
+      return l.rptHourlyByGroup;
+    case 'sales_by_table':
+      return l.rptByTable;
+    case 'sales_profit':
+      return l.rptProfitMargin;
+    case 'sales_unpaid':
+      return l.rptUnpaidSales;
+    case 'sales_starting_cash':
+      return l.rptStartingCash;
+    case 'sales_voided':
+      return l.rptVoidedItems;
+    case 'sales_discounts':
+      return l.rptDiscountsGranted;
+    case 'sales_discounts_by_source':
+      return l.rptDiscountsBySource;
+    case 'sales_item_discounts':
+      return l.rptItemDiscounts;
+    case 'sales_stock_movement':
+      return l.rptStockMovement;
+    case 'purchase_suppliers':
+      return l.rptSuppliers;
+    case 'purchase_unpaid':
+      return l.rptUnpaidPurchase;
+    case 'purchase_discounts':
+      return l.rptPurchaseDiscounts;
+    case 'purchase_items_discounts':
+      return l.rptPurchasedItemDiscounts;
+    case 'purchase_invoice_list':
+      return l.rptPurchaseInvoiceList;
+    case 'purchase_expiration':
+      return l.rptExpirationDate;
+    case 'reorder_list':
+      return l.rptReorderList;
+    case 'low_stock_warning':
+      return l.rptLowStockWarning;
+    case 'transaction_history':
+      return l.rptTransactionHistory;
+    default:
+      return id;
   }
 }
 
@@ -77,13 +112,20 @@ String _reportLabel(BuildContext context, String id) {
 String _sectionName(BuildContext context, String section) {
   final l = AppLocalizations.of(context);
   switch (section) {
-    case 'Sales': return l.secSales;
-    case 'Purchase': return l.secPurchase;
-    case 'Stock Return': return l.secStockReturn;
-    case 'Loss and damage': return l.secLossAndDamage;
-    case 'Stock control': return l.secStockControl;
-    case 'Finance': return l.secFinance;
-    default: return section;
+    case 'Sales':
+      return l.secSales;
+    case 'Purchase':
+      return l.secPurchase;
+    case 'Stock Return':
+      return l.secStockReturn;
+    case 'Loss and damage':
+      return l.secLossAndDamage;
+    case 'Stock control':
+      return l.secStockControl;
+    case 'Finance':
+      return l.secFinance;
+    default:
+      return section;
   }
 }
 
@@ -329,14 +371,16 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     try {
       if (reportId == 'sales_by_product') {
         final rows = await ref.read(salesByProductProvider(filter).future);
-        buf.writeln(_csvHeader([
-          l.fieldCode,
-          l.productLabel,
-          l.fieldQuantity,
-          l.rptColUom,
-          l.totalBeforeTax,
-          l.totalLabel,
-        ]));
+        buf.writeln(
+          _csvHeader([
+            l.fieldCode,
+            l.productLabel,
+            l.fieldQuantity,
+            l.rptColUom,
+            l.totalBeforeTax,
+            l.totalLabel,
+          ]),
+        );
         for (final r in rows) {
           buf.writeln(
             '"${r.code ?? ''}","${r.product}",${r.quantity},"${r.uom}",${r.totalBeforeTax},${r.total}',
@@ -348,12 +392,14 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         filename = 'SalesByProduct';
       } else if (reportId == 'sales_by_group') {
         final rows = await ref.read(salesByProductGroupProvider(filter).future);
-        buf.writeln(_csvHeader([
-          l.fieldProductGroup,
-          l.fieldQuantity,
-          l.totalBeforeTax,
-          l.totalLabel,
-        ]));
+        buf.writeln(
+          _csvHeader([
+            l.fieldProductGroup,
+            l.fieldQuantity,
+            l.totalBeforeTax,
+            l.totalLabel,
+          ]),
+        );
         for (final r in rows) {
           buf.writeln(
             '"${r.productGroup}",${r.quantity},${r.totalBeforeTax},${r.total}',
@@ -365,11 +411,9 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         filename = 'SalesByProductGroup';
       } else if (reportId == 'sales_by_customer') {
         final rows = await ref.read(salesByCustomerProvider(filter).future);
-        buf.writeln(_csvHeader([
-          l.customerLabel,
-          l.totalBeforeTax,
-          l.totalLabel,
-        ]));
+        buf.writeln(
+          _csvHeader([l.customerLabel, l.totalBeforeTax, l.totalLabel]),
+        );
         for (final r in rows) {
           buf.writeln('"${r.customer}",${r.totalBeforeTax},${r.total}');
         }
@@ -379,12 +423,14 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         filename = 'SalesByCustomer';
       } else if (reportId == 'sales_tax') {
         final rows = await ref.read(salesByTaxProvider(filter).future);
-        buf.writeln(_csvHeader([
-          l.rptColTaxName,
-          l.totalBeforeTax,
-          l.fieldTax,
-          l.totalLabel,
-        ]));
+        buf.writeln(
+          _csvHeader([
+            l.rptColTaxName,
+            l.totalBeforeTax,
+            l.fieldTax,
+            l.totalLabel,
+          ]),
+        );
         for (final r in rows) {
           buf.writeln(
             '"${r.taxName}",${r.totalBeforeTax},${r.taxAmount},${r.total}',
@@ -442,9 +488,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           pivot[r.userName]![r.paymentTypeName] =
               (pivot[r.userName]![r.paymentTypeName] ?? 0) + r.amount;
         }
-        buf.writeln(
-          _csvHeader([l.userLabel, ...paymentTypes, l.totalLabel]),
-        );
+        buf.writeln(_csvHeader([l.userLabel, ...paymentTypes, l.totalLabel]));
         for (final u in users) {
           final amounts = paymentTypes
               .map((pt) => pivot[u]?[pt] ?? 0.0)
@@ -475,9 +519,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
               (pivot[r.date]![r.paymentTypeName] ?? 0) + r.amount;
         }
         final dateFmt2 = DateFormat('dd/MM/yyyy');
-        buf.writeln(
-          _csvHeader([l.dateLabel, ...paymentTypes, l.totalLabel]),
-        );
+        buf.writeln(_csvHeader([l.dateLabel, ...paymentTypes, l.totalLabel]));
         for (final d in dates) {
           final amounts = paymentTypes
               .map((pt) => pivot[d]?[pt] ?? 0.0)
@@ -499,20 +541,22 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         filename = 'SalesByPaymentType';
       } else if (reportId == 'sales_refunds') {
         final rows = await ref.read(refundItemListProvider(filter).future);
-        buf.writeln(_csvHeader([
-          l.documentNumber,
-          l.rptColRefNumber,
-          l.dateLabel,
-          l.rptColCustomerCode,
-          l.customerLabel,
-          l.fieldCode,
-          l.productLabel,
-          l.fieldQuantity,
-          l.rptColUom,
-          l.totalBeforeTax,
-          l.rptColTotalTax,
-          l.totalLabel,
-        ]));
+        buf.writeln(
+          _csvHeader([
+            l.documentNumber,
+            l.rptColRefNumber,
+            l.dateLabel,
+            l.rptColCustomerCode,
+            l.customerLabel,
+            l.fieldCode,
+            l.productLabel,
+            l.fieldQuantity,
+            l.rptColUom,
+            l.totalBeforeTax,
+            l.rptColTotalTax,
+            l.totalLabel,
+          ]),
+        );
         final dateFmt = DateFormat('dd/MM/yyyy');
         for (final r in rows) {
           buf.writeln(
@@ -531,14 +575,16 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         filename = 'Refunds';
       } else if (reportId == 'sales_invoice_list') {
         final rows = await ref.read(invoiceListProvider(filter).future);
-        buf.writeln(_csvHeader([
-          '#',
-          l.dateLabel,
-          l.documentNumber,
-          l.customerLabel,
-          l.rptColPaymentMethod,
-          l.totalLabel,
-        ]));
+        buf.writeln(
+          _csvHeader([
+            '#',
+            l.dateLabel,
+            l.documentNumber,
+            l.customerLabel,
+            l.rptColPaymentMethod,
+            l.totalLabel,
+          ]),
+        );
         final dateFmt = DateFormat('dd/MM/yyyy');
         var i = 1;
         for (final r in rows) {
@@ -566,14 +612,16 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         final grandTotal = rows.fold(0.0, (s, r) => s + r.totalSales);
         final grandCount = rows.fold(0, (s, r) => s + r.salesCount);
         final timeFmt = DateFormat('h:mm a');
-        buf.writeln(_csvHeader([
-          l.rptColHourStart,
-          l.rptColHourEnd,
-          l.rptColTotalSales,
-          l.rptColSalesCount,
-          l.rptColAverageSale,
-          '%',
-        ]));
+        buf.writeln(
+          _csvHeader([
+            l.rptColHourStart,
+            l.rptColHourEnd,
+            l.rptColTotalSales,
+            l.rptColSalesCount,
+            l.rptColAverageSale,
+            '%',
+          ]),
+        );
         for (final r in rows) {
           final start = DateTime(2000, 1, 1, r.hour);
           final avg = r.salesCount > 0 ? r.totalSales / r.salesCount : 0.0;
@@ -624,11 +672,13 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         filename = 'HourlySalesByGroup';
       } else if (reportId == 'sales_by_table') {
         final rows = await ref.read(salesByTableProvider(filter).future);
-        buf.writeln(_csvHeader([
-          l.rptColTableOrOrder,
-          l.rptColNumberOfSales,
-          l.totalLabel,
-        ]));
+        buf.writeln(
+          _csvHeader([
+            l.rptColTableOrOrder,
+            l.rptColNumberOfSales,
+            l.totalLabel,
+          ]),
+        );
         for (final r in rows) {
           buf.writeln('"${r.orderNumber}",${r.numberOfSales},${r.total}');
         }
@@ -639,15 +689,17 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         filename = 'SalesByTable';
       } else if (reportId == 'sales_profit') {
         final rows = await ref.read(profitProvider(filter).future);
-        buf.writeln(_csvHeader([
-          l.fieldCode,
-          l.productLabel,
-          l.fieldQuantity,
-          l.fieldCost,
-          l.totalLabel,
-          l.rptColProfit,
-          l.rptColMargin,
-        ]));
+        buf.writeln(
+          _csvHeader([
+            l.fieldCode,
+            l.productLabel,
+            l.fieldQuantity,
+            l.fieldCost,
+            l.totalLabel,
+            l.rptColProfit,
+            l.rptColMargin,
+          ]),
+        );
         for (final r in rows) {
           buf.writeln(
             '"${r.productCode ?? ''}","${r.productName}",${r.quantity},'
@@ -664,15 +716,17 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       } else if (reportId == 'sales_unpaid') {
         final rows = await ref.read(unpaidSalesProvider(filter).future);
         final dateFmt = DateFormat('dd/MM/yyyy');
-        buf.writeln(_csvHeader([
-          l.customerLabel,
-          l.documentNumber,
-          l.dateLabel,
-          l.rptColDueDate,
-          l.totalLabel,
-          l.rptColTotalPaid,
-          l.rptColTotalUnpaid,
-        ]));
+        buf.writeln(
+          _csvHeader([
+            l.customerLabel,
+            l.documentNumber,
+            l.dateLabel,
+            l.rptColDueDate,
+            l.totalLabel,
+            l.rptColTotalPaid,
+            l.rptColTotalUnpaid,
+          ]),
+        );
         for (final r in rows) {
           buf.writeln(
             '"${r.customerName}","${r.documentNumber}",'
@@ -687,14 +741,16 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       } else if (reportId == 'sales_starting_cash') {
         final rows = await ref.read(startingCashReportProvider(filter).future);
         final dateFmt = DateFormat('dd/MM/yyyy HH:mm');
-        buf.writeln(_csvHeader([
-          l.userLabel,
-          l.typeLabel,
-          l.fieldDescription,
-          l.dateLabel,
-          l.amount,
-          l.rptColZReportNo,
-        ]));
+        buf.writeln(
+          _csvHeader([
+            l.userLabel,
+            l.typeLabel,
+            l.fieldDescription,
+            l.dateLabel,
+            l.amount,
+            l.rptColZReportNo,
+          ]),
+        );
         for (final r in rows) {
           buf.writeln(
             '"${r.userName ?? ''}","${r.isCashOut ? 'Cash Out' : 'Cash In'}",'
@@ -710,15 +766,16 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         final rows = await ref.read(stockMovementReportProvider(filter).future);
         final total = rows.fold(0.0, (s, r) => s + r.numSales);
         final average = rows.isEmpty ? 0.0 : total / rows.length;
-        buf.writeln(_csvHeader([
-          l.categoryLabel,
-          l.fieldCode,
-          l.productLabel,
-          l.rptColNumSales,
-        ]));
+        buf.writeln(
+          _csvHeader([
+            l.categoryLabel,
+            l.fieldCode,
+            l.productLabel,
+            l.rptColNumSales,
+          ]),
+        );
         for (final r in rows) {
-          final cat =
-              r.numSales >= average ? l.rptFastMoving : l.rptSlowMoving;
+          final cat = r.numSales >= average ? l.rptFastMoving : l.rptSlowMoving;
           buf.writeln(
             '"$cat","${r.productCode ?? ''}","${r.productName}",${r.numSales}',
           );
@@ -730,11 +787,9 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         final rows = await ref.read(
           itemsDiscountsReportProvider(filter).future,
         );
-        buf.writeln(_csvHeader([
-          l.fieldCode,
-          l.productLabel,
-          l.rptColTotalDiscount,
-        ]));
+        buf.writeln(
+          _csvHeader([l.fieldCode, l.productLabel, l.rptColTotalDiscount]),
+        );
         for (final r in rows) {
           buf.writeln(
             '"${r.productCode ?? ''}","${r.productName}",${r.totalDiscount}',
@@ -749,15 +804,17 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           discountsGrantedReportProvider(filter).future,
         );
         final dateFmt = DateFormat('dd/MM/yyyy');
-        buf.writeln(_csvHeader([
-          l.customerLabel,
-          l.rptColDocument,
-          l.dateLabel,
-          l.userLabel,
-          l.rptColTotalBeforeDisc,
-          l.rptColTotalAfterDisc,
-          l.rptColDiscountGranted,
-        ]));
+        buf.writeln(
+          _csvHeader([
+            l.customerLabel,
+            l.rptColDocument,
+            l.dateLabel,
+            l.userLabel,
+            l.rptColTotalBeforeDisc,
+            l.rptColTotalAfterDisc,
+            l.rptColDiscountGranted,
+          ]),
+        );
         for (final r in rows) {
           buf.writeln(
             '"${r.customerName}","${r.documentNumber}",'
@@ -782,19 +839,21 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       } else if (reportId == 'sales_voided') {
         final rows = await ref.read(voidedItemsReportProvider(filter).future);
         final dtFmt = DateFormat('dd/MM/yyyy HH:mm:ss');
-        buf.writeln(_csvHeader([
-          l.productLabel,
-          l.rptColVoidedBy,
-          l.rptColQtyShort,
-          l.priceLabel,
-          l.discountLabel,
-          l.statusLabel,
-          l.rptColOrderNo,
-          l.rptColCreated,
-          l.rptColVoided,
-          l.totalLabel,
-          l.rptColReason,
-        ]));
+        buf.writeln(
+          _csvHeader([
+            l.productLabel,
+            l.rptColVoidedBy,
+            l.rptColQtyShort,
+            l.priceLabel,
+            l.discountLabel,
+            l.statusLabel,
+            l.rptColOrderNo,
+            l.rptColCreated,
+            l.rptColVoided,
+            l.totalLabel,
+            l.rptColReason,
+          ]),
+        );
         for (final r in rows) {
           buf.writeln(
             '"${r.productName}","${r.voidedByName ?? ''}",'
@@ -811,23 +870,25 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         filename = 'VoidedItems';
       } else if (reportId == 'sales_item_list') {
         final rows = await ref.read(salesItemListProvider(filter).future);
-        buf.writeln(_csvHeader([
-          l.documentType,
-          l.dateLabel,
-          l.rptColCreateDate,
-          l.documentNumber,
-          l.rptColRefNumber,
-          l.rptColCustomerCode,
-          l.customerLabel,
-          l.orderNumberLabel,
-          l.fieldCode,
-          l.productLabel,
-          l.fieldQuantity,
-          l.rptColUom,
-          l.totalBeforeTax,
-          l.rptColTotalTax,
-          l.totalLabel,
-        ]));
+        buf.writeln(
+          _csvHeader([
+            l.documentType,
+            l.dateLabel,
+            l.rptColCreateDate,
+            l.documentNumber,
+            l.rptColRefNumber,
+            l.rptColCustomerCode,
+            l.customerLabel,
+            l.orderNumberLabel,
+            l.fieldCode,
+            l.productLabel,
+            l.fieldQuantity,
+            l.rptColUom,
+            l.totalBeforeTax,
+            l.rptColTotalTax,
+            l.totalLabel,
+          ]),
+        );
         final dateFmt = DateFormat('dd/MM/yyyy');
         final dtFmt = DateFormat('dd/MM/yyyy HH:mm:ss');
         for (final r in rows) {
@@ -859,15 +920,17 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       } else if (reportId == 'purchase_unpaid') {
         final rows = await ref.read(unpaidPurchaseProvider(filter).future);
         final dateFmt = DateFormat('dd/MM/yyyy');
-        buf.writeln(_csvHeader([
-          l.supplier,
-          l.documentNumber,
-          l.dateLabel,
-          l.rptColDueDate,
-          l.totalLabel,
-          l.rptColTotalPaid,
-          l.rptColTotalUnpaid,
-        ]));
+        buf.writeln(
+          _csvHeader([
+            l.supplier,
+            l.documentNumber,
+            l.dateLabel,
+            l.rptColDueDate,
+            l.totalLabel,
+            l.rptColTotalPaid,
+            l.rptColTotalUnpaid,
+          ]),
+        );
         for (final r in rows) {
           buf.writeln(
             '"${r.supplierName}","${r.documentNumber}",'
@@ -891,14 +954,16 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         filename = 'PurchaseBySupplier';
       } else if (reportId == 'purchase_products') {
         final rows = await ref.read(purchaseByProductProvider(filter).future);
-        buf.writeln(_csvHeader([
-          l.fieldCode,
-          l.productLabel,
-          l.fieldQuantity,
-          l.rptColUom,
-          l.totalBeforeTax,
-          l.totalLabel,
-        ]));
+        buf.writeln(
+          _csvHeader([
+            l.fieldCode,
+            l.productLabel,
+            l.fieldQuantity,
+            l.rptColUom,
+            l.totalBeforeTax,
+            l.totalLabel,
+          ]),
+        );
         for (final r in rows) {
           buf.writeln(
             '"${r.code ?? ''}","${r.product}",${r.quantity},"${r.uom}",${r.totalBeforeTax},${r.total}',
@@ -911,14 +976,16 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       } else if (reportId == 'purchase_invoice_list') {
         final rows = await ref.read(purchaseInvoiceListProvider(filter).future);
         final dateFmt = DateFormat('dd/MM/yyyy');
-        buf.writeln(_csvHeader([
-          '#',
-          l.supplier,
-          l.rptColPurchaseNumber,
-          l.externalDocument,
-          l.dateLabel,
-          l.totalLabel,
-        ]));
+        buf.writeln(
+          _csvHeader([
+            '#',
+            l.supplier,
+            l.rptColPurchaseNumber,
+            l.externalDocument,
+            l.dateLabel,
+            l.totalLabel,
+          ]),
+        );
         var i = 1;
         for (final r in rows) {
           buf.writeln(
@@ -936,20 +1003,22 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           purchaseItemsDiscountsProvider(filter).future,
         );
         final dateFmt = DateFormat('dd/MM/yyyy');
-        buf.writeln(_csvHeader([
-          l.supplier,
-          l.rptColDocument,
-          l.dateLabel,
-          l.userLabel,
-          l.fieldCode,
-          l.productLabel,
-          l.qtyShort,
-          l.fieldCost,
-          l.rptColBeforeDisc,
-          l.rptColAfterDisc,
-          l.discountLabel,
-          l.rptColTotalDisc,
-        ]));
+        buf.writeln(
+          _csvHeader([
+            l.supplier,
+            l.rptColDocument,
+            l.dateLabel,
+            l.userLabel,
+            l.fieldCode,
+            l.productLabel,
+            l.qtyShort,
+            l.fieldCost,
+            l.rptColBeforeDisc,
+            l.rptColAfterDisc,
+            l.discountLabel,
+            l.rptColTotalDisc,
+          ]),
+        );
         for (final r in rows) {
           buf.writeln(
             '"${r.supplierName}","${r.documentNumber}",'
@@ -967,15 +1036,17 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       } else if (reportId == 'purchase_discounts') {
         final rows = await ref.read(purchaseDiscountsProvider(filter).future);
         final dateFmt = DateFormat('dd/MM/yyyy');
-        buf.writeln(_csvHeader([
-          l.supplier,
-          l.rptColDocument,
-          l.dateLabel,
-          l.userLabel,
-          l.rptColTotalBeforeDisc,
-          l.rptColTotalAfterDisc,
-          l.rptColDiscountGranted,
-        ]));
+        buf.writeln(
+          _csvHeader([
+            l.supplier,
+            l.rptColDocument,
+            l.dateLabel,
+            l.userLabel,
+            l.rptColTotalBeforeDisc,
+            l.rptColTotalAfterDisc,
+            l.rptColDiscountGranted,
+          ]),
+        );
         for (final r in rows) {
           buf.writeln(
             '"${r.supplierName}","${r.documentNumber}",'
@@ -989,12 +1060,14 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         filename = 'PurchaseDiscounts';
       } else if (reportId == 'purchase_tax') {
         final rows = await ref.read(purchaseByTaxProvider(filter).future);
-        buf.writeln(_csvHeader([
-          l.rptColTaxName,
-          l.totalBeforeTax,
-          l.fieldTax,
-          l.totalLabel,
-        ]));
+        buf.writeln(
+          _csvHeader([
+            l.rptColTaxName,
+            l.totalBeforeTax,
+            l.fieldTax,
+            l.totalLabel,
+          ]),
+        );
         for (final r in rows) {
           buf.writeln(
             '"${r.taxName}",${r.totalBeforeTax},${r.taxAmount},${r.total}',
@@ -1009,14 +1082,16 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           purchaseExpirationDateProvider(filter).future,
         );
         final dateFmt = DateFormat('dd/MM/yyyy');
-        buf.writeln(_csvHeader([
-          '#',
-          l.fieldCode,
-          l.productLabel,
-          l.fieldQuantity,
-          l.rptColUom,
-          l.rptColExpirationDate,
-        ]));
+        buf.writeln(
+          _csvHeader([
+            '#',
+            l.fieldCode,
+            l.productLabel,
+            l.fieldQuantity,
+            l.rptColUom,
+            l.rptColExpirationDate,
+          ]),
+        );
         var i = 1;
         for (final r in rows) {
           buf.writeln(
@@ -1031,15 +1106,17 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           stockReturnByProductProvider(filter).future,
         );
         final dateFmt = DateFormat('dd/MM/yyyy');
-        buf.writeln(_csvHeader([
-          l.dateLabel,
-          l.fieldCode,
-          l.productLabel,
-          l.fieldQuantity,
-          l.rptColUom,
-          l.totalBeforeTax,
-          l.totalLabel,
-        ]));
+        buf.writeln(
+          _csvHeader([
+            l.dateLabel,
+            l.fieldCode,
+            l.productLabel,
+            l.fieldQuantity,
+            l.rptColUom,
+            l.totalBeforeTax,
+            l.totalLabel,
+          ]),
+        );
         for (final r in rows) {
           buf.writeln(
             '"${dateFmt.format(r.date)}","${r.code ?? ''}","${r.product}",${r.quantity},"${r.uom}",${r.totalBeforeTax},${r.total}',
@@ -1054,15 +1131,17 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           lossAndDamageByProductProvider(filter).future,
         );
         final dateFmt = DateFormat('dd/MM/yyyy');
-        buf.writeln(_csvHeader([
-          l.dateLabel,
-          l.fieldCode,
-          l.productLabel,
-          l.fieldQuantity,
-          l.rptColUom,
-          l.totalBeforeTax,
-          l.totalLabel,
-        ]));
+        buf.writeln(
+          _csvHeader([
+            l.dateLabel,
+            l.fieldCode,
+            l.productLabel,
+            l.fieldQuantity,
+            l.rptColUom,
+            l.totalBeforeTax,
+            l.totalLabel,
+          ]),
+        );
         for (final r in rows) {
           buf.writeln(
             '"${dateFmt.format(r.date)}","${r.code ?? ''}","${r.product}",${r.quantity},"${r.uom}",${r.totalBeforeTax},${r.total}',
@@ -1074,12 +1153,14 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         filename = 'LossAndDamageByProduct';
       } else if (reportId == 'reorder_list') {
         final rows = await ref.read(reorderProductListProvider(filter).future);
-        buf.writeln(_csvHeader([
-          l.supplier,
-          l.rptColProductName,
-          l.rptColOrderQty,
-          l.rptColUom,
-        ]));
+        buf.writeln(
+          _csvHeader([
+            l.supplier,
+            l.rptColProductName,
+            l.rptColOrderQty,
+            l.rptColUom,
+          ]),
+        );
         for (final r in rows) {
           buf.writeln(
             '"${r.supplierName}","${r.productName}",${r.orderQuantity},"${r.uom}"',
@@ -1088,14 +1169,16 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         filename = 'ReorderProductList';
       } else if (reportId == 'low_stock_warning') {
         final rows = await ref.read(lowStockWarningProvider(filter).future);
-        buf.writeln(_csvHeader([
-          l.supplier,
-          l.rptColProductName,
-          l.rptColCurrentStock,
-          l.rptColWarningQty,
-          l.rptColOrderQty,
-          l.rptColUom,
-        ]));
+        buf.writeln(
+          _csvHeader([
+            l.supplier,
+            l.rptColProductName,
+            l.rptColCurrentStock,
+            l.rptColWarningQty,
+            l.rptColOrderQty,
+            l.rptColUom,
+          ]),
+        );
         for (final r in rows) {
           buf.writeln(
             '"${r.supplierName}","${r.productName}",${r.currentStock},${r.lowStockWarningQuantity},${r.orderQuantity},"${r.uom}"',
@@ -1106,14 +1189,16 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         if (filter.customerId == null) return;
         final rows = await ref.read(transactionHistoryProvider(filter).future);
         final dateFmt = DateFormat('dd/MM/yyyy');
-        buf.writeln(_csvHeader([
-          l.dateLabel,
-          l.rptColTransactionType,
-          l.rptColRefNumber,
-          l.rptColCredit,
-          l.rptColDebit,
-          l.balanceLabel,
-        ]));
+        buf.writeln(
+          _csvHeader([
+            l.dateLabel,
+            l.rptColTransactionType,
+            l.rptColRefNumber,
+            l.rptColCredit,
+            l.rptColDebit,
+            l.balanceLabel,
+          ]),
+        );
         for (final r in rows) {
           final dateStr = r.isPreviousBalance
               ? ''
@@ -1135,13 +1220,19 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
 
       if (mounted) {
         showAppSnackbar(
-            context, ref, AppLocalizations.of(context).savedToPath(file.path));
+          context,
+          ref,
+          AppLocalizations.of(context).savedToPath(file.path),
+        );
       }
     } catch (e) {
       if (mounted) {
-        showAppSnackbar(context, ref,
-            AppLocalizations.of(context).exportFailed(e.toString()),
-            isError: true);
+        showAppSnackbar(
+          context,
+          ref,
+          AppLocalizations.of(context).exportFailed(e.toString()),
+          isError: true,
+        );
       }
     }
   }
@@ -1226,7 +1317,9 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                     )
                   : activeTab != null
                   ? _TabPdfView(tab: activeTab)
-                  : Center(child: Text(AppLocalizations.of(context).tabNotFound)),
+                  : Center(
+                      child: Text(AppLocalizations.of(context).tabNotFound),
+                    ),
             ),
           ),
         ],
@@ -1371,7 +1464,12 @@ class _HomeView extends StatelessWidget {
         ),
       );
 
-  Widget _reportTile(BuildContext context, ColorScheme cs, _ReportType r, {String? prefixLabel}) {
+  Widget _reportTile(
+    BuildContext context,
+    ColorScheme cs,
+    _ReportType r, {
+    String? prefixLabel,
+  }) {
     final active = selected?.id == r.id;
     final isFav = favorites.contains(r.id);
     return ListTile(
@@ -1520,7 +1618,8 @@ class _HomeView extends StatelessWidget {
                               context,
                               cs,
                               r,
-                              prefixLabel: '${_sectionName(context, section)} / ${_reportLabel(context, r.id)}',
+                              prefixLabel:
+                                  '${_sectionName(context, section)} / ${_reportLabel(context, r.id)}',
                             ),
                             Divider(height: 1, color: cs.outlineVariant),
                           ],
@@ -1557,7 +1656,8 @@ class _HomeView extends StatelessWidget {
                                 context,
                                 cs,
                                 r,
-                                prefixLabel: '${_sectionName(context, _sectionOf(r.id))} / ${_reportLabel(context, r.id)}',
+                                prefixLabel:
+                                    '${_sectionName(context, _sectionOf(r.id))} / ${_reportLabel(context, r.id)}',
                               ),
                               Divider(height: 1, color: cs.outlineVariant),
                             ],
@@ -1636,11 +1736,13 @@ class _TabPdfView extends ConsumerWidget {
             final bytes = await build(pageFormat);
             final path = await savePdfAs(bytes: bytes, suggestedName: baseName);
             if (path == null) return; // cancelled
-            messenger
-                .showSnackBar(SnackBar(content: Text(l10n.savedToPath(path))));
+            messenger.showSnackBar(
+              SnackBar(content: Text(l10n.savedToPath(path))),
+            );
           } catch (e) {
             messenger.showSnackBar(
-                SnackBar(content: Text(l10n.saveFailed(e.toString()))));
+              SnackBar(content: Text(l10n.saveFailed(e.toString()))),
+            );
           }
         },
       ),
@@ -1679,8 +1781,9 @@ class _TabPdfView extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(
-              AppLocalizations.of(context).errorWithMessage(e.toString()),
-              style: TextStyle(color: cs.error)),
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            style: TextStyle(color: cs.error),
+          ),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -1709,8 +1812,9 @@ class _TabPdfView extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(
-              AppLocalizations.of(context).errorWithMessage(e.toString()),
-              style: TextStyle(color: cs.error)),
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            style: TextStyle(color: cs.error),
+          ),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -1739,8 +1843,9 @@ class _TabPdfView extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(
-              AppLocalizations.of(context).errorWithMessage(e.toString()),
-              style: TextStyle(color: cs.error)),
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            style: TextStyle(color: cs.error),
+          ),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -1769,8 +1874,9 @@ class _TabPdfView extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(
-              AppLocalizations.of(context).errorWithMessage(e.toString()),
-              style: TextStyle(color: cs.error)),
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            style: TextStyle(color: cs.error),
+          ),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -1799,8 +1905,9 @@ class _TabPdfView extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(
-              AppLocalizations.of(context).errorWithMessage(e.toString()),
-              style: TextStyle(color: cs.error)),
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            style: TextStyle(color: cs.error),
+          ),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -1829,8 +1936,9 @@ class _TabPdfView extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(
-              AppLocalizations.of(context).errorWithMessage(e.toString()),
-              style: TextStyle(color: cs.error)),
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            style: TextStyle(color: cs.error),
+          ),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -1859,8 +1967,9 @@ class _TabPdfView extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(
-              AppLocalizations.of(context).errorWithMessage(e.toString()),
-              style: TextStyle(color: cs.error)),
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            style: TextStyle(color: cs.error),
+          ),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -1889,8 +1998,9 @@ class _TabPdfView extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(
-              AppLocalizations.of(context).errorWithMessage(e.toString()),
-              style: TextStyle(color: cs.error)),
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            style: TextStyle(color: cs.error),
+          ),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -1919,8 +2029,9 @@ class _TabPdfView extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(
-              AppLocalizations.of(context).errorWithMessage(e.toString()),
-              style: TextStyle(color: cs.error)),
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            style: TextStyle(color: cs.error),
+          ),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -1948,8 +2059,9 @@ class _TabPdfView extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(
-              AppLocalizations.of(context).errorWithMessage(e.toString()),
-              style: TextStyle(color: cs.error)),
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            style: TextStyle(color: cs.error),
+          ),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -1977,8 +2089,9 @@ class _TabPdfView extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(
-              AppLocalizations.of(context).errorWithMessage(e.toString()),
-              style: TextStyle(color: cs.error)),
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            style: TextStyle(color: cs.error),
+          ),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2005,8 +2118,9 @@ class _TabPdfView extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(
-              AppLocalizations.of(context).errorWithMessage(e.toString()),
-              style: TextStyle(color: cs.error)),
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            style: TextStyle(color: cs.error),
+          ),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2034,8 +2148,9 @@ class _TabPdfView extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(
-              AppLocalizations.of(context).errorWithMessage(e.toString()),
-              style: TextStyle(color: cs.error)),
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            style: TextStyle(color: cs.error),
+          ),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2063,8 +2178,9 @@ class _TabPdfView extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(
-              AppLocalizations.of(context).errorWithMessage(e.toString()),
-              style: TextStyle(color: cs.error)),
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            style: TextStyle(color: cs.error),
+          ),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2093,8 +2209,9 @@ class _TabPdfView extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(
-              AppLocalizations.of(context).errorWithMessage(e.toString()),
-              style: TextStyle(color: cs.error)),
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            style: TextStyle(color: cs.error),
+          ),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2122,8 +2239,9 @@ class _TabPdfView extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(
-              AppLocalizations.of(context).errorWithMessage(e.toString()),
-              style: TextStyle(color: cs.error)),
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            style: TextStyle(color: cs.error),
+          ),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2150,8 +2268,9 @@ class _TabPdfView extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(
-              AppLocalizations.of(context).errorWithMessage(e.toString()),
-              style: TextStyle(color: cs.error)),
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            style: TextStyle(color: cs.error),
+          ),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2179,8 +2298,9 @@ class _TabPdfView extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(
-              AppLocalizations.of(context).errorWithMessage(e.toString()),
-              style: TextStyle(color: cs.error)),
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            style: TextStyle(color: cs.error),
+          ),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2209,8 +2329,9 @@ class _TabPdfView extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(
-              AppLocalizations.of(context).errorWithMessage(e.toString()),
-              style: TextStyle(color: cs.error)),
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            style: TextStyle(color: cs.error),
+          ),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2238,8 +2359,9 @@ class _TabPdfView extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(
-              AppLocalizations.of(context).errorWithMessage(e.toString()),
-              style: TextStyle(color: cs.error)),
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            style: TextStyle(color: cs.error),
+          ),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2265,8 +2387,9 @@ class _TabPdfView extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(
-              AppLocalizations.of(context).errorWithMessage(e.toString()),
-              style: TextStyle(color: cs.error)),
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            style: TextStyle(color: cs.error),
+          ),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2294,8 +2417,9 @@ class _TabPdfView extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(
-              AppLocalizations.of(context).errorWithMessage(e.toString()),
-              style: TextStyle(color: cs.error)),
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            style: TextStyle(color: cs.error),
+          ),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2324,8 +2448,9 @@ class _TabPdfView extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(
-              AppLocalizations.of(context).errorWithMessage(e.toString()),
-              style: TextStyle(color: cs.error)),
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            style: TextStyle(color: cs.error),
+          ),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2354,8 +2479,9 @@ class _TabPdfView extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(
-              AppLocalizations.of(context).errorWithMessage(e.toString()),
-              style: TextStyle(color: cs.error)),
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            style: TextStyle(color: cs.error),
+          ),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2383,8 +2509,9 @@ class _TabPdfView extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(
-              AppLocalizations.of(context).errorWithMessage(e.toString()),
-              style: TextStyle(color: cs.error)),
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            style: TextStyle(color: cs.error),
+          ),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2413,8 +2540,9 @@ class _TabPdfView extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(
-              AppLocalizations.of(context).errorWithMessage(e.toString()),
-              style: TextStyle(color: cs.error)),
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            style: TextStyle(color: cs.error),
+          ),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2443,8 +2571,9 @@ class _TabPdfView extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(
-              AppLocalizations.of(context).errorWithMessage(e.toString()),
-              style: TextStyle(color: cs.error)),
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            style: TextStyle(color: cs.error),
+          ),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2473,8 +2602,9 @@ class _TabPdfView extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(
-              AppLocalizations.of(context).errorWithMessage(e.toString()),
-              style: TextStyle(color: cs.error)),
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            style: TextStyle(color: cs.error),
+          ),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2503,8 +2633,9 @@ class _TabPdfView extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(
-              AppLocalizations.of(context).errorWithMessage(e.toString()),
-              style: TextStyle(color: cs.error)),
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            style: TextStyle(color: cs.error),
+          ),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2533,8 +2664,9 @@ class _TabPdfView extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(
-              AppLocalizations.of(context).errorWithMessage(e.toString()),
-              style: TextStyle(color: cs.error)),
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            style: TextStyle(color: cs.error),
+          ),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2563,8 +2695,9 @@ class _TabPdfView extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(
-              AppLocalizations.of(context).errorWithMessage(e.toString()),
-              style: TextStyle(color: cs.error)),
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            style: TextStyle(color: cs.error),
+          ),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2592,8 +2725,9 @@ class _TabPdfView extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(
-              AppLocalizations.of(context).errorWithMessage(e.toString()),
-              style: TextStyle(color: cs.error)),
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            style: TextStyle(color: cs.error),
+          ),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2621,8 +2755,9 @@ class _TabPdfView extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(
-              AppLocalizations.of(context).errorWithMessage(e.toString()),
-              style: TextStyle(color: cs.error)),
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            style: TextStyle(color: cs.error),
+          ),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2650,8 +2785,9 @@ class _TabPdfView extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(
-              AppLocalizations.of(context).errorWithMessage(e.toString()),
-              style: TextStyle(color: cs.error)),
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            style: TextStyle(color: cs.error),
+          ),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2679,8 +2815,9 @@ class _TabPdfView extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(
-              AppLocalizations.of(context).errorWithMessage(e.toString()),
-              style: TextStyle(color: cs.error)),
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            style: TextStyle(color: cs.error),
+          ),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2716,8 +2853,9 @@ class _TabPdfView extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(
-              AppLocalizations.of(context).errorWithMessage(e.toString()),
-              style: TextStyle(color: cs.error)),
+            AppLocalizations.of(context).errorWithMessage(e.toString()),
+            style: TextStyle(color: cs.error),
+          ),
         ),
         data: (rows) => PdfPreview(
           pdfFileName: fileName,
@@ -2769,17 +2907,17 @@ class _RptFonts {
   const _RptFonts(this.latin, this.latinBold, this.arabic, this.arabicBold);
 
   static Future<_RptFonts> load() async => _RptFonts(
-        await PdfFonts.latin(),
-        await PdfFonts.latin(bold: true),
-        await PdfFonts.arabic(),
-        await PdfFonts.arabic(bold: true),
-      );
+    await PdfFonts.latin(),
+    await PdfFonts.latin(bold: true),
+    await PdfFonts.arabic(),
+    await PdfFonts.arabic(bold: true),
+  );
 
   pw.ThemeData get theme => pw.ThemeData.withFont(
-        base: latin,
-        bold: latinBold,
-        fontFallback: [arabic],
-      );
+    base: latin,
+    bold: latinBold,
+    fontFallback: [arabic],
+  );
 
   /// A style that names both faces at the weight asked for, so
   /// [styleForScript] can promote the Arabic one for an Arabic run.
@@ -2807,25 +2945,32 @@ pw.Widget _hdrPair(
   bool boldLabel = true,
   bool boldValue = false,
   PdfColor? color,
-}) =>
-    pw.Row(
-      mainAxisSize: pw.MainAxisSize.min,
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        printedText(label, style: f.style(size: size, bold: boldLabel, color: color)),
-        // 🚨 The ':' is its own run, and the label must arrive WITHOUT one.
-        // A colon is a neutral character: left at the end of an Arabic label it
-        // is moved by the bidi pass to that run's visual LEFT end, so the pair
-        // printed as `:الشركة FUTUR3` — the colon detached on the far side of
-        // the label instead of introducing the value. On its own it stays
-        // between the two in either script.
-        printedText(': ', style: f.style(size: size, bold: boldLabel, color: color)),
-        pw.Flexible(
-          child: printedText(value,
-              style: f.style(size: size, bold: boldValue, color: color)),
-        ),
-      ],
-    );
+}) => pw.Row(
+  mainAxisSize: pw.MainAxisSize.min,
+  crossAxisAlignment: pw.CrossAxisAlignment.start,
+  children: [
+    printedText(
+      label,
+      style: f.style(size: size, bold: boldLabel, color: color),
+    ),
+    // 🚨 The ':' is its own run, and the label must arrive WITHOUT one.
+    // A colon is a neutral character: left at the end of an Arabic label it
+    // is moved by the bidi pass to that run's visual LEFT end, so the pair
+    // printed as `:الشركة FUTUR3` — the colon detached on the far side of
+    // the label instead of introducing the value. On its own it stays
+    // between the two in either script.
+    printedText(
+      ': ',
+      style: f.style(size: size, bold: boldLabel, color: color),
+    ),
+    pw.Flexible(
+      child: printedText(
+        value,
+        style: f.style(size: size, bold: boldValue, color: color),
+      ),
+    ),
+  ],
+);
 
 /// Table cells as WIDGETS.
 ///
@@ -2833,8 +2978,9 @@ pw.Widget _hdrPair(
 /// `pw.Text` and no direction, which is the unshaped-Arabic bug again. It uses
 /// a cell verbatim when it already is a widget, so every header and every data
 /// cell goes through [printedText] instead.
-List<pw.Widget> _cells(List<String> values, pw.TextStyle style) =>
-    [for (final v in values) printedText(v, style: style)];
+List<pw.Widget> _cells(List<String> values, pw.TextStyle style) => [
+  for (final v in values) printedText(v, style: style),
+];
 
 Future<Uint8List> _buildProductsPdf({
   required AppLocalizations l,
@@ -2876,8 +3022,7 @@ Future<Uint8List> _buildProductsPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          cellBuilder: (i, v, r) =>
-              printedText('$v', style: f.style()),
+          cellBuilder: (i, v, r) => printedText('$v', style: f.style()),
           headers: _cells([
             l.fieldCode,
             l.productLabel,
@@ -2970,9 +3115,13 @@ Future<Uint8List> _buildProductGroupsPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          cellBuilder: (i, v, r) =>
-              printedText('$v', style: f.style()),
-          headers: _cells([l.fieldProductGroup, l.fieldQuantity, l.totalBeforeTax, l.totalLabel], f.style(bold: true)),
+          cellBuilder: (i, v, r) => printedText('$v', style: f.style()),
+          headers: _cells([
+            l.fieldProductGroup,
+            l.fieldQuantity,
+            l.totalBeforeTax,
+            l.totalLabel,
+          ], f.style(bold: true)),
           headerStyle: f.style(bold: true),
           cellStyle: f.style(),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
@@ -3033,10 +3182,7 @@ Future<Uint8List> _buildTaxPdf({
       pageFormat: PdfPageFormat.a4.landscape,
       theme: theme,
       build: (ctx) => [
-        printedText(
-          l.rptTitleSalesTax,
-          style: f.style(size: 16, bold: true),
-        ),
+        printedText(l.rptTitleSalesTax, style: f.style(size: 16, bold: true)),
         pw.SizedBox(height: 8),
         _pdfHeader(
           l,
@@ -3051,9 +3197,13 @@ Future<Uint8List> _buildTaxPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          cellBuilder: (i, v, r) =>
-              printedText('$v', style: f.style()),
-          headers: _cells([l.rptColTaxName, l.totalBeforeTax, l.fieldTax, l.totalLabel], f.style(bold: true)),
+          cellBuilder: (i, v, r) => printedText('$v', style: f.style()),
+          headers: _cells([
+            l.rptColTaxName,
+            l.totalBeforeTax,
+            l.fieldTax,
+            l.totalLabel,
+          ], f.style(bold: true)),
           headerStyle: f.style(bold: true),
           cellStyle: f.style(),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
@@ -3132,9 +3282,12 @@ Future<Uint8List> _buildCustomersPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          cellBuilder: (i, v, r) =>
-              printedText('$v', style: f.style()),
-          headers: _cells([l.customerLabel, l.totalBeforeTax, l.totalLabel], f.style(bold: true)),
+          cellBuilder: (i, v, r) => printedText('$v', style: f.style()),
+          headers: _cells([
+            l.customerLabel,
+            l.totalBeforeTax,
+            l.totalLabel,
+          ], f.style(bold: true)),
           headerStyle: f.style(bold: true),
           cellStyle: f.style(),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
@@ -3232,9 +3385,12 @@ Future<Uint8List> _buildPaymentTypesByCustomerPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          cellBuilder: (i, v, r) =>
-              printedText('$v', style: f.style()),
-          headers: _cells([l.customerLabel, ...paymentTypes, l.totalLabel], f.style(bold: true)),
+          cellBuilder: (i, v, r) => printedText('$v', style: f.style()),
+          headers: _cells([
+            l.customerLabel,
+            ...paymentTypes,
+            l.totalLabel,
+          ], f.style(bold: true)),
           headerStyle: f.style(bold: true),
           cellStyle: f.style(),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
@@ -3251,7 +3407,11 @@ Future<Uint8List> _buildPaymentTypesByCustomerPdf({
               final rowTotal = amounts.fold(0.0, (s, a) => s + a);
               return [c, ...amounts.map(fmt.format), fmt.format(rowTotal)];
             }),
-            [l.totalLabel, ...grandAmounts.map(fmt.format), fmt.format(grandTotal)],
+            [
+              l.totalLabel,
+              ...grandAmounts.map(fmt.format),
+              fmt.format(grandTotal),
+            ],
           ],
         ),
       ],
@@ -3324,9 +3484,12 @@ Future<Uint8List> _buildPaymentTypesByUserPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          cellBuilder: (i, v, r) =>
-              printedText('$v', style: f.style()),
-          headers: _cells(['', ...paymentTypes, l.totalLabel], f.style(bold: true)),
+          cellBuilder: (i, v, r) => printedText('$v', style: f.style()),
+          headers: _cells([
+            '',
+            ...paymentTypes,
+            l.totalLabel,
+          ], f.style(bold: true)),
           headerStyle: f.style(bold: true),
           cellStyle: f.style(),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
@@ -3343,7 +3506,11 @@ Future<Uint8List> _buildPaymentTypesByUserPdf({
               final rowTotal = amounts.fold(0.0, (s, a) => s + a);
               return [u, ...amounts.map(fmt.format), fmt.format(rowTotal)];
             }),
-            [l.totalLabel, ...grandAmounts.map(fmt.format), fmt.format(grandTotal)],
+            [
+              l.totalLabel,
+              ...grandAmounts.map(fmt.format),
+              fmt.format(grandTotal),
+            ],
           ],
         ),
       ],
@@ -3419,9 +3586,12 @@ Future<Uint8List> _buildPaymentTypesPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          cellBuilder: (i, v, r) =>
-              printedText('$v', style: f.style()),
-          headers: _cells([l.dateLabel, ...paymentTypes, l.totalLabel], f.style(bold: true)),
+          cellBuilder: (i, v, r) => printedText('$v', style: f.style()),
+          headers: _cells([
+            l.dateLabel,
+            ...paymentTypes,
+            l.totalLabel,
+          ], f.style(bold: true)),
           headerStyle: f.style(bold: true),
           cellStyle: f.style(),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
@@ -3477,10 +3647,7 @@ Future<Uint8List> _buildItemListPdf({
       theme: theme,
       margin: const pw.EdgeInsets.all(20),
       build: (ctx) => [
-        printedText(
-          l.rptTitleItemList,
-          style: f.style(size: 16, bold: true),
-        ),
+        printedText(l.rptTitleItemList, style: f.style(size: 16, bold: true)),
         pw.SizedBox(height: 8),
         _pdfHeader(
           l,
@@ -3495,8 +3662,7 @@ Future<Uint8List> _buildItemListPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          cellBuilder: (i, v, r) =>
-              printedText('$v', style: f.style(size: 7)),
+          cellBuilder: (i, v, r) => printedText('$v', style: f.style(size: 7)),
           headers: _cells([
             l.documentType,
             l.dateLabel,
@@ -3615,10 +3781,7 @@ Future<Uint8List> _buildProfitPdf({
       theme: theme,
       margin: const pw.EdgeInsets.all(20),
       build: (ctx) => [
-        printedText(
-          l.rptTitleProfit,
-          style: f.style(size: 16, bold: true),
-        ),
+        printedText(l.rptTitleProfit, style: f.style(size: 16, bold: true)),
         pw.SizedBox(height: 8),
         pw.Row(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -3627,7 +3790,11 @@ Future<Uint8List> _buildProfitPdf({
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  _hdrPair(f, l.periodLabel, '${dateFmt.format(filter.startDate)} - ${dateFmt.format(filter.endDate)}'),
+                  _hdrPair(
+                    f,
+                    l.periodLabel,
+                    '${dateFmt.format(filter.startDate)} - ${dateFmt.format(filter.endDate)}',
+                  ),
                   _hdrPair(f, l.customerLabel, customerLabel),
                   _hdrPair(f, l.userLabel, userLabel),
                   _hdrPair(f, l.productLabel, productLabel),
@@ -3647,8 +3814,7 @@ Future<Uint8List> _buildProfitPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          cellBuilder: (i, v, r) =>
-              printedText('$v', style: f.style()),
+          cellBuilder: (i, v, r) => printedText('$v', style: f.style()),
           headers: _cells([
             l.fieldCode,
             l.productLabel,
@@ -3742,9 +3908,12 @@ Future<Uint8List> _buildStockMovementPdf({
   }) => pw.Column(
     children: [
       pw.TableHelper.fromTextArray(
-          cellBuilder: (i, v, r) =>
-              printedText('$v', style: f.style(size: 8)),
-        headers: _cells(['#', title, l.rptColNumSales], f.style(size: 8, bold: true)),
+        cellBuilder: (i, v, r) => printedText('$v', style: f.style(size: 8)),
+        headers: _cells([
+          '#',
+          title,
+          l.rptColNumSales,
+        ], f.style(size: 8, bold: true)),
         headerStyle: f.style(size: 8, bold: true),
         cellStyle: f.style(size: 8),
         headerDecoration: pw.BoxDecoration(
@@ -3806,7 +3975,8 @@ Future<Uint8List> _buildStockMovementPdf({
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  hdrRow(l.periodLabel,
+                  hdrRow(
+                    l.periodLabel,
                     '${hdrFmt.format(filter.startDate)} - ${hdrFmt.format(filter.endDate)}',
                   ),
                   hdrRow(l.userLabel, userLabel),
@@ -3906,7 +4076,8 @@ Future<Uint8List> _buildItemsDiscountsPdf({
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  hdrRow(l.periodLabel,
+                  hdrRow(
+                    l.periodLabel,
                     '${hdrFmt.format(filter.startDate)} - ${hdrFmt.format(filter.endDate)}',
                   ),
                   hdrRow(l.customerLabel, customerLabel),
@@ -3928,9 +4099,13 @@ Future<Uint8List> _buildItemsDiscountsPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          cellBuilder: (i, v, r) =>
-              printedText('$v', style: f.style(size: 8)),
-          headers: _cells(['#', l.fieldCode, l.productLabel, l.rptColTotalDiscount], f.style(size: 8, bold: true)),
+          cellBuilder: (i, v, r) => printedText('$v', style: f.style(size: 8)),
+          headers: _cells([
+            '#',
+            l.fieldCode,
+            l.productLabel,
+            l.rptColTotalDiscount,
+          ], f.style(size: 8, bold: true)),
           headerStyle: f.style(size: 8, bold: true),
           cellStyle: f.style(size: 8),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
@@ -4033,15 +4208,14 @@ Future<Uint8List> _buildDiscountsBySourcePdf({
         ),
         pw.SizedBox(height: 12),
         if (rows.isEmpty)
-          printedText(
-            l.rptNoDiscountsInPeriod,
-            style: f.style(size: 10),
-          )
+          printedText(l.rptNoDiscountsInPeriod, style: f.style(size: 10))
         else
           pw.TableHelper.fromTextArray(
-          cellBuilder: (i, v, r) =>
-              printedText('$v', style: f.style()),
-            headers: _cells([l.rptColDiscountSource, l.totalLabel], f.style(bold: true)),
+            cellBuilder: (i, v, r) => printedText('$v', style: f.style()),
+            headers: _cells([
+              l.rptColDiscountSource,
+              l.totalLabel,
+            ], f.style(bold: true)),
             headerStyle: f.style(bold: true),
             cellStyle: f.style(),
             headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
@@ -4133,7 +4307,8 @@ Future<Uint8List> _buildDiscountsGrantedPdf({
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  hdrRow(l.periodLabel,
+                  hdrRow(
+                    l.periodLabel,
                     '${hdrFmt.format(filter.startDate)} - ${hdrFmt.format(filter.endDate)}',
                   ),
                   hdrRow(l.customerLabel, customerLabel),
@@ -4161,8 +4336,8 @@ Future<Uint8List> _buildDiscountsGrantedPdf({
             child: _hdrPair(f, l.customerLabel, entry.key, boldValue: true),
           ),
           pw.TableHelper.fromTextArray(
-          cellBuilder: (i, v, r) =>
-              printedText('$v', style: f.style(size: 7)),
+            cellBuilder: (i, v, r) =>
+                printedText('$v', style: f.style(size: 7)),
             headers: _cells([
               l.rptColDocument,
               l.dateLabel,
@@ -4286,7 +4461,8 @@ Future<Uint8List> _buildVoidedItemsPdf({
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  hdrRow(l.periodLabel,
+                  hdrRow(
+                    l.periodLabel,
                     '${hdrFmt.format(filter.startDate)} - ${hdrFmt.format(filter.endDate)}',
                   ),
                   hdrRow(l.userLabel, userLabel),
@@ -4307,8 +4483,7 @@ Future<Uint8List> _buildVoidedItemsPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          cellBuilder: (i, v, r) =>
-              printedText('$v', style: f.style(size: 7)),
+          cellBuilder: (i, v, r) => printedText('$v', style: f.style(size: 7)),
           headers: _cells([
             l.productLabel,
             l.rptColVoidedBy,
@@ -4427,7 +4602,11 @@ Future<Uint8List> _buildStartingCashPdf({
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  _hdrPair(f, l.periodLabel, '${hdrFmt.format(filter.startDate)} – ${hdrFmt.format(filter.endDate)}'),
+                  _hdrPair(
+                    f,
+                    l.periodLabel,
+                    '${hdrFmt.format(filter.startDate)} – ${hdrFmt.format(filter.endDate)}',
+                  ),
                   _hdrPair(f, l.userLabel, userLabel),
                 ],
               ),
@@ -4445,8 +4624,7 @@ Future<Uint8List> _buildStartingCashPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          cellBuilder: (i, v, r) =>
-              printedText('$v', style: f.style(size: 8)),
+          cellBuilder: (i, v, r) => printedText('$v', style: f.style(size: 8)),
           headers: _cells([
             l.userLabel,
             l.typeLabel,
@@ -4492,9 +4670,27 @@ Future<Uint8List> _buildStartingCashPdf({
             pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.end,
               children: [
-                _hdrPair(f, l.cashIn, fmt.format(totalCashIn), boldLabel: false, boldValue: true),
-                _hdrPair(f, l.cashOut, '-${fmt.format(totalCashOut)}', boldLabel: false, boldValue: true),
-                _hdrPair(f, l.rptNetTotal, fmt.format(netTotal), size: 10, boldValue: true),
+                _hdrPair(
+                  f,
+                  l.cashIn,
+                  fmt.format(totalCashIn),
+                  boldLabel: false,
+                  boldValue: true,
+                ),
+                _hdrPair(
+                  f,
+                  l.cashOut,
+                  '-${fmt.format(totalCashOut)}',
+                  boldLabel: false,
+                  boldValue: true,
+                ),
+                _hdrPair(
+                  f,
+                  l.rptNetTotal,
+                  fmt.format(netTotal),
+                  size: 10,
+                  boldValue: true,
+                ),
               ],
             ),
           ],
@@ -4549,7 +4745,11 @@ Future<Uint8List> _buildUnpaidSalesPdf({
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    _hdrPair(f, l.periodLabel, '${hdrDatFmt.format(filter.startDate)} - ${hdrDatFmt.format(filter.endDate)}'),
+                    _hdrPair(
+                      f,
+                      l.periodLabel,
+                      '${hdrDatFmt.format(filter.startDate)} - ${hdrDatFmt.format(filter.endDate)}',
+                    ),
                     _hdrPair(f, l.customerLabel, customerLabel),
                     _hdrPair(f, l.userLabel, userLabel),
                   ],
@@ -4581,14 +4781,19 @@ Future<Uint8List> _buildUnpaidSalesPdf({
                 horizontal: 6,
                 vertical: 3,
               ),
-              child: _hdrPair(f, l.customerLabel, customerName, boldValue: true),
+              child: _hdrPair(
+                f,
+                l.customerLabel,
+                customerName,
+                boldValue: true,
+              ),
             ),
           );
 
           widgets.add(
             pw.TableHelper.fromTextArray(
-          cellBuilder: (i, v, r) =>
-              printedText('$v', style: f.style(size: 8)),
+              cellBuilder: (i, v, r) =>
+                  printedText('$v', style: f.style(size: 8)),
               headers: _cells([
                 l.documentNumber,
                 l.dateLabel,
@@ -4643,8 +4848,13 @@ Future<Uint8List> _buildUnpaidSalesPdf({
           pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.end,
             children: [
-              _hdrPair(f, l.totalLabel, fmt.format(grandTotal),
-                  size: 10, boldValue: true),
+              _hdrPair(
+                f,
+                l.totalLabel,
+                fmt.format(grandTotal),
+                size: 10,
+                boldValue: true,
+              ),
             ],
           ),
         ]);
@@ -4702,36 +4912,36 @@ Future<Uint8List> _buildHourlySalesByGroupPdf({
           style: f.style(size: 16, bold: true),
         ),
         pw.SizedBox(height: 8),
-        pw.Row(
+        // 🚨 A pw.Row wrapping a single, un-Expanded pw.Column gives that
+        // Column unbounded width, which _hdrPair's own Flexible value run
+        // can't resolve ("Flex children have non-zero flex but incoming
+        // width constraints are unbounded") — crashed this report the moment
+        // it rendered (found 2026-09-01, POS_Manual_tests_NOTES.txt [35]).
+        // No Row needed for a single child; the Column alone gets the page's
+        // bounded width directly, same as every other top-level build item.
+        pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
-            pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                _hdrPair(f, l.rptColCompany, companyName ?? ''),
-                _hdrPair(f, l.setAddress, companyAddress ?? ''),
-              ],
-            ),
+            _hdrPair(f, l.rptColCompany, companyName ?? ''),
+            _hdrPair(f, l.setAddress, companyAddress ?? ''),
           ],
         ),
         pw.Divider(height: 12),
-        pw.Row(
+        pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
-            pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                _hdrPair(f, l.periodLabel, '${dateFmt.format(filter.startDate)} - ${dateFmt.format(filter.endDate)}'),
-                _hdrPair(f, l.productLabel, productLabel),
-                _hdrPair(f, l.customerLabel, customerLabel),
-              ],
+            _hdrPair(
+              f,
+              l.periodLabel,
+              '${dateFmt.format(filter.startDate)} - ${dateFmt.format(filter.endDate)}',
             ),
+            _hdrPair(f, l.productLabel, productLabel),
+            _hdrPair(f, l.customerLabel, customerLabel),
           ],
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          cellBuilder: (i, v, r) =>
-              printedText('$v', style: f.style()),
+          cellBuilder: (i, v, r) => printedText('$v', style: f.style()),
           headers: _cells([
             '',
             ...hours.map((h) => timeFmt.format(DateTime(2000, 1, 1, h))),
@@ -4791,10 +5001,7 @@ Future<Uint8List> _buildSalesByTablePdf({
       theme: theme,
       margin: const pw.EdgeInsets.all(20),
       build: (ctx) => [
-        printedText(
-          l.rptTitleByTable,
-          style: f.style(size: 16, bold: true),
-        ),
+        printedText(l.rptTitleByTable, style: f.style(size: 16, bold: true)),
         pw.SizedBox(height: 8),
         pw.Row(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -4803,7 +5010,11 @@ Future<Uint8List> _buildSalesByTablePdf({
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  _hdrPair(f, l.periodLabel, '${dateFmt.format(filter.startDate)} - ${dateFmt.format(filter.endDate)}'),
+                  _hdrPair(
+                    f,
+                    l.periodLabel,
+                    '${dateFmt.format(filter.startDate)} - ${dateFmt.format(filter.endDate)}',
+                  ),
                   _hdrPair(f, l.customerLabel, customerLabel),
                   _hdrPair(f, l.userLabel, userLabel),
                 ],
@@ -4822,9 +5033,12 @@ Future<Uint8List> _buildSalesByTablePdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          cellBuilder: (i, v, r) =>
-              printedText('$v', style: f.style()),
-          headers: _cells([l.rptColTableOrOrder, l.rptColNumberOfSales, l.totalLabel], f.style(bold: true)),
+          cellBuilder: (i, v, r) => printedText('$v', style: f.style()),
+          headers: _cells([
+            l.rptColTableOrOrder,
+            l.rptColNumberOfSales,
+            l.totalLabel,
+          ], f.style(bold: true)),
           headerStyle: f.style(bold: true),
           cellStyle: f.style(),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
@@ -4889,7 +5103,11 @@ Future<Uint8List> _buildHourlySalesPdf({
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  _hdrPair(f, l.periodLabel, '${dateFmt.format(filter.startDate)} - ${dateFmt.format(filter.endDate)}'),
+                  _hdrPair(
+                    f,
+                    l.periodLabel,
+                    '${dateFmt.format(filter.startDate)} - ${dateFmt.format(filter.endDate)}',
+                  ),
                   _hdrPair(f, l.customerLabel, customerLabel),
                 ],
               ),
@@ -4907,8 +5125,7 @@ Future<Uint8List> _buildHourlySalesPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          cellBuilder: (i, v, r) =>
-              printedText('$v', style: f.style()),
+          cellBuilder: (i, v, r) => printedText('$v', style: f.style()),
           headers: _cells([
             l.rptColHours,
             '',
@@ -4984,10 +5201,7 @@ Future<Uint8List> _buildDailySalesPdf({
       theme: theme,
       margin: const pw.EdgeInsets.all(20),
       build: (ctx) => [
-        printedText(
-          l.rptTitleDailySales,
-          style: f.style(size: 16, bold: true),
-        ),
+        printedText(l.rptTitleDailySales, style: f.style(size: 16, bold: true)),
         pw.SizedBox(height: 8),
         pw.Row(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -4996,7 +5210,11 @@ Future<Uint8List> _buildDailySalesPdf({
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  _hdrPair(f, l.periodLabel, '${dateFmt.format(filter.startDate)} - ${dateFmt.format(filter.endDate)}'),
+                  _hdrPair(
+                    f,
+                    l.periodLabel,
+                    '${dateFmt.format(filter.startDate)} - ${dateFmt.format(filter.endDate)}',
+                  ),
                   _hdrPair(f, l.customerLabel, customerLabel),
                   _hdrPair(f, l.userLabel, userLabel),
                 ],
@@ -5015,8 +5233,7 @@ Future<Uint8List> _buildDailySalesPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          cellBuilder: (i, v, r) =>
-              printedText('$v', style: f.style()),
+          cellBuilder: (i, v, r) => printedText('$v', style: f.style()),
           headers: _cells([l.dateLabel, l.totalLabel], f.style(bold: true)),
           headerStyle: f.style(bold: true),
           cellStyle: f.style(),
@@ -5060,10 +5277,7 @@ Future<Uint8List> _buildInvoiceListPdf({
       theme: theme,
       margin: const pw.EdgeInsets.all(20),
       build: (ctx) => [
-        printedText(
-          l.rptTitleInvoices,
-          style: f.style(size: 16, bold: true),
-        ),
+        printedText(l.rptTitleInvoices, style: f.style(size: 16, bold: true)),
         pw.SizedBox(height: 8),
         pw.Row(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -5072,7 +5286,11 @@ Future<Uint8List> _buildInvoiceListPdf({
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  _hdrPair(f, l.periodLabel, '${dateFmt.format(filter.startDate)} - ${dateFmt.format(filter.endDate)}'),
+                  _hdrPair(
+                    f,
+                    l.periodLabel,
+                    '${dateFmt.format(filter.startDate)} - ${dateFmt.format(filter.endDate)}',
+                  ),
                   _hdrPair(f, l.customerLabel, customerLabel),
                   _hdrPair(f, l.userLabel, userLabel),
                 ],
@@ -5091,8 +5309,7 @@ Future<Uint8List> _buildInvoiceListPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          cellBuilder: (i, v, r) =>
-              printedText('$v', style: f.style(size: 8)),
+          cellBuilder: (i, v, r) => printedText('$v', style: f.style(size: 8)),
           headers: _cells([
             '#',
             l.dateLabel,
@@ -5167,10 +5384,7 @@ Future<Uint8List> _buildRefundsPdf({
       theme: theme,
       margin: const pw.EdgeInsets.all(20),
       build: (ctx) => [
-        printedText(
-          l.rptTitleRefunds,
-          style: f.style(size: 16, bold: true),
-        ),
+        printedText(l.rptTitleRefunds, style: f.style(size: 16, bold: true)),
         pw.SizedBox(height: 8),
         _pdfHeader(
           l,
@@ -5185,8 +5399,7 @@ Future<Uint8List> _buildRefundsPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          cellBuilder: (i, v, r) =>
-              printedText('$v', style: f.style(size: 8)),
+          cellBuilder: (i, v, r) => printedText('$v', style: f.style(size: 8)),
           headers: _cells([
             l.rptColDocumentShort,
             l.rptColRefShort,
@@ -5304,9 +5517,12 @@ Future<Uint8List> _buildUsersPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          cellBuilder: (i, v, r) =>
-              printedText('$v', style: f.style()),
-          headers: _cells([l.userLabel, l.totalBeforeTax, l.totalLabel], f.style(bold: true)),
+          cellBuilder: (i, v, r) => printedText('$v', style: f.style()),
+          headers: _cells([
+            l.userLabel,
+            l.totalBeforeTax,
+            l.totalLabel,
+          ], f.style(bold: true)),
           headerStyle: f.style(bold: true),
           cellStyle: f.style(),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
@@ -5396,7 +5612,11 @@ Future<Uint8List> _buildUnpaidPurchasePdf({
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    _hdrPair(f, l.periodLabel, '${hdrDatFmt.format(filter.startDate)} - ${hdrDatFmt.format(filter.endDate)}'),
+                    _hdrPair(
+                      f,
+                      l.periodLabel,
+                      '${hdrDatFmt.format(filter.startDate)} - ${hdrDatFmt.format(filter.endDate)}',
+                    ),
                     _hdrPair(f, l.supplier, supplierLabel),
                     _hdrPair(f, l.userLabel, userLabel),
                   ],
@@ -5434,8 +5654,8 @@ Future<Uint8List> _buildUnpaidPurchasePdf({
 
           widgets.add(
             pw.TableHelper.fromTextArray(
-          cellBuilder: (i, v, r) =>
-              printedText('$v', style: f.style(size: 8)),
+              cellBuilder: (i, v, r) =>
+                  printedText('$v', style: f.style(size: 8)),
               headers: _cells([
                 l.documentNumber,
                 l.dateLabel,
@@ -5490,8 +5710,13 @@ Future<Uint8List> _buildUnpaidPurchasePdf({
           pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.end,
             children: [
-              _hdrPair(f, l.totalLabel, fmt.format(grandTotal),
-                  size: 10, boldValue: true),
+              _hdrPair(
+                f,
+                l.totalLabel,
+                fmt.format(grandTotal),
+                size: 10,
+                boldValue: true,
+              ),
             ],
           ),
         ]);
@@ -5558,9 +5783,12 @@ Future<Uint8List> _buildPurchaseBySupplierPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          cellBuilder: (i, v, r) =>
-              printedText('$v', style: f.style()),
-          headers: _cells([l.supplier, l.totalBeforeTax, l.totalLabel], f.style(bold: true)),
+          cellBuilder: (i, v, r) => printedText('$v', style: f.style()),
+          headers: _cells([
+            l.supplier,
+            l.totalBeforeTax,
+            l.totalLabel,
+          ], f.style(bold: true)),
           headerStyle: f.style(bold: true),
           cellStyle: f.style(),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
@@ -5649,8 +5877,7 @@ Future<Uint8List> _buildPurchaseByProductPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          cellBuilder: (i, v, r) =>
-              printedText('$v', style: f.style()),
+          cellBuilder: (i, v, r) => printedText('$v', style: f.style()),
           headers: _cells([
             l.fieldCode,
             l.productLabel,
@@ -5755,8 +5982,7 @@ Future<Uint8List> _buildPurchaseExpirationDatePdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          cellBuilder: (i, v, r) =>
-              printedText('$v', style: f.style()),
+          cellBuilder: (i, v, r) => printedText('$v', style: f.style()),
           headers: _cells([
             '#',
             l.fieldCode,
@@ -5855,9 +6081,13 @@ Future<Uint8List> _buildPurchaseTaxPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          cellBuilder: (i, v, r) =>
-              printedText('$v', style: f.style()),
-          headers: _cells([l.rptColTaxName, l.totalBeforeTax, l.fieldTax, l.totalLabel], f.style(bold: true)),
+          cellBuilder: (i, v, r) => printedText('$v', style: f.style()),
+          headers: _cells([
+            l.rptColTaxName,
+            l.totalBeforeTax,
+            l.fieldTax,
+            l.totalLabel,
+          ], f.style(bold: true)),
           headerStyle: f.style(bold: true),
           cellStyle: f.style(),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
@@ -5952,8 +6182,7 @@ Future<Uint8List> _buildPurchaseInvoiceListPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          cellBuilder: (i, v, r) =>
-              printedText('$v', style: f.style()),
+          cellBuilder: (i, v, r) => printedText('$v', style: f.style()),
           headers: _cells([
             '#',
             l.supplier,
@@ -6069,7 +6298,8 @@ Future<Uint8List> _buildPurchaseItemsDiscountsPdf({
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    hdrRow(l.periodLabel,
+                    hdrRow(
+                      l.periodLabel,
                       '${hdrFmt.format(filter.startDate)} - ${hdrFmt.format(filter.endDate)}',
                     ),
                     hdrRow(l.supplier, supplierLabel),
@@ -6114,8 +6344,8 @@ Future<Uint8List> _buildPurchaseItemsDiscountsPdf({
           var rowIndex = 1;
           widgets.add(
             pw.TableHelper.fromTextArray(
-          cellBuilder: (i, v, r) =>
-              printedText('$v', style: f.style(size: 7)),
+              cellBuilder: (i, v, r) =>
+                  printedText('$v', style: f.style(size: 7)),
               headers: _cells([
                 '#',
                 l.fieldCode,
@@ -6172,8 +6402,13 @@ Future<Uint8List> _buildPurchaseItemsDiscountsPdf({
           pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.end,
             children: [
-              _hdrPair(f, l.rptColTotalDiscount, fmt.format(grandTotalDiscount),
-                  size: 10, boldValue: true),
+              _hdrPair(
+                f,
+                l.rptColTotalDiscount,
+                fmt.format(grandTotalDiscount),
+                size: 10,
+                boldValue: true,
+              ),
             ],
           ),
         ]);
@@ -6253,7 +6488,8 @@ Future<Uint8List> _buildPurchaseDiscountsPdf({
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  hdrRow(l.periodLabel,
+                  hdrRow(
+                    l.periodLabel,
                     '${hdrFmt.format(filter.startDate)} - ${hdrFmt.format(filter.endDate)}',
                   ),
                   hdrRow(l.supplier, supplierLabel),
@@ -6281,8 +6517,8 @@ Future<Uint8List> _buildPurchaseDiscountsPdf({
             child: _hdrPair(f, l.supplier, entry.key, boldValue: true),
           ),
           pw.TableHelper.fromTextArray(
-          cellBuilder: (i, v, r) =>
-              printedText('$v', style: f.style(size: 7)),
+            cellBuilder: (i, v, r) =>
+                printedText('$v', style: f.style(size: 7)),
             headers: _cells([
               l.rptColDocument,
               l.dateLabel,
@@ -6363,48 +6599,49 @@ pw.Widget _pdfHeader(
   String customerLabel,
   String userLabel,
   String productLabel, {
+
   /// Purchase reports label this row "Supplier"; pass `l.supplier` there.
   String? customerRowLabel,
 }) {
-  final ts = f.style();
-  final tb = f.style(bold: true);
-
-  // Three runs, not two: the ':' is neutral and would be dragged to the visual
-  // left end of an Arabic label if it were part of it. See _hdrPair.
-  row(String lbl, String val) => pw.Row(
-    children: [
-      printedText(lbl, style: tb),
-      printedText(': ', style: tb),
-      pw.Flexible(child: printedText(val, style: ts)),
-    ],
-  );
-
+  // 🚨 Was a local `row()` duplicating _hdrPair, minus the pw.Expanded its
+  // callers wrap it in everywhere else. A Flexible value run needs a BOUNDED
+  // width to size against; without Expanded here, these two Columns (and
+  // everything nested inside, including _hdrPair's own Flexible) were laid
+  // out with unbounded width, which throws "Flex children have non-zero flex
+  // but incoming width constraints are unbounded" — crashed 20 reports the
+  // moment any of them rendered (found 2026-09-01, POS_Manual_tests_NOTES.txt
+  // [35]). Routed through the shared _hdrPair instead of a second copy of it.
   return pw.Row(
     crossAxisAlignment: pw.CrossAxisAlignment.start,
     children: [
-      pw.Column(
-        crossAxisAlignment: pw.CrossAxisAlignment.start,
-        children: [
-          row(
-            l.periodLabel,
-            '${dateFmt.format(filter.startDate)} – ${dateFmt.format(filter.endDate)}',
-          ),
-          pw.SizedBox(height: 3),
-          row(customerRowLabel ?? l.customerLabel, customerLabel),
-          pw.SizedBox(height: 3),
-          row(l.userLabel, userLabel),
-          pw.SizedBox(height: 3),
-          row(l.productLabel, productLabel),
-        ],
+      pw.Expanded(
+        child: pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            _hdrPair(
+              f,
+              l.periodLabel,
+              '${dateFmt.format(filter.startDate)} – ${dateFmt.format(filter.endDate)}',
+            ),
+            pw.SizedBox(height: 3),
+            _hdrPair(f, customerRowLabel ?? l.customerLabel, customerLabel),
+            pw.SizedBox(height: 3),
+            _hdrPair(f, l.userLabel, userLabel),
+            pw.SizedBox(height: 3),
+            _hdrPair(f, l.productLabel, productLabel),
+          ],
+        ),
       ),
       pw.SizedBox(width: 48),
-      pw.Column(
-        crossAxisAlignment: pw.CrossAxisAlignment.start,
-        children: [
-          row(l.rptColCompany, companyName ?? ''),
-          pw.SizedBox(height: 3),
-          row(l.setAddress, companyAddress ?? ''),
-        ],
+      pw.Expanded(
+        child: pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            _hdrPair(f, l.rptColCompany, companyName ?? ''),
+            pw.SizedBox(height: 3),
+            _hdrPair(f, l.setAddress, companyAddress ?? ''),
+          ],
+        ),
       ),
     ],
   );
@@ -6462,8 +6699,7 @@ Future<Uint8List> _buildStockReturnByProductPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          cellBuilder: (i, v, r) =>
-              printedText('$v', style: f.style()),
+          cellBuilder: (i, v, r) => printedText('$v', style: f.style()),
           headers: _cells([
             l.dateLabel,
             l.fieldCode,
@@ -6572,8 +6808,7 @@ Future<Uint8List> _buildLossAndDamageByProductPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          cellBuilder: (i, v, r) =>
-              printedText('$v', style: f.style()),
+          cellBuilder: (i, v, r) => printedText('$v', style: f.style()),
           headers: _cells([
             l.dateLabel,
             l.fieldCode,
@@ -6694,9 +6929,12 @@ Future<Uint8List> _buildReorderProductListPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          cellBuilder: (i, v, r) =>
-              printedText('$v', style: f.style()),
-          headers: _cells([l.rptColProductName, l.rptColOrderQty, l.rptColUom], f.style(bold: true)),
+          cellBuilder: (i, v, r) => printedText('$v', style: f.style()),
+          headers: _cells([
+            l.rptColProductName,
+            l.rptColOrderQty,
+            l.rptColUom,
+          ], f.style(bold: true)),
           headerStyle: f.style(bold: true),
           cellStyle: f.style(),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
@@ -6770,10 +7008,7 @@ Future<Uint8List> _buildLowStockWarningPdf({
         ],
       ),
       build: (ctx) => [
-        printedText(
-          l.rptTitleLowStock,
-          style: f.style(size: 16, bold: true),
-        ),
+        printedText(l.rptTitleLowStock, style: f.style(size: 16, bold: true)),
         pw.SizedBox(height: 8),
         _pdfHeader(
           l,
@@ -6788,8 +7023,7 @@ Future<Uint8List> _buildLowStockWarningPdf({
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          cellBuilder: (i, v, r) =>
-              printedText('$v', style: f.style()),
+          cellBuilder: (i, v, r) => printedText('$v', style: f.style()),
           headers: _cells([
             l.rptColProductName,
             l.rptColCurrentStock,
@@ -6864,8 +7098,12 @@ Future<Uint8List> _buildTransactionHistoryPdf({
         pw.SizedBox(height: 4),
         _hdrPair(f, l.rptBusinessPartner, partnerLabel, size: 10),
         pw.SizedBox(height: 4),
-        _hdrPair(f, l.periodLabel,
-              '${dateFmt.format(filter.startDate)} – ${dateFmt.format(filter.endDate)}', size: 10),
+        _hdrPair(
+          f,
+          l.periodLabel,
+          '${dateFmt.format(filter.startDate)} – ${dateFmt.format(filter.endDate)}',
+          size: 10,
+        ),
         if (companyName != null) ...[
           pw.SizedBox(height: 4),
           printedText(companyName, style: f.style(size: 10)),
@@ -6874,8 +7112,7 @@ Future<Uint8List> _buildTransactionHistoryPdf({
         ],
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          cellBuilder: (i, v, r) =>
-              printedText('$v', style: f.style()),
+          cellBuilder: (i, v, r) => printedText('$v', style: f.style()),
           headers: _cells([
             l.dateLabel,
             l.rptColTransactionType,
@@ -6977,7 +7214,10 @@ class _FilterPanel extends ConsumerWidget {
             _FilterDropdown<int?>(
               value: filter.customerId,
               items: [
-                DropdownMenuItem(value: null, child: Text(AppLocalizations.of(context).filterAll)),
+                DropdownMenuItem(
+                  value: null,
+                  child: Text(AppLocalizations.of(context).filterAll),
+                ),
                 ...customers.map(
                   (c) => DropdownMenuItem(
                     value: c.id,
@@ -6997,7 +7237,10 @@ class _FilterPanel extends ConsumerWidget {
               _FilterDropdown<int?>(
                 value: filter.userId,
                 items: [
-                  DropdownMenuItem(value: null, child: Text(AppLocalizations.of(context).filterAll)),
+                  DropdownMenuItem(
+                    value: null,
+                    child: Text(AppLocalizations.of(context).filterAll),
+                  ),
                   ...users.map((u) {
                     final name = '${u.firstName ?? ''} ${u.lastName ?? ''}'
                         .trim();
@@ -7006,8 +7249,9 @@ class _FilterPanel extends ConsumerWidget {
                       child: Text(
                         name.isEmpty
                             ? u.username ??
-                                AppLocalizations.of(context)
-                                    .userNumbered('${u.id}')
+                                  AppLocalizations.of(
+                                    context,
+                                  ).userNumbered('${u.id}')
                             : name,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -7023,7 +7267,10 @@ class _FilterPanel extends ConsumerWidget {
               _FilterDropdown<int?>(
                 value: filter.warehouseId,
                 items: [
-                  DropdownMenuItem(value: null, child: Text(AppLocalizations.of(context).filterAll)),
+                  DropdownMenuItem(
+                    value: null,
+                    child: Text(AppLocalizations.of(context).filterAll),
+                  ),
                   ...warehouses.map(
                     (w) => DropdownMenuItem(
                       value: w.id,
@@ -7041,7 +7288,10 @@ class _FilterPanel extends ConsumerWidget {
               _FilterDropdown<int?>(
                 value: filter.productId,
                 items: [
-                  DropdownMenuItem(value: null, child: Text(AppLocalizations.of(context).filterAll)),
+                  DropdownMenuItem(
+                    value: null,
+                    child: Text(AppLocalizations.of(context).filterAll),
+                  ),
                   ...products.map(
                     (p) => DropdownMenuItem(
                       value: p.id,
@@ -7059,7 +7309,10 @@ class _FilterPanel extends ConsumerWidget {
               _FilterDropdown<int?>(
                 value: filter.productGroupId,
                 items: [
-                  DropdownMenuItem(value: null, child: Text(AppLocalizations.of(context).filterAll)),
+                  DropdownMenuItem(
+                    value: null,
+                    child: Text(AppLocalizations.of(context).filterAll),
+                  ),
                   ...groups.map(
                     (g) => DropdownMenuItem(
                       value: g.id,

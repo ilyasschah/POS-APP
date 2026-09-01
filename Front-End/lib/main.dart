@@ -15,6 +15,7 @@ import 'package:pos_app/license/license_service.dart';
 import 'package:pos_app/license/subscription_blocked_screen.dart';
 import 'package:pos_app/settings/settings_provider.dart';
 import 'package:pos_app/database/database_provider.dart';
+import 'package:pos_app/database/db_location.dart';
 import 'package:pos_app/settings/device_scoped_settings.dart';
 import 'package:pos_app/settings/local_ui_prefs.dart';
 import 'package:pos_app/app_settings/app_settings_model.dart';
@@ -99,6 +100,15 @@ class _MyAppState extends ConsumerState<MyApp> {
       _decideBoot(ignoreMissingDatabase: true);
 
   Future<_BootDecision> _decideBoot({bool ignoreMissingDatabase = false}) async {
+    // FIRST, before anything looks at the database file: relocate a database
+    // left in the old (OneDrive-synced) Documents directory into the local
+    // app-support directory. It must run before `liveDatabaseMissing()` below —
+    // that check now looks in the NEW location, so without this a terminal
+    // whose file is still in Documents would report "database missing" and
+    // never open Drift, and the lazy migration inside `_openConnection` would
+    // never fire. Idempotent + a no-op once migrated. See `db_location.dart`.
+    await migrateDatabaseOutOfDocumentsIfNeeded();
+
     final storage = ref.read(authStorageProvider);
     final registered = await storage.isDeviceRegistered();
 

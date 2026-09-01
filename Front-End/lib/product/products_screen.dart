@@ -26,6 +26,7 @@ import 'package:pos_app/product/product_columns_provider.dart';
 import 'package:pos_app/product/product_export_model.dart';
 import 'package:pos_app/product/product_group_model.dart';
 import 'package:pos_app/product/product_provider.dart';
+import 'package:pos_app/product/product_sort.dart';
 import 'package:pos_app/tax/tax_model.dart';
 import 'package:pos_app/tax/tax_provider.dart';
 import 'package:pos_app/core/responsive.dart';
@@ -34,7 +35,8 @@ import 'package:pos_app/core/ilyass_list_scaffold.dart';
 import 'package:pos_app/core/ilyass_table.dart';
 import 'package:pos_app/core/unified_search_bar.dart';
 import 'package:pos_app/modifier/modifier_models.dart';
-import 'package:pos_app/modifier/modifier_groups_screen.dart' show selectionRuleLabel;
+import 'package:pos_app/modifier/modifier_groups_screen.dart'
+    show selectionRuleLabel;
 import 'package:pos_app/modifier/modifier_provider.dart';
 import 'package:pos_app/sync/sync_provider.dart';
 import 'package:pos_app/barcode/barcode_provider.dart';
@@ -75,29 +77,31 @@ String _buildCsvExport(List<ProductExportRow> rows) {
       'PreferredQuantity,LowStockWarning,WarningQuantity';
   final lines = [header];
   for (final p in rows) {
-    lines.add([
-      _csvCell(p.name),
-      _csvCell(p.productGroupName),
-      _csvCell(p.code),
-      _csvCell(p.barcodes.isNotEmpty ? p.barcodes.first : ''),
-      _csvCell(p.measurementUnit),
-      p.cost,
-      p.markup ?? '',
-      p.price,
-      p.taxes.isNotEmpty ? p.taxes.first.rate : '',
-      p.isTaxInclusivePrice ? 1 : 0,
-      p.isPriceChangeAllowed ? 1 : 0,
-      p.isUsingDefaultQuantity ? 1 : 0,
-      p.isService ? 1 : 0,
-      p.isEnabled ? 1 : 0,
-      _csvCell(p.description),
-      p.totalStock,
-      _csvCell(p.supplierName),
-      p.reorderPoint,
-      p.preferredQuantity,
-      p.isLowStockWarningEnabled ? 1 : 0,
-      p.lowStockWarningQuantity,
-    ].join(','));
+    lines.add(
+      [
+        _csvCell(p.name),
+        _csvCell(p.productGroupName),
+        _csvCell(p.code),
+        _csvCell(p.barcodes.isNotEmpty ? p.barcodes.first : ''),
+        _csvCell(p.measurementUnit),
+        p.cost,
+        p.markup ?? '',
+        p.price,
+        p.taxes.isNotEmpty ? p.taxes.first.rate : '',
+        p.isTaxInclusivePrice ? 1 : 0,
+        p.isPriceChangeAllowed ? 1 : 0,
+        p.isUsingDefaultQuantity ? 1 : 0,
+        p.isService ? 1 : 0,
+        p.isEnabled ? 1 : 0,
+        _csvCell(p.description),
+        p.totalStock,
+        _csvCell(p.supplierName),
+        p.reorderPoint,
+        p.preferredQuantity,
+        p.isLowStockWarningEnabled ? 1 : 0,
+        p.lowStockWarningQuantity,
+      ].join(','),
+    );
   }
   return lines.join('\n');
 }
@@ -112,8 +116,9 @@ String _buildXmlExport(List<ProductExportRow> rows) {
   final sb = StringBuffer()
     ..writeln('<?xml version="1.0" encoding="utf-8"?>')
     ..writeln(
-        '<ProductGroup xmlns:xsd="http://www.w3.org/2001/XMLSchema" '
-        'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">')
+      '<ProductGroup xmlns:xsd="http://www.w3.org/2001/XMLSchema" '
+      'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">',
+    )
     ..writeln('  <Color>Transparent</Color>')
     ..writeln('  <Rank>0</Rank>')
     ..writeln('  <Items>');
@@ -133,12 +138,12 @@ String _buildXmlExport(List<ProductExportRow> rows) {
     for (final p in products) {
       sb
         ..writeln('$indent  <PosItem xsi:type="Product">')
-        ..writeln(
-            '$indent    <Id xsi:type="xsd:long">${p.id}</Id>')
+        ..writeln('$indent    <Id xsi:type="xsd:long">${p.id}</Id>')
         ..writeln('$indent    <Name>${_xmlEsc(p.name)}</Name>')
         ..writeln('$indent    <Color>${_xmlEsc(p.color)}</Color>')
         ..writeln('$indent    <Rank>${p.rank ?? 0}</Rank>');
-      if (p.code != null) sb.writeln('$indent    <Code>${_xmlEsc(p.code)}</Code>');
+      if (p.code != null)
+        sb.writeln('$indent    <Code>${_xmlEsc(p.code)}</Code>');
       if (p.plu != null) sb.writeln('$indent    <PLU>${p.plu}</PLU>');
       sb
         ..writeln('$indent    <Price>${p.price}</Price>')
@@ -151,17 +156,21 @@ String _buildXmlExport(List<ProductExportRow> rows) {
           ..writeln('$indent        <Rate>${t.rate}</Rate>')
           ..writeln('$indent        <Code>${_xmlEsc(t.code)}</Code>')
           ..writeln(
-              '$indent        <IsFixed>${t.isFixed.toString().toLowerCase()}</IsFixed>')
+            '$indent        <IsFixed>${t.isFixed.toString().toLowerCase()}</IsFixed>',
+          )
           ..writeln(
-              '$indent        <IsTaxOnTotal>${t.isTaxOnTotal.toString().toLowerCase()}</IsTaxOnTotal>')
+            '$indent        <IsTaxOnTotal>${t.isTaxOnTotal.toString().toLowerCase()}</IsTaxOnTotal>',
+          )
           ..writeln(
-              '$indent        <IsEnabled>${t.isEnabled.toString().toLowerCase()}</IsEnabled>')
+            '$indent        <IsEnabled>${t.isEnabled.toString().toLowerCase()}</IsEnabled>',
+          )
           ..writeln('$indent      </Tax>');
       }
       sb
         ..writeln('$indent    </Taxes>')
         ..writeln(
-            '$indent    <IsTaxInclusivePrice>${p.isTaxInclusivePrice.toString().toLowerCase()}</IsTaxInclusivePrice>')
+          '$indent    <IsTaxInclusivePrice>${p.isTaxInclusivePrice.toString().toLowerCase()}</IsTaxInclusivePrice>',
+        )
         ..writeln('$indent    <Excise>0</Excise>');
       if (p.measurementUnit != null) {
         sb
@@ -176,49 +185,59 @@ String _buildXmlExport(List<ProductExportRow> rows) {
         sb
           ..writeln('$indent      <Barcode>')
           ..writeln(
-              '$indent        <Id xsi:type="xsd:long">${barcodeId++}</Id>')
+            '$indent        <Id xsi:type="xsd:long">${barcodeId++}</Id>',
+          )
           ..writeln('$indent        <Value>${_xmlEsc(barcode)}</Value>')
           ..writeln('$indent      </Barcode>');
       }
       sb
         ..writeln('$indent    </Barcodes>')
-        ..writeln('$indent    <IsUsingSerialNumbers>false</IsUsingSerialNumbers>')
+        ..writeln(
+          '$indent    <IsUsingSerialNumbers>false</IsUsingSerialNumbers>',
+        )
         ..writeln('$indent    <IsDiscountAllowed>true</IsDiscountAllowed>')
         ..writeln('$indent    <MaxDiscount>100</MaxDiscount>')
         ..writeln(
-            '$indent    <IsPriceChangeAllowed>${p.isPriceChangeAllowed.toString().toLowerCase()}</IsPriceChangeAllowed>')
-        ..writeln('$indent    <IsManufactureRequired>false</IsManufactureRequired>')
+          '$indent    <IsPriceChangeAllowed>${p.isPriceChangeAllowed.toString().toLowerCase()}</IsPriceChangeAllowed>',
+        )
         ..writeln(
-            '$indent    <IsService>${p.isService.toString().toLowerCase()}</IsService>')
+          '$indent    <IsManufactureRequired>false</IsManufactureRequired>',
+        )
         ..writeln(
-            '$indent    <IsUsingDefaultQuantity>${p.isUsingDefaultQuantity.toString().toLowerCase()}</IsUsingDefaultQuantity>')
+          '$indent    <IsService>${p.isService.toString().toLowerCase()}</IsService>',
+        )
+        ..writeln(
+          '$indent    <IsUsingDefaultQuantity>${p.isUsingDefaultQuantity.toString().toLowerCase()}</IsUsingDefaultQuantity>',
+        )
         ..writeln('$indent    <Comments>');
       for (final c in p.comments) {
         sb.writeln('$indent      <string>${_xmlEsc(c)}</string>');
       }
-      sb
-        .writeln('$indent    </Comments>');
+      sb.writeln('$indent    </Comments>');
       if (p.description != null && p.description!.isNotEmpty) {
         sb.writeln(
-            '$indent    <Description>${_xmlEsc(p.description)}</Description>');
+          '$indent    <Description>${_xmlEsc(p.description)}</Description>',
+        );
       }
       sb
         ..writeln(
-            '$indent    <IsEnabled>${p.isEnabled.toString().toLowerCase()}</IsEnabled>')
+          '$indent    <IsEnabled>${p.isEnabled.toString().toLowerCase()}</IsEnabled>',
+        )
         ..writeln('$indent    <Cost>${p.cost}</Cost>');
       if (p.lastPurchasePrice != null) {
         sb.writeln(
-            '$indent    <LastPurchasePrice>${p.lastPurchasePrice}</LastPurchasePrice>');
+          '$indent    <LastPurchasePrice>${p.lastPurchasePrice}</LastPurchasePrice>',
+        );
       }
       if (p.markup != null) {
         sb.writeln('$indent    <Markup>${p.markup}</Markup>');
       }
       if (p.ageRestriction != null) {
         sb.writeln(
-            '$indent    <AgeRestriction>${p.ageRestriction}</AgeRestriction>');
+          '$indent    <AgeRestriction>${p.ageRestriction}</AgeRestriction>',
+        );
       } else {
-        sb.writeln(
-            '$indent    <AgeRestriction xsi:nil="true" />');
+        sb.writeln('$indent    <AgeRestriction xsi:nil="true" />');
       }
       if (p.dateCreated != null) {
         sb.writeln('$indent    <DateCreated>${p.dateCreated}</DateCreated>');
@@ -243,7 +262,10 @@ String _buildXmlExport(List<ProductExportRow> rows) {
 }
 
 Future<void> _runExport(
-    BuildContext context, WidgetRef ref, String format) async {
+  BuildContext context,
+  WidgetRef ref,
+  String format,
+) async {
   final company = ref.read(selectedCompanyProvider);
   if (company == null) return;
 
@@ -257,8 +279,9 @@ Future<void> _runExport(
         .map((e) => ProductExportRow.fromJson(e as Map<String, dynamic>))
         .toList();
 
-    final content =
-        format == 'csv' ? _buildCsvExport(rows) : _buildXmlExport(rows);
+    final content = format == 'csv'
+        ? _buildCsvExport(rows)
+        : _buildXmlExport(rows);
     final ext = format == 'csv' ? 'csv' : 'xml';
 
     final path = await FilePicker.platform.saveFile(
@@ -272,14 +295,20 @@ Future<void> _runExport(
     await File(path).writeAsString(content, encoding: const Utf8Codec());
 
     if (context.mounted) {
-      showAppSnackbar(context, ref,
-          AppLocalizations.of(context).exportedProductsTo(rows.length, path));
+      showAppSnackbar(
+        context,
+        ref,
+        AppLocalizations.of(context).exportedProductsTo(rows.length, path),
+      );
     }
   } catch (e) {
     if (context.mounted) {
       showAppSnackbar(
-          context, ref, AppLocalizations.of(context).exportFailed(e.toString()),
-          isError: true);
+        context,
+        ref,
+        AppLocalizations.of(context).exportFailed(e.toString()),
+        isError: true,
+      );
     }
   }
 }
@@ -298,21 +327,25 @@ Future<void> _showExportDialog(BuildContext context, WidgetRef ref) async {
               value: 'csv',
               groupValue: selected,
               onChanged: (v) => setState(() => selected = v!),
-              title: Row(children: [
-                Icon(Icons.table_chart, color: ctx.successColor, size: 20),
-                const SizedBox(width: 10),
-                Text(AppLocalizations.of(context).exportCsv),
-              ]),
+              title: Row(
+                children: [
+                  Icon(Icons.table_chart, color: ctx.successColor, size: 20),
+                  const SizedBox(width: 10),
+                  Text(AppLocalizations.of(context).exportCsv),
+                ],
+              ),
             ),
             RadioListTile<String>(
               value: 'xml',
               groupValue: selected,
               onChanged: (v) => setState(() => selected = v!),
-              title: Row(children: [
-                Icon(Icons.code, color: ctx.infoColor, size: 20),
-                const SizedBox(width: 10),
-                Text(AppLocalizations.of(context).exportXml),
-              ]),
+              title: Row(
+                children: [
+                  Icon(Icons.code, color: ctx.infoColor, size: 20),
+                  const SizedBox(width: 10),
+                  Text(AppLocalizations.of(context).exportXml),
+                ],
+              ),
             ),
           ],
         ),
@@ -413,8 +446,9 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
   Future<void> _bulkDelete() async {
     if (_selectedIds.isEmpty) return;
     final products = ref.read(productsByGroupProvider).value ?? [];
-    final effectiveIds =
-        _selectedIds.intersection(products.map((p) => p.id).toSet());
+    final effectiveIds = _selectedIds.intersection(
+      products.map((p) => p.id).toSet(),
+    );
     if (effectiveIds.isEmpty) return;
 
     final count = effectiveIds.length;
@@ -423,15 +457,20 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
       builder: (ctx) => AlertDialog(
         title: Text(AppLocalizations.of(context).deleteProducts),
         content: Text(
-            AppLocalizations.of(context).deleteProductsConfirm(count)),
+          AppLocalizations.of(context).deleteProductsConfirm(count),
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text(AppLocalizations.of(context).actionCancel)),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(AppLocalizations.of(context).actionCancel),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: ctx.dangerColor),
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text(AppLocalizations.of(context).actionDelete, style: TextStyle(color: ctx.onStatusColor)),
+            child: Text(
+              AppLocalizations.of(context).actionDelete,
+              style: TextStyle(color: ctx.onStatusColor),
+            ),
           ),
         ],
       ),
@@ -458,11 +497,14 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
         }
         // Real server product — soft-delete so SyncManager can push the
         // DELETE to the server on the next sync.
-        await (db.update(db.productsTable)..where((t) => t.id.equals(id)))
-            .write(ProductsTableCompanion(
-          syncStatus: const Value('pending_delete'),
-          lastModified: Value(DateTime.now().toUtc()),
-        ));
+        await (db.update(
+          db.productsTable,
+        )..where((t) => t.id.equals(id))).write(
+          ProductsTableCompanion(
+            syncStatus: const Value('pending_delete'),
+            lastModified: Value(DateTime.now().toUtc()),
+          ),
+        );
       }
       deleted++;
     }
@@ -474,23 +516,29 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
 
     if (mounted) {
       // Keep blocked products selected so the user sees what wasn't deleted.
-      setState(() => _selectedIds
-        ..clear()
-        ..addAll(blocked));
+      setState(
+        () => _selectedIds
+          ..clear()
+          ..addAll(blocked),
+      );
       if (blocked.isNotEmpty) {
         final n = blocked.length;
         showAppSnackbar(
           context,
           ref,
           deleted > 0
-              ? AppLocalizations.of(context)
-                  .deletedSomeProductsBlocked(deleted, n)
+              ? AppLocalizations.of(
+                  context,
+                ).deletedSomeProductsBlocked(deleted, n)
               : AppLocalizations.of(context).cannotDeleteProductsLinked(n),
           isError: true,
         );
       } else {
-        showAppSnackbar(context, ref,
-            AppLocalizations.of(context).productsDeletedCount(deleted));
+        showAppSnackbar(
+          context,
+          ref,
+          AppLocalizations.of(context).productsDeletedCount(deleted),
+        );
       }
     }
   }
@@ -498,15 +546,17 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
   /// Returns true if [productId] is referenced by any local order line or
   /// document line — the same constraint the backend enforces on delete.
   Future<bool> _isProductReferenced(AppDatabase db, int productId) async {
-    final inOrder = await (db.select(db.posOrderItemsTable)
-          ..where((t) => t.productId.equals(productId))
-          ..limit(1))
-        .getSingleOrNull();
+    final inOrder =
+        await (db.select(db.posOrderItemsTable)
+              ..where((t) => t.productId.equals(productId))
+              ..limit(1))
+            .getSingleOrNull();
     if (inOrder != null) return true;
-    final inDoc = await (db.select(db.documentItemsTable)
-          ..where((t) => t.productId.equals(productId))
-          ..limit(1))
-        .getSingleOrNull();
+    final inDoc =
+        await (db.select(db.documentItemsTable)
+              ..where((t) => t.productId.equals(productId))
+              ..limit(1))
+            .getSingleOrNull();
     return inDoc != null;
   }
 
@@ -553,13 +603,18 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
     ref.invalidate(productsByGroupProvider);
     if (result is Product && mounted) {
       if (result.isPendingCreate) {
-        showAppSnackbar(context, ref,
-            AppLocalizations.of(context).productSavedLocallySyncFirst);
+        showAppSnackbar(
+          context,
+          ref,
+          AppLocalizations.of(context).productSavedLocallySyncFirst,
+        );
       } else {
         showDialog(
           context: context,
           builder: (_) => _ProductEditorDialog(
-              existingProduct: result, isPostCreation: true),
+            existingProduct: result,
+            isPostCreation: true,
+          ),
         ).then((_) => ref.invalidate(productsByGroupProvider));
       }
     }
@@ -575,8 +630,9 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
     final groups =
         ref.watch(allProductGroupsProvider).value ?? const <ProductGroup>[];
     final selectedGroupId = ref.watch(selectedProductGroupIdProvider);
-    final selectedGroup =
-        groups.where((g) => g.id == selectedGroupId).firstOrNull;
+    final selectedGroup = groups
+        .where((g) => g.id == selectedGroupId)
+        .firstOrNull;
 
     return UnifiedSearchBar(
       controller: _searchCtrl,
@@ -846,19 +902,32 @@ class _ProductListContent extends ConsumerWidget {
       error: (e, _) =>
           Center(child: Text(l.errorWithMessage(_parseApiError(context, e)))),
       data: (allProducts) {
+        // Copy either way — `allProducts` is the provider's own cached list,
+        // and sortProductsBy below sorts in place. Mutating it directly would
+        // reorder the POS menu's copy of the same data out from under it.
         final products = query.trim().isEmpty
-            ? allProducts
+            ? List<Product>.of(allProducts)
             : allProducts
-                .where((p) => productMatchesSearch(
+                  .where(
+                    (p) => productMatchesSearch(
                       p,
                       query,
                       scope,
                       extraBarcodes: extraBarcodes[p.id] ?? const [],
-                    ))
-                .toList();
+                    ),
+                  )
+                  .toList();
 
-        final effectiveSelected =
-            selectedIds.intersection(products.map((p) => p.id).toSet());
+        // Products.Sorting: same setting the POS menu grid honors, so the
+        // management table lists products in the order the cashier expects.
+        final sortBy =
+            ref.watch(appSettingsProvider)[SettingKeys.productSorting] ??
+            'Name';
+        sortProductsBy(products, sortBy);
+
+        final effectiveSelected = selectedIds.intersection(
+          products.map((p) => p.id).toSet(),
+        );
 
         String groupNameFor(Product p) =>
             groups.where((g) => g.id == p.productGroupId).firstOrNull?.name ??
@@ -867,9 +936,9 @@ class _ProductListContent extends ConsumerWidget {
         // Every product row opens the editor. The pencil column was a 40px
         // target on a screen driven by fingers; the row is 900 of them.
         void openEditor(Product p) => showDialog(
-              context: context,
-              builder: (_) => _ProductEditorDialog(existingProduct: p),
-            ).then((_) => ref.invalidate(productsByGroupProvider));
+          context: context,
+          builder: (_) => _ProductEditorDialog(existingProduct: p),
+        ).then((_) => ref.invalidate(productsByGroupProvider));
 
         return IlyassTable<Product>(
           tableId: 'products',
@@ -915,9 +984,11 @@ class _ProductListContent extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.inventory_2_outlined,
-                      size: 64,
-                      color: theme.disabledColor.withValues(alpha: 0.3)),
+                  Icon(
+                    Icons.inventory_2_outlined,
+                    size: 64,
+                    color: theme.disabledColor.withValues(alpha: 0.3),
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     query.trim().isEmpty
@@ -946,10 +1017,10 @@ class _ProductListContent extends ConsumerWidget {
     final p = product;
 
     Widget boolCell(bool v) => Icon(
-          v ? Icons.check_circle : Icons.remove_circle_outline,
-          size: 18,
-          color: v ? context.successColor : theme.disabledColor,
-        );
+      v ? Icons.check_circle : Icons.remove_circle_outline,
+      size: 18,
+      color: v ? context.successColor : theme.disabledColor,
+    );
 
     switch (key) {
       case 'image':
@@ -974,10 +1045,12 @@ class _ProductListContent extends ConsumerWidget {
                 : null,
           ),
           child: provider == null
-              ? PhosphorIcon(PhosphorIconsRegular.forkKnife,
+              ? PhosphorIcon(
+                  PhosphorIconsRegular.forkKnife,
                   color: marker != null
                       ? marker.withValues(alpha: 0.9)
-                      : theme.hintColor)
+                      : theme.hintColor,
+                )
               : null,
         );
       case 'color':
@@ -991,12 +1064,17 @@ class _ProductListContent extends ConsumerWidget {
                   color: marker,
                   shape: BoxShape.circle,
                   border: Border.all(
-                      color: theme.colorScheme.outlineVariant, width: 1),
+                    color: theme.colorScheme.outlineVariant,
+                    width: 1,
+                  ),
                 ),
               );
       case 'code':
-        return Text(p.code ?? '-',
-            maxLines: 1, overflow: TextOverflow.ellipsis);
+        return Text(
+          p.code ?? '-',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        );
       case 'name':
         return Row(
           mainAxisSize: MainAxisSize.min,
@@ -1009,9 +1087,9 @@ class _ProductListContent extends ConsumerWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    decoration:
-                        p.isEnabled ? null : TextDecoration.lineThrough),
+                  fontWeight: FontWeight.bold,
+                  decoration: p.isEnabled ? null : TextDecoration.lineThrough,
+                ),
               ),
             ),
             if (p.isPendingSync) ...[
@@ -1020,8 +1098,11 @@ class _ProductListContent extends ConsumerWidget {
                 message: p.isPendingCreate
                     ? AppLocalizations.of(context).pendingSyncNew
                     : AppLocalizations.of(context).pendingSyncUpdate,
-                child: Icon(Icons.cloud_upload_outlined,
-                    size: 14, color: theme.colorScheme.tertiary),
+                child: Icon(
+                  Icons.cloud_upload_outlined,
+                  size: 14,
+                  color: theme.colorScheme.tertiary,
+                ),
               ),
             ],
           ],
@@ -1030,35 +1111,51 @@ class _ProductListContent extends ConsumerWidget {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-              color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(6)),
-          child: Text(groupNameFor(p),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                  color: theme.colorScheme.primary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold)),
+            color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Text(
+            groupNameFor(p),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: theme.colorScheme.primary,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         );
       case 'price':
-        return Text("${p.price.toStringAsFixed(2)} $sym",
-            style: TextStyle(
-                color: context.successColor, fontWeight: FontWeight.bold));
+        return Text(
+          "${p.price.toStringAsFixed(2)} $sym",
+          style: TextStyle(
+            color: context.successColor,
+            fontWeight: FontWeight.bold,
+          ),
+        );
       case 'cost':
-        return Text("${p.cost.toStringAsFixed(2)} $sym",
-            style: TextStyle(color: context.dangerColor));
+        return Text(
+          "${p.cost.toStringAsFixed(2)} $sym",
+          style: TextStyle(color: context.dangerColor),
+        );
       case 'plu':
         return Text(p.plu?.toString() ?? '-');
       case 'unit':
-        return Text(p.measurementUnit ?? '-',
-            maxLines: 1, overflow: TextOverflow.ellipsis);
+        return Text(
+          p.measurementUnit ?? '-',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        );
       case 'markup':
         return Text(
-            p.markup != null ? '${p.markup!.toStringAsFixed(1)}%' : '-');
+          p.markup != null ? '${p.markup!.toStringAsFixed(1)}%' : '-',
+        );
       case 'lastPurchase':
-        return Text(p.lastPurchasePrice != null
-            ? '${p.lastPurchasePrice!.toStringAsFixed(2)} $sym'
-            : '-');
+        return Text(
+          p.lastPurchasePrice != null
+              ? '${p.lastPurchasePrice!.toStringAsFixed(2)} $sym'
+              : '-',
+        );
       case 'ageRestriction':
         return Text(p.ageRestriction?.toString() ?? '-');
       case 'rank':
@@ -1072,28 +1169,38 @@ class _ProductListContent extends ConsumerWidget {
       case 'enabled':
         return boolCell(p.isEnabled);
       case 'description':
-        return Text(p.description ?? '-',
-            maxLines: 2, overflow: TextOverflow.ellipsis);
+        return Text(
+          p.description ?? '-',
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        );
       case 'created':
-        return Text(p.dateCreated ?? '-',
-            maxLines: 1, overflow: TextOverflow.ellipsis);
+        return Text(
+          p.dateCreated ?? '-',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        );
       case 'updated':
-        return Text(p.dateUpdated ?? '-',
-            maxLines: 1, overflow: TextOverflow.ellipsis);
+        return Text(
+          p.dateUpdated ?? '-',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        );
       default:
         return const Text('-');
     }
   }
 }
 
-
 // --- ADD/EDIT TABBED DIALOG ---
 class _ProductEditorDialog extends ConsumerStatefulWidget {
   final Product? existingProduct;
   final bool isPostCreation; // Determines if we are in "Phase 2" of creation
 
-  const _ProductEditorDialog(
-      {this.existingProduct, this.isPostCreation = false});
+  const _ProductEditorDialog({
+    this.existingProduct,
+    this.isPostCreation = false,
+  });
 
   @override
   ConsumerState<_ProductEditorDialog> createState() =>
@@ -1279,7 +1386,9 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
           if (f.existsSync()) {
             _selectedImageBase64 = base64Encode(f.readAsBytesSync());
           }
-        } catch (_) {/* leave _selectedImageBase64 null — UI shows placeholder */}
+        } catch (_) {
+          /* leave _selectedImageBase64 null — UI shows placeholder */
+        }
       }
       _selectedHexColor = p.color.isNotEmpty ? p.color : '#000000';
 
@@ -1328,7 +1437,9 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
     try {
       // Offline-first: read the assigned tax from the local Drift cache
       // (seeded by SyncManager.pullProductTaxes).
-      final taxes = await ref.read(appDatabaseProvider).getProductTaxes(productId);
+      final taxes = await ref
+          .read(appDatabaseProvider)
+          .getProductTaxes(productId);
       if (taxes.isNotEmpty && mounted) {
         setState(() {
           _selectedTaxId = taxes.first.taxId;
@@ -1359,10 +1470,11 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
   Future<void> _pickImage() async {
     final picker = ImagePicker();
     final xFile = await picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 600,
-        maxHeight: 600,
-        imageQuality: 85);
+      source: ImageSource.gallery,
+      maxWidth: 600,
+      maxHeight: 600,
+      imageQuality: 85,
+    );
     if (xFile != null) {
       final bytes = await xFile.readAsBytes();
       setState(() => _selectedImageBase64 = base64Encode(bytes));
@@ -1376,8 +1488,11 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
     // SCENARIO 1: We are in "Phase 1" of creation (Only General Tab)
     if (widget.existingProduct == null && !widget.isPostCreation) {
       if (_nameCtrl.text.trim().isEmpty) {
-        setState(() =>
-            _errorMessage = AppLocalizations.of(context).pleaseEnterProductName);
+        setState(
+          () => _errorMessage = AppLocalizations.of(
+            context,
+          ).pleaseEnterProductName,
+        );
         return;
       }
       if (_formKey.currentState?.validate() == false) return;
@@ -1409,35 +1524,53 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
             await file.writeAsBytes(bytes, flush: true);
             await FileImage(file).evict();
             localImgPath = file.path;
-          } catch (_) { /* best-effort */ }
+          } catch (_) {
+            /* best-effort */
+          }
         }
 
-        await db.into(db.productsTable).insert(ProductsTableCompanion(
-          id: Value(tempId),
-          companyId: Value(companyId),
-          name: Value(_nameCtrl.text.trim()),
-          price: Value(double.tryParse(_priceCtrl.text) ?? 0),
-          cost: Value(double.tryParse(_costCtrl.text) ?? 0),
-          productGroupId: Value(_selectedGroupId),
-          isService: Value(_isService),
-          colorHex: Value(_selectedHexColor == 'Transparent' ? '#000000' : _selectedHexColor),
-          localImagePath: Value(localImgPath),
-          code: Value(_codeCtrl.text.trim().isEmpty ? null : _codeCtrl.text.trim()),
-          plu: Value(int.tryParse(_pluCtrl.text.trim())),
-          measurementUnit: Value(uomById(_uomId).code),
-          uomId: Value(_uomId),
-          isToWeigh: Value(_isToWeigh),
-          description: Value(_descriptionCtrl.text.trim().isEmpty ? null : _descriptionCtrl.text.trim()),
-          markup: Value(double.tryParse(_markupCtrl.text.trim())),
-          rank: Value(int.tryParse(_rankCtrl.text.trim()) ?? 0),
-          ageRestriction: Value(int.tryParse(_ageRestrictionCtrl.text.trim())),
-          isPriceChangeAllowed: Value(_isPriceChangeAllowed),
-          isUsingDefaultQuantity: Value(_isUsingDefaultQuantity),
-          isTaxInclusivePrice: Value(_isTaxInclusive),
-          isEnabled: Value(_isEnabled),
-          syncStatus: const Value('pending_create'),
-          lastModified: Value(now),
-        ));
+        await db
+            .into(db.productsTable)
+            .insert(
+              ProductsTableCompanion(
+                id: Value(tempId),
+                companyId: Value(companyId),
+                name: Value(_nameCtrl.text.trim()),
+                price: Value(double.tryParse(_priceCtrl.text) ?? 0),
+                cost: Value(double.tryParse(_costCtrl.text) ?? 0),
+                productGroupId: Value(_selectedGroupId),
+                isService: Value(_isService),
+                colorHex: Value(
+                  _selectedHexColor == 'Transparent'
+                      ? '#000000'
+                      : _selectedHexColor,
+                ),
+                localImagePath: Value(localImgPath),
+                code: Value(
+                  _codeCtrl.text.trim().isEmpty ? null : _codeCtrl.text.trim(),
+                ),
+                plu: Value(int.tryParse(_pluCtrl.text.trim())),
+                measurementUnit: Value(uomById(_uomId).code),
+                uomId: Value(_uomId),
+                isToWeigh: Value(_isToWeigh),
+                description: Value(
+                  _descriptionCtrl.text.trim().isEmpty
+                      ? null
+                      : _descriptionCtrl.text.trim(),
+                ),
+                markup: Value(double.tryParse(_markupCtrl.text.trim())),
+                rank: Value(int.tryParse(_rankCtrl.text.trim()) ?? 0),
+                ageRestriction: Value(
+                  int.tryParse(_ageRestrictionCtrl.text.trim()),
+                ),
+                isPriceChangeAllowed: Value(_isPriceChangeAllowed),
+                isUsingDefaultQuantity: Value(_isUsingDefaultQuantity),
+                isTaxInclusivePrice: Value(_isTaxInclusive),
+                isEnabled: Value(_isEnabled),
+                syncStatus: const Value('pending_create'),
+                lastModified: Value(now),
+              ),
+            );
 
         // Persist the tax assignment NOW, against the temp id.
         //
@@ -1472,14 +1605,18 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
           cost: double.tryParse(_costCtrl.text) ?? 0,
           productGroupId: _selectedGroupId,
           isService: _isService,
-          color: _selectedHexColor == 'Transparent' ? '#000000' : _selectedHexColor,
+          color: _selectedHexColor == 'Transparent'
+              ? '#000000'
+              : _selectedHexColor,
           localImagePath: localImgPath,
           code: _codeCtrl.text.trim().isEmpty ? null : _codeCtrl.text.trim(),
           plu: int.tryParse(_pluCtrl.text.trim()),
           measurementUnit: uomById(_uomId).code,
           uomId: _uomId,
           isToWeigh: _isToWeigh,
-          description: _descriptionCtrl.text.trim().isEmpty ? null : _descriptionCtrl.text.trim(),
+          description: _descriptionCtrl.text.trim().isEmpty
+              ? null
+              : _descriptionCtrl.text.trim(),
           markup: double.tryParse(_markupCtrl.text.trim()),
           rank: int.tryParse(_rankCtrl.text.trim()) ?? 0,
           ageRestriction: int.tryParse(_ageRestrictionCtrl.text.trim()),
@@ -1560,54 +1697,77 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
             await file.writeAsBytes(bytes, flush: true);
             await FileImage(file).evict();
             localImgPath = file.path;
-          } catch (_) { /* best-effort */ }
+          } catch (_) {
+            /* best-effort */
+          }
         }
-        await db.into(db.productsTable).insertOnConflictUpdate(
-          ProductsTableCompanion(
-            id: Value(savedProductId),
-            companyId: Value(companyId),
-            name: Value(_nameCtrl.text.trim()),
-            price: Value(double.tryParse(_priceCtrl.text) ?? 0),
-            cost: Value(double.tryParse(_costCtrl.text) ?? 0),
-            productGroupId: Value(_selectedGroupId),
-            isService: Value(_isService),
-            colorHex: Value(_selectedHexColor == 'Transparent' ? '#000000' : _selectedHexColor),
-            localImagePath: Value(localImgPath),
-            code: Value(_codeCtrl.text.trim().isEmpty ? null : _codeCtrl.text.trim()),
-            plu: Value(int.tryParse(_pluCtrl.text.trim())),
-            measurementUnit: Value(uomById(_uomId).code),
-            uomId: Value(_uomId),
-            isToWeigh: Value(_isToWeigh),
-            description: Value(_descriptionCtrl.text.trim().isEmpty ? null : _descriptionCtrl.text.trim()),
-            markup: Value(double.tryParse(_markupCtrl.text.trim())),
-            rank: Value(int.tryParse(_rankCtrl.text.trim()) ?? 0),
-            ageRestriction: Value(int.tryParse(_ageRestrictionCtrl.text.trim())),
-            isPriceChangeAllowed: Value(_isPriceChangeAllowed),
-            isUsingDefaultQuantity: Value(_isUsingDefaultQuantity),
-            isTaxInclusivePrice: Value(_isTaxInclusive),
-            isEnabled: Value(_isEnabled),
-            syncStatus: const Value('pending_update'),
-            lastModified: Value(DateTime.now().toUtc()),
-          ),
-        );
+        await db
+            .into(db.productsTable)
+            .insertOnConflictUpdate(
+              ProductsTableCompanion(
+                id: Value(savedProductId),
+                companyId: Value(companyId),
+                name: Value(_nameCtrl.text.trim()),
+                price: Value(double.tryParse(_priceCtrl.text) ?? 0),
+                cost: Value(double.tryParse(_costCtrl.text) ?? 0),
+                productGroupId: Value(_selectedGroupId),
+                isService: Value(_isService),
+                colorHex: Value(
+                  _selectedHexColor == 'Transparent'
+                      ? '#000000'
+                      : _selectedHexColor,
+                ),
+                localImagePath: Value(localImgPath),
+                code: Value(
+                  _codeCtrl.text.trim().isEmpty ? null : _codeCtrl.text.trim(),
+                ),
+                plu: Value(int.tryParse(_pluCtrl.text.trim())),
+                measurementUnit: Value(uomById(_uomId).code),
+                uomId: Value(_uomId),
+                isToWeigh: Value(_isToWeigh),
+                description: Value(
+                  _descriptionCtrl.text.trim().isEmpty
+                      ? null
+                      : _descriptionCtrl.text.trim(),
+                ),
+                markup: Value(double.tryParse(_markupCtrl.text.trim())),
+                rank: Value(int.tryParse(_rankCtrl.text.trim()) ?? 0),
+                ageRestriction: Value(
+                  int.tryParse(_ageRestrictionCtrl.text.trim()),
+                ),
+                isPriceChangeAllowed: Value(_isPriceChangeAllowed),
+                isUsingDefaultQuantity: Value(_isUsingDefaultQuantity),
+                isTaxInclusivePrice: Value(_isTaxInclusive),
+                isEnabled: Value(_isEnabled),
+                syncStatus: const Value('pending_update'),
+                lastModified: Value(DateTime.now().toUtc()),
+              ),
+            );
 
         // ── Try server sync ─────────────────────────────────────────────
         try {
-          await dio.patch('/Products/Update',
-              queryParameters: {'id': savedProductId, 'companyId': companyId},
-              data: payload);
+          await dio.patch(
+            '/Products/Update',
+            queryParameters: {'id': savedProductId, 'companyId': companyId},
+            data: payload,
+          );
           // API succeeded — clear the pending flag.
-          await (db.update(db.productsTable)
-                ..where((t) => t.id.equals(savedProductId)))
-              .write(const ProductsTableCompanion(
-                syncStatus: Value('synced'),
-                syncError: Value(null),
-              ));
+          await (db.update(
+            db.productsTable,
+          )..where((t) => t.id.equals(savedProductId))).write(
+            const ProductsTableCompanion(
+              syncStatus: Value('synced'),
+              syncError: Value(null),
+            ),
+          );
         } on DioException {
           // API unreachable — local write is queued. Will sync when online.
           if (mounted) {
-            showAppSnackbar(context, ref,
-                AppLocalizations.of(context).savedLocallyWillSyncOnline);
+            showAppSnackbar(
+              context,
+              ref,
+              AppLocalizations.of(context).savedLocallyWillSyncOnline,
+            );
             Navigator.of(context).pop();
           }
           return;
@@ -1617,7 +1777,9 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
       // Handle Taxes (offline-first): write the assignment change to local
       // Drift; SyncManager pushes /ProductTaxes/Add+Delete on the next sync.
       if (_selectedTaxId != _originalTaxId) {
-        await ref.read(appDatabaseProvider).setProductTaxLocal(
+        await ref
+            .read(appDatabaseProvider)
+            .setProductTaxLocal(
               companyId: companyId,
               productId: savedProductId,
               oldTaxId: _originalTaxId,
@@ -1627,11 +1789,12 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
 
       if (mounted) {
         showAppSnackbar(
-            context,
-            ref,
-            widget.isPostCreation
-                ? AppLocalizations.of(context).setupComplete
-                : AppLocalizations.of(context).productUpdatedSuccessfully);
+          context,
+          ref,
+          widget.isPostCreation
+              ? AppLocalizations.of(context).setupComplete
+              : AppLocalizations.of(context).productUpdatedSuccessfully,
+        );
         Navigator.of(context).pop();
       }
     } catch (e) {
@@ -1683,10 +1846,7 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
         Tab(text: l10n.barcodesTab),
         Tab(text: l10n.posModifiers),
       ]);
-      dialogTabViews.addAll([
-        _buildBarcodesTab(),
-        _buildModifiersTab(),
-      ]);
+      dialogTabViews.addAll([_buildBarcodesTab(), _buildModifiersTab()]);
     }
 
     // The standalone Taxes tab survives ONLY for Phase 2, which has no Pricing
@@ -1726,35 +1886,46 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                 Expanded(child: TabBarView(children: dialogTabViews)),
                 if (_errorMessage != null)
                   Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                    child: Text(_errorMessage!,
-                        style: TextStyle(
-                            color: context.dangerColor,
-                            fontWeight: FontWeight.bold)),
-                  )
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 8,
+                    ),
+                    child: Text(
+                      _errorMessage!,
+                      style: TextStyle(
+                        color: context.dangerColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(AppLocalizations.of(context).actionCancel)),
+            onPressed: () => Navigator.pop(context),
+            child: Text(AppLocalizations.of(context).actionCancel),
+          ),
           if (_isLoading)
             const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2)))
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            )
           else
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.colorScheme.primary,
-                  foregroundColor: theme.colorScheme.onPrimary,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 32, vertical: 12)),
+                backgroundColor: theme.colorScheme.primary,
+                foregroundColor: theme.colorScheme.onPrimary,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 12,
+                ),
+              ),
               onPressed: _submit,
               child: Text(buttonText),
             ),
@@ -1782,31 +1953,48 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                 Row(
                   children: [
                     Expanded(
-                        child: TextFormField(
-                            controller: _nameCtrl,
-                            decoration: InputDecoration(
-                                labelText: AppLocalizations.of(context).productNameRequired,
-                                filled: true,
-                                fillColor: theme.colorScheme.surface,
-                                border: const OutlineInputBorder()))),
+                      child: TextFormField(
+                        controller: _nameCtrl,
+                        decoration: InputDecoration(
+                          labelText: AppLocalizations.of(
+                            context,
+                          ).productNameRequired,
+                          filled: true,
+                          fillColor: theme.colorScheme.surface,
+                          border: const OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
                     const SizedBox(width: 16),
                     Expanded(
                       child: allGroupsAsync.when(
                         loading: () => const LinearProgressIndicator(),
-                        error: (_, __) => Text(AppLocalizations.of(context).errorLoadingGroups),
+                        error: (_, __) => Text(
+                          AppLocalizations.of(context).errorLoadingGroups,
+                        ),
                         data: (groups) => DropdownButtonFormField<int?>(
                           initialValue: _selectedGroupId,
                           decoration: InputDecoration(
-                              labelText: AppLocalizations.of(context).categoryGroup,
-                              filled: true,
-                              fillColor: theme.colorScheme.surface,
-                              border: const OutlineInputBorder()),
+                            labelText: AppLocalizations.of(
+                              context,
+                            ).categoryGroup,
+                            filled: true,
+                            fillColor: theme.colorScheme.surface,
+                            border: const OutlineInputBorder(),
+                          ),
                           items: [
                             DropdownMenuItem(
-                                value: null,
-                                child: Text(AppLocalizations.of(context).noneUncategorized)),
-                            ...groups.map((g) => DropdownMenuItem(
-                                value: g.id, child: Text(g.name))),
+                              value: null,
+                              child: Text(
+                                AppLocalizations.of(context).noneUncategorized,
+                              ),
+                            ),
+                            ...groups.map(
+                              (g) => DropdownMenuItem(
+                                value: g.id,
+                                child: Text(g.name),
+                              ),
+                            ),
                           ],
                           onChanged: (v) =>
                               setState(() => _selectedGroupId = v),
@@ -1819,23 +2007,31 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                 Row(
                   children: [
                     Expanded(
-                        child: TextFormField(
-                            controller: _codeCtrl,
-                            decoration: InputDecoration(
-                                labelText: AppLocalizations.of(context).productCodeSku,
-                                filled: true,
-                                fillColor: theme.colorScheme.surface,
-                                border: const OutlineInputBorder()))),
+                      child: TextFormField(
+                        controller: _codeCtrl,
+                        decoration: InputDecoration(
+                          labelText: AppLocalizations.of(
+                            context,
+                          ).productCodeSku,
+                          filled: true,
+                          fillColor: theme.colorScheme.surface,
+                          border: const OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
                     const SizedBox(width: 16),
                     Expanded(
-                        child: TextFormField(
-                            controller: _pluCtrl,
-                            decoration: InputDecoration(
-                                labelText: AppLocalizations.of(context).plu,
-                                filled: true,
-                                fillColor: theme.colorScheme.surface,
-                                border: const OutlineInputBorder()),
-                            keyboardType: TextInputType.number)),
+                      child: TextFormField(
+                        controller: _pluCtrl,
+                        decoration: InputDecoration(
+                          labelText: AppLocalizations.of(context).plu,
+                          filled: true,
+                          fillColor: theme.colorScheme.surface,
+                          border: const OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -1845,37 +2041,51 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                 Row(
                   children: [
                     Expanded(
-                        child: TextFormField(
-                            controller: _ageRestrictionCtrl,
-                            decoration: InputDecoration(
-                                labelText: AppLocalizations.of(context).ageRestriction,
-                                filled: true,
-                                fillColor: theme.colorScheme.surface,
-                                border: const OutlineInputBorder(),
-                                hintText: AppLocalizations.of(context).ageRestrictionHint),
-                            keyboardType: TextInputType.number)),
+                      child: TextFormField(
+                        controller: _ageRestrictionCtrl,
+                        decoration: InputDecoration(
+                          labelText: AppLocalizations.of(
+                            context,
+                          ).ageRestriction,
+                          filled: true,
+                          fillColor: theme.colorScheme.surface,
+                          border: const OutlineInputBorder(),
+                          hintText: AppLocalizations.of(
+                            context,
+                          ).ageRestrictionHint,
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
                     const SizedBox(width: 16),
                     Expanded(
-                        child: TextFormField(
-                            controller: _rankCtrl,
-                            decoration: InputDecoration(
-                                labelText: AppLocalizations.of(context).rankDisplayOrder,
-                                filled: true,
-                                fillColor: theme.colorScheme.surface,
-                                border: const OutlineInputBorder()),
-                            keyboardType: TextInputType.number)),
+                      child: TextFormField(
+                        controller: _rankCtrl,
+                        decoration: InputDecoration(
+                          labelText: AppLocalizations.of(
+                            context,
+                          ).rankDisplayOrder,
+                          filled: true,
+                          fillColor: theme.colorScheme.surface,
+                          border: const OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
-                    controller: _descriptionCtrl,
-                    maxLines: 3,
-                    decoration: InputDecoration(
-                        labelText: AppLocalizations.of(context).description,
-                        filled: true,
-                        fillColor: theme.colorScheme.surface,
-                        border: const OutlineInputBorder(),
-                        alignLabelWithHint: true)),
+                  controller: _descriptionCtrl,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).description,
+                    filled: true,
+                    fillColor: theme.colorScheme.surface,
+                    border: const OutlineInputBorder(),
+                    alignLabelWithHint: true,
+                  ),
+                ),
               ],
             ),
           ),
@@ -1887,42 +2097,54 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
               children: [
                 Container(
                   decoration: BoxDecoration(
-                      border: Border.all(color: theme.dividerColor),
-                      borderRadius: BorderRadius.circular(8)),
+                    border: Border.all(color: theme.dividerColor),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                   child: Column(
                     children: [
                       // "Price is tax inclusive" moved to the Pricing tab — it
                       // qualifies the price, so it belongs next to it.
                       SwitchListTile(
-                          title: Text(AppLocalizations.of(context).isServiceNotPhysical),
-                          value: _isService,
-                          onChanged: (v) => setState(() => _isService = v),
-                          visualDensity: VisualDensity.compact),
+                        title: Text(
+                          AppLocalizations.of(context).isServiceNotPhysical,
+                        ),
+                        value: _isService,
+                        onChanged: (v) => setState(() => _isService = v),
+                        visualDensity: VisualDensity.compact,
+                      ),
                       SwitchListTile(
-                          title: Text(AppLocalizations.of(context).changePriceAllowed),
-                          value: _isPriceChangeAllowed,
-                          onChanged: (v) =>
-                              setState(() => _isPriceChangeAllowed = v),
-                          visualDensity: VisualDensity.compact),
+                        title: Text(
+                          AppLocalizations.of(context).changePriceAllowed,
+                        ),
+                        value: _isPriceChangeAllowed,
+                        onChanged: (v) =>
+                            setState(() => _isPriceChangeAllowed = v),
+                        visualDensity: VisualDensity.compact,
+                      ),
                       // Sell by weight. A service has no stock to weigh, so the
                       // switch is disabled there rather than silently ignored
                       // at the till.
                       SwitchListTile(
-                          title: Text(AppLocalizations.of(context).sellByWeight),
-                          subtitle: Text(
-                              AppLocalizations.of(context).sellByWeightHint,
-                              style: Theme.of(context).textTheme.bodySmall),
-                          value: _isToWeigh && !_isService,
-                          onChanged: _isService
-                              ? null
-                              : (v) => setState(() => _isToWeigh = v),
-                          isThreeLine: true,
-                          visualDensity: VisualDensity.compact),
+                        title: Text(AppLocalizations.of(context).sellByWeight),
+                        subtitle: Text(
+                          AppLocalizations.of(context).sellByWeightHint,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        value: _isToWeigh && !_isService,
+                        onChanged: _isService
+                            ? null
+                            : (v) => setState(() => _isToWeigh = v),
+                        isThreeLine: true,
+                        visualDensity: VisualDensity.compact,
+                      ),
                       SwitchListTile(
-                          title: Text(AppLocalizations.of(context).isEnabledVisible),
-                          value: _isEnabled,
-                          onChanged: (v) => setState(() => _isEnabled = v),
-                          visualDensity: VisualDensity.compact),
+                        title: Text(
+                          AppLocalizations.of(context).isEnabledVisible,
+                        ),
+                        value: _isEnabled,
+                        onChanged: (v) => setState(() => _isEnabled = v),
+                        visualDensity: VisualDensity.compact,
+                      ),
                     ],
                   ),
                 ),
@@ -1945,35 +2167,49 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
   /// carry. Grouping by category is what makes the "you cannot sell kg from a
   /// litre product" rule visible before it can be broken.
   Widget _buildUomDropdown(
-      InputDecoration Function(String, {String? hint, String? prefix, String? suffix}) deco) {
+    InputDecoration Function(
+      String, {
+      String? hint,
+      String? prefix,
+      String? suffix,
+    })
+    deco,
+  ) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
     final grouped = uomsByCategory();
 
     final items = <DropdownMenuItem<int>>[];
     for (final entry in grouped.entries) {
-      items.add(DropdownMenuItem<int>(
-        // A header is not selectable — `enabled: false` keeps a tap from
-        // assigning a category id that is not in the catalog.
-        enabled: false,
-        value: -entry.key.index - 1,
-        child: Text(
-          _uomCategoryLabel(entry.key, l10n).toUpperCase(),
-          style: theme.textTheme.labelSmall?.copyWith(
+      items.add(
+        DropdownMenuItem<int>(
+          // A header is not selectable — `enabled: false` keeps a tap from
+          // assigning a category id that is not in the catalog.
+          enabled: false,
+          value: -entry.key.index - 1,
+          child: Text(
+            _uomCategoryLabel(entry.key, l10n).toUpperCase(),
+            style: theme.textTheme.labelSmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.bold,
-              letterSpacing: 0.8),
+              letterSpacing: 0.8,
+            ),
+          ),
         ),
-      ));
+      );
 
       for (final u in entry.value) {
-        items.add(DropdownMenuItem<int>(
-          value: u.id,
-          child: Padding(
-            padding: const EdgeInsetsDirectional.only(start: 12),
-            child: Text(u.isReference ? '${u.code}  ·  ${l10n.uomStockUnit}' : u.code),
+        items.add(
+          DropdownMenuItem<int>(
+            value: u.id,
+            child: Padding(
+              padding: const EdgeInsetsDirectional.only(start: 12),
+              child: Text(
+                u.isReference ? '${u.code}  ·  ${l10n.uomStockUnit}' : u.code,
+              ),
+            ),
           ),
-        ));
+        );
       }
     }
 
@@ -1991,7 +2227,8 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
           // Never turned OFF here: an admin who deliberately weighs a piece
           // product would lose that on one unrelated unit change.
           final category = uomById(v).category;
-          if (category == UomCategory.weight || category == UomCategory.volume) {
+          if (category == UomCategory.weight ||
+              category == UomCategory.volume) {
             _isToWeigh = true;
           }
         });
@@ -2013,8 +2250,9 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
         padding: const EdgeInsets.symmetric(horizontal: 12),
         child: Text(
           l10n.uomStockHeldIn(stockUnit.code),
-          style: theme.textTheme.bodySmall
-              ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
         ),
       );
     }
@@ -2027,17 +2265,22 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
       ),
       child: Row(
         children: [
-          Icon(Icons.info_outline,
-              size: 18, color: theme.colorScheme.onSurfaceVariant),
+          Icon(
+            Icons.info_outline,
+            size: 18,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               l10n.uomStockConversionNote(
-                  unit.code,
-                  formatQuantityValue(uomToReference(1, unit.id), stockUnit.id),
-                  stockUnit.code),
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                unit.code,
+                formatQuantityValue(uomToReference(1, unit.id), stockUnit.id),
+                stockUnit.code,
+              ),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
           ),
         ],
@@ -2059,15 +2302,20 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
     final currencySymbol = ref.watch(currencySymbolProvider);
     final allTaxesAsync = ref.watch(allTaxesProvider);
 
-    InputDecoration deco(String label, {String? hint, String? prefix, String? suffix}) =>
-        InputDecoration(
-            labelText: label,
-            filled: true,
-            fillColor: theme.colorScheme.surface,
-            border: const OutlineInputBorder(),
-            hintText: hint,
-            prefixText: prefix,
-            suffixText: suffix);
+    InputDecoration deco(
+      String label, {
+      String? hint,
+      String? prefix,
+      String? suffix,
+    }) => InputDecoration(
+      labelText: label,
+      filled: true,
+      fillColor: theme.colorScheme.surface,
+      border: const OutlineInputBorder(),
+      hintText: hint,
+      prefixText: prefix,
+      suffixText: suffix,
+    );
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -2088,22 +2336,32 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
           Row(
             children: [
               Expanded(
-                  child: TextFormField(
-                      controller: _priceCtrl,
-                      // Rebuilds the breakdown below as the price is typed.
-                      onChanged: (_) => setState(() {}),
-                      decoration: deco(l10n.sellingPriceRequired,
-                          prefix: "$currencySymbol "),
-                      keyboardType:
-                          const TextInputType.numberWithOptions(decimal: true))),
+                child: TextFormField(
+                  controller: _priceCtrl,
+                  // Rebuilds the breakdown below as the price is typed.
+                  onChanged: (_) => setState(() {}),
+                  decoration: deco(
+                    l10n.sellingPriceRequired,
+                    prefix: "$currencySymbol ",
+                  ),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                ),
+              ),
               const SizedBox(width: 16),
               Expanded(
-                  child: TextFormField(
-                      controller: _costCtrl,
-                      decoration:
-                          deco(l10n.purchaseCost, prefix: "$currencySymbol "),
-                      keyboardType:
-                          const TextInputType.numberWithOptions(decimal: true))),
+                child: TextFormField(
+                  controller: _costCtrl,
+                  decoration: deco(
+                    l10n.purchaseCost,
+                    prefix: "$currencySymbol ",
+                  ),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -2116,8 +2374,9 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
               final enabled = taxes.where((t) => t.isEnabled).toList();
               // A stale id (tax disabled or deleted since) must not be handed
               // to the dropdown — Material asserts on a value with no item.
-              final safeValue =
-                  enabled.any((t) => t.id == _selectedTaxId) ? _selectedTaxId : null;
+              final safeValue = enabled.any((t) => t.id == _selectedTaxId)
+                  ? _selectedTaxId
+                  : null;
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -2128,11 +2387,18 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                           initialValue: safeValue,
                           decoration: deco(l10n.primaryTaxRate),
                           items: [
-                            DropdownMenuItem(value: null, child: Text(l10n.noTax)),
-                            ...enabled.map((t) => DropdownMenuItem(
+                            DropdownMenuItem(
+                              value: null,
+                              child: Text(l10n.noTax),
+                            ),
+                            ...enabled.map(
+                              (t) => DropdownMenuItem(
                                 value: t.id,
                                 child: Text(
-                                    "${t.name} (${t.rate}${t.isFixed ? '' : '%'})"))),
+                                  "${t.name} (${t.rate}${t.isFixed ? '' : '%'})",
+                                ),
+                              ),
+                            ),
                           ],
                           onChanged: (v) => setState(() => _selectedTaxId = v),
                         ),
@@ -2141,8 +2407,10 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                       Expanded(
                         child: SwitchListTile(
                           contentPadding: EdgeInsets.zero,
-                          title: Text(l10n.priceIsTaxInclusive,
-                              style: const TextStyle(fontSize: 13)),
+                          title: Text(
+                            l10n.priceIsTaxInclusive,
+                            style: const TextStyle(fontSize: 13),
+                          ),
                           value: _isTaxInclusive,
                           onChanged: (v) => setState(() => _isTaxInclusive = v),
                           visualDensity: VisualDensity.compact,
@@ -2160,11 +2428,14 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
             Row(
               children: [
                 Expanded(
-                    child: TextFormField(
-                        controller: _markupCtrl,
-                        decoration: deco(l10n.marginMarkup, suffix: "%"),
-                        keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true))),
+                  child: TextFormField(
+                    controller: _markupCtrl,
+                    decoration: deco(l10n.marginMarkup, suffix: "%"),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                  ),
+                ),
                 const SizedBox(width: 16),
                 const Expanded(child: SizedBox()),
               ],
@@ -2211,11 +2482,15 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
         children: [
           Text(
             l10n.taxBreakdownAdded(
-                money(price), money(amount), money(price + amount)),
+              money(price),
+              money(amount),
+              money(price + amount),
+            ),
             style: TextStyle(
               fontSize: 12,
-              color:
-                  Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.65),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.65),
             ),
           ),
           _buildTaxInclusiveWarning(),
@@ -2264,14 +2539,20 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(AppLocalizations.of(context).productColorMarker,
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold, color: theme.hintColor)),
+                Text(
+                  AppLocalizations.of(context).productColorMarker,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: theme.hintColor,
+                  ),
+                ),
                 const SizedBox(height: 4),
                 Text(
-                    AppLocalizations.of(context).colorMarkerHint,
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: theme.hintColor)),
+                  AppLocalizations.of(context).colorMarkerHint,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.hintColor,
+                  ),
+                ),
                 const SizedBox(height: 12),
                 Wrap(
                   spacing: 12,
@@ -2288,24 +2569,29 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                         width: 44,
                         height: 44,
                         decoration: BoxDecoration(
-                            color: color,
-                            shape: BoxShape.circle,
-                            border: isSelected
-                                ? Border.all(
-                                    color:
-                                        Theme.of(context).colorScheme.primary,
-                                    width: 3)
-                                : null,
-                            boxShadow: [
-                              if (isSelected)
-                                BoxShadow(
-                                    color: color.withValues(alpha: 0.4),
-                                    blurRadius: 6,
-                                    spreadRadius: 1)
-                            ]),
+                          color: color,
+                          shape: BoxShape.circle,
+                          border: isSelected
+                              ? Border.all(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  width: 3,
+                                )
+                              : null,
+                          boxShadow: [
+                            if (isSelected)
+                              BoxShadow(
+                                color: color.withValues(alpha: 0.4),
+                                blurRadius: 6,
+                                spreadRadius: 1,
+                              ),
+                          ],
+                        ),
                         child: isSelected
-                            ? const Icon(Icons.check,
-                                color: Colors.white, size: 20)
+                            ? const Icon(
+                                Icons.check,
+                                color: Colors.white,
+                                size: 20,
+                              )
                             : null,
                       ),
                     );
@@ -2319,13 +2605,20 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(AppLocalizations.of(context).productImage,
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold, color: theme.hintColor)),
+                Text(
+                  AppLocalizations.of(context).productImage,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: theme.hintColor,
+                  ),
+                ),
                 const SizedBox(height: 4),
-                Text(AppLocalizations.of(context).productImageHint,
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: theme.hintColor)),
+                Text(
+                  AppLocalizations.of(context).productImageHint,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.hintColor,
+                  ),
+                ),
                 const SizedBox(height: 12),
                 Row(
                   children: [
@@ -2333,38 +2626,51 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                       width: 140,
                       height: 140,
                       decoration: BoxDecoration(
-                          color: theme.colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: theme.dividerColor)),
-                      child: _selectedImageBase64 != null &&
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: theme.dividerColor),
+                      ),
+                      child:
+                          _selectedImageBase64 != null &&
                               _selectedImageBase64!.isNotEmpty
                           ? ClipRRect(
                               borderRadius: BorderRadius.circular(8),
                               child: Image.memory(
-                                  base64Decode(_selectedImageBase64!),
-                                  fit: BoxFit.cover))
-                          : PhosphorIcon(PhosphorIconsRegular.forkKnife,
-                              color: theme.hintColor, size: 44),
+                                base64Decode(_selectedImageBase64!),
+                                fit: BoxFit.cover,
+                              ),
+                            )
+                          : PhosphorIcon(
+                              PhosphorIconsRegular.forkKnife,
+                              color: theme.hintColor,
+                              size: 44,
+                            ),
                     ),
                     const SizedBox(width: 16),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         ElevatedButton.icon(
-                            icon: const Icon(Icons.upload, size: 18),
-                            label: Text(AppLocalizations.of(context).actionUpload),
-                            onPressed: _pickImage),
+                          icon: const Icon(Icons.upload, size: 18),
+                          label: Text(
+                            AppLocalizations.of(context).actionUpload,
+                          ),
+                          onPressed: _pickImage,
+                        ),
                         if (_selectedImageBase64 != null &&
                             _selectedImageBase64!.isNotEmpty) ...[
                           const SizedBox(height: 8),
                           TextButton(
-                              onPressed: () =>
-                                  setState(() => _selectedImageBase64 = null),
-                              child: Text(AppLocalizations.of(context).removeImage,
-                                  style: TextStyle(color: context.dangerColor))),
-                        ]
+                            onPressed: () =>
+                                setState(() => _selectedImageBase64 = null),
+                            child: Text(
+                              AppLocalizations.of(context).removeImage,
+                              style: TextStyle(color: context.dangerColor),
+                            ),
+                          ),
+                        ],
                       ],
-                    )
+                    ),
                   ],
                 ),
               ],
@@ -2383,28 +2689,40 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(AppLocalizations.of(context).applyTaxes,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(
+            AppLocalizations.of(context).applyTaxes,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 16),
           allTaxesAsync.when(
-              loading: () => const CircularProgressIndicator(),
-              error: (_, __) => Text(AppLocalizations.of(context).failedToLoadTaxes),
-              data: (taxes) {
-                return DropdownButtonFormField<int?>(
-                  initialValue: _selectedTaxId,
-                  decoration: InputDecoration(
-                      labelText: AppLocalizations.of(context).primaryTaxRate,
-                      filled: true,
-                      fillColor: theme.colorScheme.surface,
-                      border: const OutlineInputBorder()),
-                  items: [
-                    DropdownMenuItem(value: null, child: Text(AppLocalizations.of(context).noTax)),
-                    ...taxes.map((t) => DropdownMenuItem(
-                        value: t.id, child: Text("${t.name} (${t.rate}%)"))),
-                  ],
-                  onChanged: (v) => setState(() => _selectedTaxId = v),
-                );
-              }),
+            loading: () => const CircularProgressIndicator(),
+            error: (_, __) =>
+                Text(AppLocalizations.of(context).failedToLoadTaxes),
+            data: (taxes) {
+              return DropdownButtonFormField<int?>(
+                initialValue: _selectedTaxId,
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context).primaryTaxRate,
+                  filled: true,
+                  fillColor: theme.colorScheme.surface,
+                  border: const OutlineInputBorder(),
+                ),
+                items: [
+                  DropdownMenuItem(
+                    value: null,
+                    child: Text(AppLocalizations.of(context).noTax),
+                  ),
+                  ...taxes.map(
+                    (t) => DropdownMenuItem(
+                      value: t.id,
+                      child: Text("${t.name} (${t.rate}%)"),
+                    ),
+                  ),
+                ],
+                onChanged: (v) => setState(() => _selectedTaxId = v),
+              );
+            },
+          ),
         ],
       ),
     );
@@ -2425,24 +2743,24 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: kMaxReadableWidth),
         child: ListView(
-        padding: const EdgeInsets.all(32.0),
-        // The picker carries its own heading and hint — a second title above
-        // it said the same thing twice, and the one it said was about the
-        // catalogue that is now gone.
-        children: [
-          // ── Modifier groups ──────────────────────────────────────────────
-          // 🚨 The free-text comment catalogue that used to sit under this is
-          // RETIRED (backlog 38, phase 6). It offered an unpriced, ungrouped,
-          // unruled list of strings that the till joined with ", " — modifiers
-          // answer the same question with prices, pick-one/pick-many rules and
-          // a reporting row per choice. Existing catalogues are converted to
-          // groups by `DataBase/SQL/RetireProductComments_2026-08-29.sql`.
-          //
-          // A per-line NOTE is not the catalogue and did not go with it: it is
-          // still on the till's Comment button, and a group can ask for one
-          // itself (`ModifierGroup.allowsFreeText`).
-          _ProductModifierGroupsPicker(productId: productId),
-        ],
+          padding: const EdgeInsets.all(32.0),
+          // The picker carries its own heading and hint — a second title above
+          // it said the same thing twice, and the one it said was about the
+          // catalogue that is now gone.
+          children: [
+            // ── Modifier groups ──────────────────────────────────────────────
+            // 🚨 The free-text comment catalogue that used to sit under this is
+            // RETIRED (backlog 38, phase 6). It offered an unpriced, ungrouped,
+            // unruled list of strings that the till joined with ", " — modifiers
+            // answer the same question with prices, pick-one/pick-many rules and
+            // a reporting row per choice. Existing catalogues are converted to
+            // groups by `DataBase/SQL/RetireProductComments_2026-08-29.sql`.
+            //
+            // A per-line NOTE is not the catalogue and did not go with it: it is
+            // still on the till's Comment button, and a group can ask for one
+            // itself (`ModifierGroup.allowsFreeText`).
+            _ProductModifierGroupsPicker(productId: productId),
+          ],
         ),
       ),
     );
@@ -2455,9 +2773,11 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
     final owner = ref
         .read(allProductsListProvider)
         .value
-        ?.where((p) =>
-            p.id != widget.existingProduct?.id &&
-            p.barcodes.any((b) => b.trim() == code))
+        ?.where(
+          (p) =>
+              p.id != widget.existingProduct?.id &&
+              p.barcodes.any((b) => b.trim() == code),
+        )
         .firstOrNull;
 
     setState(() {
@@ -2491,11 +2811,14 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(AppLocalizations.of(context).productBarcodes,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           Text(
-              AppLocalizations.of(context).barcodesHint,
-              style: TextStyle(color: theme.hintColor)),
+            AppLocalizations.of(context).productBarcodes,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          Text(
+            AppLocalizations.of(context).barcodesHint,
+            style: TextStyle(color: theme.hintColor),
+          ),
           const SizedBox(height: 24),
 
           // INPUT ROW WITH GENERATOR
@@ -2516,22 +2839,23 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                       },
                       decoration: InputDecoration(
                         labelText: AppLocalizations.of(context).barcode,
-                        hintText:
-                            _isBarcodeChipActive
-                                ? ""
-                                : AppLocalizations.of(context)
-                                    .scanOrEnterBarcode,
+                        hintText: _isBarcodeChipActive
+                            ? ""
+                            : AppLocalizations.of(context).scanOrEnterBarcode,
                         filled: true,
                         fillColor: theme.colorScheme.surface,
                         border: const OutlineInputBorder(),
                         prefixIcon: const Icon(Icons.qr_code_scanner),
                         prefix: _isBarcodeChipActive
                             ? Padding(
-                                padding:
-                                    const EdgeInsetsDirectional.only(end: 8.0),
+                                padding: const EdgeInsetsDirectional.only(
+                                  end: 8.0,
+                                ),
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 4),
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
                                   decoration: BoxDecoration(
                                     // Was a hardcoded pink — unreadable in the
                                     // dark theme, and against the project rule
@@ -2545,8 +2869,9 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                                       Text(
                                         _newBarcodeCtrl.text,
                                         style: TextStyle(
-                                            color: theme.colorScheme.onPrimary,
-                                            fontWeight: FontWeight.bold),
+                                          color: theme.colorScheme.onPrimary,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                       const SizedBox(width: 8),
                                       InkWell(
@@ -2554,9 +2879,11 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                                           _newBarcodeCtrl.clear();
                                           _isBarcodeChipActive = false;
                                         }),
-                                        child: Icon(Icons.close,
-                                            color: theme.colorScheme.onPrimary,
-                                            size: 16),
+                                        child: Icon(
+                                          Icons.close,
+                                          color: theme.colorScheme.onPrimary,
+                                          size: 16,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -2586,67 +2913,87 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                             minimumSize: const Size(50, 30),
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
-                          icon: Icon(Icons.qr_code_2,
-                              size: 16, color: context.infoColor),
-                          label: Text('EAN-13',
-                              style: TextStyle(color: context.infoColor)),
+                          icon: Icon(
+                            Icons.qr_code_2,
+                            size: 16,
+                            color: context.infoColor,
+                          ),
+                          label: Text(
+                            'EAN-13',
+                            style: TextStyle(color: context.infoColor),
+                          ),
                           onPressed: () => _fillGeneratedBarcode(
-                              buildInternalEan13(productId)),
+                            buildInternalEan13(productId),
+                          ),
                         ),
                         // One entry per priced/weighted rule the company
                         // actually has. Hidden entirely when it has none —
                         // there would be nothing to encode.
-                        Builder(builder: (context) {
-                          final scaleRules =
-                              (ref.watch(barcodeRulesProvider).value ??
-                                      kDefaultBarcodeRules)
-                                  .where((r) =>
-                                      r.isEnabled &&
-                                      (r.type == BarcodeRuleType.weighted ||
-                                          r.type == BarcodeRuleType.priced))
-                                  .toList();
-                          if (scaleRules.isEmpty) {
-                            return const SizedBox.shrink();
-                          }
+                        Builder(
+                          builder: (context) {
+                            final scaleRules =
+                                (ref.watch(barcodeRulesProvider).value ??
+                                        kDefaultBarcodeRules)
+                                    .where(
+                                      (r) =>
+                                          r.isEnabled &&
+                                          (r.type == BarcodeRuleType.weighted ||
+                                              r.type == BarcodeRuleType.priced),
+                                    )
+                                    .toList();
+                            if (scaleRules.isEmpty) {
+                              return const SizedBox.shrink();
+                            }
 
-                          return PopupMenuButton<BarcodeRule>(
-                            tooltip: AppLocalizations.of(context)
-                                .generateScaleBarcode,
-                            onSelected: (rule) {
-                              final key =
-                                  buildProductKeyForRule(rule, productId);
-                              if (key == null) {
-                                showAppSnackbar(
+                            return PopupMenuButton<BarcodeRule>(
+                              tooltip: AppLocalizations.of(
+                                context,
+                              ).generateScaleBarcode,
+                              onSelected: (rule) {
+                                final key = buildProductKeyForRule(
+                                  rule,
+                                  productId,
+                                );
+                                if (key == null) {
+                                  showAppSnackbar(
                                     context,
                                     ref,
-                                    AppLocalizations.of(context)
-                                        .scaleBarcodeRuleUnusable(rule.pattern),
-                                    isError: true);
-                                return;
-                              }
-                              _fillGeneratedBarcode(key);
-                            },
-                            itemBuilder: (context) => [
-                              for (final r in scaleRules)
-                                PopupMenuItem(
-                                  value: r,
-                                  child: Text('${r.name}  ·  ${r.pattern}'),
-                                ),
-                            ],
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.scale,
-                                    size: 16, color: context.infoColor),
-                                const SizedBox(width: 6),
-                                Text(
-                                    AppLocalizations.of(context)
-                                        .generateScaleBarcode,
-                                    style: TextStyle(color: context.infoColor)),
+                                    AppLocalizations.of(
+                                      context,
+                                    ).scaleBarcodeRuleUnusable(rule.pattern),
+                                    isError: true,
+                                  );
+                                  return;
+                                }
+                                _fillGeneratedBarcode(key);
+                              },
+                              itemBuilder: (context) => [
+                                for (final r in scaleRules)
+                                  PopupMenuItem(
+                                    value: r,
+                                    child: Text('${r.name}  ·  ${r.pattern}'),
+                                  ),
                               ],
-                            ),
-                          );
-                        }),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.scale,
+                                    size: 16,
+                                    color: context.infoColor,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    AppLocalizations.of(
+                                      context,
+                                    ).generateScaleBarcode,
+                                    style: TextStyle(color: context.infoColor),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
                       ],
                     ),
                   ],
@@ -2659,8 +3006,10 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: theme.colorScheme.primary,
                   foregroundColor: theme.colorScheme.onPrimary,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 20,
+                  ),
                 ),
                 onPressed: () async {
                   final barcodeValue = _newBarcodeCtrl.text.trim();
@@ -2670,7 +3019,9 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                   final localId = const Uuid().v4();
 
                   // Write locally first — appears in the list immediately.
-                  await db.into(db.barcodesTable).insert(
+                  await db
+                      .into(db.barcodesTable)
+                      .insert(
                         BarcodesTableCompanion(
                           localId: Value(localId),
                           productId: Value(productId),
@@ -2688,16 +3039,20 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                   // Try API — stamp serverId + clear pending on success.
                   try {
                     final dio = createDio();
-                    final res = await dio.post('/Barcodes/Add',
-                        queryParameters: {'companyId': companyId},
-                        data: {'productId': productId, 'value': barcodeValue});
+                    final res = await dio.post(
+                      '/Barcodes/Add',
+                      queryParameters: {'companyId': companyId},
+                      data: {'productId': productId, 'value': barcodeValue},
+                    );
                     final serverId = _barcodeIdFromResponse(res.data);
-                    await (db.update(db.barcodesTable)
-                          ..where((t) => t.localId.equals(localId)))
-                        .write(BarcodesTableCompanion(
-                      serverId: Value(serverId),
-                      syncStatus: const Value('synced'),
-                    ));
+                    await (db.update(
+                      db.barcodesTable,
+                    )..where((t) => t.localId.equals(localId))).write(
+                      BarcodesTableCompanion(
+                        serverId: Value(serverId),
+                        syncStatus: const Value('synced'),
+                      ),
+                    );
                   } on DioException {
                     // Offline — stays pending_create until next sync.
                   }
@@ -2710,17 +3065,21 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
 
           Expanded(
             child: asyncBarcodes.when(
-              loading: () =>
-                  const Center(child: CircularProgressIndicator()),
+              loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, _) => Center(
-                  child: Text(AppLocalizations.of(context).errorWithMessage(e.toString()),
-                      style: TextStyle(color: context.dangerColor))),
+                child: Text(
+                  AppLocalizations.of(context).errorWithMessage(e.toString()),
+                  style: TextStyle(color: context.dangerColor),
+                ),
+              ),
               data: (barcodes) {
                 if (barcodes.isEmpty) {
                   return Center(
-                      child: Text(AppLocalizations.of(context).noBarcodesYet,
-                          style: TextStyle(
-                              color: theme.hintColor, fontSize: 16)));
+                    child: Text(
+                      AppLocalizations.of(context).noBarcodesYet,
+                      style: TextStyle(color: theme.hintColor, fontSize: 16),
+                    ),
+                  );
                 }
                 return Container(
                   decoration: BoxDecoration(
@@ -2733,19 +3092,27 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                     itemBuilder: (context, index) {
                       final b = barcodes[index];
                       return ListTile(
-                        leading: Icon(Icons.qr_code,
-                            color: b.isPendingSync
-                                ? theme.colorScheme.tertiary
-                                : Colors.blueGrey),
-                        title: Text(b.value,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1.5)),
+                        leading: Icon(
+                          Icons.qr_code,
+                          color: b.isPendingSync
+                              ? theme.colorScheme.tertiary
+                              : Colors.blueGrey,
+                        ),
+                        title: Text(
+                          b.value,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
                         subtitle: b.isPendingSync
-                            ? Text(AppLocalizations.of(context).pendingSync,
+                            ? Text(
+                                AppLocalizations.of(context).pendingSync,
                                 style: TextStyle(
-                                    fontSize: 11,
-                                    color: theme.colorScheme.tertiary))
+                                  fontSize: 11,
+                                  color: theme.colorScheme.tertiary,
+                                ),
+                              )
                             : null,
                         trailing: IconButton(
                           icon: Icon(Icons.delete, color: context.dangerColor),
@@ -2762,7 +3129,8 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                             // Ask the server for its id by value first.
                             var serverId = b.id;
                             if (serverId == 0 && !b.isPendingSync) {
-                              serverId = await _resolveBarcodeServerId(
+                              serverId =
+                                  await _resolveBarcodeServerId(
                                     productId: b.productId,
                                     companyId: companyId,
                                     value: b.value,
@@ -2773,8 +3141,7 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                             if (serverId == 0) {
                               // Never reached the server — hard-delete locally.
                               await (db.delete(db.barcodesTable)
-                                    ..where((t) =>
-                                        t.localId.equals(b.localId)))
+                                    ..where((t) => t.localId.equals(b.localId)))
                                   .go();
                             } else {
                               // Soft-delete so SyncManager can push the
@@ -2782,23 +3149,26 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                               // just resolved is written back too, or the push
                               // would hit the same missing-id path.
                               await (db.update(db.barcodesTable)
-                                    ..where((t) =>
-                                        t.localId.equals(b.localId)))
-                                  .write(BarcodesTableCompanion(
-                                serverId: Value(serverId),
-                                syncStatus: const Value('pending_delete'),
-                              ));
+                                    ..where((t) => t.localId.equals(b.localId)))
+                                  .write(
+                                    BarcodesTableCompanion(
+                                      serverId: Value(serverId),
+                                      syncStatus: const Value('pending_delete'),
+                                    ),
+                                  );
                               // Try API immediately while online.
                               try {
                                 final dio = createDio();
-                                await dio.delete('/Barcodes/Delete',
-                                    queryParameters: {
-                                      'id': serverId,
-                                      'companyId': companyId,
-                                    });
-                                await (db.delete(db.barcodesTable)
-                                      ..where((t) =>
-                                          t.localId.equals(b.localId)))
+                                await dio.delete(
+                                  '/Barcodes/Delete',
+                                  queryParameters: {
+                                    'id': serverId,
+                                    'companyId': companyId,
+                                  },
+                                );
+                                await (db.delete(db.barcodesTable)..where(
+                                      (t) => t.localId.equals(b.localId),
+                                    ))
                                     .go();
                               } on DioException catch (e) {
                                 // 🚨 Say what happened. This used to be an
@@ -2815,9 +3185,11 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                                 // Offline is not a failure: the row stays
                                 // pending_delete and the next sync pushes it.
                                 if (!context.mounted) return;
-                                final offline = e.type ==
+                                final offline =
+                                    e.type ==
                                         DioExceptionType.connectionError ||
-                                    e.type == DioExceptionType.connectionTimeout ||
+                                    e.type ==
+                                        DioExceptionType.connectionTimeout ||
                                     e.type == DioExceptionType.sendTimeout ||
                                     e.type == DioExceptionType.receiveTimeout;
                                 if (offline) return;
@@ -2844,7 +3216,6 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
       ),
     );
   }
-
 }
 
 /// Attaches shared modifier groups to one product, in the order the cashier
@@ -2865,34 +3236,43 @@ class _ProductModifierGroupsPicker extends ConsumerWidget {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
-    final attached = ref.watch(productModifierGroupIdsProvider(productId)).value ??
+    final attached =
+        ref.watch(productModifierGroupIdsProvider(productId)).value ??
         const <int>[];
-    final all = ref.watch(allModifierGroupsProvider).value ??
-        const <ModifierGroup>[];
+    final all =
+        ref.watch(allModifierGroupsProvider).value ?? const <ModifierGroup>[];
     final byId = {for (final g in all) g.id: g};
     final available = all.where((g) => !attached.contains(g.id)).toList();
 
     Future<void> write(List<int> ids) async {
       final companyId = ref.read(selectedCompanyProvider)?.id;
       if (companyId == null) return;
-      await ref.read(appDatabaseProvider).setProductModifierGroupsLocal(
+      await ref
+          .read(appDatabaseProvider)
+          .setProductModifierGroupsLocal(
             companyId: companyId,
             productId: productId,
             groupIds: ids,
           );
-      unawaited(ref
-          .read(syncManagerProvider)
-          .sync(companyId)
-          .catchError((Object _) => <String>[]));
+      unawaited(
+        ref
+            .read(syncManagerProvider)
+            .sync(companyId)
+            .catchError((Object _) => <String>[]),
+      );
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(l10n.productModifierGroups,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        Text(l10n.productModifierGroupsHint,
-            style: TextStyle(color: theme.hintColor, fontSize: 12)),
+        Text(
+          l10n.productModifierGroups,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        Text(
+          l10n.productModifierGroupsHint,
+          style: TextStyle(color: theme.hintColor, fontSize: 12),
+        ),
         const SizedBox(height: 12),
 
         if (attached.isEmpty)
@@ -2935,19 +3315,24 @@ class _ProductModifierGroupsPicker extends ConsumerWidget {
                         // Finger-sized: the handle is the control this list is
                         // driven by on a touch screen.
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 4, vertical: 12),
+                          horizontal: 4,
+                          vertical: 12,
+                        ),
                         child: Icon(Icons.drag_indicator, color: cs.outline),
                       ),
                     ),
                   ),
-                  title: Text(g?.name ?? '#$id',
-                      style: const TextStyle(fontWeight: FontWeight.w600)),
+                  title: Text(
+                    g?.name ?? '#$id',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
                   subtitle: g == null
                       ? null
                       : Text(
                           '${selectionRuleLabel(context, g)} · '
                           '${l10n.optionCount(g.options.length)}',
-                          style: TextStyle(color: cs.onSurfaceVariant)),
+                          style: TextStyle(color: cs.onSurfaceVariant),
+                        ),
                   trailing: IconButton(
                     icon: Icon(Icons.close, color: cs.error),
                     tooltip: l10n.actionDelete,
@@ -2959,8 +3344,10 @@ class _ProductModifierGroupsPicker extends ConsumerWidget {
           ),
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
-            child: Text(l10n.dragToReorderGroups,
-                style: TextStyle(color: theme.hintColor, fontSize: 11)),
+            child: Text(
+              l10n.dragToReorderGroups,
+              style: TextStyle(color: theme.hintColor, fontSize: 11),
+            ),
           ),
         ],
 
@@ -2977,9 +3364,8 @@ class _ProductModifierGroupsPicker extends ConsumerWidget {
                 : () async {
                     final picked = await showDialog<int>(
                       context: context,
-                      builder: (_) => _ModifierGroupPickerDialog(
-                        groups: available,
-                      ),
+                      builder: (_) =>
+                          _ModifierGroupPickerDialog(groups: available),
                     );
                     if (picked != null) await write([...attached, picked]);
                   },
@@ -2989,8 +3375,8 @@ class _ProductModifierGroupsPicker extends ConsumerWidget {
               all.isEmpty
                   ? l10n.noModifierGroupsYet
                   : available.isEmpty
-                      ? l10n.allModifierGroupsAttached
-                      : l10n.attachModifierGroup,
+                  ? l10n.allModifierGroupsAttached
+                  : l10n.attachModifierGroup,
             ),
           ),
         ),
@@ -3036,10 +3422,12 @@ class _ModifierGroupPickerDialogState
     final shown = _query.isEmpty
         ? widget.groups
         : widget.groups
-            .where((g) =>
-                g.name.toLowerCase().contains(_query) ||
-                g.options.any((o) => o.name.toLowerCase().contains(_query)))
-            .toList();
+              .where(
+                (g) =>
+                    g.name.toLowerCase().contains(_query) ||
+                    g.options.any((o) => o.name.toLowerCase().contains(_query)),
+              )
+              .toList();
 
     return AlertDialog(
       title: Text(l10n.chooseAModifierGroup),
@@ -3066,8 +3454,10 @@ class _ModifierGroupPickerDialogState
             Expanded(
               child: shown.isEmpty
                   ? Center(
-                      child: Text(l10n.noModifierGroupsYet,
-                          style: TextStyle(color: cs.onSurfaceVariant)),
+                      child: Text(
+                        l10n.noModifierGroupsYet,
+                        style: TextStyle(color: cs.onSurfaceVariant),
+                      ),
                     )
                   : ListView.separated(
                       itemCount: shown.length,
@@ -3086,23 +3476,29 @@ class _ModifierGroupPickerDialogState
                               children: [
                                 Flexible(
                                   flex: 3,
-                                  child: Text(g.name,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.w600)),
+                                  child: Text(
+                                    g.name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                                 ),
                                 if (!g.isEnabled) ...[
                                   const SizedBox(width: 8),
                                   Flexible(
                                     flex: 2,
-                                    child: Text(l10n.groupIsDisabled,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.bold,
-                                            color: cs.onSurfaceVariant)),
+                                    child: Text(
+                                      l10n.groupIsDisabled,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: cs.onSurfaceVariant,
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ],
@@ -3121,9 +3517,11 @@ class _ModifierGroupPickerDialogState
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
-                                        fontSize: 11,
-                                        color: cs.onSurfaceVariant
-                                            .withValues(alpha: 0.8)),
+                                      fontSize: 11,
+                                      color: cs.onSurfaceVariant.withValues(
+                                        alpha: 0.8,
+                                      ),
+                                    ),
                                   ),
                               ],
                             ),
@@ -3168,8 +3566,10 @@ class _HintCard extends StatelessWidget {
           Icon(icon, size: 18, color: cs.onSurfaceVariant),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(text,
-                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
+            child: Text(
+              text,
+              style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
+            ),
           ),
         ],
       ),

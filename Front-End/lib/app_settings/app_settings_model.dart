@@ -423,6 +423,10 @@ class SettingKeys {
   static const defaultDueDateDays = 'Order.DefaultDueDateDays';
   static const mergeItemsOnReceipt = 'Receipt.MergeItems';
   static const singleItemDiscountAllowed = 'Order.SingleItemDiscountAllowed';
+  // Enter/NumpadEnter confirms the sale on the checkout dialog, for tills
+  // driven by a physical keyboard or a keyboard-wedge barcode scanner.
+  static const shortcutKeysPaymentConfirmation =
+      'Order.ShortcutKeysPaymentConfirmation';
 
   // Order Name
 
@@ -461,6 +465,7 @@ class SettingKeys {
   static const showCommentBtn = 'ButtonBar.ShowComment';
   static const showModifiersBtn = 'ButtonBar.ShowModifiers';
   static const showRefundBtn = 'ButtonBar.ShowRefund';
+
   /// Show the green "Continue selling" floating button on the session screen.
   static const showContinueSellingBtn = 'Pos.ShowContinueSellingBtn';
 
@@ -473,6 +478,7 @@ class SettingKeys {
   static const showBookingBtn = 'ButtonBar.ShowBooking';
   static const showTablesBtn = 'ButtonBar.ShowTables';
   static const showKitchenBtn = 'ButtonBar.ShowKitchen';
+
   /// Pre-bill ("Addition") button — prints the guest check the customer settles
   /// against. Nothing is banked, so it is separate from the Pay button.
   static const showAdditionBtn = 'ButtonBar.ShowAddition';
@@ -746,6 +752,7 @@ const Map<String, String> kSettingDefaults = {
   SettingKeys.defaultDueDateDays: '0',
   SettingKeys.mergeItemsOnReceipt: 'true',
   SettingKeys.singleItemDiscountAllowed: 'true',
+  SettingKeys.shortcutKeysPaymentConfirmation: 'false',
 
   // Order Name
 
@@ -758,7 +765,10 @@ const Map<String, String> kSettingDefaults = {
   // Advanced Settings
   SettingKeys.resetOrderNumberOnDayClose: 'false',
   SettingKeys.showItemsOnPaymentForm: 'true',
-  SettingKeys.numberOfPaymentTypeRows: '0',
+  // Matches the backend seeder (Order.NumberOfPaymentTypeRows = "1"); the two
+  // used to disagree (client fallback was "0"), which was harmless only
+  // because _PaymentMethodsColumn treats both 0 and 1 as "single column".
+  SettingKeys.numberOfPaymentTypeRows: '1',
   SettingKeys.showAllOccupiedTablesInFloorPlan: 'true',
   SettingKeys.defaultWarehouseId: '',
 
