@@ -8,9 +8,16 @@ deleted from both files and its number retires with it.
 
 OPEN RIGHT NOW: 11, 13, 14, 15, 35, 41, 42, 44.
 (9 was built on 2026-08-30 - see B5 - and needs a real
-printer before it can be called done. 20 and 43 were
-CLOSED on 2026-09-03 on your call - see B6 and B7 - and
-their numbers are retired.)
+printer before it can be called done. 42 was BUILT on
+2026-09-03 - see B6 - and needs TWO TILLS to prove it.
+20 and 43 were CLOSED on 2026-09-03 on your call; their
+numbers are retired and the detail is in handoff.md under
+"Carried over" - there is no B6/B7 for them, the older
+header line here said so and was wrong.)
+
+FOUR THINGS WERE BUILT ON 2026-09-03 - B6, B7, B8, B9.
+Three of them came out of the LATER list, which is now
+much shorter. Test steps are with each item.
 
 SIX LISTS BELOW - read them in this order:
 
@@ -111,82 +118,265 @@ B.  CHECK NOW   (built and tested by me, needs YOUR eyes)
      plan; if your tablets' printers are not on the network,
      tell me and that becomes the next piece.
 
-[B6] TAX CODE IS NOW REQUIRED - was item 20, your call
-     taken 2026-09-03. You picked the free fix over the
-     schema change, so no migration was written and the
-     filtered unique index was NOT created.
 
-     What changed: the API now REFUSES a tax with no code.
-     The tax form already demanded one; the hole was that
-     the server did not, so the admin portal or a sync push
-     could still create a code-less tax and hit the limit
-     from the other side. AddTax rejects a missing or blank
-     code outright. UpdateTax rejects a code that is sent
-     and blank, but still accepts a code that is ABSENT -
-     that means "leave it alone", which is what keeps an
-     old code-less tax syncing instead of parking.
+[B6] ITEM 42 - TWO TILLS, ONE DRAWER, NO INTERNET. BUILT.
+     This is the one that lost money data, so read the
+     "why" before the steps.
 
-     (a) Tax Rates -> New. Leave Code empty -> Save must
-         refuse before anything is written.
-     (b) Give it a code another tax already has -> refused,
-         "Already used by another tax".
-     (c) Give it a fresh code -> saves, and appears on the
-         other terminal after its next sync.
-     (d) 🚨 The one to actually watch: if you already have
-         a tax with NO code, it is still there and still
-         works. Open it, give it a code, save. It must go
-         through - and after that the till can never get
-         back into the two-blank-codes state.
+     WHAT WENT WRONG: two terminals share one register. A
+     terminal only learns about the other one's session when
+     it PULLS. Offline it never pulls, so its own database
+     honestly says the drawer is free and it opens a second
+     session. When the internet comes back the server takes
+     the first push and refuses the second - "This register
+     already has an open session" - and that row parked at
+     sync_failed, which is TERMINAL. Every sale the second
+     cashier rang was still on the tablet, pointing at a
+     session the server would never own. Nothing retried it,
+     nothing recovered it.
 
-     WHAT DID NOT CHANGE: the database limit is untouched.
-     UQ_Tax_Code_PerCompany still counts an empty code as a
-     value, so one code-less tax is still the ceiling. The
-     app just never asks for a second one now. If you ever
-     want blank codes to be legal, say so and the filtered
-     index is the schema change that does it.
+     TWO FIXES, because one was not enough:
+     (a) A PRE-OPEN REFRESH. Press Open Register and the till
+         now pulls the register's sessions FIRST. If one is
+         already running you are told so and handed a
+         "Sell in this session" button instead of opening a
+         second. Bounded to 6 seconds and it fails OPEN - an
+         offline till still opens its register exactly as
+         before, because a shop with no internet must never
+         be stopped from starting its day.
+     (b) A MERGE when it happens anyway. The rejection is no
+         longer a dead end. The till asks the server which
+         session actually holds the register, moves its
+         orders, documents, payments and cash in/out onto it,
+         and deletes the duplicate.
 
-[B7] ProductComment IS GONE - was item 43, your word given
-     2026-09-03. Removed: the SQL Server domain model and
-     DbSet, all six /ProductComments endpoints, the service,
-     repository, commands, queries and mapper; on the till,
-     the Drift table, product_comment_provider,
-     product_comment_model, pullProductComments,
-     pushPendingProductCommentOps and the sync-status row.
-     The Postman collection and the conversion script went
-     with them - both are in git history at this commit if
-     a database with real rows ever turns up.
+     🚨 THE DETAIL THAT DECIDES THE DRAWER: the second till's
+     OPENING FLOAT is deleted, not moved. The surviving
+     session already carries its own counted float, and
+     expected cash is opening + cash payments + cash in -
+     cash out. Moving a second float across would put two
+     floats on one drawer for money counted into it once.
+     Watch for this in step (f).
 
-     TWO THINGS TO KNOW, neither of them a bug:
+     HOW TO TEST - you need two devices on ONE register:
+     (a) Both devices: Settings -> Register, pick the SAME
+         register. Confirm both show the same register name.
+     (b) Device A, ONLINE: Open Register, float 200. Ring one
+         sale. Let it sync.
+     (c) Device B, ONLINE: press Open Register. You must get
+         "This register is already open" and a single
+         "Sell in this session" button - no float field. Tap
+         it and ring a sale. Both sales must appear in the
+         same session. 🚨 That is fix (a); before today B
+         would have opened a second session here.
+     (d) NOW THE REAL ONE. Close the session. Put BOTH
+         devices in aeroplane mode / pull the network.
+     (e) Device A: Open Register, float 200, ring 2 sales.
+         Device B: Open Register, float 150, ring 3 sales,
+         and do one Cash Out of 20. Both succeed - they are
+         offline and neither can know about the other.
+     (f) Put A back online, let it sync. Then B. Now on B:
+         - No sync error, and nothing sits at "failed" in
+           Sync Status.
+         - POS Session shows ONE session, not two, with all
+           FIVE sales in it.
+         - Cash movements list shows ONE opening float of
+           200 (A's), NOT two, and the 20 cash-out is there.
+         - Expected cash at close = 200 + all cash payments
+           - 20. If you see 350 of float, the merge moved
+           something it should have dropped - tell me.
+     (g) Close the register and check the Z-report covers all
+         five sales once.
 
-     1. The SQL Server table is STILL THERE. You asked for
-        code only, no migration, and that is what was done -
-        it now holds 0 rows that nothing can read or write.
-        🚨 But EF no longer knows about it, so the NEXT
-        migration you scaffold for any reason will quietly
-        include a DROP TABLE for it. That is the end state
-        you want; just do not be surprised by it, and read
-        the generated migration before applying it.
+     ⚠️ WHAT IS DELIBERATELY NOT MERGED: a session device B
+     had already CLOSED offline. Once a Z-report exists the
+     payments carry its number, and moving them under another
+     session would restate a slip already printed. That one
+     still parks, and now says why. If you hit it, tell me -
+     it needs a decision, not a silent repair.
 
-     2. The TILL's local table is dropped for real, by the
-        schema bump 64 -> 65. It runs once, on the first
-        launch of the new build, and it cannot fail - it is
-        DROP TABLE IF EXISTS.
+     Covered by test/session_offline_conflict_test.dart
+     (9 tests, including the float rule and the refusal to
+     merge a closed session).
 
-     (a) Launch the app on a till that has run the old
-         build. It must open normally, not re-download the
-         world - the bump migrates, it does not reset.
-     (b) Sync -> the status dialog no longer lists "Product
-         comments". Every other row still counts up.
-     (c) Ring a sale, press Comment on a line, type a note,
-         send it to the kitchen. The per-line NOTE is NOT
-         the catalogue and did not go with it - this must
-         still work, and still print.
-     (d) A product with modifier groups still opens its
-         Customize sheet, and a group set to allow free text
-         still offers the box.
-     (e) Products -> Export. The file still has its
-         <Comments> element, now always empty, so whatever
-         reads that file keeps parsing it.
+
+[B7] KITCHEN DISPLAY IS TRANSLATED. EN / FR / AR.
+     It was the one app with no strings file at all - the
+     kitchen staff being, as you said, the likeliest
+     Arabic-only readers in the building.
+
+     The language is picked ON THE DISPLAY (your call), with
+     a 🌐 button in the top-right of BOTH screens - including
+     the pairing screen, because the person setting it up is
+     the one who may not read English. Each language is
+     written in its own name (English / Francais / العربية),
+     so somebody who cannot read the current language can
+     still find their way out.
+
+     HOW TO TEST:
+     (a) Launch the KDS unpaired. Top-right 🌐 -> العربية.
+         The whole pairing screen flips to Arabic AND to
+         right-to-left.
+     (b) 🚨 CHECK THE IP ADDRESS ON THAT SCREEN. It must
+         still read left-to-right, e.g. 192.168.1.50:9100,
+         NOT with its parts rearranged. Arabic reorders
+         neutral characters like . and : - if the address is
+         scrambled an operator types the wrong one into the
+         POS and pairing silently never happens. This is
+         pinned in code, but eyes on it once.
+     (c) Pair it from the POS. Send an order.
+     (d) The ticket must show: the header count in Arabic,
+         "Paired with ...", the service type (Dine in /
+         Takeaway / Delivery) translated, and the DONE button
+         in Arabic.
+     (e) With several tickets on screen, check the LEFT and
+         RIGHT scroll arrows. In Arabic they must sit on the
+         opposite sides and point the opposite way - the list
+         itself runs right-to-left. If they are on the wrong
+         end, say so.
+     (f) Unpair. The language must SURVIVE it - you should
+         come back to an Arabic pairing screen, not English.
+         The language belongs to the cook, not to the till.
+     (g) Restart the app. Language still Arabic.
+     (h) Switch to Francais and back to English; nothing
+         should be left in the wrong language.
+
+     Covered by kitchen_display/test/kds_models_test.dart
+     (24 tests), including the guard that stops an unknown
+     stored value rendering the whole display in Arabic -
+     Flutter falls back to the FIRST supported locale, and
+     that is alphabetically 'ar'.
+
+
+[B8] DATE FORMAT NOW ACTUALLY DOES SOMETHING.
+     Settings -> General -> Regional -> Date Format had four
+     options and changed NOTHING. Every screen and every PDF
+     built its own 'dd/MM/yyyy' - about 85 places in the
+     reports screen alone, plus thirteen other files.
+
+     Now one setting drives all of them.
+
+     🚨 FIXED AGAIN ON 2026-09-03 AFTER YOU CAUGHT THE FIRST
+     PASS MISSING THE TABLES. You set yyyy-MM-dd, it saved,
+     and Sales History still showed 01/09/2026 23:42. You
+     were right, and you also spotted why: those columns
+     carry a TIME as well as a date.
+
+     WHAT I HAD MISSED: I swept for DateFormat('...') and
+     fixed every one. But seven screens never called
+     DateFormat AT ALL - they built the date by hand out of
+     padLeft and string joins, WHILE ALSO converting the
+     timezone:
+
+         '${_pad(d.day)}/${_pad(d.month)}/${d.year} '
+         '${_pad(d.hour)}:${_pad(d.minute)}'
+
+     A search for DateFormat cannot see that. Those seven
+     were: Sales History, Documents, POS Session, the Session
+     list, the Document editor, Promotions, and the
+     Subscription/About rows in Settings - plus the printed
+     RECEIPT and the printed Z-REPORT slip, which had the
+     same hand-rolled code. Every one of them is exactly the
+     kind of screen that shows a date, which is why the miss
+     was so visible.
+
+     THE REAL LESSON, and why this is now one object: those
+     screens had to do TWO things - apply the timezone AND
+     format the date. Keeping the two apart is what let them
+     drift. AppDateFormat now answers both, and a stored
+     timestamp goes through one call. A bare calendar date is
+     deliberately NOT timezone-shifted - shifting 2026-09-01
+     by an offset is how a document dated the 1st starts
+     displaying as the 31st.
+
+     So when you re-test, the columns to stare at are the
+     ones with a TIME in them: Date, Créé/Created, Opened,
+     Closed. Those are the ones that were wrong.
+
+     🚨 ONE DELIBERATE EXCEPTION, and I want you to agree
+     with it: CSV EXPORTS AND FILE NAMES DO NOT FOLLOW THE
+     SETTING. They are fixed at yyyy-MM-dd. A spreadsheet
+     that reads your exports would otherwise change meaning
+     the day somebody picks a different display format -
+     silently, because 03/09 and 09/03 are both valid dates
+     and neither one errors. File names also cannot contain
+     "/" at all, and only sort chronologically as ISO.
+     NOTE: today's CSV exports say dd/MM/yyyy, so this is a
+     one-time change to their shape. Nothing is shipped yet
+     (the API still points at your dev box, item 13), so now
+     is the moment to make it. Say the word if you would
+     rather they kept dd/MM/yyyy.
+
+     HOW TO TEST:
+     (a) Settings -> General -> Regional -> Date Format ->
+         yyyy-MM-dd. Save.
+     (b) 🚨 THE COLUMNS THAT WERE WRONG - do these FIRST,
+         they are the ones you caught:
+         - Sales History: the Date and Créé/Created columns.
+           Must read 2026-09-01 23:42, not 01/09/2026 23:42.
+         - Documents: the Date column. It used to read
+           01-Sep-26 23:42 with an English/localized month
+           abbreviation; that shape is gone, it follows the
+           setting now.
+         - POS Session: Opened at / Closed at, the payment
+           rows, the document rows, the cash-movement rows.
+         - Session list: the Opening and Closing columns.
+           These used to read "Aug 20, 10:16 AM" - hardcoded
+           English months and a 12-hour clock.
+     (c) Then the rest: End of Day (Z-report history), Cash
+         In/Out, Credit Payments, Dashboard, Shift
+         Management, Bookings, Stock, Promotions (start/end
+         dates), Document editor (document date + an item's
+         expiry date), and Settings -> Subscription and
+         Settings -> About (last sync).
+     (d) Open the date-range picker anywhere. The selected
+         date at the top follows the setting too. (The
+         "September 2026" month heading inside the calendar
+         is a month NAME, not a date - it does not change.)
+     (e) PRINTED DOCUMENTS - the half with the blast radius,
+         so do all of them: an INVOICE PDF from Sales
+         History, the STOCK sheet from Stock, a Z-REPORT,
+         three or four different REPORTS, AND - new in this
+         round - a printed RECEIPT and a KITCHEN TICKET, both
+         of which had the same hand-rolled date. Every date
+         follows the setting; nothing is blank, "---" or a
+         raw timestamp.
+     (f) Now export a CSV from Reports and from Shift
+         Management. Those must STAY yyyy-MM-dd whatever the
+         setting says. Try it with the setting on MM/dd/yyyy
+         to be sure.
+     (g) Check the saved PDF/CSV FILE NAMES are still
+         Report_2026-09-01_2026-09-03 style.
+     (h) TIMEZONE, since it now shares the same code path:
+         with the setting on yyyy-MM-dd, change Settings ->
+         General -> Regional -> Timezone and confirm the
+         TIMES in Sales History shift, and that a document's
+         plain DATE column does NOT jump a day. A bare date
+         is a calendar day, not an instant - it must not be
+         shifted by an offset.
+     (i) Set it back to dd/MM/yyyy and confirm everything
+         returns to what you are used to.
+
+     Two smaller things fixed on the way: the client default
+     was 'dd-MM-yyyy' while the server seeded 'dd/MM/yyyy'
+     and every screen drew 'dd/MM/yyyy'. All three now agree
+     on dd/MM/yyyy, so a fresh install looks like today. And
+     the timezone database used to be initialised separately
+     by three screens - a screen that forgot silently fell
+     back to UTC. It is loaded once now, by the shared code.
+
+     Covered by test/app_date_format_test.dart (22 tests,
+     11 of them added specifically for the path you caught -
+     the timestamp/date split and the timezone half) and
+     test/pos_session_list_test.dart. 🚨 One old test had to
+     be INVERTED: it asserted the session list rendered
+     "Aug 20, 10:16 AM", which was the hardcoded behaviour.
+     A test that pins the bug is worse than no test, so it
+     now pins that the setting reaches the list instead.
+
+
+[B9] EMAIL / SMTP SETTINGS ARE GONE. No need for now status : DONE
+
 
 =======================================================
 C.  DECIDE   (blocked on you - I will not guess)
@@ -201,43 +391,22 @@ C.  DECIDE   (blocked on you - I will not guess)
      transport next - the dispatcher already routes per
      printer, so it is a new arm rather than a rewrite.
 
-[--] THE NO-SALE RULE IS STILL OFF, as you instructed.
-     canSellProvider gates nothing today. Switching it on
-     makes an OPEN SESSION MANDATORY before any sale can be
-     rung. That is policy, not a bug - tell me when you want
-     it live.
-
-
 =======================================================
 D.  LATER   (known, parked, nothing breaks meanwhile)
 =======================================================
 
-[42] Two devices on ONE shared register can still open
-     PARALLEL sessions while offline. The server rejects the
-     second on push and that row parks at sync_failed, which
-     is terminal - the cashier's session is lost. The
-     pre-open refresh that would close the window is not
-     written. Only bites a venue running two tills on one
-     drawer with the internet down.
+This list is nearly empty now - three of its six entries
+were BUILT on 2026-09-03 and moved up to B6, B7 and B8.
+What is left is what genuinely cannot be closed from here.
 
-[--] kitchen_display/ is NOT translated. Separate app, own
-     strings. You deferred it - but kitchen staff are the
-     likeliest Arabic-only readers in the building.
-
-[--] Settings that still do nothing, fixed 2026-09-01 except
-     email: date format was dead everywhere (reports_screen.dart
-     alone hardcodes 'dd/MM/yyyy' at ~85 call sites; 14 other
-     screens too) - NOT wired, needs its own pass since a blind
-     rewrite across financial/printed documents is too much
-     blast radius for one sitting. Timezone turned out to
-     already be wired (sales_history_screen.dart,
-     documents_screen.dart convert display timestamps with it) -
-     the note calling it dead was stale. Email/SMTP: still fully
-     unbuilt - Email.SmtpHost/SmtpPort/FromAddress/FromName and
-     Application.User.Email are five stub settings with zero
-     consuming code anywhere in the backend. Needs a product
-     decision (what triggers a send - email receipt? password
-     reset?) before there's anything to wire them to.
+[--] Settings, after the 2026-09-03 pass. Date format is now
+     WIRED everywhere, screens and printed documents alike -
+     see B8; CSV exports and file names deliberately stay
+     ISO. Timezone was already wired (the old note calling it
+     dead was stale). Email/SMTP is RETIRED rather than built
+     - see B9. That empties this entry except for the thing
+     it was always really about: when email is wanted, decide
+     what SENDS before anyone writes a setting for it.
 
 [--] Dead or inconsistent settings keys, fixed 2026-09-01:
      Order.ShortcutKeysPaymentConfirmation now has a frontend
@@ -251,14 +420,26 @@ D.  LATER   (known, parked, nothing breaks meanwhile)
      agree on Order.NumberOfPaymentTypeRows now (both "1").
      Products.Sorting now also sorts the Products management
      table (products_screen.dart), not just the POS menu grid -
-     shared logic moved to product_sort.dart. Still dead:
-     Application.User.Email (paired with the unbuilt SMTP
-     feature above).
+     shared logic moved to product_sort.dart. NOTHING IS DEAD
+     HERE ANY MORE: Application.User.Email was the last one and
+     it went with the SMTP retirement on 2026-09-03 (B9), which
+     added all five email keys to the same obsolete-property
+     sweep. Application.DateFormat also stopped being a lie the
+     same day, and its client default (was 'dd-MM-yyyy') now
+     matches the server seed and what the screens actually drew
+     ('dd/MM/yyyy').
 
 [--] Never met real hardware: the serial scale (Windows only
      in any case - Android always takes the keypad path).
-     box / pack carry a nominal factor, not a real
-     per-product pack size.
+
+[--] box / pack carry a NOMINAL factor (1/12 and 1/6, hard-
+     coded in uom/unit_of_measure.dart), not a real per-
+     product pack size. NOT TOUCHED on 2026-09-03, and
+     deliberately: a real pack size is a new column on the
+     product, which is a schema change, and CLAUDE.md rule 3
+     says I do not write migrations without you saying so.
+     Say the word and it is a migration plus a field on the
+     product editor. Until then a "box" of anything is 12.
 
 [--] RESOLVED 2026-09-01: ProcessRefundCommand's comment asked
      whether DocumentItem_Insert_Trigger already moves stock for
@@ -308,9 +489,3 @@ build different from the one you run today.
 
 [--] STILL OWED ON SECURITY: a server-side per-user audit,
      and a per-user salt on the local PIN.
-
-
-=======================================================
-F.  TESTING THE POLE DISPLAY WITHOUT A POLE DISPLAY
-=======================================================
-

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:pos_app/core/app_date_format.dart';
 import 'package:pos_app/app_settings/app_settings_provider.dart';
 import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/cash/cash_movement_kind.dart';
@@ -679,7 +680,7 @@ class _SessionDetail extends ConsumerWidget {
 }
 
 /// Who, where, when — and where the session stands in its lifecycle.
-class _HeroCard extends StatelessWidget {
+class _HeroCard extends ConsumerWidget {
   const _HeroCard({
     required this.session,
     required this.openedBy,
@@ -691,7 +692,8 @@ class _HeroCard extends StatelessWidget {
   final String? closedBy;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dates = ref.watch(appDateFormatProvider);
     final l = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final closed = session.status == PosSessionStatus.closed;
@@ -742,7 +744,7 @@ class _HeroCard extends StatelessWidget {
                                     ?.copyWith(fontWeight: FontWeight.bold),
                               ),
                               Text(
-                                _fmt(session.openedAt),
+                                _fmt(dates, session.openedAt),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: theme.textTheme.bodySmall?.copyWith(
@@ -776,7 +778,7 @@ class _HeroCard extends StatelessWidget {
                         if (session.closedAt != null)
                           _MetaChip(
                             icon: Icons.lock_clock,
-                            text: _fmt(session.closedAt!),
+                            text: _fmt(dates, session.closedAt!),
                           ),
                         if (closedBy != null)
                           _MetaChip(
@@ -1087,6 +1089,7 @@ class _SessionPaymentsTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final dates = ref.watch(appDateFormatProvider);
     final l = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final entries = ref.watch(sessionPaymentsProvider(session.localId)).value ??
@@ -1183,7 +1186,7 @@ class _SessionPaymentsTab extends ConsumerWidget {
                     style: theme.textTheme.bodyLarge
                         ?.copyWith(fontWeight: FontWeight.w600)),
                 subtitle: Text(
-                  '${_fmt(e.payment.date)} · ${e.paymentTypeName} · '
+                  '${_fmt(dates, e.payment.date)} · ${e.paymentTypeName} · '
                   '${_userLabel(users, e.payment.userId)}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -1244,6 +1247,7 @@ class _SessionDocumentsTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final dates = ref.watch(appDateFormatProvider);
     final l = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final entries =
@@ -1350,7 +1354,7 @@ class _SessionDocumentsTab extends ConsumerWidget {
                 ),
                 subtitle: Text(
                   [
-                    _fmt(e.document.date),
+                    _fmt(dates, e.document.date),
                     if ((e.customerName ?? '').trim().isNotEmpty)
                       e.customerName!.trim(),
                     who,
@@ -1499,7 +1503,7 @@ class _Row extends StatelessWidget {
 }
 
 /// One cash in / out: direction, when, who, why, how much.
-class _MovementRow extends StatelessWidget {
+class _MovementRow extends ConsumerWidget {
   const _MovementRow({
     required this.movement,
     required this.who,
@@ -1511,7 +1515,8 @@ class _MovementRow extends StatelessWidget {
   final String Function(double) money;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dates = ref.watch(appDateFormatProvider);
     final theme = Theme.of(context);
     // Three kinds, not two. `type == 'in'` alone made the opening float — which
     // is neither an in nor an out — render as a cash OUT in red with a minus
@@ -1551,7 +1556,7 @@ class _MovementRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('${_fmt(movement.createdAt)} · $who',
+                Text('${_fmt(dates, movement.createdAt)} · $who',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodySmall
@@ -1650,12 +1655,11 @@ String _userLabel(List<User> users, int? id) {
   return '#$id';
 }
 
-String _fmt(DateTime dt) {
-  final local = dt.toLocal();
-  String two(int v) => v.toString().padLeft(2, '0');
-  return '${two(local.day)}/${two(local.month)}/${local.year} '
-      '${two(local.hour)}:${two(local.minute)}';
-}
+/// 🚨 Takes the format rather than reading a provider: this is a top-level
+/// helper with no `ref`, and hardcoding `dd/MM/yyyy` here is exactly how the
+/// session screen went on ignoring `Application.DateFormat`. Callers pass
+/// `ref.watch(appDateFormatProvider)`.
+String _fmt(AppDateFormat dates, DateTime dt) => dates.stamp(dt);
 
 String _fmtDuration(Duration d) {
   if (d.isNegative) return '—';

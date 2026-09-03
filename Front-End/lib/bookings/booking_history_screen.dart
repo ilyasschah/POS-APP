@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/core/app_date_format.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -212,7 +213,7 @@ class _BookingList extends StatelessWidget {
   }
 }
 
-class _BookingCard extends StatelessWidget {
+class _BookingCard extends ConsumerWidget {
   final Booking booking;
 
   const _BookingCard({required this.booking});
@@ -246,10 +247,10 @@ class _BookingCard extends StatelessWidget {
   };
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
-    final dateFmt = DateFormat('EEE, d MMM yyyy');
+    final dateFmt = ref.watch(appDateFormatProvider).dateWithWeekday;
     final timeFmt = DateFormat('HH:mm');
 
     final statusColor = _statusColor[booking.status] ?? cs.outline;

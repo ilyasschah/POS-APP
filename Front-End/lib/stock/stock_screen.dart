@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:pos_app/core/app_date_format.dart';
 import 'package:pos_app/core/ilyass_list_scaffold.dart';
 import 'package:pos_app/stock/warehouse_model.dart';
 import 'package:pos_app/core/ilyass_table.dart';
@@ -217,6 +218,9 @@ class _StockScreenState extends ConsumerState<StockScreen> {
   ) async {
     final company = ref.read(selectedCompanyProvider);
     if (company == null) return null;
+    // The company's display date format — this sheet is a PRINTED document, so
+    // it follows the setting like every other one.
+    final dates = ref.read(appDateFormatProvider);
 
     Map<int, String> groupMap = {};
     try {
@@ -447,7 +451,7 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                   crossAxisAlignment: pw.CrossAxisAlignment.end,
                   children: [
                     printedText(
-                      DateFormat('dd/MM/yyyy').format(now),
+                      dates.date.format(now),
                       style: sheetStyle(size: 11, isBold: true)
                           .copyWith(color: const PdfColor.fromInt(0xFF263238)),
                     ),
@@ -530,7 +534,7 @@ class _StockScreenState extends ConsumerState<StockScreen> {
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
               printedText(
-                DateFormat('dd/MM/yyyy HH:mm:ss').format(now),
+                dates.dateTimeSeconds.format(now),
                 style: sheetStyle(size: 7.5)
                     .copyWith(color: PdfColors.grey600),
               ),

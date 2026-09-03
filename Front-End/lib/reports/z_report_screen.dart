@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:pos_app/core/app_date_format.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/auth/auth_provider.dart';
@@ -83,8 +84,10 @@ class EndOfDayScreen extends ConsumerStatefulWidget {
 
 class _EndOfDayScreenState extends ConsumerState<EndOfDayScreen> {
   final _searchCtrl = TextEditingController();
-  final _dateFmt = DateFormat('dd/MM/yy');
-  final _stampFmt = DateFormat('dd/MM/yy HH:mm');
+  // Getters, not fields — see the note in sales_history_screen.dart.
+  DateFormat get _dateFmt => ref.watch(appDateFormatProvider).shortYearDate;
+  DateFormat get _stampFmt =>
+      ref.watch(appDateFormatProvider).shortYearWithTime('HH:mm');
 
   String _query = '';
   DateTimeRange? _period;

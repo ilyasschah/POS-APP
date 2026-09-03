@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
+import 'package:pos_app/core/app_date_format.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/core/ilyass_list_scaffold.dart';
@@ -66,10 +67,12 @@ class _PromotionsListScreenState extends ConsumerState<PromotionsListScreen> {
     return activeDays.join(", ");
   }
 
-  String _formatDate(DateTime? date) {
-    if (date == null) return "-";
-    return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
-  }
+  /// 🚨 Was hardcoded `yyyy-MM-dd`. ISO belongs in exports and file names, not
+  /// on screen — a promotion's start and end dates are read by an operator, so
+  /// they follow `Application.DateFormat` like every other displayed date.
+  /// A promotion window is a calendar day, so no timezone conversion.
+  String _formatDate(DateTime? date) =>
+      date == null ? "-" : ref.read(appDateFormatProvider).day(date);
 
   /// Disabled (switched off), Active (live right now), or Inactive (enabled but
   /// outside its date / day / time window).

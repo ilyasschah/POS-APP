@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'l10n/kds_localizations.dart';
+
 /// A single line on a kitchen ticket. `isDone` is local-only UI state (the cook
 /// striking through a line); it is never sent anywhere.
 class KitchenItem {
@@ -32,7 +34,12 @@ class KitchenItem {
 
   factory KitchenItem.fromJson(Map<String, dynamic> j) => KitchenItem(
         id: (j['id'] ?? 0) as int,
-        name: (j['productName'] ?? j['name'] ?? 'Unknown Item') as String,
+        // 🚨 Empty, not a translated placeholder. This value is written back
+        // out by `toJson` into the stored snapshot, so putting a language into
+        // it here would freeze whatever language was showing at parse time into
+        // storage — and the card would then contradict the picker. The screen
+        // substitutes `unknownItem` at display time instead.
+        name: (j['productName'] ?? j['name'] ?? '') as String,
         quantity: ((j['quantity'] ?? 1) as num).toDouble(),
         comment: j['comment'] as String?,
         modifiers: [
@@ -73,11 +80,17 @@ class KitchenOrder {
     required this.items,
   });
 
-  String get typeString {
-    if (serviceType == 1) return 'Dine in';
-    if (serviceType == 2) return 'Takeaway';
-    if (serviceType == 3) return 'Delivery';
-    return 'Order';
+  /// The service type, in the display's language.
+  ///
+  /// 🚨 Takes the localizations rather than reading a context: this is a plain
+  /// model with no `BuildContext` of its own, and the alternative — keeping an
+  /// English string on the model and translating it at the call site — means
+  /// matching on English text, which breaks the moment the wording changes.
+  String typeString(KdsLocalizations l) {
+    if (serviceType == 1) return l.typeDineIn;
+    if (serviceType == 2) return l.typeTakeaway;
+    if (serviceType == 3) return l.typeDelivery;
+    return l.typeOrder;
   }
 
   /// Age-based header colour — green (fresh) → yellow (>5 min) → orange (>15 min).

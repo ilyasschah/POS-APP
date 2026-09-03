@@ -3,6 +3,7 @@
 import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:pos_app/core/app_date_format.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -238,7 +239,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       icon: Icons.kitchen,
       label: AppLocalizations.of(context).setKitchenDisplay,
     ),
-    (icon: Icons.email, label: AppLocalizations.of(context).fieldEmail),
     (icon: Icons.print, label: AppLocalizations.of(context).setPrint),
     (
       icon: Icons.currency_exchange,
@@ -259,7 +259,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     _WeighingScaleTab(),
     _CustomerDisplayTab(),
     _KitchenDisplayTab(),
-    _EmailTab(),
     _PrintTab(),
     _DualCurrencyTab(),
     _DatabaseTab(),
@@ -2963,76 +2962,25 @@ List<SearchableSetting> _kSearchableSettings(
         const _SwitchControl(SettingKeys.customerDisplayWebEnabled),
   ),
 
-  // ── Email ────────────────────────────────────────────────────────────────────
-  SearchableSetting(
-    title: AppLocalizations.of(context).setSmtpHost,
-    tabName: 'Email · SMTP Server',
-    tabIndex: 6,
-    trailingBuilder: (_) => const _TextFieldControl(
-      SettingKeys.emailSmtpHost,
-      hint: 'smtp.gmail.com',
-      keyboardType: TextInputType.url,
-    ),
-  ),
-  SearchableSetting(
-    title: AppLocalizations.of(context).setSmtpPort,
-    tabName: 'Email · SMTP Server',
-    tabIndex: 6,
-    trailingBuilder: (_) => const _TextFieldControl(
-      SettingKeys.emailSmtpPort,
-      hint: '587',
-      keyboardType: TextInputType.number,
-    ),
-  ),
-  SearchableSetting(
-    title: AppLocalizations.of(context).setFromEmailAddress,
-    tabName: 'Email · Sender',
-    tabIndex: 6,
-    trailingBuilder: (_) => const _TextFieldControl(
-      SettingKeys.emailFromAddress,
-      hint: 'pos@yourbusiness.com',
-      keyboardType: TextInputType.emailAddress,
-    ),
-  ),
-  SearchableSetting(
-    title: AppLocalizations.of(context).setFromName,
-    tabName: 'Email · Sender',
-    tabIndex: 6,
-    trailingBuilder: (_) => _TextFieldControl(
-      SettingKeys.emailFromName,
-      hint: AppLocalizations.of(context).posSystem,
-    ),
-  ),
-  SearchableSetting(
-    title: AppLocalizations.of(context).accountUserEmail,
-    tabName: 'Email · Sender',
-    tabIndex: 6,
-    trailingBuilder: (_) => const _TextFieldControl(
-      SettingKeys.emailUserEmail,
-      hint: 'your@email.com',
-      keyboardType: TextInputType.emailAddress,
-    ),
-  ),
-
   // ── Dual Currency ────────────────────────────────────────────────────────────
   SearchableSetting(
     title: AppLocalizations.of(context).setDualCurrencyEnabled,
     tabName: 'Dual Currency',
-    tabIndex: 8,
+    tabIndex: 7,
     trailingBuilder: (_) =>
         const _SwitchControl(SettingKeys.dualCurrencyEnabled),
   ),
   SearchableSetting(
     title: AppLocalizations.of(context).setSecondaryCurrencySymbol,
     tabName: 'Dual Currency',
-    tabIndex: 8,
+    tabIndex: 7,
     trailingBuilder: (_) =>
         const _TextFieldControl(SettingKeys.dualCurrencySymbol, hint: 'e.g. €'),
   ),
   SearchableSetting(
     title: AppLocalizations.of(context).setExchangeRate,
     tabName: 'Dual Currency',
-    tabIndex: 8,
+    tabIndex: 7,
     trailingBuilder: (_) => const _TextFieldControl(
       SettingKeys.dualCurrencyRate,
       hint: 'e.g. 1.08',
@@ -3050,25 +2998,25 @@ List<SearchableSetting> _kSearchableSettings(
   SearchableSetting(
     title: AppLocalizations.of(context).setPrinterReceiptSettings,
     tabName: 'Print',
-    tabIndex: 7,
+    tabIndex: 6,
     navigational: true,
   ),
   SearchableSetting(
     title: AppLocalizations.of(context).setDatabaseBackup,
     tabName: 'Database',
-    tabIndex: 9,
+    tabIndex: 8,
     navigational: true,
   ),
   SearchableSetting(
     title: AppLocalizations.of(context).setSubscription,
     tabName: 'Subscription',
-    tabIndex: 10,
+    tabIndex: 9,
     navigational: true,
   ),
   SearchableSetting(
     title: AppLocalizations.of(context).setAbout,
     tabName: 'About',
-    tabIndex: 11,
+    tabIndex: 10,
     navigational: true,
   ),
 ];
@@ -6561,58 +6509,6 @@ class _KitchenDisplayTabState extends ConsumerState<_KitchenDisplayTab> {
   }
 }
 
-// ── Email ─────────────────────────────────────────────────────────────────────
-class _EmailTab extends ConsumerWidget {
-  const _EmailTab();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return _TabScrollView(
-      cards: [
-        _SettingsCard(
-          title: AppLocalizations.of(context).setSmtpServer,
-          children: [
-            _SettingTextField(
-              settingKey: SettingKeys.emailSmtpHost,
-              label: AppLocalizations.of(context).setSmtpHost,
-              hint: 'smtp.gmail.com',
-              keyboardType: TextInputType.url,
-            ),
-            _SettingTextField(
-              settingKey: SettingKeys.emailSmtpPort,
-              label: AppLocalizations.of(context).setSmtpPort,
-              hint: '587',
-              keyboardType: TextInputType.number,
-            ),
-          ],
-        ),
-        _SettingsCard(
-          title: AppLocalizations.of(context).setSender,
-          children: [
-            _SettingTextField(
-              settingKey: SettingKeys.emailFromAddress,
-              label: AppLocalizations.of(context).setFromEmailAddress,
-              hint: 'pos@yourbusiness.com',
-              keyboardType: TextInputType.emailAddress,
-            ),
-            _SettingTextField(
-              settingKey: SettingKeys.emailFromName,
-              label: AppLocalizations.of(context).setFromName,
-              hint: AppLocalizations.of(context).posSystem,
-            ),
-            _SettingTextField(
-              settingKey: SettingKeys.emailUserEmail,
-              label: AppLocalizations.of(context).accountUserEmail,
-              hint: 'your@email.com',
-              keyboardType: TextInputType.emailAddress,
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
 // ── Print ─────────────────────────────────────────────────────────────────────
 // The Print sidebar entry now embeds the 4-tab printer/receipt settings directly
 // (Printers, Customize Receipt, Localize Text, Print Templates) — no intro splash.
@@ -7156,19 +7052,15 @@ class _BackupLocationFieldState extends ConsumerState<_BackupLocationField> {
 
 // ── Subscription ──────────────────────────────────────────────────────────────
 
-String _fmtSubscriptionDate(DateTime? dt) {
-  if (dt == null) return '–';
-  final l = dt.toLocal();
-  return '${l.day.toString().padLeft(2, '0')}/'
-      '${l.month.toString().padLeft(2, '0')}/'
-      '${l.year}';
-}
+String _fmtSubscriptionDate(AppDateFormat dates, DateTime? dt) =>
+    dt == null ? '–' : dates.stamp(dt).split(' ').first;
 
 class _SubscriptionTab extends ConsumerWidget {
   const _SubscriptionTab();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final dates = ref.watch(appDateFormatProvider);
     final infoAsync = ref.watch(subscriptionInfoProvider);
 
     return infoAsync.when(
@@ -7212,11 +7104,11 @@ class _SubscriptionTab extends ConsumerWidget {
               ),
               _InfoRow(
                 label: AppLocalizations.of(context).setStarted,
-                value: _fmtSubscriptionDate(info.startedAt),
+                value: _fmtSubscriptionDate(dates, info.startedAt),
               ),
               _InfoRow(
                 label: AppLocalizations.of(context).setRenewsEnds,
-                value: _fmtSubscriptionDate(info.periodEnd ?? info.validUntil),
+                value: _fmtSubscriptionDate(dates, info.periodEnd ?? info.validUntil),
               ),
               // Allowance 0 = no subscription row provisioned upstream, NOT an
               // unlimited plan — say nothing rather than imply a cap either way.
@@ -7379,20 +7271,7 @@ final _aboutStatsProvider = FutureProvider.autoDispose<_AboutStats>((
   );
 });
 
-String _fmtAboutDt(DateTime dt) {
-  final l = dt.toLocal();
-  final now = DateTime.now();
-  final isToday =
-      l.year == now.year && l.month == now.month && l.day == now.day;
-  final datePart = isToday
-      ? 'Today'
-      : '${l.day.toString().padLeft(2, '0')}/'
-            '${l.month.toString().padLeft(2, '0')}/'
-            '${l.year}';
-  final timePart =
-      '${l.hour.toString().padLeft(2, '0')}:${l.minute.toString().padLeft(2, '0')}';
-  return '$datePart at $timePart';
-}
+String _fmtAboutDt(AppDateFormat dates, DateTime dt) => dates.stamp(dt);
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -7401,6 +7280,7 @@ class _AboutTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final dates = ref.watch(appDateFormatProvider);
     final settings = ref.watch(appSettingsProvider);
     final company = ref.watch(selectedCompanyProvider);
     final statsAsync = ref.watch(_aboutStatsProvider);
@@ -7541,7 +7421,7 @@ class _AboutTab extends ConsumerWidget {
                 _InfoRow(
                   label: AppLocalizations.of(context).setLastSync,
                   value: s.lastSync != null
-                      ? _fmtAboutDt(s.lastSync!)
+                      ? _fmtAboutDt(dates, s.lastSync!)
                       : 'Never',
                 ),
               ],

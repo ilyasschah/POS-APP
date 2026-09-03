@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
+import 'package:pos_app/core/app_date_format.dart';
 import 'package:pos_app/cash/cash_movement_kind.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
@@ -57,7 +58,9 @@ class _CashMovementScreenState extends ConsumerState<CashMovementScreen> {
   bool _saving = false;
   String? _error;
 
-  static final _dtFmt = DateFormat('dd/MM/yyyy HH:mm:ss');
+  // Was `static final`, which made the company's date format unreachable —
+  // a static has no `ref`. See the note in sales_history_screen.dart.
+  DateFormat get _dtFmt => ref.watch(appDateFormatProvider).dateTimeSeconds;
   static final _numFmt = NumberFormat('#,##0.00');
 
   @override

@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
+import 'package:pos_app/core/app_date_format.dart';
 import 'package:pos_app/printer/pdf_fonts.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -25,7 +26,6 @@ const _kGreen = PdfColor(0.18, 0.49, 0.196);
 const _kRed = PdfColor(0.82, 0.1, 0.1);
 
 class InvoicePdfService {
-  static final _dateFmt = DateFormat('dd/MM/yyyy');
   static final _numFmt = NumberFormat('#,##0.00');
 
   // ── Public API ──────────────────────────────────────────────────────────────
@@ -239,10 +239,16 @@ class InvoicePdfService {
           color: color,
         );
 
+    // Built from the settings map the caller already hands in, rather than the
+    // `static final DateFormat('dd/MM/yyyy')` this used to be — a static has no
+    // way to reach `Application.DateFormat`, which is how an invoice came to
+    // ignore the company's own date format.
+    final dateFmt = AppDateFormat(settings[SettingKeys.dateFormat]).date;
+
     String fmtDate(String? iso) {
       if (iso == null || iso.isEmpty) return '---';
       try {
-        return _dateFmt.format(DateTime.parse(iso));
+        return dateFmt.format(DateTime.parse(iso));
       } catch (_) {
         return iso;
       }

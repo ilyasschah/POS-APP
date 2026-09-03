@@ -434,9 +434,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get errorLabel => 'خطأ';
 
   @override
-  String get accountUserEmail => 'الحساب / بريد المستخدم';
-
-  @override
   String get dateFormatLabel => 'تنسيق التاريخ';
 
   @override
@@ -2980,12 +2977,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get setFontSize => 'حجم الخط';
 
   @override
-  String get setFromEmailAddress => 'عنوان البريد المُرسِل';
-
-  @override
-  String get setFromName => 'اسم المُرسِل';
-
-  @override
   String get setGeneral => 'عام';
 
   @override
@@ -3187,9 +3178,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get setSendToKitchenButton => 'زر الإرسال إلى المطبخ';
 
   @override
-  String get setSender => 'المُرسِل';
-
-  @override
   String get setSeparateRowPerItem => 'سطر منفصل لكل صنف';
 
   @override
@@ -3251,15 +3239,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get setSingleUser => 'مستخدم واحد';
-
-  @override
-  String get setSmtpHost => 'خادم SMTP';
-
-  @override
-  String get setSmtpPort => 'منفذ SMTP';
-
-  @override
-  String get setSmtpServer => 'خادم SMTP';
 
   @override
   String get setSorting => 'الترتيب';

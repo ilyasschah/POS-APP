@@ -3,16 +3,14 @@ import 'dart:typed_data';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:pos_app/core/app_date_format.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:pos_app/uom/unit_of_measure.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:gap/gap.dart';
 import 'package:intl/intl.dart';
-import 'package:timezone/data/latest.dart' as tz_data;
-import 'package:timezone/timezone.dart' as tz;
 import 'package:pos_app/api/api_client.dart';
-import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/app_settings/app_settings_provider.dart';
 import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/modifier/modifier_models.dart';
@@ -244,13 +242,15 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
   late Set<String> _visibleMasterColIds;
   late Set<String> _visibleDetailColIds;
 
-  final _dateFmt = DateFormat('dd/MM/yyyy');
+  // A getter, not a field: a field initializer runs before `ref` is usable,
+  // and the format has to follow the setting rather than be frozen at the one
+  // moment this screen was first built.
+  DateFormat get _dateFmt => ref.watch(appDateFormatProvider).date;
   final _numFmt = NumberFormat('#,##0.00');
 
   @override
   void initState() {
     super.initState();
-    tz_data.initializeTimeZones();
     _visibleMasterColIds = _loadCols(_prefsMasterColsKey, _masterColumnIds);
     _visibleDetailColIds = _loadCols(_prefsDetailColsKey, _detailColumnIds);
     WidgetsBinding.instance.addPostFrameCallback((_) => _fetchDocuments());
@@ -276,40 +276,14 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
 
   // ── date formatting ───────────────────────────────────────────────────────
 
-  String _fmt(String? iso) {
-    if (iso == null || iso.isEmpty) return '-';
-    try {
-      final dt = DateTime.parse(iso);
-      final isTs = iso.contains('T') || iso.contains(' ');
-      if (isTs) {
-        final utc = dt.isUtc
-            ? dt
-            : DateTime.utc(
-                dt.year,
-                dt.month,
-                dt.day,
-                dt.hour,
-                dt.minute,
-                dt.second,
-              );
-        final tzId =
-            ref.read(appSettingsProvider)[SettingKeys.timezone] ?? 'UTC';
-        DateTime disp;
-        try {
-          disp = tz.TZDateTime.from(utc, tz.getLocation(tzId));
-        } catch (_) {
-          disp = utc;
-        }
-        return '${_pad(disp.day)}/${_pad(disp.month)}/${disp.year} '
-            '${_pad(disp.hour)}:${_pad(disp.minute)}';
-      }
-      return '${_pad(dt.day)}/${_pad(dt.month)}/${dt.year}';
-    } catch (_) {
-      return iso;
-    }
-  }
-
-  String _pad(int v) => v.toString().padLeft(2, '0');
+  /// 🚨 Was a hand-rolled `padLeft` formatter that hardcoded `dd/MM/yyyy` while
+  /// doing its own timezone conversion. Because it never touched `DateFormat`,
+  /// it survived the pass that wired `Application.DateFormat` through the rest
+  /// of the app — so this table went on printing `01/09/2026 23:42` after the
+  /// setting had been changed to something else. Both halves now live in
+  /// `AppDateFormat`.
+  String _fmt(String? iso) =>
+      ref.watch(appDateFormatProvider).isoToDisplay(iso);
 
   // ── API ───────────────────────────────────────────────────────────────────
 

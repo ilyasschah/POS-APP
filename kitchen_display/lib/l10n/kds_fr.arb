@@ -1,0 +1,37 @@
+{
+  "@@locale": "fr",
+
+  "appTitle": "Écran cuisine",
+
+  "headerOrders": "Écran cuisine — {count, plural, =0{aucune commande} =1{1 commande} other{{count} commandes}}",
+  "@headerOrders": {"placeholders": {"count": {"type": "int"}}},
+  "pairedWith": "Associé à {pos}",
+  "@pairedWith": {"placeholders": {"pos": {"type": "String"}}},
+
+  "unpair": "Dissocier",
+  "unpairTitle": "Dissocier cet écran ?",
+  "unpairBody": "Cet écran cuisine sera déconnecté de {pos} et reviendra à l’écran d’association.",
+  "@unpairBody": {"placeholders": {"pos": {"type": "String"}}},
+  "cancel": "Annuler",
+
+  "waitingForOrders": "En attente de commandes…",
+  "done": "PRÊT",
+
+  "typeDineIn": "Sur place",
+  "typeTakeaway": "À emporter",
+  "typeDelivery": "Livraison",
+  "typeOrder": "Commande",
+  "unknownItem": "Article inconnu",
+
+  "brandTitle": "ÉCRAN CUISINE",
+  "waitingToPair": "En attente d’association…",
+  "pairInstructions": "Pour commencer, associez cet appareil dans les paramètres de l’application POS.",
+  "deviceNameLabel": "Nom de l’appareil",
+  "ipAddressLabel": "Adresse IP",
+  "pairPath": "POS → Paramètres → Écran cuisine → ajouter cette adresse",
+
+  "language": "Langue",
+  "languageEnglish": "English",
+  "languageFrench": "Français",
+  "languageArabic": "العربية"
+}

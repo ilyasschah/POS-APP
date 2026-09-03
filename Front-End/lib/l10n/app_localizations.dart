@@ -874,12 +874,6 @@ abstract class AppLocalizations {
   /// **'Error'**
   String get errorLabel;
 
-  /// No description provided for @accountUserEmail.
-  ///
-  /// In en, this message translates to:
-  /// **'Account / User Email'**
-  String get accountUserEmail;
-
   /// No description provided for @dateFormatLabel.
   ///
   /// In en, this message translates to:
@@ -5686,18 +5680,6 @@ abstract class AppLocalizations {
   /// **'Font Size'**
   String get setFontSize;
 
-  /// No description provided for @setFromEmailAddress.
-  ///
-  /// In en, this message translates to:
-  /// **'From Email Address'**
-  String get setFromEmailAddress;
-
-  /// No description provided for @setFromName.
-  ///
-  /// In en, this message translates to:
-  /// **'From Name'**
-  String get setFromName;
-
   /// No description provided for @setGeneral.
   ///
   /// In en, this message translates to:
@@ -6100,12 +6082,6 @@ abstract class AppLocalizations {
   /// **'Send to Kitchen button'**
   String get setSendToKitchenButton;
 
-  /// No description provided for @setSender.
-  ///
-  /// In en, this message translates to:
-  /// **'SENDER'**
-  String get setSender;
-
   /// No description provided for @setSeparateRowPerItem.
   ///
   /// In en, this message translates to:
@@ -6231,24 +6207,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Single user'**
   String get setSingleUser;
-
-  /// No description provided for @setSmtpHost.
-  ///
-  /// In en, this message translates to:
-  /// **'SMTP Host'**
-  String get setSmtpHost;
-
-  /// No description provided for @setSmtpPort.
-  ///
-  /// In en, this message translates to:
-  /// **'SMTP Port'**
-  String get setSmtpPort;
-
-  /// No description provided for @setSmtpServer.
-  ///
-  /// In en, this message translates to:
-  /// **'SMTP SERVER'**
-  String get setSmtpServer;
 
   /// No description provided for @setSorting.
   ///

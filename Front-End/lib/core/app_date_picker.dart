@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pos_app/core/app_date_format.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
 
@@ -93,7 +95,7 @@ class _DatePreset {
   const _DatePreset(this.label, this.start, this.end);
 }
 
-class _AppDatePickerDialog extends StatefulWidget {
+class _AppDatePickerDialog extends ConsumerStatefulWidget {
   final bool rangeMode;
   final DateTime initialStart;
   final DateTime? initialEnd;
@@ -109,10 +111,11 @@ class _AppDatePickerDialog extends StatefulWidget {
   });
 
   @override
-  State<_AppDatePickerDialog> createState() => _AppDatePickerDialogState();
+  ConsumerState<_AppDatePickerDialog> createState() =>
+      _AppDatePickerDialogState();
 }
 
-class _AppDatePickerDialogState extends State<_AppDatePickerDialog> {
+class _AppDatePickerDialogState extends ConsumerState<_AppDatePickerDialog> {
   late DateTime _start;
   late DateTime? _end; // range mode only
   late DateTime _viewMonth;
@@ -299,7 +302,7 @@ class _AppDatePickerDialogState extends State<_AppDatePickerDialog> {
   }
 
   Widget _buildCalendar(ThemeData theme, ColorScheme cs) {
-    final fmt = DateFormat('dd/MM/yyyy');
+    final fmt = ref.watch(appDateFormatProvider).date;
     final firstOfView = DateTime(_viewMonth.year, _viewMonth.month, 1);
     final canGoPrev =
         firstOfView.isAfter(DateTime(_firstDay.year, _firstDay.month, 1));
@@ -324,6 +327,10 @@ class _AppDatePickerDialogState extends State<_AppDatePickerDialog> {
               ),
               Expanded(
                 child: Text(
+                  // Deliberately NOT the company's date format: this is the
+                  // calendar's month HEADING ("September 2026"), a month name
+                  // rather than a date. Running it through `AppDateFormat`
+                  // would print "09/2026" over the grid.
                   DateFormat('MMMM yyyy').format(_viewMonth),
                   textAlign: TextAlign.center,
                   style: const TextStyle(

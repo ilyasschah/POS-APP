@@ -434,9 +434,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorLabel => 'Error';
 
   @override
-  String get accountUserEmail => 'Account / User Email';
-
-  @override
   String get dateFormatLabel => 'Date Format';
 
   @override
@@ -2988,12 +2985,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get setFontSize => 'Font Size';
 
   @override
-  String get setFromEmailAddress => 'From Email Address';
-
-  @override
-  String get setFromName => 'From Name';
-
-  @override
   String get setGeneral => 'GENERAL';
 
   @override
@@ -3198,9 +3189,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get setSendToKitchenButton => 'Send to Kitchen button';
 
   @override
-  String get setSender => 'SENDER';
-
-  @override
   String get setSeparateRowPerItem => 'Separate row for each item';
 
   @override
@@ -3264,15 +3252,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get setSingleUser => 'Single user';
-
-  @override
-  String get setSmtpHost => 'SMTP Host';
-
-  @override
-  String get setSmtpPort => 'SMTP Port';
-
-  @override
-  String get setSmtpServer => 'SMTP SERVER';
 
   @override
   String get setSorting => 'Sorting';

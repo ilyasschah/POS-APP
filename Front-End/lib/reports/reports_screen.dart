@@ -17,6 +17,7 @@ import 'package:pos_app/customer/customer_provider.dart';
 import 'package:pos_app/product/product_provider.dart';
 import 'package:pos_app/product/product_group_provider.dart';
 import 'package:pos_app/stock/warehouse_provider.dart';
+import 'package:pos_app/core/app_date_format.dart';
 import 'package:pos_app/core/app_date_picker.dart';
 import 'package:pos_app/printer/pdf_file_name.dart';
 import 'package:pos_app/printer/pdf_save_service.dart';
@@ -518,7 +519,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           pivot[r.date]![r.paymentTypeName] =
               (pivot[r.date]![r.paymentTypeName] ?? 0) + r.amount;
         }
-        final dateFmt2 = DateFormat('dd/MM/yyyy');
+        final dateFmt2 = AppDateFormat.isoDate;
         buf.writeln(_csvHeader([l.dateLabel, ...paymentTypes, l.totalLabel]));
         for (final d in dates) {
           final amounts = paymentTypes
@@ -557,7 +558,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             l.totalLabel,
           ]),
         );
-        final dateFmt = DateFormat('dd/MM/yyyy');
+        final dateFmt = AppDateFormat.isoDate;
         for (final r in rows) {
           buf.writeln(
             '"${r.documentNumber}","${r.refNumber ?? ''}","${dateFmt.format(r.date)}",'
@@ -585,7 +586,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             l.totalLabel,
           ]),
         );
-        final dateFmt = DateFormat('dd/MM/yyyy');
+        final dateFmt = AppDateFormat.isoDate;
         var i = 1;
         for (final r in rows) {
           buf.writeln(
@@ -601,7 +602,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       } else if (reportId == 'sales_daily') {
         final rows = await ref.read(dailySalesProvider(filter).future);
         buf.writeln(_csvHeader([l.dateLabel, l.totalLabel]));
-        final dayFmt = DateFormat('dd/MM/yyyy (EEE)');
+        final dayFmt = AppDateFormat.isoDate;
         for (final r in rows) {
           buf.writeln('"${dayFmt.format(r.date)}",${r.total}');
         }
@@ -715,7 +716,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         filename = 'Profit';
       } else if (reportId == 'sales_unpaid') {
         final rows = await ref.read(unpaidSalesProvider(filter).future);
-        final dateFmt = DateFormat('dd/MM/yyyy');
+        final dateFmt = AppDateFormat.isoDate;
         buf.writeln(
           _csvHeader([
             l.customerLabel,
@@ -740,7 +741,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         filename = 'UnpaidSales';
       } else if (reportId == 'sales_starting_cash') {
         final rows = await ref.read(startingCashReportProvider(filter).future);
-        final dateFmt = DateFormat('dd/MM/yyyy HH:mm');
+        final dateFmt = AppDateFormat.isoDateTime;
         buf.writeln(
           _csvHeader([
             l.userLabel,
@@ -803,7 +804,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         final rows = await ref.read(
           discountsGrantedReportProvider(filter).future,
         );
-        final dateFmt = DateFormat('dd/MM/yyyy');
+        final dateFmt = AppDateFormat.isoDate;
         buf.writeln(
           _csvHeader([
             l.customerLabel,
@@ -838,7 +839,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         filename = 'DiscountsBySource';
       } else if (reportId == 'sales_voided') {
         final rows = await ref.read(voidedItemsReportProvider(filter).future);
-        final dtFmt = DateFormat('dd/MM/yyyy HH:mm:ss');
+        final dtFmt = AppDateFormat.isoDateTime;
         buf.writeln(
           _csvHeader([
             l.productLabel,
@@ -889,8 +890,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             l.totalLabel,
           ]),
         );
-        final dateFmt = DateFormat('dd/MM/yyyy');
-        final dtFmt = DateFormat('dd/MM/yyyy HH:mm:ss');
+        final dateFmt = AppDateFormat.isoDate;
+        final dtFmt = AppDateFormat.isoDateTime;
         for (final r in rows) {
           buf.writeln(
             '"${r.documentTypeName}","${dateFmt.format(r.date)}","${dtFmt.format(r.dateCreated)}",'
@@ -919,7 +920,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         filename = 'SalesByUser';
       } else if (reportId == 'purchase_unpaid') {
         final rows = await ref.read(unpaidPurchaseProvider(filter).future);
-        final dateFmt = DateFormat('dd/MM/yyyy');
+        final dateFmt = AppDateFormat.isoDate;
         buf.writeln(
           _csvHeader([
             l.supplier,
@@ -975,7 +976,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         filename = 'PurchaseByProduct';
       } else if (reportId == 'purchase_invoice_list') {
         final rows = await ref.read(purchaseInvoiceListProvider(filter).future);
-        final dateFmt = DateFormat('dd/MM/yyyy');
+        final dateFmt = AppDateFormat.isoDate;
         buf.writeln(
           _csvHeader([
             '#',
@@ -1002,7 +1003,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         final rows = await ref.read(
           purchaseItemsDiscountsProvider(filter).future,
         );
-        final dateFmt = DateFormat('dd/MM/yyyy');
+        final dateFmt = AppDateFormat.isoDate;
         buf.writeln(
           _csvHeader([
             l.supplier,
@@ -1035,7 +1036,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         filename = 'PurchaseItemsDiscounts';
       } else if (reportId == 'purchase_discounts') {
         final rows = await ref.read(purchaseDiscountsProvider(filter).future);
-        final dateFmt = DateFormat('dd/MM/yyyy');
+        final dateFmt = AppDateFormat.isoDate;
         buf.writeln(
           _csvHeader([
             l.supplier,
@@ -1081,7 +1082,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         final rows = await ref.read(
           purchaseExpirationDateProvider(filter).future,
         );
-        final dateFmt = DateFormat('dd/MM/yyyy');
+        final dateFmt = AppDateFormat.isoDate;
         buf.writeln(
           _csvHeader([
             '#',
@@ -1105,7 +1106,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         final rows = await ref.read(
           stockReturnByProductProvider(filter).future,
         );
-        final dateFmt = DateFormat('dd/MM/yyyy');
+        final dateFmt = AppDateFormat.isoDate;
         buf.writeln(
           _csvHeader([
             l.dateLabel,
@@ -1130,7 +1131,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         final rows = await ref.read(
           lossAndDamageByProductProvider(filter).future,
         );
-        final dateFmt = DateFormat('dd/MM/yyyy');
+        final dateFmt = AppDateFormat.isoDate;
         buf.writeln(
           _csvHeader([
             l.dateLabel,
@@ -1188,7 +1189,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       } else if (reportId == 'transaction_history') {
         if (filter.customerId == null) return;
         final rows = await ref.read(transactionHistoryProvider(filter).future);
-        final dateFmt = DateFormat('dd/MM/yyyy');
+        final dateFmt = AppDateFormat.isoDate;
         buf.writeln(
           _csvHeader([
             l.dateLabel,
@@ -1707,6 +1708,10 @@ class _TabPdfView extends ConsumerWidget {
     // no BuildContext of their own, so the strings they print have to be handed
     // down from here.
     final l = AppLocalizations.of(context);
+    // …and so does the company's date format, for exactly the same reason. Each
+    // builder used to construct its own `DateFormat('dd/MM/yyyy')`, which is
+    // how `Application.DateFormat` came to be a setting that changed nothing.
+    final dates = ref.watch(appDateFormatProvider);
     final company = ref.watch(selectedCompanyProvider);
     final customers = ref.watch(allCustomersProvider).value ?? [];
     final users = ref.watch(allUsersProvider).value ?? [];
@@ -1794,6 +1799,7 @@ class _TabPdfView extends ConsumerWidget {
           allowSharing: false,
           build: (_) => _buildProductsPdf(
             l: l,
+            dates: dates,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -1825,6 +1831,7 @@ class _TabPdfView extends ConsumerWidget {
           allowSharing: false,
           build: (_) => _buildProductGroupsPdf(
             l: l,
+            dates: dates,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -1856,6 +1863,7 @@ class _TabPdfView extends ConsumerWidget {
           allowSharing: false,
           build: (_) => _buildCustomersPdf(
             l: l,
+            dates: dates,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -1887,6 +1895,7 @@ class _TabPdfView extends ConsumerWidget {
           allowSharing: false,
           build: (_) => _buildTaxPdf(
             l: l,
+            dates: dates,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -1918,6 +1927,7 @@ class _TabPdfView extends ConsumerWidget {
           allowSharing: false,
           build: (_) => _buildPaymentTypesByCustomerPdf(
             l: l,
+            dates: dates,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -1949,6 +1959,7 @@ class _TabPdfView extends ConsumerWidget {
           allowSharing: false,
           build: (_) => _buildPaymentTypesByUserPdf(
             l: l,
+            dates: dates,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -1980,6 +1991,7 @@ class _TabPdfView extends ConsumerWidget {
           allowSharing: false,
           build: (_) => _buildPaymentTypesPdf(
             l: l,
+            dates: dates,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2011,6 +2023,7 @@ class _TabPdfView extends ConsumerWidget {
           allowSharing: false,
           build: (_) => _buildRefundsPdf(
             l: l,
+            dates: dates,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2042,6 +2055,7 @@ class _TabPdfView extends ConsumerWidget {
           allowSharing: false,
           build: (_) => _buildInvoiceListPdf(
             l: l,
+            dates: dates,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2072,6 +2086,7 @@ class _TabPdfView extends ConsumerWidget {
           allowSharing: false,
           build: (_) => _buildDailySalesPdf(
             l: l,
+            dates: dates,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2102,6 +2117,7 @@ class _TabPdfView extends ConsumerWidget {
           allowSharing: false,
           build: (_) => _buildHourlySalesPdf(
             l: l,
+            dates: dates,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2131,6 +2147,7 @@ class _TabPdfView extends ConsumerWidget {
           allowSharing: false,
           build: (_) => _buildHourlySalesByGroupPdf(
             l: l,
+            dates: dates,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2161,6 +2178,7 @@ class _TabPdfView extends ConsumerWidget {
           allowSharing: false,
           build: (_) => _buildSalesByTablePdf(
             l: l,
+            dates: dates,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2191,6 +2209,7 @@ class _TabPdfView extends ConsumerWidget {
           allowSharing: false,
           build: (_) => _buildProfitPdf(
             l: l,
+            dates: dates,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2222,6 +2241,7 @@ class _TabPdfView extends ConsumerWidget {
           allowSharing: false,
           build: (_) => _buildUnpaidSalesPdf(
             l: l,
+            dates: dates,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2252,6 +2272,7 @@ class _TabPdfView extends ConsumerWidget {
           allowSharing: false,
           build: (_) => _buildStartingCashPdf(
             l: l,
+            dates: dates,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2281,6 +2302,7 @@ class _TabPdfView extends ConsumerWidget {
           allowSharing: false,
           build: (_) => _buildStockMovementPdf(
             l: l,
+            dates: dates,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2311,6 +2333,7 @@ class _TabPdfView extends ConsumerWidget {
           allowSharing: false,
           build: (_) => _buildItemsDiscountsPdf(
             l: l,
+            dates: dates,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2342,6 +2365,7 @@ class _TabPdfView extends ConsumerWidget {
           allowSharing: false,
           build: (_) => _buildDiscountsGrantedPdf(
             l: l,
+            dates: dates,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2372,6 +2396,7 @@ class _TabPdfView extends ConsumerWidget {
           allowSharing: false,
           build: (_) => _buildDiscountsBySourcePdf(
             l: l,
+            dates: dates,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2400,6 +2425,7 @@ class _TabPdfView extends ConsumerWidget {
           allowSharing: false,
           build: (_) => _buildVoidedItemsPdf(
             l: l,
+            dates: dates,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2430,6 +2456,7 @@ class _TabPdfView extends ConsumerWidget {
           allowSharing: false,
           build: (_) => _buildItemListPdf(
             l: l,
+            dates: dates,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2461,6 +2488,7 @@ class _TabPdfView extends ConsumerWidget {
           allowSharing: false,
           build: (_) => _buildUsersPdf(
             l: l,
+            dates: dates,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2492,6 +2520,7 @@ class _TabPdfView extends ConsumerWidget {
           allowSharing: false,
           build: (_) => _buildUnpaidPurchasePdf(
             l: l,
+            dates: dates,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2522,6 +2551,7 @@ class _TabPdfView extends ConsumerWidget {
           allowSharing: false,
           build: (_) => _buildPurchaseBySupplierPdf(
             l: l,
+            dates: dates,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2553,6 +2583,7 @@ class _TabPdfView extends ConsumerWidget {
           allowSharing: false,
           build: (_) => _buildPurchaseByProductPdf(
             l: l,
+            dates: dates,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2584,6 +2615,7 @@ class _TabPdfView extends ConsumerWidget {
           allowSharing: false,
           build: (_) => _buildPurchaseTaxPdf(
             l: l,
+            dates: dates,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2615,6 +2647,7 @@ class _TabPdfView extends ConsumerWidget {
           allowSharing: false,
           build: (_) => _buildPurchaseExpirationDatePdf(
             l: l,
+            dates: dates,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2646,6 +2679,7 @@ class _TabPdfView extends ConsumerWidget {
           allowSharing: false,
           build: (_) => _buildPurchaseInvoiceListPdf(
             l: l,
+            dates: dates,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2677,6 +2711,7 @@ class _TabPdfView extends ConsumerWidget {
           allowSharing: false,
           build: (_) => _buildPurchaseItemsDiscountsPdf(
             l: l,
+            dates: dates,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2708,6 +2743,7 @@ class _TabPdfView extends ConsumerWidget {
           allowSharing: false,
           build: (_) => _buildPurchaseDiscountsPdf(
             l: l,
+            dates: dates,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2738,6 +2774,7 @@ class _TabPdfView extends ConsumerWidget {
           allowSharing: false,
           build: (_) => _buildStockReturnByProductPdf(
             l: l,
+            dates: dates,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2768,6 +2805,7 @@ class _TabPdfView extends ConsumerWidget {
           allowSharing: false,
           build: (_) => _buildLossAndDamageByProductPdf(
             l: l,
+            dates: dates,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2798,6 +2836,7 @@ class _TabPdfView extends ConsumerWidget {
           allowSharing: false,
           build: (_) => _buildReorderProductListPdf(
             l: l,
+            dates: dates,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2828,6 +2867,7 @@ class _TabPdfView extends ConsumerWidget {
           allowSharing: false,
           build: (_) => _buildLowStockWarningPdf(
             l: l,
+            dates: dates,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2866,6 +2906,7 @@ class _TabPdfView extends ConsumerWidget {
           allowSharing: false,
           build: (_) => _buildTransactionHistoryPdf(
             l: l,
+            dates: dates,
             rows: rows,
             filter: tab.filter,
             companyName: company?.name,
@@ -2984,6 +3025,7 @@ List<pw.Widget> _cells(List<String> values, pw.TextStyle style) => [
 
 Future<Uint8List> _buildProductsPdf({
   required AppLocalizations l,
+  required AppDateFormat dates,
   required List<SalesByProductRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -2994,7 +3036,7 @@ Future<Uint8List> _buildProductsPdf({
 }) async {
   final doc = pw.Document();
   final fmt = NumberFormat('#,##0.00');
-  final dateFmt = DateFormat('dd/MM/yyyy');
+  final dateFmt = dates.date;
 
   final f = await _RptFonts.load();
   final theme = f.theme;
@@ -3077,6 +3119,7 @@ Future<Uint8List> _buildProductsPdf({
 
 Future<Uint8List> _buildProductGroupsPdf({
   required AppLocalizations l,
+  required AppDateFormat dates,
   required List<SalesByProductGroupRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -3087,7 +3130,7 @@ Future<Uint8List> _buildProductGroupsPdf({
 }) async {
   final doc = pw.Document();
   final fmt = NumberFormat('#,##0.00');
-  final dateFmt = DateFormat('dd/MM/yyyy');
+  final dateFmt = dates.date;
 
   final f = await _RptFonts.load();
   final theme = f.theme;
@@ -3162,6 +3205,7 @@ Future<Uint8List> _buildProductGroupsPdf({
 
 Future<Uint8List> _buildTaxPdf({
   required AppLocalizations l,
+  required AppDateFormat dates,
   required List<SalesByTaxRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -3172,7 +3216,7 @@ Future<Uint8List> _buildTaxPdf({
 }) async {
   final doc = pw.Document();
   final fmt = NumberFormat('#,##0.00');
-  final dateFmt = DateFormat('dd/MM/yyyy');
+  final dateFmt = dates.date;
 
   final f = await _RptFonts.load();
   final theme = f.theme;
@@ -3244,6 +3288,7 @@ Future<Uint8List> _buildTaxPdf({
 
 Future<Uint8List> _buildCustomersPdf({
   required AppLocalizations l,
+  required AppDateFormat dates,
   required List<SalesByCustomerRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -3254,7 +3299,7 @@ Future<Uint8List> _buildCustomersPdf({
 }) async {
   final doc = pw.Document();
   final fmt = NumberFormat('#,##0.00');
-  final dateFmt = DateFormat('dd/MM/yyyy');
+  final dateFmt = dates.date;
 
   final f = await _RptFonts.load();
   final theme = f.theme;
@@ -3324,6 +3369,7 @@ Future<Uint8List> _buildCustomersPdf({
 
 Future<Uint8List> _buildPaymentTypesByCustomerPdf({
   required AppLocalizations l,
+  required AppDateFormat dates,
   required List<PaymentTypesByCustomerRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -3334,7 +3380,7 @@ Future<Uint8List> _buildPaymentTypesByCustomerPdf({
 }) async {
   final doc = pw.Document();
   final fmt = NumberFormat('#,##0.00');
-  final dateFmt = DateFormat('dd/MM/yyyy');
+  final dateFmt = dates.date;
 
   final f = await _RptFonts.load();
   final theme = f.theme;
@@ -3423,6 +3469,7 @@ Future<Uint8List> _buildPaymentTypesByCustomerPdf({
 
 Future<Uint8List> _buildPaymentTypesByUserPdf({
   required AppLocalizations l,
+  required AppDateFormat dates,
   required List<PaymentTypesByUserRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -3433,7 +3480,7 @@ Future<Uint8List> _buildPaymentTypesByUserPdf({
 }) async {
   final doc = pw.Document();
   final fmt = NumberFormat('#,##0.00');
-  final dateFmt = DateFormat('dd/MM/yyyy');
+  final dateFmt = dates.date;
 
   final f = await _RptFonts.load();
   final theme = f.theme;
@@ -3522,6 +3569,7 @@ Future<Uint8List> _buildPaymentTypesByUserPdf({
 
 Future<Uint8List> _buildPaymentTypesPdf({
   required AppLocalizations l,
+  required AppDateFormat dates,
   required List<SalesByPaymentTypeRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -3532,7 +3580,7 @@ Future<Uint8List> _buildPaymentTypesPdf({
 }) async {
   final doc = pw.Document();
   final fmt = NumberFormat('#,##0.00');
-  final dateFmt = DateFormat('dd/MM/yyyy');
+  final dateFmt = dates.date;
 
   final f = await _RptFonts.load();
   final theme = f.theme;
@@ -3540,7 +3588,8 @@ Future<Uint8List> _buildPaymentTypesPdf({
   // Pivot data
   final paymentTypes = rows.map((r) => r.paymentTypeName).toSet().toList()
     ..sort();
-  final dates = rows.map((r) => r.date).toSet().toList()..sort();
+  // Renamed off `dates`, which is now the report's date FORMAT parameter.
+  final rowDates = rows.map((r) => r.date).toSet().toList()..sort();
   final pivot = <DateTime, Map<String, double>>{};
   for (final r in rows) {
     pivot.putIfAbsent(r.date, () => {});
@@ -3559,7 +3608,7 @@ Future<Uint8List> _buildPaymentTypesPdf({
 
   // Grand totals per payment type
   final grandAmounts = paymentTypes
-      .map((pt) => dates.fold(0.0, (s, d) => s + (pivot[d]?[pt] ?? 0.0)))
+      .map((pt) => rowDates.fold(0.0, (s, d) => s + (pivot[d]?[pt] ?? 0.0)))
       .toList();
   final grandTotal = rows.fold(0.0, (s, r) => s + r.amount);
 
@@ -3601,7 +3650,7 @@ Future<Uint8List> _buildPaymentTypesPdf({
           },
           columnWidths: colWidths,
           data: [
-            ...dates.map((d) {
+            ...rowDates.map((d) {
               final amounts = paymentTypes
                   .map((pt) => pivot[d]?[pt] ?? 0.0)
                   .toList();
@@ -3625,6 +3674,7 @@ Future<Uint8List> _buildPaymentTypesPdf({
 
 Future<Uint8List> _buildItemListPdf({
   required AppLocalizations l,
+  required AppDateFormat dates,
   required List<SalesItemListRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -3635,8 +3685,8 @@ Future<Uint8List> _buildItemListPdf({
 }) async {
   final doc = pw.Document();
   final fmt = NumberFormat('#,##0.00');
-  final dateFmt = DateFormat('dd/MM/yyyy');
-  final dtFmt = DateFormat('dd/MM/yyyy HH:mm:ss');
+  final dateFmt = dates.date;
+  final dtFmt = dates.dateTimeSeconds;
 
   final f = await _RptFonts.load();
   final theme = f.theme;
@@ -3754,6 +3804,7 @@ Future<Uint8List> _buildItemListPdf({
 
 Future<Uint8List> _buildProfitPdf({
   required AppLocalizations l,
+  required AppDateFormat dates,
   required List<ProfitRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -3765,7 +3816,7 @@ Future<Uint8List> _buildProfitPdf({
   final doc = pw.Document();
   final fmt = NumberFormat('#,##0.00');
   final pctFmt = NumberFormat('#,##0.00');
-  final dateFmt = DateFormat('dd/MM/yyyy');
+  final dateFmt = dates.date;
 
   final f = await _RptFonts.load();
   final theme = f.theme;
@@ -3875,6 +3926,7 @@ Future<Uint8List> _buildProfitPdf({
 
 Future<Uint8List> _buildStockMovementPdf({
   required AppLocalizations l,
+  required AppDateFormat dates,
   required List<StockMovementRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -3883,7 +3935,7 @@ Future<Uint8List> _buildStockMovementPdf({
   required String productLabel,
 }) async {
   final doc = pw.Document();
-  final hdrFmt = DateFormat('dd/MM/yyyy');
+  final hdrFmt = dates.date;
 
   final f = await _RptFonts.load();
   final theme = f.theme;
@@ -3953,7 +4005,7 @@ Future<Uint8List> _buildStockMovementPdf({
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
           printedText(
-            DateFormat('dd/MM/yyyy HH:mm:ss').format(DateTime.now()),
+            dates.dateTimeSeconds.format(DateTime.now()),
             style: f.style(size: 8, color: PdfColors.red),
           ),
           printedText(
@@ -4026,6 +4078,7 @@ Future<Uint8List> _buildStockMovementPdf({
 
 Future<Uint8List> _buildItemsDiscountsPdf({
   required AppLocalizations l,
+  required AppDateFormat dates,
   required List<ItemsDiscountsRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -4036,7 +4089,7 @@ Future<Uint8List> _buildItemsDiscountsPdf({
 }) async {
   final doc = pw.Document();
   final fmt = NumberFormat('#,##0.00');
-  final hdrFmt = DateFormat('dd/MM/yyyy');
+  final hdrFmt = dates.date;
 
   final f = await _RptFonts.load();
   final theme = f.theme;
@@ -4054,7 +4107,7 @@ Future<Uint8List> _buildItemsDiscountsPdf({
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
           printedText(
-            DateFormat('dd/MM/yyyy HH:mm:ss').format(DateTime.now()),
+            dates.dateTimeSeconds.format(DateTime.now()),
             style: f.style(size: 8, color: PdfColors.red),
           ),
           printedText(
@@ -4157,6 +4210,7 @@ Future<Uint8List> _buildItemsDiscountsPdf({
 
 Future<Uint8List> _buildDiscountsBySourcePdf({
   required AppLocalizations l,
+  required AppDateFormat dates,
   required List<DiscountBySourceRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -4164,7 +4218,7 @@ Future<Uint8List> _buildDiscountsBySourcePdf({
 }) async {
   final doc = pw.Document();
   final fmt = NumberFormat('#,##0.00');
-  final dateFmt = DateFormat('dd/MM/yyyy');
+  final dateFmt = dates.date;
 
   final f = await _RptFonts.load();
   final theme = f.theme;
@@ -4180,7 +4234,7 @@ Future<Uint8List> _buildDiscountsBySourcePdf({
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
           printedText(
-            DateFormat('dd/MM/yyyy HH:mm:ss').format(DateTime.now()),
+            dates.dateTimeSeconds.format(DateTime.now()),
             style: f.style(size: 8, color: PdfColors.red),
           ),
           printedText(
@@ -4241,6 +4295,7 @@ Future<Uint8List> _buildDiscountsBySourcePdf({
 
 Future<Uint8List> _buildDiscountsGrantedPdf({
   required AppLocalizations l,
+  required AppDateFormat dates,
   required List<DiscountsGrantedRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -4250,8 +4305,8 @@ Future<Uint8List> _buildDiscountsGrantedPdf({
 }) async {
   final doc = pw.Document();
   final fmt = NumberFormat('#,##0.00');
-  final dateFmt = DateFormat('dd/MM/yyyy');
-  final hdrFmt = DateFormat('dd/MM/yyyy');
+  final dateFmt = dates.date;
+  final hdrFmt = dates.date;
 
   final f = await _RptFonts.load();
   final theme = f.theme;
@@ -4285,7 +4340,7 @@ Future<Uint8List> _buildDiscountsGrantedPdf({
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
           printedText(
-            DateFormat('dd/MM/yyyy HH:mm:ss').format(DateTime.now()),
+            dates.dateTimeSeconds.format(DateTime.now()),
             style: f.style(size: 8, color: PdfColors.red),
           ),
           printedText(
@@ -4411,6 +4466,7 @@ Future<Uint8List> _buildDiscountsGrantedPdf({
 
 Future<Uint8List> _buildVoidedItemsPdf({
   required AppLocalizations l,
+  required AppDateFormat dates,
   required List<VoidedItemRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -4420,8 +4476,8 @@ Future<Uint8List> _buildVoidedItemsPdf({
 }) async {
   final doc = pw.Document();
   final fmt = NumberFormat('#,##0.00');
-  final dtFmt = DateFormat('dd/MM/yyyy HH:mm:ss');
-  final hdrFmt = DateFormat('dd/MM/yyyy');
+  final dtFmt = dates.dateTimeSeconds;
+  final hdrFmt = dates.date;
 
   final f = await _RptFonts.load();
   final theme = f.theme;
@@ -4439,7 +4495,7 @@ Future<Uint8List> _buildVoidedItemsPdf({
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
           printedText(
-            DateFormat('dd/MM/yyyy HH:mm:ss').format(DateTime.now()),
+            dates.dateTimeSeconds.format(DateTime.now()),
             style: f.style(size: 8, color: PdfColors.red),
           ),
           printedText(
@@ -4562,6 +4618,7 @@ Future<Uint8List> _buildVoidedItemsPdf({
 
 Future<Uint8List> _buildStartingCashPdf({
   required AppLocalizations l,
+  required AppDateFormat dates,
   required List<StartingCashRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -4570,8 +4627,8 @@ Future<Uint8List> _buildStartingCashPdf({
 }) async {
   final doc = pw.Document();
   final fmt = NumberFormat('#,##0.00');
-  final dateFmt = DateFormat('dd/MM/yyyy HH:mm');
-  final hdrFmt = DateFormat('dd/MM/yyyy');
+  final dateFmt = dates.dateTime;
+  final hdrFmt = dates.date;
 
   final f = await _RptFonts.load();
   final theme = f.theme;
@@ -4704,6 +4761,7 @@ Future<Uint8List> _buildStartingCashPdf({
 
 Future<Uint8List> _buildUnpaidSalesPdf({
   required AppLocalizations l,
+  required AppDateFormat dates,
   required List<UnpaidSalesRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -4713,8 +4771,8 @@ Future<Uint8List> _buildUnpaidSalesPdf({
 }) async {
   final doc = pw.Document();
   final fmt = NumberFormat('#,##0.00');
-  final dateFmt = DateFormat('dd/MM/yyyy');
-  final hdrDatFmt = DateFormat('dd/MM/yyyy');
+  final dateFmt = dates.date;
+  final hdrDatFmt = dates.date;
 
   final f = await _RptFonts.load();
   final theme = f.theme;
@@ -4869,6 +4927,7 @@ Future<Uint8List> _buildUnpaidSalesPdf({
 
 Future<Uint8List> _buildHourlySalesByGroupPdf({
   required AppLocalizations l,
+  required AppDateFormat dates,
   required List<HourlySalesByGroupRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -4878,7 +4937,7 @@ Future<Uint8List> _buildHourlySalesByGroupPdf({
 }) async {
   final doc = pw.Document();
   final fmt = NumberFormat('#,##0.00');
-  final dateFmt = DateFormat('dd/MM/yyyy');
+  final dateFmt = dates.date;
   final timeFmt = DateFormat('h:mm a');
 
   final f = await _RptFonts.load();
@@ -4978,6 +5037,7 @@ Future<Uint8List> _buildHourlySalesByGroupPdf({
 
 Future<Uint8List> _buildSalesByTablePdf({
   required AppLocalizations l,
+  required AppDateFormat dates,
   required List<SalesByTableRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -4987,7 +5047,7 @@ Future<Uint8List> _buildSalesByTablePdf({
 }) async {
   final doc = pw.Document();
   final fmt = NumberFormat('#,##0.00');
-  final dateFmt = DateFormat('dd/MM/yyyy');
+  final dateFmt = dates.date;
 
   final f = await _RptFonts.load();
   final theme = f.theme;
@@ -5067,6 +5127,7 @@ Future<Uint8List> _buildSalesByTablePdf({
 
 Future<Uint8List> _buildHourlySalesPdf({
   required AppLocalizations l,
+  required AppDateFormat dates,
   required List<HourlySalesRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -5076,7 +5137,7 @@ Future<Uint8List> _buildHourlySalesPdf({
   final doc = pw.Document();
   final fmt = NumberFormat('#,##0.00');
   final pctFmt = NumberFormat('#,##0.00');
-  final dateFmt = DateFormat('dd/MM/yyyy');
+  final dateFmt = dates.date;
   final timeFmt = DateFormat('h:mm a');
 
   final f = await _RptFonts.load();
@@ -5180,6 +5241,7 @@ Future<Uint8List> _buildHourlySalesPdf({
 
 Future<Uint8List> _buildDailySalesPdf({
   required AppLocalizations l,
+  required AppDateFormat dates,
   required List<DailySalesRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -5189,8 +5251,8 @@ Future<Uint8List> _buildDailySalesPdf({
 }) async {
   final doc = pw.Document();
   final fmt = NumberFormat('#,##0.00');
-  final dayFmt = DateFormat('dd/MM/yyyy (EEE)');
-  final dateFmt = DateFormat('dd/MM/yyyy');
+  final dayFmt = dates.dateWithWeekday;
+  final dateFmt = dates.date;
 
   final f = await _RptFonts.load();
   final theme = f.theme;
@@ -5257,6 +5319,7 @@ Future<Uint8List> _buildDailySalesPdf({
 
 Future<Uint8List> _buildInvoiceListPdf({
   required AppLocalizations l,
+  required AppDateFormat dates,
   required List<InvoiceListRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -5266,7 +5329,7 @@ Future<Uint8List> _buildInvoiceListPdf({
 }) async {
   final doc = pw.Document();
   final fmt = NumberFormat('#,##0.00');
-  final dateFmt = DateFormat('dd/MM/yyyy');
+  final dateFmt = dates.date;
 
   final f = await _RptFonts.load();
   final theme = f.theme;
@@ -5363,6 +5426,7 @@ Future<Uint8List> _buildInvoiceListPdf({
 
 Future<Uint8List> _buildRefundsPdf({
   required AppLocalizations l,
+  required AppDateFormat dates,
   required List<RefundItemListRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -5373,7 +5437,7 @@ Future<Uint8List> _buildRefundsPdf({
 }) async {
   final doc = pw.Document();
   final fmt = NumberFormat('#,##0.00');
-  final dateFmt = DateFormat('dd/MM/yyyy');
+  final dateFmt = dates.date;
 
   final f = await _RptFonts.load();
   final theme = f.theme;
@@ -5479,6 +5543,7 @@ Future<Uint8List> _buildRefundsPdf({
 
 Future<Uint8List> _buildUsersPdf({
   required AppLocalizations l,
+  required AppDateFormat dates,
   required List<SalesByUserRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -5489,7 +5554,7 @@ Future<Uint8List> _buildUsersPdf({
 }) async {
   final doc = pw.Document();
   final fmt = NumberFormat('#,##0.00');
-  final dateFmt = DateFormat('dd/MM/yyyy');
+  final dateFmt = dates.date;
 
   final f = await _RptFonts.load();
   final theme = f.theme;
@@ -5559,6 +5624,7 @@ Future<Uint8List> _buildUsersPdf({
 
 Future<Uint8List> _buildUnpaidPurchasePdf({
   required AppLocalizations l,
+  required AppDateFormat dates,
   required List<UnpaidPurchaseRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -5568,8 +5634,8 @@ Future<Uint8List> _buildUnpaidPurchasePdf({
 }) async {
   final doc = pw.Document();
   final fmt = NumberFormat('#,##0.00');
-  final dateFmt = DateFormat('dd/MM/yyyy');
-  final hdrDatFmt = DateFormat('dd/MM/yyyy');
+  final dateFmt = dates.date;
+  final hdrDatFmt = dates.date;
 
   final f = await _RptFonts.load();
   final theme = f.theme;
@@ -5589,7 +5655,7 @@ Future<Uint8List> _buildUnpaidPurchasePdf({
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
           printedText(
-            DateFormat('dd/MM/yyyy HH:mm:ss').format(DateTime.now()),
+            dates.dateTimeSeconds.format(DateTime.now()),
             style: f.style(size: 8),
           ),
           printedText(
@@ -5731,6 +5797,7 @@ Future<Uint8List> _buildUnpaidPurchasePdf({
 
 Future<Uint8List> _buildPurchaseBySupplierPdf({
   required AppLocalizations l,
+  required AppDateFormat dates,
   required List<PurchaseBySupplierRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -5741,7 +5808,7 @@ Future<Uint8List> _buildPurchaseBySupplierPdf({
 }) async {
   final doc = pw.Document();
   final fmt = NumberFormat('#,##0.00');
-  final dateFmt = DateFormat('dd/MM/yyyy');
+  final dateFmt = dates.date;
 
   final f = await _RptFonts.load();
   final theme = f.theme;
@@ -5754,7 +5821,7 @@ Future<Uint8List> _buildPurchaseBySupplierPdf({
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
           printedText(
-            DateFormat('dd/MM/yyyy HH:mm:ss').format(DateTime.now()),
+            dates.dateTimeSeconds.format(DateTime.now()),
             style: f.style(size: 8),
           ),
           printedText(
@@ -5825,6 +5892,7 @@ Future<Uint8List> _buildPurchaseBySupplierPdf({
 
 Future<Uint8List> _buildPurchaseByProductPdf({
   required AppLocalizations l,
+  required AppDateFormat dates,
   required List<PurchaseByProductRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -5835,7 +5903,7 @@ Future<Uint8List> _buildPurchaseByProductPdf({
 }) async {
   final doc = pw.Document();
   final fmt = NumberFormat('#,##0.00');
-  final dateFmt = DateFormat('dd/MM/yyyy');
+  final dateFmt = dates.date;
 
   final f = await _RptFonts.load();
   final theme = f.theme;
@@ -5848,7 +5916,7 @@ Future<Uint8List> _buildPurchaseByProductPdf({
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
           printedText(
-            DateFormat('dd/MM/yyyy HH:mm:ss').format(DateTime.now()),
+            dates.dateTimeSeconds.format(DateTime.now()),
             style: f.style(size: 8),
           ),
           printedText(
@@ -5932,6 +6000,7 @@ Future<Uint8List> _buildPurchaseByProductPdf({
 
 Future<Uint8List> _buildPurchaseExpirationDatePdf({
   required AppLocalizations l,
+  required AppDateFormat dates,
   required List<PurchaseExpirationDateRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -5941,7 +6010,7 @@ Future<Uint8List> _buildPurchaseExpirationDatePdf({
   required String productLabel,
 }) async {
   final doc = pw.Document();
-  final dateFmt = DateFormat('dd/MM/yyyy');
+  final dateFmt = dates.date;
 
   final f = await _RptFonts.load();
   final theme = f.theme;
@@ -5954,7 +6023,7 @@ Future<Uint8List> _buildPurchaseExpirationDatePdf({
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
           printedText(
-            DateFormat('dd/MM/yyyy HH:mm:ss').format(DateTime.now()),
+            dates.dateTimeSeconds.format(DateTime.now()),
             style: f.style(size: 8, color: PdfColors.red),
           ),
           printedText(
@@ -6030,6 +6099,7 @@ Future<Uint8List> _buildPurchaseExpirationDatePdf({
 
 Future<Uint8List> _buildPurchaseTaxPdf({
   required AppLocalizations l,
+  required AppDateFormat dates,
   required List<PurchaseByTaxRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -6040,7 +6110,7 @@ Future<Uint8List> _buildPurchaseTaxPdf({
 }) async {
   final doc = pw.Document();
   final fmt = NumberFormat('#,##0.00');
-  final dateFmt = DateFormat('dd/MM/yyyy');
+  final dateFmt = dates.date;
 
   final f = await _RptFonts.load();
   final theme = f.theme;
@@ -6053,7 +6123,7 @@ Future<Uint8List> _buildPurchaseTaxPdf({
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
           printedText(
-            DateFormat('dd/MM/yyyy HH:mm:ss').format(DateTime.now()),
+            dates.dateTimeSeconds.format(DateTime.now()),
             style: f.style(size: 8, color: PdfColors.red),
           ),
           printedText(
@@ -6128,6 +6198,7 @@ Future<Uint8List> _buildPurchaseTaxPdf({
 
 Future<Uint8List> _buildPurchaseInvoiceListPdf({
   required AppLocalizations l,
+  required AppDateFormat dates,
   required List<PurchaseInvoiceListRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -6138,7 +6209,7 @@ Future<Uint8List> _buildPurchaseInvoiceListPdf({
 }) async {
   final doc = pw.Document();
   final fmt = NumberFormat('#,##0.00');
-  final dateFmt = DateFormat('dd/MM/yyyy');
+  final dateFmt = dates.date;
 
   final f = await _RptFonts.load();
   final theme = f.theme;
@@ -6153,7 +6224,7 @@ Future<Uint8List> _buildPurchaseInvoiceListPdf({
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
           printedText(
-            DateFormat('dd/MM/yyyy HH:mm:ss').format(DateTime.now()),
+            dates.dateTimeSeconds.format(DateTime.now()),
             style: f.style(size: 8, color: PdfColors.red),
           ),
           printedText(
@@ -6229,6 +6300,7 @@ Future<Uint8List> _buildPurchaseInvoiceListPdf({
 
 Future<Uint8List> _buildPurchaseItemsDiscountsPdf({
   required AppLocalizations l,
+  required AppDateFormat dates,
   required List<PurchaseItemsDiscountsRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -6239,7 +6311,7 @@ Future<Uint8List> _buildPurchaseItemsDiscountsPdf({
 }) async {
   final doc = pw.Document();
   final fmt = NumberFormat('#,##0.00');
-  final hdrFmt = DateFormat('dd/MM/yyyy');
+  final hdrFmt = dates.date;
 
   final f = await _RptFonts.load();
   final theme = f.theme;
@@ -6275,7 +6347,7 @@ Future<Uint8List> _buildPurchaseItemsDiscountsPdf({
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
           printedText(
-            DateFormat('dd/MM/yyyy HH:mm:ss').format(DateTime.now()),
+            dates.dateTimeSeconds.format(DateTime.now()),
             style: f.style(size: 8, color: PdfColors.red),
           ),
           printedText(
@@ -6423,6 +6495,7 @@ Future<Uint8List> _buildPurchaseItemsDiscountsPdf({
 
 Future<Uint8List> _buildPurchaseDiscountsPdf({
   required AppLocalizations l,
+  required AppDateFormat dates,
   required List<PurchaseDiscountsRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -6432,8 +6505,8 @@ Future<Uint8List> _buildPurchaseDiscountsPdf({
 }) async {
   final doc = pw.Document();
   final fmt = NumberFormat('#,##0.00');
-  final dateFmt = DateFormat('dd/MM/yyyy');
-  final hdrFmt = DateFormat('dd/MM/yyyy');
+  final dateFmt = dates.date;
+  final hdrFmt = dates.date;
 
   final f = await _RptFonts.load();
   final theme = f.theme;
@@ -6466,7 +6539,7 @@ Future<Uint8List> _buildPurchaseDiscountsPdf({
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
           printedText(
-            DateFormat('dd/MM/yyyy HH:mm:ss').format(DateTime.now()),
+            dates.dateTimeSeconds.format(DateTime.now()),
             style: f.style(size: 8, color: PdfColors.red),
           ),
           printedText(
@@ -6649,6 +6722,7 @@ pw.Widget _pdfHeader(
 
 Future<Uint8List> _buildStockReturnByProductPdf({
   required AppLocalizations l,
+  required AppDateFormat dates,
   required List<StockReturnByProductRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -6658,7 +6732,7 @@ Future<Uint8List> _buildStockReturnByProductPdf({
 }) async {
   final doc = pw.Document();
   final fmt = NumberFormat('#,##0.00');
-  final dateFmt = DateFormat('dd/MM/yyyy');
+  final dateFmt = dates.date;
 
   final f = await _RptFonts.load();
   final theme = f.theme;
@@ -6671,7 +6745,7 @@ Future<Uint8List> _buildStockReturnByProductPdf({
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
           printedText(
-            DateFormat('dd/MM/yyyy HH:mm:ss').format(DateTime.now()),
+            dates.dateTimeSeconds.format(DateTime.now()),
             style: f.style(size: 8),
           ),
           printedText(
@@ -6758,6 +6832,7 @@ Future<Uint8List> _buildStockReturnByProductPdf({
 
 Future<Uint8List> _buildLossAndDamageByProductPdf({
   required AppLocalizations l,
+  required AppDateFormat dates,
   required List<LossAndDamageByProductRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -6767,7 +6842,7 @@ Future<Uint8List> _buildLossAndDamageByProductPdf({
 }) async {
   final doc = pw.Document();
   final fmt = NumberFormat('#,##0.00');
-  final dateFmt = DateFormat('dd/MM/yyyy');
+  final dateFmt = dates.date;
 
   final f = await _RptFonts.load();
   final theme = f.theme;
@@ -6780,7 +6855,7 @@ Future<Uint8List> _buildLossAndDamageByProductPdf({
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
           printedText(
-            DateFormat('dd/MM/yyyy HH:mm:ss').format(DateTime.now()),
+            dates.dateTimeSeconds.format(DateTime.now()),
             style: f.style(size: 8),
           ),
           printedText(
@@ -6867,6 +6942,7 @@ Future<Uint8List> _buildLossAndDamageByProductPdf({
 
 Future<Uint8List> _buildReorderProductListPdf({
   required AppLocalizations l,
+  required AppDateFormat dates,
   required List<ReorderProductListRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -6901,7 +6977,7 @@ Future<Uint8List> _buildReorderProductListPdf({
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
           printedText(
-            DateFormat('dd/MM/yyyy HH:mm:ss').format(DateTime.now()),
+            dates.dateTimeSeconds.format(DateTime.now()),
             style: f.style(size: 8),
           ),
           printedText(
@@ -6919,7 +6995,7 @@ Future<Uint8List> _buildReorderProductListPdf({
         _pdfHeader(
           l,
           f,
-          DateFormat('dd/MM/yyyy'),
+          dates.date,
           filter,
           companyName,
           companyAddress,
@@ -6958,6 +7034,7 @@ Future<Uint8List> _buildReorderProductListPdf({
 
 Future<Uint8List> _buildLowStockWarningPdf({
   required AppLocalizations l,
+  required AppDateFormat dates,
   required List<LowStockWarningRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -6998,7 +7075,7 @@ Future<Uint8List> _buildLowStockWarningPdf({
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
           printedText(
-            DateFormat('dd/MM/yyyy HH:mm:ss').format(DateTime.now()),
+            dates.dateTimeSeconds.format(DateTime.now()),
             style: f.style(size: 8),
           ),
           printedText(
@@ -7013,7 +7090,7 @@ Future<Uint8List> _buildLowStockWarningPdf({
         _pdfHeader(
           l,
           f,
-          DateFormat('dd/MM/yyyy'),
+          dates.date,
           filter,
           companyName,
           companyAddress,
@@ -7060,6 +7137,7 @@ Future<Uint8List> _buildLowStockWarningPdf({
 
 Future<Uint8List> _buildTransactionHistoryPdf({
   required AppLocalizations l,
+  required AppDateFormat dates,
   required List<TransactionHistoryRow> rows,
   required ReportFilter filter,
   String? companyName,
@@ -7068,7 +7146,7 @@ Future<Uint8List> _buildTransactionHistoryPdf({
 }) async {
   final doc = pw.Document();
   final fmt = NumberFormat('#,##0.00');
-  final dateFmt = DateFormat('dd/MM/yyyy');
+  final dateFmt = dates.date;
 
   final f = await _RptFonts.load();
   final theme = f.theme;
@@ -7081,7 +7159,7 @@ Future<Uint8List> _buildTransactionHistoryPdf({
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
           printedText(
-            DateFormat('dd/MM/yyyy HH:mm:ss').format(DateTime.now()),
+            dates.dateTimeSeconds.format(DateTime.now()),
             style: f.style(size: 8),
           ),
           printedText(
@@ -7178,7 +7256,7 @@ class _FilterPanel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
-    final dateFmt = DateFormat('dd/MM/yyyy');
+    final dateFmt = ref.watch(appDateFormatProvider).date;
 
     final customers = ref.watch(allCustomersProvider).value ?? [];
     final users = ref.watch(allUsersProvider).value ?? [];

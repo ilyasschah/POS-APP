@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'l10n/kds_localizations.dart';
+import 'language_picker.dart';
+
 /// Pre-pairing splash, shown until a POS binds this device. Mirrors the Loyverse
 /// CDS onboarding: branded panel up top, "pair this device in the POS settings"
 /// instructions plus the device name and IP the operator types into the POS.
@@ -13,12 +16,14 @@ class OnboardingScreen extends StatelessWidget {
   final String deviceName;
   final String ipAddress;
   final int port;
+  final Future<void> Function(String code) onLanguageChanged;
 
   const OnboardingScreen({
     super.key,
     required this.deviceName,
     required this.ipAddress,
     required this.port,
+    required this.onLanguageChanged,
   });
 
   static const _brand = Color(0xFF546E7A);
@@ -30,16 +35,34 @@ class OnboardingScreen extends StatelessWidget {
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
-            return SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: Column(
-                  children: [
-                    _hero(context, constraints.maxHeight),
-                    _instructions(context),
-                  ],
+            return Stack(
+              children: [
+                SingleChildScrollView(
+                  child: ConstrainedBox(
+                    constraints:
+                        BoxConstraints(minHeight: constraints.maxHeight),
+                    child: Column(
+                      children: [
+                        _hero(context, constraints.maxHeight),
+                        _instructions(context),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
+                // 🚨 The picker has to be reachable HERE, before pairing. This
+                // screen is the one a cook stands in front of while the display
+                // is being set up, and it is the screen that tells them what to
+                // do next — in a language they may not read. Making them pair
+                // first to reach the language menu is the wrong way round.
+                PositionedDirectional(
+                  top: 4,
+                  end: 4,
+                  child: LanguageButton(
+                    onLanguageChanged: onLanguageChanged,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
             );
           },
         ),
@@ -48,6 +71,7 @@ class OnboardingScreen extends StatelessWidget {
   }
 
   Widget _hero(BuildContext context, double maxHeight) {
+    final l = KdsLocalizations.of(context);
     return Container(
       width: double.infinity,
       // Grows on tall screens, but never collapses on short ones.
@@ -59,15 +83,18 @@ class OnboardingScreen extends StatelessWidget {
         children: [
           const Icon(Icons.kitchen, size: 72, color: Colors.white),
           const SizedBox(height: 16),
-          const FittedBox(
+          FittedBox(
             fit: BoxFit.scaleDown,
             child: Text(
-              'KITCHEN DISPLAY',
-              style: TextStyle(
+              l.brandTitle,
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
-                letterSpacing: 3,
+                // ⚠️ No letterSpacing. Arabic is a CONNECTED script — spacing
+                // its letters apart is what breaks the joins and renders the
+                // word as a row of disconnected shapes, the same class of bug
+                // the POS hit in its printed reports.
               ),
             ),
           ),
@@ -85,7 +112,7 @@ class OnboardingScreen extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                'Waiting to pair…',
+                l.waitingToPair,
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.85),
                   fontSize: 14,
@@ -100,15 +127,18 @@ class OnboardingScreen extends StatelessWidget {
   }
 
   Widget _instructions(BuildContext context) {
+    final l = KdsLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 28, 24, 28),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(
-            'To get started, pair this device in\nthe POS app settings.',
+          Text(
+            // No baked-in line break — the translations differ in length and a
+            // hard \n that suits English wraps badly in French and Arabic.
+            l.pairInstructions,
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w600,
               color: Color(0xFF263238),
@@ -116,12 +146,21 @@ class OnboardingScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          _InfoRow(label: 'Device name', value: deviceName),
+          _InfoRow(label: l.deviceNameLabel, value: deviceName),
           const SizedBox(height: 10),
-          _InfoRow(label: 'IP address', value: '$ipAddress:$port'),
+          // 🚨 The ADDRESS is forced left-to-right. An IP and port are Latin
+          // digits and dots; inside an Arabic (RTL) paragraph the neutral `.`
+          // and `:` get reordered by the bidi algorithm and "192.168.1.50:9100"
+          // is displayed with its parts rearranged — an operator then types a
+          // wrong address into the POS and the pairing silently never happens.
+          _InfoRow(
+            label: l.ipAddressLabel,
+            value: '$ipAddress:$port',
+            forceLtrValue: true,
+          ),
           const SizedBox(height: 24),
           Text(
-            'POS → Settings → Kitchen Display → add this address',
+            l.pairPath,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 13,
@@ -138,10 +177,28 @@ class _InfoRow extends StatelessWidget {
   final String label;
   final String value;
 
-  const _InfoRow({required this.label, required this.value});
+  /// Pins the VALUE to left-to-right regardless of the display's language.
+  /// For addresses and other machine text the operator has to retype — see the
+  /// note at the IP row's call site.
+  final bool forceLtrValue;
+
+  const _InfoRow({
+    required this.label,
+    required this.value,
+    this.forceLtrValue = false,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final valueText = Text(
+      value,
+      style: const TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+        color: Color(0xFF263238),
+      ),
+    );
+
     // Wrap so a long value drops to the next line on narrow screens instead of
     // overflowing horizontally.
     return Wrap(
@@ -155,14 +212,10 @@ class _InfoRow extends StatelessWidget {
             color: Colors.black.withValues(alpha: 0.5),
           ),
         ),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF263238),
-          ),
-        ),
+        if (forceLtrValue)
+          Directionality(textDirection: TextDirection.ltr, child: valueText)
+        else
+          valueText,
       ],
     );
   }

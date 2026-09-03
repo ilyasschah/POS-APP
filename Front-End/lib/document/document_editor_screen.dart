@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/core/app_date_format.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
@@ -979,10 +980,10 @@ class _HeaderForm extends ConsumerWidget {
     required this.onSave,
   });
 
-  String _fmt(BuildContext context, DateTime dt) {
-    final months = AppLocalizations.of(context).monthAbbreviations.split(',');
-    return "${dt.day.toString().padLeft(2, '0')}-${months[dt.month - 1]}-${dt.year}";
-  }
+  /// 🚨 Was `03-Sep-2026`, built from a localized month table and ignoring
+  /// `Application.DateFormat` entirely. A document DATE is a calendar day, not
+  /// an instant, so it takes no timezone conversion — see `AppDateFormat.day`.
+  String _fmt(AppDateFormat dates, DateTime dt) => dates.day(dt);
 
   Widget _buildCard(String title, IconData icon, List<Widget> children) {
     return Card(
@@ -1018,7 +1019,7 @@ class _HeaderForm extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final l = AppLocalizations.of(context);
-    String fmt(DateTime dt) => _fmt(context, dt);
+    String fmt(DateTime dt) => _fmt(ref.watch(appDateFormatProvider), dt);
     final asyncCustomers = ref.watch(selectableCustomersProvider);
     final asyncUsers = ref.watch(allUsersProvider);
     final asyncWarehouses = ref.watch(allWarehousesProvider);
@@ -2285,8 +2286,13 @@ class _EditItemDialogState extends ConsumerState<_EditItemDialog> {
     _selectedTaxId = widget.item.taxId;
     _selectedTaxRate = widget.item.taxRate;
     _expirationDate = widget.item.expirationDate;
+    // Display only — the field is `readOnly` and the real value lives in
+    // `_expirationDate`, so this can follow the company's date format without
+    // anything having to parse it back.
     _expirationDateCtrl = TextEditingController(
-      text: _expirationDate?.toIso8601String().split('T').first ?? '',
+      text: _expirationDate == null
+          ? ''
+          : ref.read(appDateFormatProvider).day(_expirationDate!),
     );
   }
 
@@ -2462,10 +2468,8 @@ class _EditItemDialogState extends ConsumerState<_EditItemDialog> {
                         if (picked != null) {
                           setState(() {
                             _expirationDate = picked;
-                            _expirationDateCtrl.text = picked
-                                .toIso8601String()
-                                .split('T')
-                                .first;
+                            _expirationDateCtrl.text =
+                                ref.read(appDateFormatProvider).day(picked);
                           });
                         }
                       },

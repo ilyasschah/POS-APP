@@ -6,6 +6,7 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pos_app/core/app_date_format.dart';
 import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/session/pos_session_status.dart';
 import 'package:pos_app/session/session_list_screen.dart';
@@ -127,11 +128,49 @@ void main() {
     });
   });
 
-  test('dates render in the list format', () {
-    expect(fmtSessionDate(DateTime(2026, 8, 20, 10, 16)), 'Aug 20, 10:16 AM');
-    expect(fmtSessionDate(DateTime(2026, 8, 19, 15, 5)), 'Aug 19, 3:05 PM');
-    // Midnight and noon are the two the 12-hour clock usually gets wrong.
-    expect(fmtSessionDate(DateTime(2026, 8, 19, 0, 30)), 'Aug 19, 12:30 AM');
-    expect(fmtSessionDate(DateTime(2026, 8, 19, 12, 0)), 'Aug 19, 12:00 PM');
+  group('session dates follow the company format', () {
+    // 🚨 This test used to assert `Aug 20, 10:16 AM` — a hardcoded English
+    // month table and a 12-hour clock baked into `fmtSessionDate`. That WAS the
+    // bug: `Application.DateFormat` is a setting, and this list ignored it
+    // along with the company's timezone. The assertions are inverted on
+    // purpose — what is pinned now is that the format reaches the list, not
+    // that one particular shape comes out.
+    final at = DateTime.utc(2026, 8, 20, 10, 16);
+
+    test('the chosen pattern is what renders', () {
+      expect(
+        fmtSessionDate(AppDateFormat('yyyy-MM-dd', timezone: 'Etc/UTC'), at),
+        '2026-08-20 10:16',
+      );
+      expect(
+        fmtSessionDate(AppDateFormat('MM/dd/yyyy', timezone: 'Etc/UTC'), at),
+        '08/20/2026 10:16',
+      );
+      expect(
+        fmtSessionDate(AppDateFormat('dd/MM/yyyy', timezone: 'Etc/UTC'), at),
+        '20/08/2026 10:16',
+      );
+    });
+
+    test('an opening time is shown in the company timezone', () {
+      // A session opened at 23:42 UTC belongs to the NEXT trading day in
+      // Casablanca. Getting this wrong files a shift under the wrong date.
+      final late = DateTime.utc(2026, 8, 20, 23, 42);
+      expect(
+        fmtSessionDate(
+            AppDateFormat('yyyy-MM-dd', timezone: 'Africa/Casablanca'), late),
+        startsWith('2026-08-21'),
+      );
+    });
+
+    test('midnight and noon still survive the round trip', () {
+      // The two the old 12-hour formatter existed to get right; on a 24-hour
+      // clock they are unremarkable, which is the point.
+      final f = AppDateFormat('dd/MM/yyyy', timezone: 'Etc/UTC');
+      expect(fmtSessionDate(f, DateTime.utc(2026, 8, 19, 0, 30)),
+          '19/08/2026 00:30');
+      expect(fmtSessionDate(f, DateTime.utc(2026, 8, 19, 12, 0)),
+          '19/08/2026 12:00');
+    });
   });
 }

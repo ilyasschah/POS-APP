@@ -1,10 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:pos_app/core/app_date_format.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/company/company_provider.dart';
@@ -237,7 +237,7 @@ class _ActiveShiftViewState extends ConsumerState<_ActiveShiftView> {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final shift = widget.shift;
-    final fmt = DateFormat('dd/MM/yyyy HH:mm');
+    final fmt = ref.watch(appDateFormatProvider).dateTime;
 
     final duration = DateTime.now().difference(shift.openedAt);
     final hours = duration.inHours;
@@ -376,7 +376,12 @@ class _HoursTabState extends ConsumerState<_HoursTab> {
       return;
     }
     final openLabel = AppLocalizations.of(context).shiftStillOpen;
-    final fmt = DateFormat('yyyy-MM-dd HH:mm');
+    // 🚨 ISO, and NOT the company's date setting — same reasoning as the
+    // English header on the next line. This file is parsed by a spreadsheet,
+    // and a date column that changes shape when somebody picks a different
+    // display format breaks every import written against the old shape,
+    // silently, because both shapes are valid dates.
+    final fmt = AppDateFormat.isoDateTime;
     // CSV header stays English on purpose — it is a machine-readable column
     // header pasted into a spreadsheet, not screen text.
     final sb = StringBuffer('Clock in,Clock out,Employee,Store,Total Hours\n');
@@ -429,7 +434,7 @@ class _HoursTabState extends ConsumerState<_HoursTab> {
     final sessionsAsync = ref.watch(shiftSessionsProvider(_params));
     final allUsersAsync = ref.watch(allUsersProvider);
 
-    final dateFmt = DateFormat('MMM d, yyyy');
+    final dateFmt = ref.watch(appDateFormatProvider).date;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -625,7 +630,7 @@ class _FramedAction extends StatelessWidget {
   }
 }
 
-class _SessionsReportCard extends StatelessWidget {
+class _SessionsReportCard extends ConsumerWidget {
   final List<ShiftSessionRow> rows;
   final int page;
   final int rowsPerPage;
@@ -646,13 +651,13 @@ class _SessionsReportCard extends StatelessWidget {
   int get _safePage => page.clamp(0, _totalPages - 1);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final labelStyle = theme.textTheme.bodySmall
         ?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w500);
     final dividerColor = cs.outline.withValues(alpha: 0.22);
-    final fmt = DateFormat('MMM d, yyyy h:mm a');
+    final fmt = ref.watch(appDateFormatProvider).withTime('h:mm a');
 
     final pageRows =
         rows.skip(_safePage * rowsPerPage).take(rowsPerPage).toList();
@@ -1006,7 +1011,7 @@ class _AddTimeCardDialogState extends ConsumerState<_AddTimeCardDialog> {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final usersAsync = ref.watch(allUsersProvider);
-    final dateFmt = DateFormat('MMM d, yyyy');
+    final dateFmt = ref.watch(appDateFormatProvider).date;
     String dtLabel(DateTime dt) =>
         '${dateFmt.format(dt)}  ${TimeOfDay.fromDateTime(dt).format(context)}';
 

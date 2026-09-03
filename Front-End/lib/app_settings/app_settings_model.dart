@@ -117,12 +117,18 @@ class SettingKeys {
   static const customerDisplayThankYouMessage =
       'CustomerDisplay.ThankYouMessage';
 
-  // Email
-  static const emailSmtpHost = 'Email.SmtpHost';
-  static const emailSmtpPort = 'Email.SmtpPort';
-  static const emailFromAddress = 'Email.FromAddress';
-  static const emailFromName = 'Email.FromName';
-  static const emailUserEmail = 'Application.User.Email';
+  // 🚨 Email/SMTP was RETIRED on 2026-09-03. `Email.SmtpHost`, `SmtpPort`,
+  // `FromAddress`, `FromName` and `Application.User.Email` were five settings
+  // with a full tab in the settings screen and zero consuming code anywhere in
+  // the app or the backend — nothing has ever sent an email. A settings page
+  // that collects an SMTP host and then does nothing with it is worse than no
+  // page: it is a promise the product does not keep, and a support call the
+  // first time somebody fills it in. The server sweeps the stale rows via
+  // `CompanyDefaultsSeeder.ObsoleteProperties`.
+  //
+  // When email IS built, these names are free to come back — but decide what
+  // SENDS first (a receipt? a password reset?), because that decision is what
+  // the settings have to serve.
 
   // Print
   static const printerName = 'Print.PrinterName';
@@ -512,7 +518,7 @@ const Map<String, String> kSettingDefaults = {
   // the timezone picker asserts on a value it can't find among its items.
   SettingKeys.timezone: 'Etc/UTC',
   SettingKeys.timezoneMode: 'Auto',
-  SettingKeys.dateFormat: 'dd-MM-yyyy',
+  SettingKeys.dateFormat: 'dd/MM/yyyy',
   SettingKeys.taxIncludedByDefault: 'true',
   SettingKeys.defaultTaxRateIds: '',
   SettingKeys.defaultPaymentType: 'Cash',
@@ -548,11 +554,6 @@ const Map<String, String> kSettingDefaults = {
   SettingKeys.customerDisplayWelcomeMessage: 'WELCOME!',
   SettingKeys.customerDisplayWelcomeBottom: '',
   SettingKeys.customerDisplayThankYouMessage: '',
-  SettingKeys.emailSmtpHost: '',
-  SettingKeys.emailSmtpPort: '587',
-  SettingKeys.emailFromAddress: '',
-  SettingKeys.emailFromName: 'POS System',
-  SettingKeys.emailUserEmail: '',
   SettingKeys.printerName: '',
   SettingKeys.printCopies: '1',
   SettingKeys.autoprint: 'false',

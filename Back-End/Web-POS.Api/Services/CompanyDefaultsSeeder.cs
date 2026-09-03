@@ -201,6 +201,18 @@ namespace Api.Services
             // from a modifier group with AllowsFreeText, so the toggle that
             // showed the button has nothing left to show or hide.
             "ButtonBar.ShowComment",
+            // Email/SMTP, retired 2026-09-03. These five had a full settings tab
+            // on the client and ZERO consuming code on either side — nothing in
+            // this API has ever sent an email. A page that collects an SMTP host
+            // and does nothing with it is a promise the product does not keep.
+            // They can come back when there is something that actually sends;
+            // that decision (receipt? password reset?) is what the settings have
+            // to serve, and it had never been made.
+            "Email.SmtpHost",
+            "Email.SmtpPort",
+            "Email.FromAddress",
+            "Email.FromName",
+            "Application.User.Email",
         };
 
         /// <summary>
@@ -223,8 +235,8 @@ namespace Api.Services
 
         /// <summary>
         /// Baseline settings every company starts with. NOTE: a few values are
-        /// environment/user-specific (Application.User.Email, Database.BackupPath,
-        /// Kitchen.DisplayIps, Application.Api.BaseUrl) — adjust as needed.
+        /// environment/user-specific (Database.BackupPath, Kitchen.DisplayIps,
+        /// Application.Api.BaseUrl) — adjust as needed.
         /// </summary>
         public static readonly (string Name, string Value)[] DefaultProperties =
         {
@@ -243,7 +255,6 @@ namespace Api.Services
             // turning this off restores trading immediately.
             ("PosSession.RequireOpenSession", "true"),
             ("Application.Api.BaseUrl", "https://api.futur3.com/api"),
-            ("Application.User.Email", ""),
             ("Database.Backup.Version", "v2"),
             ("Theme_Mode", "dark"),
             ("Theme_AccentColor", "#10B981"),

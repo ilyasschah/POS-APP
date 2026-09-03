@@ -1,10 +1,13 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
+import 'kds_locale.dart';
 import 'kds_models.dart';
 import 'kds_storage.dart';
 import 'kitchen_screen.dart';
+import 'l10n/kds_localizations.dart';
 import 'lan_server.dart';
 import 'onboarding_screen.dart';
 
@@ -13,18 +16,57 @@ void main() {
   runApp(const KitchenDisplayApp());
 }
 
-class KitchenDisplayApp extends StatelessWidget {
+class KitchenDisplayApp extends StatefulWidget {
   const KitchenDisplayApp({super.key});
+
+  @override
+  State<KitchenDisplayApp> createState() => _KitchenDisplayAppState();
+}
+
+class _KitchenDisplayAppState extends State<KitchenDisplayApp> {
+  final KdsStorage _storage = KdsStorage();
+
+  /// Starts on the guarded fallback rather than null, so the very first frame
+  /// is English instead of whichever locale happens to sort first.
+  Locale _locale = resolveKdsLocale(null);
+
+  @override
+  void initState() {
+    super.initState();
+    _storage.loadLanguage().then((code) {
+      if (!mounted || code == null) return;
+      setState(() => _locale = resolveKdsLocale(code));
+    });
+  }
+
+  Future<void> _setLanguage(String code) async {
+    setState(() => _locale = resolveKdsLocale(code));
+    await _storage.saveLanguage(code);
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Kitchen Display',
+      // ⚠️ `onGenerateTitle`, never `title:`. `title:` is evaluated in THIS
+      // build — above the Localizations widget MaterialApp itself creates — so
+      // a lookup there returns null and the non-nullable generated getter
+      // throws "Null check operator used on a null value" on a red screen
+      // before any UI renders. The POS shipped that bug once; this app is not
+      // going to repeat it.
+      onGenerateTitle: (context) => KdsLocalizations.of(context).appTitle,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueGrey),
         useMaterial3: true,
       ),
-      home: const RootScreen(),
+      locale: _locale,
+      localizationsDelegates: const [
+        KdsLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: KdsLocalizations.supportedLocales,
+      home: RootScreen(onLanguageChanged: _setLanguage),
       debugShowCheckedModeBanner: false,
     );
   }
@@ -34,7 +76,12 @@ class KitchenDisplayApp extends StatelessWidget {
 /// record + the current order snapshot, and swaps between the onboarding and
 /// kitchen screens. Everything is local — there is no backend API client.
 class RootScreen extends StatefulWidget {
-  const RootScreen({super.key});
+  const RootScreen({super.key, required this.onLanguageChanged});
+
+  /// Handed down to both screens: the display can be re-languaged before it is
+  /// paired as well as after, because the person who needs Arabic is usually
+  /// the one setting the thing up.
+  final Future<void> Function(String code) onLanguageChanged;
 
   @override
   State<RootScreen> createState() => _RootScreenState();
@@ -173,6 +220,7 @@ class _RootScreenState extends State<RootScreen> {
         deviceName: _deviceName,
         ipAddress: _deviceIp,
         port: kKdsPort,
+        onLanguageChanged: widget.onLanguageChanged,
       );
     }
 
@@ -181,6 +229,7 @@ class _RootScreenState extends State<RootScreen> {
       posName: _pairing.posName.isEmpty ? 'POS' : _pairing.posName,
       onMarkReady: _markReady,
       onUnpair: _handleUnpair,
+      onLanguageChanged: widget.onLanguageChanged,
     );
   }
 }

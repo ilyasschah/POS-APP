@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/core/app_date_format.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'package:pos_app/api/api_client.dart' show apiBaseUrl;
@@ -155,7 +155,10 @@ class _SubscriptionBlockedScreenState
                         const Gap(8),
                         Text(
                           AppLocalizations.of(context).expiredOnDate(
-                    DateFormat('d MMM yyyy').format(validUntil.toLocal())),
+                    ref
+                        .watch(appDateFormatProvider)
+                        .date
+                        .format(validUntil.toLocal())),
                           style: TextStyle(
                             color: cs.onSurface,
                             fontWeight: FontWeight.w600,

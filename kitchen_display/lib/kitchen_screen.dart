@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'kds_models.dart';
+import 'l10n/kds_localizations.dart';
+import 'language_picker.dart';
 
 /// Pure display of kitchen tickets. It owns no network or storage — orders are
 /// handed in from the root (which receives them over the LAN from the paired
@@ -10,6 +12,7 @@ class KitchenScreen extends StatefulWidget {
   final String posName;
   final void Function(KitchenOrder order) onMarkReady;
   final VoidCallback onUnpair;
+  final Future<void> Function(String code) onLanguageChanged;
 
   const KitchenScreen({
     super.key,
@@ -17,6 +20,7 @@ class KitchenScreen extends StatefulWidget {
     required this.posName,
     required this.onMarkReady,
     required this.onUnpair,
+    required this.onLanguageChanged,
   });
 
   @override
@@ -25,8 +29,14 @@ class KitchenScreen extends StatefulWidget {
 
 class _KitchenScreenState extends State<KitchenScreen> {
   final ScrollController _scrollController = ScrollController();
-  bool _canScrollLeft = false;
-  bool _canScrollRight = false;
+
+  // 🚨 BACK / FORWARD, not left / right, and the rename is the fix rather than
+  // tidying. Scroll offset 0 is the START edge of the list — the visual LEFT in
+  // English and French, the visual RIGHT in Arabic. Naming these by screen side
+  // is what puts both arrows on the wrong end of an Arabic display, pointing
+  // the wrong way, the moment the picker is switched.
+  bool _canScrollBack = false;
+  bool _canScrollForward = false;
 
   @override
   void initState() {
@@ -53,13 +63,13 @@ class _KitchenScreenState extends State<KitchenScreen> {
 
   void _updateScrollArrows() {
     if (!_scrollController.hasClients) return;
-    final canLeft = _scrollController.offset > 0;
-    final canRight =
+    final canBack = _scrollController.offset > 0;
+    final canForward =
         _scrollController.offset < _scrollController.position.maxScrollExtent;
-    if (canLeft != _canScrollLeft || canRight != _canScrollRight) {
+    if (canBack != _canScrollBack || canForward != _canScrollForward) {
       setState(() {
-        _canScrollLeft = canLeft;
-        _canScrollRight = canRight;
+        _canScrollBack = canBack;
+        _canScrollForward = canForward;
       });
     }
   }
@@ -74,18 +84,16 @@ class _KitchenScreenState extends State<KitchenScreen> {
   }
 
   void _confirmUnpair() {
+    final l = KdsLocalizations.of(context);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Unpair this display?'),
-        content: Text(
-          'This Kitchen Display will be disconnected from ${widget.posName} '
-          'and return to the pairing screen.',
-        ),
+        title: Text(l.unpairTitle),
+        content: Text(l.unpairBody(widget.posName)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(l.cancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
@@ -93,7 +101,7 @@ class _KitchenScreenState extends State<KitchenScreen> {
               Navigator.pop(ctx);
               widget.onUnpair();
             },
-            child: const Text('Unpair'),
+            child: Text(l.unpair),
           ),
         ],
       ),
@@ -103,6 +111,8 @@ class _KitchenScreenState extends State<KitchenScreen> {
   @override
   Widget build(BuildContext context) {
     final orders = widget.orders;
+    final l = KdsLocalizations.of(context);
+    final isRtl = Directionality.of(context) == TextDirection.rtl;
     return Scaffold(
       backgroundColor: const Color(0xFFE5E7EB),
       appBar: AppBar(
@@ -112,34 +122,39 @@ class _KitchenScreenState extends State<KitchenScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Kitchen Display — ${orders.length} order${orders.length == 1 ? '' : 's'}',
+              l.headerOrders(orders.length),
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
             ),
             Text(
-              'Paired with ${widget.posName}',
+              l.pairedWith(widget.posName),
               style: const TextStyle(fontSize: 11, color: Colors.white70),
             ),
           ],
         ),
         actions: [
+          LanguageButton(
+            onLanguageChanged: widget.onLanguageChanged,
+            color: Colors.white,
+          ),
           IconButton(
             icon: const Icon(Icons.link_off),
-            tooltip: 'Unpair',
+            tooltip: l.unpair,
             onPressed: _confirmUnpair,
           ),
           const SizedBox(width: 8),
         ],
       ),
       body: orders.isEmpty
-          ? const Center(
+          ? Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.restaurant_menu, size: 72, color: Colors.grey),
-                  SizedBox(height: 16),
+                  const Icon(Icons.restaurant_menu,
+                      size: 72, color: Colors.grey),
+                  const SizedBox(height: 16),
                   Text(
-                    'Waiting for orders…',
-                    style: TextStyle(
+                    l.waitingForOrders,
+                    style: const TextStyle(
                       color: Colors.grey,
                       fontSize: 20,
                       fontWeight: FontWeight.w500,
@@ -169,26 +184,29 @@ class _KitchenScreenState extends State<KitchenScreen> {
                     ),
                   ),
                 ),
-                if (_canScrollLeft)
-                  Positioned(
-                    left: 0,
+                // PositionedDirectional, not Positioned: `start` is the left
+                // edge in English and the right edge in Arabic, which is the
+                // same edge scroll offset 0 sits at in each.
+                if (_canScrollBack)
+                  PositionedDirectional(
+                    start: 0,
                     top: 0,
                     bottom: 0,
                     child: Center(
                       child: _ScrollArrowButton(
-                        icon: Icons.chevron_left,
+                        icon: isRtl ? Icons.chevron_right : Icons.chevron_left,
                         onTap: () => _scrollBy(-340),
                       ),
                     ),
                   ),
-                if (_canScrollRight)
-                  Positioned(
-                    right: 0,
+                if (_canScrollForward)
+                  PositionedDirectional(
+                    end: 0,
                     top: 0,
                     bottom: 0,
                     child: Center(
                       child: _ScrollArrowButton(
-                        icon: Icons.chevron_right,
+                        icon: isRtl ? Icons.chevron_left : Icons.chevron_right,
                         onTap: () => _scrollBy(340),
                       ),
                     ),
@@ -235,6 +253,7 @@ class KitchenCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = KdsLocalizations.of(context);
     final title = order.tableName != null && order.tableName!.isNotEmpty
         ? order.tableName!
         : order.number;
@@ -286,7 +305,7 @@ class KitchenCard extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Text(
-              order.typeString,
+              order.typeString(l),
               style: const TextStyle(
                 fontSize: 16,
                 fontStyle: FontStyle.italic,
@@ -332,7 +351,10 @@ class KitchenCard extends StatelessWidget {
                               ),
                               Expanded(
                                 child: Text(
-                                  item.name,
+                                  // The snapshot stores an empty name when the
+                                  // POS sent none — translated here, not at
+                                  // parse time, so it follows the picker.
+                                  item.name.isEmpty ? l.unknownItem : item.name,
                                   style: TextStyle(
                                     fontSize: 18,
                                     decoration: item.isDone
@@ -406,9 +428,9 @@ class KitchenCard extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     icon: const Icon(Icons.check_circle, color: Colors.white),
-                    label: const Text(
-                      "DONE",
-                      style: TextStyle(
+                    label: Text(
+                      l.done,
+                      style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                         fontSize: 16,

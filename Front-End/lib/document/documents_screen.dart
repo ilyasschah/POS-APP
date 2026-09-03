@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:pos_app/core/app_date_format.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:intl/intl.dart';
-import 'package:timezone/data/latest.dart' as tz_data;
-import 'package:timezone/timezone.dart' as tz;
 import 'package:pos_app/api/api_client.dart';
 import 'package:pos_app/core/app_date_picker.dart';
 import 'package:pos_app/core/ilyass_column_order.dart';
@@ -16,8 +15,6 @@ import 'package:pos_app/document/document_filters.dart';
 import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/security/security_guard.dart';
 import 'package:pos_app/security/security_keys.dart';
-import 'package:pos_app/app_settings/app_settings_model.dart';
-import 'package:pos_app/app_settings/app_settings_provider.dart';
 import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/auth/user_model.dart';
 import 'package:pos_app/company/company_provider.dart';
@@ -199,12 +196,12 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
   /// showing as unselected.
   final Set<int> _selectedIds = {};
 
-  final _dateFmt = DateFormat('dd/MM/yy');
+  // A getter, not a field — see the note in sales_history_screen.dart.
+  DateFormat get _dateFmt => ref.watch(appDateFormatProvider).shortYearDate;
 
   @override
   void initState() {
     super.initState();
-    tz_data.initializeTimeZones();
   }
 
   @override
@@ -215,46 +212,15 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
 
   // ── date formatting ───────────────────────────────────────────────────────
 
-  String _formatDate(String? iso) {
-    if (iso == null || iso.isEmpty) return '-';
-    try {
-      final isTimestamp = iso.contains('T') || iso.contains(' ');
-      final dt = DateTime.parse(iso);
-      if (isTimestamp) {
-        final utcDt = dt.isUtc
-            ? dt
-            : DateTime.utc(
-                dt.year,
-                dt.month,
-                dt.day,
-                dt.hour,
-                dt.minute,
-                dt.second,
-              );
-        final tzId =
-            ref.read(appSettingsProvider)[SettingKeys.timezone] ?? 'UTC';
-        DateTime display;
-        try {
-          final location = tz.getLocation(tzId);
-          display = tz.TZDateTime.from(utcDt, location);
-        } catch (_) {
-          display = utcDt;
-        }
-        return '${display.day.toString().padLeft(2, '0')}-'
-            '${_monthAbbr(display.month)}-${display.year.toString().substring(2)} '
-            '${display.hour.toString().padLeft(2, '0')}:'
-            '${display.minute.toString().padLeft(2, '0')}';
-      } else {
-        return '${dt.day.toString().padLeft(2, '0')}-'
-            '${_monthAbbr(dt.month)}-${dt.year.toString().substring(2)}';
-      }
-    } catch (_) {
-      return iso;
-    }
-  }
-
-  String _monthAbbr(int m) =>
-      AppLocalizations.of(context).monthAbbreviations.split(',')[m - 1];
+  /// 🚨 Was a hand-rolled `padLeft` formatter printing `03-Sep-26 14:32` with
+  /// its own timezone conversion. It never touched `DateFormat`, so it survived
+  /// the pass that wired `Application.DateFormat` and this table kept its own
+  /// shape after the setting changed. Both halves now live in `AppDateFormat`.
+  ///
+  /// The localized month abbreviation went with it: the setting decides the
+  /// shape of a date now, and `dd-MMM-yy` is not one of the shapes it offers.
+  String _formatDate(String? iso) =>
+      ref.watch(appDateFormatProvider).isoToDisplay(iso);
 
   // ── badges ────────────────────────────────────────────────────────────────
 

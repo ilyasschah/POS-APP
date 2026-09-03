@@ -2,6 +2,7 @@ import 'package:drift/drift.dart' show OrderingTerm;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:pos_app/core/app_date_format.dart';
 import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/auth/user_model.dart';
 import 'package:pos_app/company/company_provider.dart';
@@ -256,7 +257,7 @@ class _SessionListScreenState extends ConsumerState<SessionListScreen> {
 }
 
 /// The wide layout: a DataTable of whichever columns are enabled.
-class _SessionTable extends StatelessWidget {
+class _SessionTable extends ConsumerWidget {
   const _SessionTable({
     required this.rows,
     required this.columns,
@@ -272,7 +273,8 @@ class _SessionTable extends StatelessWidget {
   final double maxWidth;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dates = ref.watch(appDateFormatProvider);
     final theme = Theme.of(context);
 
     // Horizontal scroll lets the grid grow past the viewport as more columns
@@ -336,6 +338,7 @@ class _SessionTable extends StatelessWidget {
                             session: s,
                             isActive: s.localId == activeLocalId,
                             who: who,
+                            dates: dates,
                           ),
                         ),
                     ],
@@ -352,7 +355,7 @@ class _SessionTable extends StatelessWidget {
 /// The compact layout: one tappable card per session, showing the same columns
 /// the table would — so hiding a column hides it in both places rather than the
 /// preference silently applying to only half the app.
-class _SessionCards extends StatelessWidget {
+class _SessionCards extends ConsumerWidget {
   const _SessionCards({
     required this.rows,
     required this.columns,
@@ -366,7 +369,8 @@ class _SessionCards extends StatelessWidget {
   final String Function(int?) who;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dates = ref.watch(appDateFormatProvider);
     final l = AppLocalizations.of(context);
     final theme = Theme.of(context);
 
@@ -455,6 +459,7 @@ class _SessionCards extends StatelessWidget {
                               session: s,
                               isActive: isActive,
                               who: who,
+                              dates: dates,
                               alignEnd: true,
                             ),
                           ),
@@ -479,6 +484,7 @@ Widget _sessionCell(
   required ShiftsTableData session,
   required bool isActive,
   required String Function(int?) who,
+  required AppDateFormat dates,
   bool alignEnd = false,
 }) {
   final l = AppLocalizations.of(context);
@@ -517,10 +523,10 @@ Widget _sessionCell(
     case 'openedBy':
       return text(who(session.userId));
     case 'opening':
-      return text(fmtSessionDate(session.openedAt));
+      return text(fmtSessionDate(dates, session.openedAt));
     case 'closing':
       return text(
-        session.closedAt == null ? '—' : fmtSessionDate(session.closedAt!),
+        session.closedAt == null ? '—' : fmtSessionDate(dates, session.closedAt!),
       );
     case 'closedBy':
       return text(
@@ -576,27 +582,10 @@ String sessionDisplayId(ShiftsTableData s) {
   return device.isEmpty ? '#$num' : '$device/$num';
 }
 
-String fmtSessionDate(DateTime dt) {
-  final d = dt.toLocal();
-  const months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-  final h = d.hour % 12 == 0 ? 12 : d.hour % 12;
-  final ampm = d.hour < 12 ? 'AM' : 'PM';
-  return '${months[d.month - 1]} ${d.day}, $h:'
-      '${d.minute.toString().padLeft(2, '0')} $ampm';
-}
+/// 🚨 Was `Sep 3, 11:42 PM` — a hardcoded English month table and a 12-hour
+/// clock, with no reference to `Application.DateFormat` or the company's
+/// timezone. Both are now the caller's, via [AppDateFormat].
+String fmtSessionDate(AppDateFormat dates, DateTime dt) => dates.stamp(dt);
 
 /// `7h 18m` — how long the register traded.
 String fmtSessionDuration(Duration d) {

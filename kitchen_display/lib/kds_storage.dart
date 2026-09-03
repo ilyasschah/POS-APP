@@ -45,6 +45,7 @@ class KdsStorage {
   static const _kPosIp = 'kds.posIp';
   static const _kPosPort = 'kds.posPort';
   static const _kOrders = 'kds.orders';
+  static const _kLanguage = 'kds.language';
 
   SharedPreferences? _prefs;
   Future<SharedPreferences> get _sp async =>
@@ -95,7 +96,20 @@ class KdsStorage {
     await p.remove(_kPosIp);
     await p.remove(_kPosPort);
     await p.remove(_kOrders);
+    // 🚨 The LANGUAGE deliberately survives an unpair. It belongs to the person
+    // standing in front of the screen, not to the till it happens to be bound
+    // to — making the cook re-pick Arabic every time the display is re-paired
+    // is precisely the friction this feature exists to remove.
   }
+
+  /// The language code chosen on this display, if one ever was.
+  ///
+  /// Returns null rather than a default so the caller can tell "never set" from
+  /// "set to English"; `resolveKdsLocale` turns either into a real locale.
+  Future<String?> loadLanguage() async => (await _sp).getString(_kLanguage);
+
+  Future<void> saveLanguage(String code) async =>
+      (await _sp).setString(_kLanguage, code);
 
   Future<List<KitchenOrder>> loadOrders() async {
     final p = await _sp;

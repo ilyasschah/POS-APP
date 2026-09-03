@@ -1,5 +1,8 @@
+import 'package:flutter/widgets.dart' show Locale;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kitchen_display/kds_locale.dart';
 import 'package:kitchen_display/kds_models.dart';
+import 'package:kitchen_display/l10n/kds_localizations.dart';
 
 /// Replaces the generated `widget_test.dart`, which pumped `KitchenDisplayApp`
 /// and asserted a counter incremented — the Flutter scaffold's own test, left
@@ -21,8 +24,14 @@ void main() {
       expect(KitchenItem.fromJson({'id': 1, 'name': 'Steak'}).name, 'Steak');
     });
 
-    test('names an item rather than rendering a blank line', () {
-      expect(KitchenItem.fromJson({'id': 1}).name, 'Unknown Item');
+    test('a missing product name parses as empty, never as a placeholder', () {
+      // 🚨 It used to parse as the literal 'Unknown Item'. That stopped being
+      // right when the display gained languages: `fromJson` runs on data that
+      // `toJson` writes straight back into the stored snapshot, so a translated
+      // placeholder here would freeze whatever language was showing at parse
+      // time into storage and the card would then contradict the picker. The
+      // screen substitutes `unknownItem` at DISPLAY time instead.
+      expect(KitchenItem.fromJson({'id': 1}).name, '');
     });
 
     test('defaults quantity to 1 and widens an int to double', () {
@@ -95,17 +104,70 @@ void main() {
   });
 
   group('KitchenOrder.typeString', () {
-    test('maps the known service types', () {
-      String typeFor(int t) =>
-          KitchenOrder.fromJson({'serviceType': t}).typeString;
+    String typeFor(int t, String language) => KitchenOrder.fromJson(
+        {'serviceType': t}).typeString(lookupKdsLocalizations(Locale(language)));
 
-      expect(typeFor(1), 'Dine in');
-      expect(typeFor(2), 'Takeaway');
-      expect(typeFor(3), 'Delivery');
+    test('maps the known service types', () {
+      expect(typeFor(1, 'en'), 'Dine in');
+      expect(typeFor(2, 'en'), 'Takeaway');
+      expect(typeFor(3, 'en'), 'Delivery');
     });
 
     test('falls back for an unknown type', () {
-      expect(KitchenOrder.fromJson({'serviceType': 99}).typeString, 'Order');
+      expect(typeFor(99, 'en'), 'Order');
+    });
+
+    // The point of the localization pass: the cook reads the ticket, and the
+    // service type is the line that says what to DO with the food.
+    test('every service type is translated in every shipped language', () {
+      for (final language in kKdsLanguages) {
+        for (final type in [1, 2, 3, 99]) {
+          final text = typeFor(type, language);
+          expect(text, isNotEmpty,
+              reason: '$language has no string for serviceType $type');
+          if (language != 'en') {
+            expect(text, isNot(typeFor(type, 'en')),
+                reason: '$language still shows the English text for '
+                    'serviceType $type');
+          }
+        }
+      }
+    });
+  });
+
+  group('resolveKdsLocale — the Arabic-fallback guard', () {
+    // 🚨 gen-l10n emits supportedLocales ALPHABETICALLY, so `ar` is first, and
+    // Flutter falls back to the first entry for anything it cannot resolve.
+    // Without this guard an unset or stale preference renders the whole kitchen
+    // display in Arabic instead of English. Deleting it as redundant is exactly
+    // the mistake it exists to prevent — so it is pinned here.
+    test('null and empty fall back to English, never to the first locale', () {
+      expect(resolveKdsLocale(null).languageCode, 'en');
+      expect(resolveKdsLocale('').languageCode, 'en');
+      expect(resolveKdsLocale('   ').languageCode, 'en');
+    });
+
+    test('an unsupported language falls back to English', () {
+      expect(resolveKdsLocale('de').languageCode, 'en');
+      expect(resolveKdsLocale('es').languageCode, 'en');
+    });
+
+    test('the shipped languages pass through', () {
+      for (final code in kKdsLanguages) {
+        expect(resolveKdsLocale(code).languageCode, code);
+      }
+    });
+
+    test('a region tag keeps its language rather than dropping to English', () {
+      expect(resolveKdsLocale('ar_MA').languageCode, 'ar');
+      expect(resolveKdsLocale('fr-CA').languageCode, 'fr');
+      expect(resolveKdsLocale('AR').languageCode, 'ar');
+    });
+
+    test('the first supported locale really is the one that would bite', () {
+      // If this ever stops being `ar`, the guard is still correct — but the
+      // comment explaining WHY it exists would be stale, so fail loudly.
+      expect(KdsLocalizations.supportedLocales.first.languageCode, 'ar');
     });
   });
 

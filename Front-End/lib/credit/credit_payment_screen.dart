@@ -1,11 +1,11 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
+import 'package:pos_app/core/app_date_format.dart';
 import 'package:pos_app/navigation/main_layout.dart';
 import 'package:pos_app/core/ilyass_screen.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/cart/payment_type_model.dart';
@@ -187,8 +187,9 @@ class _CreditPaymentsScreenState extends ConsumerState<CreditPaymentsScreen> {
       final userName = {for (final u in users) u.id: u.name};
       final typeName = {for (final t in types) t.id: t.name};
 
-      final dateFmt = DateFormat('dd/MM/yyyy');
-      final createdFmt = DateFormat('dd/MM/yyyy HH:mm:ss');
+      final dates = ref.read(appDateFormatProvider);
+      final dateFmt = dates.date;
+      final createdFmt = dates.dateTimeSeconds;
 
       final docs = <_UnpaidDoc>[];
       for (final row in rows) {

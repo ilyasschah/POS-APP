@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:pos_app/core/app_date_format.dart';
 import 'package:pos_app/auth/user_model.dart';
 import 'package:pos_app/app_settings/app_settings_model.dart';
 import 'package:pos_app/cart/checkout_models.dart';
@@ -381,11 +382,22 @@ class ReceiptPrinterService {
     );
   }
 
-  static String _fmtDateTime(DateTime dt) {
-    final d =
-        '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
-    return '$d ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-  }
+  /// The date on a printed receipt or kitchen ticket.
+  ///
+  /// 🚨 Takes the settings map for the same reason [_l10n] does — every caller
+  /// already hands over the whole `appSettingsProvider` map, so the company's
+  /// date format and timezone are right there. This used to be a hardcoded
+  /// `dd/MM/yyyy HH:mm` built out of `padLeft`, which is why a receipt kept
+  /// printing one shape after `Application.DateFormat` said another.
+  ///
+  /// Note this is NOT the language rule: receipt body text stays independent of
+  /// the UI language on purpose (see `handoff.md` §3), but a DATE is a number,
+  /// and the whole point of the setting is that one company reads dates one
+  /// way on screen and on paper alike.
+  static String _fmtDateTime(Map<String, String> s, DateTime dt) =>
+      AppDateFormat(s[SettingKeys.dateFormat],
+              timezone: s[SettingKeys.timezone])
+          .stamp(dt);
 
   // ── Receipt / Guest Check ─────────────────────────────────────────────────
 
@@ -710,7 +722,7 @@ class ReceiptPrinterService {
             if (printOrderNumber)
               rowW(lbl(SettingKeys.labelReceiptNumber, l.receiptLabel),
                   shortNo(orderNumber)),
-            rowW(l.dateLabel, _fmtDateTime(printTime)),
+            rowW(l.dateLabel, _fmtDateTime(roleSettings, printTime)),
             if (cashier != null)
               rowW(lbl(SettingKeys.labelUser, l.roleCashier),
                   cashier.displayName),
@@ -1093,7 +1105,8 @@ class ReceiptPrinterService {
             // real course tracking.
             printedPair(l.userLabel, cashierName, style: ts(10), separator: ':'),
             printedPair(l.posOrder, orderNumber, style: ts(10), separator: ':'),
-            printedPair(l.timeLabel, _fmtDateTime(printTime), style: ts(10), separator: ':'),
+            printedPair(l.timeLabel, _fmtDateTime(roleSettings, printTime),
+                style: ts(10), separator: ':'),
             pw.SizedBox(height: 6),
 
             // ── Table + service type ──────────────────────────────────
@@ -1255,7 +1268,12 @@ class ReceiptPrinterService {
                   printedText(l.dateLabel, style: ts(10)),
                   printedText(': ', style: ts(10)),
                   printedText(
-                    report.dateCreated.toIso8601String().split('T').first,
+                    // Was raw ISO on a printed slip. It is a date a person
+                    // reads, so it follows the company's format like every
+                    // other one; the run keeps its own direction (see above).
+                    AppDateFormat(roleSettings[SettingKeys.dateFormat],
+                            timezone: roleSettings[SettingKeys.timezone])
+                        .day(report.dateCreated),
                     style: ts(10),
                   ),
                   pw.SizedBox(width: 8),

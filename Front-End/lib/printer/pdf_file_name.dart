@@ -25,6 +25,19 @@ String pdfSafeName(String raw) {
   return cleaned.isEmpty ? 'Print' : cleaned;
 }
 
+// 🚨 Every date below is deliberately ISO / fixed, and does NOT follow
+// `Application.DateFormat` the way the documents' CONTENTS now do
+// (`lib/core/app_date_format.dart`). These are FILE NAMES:
+//
+//   * `/` is a path separator — `dd/MM/yyyy` cannot appear in one at all, and
+//     `pdfSafeName` would strip it to an unreadable run of digits;
+//   * a folder of exports sorts chronologically only while the date is
+//     `yyyy-MM-dd`;
+//   * a name is how a file is found again months later, so it must not change
+//     shape because somebody adjusted a display preference.
+//
+// Leave these alone.
+
 /// `TALABIA #008_14-32` — an open order has no permanent number (it is only
 /// assigned one when it is banked as a document at checkout), so it is
 /// identified by its name plus the print time.
