@@ -142,8 +142,9 @@ String _buildXmlExport(List<ProductExportRow> rows) {
         ..writeln('$indent    <Name>${_xmlEsc(p.name)}</Name>')
         ..writeln('$indent    <Color>${_xmlEsc(p.color)}</Color>')
         ..writeln('$indent    <Rank>${p.rank ?? 0}</Rank>');
-      if (p.code != null)
+      if (p.code != null) {
         sb.writeln('$indent    <Code>${_xmlEsc(p.code)}</Code>');
+      }
       if (p.plu != null) sb.writeln('$indent    <PLU>${p.plu}</PLU>');
       sb
         ..writeln('$indent    <Price>${p.price}</Price>')
