@@ -5784,7 +5784,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get syncNow => 'المزامنة الآن';
 
   @override
-  @override
   String get syncProductTaxes => 'ضرائب المنتجات';
 
   @override

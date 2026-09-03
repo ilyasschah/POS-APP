@@ -5740,7 +5740,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get syncNow => 'Sync now';
 
   @override
-  @override
   String get syncProductTaxes => 'Product taxes';
 
   @override
