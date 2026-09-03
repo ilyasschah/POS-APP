@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
+import 'package:dio/dio.dart' show DioException;
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -238,7 +239,13 @@ class LicenseService {
       // which is the whole contract of this offline-tolerant refresh.
       return await evaluate();
     } catch (e) {
-      debugPrint('lease refresh skipped (offline?) — $e');
+      // "(offline?)" only when it plausibly IS the network. This catch also
+      // sees storage and decode failures, and labelling those as offline sent
+      // the last one on a hunt for a network fault that did not exist.
+      final offline = e is DioException;
+      debugPrint(
+        'lease refresh skipped${offline ? ' (offline?)' : ''} — $e',
+      );
       return null;
     }
   }

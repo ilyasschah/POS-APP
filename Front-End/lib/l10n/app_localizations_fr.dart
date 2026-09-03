@@ -140,6 +140,14 @@ class AppLocalizationsFr extends AppLocalizations {
       'Une autre caisse a déjà une session ouverte. Vendez dans celle-là plutôt que d’en démarrer une seconde.';
 
   @override
+  String get sessionAlreadyOpenTitle => 'Cette caisse est déjà ouverte';
+
+  @override
+  String sessionAlreadyOpenBody(String register) {
+    return 'Un autre terminal a ouvert une session sur $register avant que celui-ci ne se mette à jour. Vous vendrez dans cette session — en ouvrir une seconde sur le même tiroir répartirait la caisse du jour sur deux rapports qu’aucun comptage ne pourrait réconcilier.';
+  }
+
+  @override
   String get actionCancel => 'Annuler';
 
   @override

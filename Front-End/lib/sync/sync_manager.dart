@@ -1586,6 +1586,9 @@ class SyncManager {
           await db.markSessionSynced(session.localId, serverId);
         }
       } catch (e) {
+        // 🚨 The register conflict is NOT a dead end, and treating it as one
+        // is what lost a cashier's session. Try to merge before resolving.
+        if (await _adoptOnRegisterConflict(companyId, session, e)) continue;
         await _resolveRejection(
           error: e,
           syncStatus: session.syncStatus,
@@ -1596,6 +1599,96 @@ class SyncManager {
               .write(ShiftsTableCompanion(syncStatus: Value(status))),
         );
       }
+    }
+  }
+
+  /// The server's refusal to open a second session on one register, as
+  /// `PosSessionService.OpenAsync` phrases it. Matched on the stable middle of
+  /// the sentence — the id and the status name are interpolated around it.
+  static const _registerConflictMarker = 'already has an open session';
+
+  /// Recovers the one push rejection that is a MERGE, not a failure.
+  ///
+  /// 🚨 Two terminals on one shared register, both offline, both open a
+  /// session. The server takes the first push and rejects the second; before
+  /// this existed that second row resolved to `sync_failed` — terminal — and
+  /// the cashier's session, with every sale rung into it, was simply lost. The
+  /// sales were never broken: they point at a session the server will never
+  /// own. This asks the server which session actually holds the register and
+  /// re-points them at it (see `AppDatabase.adoptSessionInto`).
+  ///
+  /// Returns true when the conflict was absorbed and the caller should move on.
+  /// Every other outcome returns false and falls through to the normal
+  /// resolver — including a second failure here, because the recovery itself
+  /// needs the network and the till may have dropped off again mid-sync.
+  ///
+  /// 🚨 A session that is no longer LIVE is never merged. Once it has been
+  /// closed the register has produced a Z-report against it, and the payments
+  /// carry that report's id — moving them under another session would restate
+  /// a slip the cashier has already signed. That one parks as before, and the
+  /// message says why.
+  Future<bool> _adoptOnRegisterConflict(
+    int companyId,
+    ShiftsTableData session,
+    Object error,
+  ) async {
+    if (!_isServerRejection(error)) return false;
+    if (!_serverErrMsg(error)
+        .toLowerCase()
+        .contains(_registerConflictMarker)) {
+      return false;
+    }
+    final registerUid = session.posDeviceUid;
+    if (registerUid == null || !PosSessionStatus.isLive(session.status)) {
+      return false;
+    }
+
+    try {
+      // Ask which session actually owns the register, rather than assuming the
+      // history pull already carries it — the conflict means our copy is stale
+      // by definition.
+      final res = await dio.get<Map<String, dynamic>>(
+        '/PosSession/Current',
+        queryParameters: {'companyId': companyId, 'deviceUid': registerUid},
+      );
+      final survivor = res.data;
+      final serverId = (survivor?['id'] as num?)?.toInt();
+      if (survivor == null || serverId == null) return false;
+
+      // The opener's own localId is the identity every other device's rows
+      // already use; `srvs_` covers a session created server-side.
+      final rawLocalId = (survivor['localId'] as String?)?.trim();
+      final survivingLocalId = (rawLocalId != null && rawLocalId.isNotEmpty)
+          ? rawLocalId
+          : 'srvs_$serverId';
+      if (survivingLocalId == session.localId) return false;
+
+      // The surviving row must be in Drift BEFORE anything points at it, or
+      // the re-pointed sales hang off a session this device cannot resolve.
+      await pullSessions(companyId);
+      final landed = await (db.select(db.shiftsTable)
+            ..where((t) => t.localId.equals(survivingLocalId)))
+          .getSingleOrNull();
+      if (landed == null) return false;
+
+      final moved = await db.adoptSessionInto(
+        doomedLocalId: session.localId,
+        survivingLocalId: survivingLocalId,
+      );
+
+      final register = session.posDeviceName ?? 'this register';
+      _rejectionNotices.add(
+        'A session was already open on $register, so this one was merged into '
+        'it — $moved record(s) moved across. Nothing was lost.',
+      );
+      debugPrint(
+        'pushPendingSessions: ${session.localId} merged into '
+        '$survivingLocalId ($moved rows).',
+      );
+      return true;
+    } catch (e) {
+      debugPrint('session merge for ${session.localId} failed — $e');
+      return false;
     }
   }
 

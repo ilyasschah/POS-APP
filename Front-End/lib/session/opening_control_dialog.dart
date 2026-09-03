@@ -4,9 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/currency/currencies_provider.dart';
+import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
 import 'package:pos_app/session/register_identity.dart';
 import 'package:pos_app/session/session_provider.dart';
+import 'package:pos_app/sync/sync_provider.dart';
 
 /// Odoo's **Opening Control**: confirm the float before the register trades.
 ///
@@ -36,11 +38,48 @@ class _OpeningControlDialogState extends ConsumerState<OpeningControlDialog> {
   bool _busy = false;
   String? _error;
 
+  /// A session the pre-open refresh found already running on this register.
+  /// While it is set the dialog stops being a form and becomes the hand-off:
+  /// there is nothing left to open, only a session to carry on selling in.
+  ShiftsTableData? _alreadyOpen;
+
   @override
   void dispose() {
     _cash.dispose();
     _note.dispose();
     super.dispose();
+  }
+
+  /// Pulls the register's sessions before opening, so a second terminal on a
+  /// SHARED register cannot open a parallel one it will never be able to push.
+  ///
+  /// 🚨 This is the window the shared-register work left open. A terminal only
+  /// ever creates its own sessions, and learns about the other one's from
+  /// `pullSessions` — so between device A opening and device B pulling, B's
+  /// Drift honestly says the drawer is free and B opens a second session on it.
+  /// The server then rejects B's push. Refreshing HERE, at the one moment the
+  /// answer matters, closes that window whenever the till has any connectivity
+  /// at all.
+  ///
+  /// Best-effort by design: it is bounded, and every failure returns null so an
+  /// OFFLINE register opens exactly as it always did. A till with no network
+  /// must never be stopped from starting its day — and if it does collide, the
+  /// push now merges rather than losing the session
+  /// (`SyncManager._adoptOnRegisterConflict`).
+  Future<ShiftsTableData?> _refreshRegisterSession(
+      int companyId, String uid) async {
+    try {
+      await ref
+          .read(syncManagerProvider)
+          .pullSessions(companyId)
+          .timeout(const Duration(seconds: 6));
+    } catch (_) {
+      return null;
+    }
+    if (!mounted) return null;
+    return ref
+        .read(sessionNotifierProvider.notifier)
+        .liveSessionFor(companyId, uid);
   }
 
   Future<void> _open() async {
@@ -57,6 +96,11 @@ class _OpeningControlDialogState extends ConsumerState<OpeningControlDialog> {
       _error = null;
     });
     try {
+      final live = await _refreshRegisterSession(companyId, uid);
+      if (live != null) {
+        if (mounted) setState(() => _alreadyOpen = live);
+        return;
+      }
       final opening =
           double.tryParse(_cash.text.trim().replaceAll(',', '.')) ?? 0;
       final notifier = ref.read(sessionNotifierProvider.notifier);
@@ -89,6 +133,34 @@ class _OpeningControlDialogState extends ConsumerState<OpeningControlDialog> {
     final l = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final sym = ref.watch(currencySymbolProvider);
+
+    // The refresh found the drawer already open. There is nothing to open any
+    // more, so the form is replaced rather than left on screen behind an error
+    // — a float field the cashier can still type into is an invitation to do
+    // the exact thing this dialog just prevented.
+    final joined = _alreadyOpen;
+    if (joined != null) {
+      return AlertDialog(
+        backgroundColor: theme.cardColor,
+        icon: Icon(Icons.login, color: theme.colorScheme.primary, size: 30),
+        title: Text(l.sessionAlreadyOpenTitle,
+            style: theme.textTheme.titleMedium),
+        content: SizedBox(
+          width: 420,
+          child: Text(
+            l.sessionAlreadyOpenBody(
+                joined.posDeviceName ?? l.sessionNumber),
+            style: theme.textTheme.bodyMedium,
+          ),
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(l.sessionJoinRegister),
+          ),
+        ],
+      );
+    }
 
     return AlertDialog(
       backgroundColor: theme.cardColor,

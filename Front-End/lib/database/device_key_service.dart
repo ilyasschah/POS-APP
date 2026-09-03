@@ -23,8 +23,6 @@ import 'package:pos_app/core/secure_storage.dart';
 /// reconstructed there. This is also what makes the Pillar-4 seat binding
 /// clone-proof (a soft `device_id` alone was copyable).
 class DeviceKeyService {
-  static const _secureStorage = kSecureStorage;
-
   /// Secure-storage key holding the random secret (the strong, non-exportable
   /// half of the derivation).
   static const _kSecret = 'db_cipher_secret_v1';
@@ -47,8 +45,16 @@ class DeviceKeyService {
   }
 
   /// Loads the persisted random secret, generating + storing one on first run.
+  ///
+  /// 🚨 Reads through [SecureStore.readOrThrow], NOT `readOrNull`, and the
+  /// difference is the database. "No secret stored" is the first-run signal that
+  /// makes this mint a new one — and a new secret derives a new SQLCipher key,
+  /// so every row written under the old one becomes unreadable. A store that is
+  /// merely unreadable must therefore never be allowed to look like a first run:
+  /// it throws, the database refuses to open, and the operator gets a failure
+  /// they can act on instead of a silently empty till.
   Future<List<int>> _getOrCreateSecret() async {
-    final existing = await _secureStorage.read(key: _kSecret);
+    final existing = await SecureStore.readOrThrow(_kSecret);
     if (existing != null && existing.isNotEmpty) {
       try {
         return base64Decode(existing);
@@ -56,7 +62,7 @@ class DeviceKeyService {
     }
     final rng = Random.secure();
     final secret = List<int>.generate(32, (_) => rng.nextInt(256));
-    await _secureStorage.write(key: _kSecret, value: base64Encode(secret));
+    await SecureStore.write(_kSecret, base64Encode(secret));
     return secret;
   }
 

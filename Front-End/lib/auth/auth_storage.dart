@@ -9,8 +9,6 @@ import 'package:pos_app/auth/auth_token_cache.dart';
 final authStorageProvider = Provider<AuthStorage>((ref) => AuthStorage());
 
 class AuthStorage {
-  final _secureStorage = kSecureStorage;
-
   static const _keyJwt = 'jwt_token';
   // The device's own token from master-login. Kept alongside the active token so
   // that when a cashier logs in via PIN we can exchange it for a per-user token
@@ -46,22 +44,22 @@ class AuthStorage {
   Future<void> saveMasterSession(String jwt, int companyId) async {
     // The master-login token is both the initial active token and the durable
     // device token used to mint per-user tokens later.
-    await _secureStorage.write(key: _keyJwt, value: jwt);
-    await _secureStorage.write(key: _keyDeviceJwt, value: jwt);
+    await SecureStore.write(_keyJwt, jwt);
+    await SecureStore.write(_keyDeviceJwt, jwt);
     AuthTokenCache.set(jwt);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_keyCompanyId, companyId);
   }
 
   Future<String?> getDeviceJwt() async =>
-      _secureStorage.read(key: _keyDeviceJwt);
+      SecureStore.readOrNull(_keyDeviceJwt);
 
   /// Reverts the active token to the durable device token — used on logout and
   /// as the offline fallback when no per-user token could be minted.
   Future<void> resetActiveToDevice() async {
     final device = await getDeviceJwt();
     if (device != null && device.isNotEmpty) {
-      await _secureStorage.write(key: _keyJwt, value: device);
+      await SecureStore.write(_keyJwt, device);
       AuthTokenCache.set(device);
     }
   }
@@ -70,7 +68,7 @@ class AuthStorage {
   /// app can enforce the subscription offline (Pillar 2).
   Future<void> saveLease(String? lease) async {
     if (lease == null || lease.isEmpty) return;
-    await _secureStorage.write(key: _keyLease, value: lease);
+    await SecureStore.write(_keyLease, lease);
     final validUntil = decodeLeaseValidUntil(lease);
     final prefs = await SharedPreferences.getInstance();
     if (validUntil != null) {
@@ -79,16 +77,16 @@ class AuthStorage {
     }
   }
 
-  Future<String?> getLease() async => _secureStorage.read(key: _keyLease);
+  Future<String?> getLease() async => SecureStore.readOrNull(_keyLease);
 
   /// Caches the server's RSA public key (PEM) used to verify the lease offline.
   Future<void> saveLeasePublicKey(String pem) async {
     if (pem.isEmpty) return;
-    await _secureStorage.write(key: _keyLeasePubKey, value: pem);
+    await SecureStore.write(_keyLeasePubKey, pem);
   }
 
   Future<String?> getLeasePublicKey() async =>
-      _secureStorage.read(key: _keyLeasePubKey);
+      SecureStore.readOrNull(_keyLeasePubKey);
 
   /// Advances the monotonic anti-rollback clock to [serverTime] if it is newer
   /// than what we've already seen (never moves backwards).
@@ -148,7 +146,7 @@ class AuthStorage {
   }
 
   Future<String?> getJwt() async {
-    return await _secureStorage.read(key: _keyJwt);
+    return await SecureStore.readOrNull(_keyJwt);
   }
 
   /// Overwrites just the stored JWT — used by the sliding-window refresh on sync
@@ -156,7 +154,7 @@ class AuthStorage {
   /// untouched, unlike [saveMasterSession]).
   Future<void> saveJwt(String jwt) async {
     if (jwt.isEmpty) return;
-    await _secureStorage.write(key: _keyJwt, value: jwt);
+    await SecureStore.write(_keyJwt, jwt);
     AuthTokenCache.set(jwt);
   }
 
@@ -177,9 +175,9 @@ class AuthStorage {
 
   Future<void> unlinkDevice() async {
     AuthTokenCache.clear();
-    await _secureStorage.delete(key: _keyJwt);
-    await _secureStorage.delete(key: _keyDeviceJwt);
-    await _secureStorage.delete(key: _keyLease);
+    await SecureStore.delete(_keyJwt);
+    await SecureStore.delete(_keyDeviceJwt);
+    await SecureStore.delete(_keyLease);
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_keyCompanyId);
     await prefs.remove(_keyCachedUsers);

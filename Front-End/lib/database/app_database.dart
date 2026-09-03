@@ -8,6 +8,7 @@ import 'package:path/path.dart' as p;
 import 'package:sqlite3/sqlite3.dart';
 import 'package:uuid/uuid.dart';
 
+import 'package:pos_app/cash/cash_movement_kind.dart';
 import 'package:pos_app/database/db_location.dart';
 import 'package:pos_app/database/device_key_service.dart';
 import 'package:pos_app/database/restore_service.dart';
@@ -6260,6 +6261,81 @@ extension OfflineQueueHelpers on AppDatabase {
       serverId: Value(serverId),
       syncStatus: const Value('synced'),
     ));
+  }
+
+  /// Merges a session this device opened in parallel into the one the server
+  /// already had on the SAME register, and reports how many rows moved.
+  ///
+  /// 🚨 This is the offline half of "one live session per register". Two
+  /// terminals on one drawer, both with the internet down, both open a session:
+  /// the server accepts the first push and rejects the second with *"This
+  /// register already has an open session"*. That second row used to resolve to
+  /// `sync_failed`, which is TERMINAL — and it took the cashier's whole day
+  /// with it. Nothing was ever wrong with the sales; they are all still here,
+  /// merely pointing at a session the server will never own. Re-pointing them
+  /// at the session that survived is what makes the rejection recoverable
+  /// instead of fatal.
+  ///
+  /// 🚨 The opening float is DELETED, never re-pointed, and that is the one
+  /// line here that decides whether the drawer reconciles. Expected cash is
+  /// `openingCash + cashPayments + cashIn − cashOut`, where `openingCash` is
+  /// the SURVIVING session's own `starting_cash` — so its float is already in
+  /// the sum. Carrying a second `opening` row across would show two floats on
+  /// one drawer in the movement list the cashier reads at close, for money that
+  /// was only ever counted into it once. See [CashMovementKind].
+  ///
+  /// Everything that represents TRADING moves: orders, documents, payments and
+  /// the `in` / `out` drawer movements. The duplicate `shifts` row is then
+  /// deleted — it never reached the server, nothing points at it any more, and
+  /// leaving it would put a phantom register in the session history that closed
+  /// without ever being counted.
+  ///
+  /// Idempotent: a second run finds no rows on the doomed id and writes
+  /// nothing. Returns the number of trading rows moved.
+  Future<int> adoptSessionInto({
+    required String doomedLocalId,
+    required String survivingLocalId,
+  }) async {
+    if (doomedLocalId == survivingLocalId) return 0;
+
+    return transaction(() async {
+      var moved = 0;
+
+      moved += await (update(posOrdersTable)
+            ..where((t) => t.sessionLocalId.equals(doomedLocalId)))
+          .write(PosOrdersTableCompanion(
+              sessionLocalId: Value(survivingLocalId)));
+
+      moved += await (update(documentsTable)
+            ..where((t) => t.sessionLocalId.equals(doomedLocalId)))
+          .write(DocumentsTableCompanion(
+              sessionLocalId: Value(survivingLocalId)));
+
+      moved += await (update(paymentsTable)
+            ..where((t) => t.sessionLocalId.equals(doomedLocalId)))
+          .write(PaymentsTableCompanion(
+              sessionLocalId: Value(survivingLocalId)));
+
+      // Drawer movements move; the float does not — see the note above.
+      moved += await (update(startingCashTable)
+            ..where((t) =>
+                t.sessionLocalId.equals(doomedLocalId) &
+                t.type.isNotValue(CashMovementKind.opening)))
+          .write(StartingCashTableCompanion(
+              sessionLocalId: Value(survivingLocalId)));
+
+      await (delete(startingCashTable)
+            ..where((t) =>
+                t.sessionLocalId.equals(doomedLocalId) &
+                t.type.equals(CashMovementKind.opening)))
+          .go();
+
+      await (delete(shiftsTable)
+            ..where((t) => t.localId.equals(doomedLocalId)))
+          .go();
+
+      return moved;
+    });
   }
 
   Future<ShiftsTableData?> getActiveShift(int companyId) {

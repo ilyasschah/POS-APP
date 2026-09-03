@@ -283,6 +283,14 @@ class SessionNotifier extends Notifier<void> {
     ));
   }
 
+  /// The live session on a REGISTER right now, whichever terminal opened it.
+  ///
+  /// Public because the pre-open refresh asks the question a second time, after
+  /// pulling — the whole point being that the answer it got from Drift a moment
+  /// earlier was stale. See `OpeningControlDialog._refreshRegisterSession`.
+  Future<ShiftsTableData?> liveSessionFor(int companyId, String registerUid) =>
+      _liveSessionFor(companyId, registerUid);
+
   // ── internals ──────────────────────────────────────────────────────────
 
   Future<ShiftsTableData?> _byLocalId(String localId) =>

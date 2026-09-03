@@ -40,6 +40,9 @@
   "sessionJoinBlocked": "This device already has its own session open. Close it before working another register, or it stays open with nothing able to reach it.",
   "sessionJoinNoRegister": "This session has not finished syncing, so the register it belongs to is not known here yet. Sync and try again.",
   "sessionJoinOpenElsewhere": "Another register already has a session open. Sell in that one instead of starting a second.",
+  "sessionAlreadyOpenTitle": "This register is already open",
+  "sessionAlreadyOpenBody": "Another terminal opened a session on {register} before this one caught up. You will be selling in that session — opening a second one on the same drawer would split the day's cash across two reports that no count can reconcile.",
+  "@sessionAlreadyOpenBody": {"placeholders": {"register": {"type": "String"}}},
   "actionCancel": "Cancel",
   "@actionCancel": {
     "description": "Dismisses a dialog without applying changes"

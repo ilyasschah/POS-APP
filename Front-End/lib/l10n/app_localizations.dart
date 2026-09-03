@@ -328,6 +328,18 @@ abstract class AppLocalizations {
   /// **'Another register already has a session open. Sell in that one instead of starting a second.'**
   String get sessionJoinOpenElsewhere;
 
+  /// No description provided for @sessionAlreadyOpenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This register is already open'**
+  String get sessionAlreadyOpenTitle;
+
+  /// No description provided for @sessionAlreadyOpenBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Another terminal opened a session on {register} before this one caught up. You will be selling in that session — opening a second one on the same drawer would split the day\'s cash across two reports that no count can reconcile.'**
+  String sessionAlreadyOpenBody(String register);
+
   /// Dismisses a dialog without applying changes
   ///
   /// In en, this message translates to:

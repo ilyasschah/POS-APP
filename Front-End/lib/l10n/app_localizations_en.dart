@@ -140,6 +140,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'Another register already has a session open. Sell in that one instead of starting a second.';
 
   @override
+  String get sessionAlreadyOpenTitle => 'This register is already open';
+
+  @override
+  String sessionAlreadyOpenBody(String register) {
+    return 'Another terminal opened a session on $register before this one caught up. You will be selling in that session — opening a second one on the same drawer would split the day\'s cash across two reports that no count can reconcile.';
+  }
+
+  @override
   String get actionCancel => 'Cancel';
 
   @override

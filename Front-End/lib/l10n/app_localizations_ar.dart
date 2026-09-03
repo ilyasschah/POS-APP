@@ -139,6 +139,14 @@ class AppLocalizationsAr extends AppLocalizations {
       'يوجد صندوق آخر لديه جلسة مفتوحة. بِع فيها بدل بدء جلسة ثانية.';
 
   @override
+  String get sessionAlreadyOpenTitle => 'هذا الصندوق مفتوح بالفعل';
+
+  @override
+  String sessionAlreadyOpenBody(String register) {
+    return 'فتح جهاز آخر جلسة على $register قبل أن يتحدّث هذا الجهاز. ستبيع في تلك الجلسة — فتح جلسة ثانية على نفس الدرج يقسّم نقد اليوم على تقريرين لا يمكن لأي جرد التوفيق بينهما.';
+  }
+
+  @override
   String get actionCancel => 'إلغاء';
 
   @override

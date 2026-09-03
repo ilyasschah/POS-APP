@@ -8,10 +8,12 @@ import 'package:pos_app/core/secure_storage.dart';
 /// crash. So the token is loaded from storage exactly ONCE (deduped) and then
 /// kept here; every write path (login / refresh / logout) updates it in place, so
 /// the interceptor never touches the file again.
+///
+/// The concurrency itself is now handled for every caller by [SecureStore]; this
+/// cache stays because not making the call at all still beats serialising it.
 class AuthTokenCache {
   AuthTokenCache._();
 
-  static const _storage = kSecureStorage;
   static const _key = 'jwt_token';
 
   static String? _token;
@@ -32,11 +34,10 @@ class AuthTokenCache {
   }
 
   static Future<String?> _load() async {
-    try {
-      _token = await _storage.read(key: _key);
-    } catch (_) {
-      _token = null; // corrupt / locked file — never crash a request over it
-    }
+    // `readOrNull` already serialises against every other secure-storage caller
+    // and reports an unreadable store as null, so the try/catch that used to
+    // sit here has nothing left to catch.
+    _token = await SecureStore.readOrNull(_key);
     _loaded = true;
     _loading = null;
     return _token;
