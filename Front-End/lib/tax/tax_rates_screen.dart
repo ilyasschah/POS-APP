@@ -417,6 +417,24 @@ class _TaxFormDialogState extends ConsumerState<_TaxFormDialog> {
     super.dispose();
   }
 
+  /// Required + unique-per-company, case-insensitive — same rule as the
+  /// code, and for the same reason: `TaxService.CreateAsync` rejects a
+  /// duplicate name with a 400 ("A Tax with the name 'tax2' already
+  /// exists for your company"), which without this arrives out of a
+  /// background sync long after the dialog closed.
+  String? _validateName(String? v) {
+    final name = (v ?? '').trim();
+    if (name.isEmpty) return AppLocalizations.of(context).requiredField;
+
+    final taxes = ref.read(allTaxesProvider).value ?? const [];
+    final clash = taxes.any(
+      (t) =>
+          t.id != widget.tax?.id &&
+          t.name.trim().toLowerCase() == name.toLowerCase(),
+    );
+    return clash ? AppLocalizations.of(context).taxNameAlreadyUsed : null;
+  }
+
   /// Required + unique-per-company, case-insensitive.
   ///
   /// Compared against the local Drift cache (the same rows the list shows), so
@@ -502,10 +520,7 @@ class _TaxFormDialogState extends ConsumerState<_TaxFormDialog> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      validator: (v) =>
-                          v == null || v.trim().isEmpty
-                              ? AppLocalizations.of(context).requiredField
-                              : null,
+                      validator: _validateName,
                     ),
                   ),
                   const SizedBox(width: 16),

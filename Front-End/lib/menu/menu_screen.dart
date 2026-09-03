@@ -392,8 +392,6 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
         settings[SettingKeys.showCloseRegisterBtn]?.toLowerCase() != 'false';
     final showTaxBtn =
         settings[SettingKeys.showTaxBtn]?.toLowerCase() != 'false';
-    final showCommentBtn =
-        settings[SettingKeys.showCommentBtn]?.toLowerCase() != 'false';
     final showModifiersBtn =
         settings[SettingKeys.showModifiersBtn]?.toLowerCase() != 'false';
     // A sync can swap an offline-created table's temp id out from under an open
@@ -816,46 +814,6 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                             );
                           },
                         ),
-                ),
-              if (showCommentBtn)
-                _MenuHeaderActionBtn(
-                  icon: Icons.comment_outlined,
-                  label: AppLocalizations.of(context).posComment,
-                  // Greyed out until a cart line is selected — a comment
-                  // belongs to one line, so there is nothing to edit
-                  // otherwise. Same gating as Quantity.
-                  onTap: cartState.selectedCartItemId == null
-                      ? null
-                      : () async {
-                          final cart = ref.read(cartProvider);
-                          final item = cart.items
-                              .where(
-                                (i) => i.cartItemId == cart.selectedCartItemId,
-                              )
-                              .firstOrNull;
-                          if (item == null) return;
-                          // Just the note now. The predefined-comment
-                          // catalogue this used to load is retired —
-                          // modifiers do that job with prices, rules and
-                          // reporting rows (backlog 38, phase 6).
-                          final result = await showDialog<String?>(
-                            context: context,
-                            builder: (_) => _ItemNoteDialog(
-                              productName: item.productName,
-                              initialComment: item.comment,
-                              confirmLabel: AppLocalizations.of(
-                                context,
-                              ).actionSave,
-                            ),
-                          );
-                          if (result == null) return;
-                          ref
-                              .read(cartProvider.notifier)
-                              .setItemComment(
-                                item.cartItemId,
-                                result.trim().isEmpty ? null : result.trim(),
-                              );
-                        },
                 ),
               if (showModifiersBtn)
                 _MenuHeaderActionBtn(
@@ -4506,84 +4464,6 @@ Future<bool> _showAgeRestrictionDialog(BuildContext context, int minAge) async {
     ),
   );
   return result ?? false;
-}
-
-/// A free-text note on one cart line.
-///
-/// 🚨 What this REPLACED, and why the note itself survived it. This dialog used
-/// to render the product's predefined-comment catalogue as a list of switches,
-/// joined the chosen ones with ", " and stored the string. Modifiers do that
-/// job properly — priced, grouped, with pick-one/pick-many rules and their own
-/// reporting rows — so the catalogue is retired (backlog 38, phase 6).
-///
-/// The NOTE is not the catalogue and does not go with it: "allergic to nuts" is
-/// not a menu option anyone can enumerate in advance. It stays exactly where it
-/// was, in `CartItem.comment`, and still prints on the kitchen ticket under the
-/// choices. A group can also ask for one in the Customize sheet — see
-/// `ModifierGroup.allowsFreeText`.
-class _ItemNoteDialog extends StatefulWidget {
-  final String productName;
-
-  /// The line's current note, when editing one already in the cart.
-  final String? initialComment;
-  final String confirmLabel;
-
-  const _ItemNoteDialog({
-    required this.productName,
-    this.initialComment,
-    this.confirmLabel = 'Add to Cart',
-  });
-
-  @override
-  State<_ItemNoteDialog> createState() => _ItemNoteDialogState();
-}
-
-class _ItemNoteDialogState extends State<_ItemNoteDialog> {
-  late final TextEditingController _customController = TextEditingController(
-    text: widget.initialComment?.trim() ?? '',
-  );
-
-  @override
-  void dispose() {
-    _customController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(
-        AppLocalizations.of(context).commentsForProduct(widget.productName),
-      ),
-      content: SizedBox(
-        width: 360,
-        child: TextField(
-          controller: _customController,
-          autofocus: true,
-          maxLines: 3,
-          decoration: InputDecoration(
-            labelText: AppLocalizations.of(context).customComment,
-            hintText: AppLocalizations.of(context).addANoteHint,
-            prefixIcon: const Icon(Icons.edit_note),
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, null),
-          child: Text(AppLocalizations.of(context).actionCancel),
-        ),
-        ElevatedButton(
-          // Empty is a legitimate answer — it CLEARS the note. Returning null
-          // for it would be read as "cancelled" by both call sites and the old
-          // text would stay on the line.
-          onPressed: () =>
-              Navigator.pop(context, _customController.text.trim()),
-          child: Text(widget.confirmLabel),
-        ),
-      ],
-    );
-  }
 }
 
 class _ItemTaxDialog extends ConsumerStatefulWidget {

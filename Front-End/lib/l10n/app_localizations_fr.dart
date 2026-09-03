@@ -2850,9 +2850,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get setComPort => 'Port COM';
 
   @override
-  String get setCommentButton => 'Bouton Commentaire';
-
-  @override
   String get setCompany => 'SOCIÉTÉ';
 
   @override
@@ -3702,9 +3699,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get newModifierHint => 'ex. Sans oignons';
 
   @override
-  String get noCommentsYet => 'Aucun commentaire ajouté.';
-
-  @override
   String get deleteComment => 'Supprimer le commentaire';
 
   @override
@@ -3828,6 +3822,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get taxCodeAlreadyUsed => 'Déjà utilisé par une autre taxe';
 
   @override
+  String get taxNameAlreadyUsed => 'Déjà utilisé par une autre taxe';
+
+  @override
   String get fieldCode => 'Code';
 
   @override
@@ -3878,9 +3875,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get posTax => 'Taxe';
-
-  @override
-  String get posComment => 'Commentaire';
 
   @override
   String get posTransfer => 'Transférer';
@@ -3981,17 +3975,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String confirmMinimumAge(String minAge) {
     return 'Confirmer ($minAge+)';
   }
-
-  @override
-  String commentsForProduct(String product) {
-    return 'Commentaires : $product';
-  }
-
-  @override
-  String get customComment => 'Commentaire personnalisé';
-
-  @override
-  String get addANoteHint => 'Ajouter une note...';
 
   @override
   String get noTaxesAvailable => 'Aucune taxe disponible dans le système.';
@@ -4466,9 +4449,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String codeWithValue(String code) {
     return 'Code : $code';
   }
-
-  @override
-  String get commentsTab => 'Commentaires';
 
   @override
   String get companyUpdatedSuccessfully => 'Société mise à jour avec succès';

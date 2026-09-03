@@ -1128,17 +1128,6 @@ class CartNotifier extends Notifier<CartState> {
     state = state.copyWith(items: items);
   }
 
-  /// Sets (or clears, with null) the comment on an existing cart line, so a
-  /// modifier can be changed after the item is in the cart instead of only at
-  /// add time. Comments carry no price, so promotions don't need re-applying.
-  void setItemComment(String cartItemId, String? comment) {
-    final items = List<CartItem>.from(state.items);
-    final index = items.indexWhere((i) => i.cartItemId == cartItemId);
-    if (index < 0) return;
-    items[index].comment = comment;
-    state = state.copyWith(items: items);
-  }
-
   void removeItem(String cartItemId) {
     final items = List<CartItem>.from(state.items);
     items.removeWhere((i) => i.cartItemId == cartItemId);

@@ -1146,7 +1146,6 @@
   "setChangeQuantityButton": "Change quantity button",
   "setColor": "Color",
   "setComPort": "COM port",
-  "setCommentButton": "Comment button",
   "setCompany": "COMPANY",
   "setCopyLanUrl": "Copy LAN URL",
   "setCostPriceMarkup": "Cost price based markup",
@@ -1487,7 +1486,6 @@
   "productModifiersComments": "Product Modifiers & Comments",
   "newModifierComment": "New Modifier / Comment",
   "newModifierHint": "e.g. No Onions",
-  "noCommentsYet": "No comments added yet.",
   "deleteComment": "Delete Comment",
   "productBarcodes": "Product Barcodes",
   "barcode": "Barcode",
@@ -1548,6 +1546,7 @@
   "fieldNameRequired": "Name *",
   "codeRequired": "Code *",
   "taxCodeAlreadyUsed": "Already used by another tax",
+  "taxNameAlreadyUsed": "Already used by another tax",
   "fieldCode": "Code",
   "fieldPosition": "Position",
   "fieldShortcut": "Shortcut",
@@ -1577,7 +1576,6 @@
   "posDiscount": "Discount",
   "posQuantity": "Quantity",
   "posTax": "Tax",
-  "posComment": "Comment",
   "posTransfer": "Transfer",
   "posRefund": "Refund",
   "posKitchen": "Kitchen",
@@ -1645,16 +1643,6 @@
       }
     }
   },
-  "commentsForProduct": "Comments: {product}",
-  "@commentsForProduct": {
-    "placeholders": {
-      "product": {
-        "type": "String"
-      }
-    }
-  },
-  "customComment": "Custom comment",
-  "addANoteHint": "Add a note...",
   "noTaxesAvailable": "No taxes available in system.",
   "transferOrder": "Transfer Order",
   "assignStaff": "Assign Staff",
@@ -1933,7 +1921,6 @@
       }
     }
   },
-  "commentsTab": "Comments",
   "companyUpdatedSuccessfully": "Company updated successfully",
   "conditionalPromoHint": "Conditional (e.g. Buy 2, get discount)",
   "costPrice": "Cost Price",

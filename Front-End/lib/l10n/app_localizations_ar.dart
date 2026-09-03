@@ -2824,9 +2824,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get setComPort => 'منفذ COM';
 
   @override
-  String get setCommentButton => 'زر الملاحظة';
-
-  @override
   String get setCompany => 'الشركة';
 
   @override
@@ -3650,9 +3647,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get newModifierHint => 'مثال: بدون بصل';
 
   @override
-  String get noCommentsYet => 'لم تتم إضافة أي ملاحظات.';
-
-  @override
   String get deleteComment => 'حذف الملاحظة';
 
   @override
@@ -3776,6 +3770,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get taxCodeAlreadyUsed => 'مستخدم بالفعل في ضريبة أخرى';
 
   @override
+  String get taxNameAlreadyUsed => 'مستخدم بالفعل في ضريبة أخرى';
+
+  @override
   String get fieldCode => 'الرمز';
 
   @override
@@ -3830,9 +3827,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get posTax => 'الضريبة';
-
-  @override
-  String get posComment => 'ملاحظة';
 
   @override
   String get posTransfer => 'تحويل';
@@ -3932,17 +3926,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String confirmMinimumAge(String minAge) {
     return 'تأكيد ($minAge+)';
   }
-
-  @override
-  String commentsForProduct(String product) {
-    return 'ملاحظات: $product';
-  }
-
-  @override
-  String get customComment => 'ملاحظة مخصصة';
-
-  @override
-  String get addANoteHint => 'أضف ملاحظة...';
 
   @override
   String get noTaxesAvailable => 'لا توجد ضرائب متاحة في النظام.';
@@ -4415,9 +4398,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String codeWithValue(String code) {
     return 'الرمز: $code';
   }
-
-  @override
-  String get commentsTab => 'التعليقات';
 
   @override
   String get companyUpdatedSuccessfully => 'تم تحديث الشركة بنجاح';

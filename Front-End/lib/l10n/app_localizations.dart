@@ -5380,12 +5380,6 @@ abstract class AppLocalizations {
   /// **'COM port'**
   String get setComPort;
 
-  /// No description provided for @setCommentButton.
-  ///
-  /// In en, this message translates to:
-  /// **'Comment button'**
-  String get setCommentButton;
-
   /// No description provided for @setCompany.
   ///
   /// In en, this message translates to:
@@ -6988,12 +6982,6 @@ abstract class AppLocalizations {
   /// **'e.g. No Onions'**
   String get newModifierHint;
 
-  /// No description provided for @noCommentsYet.
-  ///
-  /// In en, this message translates to:
-  /// **'No comments added yet.'**
-  String get noCommentsYet;
-
   /// No description provided for @deleteComment.
   ///
   /// In en, this message translates to:
@@ -7228,6 +7216,12 @@ abstract class AppLocalizations {
   /// **'Already used by another tax'**
   String get taxCodeAlreadyUsed;
 
+  /// No description provided for @taxNameAlreadyUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Already used by another tax'**
+  String get taxNameAlreadyUsed;
+
   /// No description provided for @fieldCode.
   ///
   /// In en, this message translates to:
@@ -7311,12 +7305,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tax'**
   String get posTax;
-
-  /// No description provided for @posComment.
-  ///
-  /// In en, this message translates to:
-  /// **'Comment'**
-  String get posComment;
 
   /// No description provided for @posTransfer.
   ///
@@ -7497,24 +7485,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Confirm ({minAge}+)'**
   String confirmMinimumAge(String minAge);
-
-  /// No description provided for @commentsForProduct.
-  ///
-  /// In en, this message translates to:
-  /// **'Comments: {product}'**
-  String commentsForProduct(String product);
-
-  /// No description provided for @customComment.
-  ///
-  /// In en, this message translates to:
-  /// **'Custom comment'**
-  String get customComment;
-
-  /// No description provided for @addANoteHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Add a note...'**
-  String get addANoteHint;
 
   /// No description provided for @noTaxesAvailable.
   ///
@@ -8319,12 +8289,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Code: {code}'**
   String codeWithValue(String code);
-
-  /// No description provided for @commentsTab.
-  ///
-  /// In en, this message translates to:
-  /// **'Comments'**
-  String get commentsTab;
 
   /// No description provided for @companyUpdatedSuccessfully.
   ///

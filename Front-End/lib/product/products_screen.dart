@@ -209,12 +209,7 @@ String _buildXmlExport(List<ProductExportRow> rows) {
         )
         ..writeln(
           '$indent    <IsUsingDefaultQuantity>${p.isUsingDefaultQuantity.toString().toLowerCase()}</IsUsingDefaultQuantity>',
-        )
-        // Emitted empty, and always will be: the free-text comment
-        // catalogue behind it is retired. The element itself stays so the
-        // exported file keeps the exact shape its consumer parses.
-        ..writeln('$indent    <Comments>')
-        ..writeln('$indent    </Comments>');
+        );
       if (p.description != null && p.description!.isNotEmpty) {
         sb.writeln(
           '$indent    <Description>${_xmlEsc(p.description)}</Description>',

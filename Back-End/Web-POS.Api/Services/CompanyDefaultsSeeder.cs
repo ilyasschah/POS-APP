@@ -197,6 +197,10 @@ namespace Api.Services
             // Removed from the app; stale rows survived from companies seeded
             // before the removal (POS_Manual_tests_NOTES.txt, audited 2026-08-30).
             "App.IndustryMode",
+            // The per-line Comment button is gone — a line note now comes only
+            // from a modifier group with AllowsFreeText, so the toggle that
+            // showed the button has nothing left to show or hide.
+            "ButtonBar.ShowComment",
         };
 
         /// <summary>
@@ -287,7 +291,6 @@ namespace Api.Services
             ("ButtonBar.ShowTransfer", "true"),
             ("ButtonBar.ShowCustomer", "true"),
             ("ButtonBar.ShowDiscount", "true"),
-            ("ButtonBar.ShowComment", "true"),
             ("ButtonBar.ShowRefund", "true"),
             ("ButtonBar.ShowCashDrawer", "true"),
             ("App.ShowCashInOnStart", "false"),
