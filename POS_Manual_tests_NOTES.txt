@@ -1,14 +1,16 @@
 POS NOTES
 =======================================================
-Updated 2026-08-30.
+Updated 2026-09-03.
 
 Numbers match the * NUMBERED BACKLOG in handoff.md 1-for-1.
 A number is NEVER reused: when an item is finished it is
 deleted from both files and its number retires with it.
 
-OPEN RIGHT NOW: 11, 13, 14, 15, 20, 35, 41, 42, 43, 44.
+OPEN RIGHT NOW: 11, 13, 14, 15, 35, 41, 42, 44.
 (9 was built on 2026-08-30 - see B5 - and needs a real
-printer before it can be called done.)
+printer before it can be called done. 20 and 43 were
+CLOSED on 2026-09-03 on your call - see B6 and B7 - and
+their numbers are retired.)
 
 SIX LISTS BELOW - read them in this order:
 
@@ -109,29 +111,86 @@ B.  CHECK NOW   (built and tested by me, needs YOUR eyes)
      plan; if your tablets' printers are not on the network,
      tell me and that becomes the next piece.
 
+[B6] TAX CODE IS NOW REQUIRED - was item 20, your call
+     taken 2026-09-03. You picked the free fix over the
+     schema change, so no migration was written and the
+     filtered unique index was NOT created.
+
+     What changed: the API now REFUSES a tax with no code.
+     The tax form already demanded one; the hole was that
+     the server did not, so the admin portal or a sync push
+     could still create a code-less tax and hit the limit
+     from the other side. AddTax rejects a missing or blank
+     code outright. UpdateTax rejects a code that is sent
+     and blank, but still accepts a code that is ABSENT -
+     that means "leave it alone", which is what keeps an
+     old code-less tax syncing instead of parking.
+
+     (a) Tax Rates -> New. Leave Code empty -> Save must
+         refuse before anything is written.
+     (b) Give it a code another tax already has -> refused,
+         "Already used by another tax".
+     (c) Give it a fresh code -> saves, and appears on the
+         other terminal after its next sync.
+     (d) 🚨 The one to actually watch: if you already have
+         a tax with NO code, it is still there and still
+         works. Open it, give it a code, save. It must go
+         through - and after that the till can never get
+         back into the two-blank-codes state.
+
+     WHAT DID NOT CHANGE: the database limit is untouched.
+     UQ_Tax_Code_PerCompany still counts an empty code as a
+     value, so one code-less tax is still the ceiling. The
+     app just never asks for a second one now. If you ever
+     want blank codes to be legal, say so and the filtered
+     index is the schema change that does it.
+
+[B7] ProductComment IS GONE - was item 43, your word given
+     2026-09-03. Removed: the SQL Server domain model and
+     DbSet, all six /ProductComments endpoints, the service,
+     repository, commands, queries and mapper; on the till,
+     the Drift table, product_comment_provider,
+     product_comment_model, pullProductComments,
+     pushPendingProductCommentOps and the sync-status row.
+     The Postman collection and the conversion script went
+     with them - both are in git history at this commit if
+     a database with real rows ever turns up.
+
+     TWO THINGS TO KNOW, neither of them a bug:
+
+     1. The SQL Server table is STILL THERE. You asked for
+        code only, no migration, and that is what was done -
+        it now holds 0 rows that nothing can read or write.
+        🚨 But EF no longer knows about it, so the NEXT
+        migration you scaffold for any reason will quietly
+        include a DROP TABLE for it. That is the end state
+        you want; just do not be surprised by it, and read
+        the generated migration before applying it.
+
+     2. The TILL's local table is dropped for real, by the
+        schema bump 64 -> 65. It runs once, on the first
+        launch of the new build, and it cannot fail - it is
+        DROP TABLE IF EXISTS.
+
+     (a) Launch the app on a till that has run the old
+         build. It must open normally, not re-download the
+         world - the bump migrates, it does not reset.
+     (b) Sync -> the status dialog no longer lists "Product
+         comments". Every other row still counts up.
+     (c) Ring a sale, press Comment on a line, type a note,
+         send it to the kitchen. The per-line NOTE is NOT
+         the catalogue and did not go with it - this must
+         still work, and still print.
+     (d) A product with modifier groups still opens its
+         Customize sheet, and a group set to allow free text
+         still offers the box.
+     (e) Products -> Export. The file still has its
+         <Comments> element, now always empty, so whatever
+         reads that file keeps parsing it.
+
 =======================================================
 C.  DECIDE   (blocked on you - I will not guess)
 =======================================================
-
-[20] TWO TAXES CANNOT BOTH HAVE A BLANK CODE.
-     The 500 is already fixed - you get a clean message now
-     and the row parks instead of retrying a doomed request
-     forever. The underlying limit is real: SQL Server counts
-     an empty code as a value, so a company may hold only ONE
-     tax with no code.
-     YOUR CALL: the real fix is a filtered unique index
-     (WHERE Code IS NOT NULL AND Code <> ''). That is a
-     SCHEMA CHANGE and I will not touch it without you
-     saying so. The free alternative: make Code required in
-     the UI and give every tax one.
-
-[43] DROP THE ProductComment TABLE.
-     The last piece of modifiers, held back on purpose for
-     one release so the conversion script could be checked
-     against a real catalogue. YOUR database has ZERO rows,
-     so nothing is at risk and nothing needs converting.
-     Say the word and the table, its endpoints and
-     pullProductComments go.
 
 [9]  ANDROID SILENT PRINTING - LAN half is BUILT (see B5).
      The question that is left is narrower than it was:

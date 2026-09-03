@@ -370,8 +370,6 @@ class CompaniesTable extends Table {
   TextColumn get syncStatus => text().withDefault(const Constant('synced'))();
 }
 
-/// Per-product comment suggestions (e.g. "no onions", "extra cheese") used
-/// by the menu grid's tap dialog. Pulled in bulk via /ProductComments/GetAll.
 /// Catalogue: a named set of choices — "Toppings", "Doneness".
 ///
 /// Mirrors `Back-End/Web-POS.Api/Domain/ModifierGroup.cs`. A group is
@@ -394,8 +392,8 @@ class ModifierGroupsTable extends Table {
   IntColumn get maxSelections => integer().withDefault(const Constant(1))();
 
   /// Whether this group also accepts a free-text note, which is what keeps
-  /// "no ice" / "allergic to nuts" possible after the free-text
-  /// `product_comments` catalogue is retired. The note lands in the order
+  /// "no ice" / "allergic to nuts" possible now that the free-text
+  /// `product_comments` catalogue is gone. The note lands in the order
   /// line's existing `comment` column.
   BoolColumn get allowsFreeText => boolean().withDefault(const Constant(false))();
 
@@ -505,24 +503,6 @@ class DocumentItemModifiersTable extends Table {
 
   @override
   Set<Column> get primaryKey => {localId};
-}
-
-class ProductCommentsTable extends Table {
-  @override
-  String get tableName => 'product_comments';
-
-  IntColumn get id => integer()();          // positive = server id; negative = temp local id
-  IntColumn get companyId => integer()();
-  IntColumn get productId => integer()();
-  TextColumn get comment => text()();
-  DateTimeColumn get lastModified => dateTime()();
-  // 'synced' | 'pending_create' | 'pending_delete'. pending_create rows use a
-  // negative temp id until pushPendingProductCommentOps swaps in the server id.
-  TextColumn get syncStatus =>
-      text().withDefault(const Constant('synced'))();
-
-  @override
-  Set<Column> get primaryKey => {id};
 }
 
 class PromotionsTable extends Table {
@@ -1770,7 +1750,6 @@ class ZReportPaymentSummariesTable extends Table {
     CustomersTable,
     PromotionsTable,
     PromotionItemsTable,
-    ProductCommentsTable,
     ModifierGroupsTable,
     ModifierOptionsTable,
     ProductModifierGroupsTable,
@@ -1818,7 +1797,7 @@ class AppDatabase extends _$AppDatabase {
   /// Restore validation needs it before Drift is touched: a backup whose
   /// `user_version` is higher came from a newer build, and Drift migrates
   /// forward only, so opening it here would corrupt it.
-  static const int expectedSchemaVersion = 64;
+  static const int expectedSchemaVersion = 65;
 
   @override
   int get schemaVersion => expectedSchemaVersion;
@@ -1858,6 +1837,16 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(posOrderItemModifiersTable);
             await m.createTable(documentItemModifiersTable);
           }
+          if (from < 65) {
+            // The free-text product-comment catalogue is retired — modifier
+            // groups replaced it, and a group's `allowsFreeText` carries the
+            // one thing it was still good for. Raw SQL with IF EXISTS rather
+            // than `m.deleteTable`, because the Drift table it named is gone
+            // from this build: an install old enough never to have created it
+            // (or new enough never to have seen it) drops through untouched.
+            await customStatement('DROP TABLE IF EXISTS product_comments');
+          }
+
           if (from < 64) {
             // Nullable: existing reports keep "not applicable" rather than a
             // fabricated 0.00, which would read as "the drawer opened empty".
@@ -2019,14 +2008,6 @@ class AppDatabase extends _$AppDatabase {
           // discount slot. See [DiscountLinesTable].
           if (from < 47) {
             await m.createTable(discountLinesTable);
-          }
-
-          // v46: product comments become offline-first (create/delete with a
-          // temp id while offline, pushed on sync) — needs a sync_status column.
-          if (from < 46) {
-            await customStatement(
-                "ALTER TABLE product_comments ADD COLUMN sync_status "
-                "TEXT NOT NULL DEFAULT 'synced'");
           }
 
           // v45: Backfill legacy refunds that were created before refunds
@@ -2253,13 +2234,6 @@ class AppDatabase extends _$AppDatabase {
           if (from < 6) {
             await m.addColumn(
                 productGroupsTable, productGroupsTable.localImagePath);
-          }
-
-          // v6 -> v7: ProductComments offline cache — the per-product
-          // "extra cheese / no onions" suggestion list, used by the tap
-          // dialog. New table only, no existing data to migrate.
-          if (from < 7) {
-            await m.createTable(productCommentsTable);
           }
 
           // v7 -> v8: Stocks offline cache so local inventory is checked and
@@ -4573,100 +4547,6 @@ class AppDatabase extends _$AppDatabase {
             ..where((t) => t.syncStatus.equals('pending_delete').not()))
           .get();
 
-  // ─── Offline-first PRODUCT COMMENT CRUD (mirrors taxes/void reasons) ───────
-
-  /// Next temp (negative) id, distinct from any server id, for an offline create.
-  Future<int> _nextProductCommentTempId() async {
-    final row = await (selectOnly(productCommentsTable)
-          ..addColumns([productCommentsTable.id.min()]))
-        .getSingleOrNull();
-    final min = row?.read(productCommentsTable.id.min());
-    return ((min != null && min < 0) ? min : 0) - 1;
-  }
-
-  /// Offline-first create. Writes the comment locally with a temp id +
-  /// pending_create so the menu's modifier popup sees it instantly (online or
-  /// offline); pushPendingProductCommentOps later POSTs it and swaps in the
-  /// server id. Returns the temp id. [productId] may itself be a temp product id
-  /// (offline-created product) — remapProductId repoints it before the push.
-  Future<int> createProductCommentLocal({
-    required int companyId,
-    required int productId,
-    required String comment,
-  }) async {
-    final tempId = await _nextProductCommentTempId();
-    await into(productCommentsTable).insert(
-      ProductCommentsTableCompanion(
-        id: Value(tempId),
-        companyId: Value(companyId),
-        productId: Value(productId),
-        comment: Value(comment),
-        lastModified: Value(DateTime.now().toUtc()),
-        syncStatus: const Value('pending_create'),
-      ),
-    );
-    return tempId;
-  }
-
-  /// Upserts a comment pulled from the server as 'synced'. Used by
-  /// [pullProductComments]; never overwrites a row the user is locally deleting.
-  Future<void> upsertSyncedProductComment({
-    required int id,
-    required int companyId,
-    required int productId,
-    required String comment,
-    required DateTime lastModified,
-  }) =>
-      into(productCommentsTable).insertOnConflictUpdate(
-        ProductCommentsTableCompanion(
-          id: Value(id),
-          companyId: Value(companyId),
-          productId: Value(productId),
-          comment: Value(comment),
-          lastModified: Value(lastModified),
-          syncStatus: const Value('synced'),
-        ),
-      );
-
-  /// Offline-first delete. A never-synced row (temp/pending_create) is removed
-  /// outright; a server-known row is flagged pending_delete so the push issues
-  /// the server DELETE. Reads exclude pending_delete, so it disappears at once.
-  Future<void> deleteProductCommentLocal(int id) async {
-    final row = await (select(productCommentsTable)
-          ..where((t) => t.id.equals(id)))
-        .getSingleOrNull();
-    if (row == null) return;
-    if (row.syncStatus == 'pending_create' || row.id < 0) {
-      await (delete(productCommentsTable)..where((t) => t.id.equals(id))).go();
-    } else {
-      await (update(productCommentsTable)..where((t) => t.id.equals(id))).write(
-        const ProductCommentsTableCompanion(syncStatus: Value('pending_delete')),
-      );
-    }
-  }
-
-  /// Hard-remove (used by the push after the server delete/create swap).
-  Future<void> hardDeleteProductComment(int id) =>
-      (delete(productCommentsTable)..where((t) => t.id.equals(id))).go();
-
-  /// Local comments still needing a server push.
-  Future<List<ProductCommentsTableData>> getPendingProductComments(
-          int companyId) =>
-      (select(productCommentsTable)
-            ..where((t) => t.companyId.equals(companyId))
-            ..where((t) => t.syncStatus.isIn(['pending_create', 'pending_delete'])))
-          .get();
-
-  /// Server ids the user has locally flagged for deletion — [pullProductComments]
-  /// skips these so an incremental pull can't resurrect them before the push.
-  Future<Set<int>> pendingDeleteProductCommentIds(int companyId) async {
-    final rows = await (select(productCommentsTable)
-          ..where((t) => t.companyId.equals(companyId))
-          ..where((t) => t.syncStatus.equals('pending_delete')))
-        .get();
-    return rows.map((r) => r.id).toSet();
-  }
-
   // ── Modifiers ─────────────────────────────────────────────────────────────
   //
   // The unit of work is the WHOLE GROUP — a group plus its complete option list
@@ -5007,9 +4887,8 @@ class AppDatabase extends _$AppDatabase {
   /// StreamProvider, and with no active listener that future can resolve before
   /// the Drift watch-stream has emitted its first row. A product that HAS
   /// groups then looks like it has none and the customise sheet silently never
-  /// opens. That is not a hypothetical: the identical trap is documented on
-  /// `productCommentsProvider` a few lines from this call site, and it caught
-  /// this feature too.
+  /// opens. That is not a hypothetical: the same trap bit the retired
+  /// product-comments provider, and it caught this feature too.
   ///
   /// Returns rows, not models, so this layer keeps no dependency on the modifier
   /// models; the caller composes them.
@@ -5153,11 +5032,6 @@ class AppDatabase extends _$AppDatabase {
         .write(StockControlsTableCompanion(productId: Value(realId)));
     await (update(stocksTable)..where((t) => t.productId.equals(tempId)))
         .write(StocksTableCompanion(productId: Value(realId)));
-    // Offline-created comments on an offline product must push with the real
-    // product id, else /ProductComments/Add 400s on an unknown productId.
-    await (update(productCommentsTable)
-          ..where((t) => t.productId.equals(tempId)))
-        .write(ProductCommentsTableCompanion(productId: Value(realId)));
     // Modifier groups attached to an offline product. /Modifiers/SetProductGroups
     // sends the productId, so a link still pointing at the temp id would 400 —
     // and the till's own lookup (modifierGroupsForProductDirect) keys on

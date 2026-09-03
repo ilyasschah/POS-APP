@@ -92,7 +92,7 @@ namespace Api.Services
         /// with it. PosVoid does too, and is already above.
         private static readonly string[] ProductTables =
         [
-            "Barcode", "ProductTax", "ProductComment", "Stock", "StockControl",
+            "Barcode", "ProductTax", "Stock", "StockControl",
             "PromotionItem", "Promotion", "Product", "ProductGroup",
         ];
 

@@ -50,7 +50,6 @@ namespace Api.Models
         public DateTime? DateUpdated { get; set; }
         public List<string> Barcodes { get; set; } = [];
         public List<TaxExportDto> Taxes { get; set; } = [];
-        public List<string> Comments { get; set; } = [];
     }
 
 

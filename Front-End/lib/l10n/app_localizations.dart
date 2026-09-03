@@ -10418,12 +10418,6 @@ abstract class AppLocalizations {
   /// **'Sync now'**
   String get syncNow;
 
-  /// No description provided for @syncProductComments.
-  ///
-  /// In en, this message translates to:
-  /// **'Product comments'**
-  String get syncProductComments;
-
   /// No description provided for @syncProductTaxes.
   ///
   /// In en, this message translates to:

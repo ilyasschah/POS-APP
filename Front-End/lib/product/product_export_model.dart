@@ -58,7 +58,6 @@ class ProductExportRow {
   final String? dateUpdated;
   final List<String> barcodes;
   final List<TaxExportItem> taxes;
-  final List<String> comments;
 
   ProductExportRow({
     required this.id,
@@ -90,7 +89,6 @@ class ProductExportRow {
     this.dateUpdated,
     required this.barcodes,
     required this.taxes,
-    required this.comments,
   });
 
   factory ProductExportRow.fromJson(Map<String, dynamic> j) => ProductExportRow(
@@ -125,6 +123,5 @@ class ProductExportRow {
         taxes: (j['taxes'] as List<dynamic>)
             .map((t) => TaxExportItem.fromJson(t as Map<String, dynamic>))
             .toList(),
-        comments: (j['comments'] as List<dynamic>).cast<String>(),
       );
 }

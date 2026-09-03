@@ -2900,7 +2900,6 @@
     "description": "Display label for the persisted App autoSyncMode VALUE 'Every 1 hour'. The stored value stays English — only this label is translated."
   },
   "syncNow": "Sync now",
-  "syncProductComments": "Product comments",
   "syncProductTaxes": "Product taxes",
   "syncShifts": "Shifts",
   "syncStatusTitle": "Sync Status",

@@ -69,13 +69,6 @@ namespace Api.Queries.ProductsQuery
                     IsTaxOnTotal = t.IsTaxOnTotal, IsEnabled = t.TaxEnabled,
                 }).ToList());
 
-            var commentMap = (await _db.ProductComments
-                .Where(c => c.CompanyId == request.CompanyId && productIds.Contains(c.ProductId))
-                .Select(c => new { c.ProductId, c.Comment })
-                .ToListAsync(ct))
-                .GroupBy(c => c.ProductId)
-                .ToDictionary(g => g.Key, g => g.Select(c => c.Comment).ToList());
-
             var stockMap = await _db.Stocks
                 .Where(s => s.CompanyId == request.CompanyId && productIds.Contains(s.ProductId))
                 .GroupBy(s => s.ProductId)
@@ -133,7 +126,6 @@ namespace Api.Queries.ProductsQuery
                         LowStockWarningQuantity  = sc?.LowStockWarningQuantity  ?? 0,
                         Barcodes                 = barcodeMap.GetValueOrDefault(p.Id, []),
                         Taxes                    = taxMap.GetValueOrDefault(p.Id, []),
-                        Comments                 = commentMap.GetValueOrDefault(p.Id, []),
                     };
                 })
                 .OrderBy(p => p.ProductGroupName)

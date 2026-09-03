@@ -39,8 +39,6 @@ String _syncEntityLabel(BuildContext context, String id) {
       return l10n.products;
     case 'Product groups':
       return l10n.productGroups;
-    case 'Product comments':
-      return l10n.syncProductComments;
     case 'Barcodes':
       return l10n.barcodesTab;
     case 'Taxes':

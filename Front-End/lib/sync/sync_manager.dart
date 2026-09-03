@@ -80,7 +80,6 @@ class SyncManager {
   static const _kPaymentTypes = 'payment_types';
   static const _kCustomers = 'customers';
   static const _kPromotions = 'promotions';
-  static const _kProductComments = 'product_comments';
   static const _kModifierGroups = 'modifier_groups';
   static const _kModifierOptions = 'modifier_options';
   static const _kProductModifierGroups = 'product_modifier_groups';
@@ -292,8 +291,6 @@ class SyncManager {
         () => pushPendingProductGroupOps(companyId)); // remaps products.groupId
     await _step('push:products',
         () => pushPendingProductOps(companyId)); // remaps order/doc items.productId
-    await _step('push:productComments',
-        () => pushPendingProductCommentOps(companyId)); // offline products
     // After products, so a group linked to an offline-created product already
     // carries the real productId.
     await _step('push:modifiers', () => pushPendingModifierOps(companyId));
@@ -460,7 +457,6 @@ class SyncManager {
     await _step('paymentTypes', () => pullPaymentTypes(companyId));
     await _step('customers', () => pullCustomers(companyId));
     await _step('promotions', () => pullPromotions(companyId));
-    await _step('productComments', () => pullProductComments(companyId));
     // Groups BEFORE options and links: both point at a group id, and a till
     // that cached an option whose group had not arrived yet would render a
     // choice with no section to put it in.
@@ -5676,105 +5672,6 @@ class SyncManager {
       } catch (e) {
         debugPrint(
             'pushPendingProductModifierLinks: product $productId failed — $e');
-      }
-    }
-  }
-
-  Future<void> pullProductComments(int companyId) async {
-    final startedAt = DateTime.now().toUtc();
-    final watermark = await _getLastSync(_kProductComments);
-
-    final res = await dio.get<List<dynamic>>(
-      '/ProductComments/GetAll',
-      queryParameters: _query(companyId, watermark),
-    );
-    final rows = res.data ?? const [];
-
-    // Don't let an incremental pull overwrite/resurrect a comment the user is
-    // locally deleting before its DELETE has been pushed. (Negative temp
-    // pending_create rows never collide with positive server ids.)
-    final pendingDeletes = await db.pendingDeleteProductCommentIds(companyId);
-
-    await db.batch((batch) {
-      for (final json in rows.cast<Map<String, dynamic>>()) {
-        final id = json['id'] as int;
-        if (pendingDeletes.contains(id)) continue;
-        batch.insert(
-          db.productCommentsTable,
-          ProductCommentsTableCompanion(
-            id: Value(id),
-            companyId: Value(json['companyId'] as int? ?? companyId),
-            productId: Value(json['productId'] as int? ?? 0),
-            comment: Value(json['comment'] as String? ?? ''),
-            lastModified: Value(_parseLastModified(json['lastModified'])),
-            syncStatus: const Value('synced'),
-          ),
-          mode: InsertMode.insertOrReplace,
-        );
-      }
-    });
-
-    await _setLastSync(_kProductComments, startedAt);
-  }
-
-  /// Drains offline product-comment writes. Runs AFTER pushPendingProductOps so
-  /// a comment on an offline-created product already carries the real productId
-  /// (remapProductId cascaded it). A temp (negative) id always POSTs, then its
-  /// row is swapped for the server id. A pending_delete issues the server DELETE
-  /// (skipped for a temp id the server never saw) then hard-deletes locally.
-  Future<void> pushPendingProductCommentOps(int companyId) async {
-    final pending = await db.getPendingProductComments(companyId);
-    if (pending.isEmpty) return;
-
-    for (final c in pending) {
-      try {
-        final isTemp = c.id < 0;
-
-        // ── DELETE ────────────────────────────────────────────────────────
-        if (c.syncStatus == 'pending_delete') {
-          if (!isTemp) {
-            await dio.delete<dynamic>(
-              '/ProductComments/Delete',
-              queryParameters: {'id': c.id, 'companyId': companyId},
-            );
-          }
-          await db.hardDeleteProductComment(c.id);
-          continue;
-        }
-
-        // ── CREATE (temp id always POSTs) ─────────────────────────────────
-        final res = await dio.post<dynamic>(
-          '/ProductComments/Add',
-          queryParameters: {'companyId': companyId},
-          data: {'productId': c.productId, 'comment': c.comment},
-        );
-        final body =
-            res.data is Map ? ((res.data as Map)['data'] ?? res.data) : null;
-        final realId = (body is Map ? (body['id'] as num?) : null)?.toInt();
-        if (realId == null) {
-          throw Exception('Server returned no id for product comment create');
-        }
-        await db.transaction(() async {
-          await db.hardDeleteProductComment(c.id);
-          await db.upsertSyncedProductComment(
-            id: realId,
-            companyId: c.companyId,
-            productId: c.productId,
-            comment: c.comment,
-            lastModified: DateTime.now().toUtc(),
-          );
-        });
-      } catch (e) {
-        await _resolveRejection(
-          error: e,
-          syncStatus: c.syncStatus,
-          logLabel:
-              'pushPendingProductCommentOps: comment ${c.id} (${c.syncStatus})',
-          entityLabel: 'Comment "${c.comment}"',
-          apply: (s, _) => (db.update(db.productCommentsTable)
-                ..where((x) => x.id.equals(c.id)))
-              .write(ProductCommentsTableCompanion(syncStatus: Value(s))),
-        );
       }
     }
   }

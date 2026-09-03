@@ -133,9 +133,9 @@ void main() {
     });
 
     test('the tables an existing install already had are untouched', () async {
-      // The additive promise, stated as a test: nothing about products, order
-      // lines or comments changed, so a till that never syncs a modifier sells
-      // exactly as it did before.
+      // The additive promise, stated as a test: nothing about products or order
+      // lines changed, so a till that never syncs a modifier sells exactly as
+      // it did before.
       await db.into(db.productsTable).insert(
             ProductsTableCompanion.insert(
               id: const Value(1),
@@ -148,11 +148,29 @@ void main() {
 
       final product = await db.select(db.productsTable).getSingle();
       expect(product.price, 80);
+    });
 
-      // product_comments is still here — Phase 6 retires it, not Phase 1, and
-      // the order line's own `comment` column is never going anywhere.
-      final comments = await db.select(db.productCommentsTable).get();
-      expect(comments, isEmpty);
+    test('product_comments is gone, and the order line keeps its own comment',
+        () async {
+      // Backlog 43: the free-text catalogue is retired. `onCreate` calls
+      // `createAll`, so a table still declared on the database would be here —
+      // asking SQLite directly is what makes this a removal test rather than a
+      // restatement of the Dart.
+      final tables = await db
+          .customSelect(
+            "SELECT name FROM sqlite_master "
+            "WHERE type = 'table' AND name = 'product_comments'",
+          )
+          .get();
+      expect(tables, isEmpty);
+
+      // What replaced it for the one job it still did: the line's own note.
+      final columns =
+          await db.customSelect('PRAGMA table_info(pos_order_items)').get();
+      expect(
+        columns.map((r) => r.read<String>('name')),
+        contains('comment'),
+      );
     });
   });
 

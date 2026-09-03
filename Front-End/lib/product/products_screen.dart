@@ -209,11 +209,11 @@ String _buildXmlExport(List<ProductExportRow> rows) {
         ..writeln(
           '$indent    <IsUsingDefaultQuantity>${p.isUsingDefaultQuantity.toString().toLowerCase()}</IsUsingDefaultQuantity>',
         )
-        ..writeln('$indent    <Comments>');
-      for (final c in p.comments) {
-        sb.writeln('$indent      <string>${_xmlEsc(c)}</string>');
-      }
-      sb.writeln('$indent    </Comments>');
+        // Emitted empty, and always will be: the free-text comment
+        // catalogue behind it is retired. The element itself stays so the
+        // exported file keeps the exact shape its consumer parses.
+        ..writeln('$indent    <Comments>')
+        ..writeln('$indent    </Comments>');
       if (p.description != null && p.description!.isNotEmpty) {
         sb.writeln(
           '$indent    <Description>${_xmlEsc(p.description)}</Description>',
@@ -2753,8 +2753,9 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
             // RETIRED (backlog 38, phase 6). It offered an unpriced, ungrouped,
             // unruled list of strings that the till joined with ", " — modifiers
             // answer the same question with prices, pick-one/pick-many rules and
-            // a reporting row per choice. Existing catalogues are converted to
-            // groups by `DataBase/SQL/RetireProductComments_2026-08-29.sql`.
+            // a reporting row per choice. The table, its endpoints and its
+            // sync step are gone as of backlog 43 — this database held zero
+            // rows, so there was nothing to convert.
             //
             // A per-line NOTE is not the catalogue and did not go with it: it is
             // still on the till's Comment button, and a group can ask for one

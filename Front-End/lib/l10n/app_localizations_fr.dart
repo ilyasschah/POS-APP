@@ -5807,8 +5807,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get syncNow => 'Synchroniser maintenant';
 
   @override
-  String get syncProductComments => 'Commentaires produit';
-
   @override
   String get syncProductTaxes => 'Taxes produit';
 

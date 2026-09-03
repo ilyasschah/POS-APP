@@ -86,7 +86,11 @@ namespace Api.Services
 
             entity.Name = req.Name ?? entity.Name;
             entity.Rate = req.Rate ?? entity.Rate;
-            entity.Code = req.Code ?? entity.Code;
+            // Trimmed on the way in, exactly as Tax.Create does it — the
+            // uniqueness lookup above compares trimmed values, so storing an
+            // untrimmed one would let " 20" slip past a check that read it
+            // as "20".
+            entity.Code = req.Code?.Trim() ?? entity.Code;
             entity.IsFixed = req.IsFixed ?? entity.IsFixed;
             entity.IsTaxOnTotal = req.IsTaxOnTotal ?? entity.IsTaxOnTotal;
             entity.IsEnabled = req.IsEnabled ?? entity.IsEnabled;

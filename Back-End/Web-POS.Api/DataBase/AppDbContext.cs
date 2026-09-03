@@ -18,7 +18,6 @@ namespace Api.DataBase
         public DbSet<Barcode> Barcodes { get; set; }
         public DbSet<BarcodeRule> BarcodeRules { get; set; }
         public DbSet<SecurityKey> SecurityKeys { get; set; }
-        public DbSet<ProductComment> ProductComments { get; set; }
 
         // ── Modifiers (see Domain/ModifierGroup.cs) ─────────────────────────
         // Catalogue: a group is company-level and shared across products, so the

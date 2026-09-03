@@ -55,8 +55,8 @@ namespace Api.Domain
         /// Whether this group accepts a free-text note alongside its options.
         /// </summary>
         /// <remarks>
-        /// This is what keeps "no ice", "allergic to nuts" possible once the old
-        /// free-text ProductComment catalogue is retired. The note is written to
+        /// This is what keeps "no ice", "allergic to nuts" possible now that the
+        /// old free-text comment catalogue is gone. The note is written to
         /// the order line's existing <c>Comment</c> column — it is a property of
         /// a group, not a second parallel feature, and nothing downstream needed
         /// a new column to carry it.

@@ -4,8 +4,9 @@
 // product that plainly had a group attached — the sheet never opened and the
 // item went straight into the cart. The cause was reading an autoDispose
 // `.family` StreamProvider's `.future` with no active listener: it resolved
-// before the Drift watch-stream emitted its first row. The identical trap is
-// documented on `productCommentsProvider` a few lines from that call site.
+// before the Drift watch-stream emitted its first row. The identical trap bit
+// the retired product-comments provider, which sat a few lines from that call
+// site.
 //
 // So these run against the DATABASE, the way the till does, and cover the
 // filtering too — a group that must not be offered is as much a bug as one

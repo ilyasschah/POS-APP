@@ -1095,7 +1095,7 @@ class CartNotifier extends Notifier<CartState> {
   /// Combines two comma-separated comment strings, dropping blanks and
   /// case-insensitive duplicates while preserving order (existing parts first,
   /// then any new ones). Kept comma-joined so it renders as one line and matches
-  /// how [_ProductCommentsDialog] stores a selection.
+  /// how the menu's item-note dialog stores a selection.
   String _mergeComments(String? existing, String incoming) {
     final seen = <String>{};
     final parts = <String>[];
