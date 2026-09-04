@@ -6,11 +6,14 @@ namespace Api.Tests;
 /// <summary>
 /// Pins the FK-closure rules behind Settings → Database → Reset database.
 ///
-/// These matter because of how the purge works: constraints are disabled for
-/// the deletes and re-armed afterwards with <c>WITH CHECK CHECK CONSTRAINT</c>,
-/// which RE-VALIDATES every row. So a group that deletes a parent without its
-/// referencing children does not fail at the delete — it fails at the very end,
-/// on the re-enable, aborting a transaction that has already destroyed data.
+/// These matter because the purge runs with foreign keys ENFORCED, deleting in
+/// dependency order (see <see cref="ForeignKeyDeleteOrder"/> and its tests). A
+/// group that deletes a parent without its referencing children therefore fails
+/// on that parent's own DELETE, inside the transaction, and rolls back.
+///
+/// Ordering WITHIN a group is no longer something these lists have to get right
+/// — the sort handles it. MEMBERSHIP still is: nothing outside the group may be
+/// left pointing at a row the group deletes.
 ///
 /// The dependencies that force the cascades below, taken from the live schema:
 ///   FK_DocumentItem_Product, FK_PosOrderItem_Product, FK_PosVoid_Product
