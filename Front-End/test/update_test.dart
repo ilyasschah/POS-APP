@@ -220,6 +220,68 @@ void main() {
     });
   });
 
+  group('two products, one repository', () {
+    Map<String, dynamic> kdsRelease() => {
+          'tag_name': 'kds-v1.0.0',
+          'draft': false,
+          'prerelease': false,
+          'body': 'kitchen display',
+          'assets': [
+            {
+              'name': 'Octopus_KDS_Setup_v1.0.0.exe',
+              'size': 34000000,
+              'browser_download_url':
+                  'https://github.com/o/r/releases/download/kds-v1.0.0/Octopus_KDS_Setup_v1.0.0.exe',
+            },
+          ],
+        };
+
+    test('a Kitchen Display release at the top does not hide the POS build', () {
+      // EXACTLY what happened on 2026-09-04: kds-v1.0.0 was published after
+      // v1.0.11, so GitHub's /releases/latest returned the KDS release. The POS
+      // updater could not parse "kds-v1.0.0", returned null, and every till read
+      // "Could not reach the update server" — never seeing 1.0.11 at all.
+      final picked = UpdateService.pickNewestPosRelease([
+        kdsRelease(),
+        _release(tag: 'v1.0.11'),
+      ]);
+
+      expect(picked, isNotNull, reason: 'the POS build must still be found');
+      expect(picked!.version, const SemVer(1, 0, 11));
+      expect(picked.installerName, contains('Octopus_POS_Setup'));
+    });
+
+    test('the KDS installer is never offered to a POS terminal', () {
+      // Its asset IS a .exe, so filtering on the asset would pick it. The tag is
+      // what disqualifies it.
+      final picked = UpdateService.pickNewestPosRelease([kdsRelease()]);
+      expect(picked, isNull);
+    });
+
+    test('drafts and prereleases are skipped, not treated as the end of the list', () {
+      final picked = UpdateService.pickNewestPosRelease([
+        _release(tag: 'v9.9.9', draft: true),
+        _release(tag: 'v9.9.8', prerelease: true),
+        _release(tag: 'v1.2.0'),
+      ]);
+      expect(picked!.version, const SemVer(1, 2, 0));
+    });
+
+    test('newest-first order is respected', () {
+      final picked = UpdateService.pickNewestPosRelease([
+        _release(tag: 'v2.0.0'),
+        _release(tag: 'v1.2.0'),
+      ]);
+      expect(picked!.version, const SemVer(2, 0, 0));
+    });
+
+    test('an empty or asset-less list is no update, not a crash', () {
+      expect(UpdateService.pickNewestPosRelease([]), isNull);
+      expect(UpdateService.pickNewestPosRelease([_release(assets: [])]), isNull);
+      expect(UpdateService.pickNewestPosRelease(['not a release', 42]), isNull);
+    });
+  });
+
   group('transport timeouts', () {
     test('the client has a connect timeout', () {
       // 🚨 Regression guard. connectTimeout lives on BaseOptions and has NO
