@@ -602,7 +602,13 @@ const Map<String, String> kSettingDefaults = {
   SettingKeys.scaleBarcodeTrimZeros: 'true',
   SettingKeys.scaleBarcodePrintsPrice: 'false',
   SettingKeys.themeMode: 'dark',
-  SettingKeys.themeAccentColor: '#FF5733',
+  // The brand accent — the same hex as kBrandAccent in core/app_theme.dart and
+  // the server's CompanyDefaultsSeeder. #FF5733 lived here before and is what
+  // made the app look BROWN: Material desaturates that coral heavily when it
+  // seeds a dark scheme, so the result matched neither the logo nor the
+  // marketing site. Change all three together or the app disagrees with itself
+  // depending on whether settings have synced yet.
+  SettingKeys.themeAccentColor: '#FF416C',
   SettingKeys.menuLayoutMode: 'List',
   SettingKeys.menuGridCols: '4',
   SettingKeys.menuGridRows: '4',
