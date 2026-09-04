@@ -6,6 +6,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pos_app/update/app_release.dart';
 import 'package:pos_app/update/update_guard.dart';
@@ -216,6 +217,34 @@ void main() {
           evaluateUpdateBlockers(cartItemCount: 2, pendingPushCount: 5);
       expect(blockers.first, UpdateBlocker.activeCart);
       expect(canInstallUpdate(blockers), isFalse);
+    });
+  });
+
+  group('transport timeouts', () {
+    test('the client has a connect timeout', () {
+      // 🚨 Regression guard. connectTimeout lives on BaseOptions and has NO
+      // per-request equivalent, so it cannot be passed in the `Options` of an
+      // individual call — a reader who "moves it next to the other timeouts"
+      // silently removes it.
+      //
+      // Without it the updater hung forever on a half-open connection (captive
+      // portal, dead AP, DNS blackhole): receiveTimeout only starts once bytes
+      // arrive, and sendTimeout only applies to a request body, which a GET has
+      // none of. The hang then latched UpdateController's re-entry guard and
+      // stopped all update checks until the app was restarted.
+      final dio = Dio();
+      expect(dio.options.connectTimeout, isNull,
+          reason: 'baseline: Dio ships with no connect timeout');
+
+      UpdateService(dio: dio);
+      expect(dio.options.connectTimeout, isNotNull);
+      expect(dio.options.connectTimeout, lessThanOrEqualTo(const Duration(seconds: 30)));
+    });
+
+    test('an explicit connect timeout is left alone', () {
+      final dio = Dio(BaseOptions(connectTimeout: const Duration(seconds: 3)));
+      UpdateService(dio: dio);
+      expect(dio.options.connectTimeout, const Duration(seconds: 3));
     });
   });
 }

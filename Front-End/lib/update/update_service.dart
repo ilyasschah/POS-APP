@@ -23,9 +23,27 @@ const String kGitHubLatestReleaseUrl =
 /// Every method is safe to call when there is no update, no network, or no
 /// permission — a POS must never be blocked, delayed or crashed by its updater.
 class UpdateService {
-  UpdateService({Dio? dio}) : _dio = dio ?? Dio();
+  UpdateService({Dio? dio}) : _dio = dio ?? Dio() {
+    // Set on the client, not per request: connectTimeout lives on BaseOptions
+    // and has no per-request equivalent, so passing it in an `Options` does
+    // nothing at all. `??=` leaves an injected Dio's own value alone.
+    _dio.options.connectTimeout ??= _connectTimeout;
+  }
 
   final Dio _dio;
+
+  /// 🚨 Without this the updater can hang FOREVER, and the hang is sticky.
+  ///
+  /// `receiveTimeout` only starts counting once bytes begin arriving, and
+  /// `sendTimeout` only applies to a request body — a GET has none. So neither
+  /// covers "the TCP connection never completes", which is exactly what a
+  /// captive portal, a dead access point or a DNS blackhole produces. Dio's
+  /// default connect timeout is unlimited, so `fetchLatest()` awaited forever;
+  /// `UpdateController.check()` had already set state to `UpdateChecking`, and
+  /// its own re-entry guard then rejected every later check for the life of the
+  /// process. One bad moment on the network killed updates until the app was
+  /// restarted, showing a spinner and no error.
+  static const _connectTimeout = Duration(seconds: 15);
 
   /// Android cannot silently self-install. The macOS build ships as a DMG the
   /// user drags to Applications — an app cannot replace its own running bundle

@@ -4,7 +4,7 @@ publish_to: 'none'
 # 1.0.1 is the release being cut (matches tag v1.0.1); +3 keeps the build number
 # moving forward from 1.0.0+2 Ã¢â‚¬â€ Android's versionCode is derived from it and must
 # never decrease, and `1.0.1` with no build number would silently reset it to 1.
-version: 1.0.10+13
+version: 1.0.11+14
 
 environment:
   sdk: '>=3.0.0 >3.8.0 <4.0.0'

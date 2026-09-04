@@ -45,29 +45,55 @@ class UpdateController extends Notifier<UpdateStatus> {
 
   /// Looks for a newer release. Never throws — a till offline mid-service must
   /// see "couldn't check", not an exception.
+  ///
+  /// 🚨 The re-entry guard below is a LATCH if anything inside can hang. It
+  /// used to be one: `fetchLatest()` had no connect timeout, so a half-open
+  /// connection left state on `UpdateChecking` forever, and every later check —
+  /// the 6-hourly timer and the operator's own "Check now" — returned
+  /// immediately at the guard. Updates silently stopped until the app was
+  /// restarted. Two things keep that from coming back: the transport now has a
+  /// connect timeout (see [UpdateService]), and the whole body runs inside
+  /// try/finally so no path can exit still holding the guard.
   Future<void> check() async {
     if (!UpdateService.isSupported) return;
     if (state is UpdateChecking || state is UpdateDownloading) return;
 
     state = const UpdateChecking();
+    var settled = false;
+    try {
+      final running = SemVer.tryParse(
+        (await ref.read(appVersionProvider.future)).version,
+      );
+      if (running == null) {
+        state = const UpdateFailed('Could not read the running version.');
+        settled = true;
+        return;
+      }
 
-    final running = SemVer.tryParse(
-      (await ref.read(appVersionProvider.future)).version,
-    );
-    if (running == null) {
-      state = const UpdateFailed('Could not read the running version.');
-      return;
+      final release = await ref.read(updateServiceProvider).fetchLatest();
+      if (release == null) {
+        state = const UpdateFailed('Could not reach the update server.');
+        settled = true;
+        return;
+      }
+
+      state = release.isNewerThan(running)
+          ? UpdateAvailable(release)
+          : UpdateUpToDate(running);
+      settled = true;
+    } catch (_) {
+      // fetchLatest swallows its own failures, but reading the running version
+      // goes through PackageInfo, which can throw. Anything escaping here must
+      // still clear the guard.
+      state = const UpdateFailed('Could not check for updates.');
+      settled = true;
+    } finally {
+      // Belt and braces: if some future edit adds an early return that forgets
+      // to set a terminal state, do not leave the controller wedged.
+      if (!settled && state is UpdateChecking) {
+        state = const UpdateFailed('Could not check for updates.');
+      }
     }
-
-    final release = await ref.read(updateServiceProvider).fetchLatest();
-    if (release == null) {
-      state = const UpdateFailed('Could not reach the update server.');
-      return;
-    }
-
-    state = release.isNewerThan(running)
-        ? UpdateAvailable(release)
-        : UpdateUpToDate(running);
   }
 
   /// Downloads and verifies the installer. Does NOT install — the operator

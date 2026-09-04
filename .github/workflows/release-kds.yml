@@ -1,0 +1,185 @@
+name: Release Kitchen Display
+
+# Builds the Kitchen Display for Windows (Inno Setup installer) and Android
+# (APK), and attaches both to a GitHub Release.
+#
+# 🚨 The tag prefix is `kds-v`, NOT `v`. `v*` belongs to the POS app, and
+# release-windows.yml hard-fails if the tag does not match Front-End's pubspec —
+# so a shared prefix would make every KDS release break the POS pipeline. The
+# two globs do not overlap: `v*` does not match `kds-v1.0.0`.
+#
+# To cut a release:
+#   1. bump `version:` in kitchen_display/pubspec.yaml
+#   2. commit, then tag it:  git tag kds-v1.0.0 && git push origin kds-v1.0.0
+#
+# workflow_dispatch builds and uploads Actions artifacts but publishes nothing —
+# the publish step is gated on the tag, so a dry run cannot create a Release.
+
+on:
+  push:
+    tags: ["kds-v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write # required to create the Release and upload assets
+
+concurrency:
+  group: release-kds
+  cancel-in-progress: false
+
+jobs:
+  build:
+    # GitHub-hosted, not the octopus-prod runner: this builds an artefact, it
+    # does not touch the production server, and it needs a clean toolchain
+    # (Inno Setup, the Android SDK) rather than the deploy box.
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: kitchen_display
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          # Pinned, not "stable": a Flutter bump must be a deliberate commit, not
+          # something that silently changes what ships. Dart 3.13.x satisfies
+          # kitchen_display's `sdk: ^3.11.4`.
+          flutter-version: "3.47.2"
+          channel: stable
+
+      - name: Resolve version from pubspec
+        id: version
+        shell: pwsh
+        run: |
+          $line = (Get-Content pubspec.yaml | Select-String '^version:').Line
+          $full = $line.Split(':')[1].Trim()      # e.g. 1.0.0+1
+          $numeric = $full.Split('+')[0]          # e.g. 1.0.0
+          if ($numeric -notmatch '^\d+\.\d+\.\d+$') {
+            throw "pubspec version '$full' is not major.minor.patch."
+          }
+          "numeric=$numeric" >> $env:GITHUB_OUTPUT
+          Write-Host "pubspec version: $full (numeric $numeric)"
+
+      - name: Tag must match pubspec
+        # Same guard as the POS pipeline, for the same reason: a tag that
+        # disagrees with the shipped build produces a Release whose name is a
+        # version that was never built. Skipped for workflow_dispatch (no tag).
+        if: startsWith(github.ref, 'refs/tags/kds-v')
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}" -replace '^kds-v',''
+          $pubspec = "${{ steps.version.outputs.numeric }}"
+          if ($tag -ne $pubspec) {
+            throw "Tag kds-v$tag does not match pubspec version $pubspec. Bump kitchen_display/pubspec.yaml, commit, then re-tag."
+          }
+
+      - run: flutter pub get
+
+      - run: flutter analyze lib test
+
+      - run: flutter test
+
+      # ── Windows ───────────────────────────────────────────────────────────
+      - run: flutter build windows --release
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup --no-progress -y
+
+      - name: Build Windows installer
+        shell: pwsh
+        run: |
+          # ⚠️ Never hardcode the ISCC path — Inno 6 lands in "Program Files (x86)",
+          # Inno 7 in "Program Files", and choco may ship either.
+          $iscc = (Get-Command ISCC.exe -ErrorAction SilentlyContinue).Source
+          if (-not $iscc) {
+            $iscc = Get-ChildItem 'C:\Program Files*\Inno Setup*\ISCC.exe' -ErrorAction SilentlyContinue |
+                    Select-Object -First 1 -ExpandProperty FullName
+          }
+          if (-not $iscc) { throw "ISCC.exe not found after installing Inno Setup." }
+          & $iscc /DAppVersion=${{ steps.version.outputs.numeric }} kds_setup.iss
+          if ($LASTEXITCODE -ne 0) { throw "ISCC failed with exit code $LASTEXITCODE" }
+
+      # ── Android ───────────────────────────────────────────────────────────
+      - name: Build APK
+        # ⚠️ This is release-signed with the DEBUG keystore — android/app/build.gradle
+        # still carries the Flutter template's
+        # `signingConfig = signingConfigs.getByName("debug")`. It sideloads onto a
+        # kitchen tablet fine, which is how the KDS is installed, but it cannot go
+        # to the Play Store and the signature is not yours. The POS app is in the
+        # same state; fixing both is a deliberate change, not something to slip
+        # into a release build.
+        run: flutter build apk --release
+
+      - name: Rename APK to carry the version
+        shell: pwsh
+        run: |
+          $src = "build/app/outputs/flutter-apk/app-release.apk"
+          if (-not (Test-Path $src)) { throw "APK not found at $src" }
+          Copy-Item $src "build/app/outputs/flutter-apk/Octopus_KDS_v${{ steps.version.outputs.numeric }}.apk"
+
+      # ── Checksums ─────────────────────────────────────────────────────────
+      - name: Checksums
+        id: hash
+        shell: pwsh
+        # Published beside each artefact so an install can be verified before it
+        # is run — the same contract the POS updater relies on.
+        run: |
+          $exe = "Output/Octopus_KDS_Setup_v${{ steps.version.outputs.numeric }}.exe"
+          $apk = "build/app/outputs/flutter-apk/Octopus_KDS_v${{ steps.version.outputs.numeric }}.apk"
+          foreach ($f in @($exe, $apk)) {
+            if (-not (Test-Path $f)) { throw "Expected artefact missing: $f" }
+            $sha = (Get-FileHash $f -Algorithm SHA256).Hash.ToLower()
+            "$sha  $(Split-Path $f -Leaf)" | Out-File "$f.sha256" -Encoding ascii
+            Write-Host "$(Split-Path $f -Leaf): $sha"
+          }
+          "exe=$((Get-FileHash $exe -Algorithm SHA256).Hash.ToLower())" >> $env:GITHUB_OUTPUT
+          "apk=$((Get-FileHash $apk -Algorithm SHA256).Hash.ToLower())" >> $env:GITHUB_OUTPUT
+
+      - name: Upload build artifacts
+        # Always kept, so a workflow_dispatch dry run still produces something
+        # installable without creating a Release.
+        uses: actions/upload-artifact@v4
+        with:
+          name: Octopus_KDS_v${{ steps.version.outputs.numeric }}
+          path: |
+            kitchen_display/Output/*.exe
+            kitchen_display/Output/*.sha256
+            kitchen_display/build/app/outputs/flutter-apk/Octopus_KDS_v*.apk
+            kitchen_display/build/app/outputs/flutter-apk/*.sha256
+          retention-days: 14
+
+      # ── Publish ───────────────────────────────────────────────────────────
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/kds-v')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Octopus Kitchen Display ${{ steps.version.outputs.numeric }}
+          generate_release_notes: true
+          files: |
+            kitchen_display/Output/*.exe
+            kitchen_display/Output/*.sha256
+            kitchen_display/build/app/outputs/flutter-apk/Octopus_KDS_v*.apk
+            kitchen_display/build/app/outputs/flutter-apk/*.sha256
+          body: |
+            **Windows** — download the `.exe` and run it. Upgrades an existing
+            install in place and can start automatically with Windows, so a
+            kitchen screen comes back up on its own after a power cut.
+
+            SHA-256: `${{ steps.hash.outputs.exe }}`
+
+            **Android** — download the `.apk` and sideload it onto the tablet.
+            You may need to allow installs from unknown sources.
+
+            SHA-256: `${{ steps.hash.outputs.apk }}`
+
+            ---
+
+            ⚠️ This Release is tagged `kds-v*`. The POS application is released
+            separately under `v*`; the two pipelines are independent.
