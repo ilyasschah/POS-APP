@@ -20,12 +20,21 @@ abstract final class AppConfig {
   /// combination, because "wrong API URL" is the single most common cause of
   /// "why is nothing loading".
   static const String devBaseUrl = 'http://100.114.12.38:5002/api';
+
+  /// ⚠️ GONE — the OVH box this ran on was deleted. Kept only so a browser with
+  /// this URL still in localStorage resolves to a labelled segment instead of an
+  /// unrecognised custom endpoint. Nothing answers on it.
   static const String testBaseUrl = 'https://51-91-6-6.sslip.io/api';
+
+  /// **Production.** Served from the same origin as this app
+  /// (`api.octopus-pos.com/dashboard/` calling `api.octopus-pos.com/api`), so
+  /// production traffic is same-origin and never hits CORS.
+  static const String prodBaseUrl = 'https://api.octopus-pos.com/api';
 
   /// The only backend this app should point at by default. The iOS original
   /// still shipped a stale Tailscale IP as its compiled-in default; that bug
-  /// is fixed here by defaulting to Test.
-  static const String defaultBaseUrl = testBaseUrl;
+  /// is fixed here by defaulting to Production.
+  static const String defaultBaseUrl = prodBaseUrl;
 
   /// Minimum length enforced client-side before an admin password reset is
   /// allowed to submit.

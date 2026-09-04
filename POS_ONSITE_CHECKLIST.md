@@ -2,7 +2,7 @@
 
 **Terminal:** Verteda POS (Windows 10 22H2)
 **Peripherals:** 240-LCM customer pole display (P/N ARTJ-00371) · WD8260 80 mm receipt printer with cash drawer on its RJ11 port · ZKB103 barcode scanner
-**Backend:** **TEST** server — `https://51-91-6-6.sslip.io/api`
+**Backend:** **PRODUCTION** — `https://api.octopus-pos.com/api`
 **Date:** ____________  **Done by:** ____________
 
 ---
@@ -28,12 +28,16 @@
 
 ## 2 · Point the terminal at the TEST server ⚠️
 
-> The shipped build's compiled default is the **Dev** endpoint (Tailscale `100.114.12.38`), which this till cannot even reach. A terminal left on Dev logs in "fine" and then reports the wrong tenant's subscription state. Do not skip this.
+> The shipped build's compiled default is now **Production**, so a fresh install
+> points at the right server with nothing to configure. Still verify it below: a
+> terminal left on the wrong endpoint logs in "fine" and then reports another
+> tenant's subscription state. (Until the production cutover the compiled default
+> was the **Dev** Tailscale address, which no till could reach at all.)
 
-- [ ] On the **master login** screen, the environment segmented control is set to **Test**.
-- [ ] Verify after login: `Settings → Connection → API base URL` = `https://51-91-6-6.sslip.io/api`.
-- [ ] Master login with the test-server credentials succeeds.
-- [ ] The company shown is **your test company account** — not a leftover demo tenant.
+- [ ] On the **master login** screen, the environment segmented control is set to **Production**.
+- [ ] Verify after login: `Settings → Connection → API base URL` = `https://api.octopus-pos.com/api`.
+- [ ] Master login with the production credentials succeeds.
+- [ ] The company shown is **the correct customer company** — not a leftover demo tenant.
 - [ ] `Settings → Subscription`: lease **active**, expiry date sensible.
 - [ ] Device **seat** consumed correctly — seat count went up by exactly 1.
 

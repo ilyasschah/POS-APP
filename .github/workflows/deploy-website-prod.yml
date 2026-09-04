@@ -1,0 +1,91 @@
+name: Deploy Website to Production
+
+# Builds the Next.js marketing site as a STATIC EXPORT and publishes it to
+# C:\inetpub\wwwroot\octopus-site on the OVH production box, where IIS serves it
+# for https://octopus-pos.com and https://www.octopus-pos.com.
+#
+# There is no Node process on the server. next.config.ts sets output: "export",
+# so `next build` emits plain HTML/CSS/JS into out/ and IIS serves it like any
+# other static folder — no `next start`, nothing to keep alive, nothing competing
+# with SQL Server for the box's 8 GB.
+#
+# 🚨 Deploys from `prod`, NOT `main` - same rule as the backend and dashboard.
+#
+# Server prerequisite: Node.js LTS installed and on PATH for the runner account.
+
+on:
+  push:
+    branches: [prod]
+    paths:
+      - "website/**"
+      - ".github/workflows/deploy-website-prod.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-website-prod
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, Windows, octopus-prod]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build static export
+        working-directory: ./website
+        shell: powershell
+        env:
+          CI: true
+        run: |
+          # npm ci needs package-lock.json and installs exactly what it pins -
+          # npm install would be free to resolve different versions on the server
+          # than the ones this site was built and tested against.
+          npm ci
+          if ($LASTEXITCODE -ne 0) { throw "npm ci failed" }
+
+          npx next build
+          if ($LASTEXITCODE -ne 0) { throw "next build failed" }
+
+          $publishDir = Join-Path $env:GITHUB_WORKSPACE "website\out"
+          if (-not (Test-Path (Join-Path $publishDir "index.html"))) {
+            throw "next build produced no out/index.html. If next.config.ts lost its export output mode, this build silently became a server bundle, which IIS cannot serve."
+          }
+          echo "PUBLISH_DIR=$publishDir" >> $env:GITHUB_ENV
+
+      - name: Replace site files
+        shell: powershell
+        run: |
+          $targetDir = "C:\inetpub\wwwroot\octopus-site"
+          if (-not (Test-Path $targetDir)) { New-Item -ItemType Directory -Path $targetDir -Force }
+
+          # /MIR mirrors, so files deleted from the site are deleted on the server.
+          # web.config is NOT excluded - it ships with the build from
+          # website/public/web.config, which is where the MIME map for .webp and the
+          # custom 404 live. Excluding it would leave IIS 404-ing the site's own logo.
+          robocopy "$env:PUBLISH_DIR" "$targetDir" /MIR /NFL /NDL /NJH /NJS
+          $rc = $LASTEXITCODE
+          if ($rc -ge 8) { throw "robocopy failed with exit code $rc" }
+          exit 0
+
+      - name: Health check
+        if: always()
+        shell: powershell
+        # Assert on real content, not just a 200: IIS will happily serve a stale
+        # index.html or a directory listing and call that success.
+        run: |
+          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+          $ok = $false
+          for ($i = 0; $i -lt 10; $i++) {
+            try {
+              $r = Invoke-WebRequest -Uri "https://octopus-pos.com/" -UseBasicParsing -TimeoutSec 10
+              if ($r.StatusCode -eq 200 -and $r.Content -match "Octopus POS") {
+                $ok = $true
+                break
+              }
+            } catch {}
+            Start-Sleep -Seconds 3
+          }
+          if (-not $ok) {
+            throw "Website health check failed: https://octopus-pos.com/ did not return the built site. Check the IIS binding for octopus-pos.com and that the A record points at this server."
+          }
+          Write-Host "Website healthy: https://octopus-pos.com/"
