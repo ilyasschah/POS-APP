@@ -1,27 +1,31 @@
-name: Deploy Backend to OVH Test
+name: Deploy Backend to Production
 
-# Runs on the self-hosted runner installed directly on the OVH test box.
+# Runs on the self-hosted runner installed directly on the OVH production box.
 # Publishes Web-POS.Api and replaces the files under C:\inetpub\wwwroot\pos-api,
-# then re-injects the Test-environment secrets (DB connection strings, JWT
-# secret, admin portal seed password) into the freshly-generated web.config, since
-# those secrets are never committed to the repo and dotnet publish regenerates
+# then re-injects the production secrets (DB connection strings, JWT secret,
+# admin portal seed password) into the freshly-generated web.config, since those
+# secrets are never committed to the repo and dotnet publish regenerates
 # web.config from the checked-in template on every run.
+#
+# 🚨 This deploys from `prod`, NOT from `main`. `main` remains the source of
+# truth and triggers nothing, exactly as it did when the target was the test box.
+# Merging to main changes nothing on the server; you must merge into `prod`.
 
 on:
   push:
-    branches: [test]
+    branches: [prod]
     paths:
       - "Back-End/**"
-      - ".github/workflows/deploy-backend-test.yml"
+      - ".github/workflows/deploy-backend-prod.yml"
   workflow_dispatch:
 
 concurrency:
-  group: deploy-backend-test
+  group: deploy-backend-prod
   cancel-in-progress: false
 
 jobs:
   deploy:
-    runs-on: [self-hosted, Windows, ovh-test]
+    runs-on: [self-hosted, Windows, octopus-prod]
     steps:
       - uses: actions/checkout@v4
 
@@ -87,19 +91,26 @@ jobs:
         shell: powershell
         run: |
           # lease_signing_key.pem is a server-only secret (gitignored, never in the
-          # publish output) - excluded here so /MIR doesn't delete it. app_offline.htm
-          # is excluded so it survives until the "bring back online" step removes it.
-          # /R and /W are explicit because robocopy's defaults are /R:1000000 /W:30 -
-          # a lock it cannot get would retry for weeks rather than fail the job.
+          # publish output) - excluded here so /MIR does not delete it.
+          #
+          # 🚨 In production that exclusion is not a convenience, it is the licensing
+          # system: delete that key and every offline lease already issued to a
+          # customer terminal stops validating, all at once, with no way to recover
+          # the original. Never remove it from this /XF list.
+          #
+          # app_offline.htm is excluded so it survives until the "bring back online"
+          # step removes it. /R and /W are explicit because robocopy defaults to
+          # /R:1000000 /W:30 - a lock it cannot get would retry for weeks rather than
+          # fail the job.
           robocopy "$env:PUBLISH_DIR" "C:\inetpub\wwwroot\pos-api" /MIR /XD logs /XF app_offline.htm lease_signing_key.pem /R:5 /W:3 /NFL /NDL /NJH /NJS
           $rc = $LASTEXITCODE
           if ($rc -ge 8) { throw "robocopy failed with exit code $rc" }
-          # Robocopy's own "success" codes (0-7) are non-zero (e.g. 1 = files copied),
-          # and the runner auto-propagates $LASTEXITCODE as the step's exit code - so
-          # without this, a successful copy still fails the step.
+          # Robocopy success codes (0-7) are non-zero (e.g. 1 = files copied), and the
+          # runner auto-propagates $LASTEXITCODE as the step exit code - so without
+          # this, a successful copy still fails the step.
           exit 0
 
-      - name: Inject Test environment secrets into web.config
+      - name: Inject production secrets into web.config
         shell: powershell
         # 🚨 THE most important step in this workflow: without it the site runs with
         # no connection strings and no JWT secret.
@@ -109,15 +120,25 @@ jobs:
         # permissions error GitHub SKIPPED this one — deploying the whole site
         # unconfigured. Nothing optional belongs anywhere near this step.
         env:
-          TEST_DB_CONN: ${{ secrets.TEST_DB_CONNECTION_STRING }}
-          TEST_MASTER_DB_CONN: ${{ secrets.TEST_MASTER_DB_CONNECTION_STRING }}
-          TEST_JWT_SECRET: ${{ secrets.TEST_JWT_SECRET }}
+          PROD_DB_CONN: ${{ secrets.PROD_DB_CONNECTION_STRING }}
+          PROD_MASTER_DB_CONN: ${{ secrets.PROD_MASTER_DB_CONNECTION_STRING }}
+          PROD_JWT_SECRET: ${{ secrets.PROD_JWT_SECRET }}
           # The admin portal's first account is seeded on startup. Without this the
-          # seed uses the password published in the source, on a PUBLIC hostname.
-          TEST_ADMIN_SEED_PASSWORD: ${{ secrets.TEST_ADMIN_PORTAL_SEED_PASSWORD }}
+          # seed uses the password published in the source - and THIS REPOSITORY IS
+          # PUBLIC, so that password is not a secret at all.
+          PROD_ADMIN_SEED_PASSWORD: ${{ secrets.PROD_ADMIN_PORTAL_SEED_PASSWORD }}
         run: |
-          if ([string]::IsNullOrWhiteSpace($env:TEST_ADMIN_SEED_PASSWORD)) {
-            Write-Host "::warning::TEST_ADMIN_PORTAL_SEED_PASSWORD is not set. If the Master DB has no admin account yet, /admin will be seeded with the default password from the source - on a public URL. Set the secret and redeploy, or change the password immediately at /admin/account/password."
+          # Fail loudly and early rather than deploying a site that starts, answers,
+          # and rejects every login. StartupConfigurationValidator would abort the app
+          # anyway outside Development - this just makes the cause obvious in the log.
+          foreach ($required in @("PROD_DB_CONN", "PROD_JWT_SECRET")) {
+            if ([string]::IsNullOrWhiteSpace((Get-Item "env:$required").Value)) {
+              throw "$required is empty. Set the matching repository secret before deploying."
+            }
+          }
+
+          if ([string]::IsNullOrWhiteSpace($env:PROD_ADMIN_SEED_PASSWORD)) {
+            Write-Host "::warning::PROD_ADMIN_PORTAL_SEED_PASSWORD is not set. If the Master DB has no admin account yet, /admin is seeded with the default password from the source - on a public hostname, from a public repo. Set the secret and redeploy, or change it immediately at /admin/account/password."
           }
 
           $path = "C:\inetpub\wwwroot\pos-api\web.config"
@@ -133,17 +154,27 @@ jobs:
             $envVarsNode.AppendChild($node) | Out-Null
           }
 
-          Add-EnvVar "ASPNETCORE_ENVIRONMENT" "Test"
-          Add-EnvVar "ConnectionStrings__DefaultConnection" $env:TEST_DB_CONN
-          Add-EnvVar "ConnectionStrings__MasterConnection" $env:TEST_MASTER_DB_CONN
-          Add-EnvVar "Jwt__Secret" $env:TEST_JWT_SECRET
+          Add-EnvVar "ASPNETCORE_ENVIRONMENT" "Production"
 
-          # AdminPortal__AccessKey is GONE. The portal used to be gated by that one
-          # shared secret; it now has real per-user accounts in the Master DB, and
-          # nothing reads the key any more. Only seeded on a first-ever deploy, and
-          # only when the Master DB has no admin account yet.
-          if (-not [string]::IsNullOrWhiteSpace($env:TEST_ADMIN_SEED_PASSWORD)) {
-            Add-EnvVar "AdminPortal__SeedPassword" $env:TEST_ADMIN_SEED_PASSWORD
+          # Program.cs enables UseHttpsRedirection in Production, and that middleware
+          # must be told which port to redirect TO. Behind IIS it cannot always infer
+          # it, and when it fails it logs a warning and then does nothing at all -
+          # silently continuing to serve plain http. This is what makes it real.
+          Add-EnvVar "ASPNETCORE_HTTPS_PORT" "443"
+
+          Add-EnvVar "ConnectionStrings__DefaultConnection" $env:PROD_DB_CONN
+          Add-EnvVar "ConnectionStrings__MasterConnection" $env:PROD_MASTER_DB_CONN
+          Add-EnvVar "Jwt__Secret" $env:PROD_JWT_SECRET
+
+          # CORS: with no origins configured the policy falls back to AllowAnyOrigin
+          # (see Program.cs). The dashboard is served from this same origin so it
+          # needs no entry; these cover the marketing site calling the API.
+          Add-EnvVar "Cors__AllowedOrigins__0" "https://api.octopus-pos.com"
+          Add-EnvVar "Cors__AllowedOrigins__1" "https://octopus-pos.com"
+          Add-EnvVar "Cors__AllowedOrigins__2" "https://www.octopus-pos.com"
+
+          if (-not [string]::IsNullOrWhiteSpace($env:PROD_ADMIN_SEED_PASSWORD)) {
+            Add-EnvVar "AdminPortal__SeedPassword" $env:PROD_ADMIN_SEED_PASSWORD
           }
 
           $aspNetCore.AppendChild($envVarsNode) | Out-Null
@@ -158,28 +189,52 @@ jobs:
           Remove-Item "C:\inetpub\wwwroot\pos-api\app_offline.htm" -Force -ErrorAction SilentlyContinue
           Start-Sleep -Seconds 3
 
-      - name: Health check
+      - name: Readiness check
         if: always()
         shell: powershell
+        # This used to fetch /swagger/v1/swagger.json, which Production no longer
+        # serves. /health/ready is a stronger check anyway: it answers 503 when the
+        # deployed binaries are AHEAD of the database schema, which is the exact
+        # failure that took the test server down after AddSellByWeightAndBarcodeRules
+        # - the API published fine and every endpoint touching Product returned 500.
+        # A plain "site returns 200" check called that deploy healthy.
         run: |
+          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
           $ok = $false
-          for ($i = 0; $i -lt 10; $i++) {
+          $lastBody = "(no response)"
+
+          for ($i = 0; $i -lt 20; $i++) {
             try {
-              $r = Invoke-WebRequest -Uri "https://51-91-6-6.sslip.io/swagger/v1/swagger.json" -UseBasicParsing -TimeoutSec 10
+              $r = Invoke-WebRequest -Uri "https://api.octopus-pos.com/health/ready" -UseBasicParsing -TimeoutSec 10
               if ($r.StatusCode -eq 200) { $ok = $true; break }
-            } catch {}
+            } catch {
+              # A 503 arrives as an exception, but it carries the body that names the
+              # actual problem - read it rather than discarding it.
+              if ($_.Exception.Response) {
+                try {
+                  $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
+                  $lastBody = $reader.ReadToEnd()
+                  $reader.Close()
+                } catch { }
+              } else {
+                $lastBody = $_.Exception.Message
+              }
+            }
             Start-Sleep -Seconds 3
           }
-          if (-not $ok) { throw "Health check failed: site did not return 200 after deploy" }
-          Write-Host "Deploy healthy: https://51-91-6-6.sslip.io"
+
+          if (-not $ok) {
+            throw "Readiness check failed after 60s. Last response: $lastBody -- if it names pendingMigrations the deployed code is ahead of the database schema and migrations must be applied on the server; if it says the database is unreachable, check ConnectionStrings__DefaultConnection and that SQL Server is running."
+          }
+          Write-Host "Deploy healthy and schema-current: https://api.octopus-pos.com"
 
       - name: Admin portal health check
         if: always()
         shell: powershell
-        # Swagger answering proves the app started; it does NOT prove the portal is
-        # usable. The two ways this deploy can leave /admin broken while the API looks
-        # perfectly healthy are (a) the login page ending up behind its own login and
-        # (b) the AdminUser table failing to create in the Master DB. Both surface here.
+        # A ready API does NOT prove the portal is usable. The two ways this deploy
+        # can leave /admin broken while the API looks perfectly healthy are (a) the
+        # login page ending up behind its own login and (b) the AdminUser table
+        # failing to create in the Master DB. Both surface here.
         run: |
           [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
@@ -210,13 +265,13 @@ jobs:
             }
           }
 
-          $loginStatus = Get-Status "https://51-91-6-6.sslip.io/admin/login"
+          $loginStatus = Get-Status "https://api.octopus-pos.com/admin/login"
           if ($loginStatus -ne 200) {
             throw "Admin login page returned $loginStatus, expected 200. If it is 302 the login page ended up behind its own login and nobody can sign in; if 500, check the startup log for 'ADMIN PORTAL UNUSABLE'."
           }
 
           # A signed-out request for a real portal page must be redirected, never served.
-          $guardedStatus = Get-Status "https://51-91-6-6.sslip.io/admin/companies"
+          $guardedStatus = Get-Status "https://api.octopus-pos.com/admin/companies"
           if ($guardedStatus -ne 302) {
             throw "SECURITY: /admin/companies returned $guardedStatus while signed out, expected a 302 to the login page."
           }
