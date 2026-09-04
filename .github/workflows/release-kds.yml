@@ -187,6 +187,20 @@ jobs:
         with:
           name: Octopus Kitchen Display ${{ steps.version.outputs.numeric }}
           generate_release_notes: true
+          # 🚨 NEVER let a KDS release become the repository's "latest".
+          #
+          # Both products release out of this one repo, and the POS's in-app
+          # updater fetches /releases/latest — which GitHub resolves to whichever
+          # non-draft, non-prerelease release was published most recently,
+          # regardless of product. kds-v1.0.0 duly took that spot from v1.0.11.
+          #
+          # The POS updater then parses the tag with SemVer.tryParse, which strips
+          # a leading "v" only: "kds-v1.0.0" starts with "k", the
+          # ^(\d+)\.(\d+)\.(\d+)$ match fails, fromGitHubJson returns null, and
+          # every till reports "Could not reach the update server" and is never
+          # offered the POS build. Silent, fleet-wide, and it looks like a network
+          # fault.
+          make_latest: false
           files: |
             kitchen_display/Output/*.exe
             kitchen_display/Output/*.sha256
