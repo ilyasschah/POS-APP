@@ -6,6 +6,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pos_app/update/app_release.dart';
 import 'package:pos_app/update/update_guard.dart';
@@ -216,6 +217,96 @@ void main() {
           evaluateUpdateBlockers(cartItemCount: 2, pendingPushCount: 5);
       expect(blockers.first, UpdateBlocker.activeCart);
       expect(canInstallUpdate(blockers), isFalse);
+    });
+  });
+
+  group('two products, one repository', () {
+    Map<String, dynamic> kdsRelease() => {
+          'tag_name': 'kds-v1.0.0',
+          'draft': false,
+          'prerelease': false,
+          'body': 'kitchen display',
+          'assets': [
+            {
+              'name': 'Octopus_KDS_Setup_v1.0.0.exe',
+              'size': 34000000,
+              'browser_download_url':
+                  'https://github.com/o/r/releases/download/kds-v1.0.0/Octopus_KDS_Setup_v1.0.0.exe',
+            },
+          ],
+        };
+
+    test('a Kitchen Display release at the top does not hide the POS build', () {
+      // EXACTLY what happened on 2026-09-04: kds-v1.0.0 was published after
+      // v1.0.11, so GitHub's /releases/latest returned the KDS release. The POS
+      // updater could not parse "kds-v1.0.0", returned null, and every till read
+      // "Could not reach the update server" — never seeing 1.0.11 at all.
+      final picked = UpdateService.pickNewestPosRelease([
+        kdsRelease(),
+        _release(tag: 'v1.0.11'),
+      ]);
+
+      expect(picked, isNotNull, reason: 'the POS build must still be found');
+      expect(picked!.version, const SemVer(1, 0, 11));
+      expect(picked.installerName, contains('Octopus_POS_Setup'));
+    });
+
+    test('the KDS installer is never offered to a POS terminal', () {
+      // Its asset IS a .exe, so filtering on the asset would pick it. The tag is
+      // what disqualifies it.
+      final picked = UpdateService.pickNewestPosRelease([kdsRelease()]);
+      expect(picked, isNull);
+    });
+
+    test('drafts and prereleases are skipped, not treated as the end of the list', () {
+      final picked = UpdateService.pickNewestPosRelease([
+        _release(tag: 'v9.9.9', draft: true),
+        _release(tag: 'v9.9.8', prerelease: true),
+        _release(tag: 'v1.2.0'),
+      ]);
+      expect(picked!.version, const SemVer(1, 2, 0));
+    });
+
+    test('newest-first order is respected', () {
+      final picked = UpdateService.pickNewestPosRelease([
+        _release(tag: 'v2.0.0'),
+        _release(tag: 'v1.2.0'),
+      ]);
+      expect(picked!.version, const SemVer(2, 0, 0));
+    });
+
+    test('an empty or asset-less list is no update, not a crash', () {
+      expect(UpdateService.pickNewestPosRelease([]), isNull);
+      expect(UpdateService.pickNewestPosRelease([_release(assets: [])]), isNull);
+      expect(UpdateService.pickNewestPosRelease(['not a release', 42]), isNull);
+    });
+  });
+
+  group('transport timeouts', () {
+    test('the client has a connect timeout', () {
+      // 🚨 Regression guard. connectTimeout lives on BaseOptions and has NO
+      // per-request equivalent, so it cannot be passed in the `Options` of an
+      // individual call — a reader who "moves it next to the other timeouts"
+      // silently removes it.
+      //
+      // Without it the updater hung forever on a half-open connection (captive
+      // portal, dead AP, DNS blackhole): receiveTimeout only starts once bytes
+      // arrive, and sendTimeout only applies to a request body, which a GET has
+      // none of. The hang then latched UpdateController's re-entry guard and
+      // stopped all update checks until the app was restarted.
+      final dio = Dio();
+      expect(dio.options.connectTimeout, isNull,
+          reason: 'baseline: Dio ships with no connect timeout');
+
+      UpdateService(dio: dio);
+      expect(dio.options.connectTimeout, isNotNull);
+      expect(dio.options.connectTimeout, lessThanOrEqualTo(const Duration(seconds: 30)));
+    });
+
+    test('an explicit connect timeout is left alone', () {
+      final dio = Dio(BaseOptions(connectTimeout: const Duration(seconds: 3)));
+      UpdateService(dio: dio);
+      expect(dio.options.connectTimeout, const Duration(seconds: 3));
     });
   });
 }

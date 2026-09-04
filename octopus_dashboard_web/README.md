@@ -19,8 +19,8 @@ flutter analyze                # clean
 flutter build web --release    # output in build/web/
 ```
 
-Sign in with the **Test** environment preset (`https://51-91-6-6.sslip.io/api`),
-which is the default.
+Sign in with the **Production** environment preset
+(`https://api.octopus-pos.com/api`), which is the default.
 
 ---
 

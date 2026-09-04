@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:pos_app/update/app_release.dart';
 import 'package:pos_app/update/update_providers.dart';
 import 'package:pos_app/update/update_service.dart';
 
@@ -28,6 +29,7 @@ import 'package:pos_app/update/update_service.dart';
 class UpdateWatcher extends Notifier<void> {
   Timer? _initial;
   Timer? _periodic;
+  Timer? _retry;
 
   /// Long enough for login, the master-data pull and the first sync to finish.
   static const _initialDelay = Duration(minutes: 1);
@@ -35,6 +37,16 @@ class UpdateWatcher extends Notifier<void> {
   /// A release lands a few times a week at most; polling harder buys nothing and
   /// spends a shop's bandwidth.
   static const _interval = Duration(hours: 6);
+
+  /// One retry after a failed check.
+  ///
+  /// The first check fires a minute after login, which on a till that was just
+  /// switched on is easily before the network is actually usable. Without this
+  /// that miss cost SIX HOURS — and a shop that opens at 9 and closes at 17
+  /// never reaches the second tick, so the terminal would go a whole day
+  /// without ever looking. Deliberately one retry, not a backoff loop: the
+  /// point is to survive a cold start, not to hammer a venue's connection.
+  static const _retryDelay = Duration(minutes: 5);
 
   @override
   void build() {
@@ -50,17 +62,30 @@ class UpdateWatcher extends Notifier<void> {
     _periodic = Timer.periodic(_interval, (_) => _check());
   }
 
-  void _check() {
+  void _check({bool allowRetry = true}) {
     // check() is already a no-op while a check or download is in flight, and it
     // swallows its own failures — an offline venue must not produce noise.
-    ref.read(updateControllerProvider.notifier).check();
+    final future = ref.read(updateControllerProvider.notifier).check();
+
+    if (!allowRetry) return;
+    future.whenComplete(() {
+      // Only a failed check earns a retry. Reaching the server and being told
+      // "up to date" is a success, and re-asking would waste the venue's
+      // GitHub rate limit — it is 60 requests an hour for ALL tills sharing the
+      // venue's public IP, because the API is called unauthenticated.
+      if (ref.read(updateControllerProvider) is! UpdateFailed) return;
+      _retry?.cancel();
+      _retry = Timer(_retryDelay, () => _check(allowRetry: false));
+    });
   }
 
   void _cancel() {
     _initial?.cancel();
     _periodic?.cancel();
+    _retry?.cancel();
     _initial = null;
     _periodic = null;
+    _retry = null;
   }
 }
 

@@ -422,13 +422,34 @@ var startupReport = await Api.Startup.DatabaseBootstrapper.RunAsync(app, logger)
 // (400/404/403) instead of raw 500s. Registered first so it wraps all controllers.
 app.UseMiddleware<Api.Middleware.ExceptionHandlingMiddleware>();
 
-app.UseSwagger();
-app.UseSwaggerUI(c => {
-    c.SwaggerEndpoint("./v1/swagger.json", "My API V1");
-    c.RoutePrefix = "swagger";
-});
+// Swagger publishes the ENTIRE API surface — every admin, licensing and company
+// endpoint included — to anyone who asks for it. On the sslip.io test box that was
+// an acceptable trade; on a public production hostname it is free reconnaissance
+// for anyone probing the domain. Outside Production nothing changes: /swagger is
+// still there for local work and for the bench.
+if (!app.Environment.IsProduction())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(c => {
+        c.SwaggerEndpoint("./v1/swagger.json", "My API V1");
+        c.RoutePrefix = "swagger";
+    });
+}
 
-//app.UseHttpsRedirection();
+// HTTPS is enforced in Production ONLY. In Development the API is served over
+// plain http on a LAN/Tailscale address, and redirecting there would break every
+// terminal on the bench.
+//
+// ⚠️ UseHttpsRedirection needs to know which port to redirect TO. Behind IIS it
+// cannot always work that out on its own, and when it fails it logs a warning and
+// then silently does nothing at all. The deploy therefore sets
+// ASPNETCORE_HTTPS_PORT=443 in web.config — without it this block is decoration.
+if (app.Environment.IsProduction())
+{
+    app.UseHsts();
+    app.UseHttpsRedirection();
+}
+
 app.UseCors("AllowFrontend");
 app.UseStaticFiles();
 
@@ -456,6 +477,59 @@ app.MapGet("/", () => Results.Redirect("/admin/companies")).AllowAnonymous();
 // login page the way the cookie handler would. The result is "This page isn't
 // working — HTTP ERROR 401" on the most obvious URL in the whole product.
 app.MapGet("/admin", () => Results.Redirect("/admin/companies")).AllowAnonymous();
+
+// ── Deployment health probes ─────────────────────────────────────────────────
+// Both are anonymous: the global JWT FallbackPolicy would otherwise answer them
+// with a 401 and every deploy would report a healthy site as broken.
+//
+// These exist because the deploy used to prove itself by fetching
+// /swagger/v1/swagger.json, which Production no longer serves. They are also a
+// strictly better check than Swagger ever was — see /health/ready.
+
+// Liveness: the process started and the pipeline is wired. Touches nothing else,
+// so it still answers 200 while the database is down. That is the point — it
+// separates "the app is dead" from "the app is up but its data layer is not".
+app.MapGet("/health", () => Results.Ok(new { status = "ok" })).AllowAnonymous();
+
+// Readiness: the API can actually serve traffic.
+//
+// 🚨 "Returns 200" and "works" are different claims, and the gap between them is
+// exactly how AddSellByWeightAndBarcodeRules broke the test server: the API
+// published perfectly, then every endpoint touching Product answered 500, because
+// the code had moved and the schema had not. A probe that only proves the process
+// is running cannot catch that — so this one reports PENDING MIGRATIONS as
+// not-ready. If this endpoint is green, the deployed binaries and the database
+// schema agree.
+app.MapGet("/health/ready", async (AppDbContext db, CancellationToken ct) =>
+{
+    try
+    {
+        var pending = (await db.Database.GetPendingMigrationsAsync(ct)).ToArray();
+        if (pending.Length > 0)
+        {
+            return Results.Json(
+                new
+                {
+                    status = "not-ready",
+                    database = "reachable",
+                    pendingMigrations = pending,
+                    message = "The database schema is behind the deployed code. Apply migrations."
+                },
+                statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
+
+        return Results.Ok(new { status = "ready", database = "ok" });
+    }
+    catch (Exception ex)
+    {
+        // The message is deliberately NOT echoed to the caller — this endpoint is
+        // public and a connection-string error names the server and the login.
+        app.Logger.LogError(ex, "Readiness probe failed: the POS database is unreachable.");
+        return Results.Json(
+            new { status = "not-ready", database = "unreachable" },
+            statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+}).AllowAnonymous();
 
 // Prints the banner (URLs + health) once Kestrel is listening, and in Development
 // opens the portal in a browser. Both need the bound addresses, which do not exist

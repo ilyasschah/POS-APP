@@ -47,3 +47,14 @@ SECRETS.local.txt
 # Treated like node_modules: skills-lock.json is committed so the set is
 # reproducible, the unpacked skill files are not.
 /.agents/
+
+# ── SSH and server private keys — NEVER commit. THIS REPOSITORY IS PUBLIC. ──
+# server-pos.ppk turned up in the repo root during the production cutover, and
+# Step 1 of RELEASE_RUNBOOK.md is literally `git add .` — one routine commit
+# would have published the production server's SSH key to the whole internet.
+# No .pem or .ppk has ever been tracked here, so these patterns cost nothing.
+*.ppk
+*.pem
+*.key
+id_rsa
+id_ed25519

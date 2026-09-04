@@ -5,8 +5,16 @@
 -- The API points at this via the "MasterConnection" connection string.
 -- ============================================================================
 
+-- The COLLATE is explicit on purpose. Without it CREATE DATABASE inherits the
+-- HOST SERVER's collation, which is how dev and production drifted apart:
+-- 'web-pos' carries SQL_Latin1_General_CP1_CI_AS (it predates the current dev
+-- box), while ILYASS-DESK's server collation is Latin1_General_CI_AS, so the
+-- dev copy of this database silently came out in the other collation.
+-- Pinning it to match 'web-pos' keeps every database, plus tempdb, on one
+-- collation -- otherwise any join between a table here and a #temp table or a
+-- 'web-pos' string column fails with "Cannot resolve the collation conflict".
 IF DB_ID('web-pos-master') IS NULL
-    CREATE DATABASE [web-pos-master];
+    CREATE DATABASE [web-pos-master] COLLATE SQL_Latin1_General_CP1_CI_AS;
 GO
 
 USE [web-pos-master];
@@ -88,4 +96,39 @@ CREATE TABLE dbo.BillingEvent (
     ReceivedAt    DATETIME2    NOT NULL CONSTRAINT DF_Billing_Recv DEFAULT(SYSUTCDATETIME()),
     CONSTRAINT UQ_Billing_StripeEventId UNIQUE (StripeEventId)
 );
+GO
+
+-- ── TransactionAudit: Pillar 5 duplicate-transaction ledger ──
+-- Byte-for-byte the table that EnsureCloneAuditTableAsync in
+-- Startup/DatabaseBootstrapper.cs creates. Changing one means changing both,
+-- exactly like the AdminUser block above.
+--
+-- It is provisioned HERE, up front, so the API's runtime login never needs
+-- CREATE TABLE. The bootstrapper runs this DDL on every boot, but its
+-- IF OBJECT_ID guard finds the table and the CREATE branch is never executed —
+-- and SQL Server checks permissions on execution, not compilation, so a
+-- db_datareader + db_datawriter login sails through the no-op.
+--
+-- Get this wrong and the failure is quiet: the bootstrapper catches the error,
+-- the API still starts, /health/ready still passes, and only /admin is dead
+-- (AdminPortalReady = false). See SERVER_SETUP.md gotcha 4 for why that login
+-- is deliberately not db_owner.
+IF OBJECT_ID('dbo.TransactionAudit', 'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.TransactionAudit (
+        Id            INT IDENTITY(1,1) PRIMARY KEY,
+        TenantId      INT NOT NULL,
+        CompanyId     INT NOT NULL,
+        ClientTxnId   NVARCHAR(128) NOT NULL,
+        FirstDeviceId NVARCHAR(128) NOT NULL,
+        LastDeviceId  NVARCHAR(128) NULL,
+        SeenCount     INT NOT NULL DEFAULT(1),
+        IsFlagged     BIT NOT NULL DEFAULT(0),
+        FlagReason    NVARCHAR(64) NULL,
+        FirstSeenUtc  DATETIME2 NOT NULL DEFAULT(SYSUTCDATETIME()),
+        LastSeenUtc   DATETIME2 NOT NULL DEFAULT(SYSUTCDATETIME())
+    );
+    CREATE UNIQUE INDEX UX_TransactionAudit_Tenant_Txn
+        ON dbo.TransactionAudit (TenantId, ClientTxnId);
+END
 GO

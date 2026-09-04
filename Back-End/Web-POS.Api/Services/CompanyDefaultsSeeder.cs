@@ -254,10 +254,26 @@ namespace Api.Services
             // recovery path: if session state is ever wrong on a real till,
             // turning this off restores trading immediately.
             ("PosSession.RequireOpenSession", "true"),
-            ("Application.Api.BaseUrl", "https://api.futur3.com/api"),
+            // 🚨 This is what a terminal shows in Settings → Preferences as its
+            // API address, so a wrong value here is visible to every operator of
+            // every new company. It said api.futur3.com — a domain this product
+            // does not use — until 2026-09-04.
+            ("Application.Api.BaseUrl", "https://api.octopus-pos.com/api"),
             ("Database.Backup.Version", "v2"),
             ("Theme_Mode", "dark"),
-            ("Theme_AccentColor", "#10B981"),
+            // The brand accent, and the ONLY correct value: #FF416C is the
+            // lighter stop of the octopus gradient in Front-End/assets/icon.svg
+            // (#FF416C → #FF4B2B) and the accent the marketing site uses.
+            // Material generates the whole scheme from it, so this single hex is
+            // what makes the app agree with its own icon.
+            //
+            // It used to seed #10B981 — emerald green, from nothing — while the
+            // client defaulted to #FF5733, which Material desaturates in dark
+            // mode into the brown the app actually looked. Three sources, three
+            // colours, none of them the logo. Keep this in step with
+            // kBrandAccent in Front-End/lib/core/app_theme.dart and with
+            // kSettingDefaults in app_settings_model.dart.
+            ("Theme_AccentColor", "#FF416C"),
             ("Menu_Grid_Cols", "4"),
             ("Menu_Grid_Rows", "4"),
             ("Application.Language", "en"),

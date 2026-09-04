@@ -1,10 +1,10 @@
 <#
 .SYNOPSIS
-  Applies pending EF Core migrations to the Test database. Run on the Test server
-  after every backend deploy.
+  Applies pending EF Core migrations to the production database. Run on the
+  production server after every backend deploy.
 
 .DESCRIPTION
-  deploy-backend-test.yml publishes the API but never touches the database, and
+  deploy-backend-prod.yml publishes the API but never touches the database, and
   Program.cs has no Database.Migrate() call. So the schema stays where it was
   while the code moves on, and the first endpoint that reads a new column answers
   500 instead of data.
@@ -26,10 +26,10 @@
   a UTF-8 dash becomes a parse error nowhere near the real line. Keep it ASCII.
 
 .EXAMPLE
-  ./tools/update-test-database.ps1
-  ./tools/update-test-database.ps1 -WhatIf       # list what is pending, apply nothing
-  ./tools/update-test-database.ps1 -ScriptOnly   # write the SQL for review instead
-  ./tools/update-test-database.ps1 -RestartIis   # recycle the site afterwards
+  ./tools/update-database.ps1
+  ./tools/update-database.ps1 -WhatIf       # list what is pending, apply nothing
+  ./tools/update-database.ps1 -ScriptOnly   # write the SQL for review instead
+  ./tools/update-database.ps1 -RestartIis   # recycle the site afterwards
 #>
 [CmdletBinding(SupportsShouldProcess)]
 param(
@@ -89,7 +89,7 @@ $node = $xml.SelectSingleNode("//environmentVariable[@name='ConnectionStrings__D
 $connection = if ($node) { $node.GetAttribute('value') } else { $null }
 
 if ([string]::IsNullOrWhiteSpace($connection)) {
-    throw "web.config has no ConnectionStrings__DefaultConnection. The 'Inject Test environment secrets' step of the deploy workflow did not run - redeploy before migrating."
+    throw "web.config has no ConnectionStrings__DefaultConnection. The 'Inject production secrets into web.config' step of the deploy workflow did not run - redeploy before migrating."
 }
 
 # Show WHICH database is about to change, without ever printing the password.

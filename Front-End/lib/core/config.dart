@@ -1,8 +1,8 @@
 /// Compile-time configuration.
 ///
-/// 🚧 **DEV/TEST PHASE — [defaultApiBaseUrl] points at the LAN test server.**
-/// Change it back to the production endpoint before shipping to customers.
-/// It was `https://51-91-6-6.sslip.io/api` until 2026-08-06.
+/// ✅ **[defaultApiBaseUrl] points at PRODUCTION** (`api.octopus-pos.com`).
+/// It pointed at the LAN/Tailscale dev server from 2026-08-06 until the
+/// production cutover.
 ///
 /// ## Why this is the only place the endpoint is written
 ///
@@ -26,22 +26,36 @@ class AppConfig {
   /// entered manually in Settings.
   static const String devBaseUrl = 'http://100.114.12.38:5002/api';
 
-  /// The hosted backend.
+  /// The old hosted test backend.
+  ///
+  /// ⚠️ This server is GONE — the OVH box it ran on was deleted. The constant is
+  /// kept only so a terminal that still has the URL saved in SharedPreferences
+  /// resolves to a labelled segment ("Test") in the picker instead of showing up
+  /// as an unrecognised custom endpoint. Nothing answers on it.
   static const String testBaseUrl = 'https://51-91-6-6.sslip.io/api';
+
+  /// **Production.** The backend customers actually talk to.
+  static const String prodBaseUrl = 'https://api.octopus-pos.com/api';
 
   /// The endpoint a terminal uses until one is chosen — on the master-login
   /// environment picker, or in Settings → Connection → API base URL. Stored
   /// device-locally in SharedPreferences; never cloud-synced, because it is how
   /// this terminal reaches the cloud in the first place.
   ///
-  /// 🚧 **DEV PHASE: defaults to [devBaseUrl].** Flip to [testBaseUrl] before
-  /// shipping to customers.
+  /// ✅ **Defaults to [prodBaseUrl].**
+  ///
+  /// This used to default to [devBaseUrl] behind a "flip it before shipping"
+  /// note, and nothing enforced the flip. Neither `release-windows.yml` nor
+  /// `release-macos.yml` passes `--dart-define=API_BASE_URL`, so every release
+  /// built from this repo compiled in a **Tailscale address** — an endpoint that
+  /// is unroutable from any customer machine on earth. A shipped terminal would
+  /// simply fail to reach anything, with no clue as to why.
   ///
   /// Overridable at build time without touching source:
   /// `flutter build windows --dart-define=API_BASE_URL=https://…/api`
   static const String defaultApiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: devBaseUrl,
+    defaultValue: prodBaseUrl,
   );
 }
 
@@ -58,7 +72,8 @@ class AppConfig {
 /// the choice explicit at master login is the point.
 enum ApiEnvironment {
   dev('Dev', AppConfig.devBaseUrl),
-  test('Test', AppConfig.testBaseUrl);
+  test('Test', AppConfig.testBaseUrl),
+  prod('Production', AppConfig.prodBaseUrl);
 
   const ApiEnvironment(this.label, this.baseUrl);
 

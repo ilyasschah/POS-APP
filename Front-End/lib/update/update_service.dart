@@ -10,22 +10,53 @@ import 'package:pos_app/update/app_release.dart';
 
 /// Where the updater looks for releases.
 ///
-/// The repository is PUBLIC, so `/releases/latest` answers unauthenticated —
-/// verified with a plain unauthenticated request, which is what makes this
-/// possible at all. A private repo would need a token, and a token shipped
-/// inside a desktop app is a published token; the fallback then would be a
-/// manifest served by our own API, which terminals already authenticate against.
-const String kGitHubLatestReleaseUrl =
-    'https://api.github.com/repos/ilyasschah/POS-APP/releases/latest';
+/// The repository is PUBLIC, so this answers unauthenticated — verified with a
+/// plain unauthenticated request, which is what makes this possible at all. A
+/// private repo would need a token, and a token shipped inside a desktop app is
+/// a published token; the fallback then would be a manifest served by our own
+/// API, which terminals already authenticate against.
+///
+/// 🚨 The LIST, deliberately — not `/releases/latest`.
+///
+/// This repository ships two products. `/releases/latest` resolves to whichever
+/// non-draft, non-prerelease release was published most recently, *regardless of
+/// which product it belongs to*, so publishing Kitchen Display `kds-v1.0.0` took
+/// that spot from POS `v1.0.11`. The POS updater then read a tag it cannot parse
+/// and every till reported "Could not reach the update server" — silent,
+/// fleet-wide, and indistinguishable from a network fault.
+///
+/// Reading the list and picking the newest release whose tag is a POS version
+/// makes that impossible rather than merely unlikely: it no longer depends on
+/// every future KDS release remembering to pass `make_latest: false`.
+const String kGitHubReleasesUrl =
+    'https://api.github.com/repos/ilyasschah/POS-APP/releases?per_page=30';
 
 /// Checks for, downloads and launches application updates. Windows only.
 ///
 /// Every method is safe to call when there is no update, no network, or no
 /// permission — a POS must never be blocked, delayed or crashed by its updater.
 class UpdateService {
-  UpdateService({Dio? dio}) : _dio = dio ?? Dio();
+  UpdateService({Dio? dio}) : _dio = dio ?? Dio() {
+    // Set on the client, not per request: connectTimeout lives on BaseOptions
+    // and has no per-request equivalent, so passing it in an `Options` does
+    // nothing at all. `??=` leaves an injected Dio's own value alone.
+    _dio.options.connectTimeout ??= _connectTimeout;
+  }
 
   final Dio _dio;
+
+  /// 🚨 Without this the updater can hang FOREVER, and the hang is sticky.
+  ///
+  /// `receiveTimeout` only starts counting once bytes begin arriving, and
+  /// `sendTimeout` only applies to a request body — a GET has none. So neither
+  /// covers "the TCP connection never completes", which is exactly what a
+  /// captive portal, a dead access point or a DNS blackhole produces. Dio's
+  /// default connect timeout is unlimited, so `fetchLatest()` awaited forever;
+  /// `UpdateController.check()` had already set state to `UpdateChecking`, and
+  /// its own re-entry guard then rejected every later check for the life of the
+  /// process. One bad moment on the network killed updates until the app was
+  /// restarted, showing a spinner and no error.
+  static const _connectTimeout = Duration(seconds: 15);
 
   /// Android cannot silently self-install. The macOS build ships as a DMG the
   /// user drags to Applications — an app cannot replace its own running bundle
@@ -41,7 +72,7 @@ class UpdateService {
   Future<AppRelease?> fetchLatest() async {
     try {
       final response = await _dio.get<dynamic>(
-        kGitHubLatestReleaseUrl,
+        kGitHubReleasesUrl,
         options: Options(
           // GitHub asks for this; without it the API may answer differently.
           headers: {'Accept': 'application/vnd.github+json'},
@@ -51,14 +82,31 @@ class UpdateService {
       );
 
       final data = response.data;
-      final json = data is String
-          ? jsonDecode(data) as Map<String, dynamic>
-          : (data as Map).cast<String, dynamic>();
+      final decoded = data is String ? jsonDecode(data) : data;
+      if (decoded is! List) return null;
 
-      return AppRelease.fromGitHubJson(json);
+      return pickNewestPosRelease(decoded);
     } catch (_) {
       return null;
     }
+  }
+
+  /// Picks the newest POS release out of a `/releases` payload.
+  ///
+  /// GitHub returns the list newest-first, so the first entry that yields a
+  /// usable [AppRelease] wins. Anything that does not — a Kitchen Display
+  /// release, a draft, a prerelease, a build with no installer attached — is
+  /// skipped rather than ending the search, so one foreign release at the top
+  /// cannot hide every POS build behind it.
+  ///
+  /// Public for testing: this is the rule that decides what a till installs.
+  static AppRelease? pickNewestPosRelease(List<dynamic> releases) {
+    for (final entry in releases) {
+      if (entry is! Map) continue;
+      final release = AppRelease.fromGitHubJson(entry.cast<String, dynamic>());
+      if (release != null) return release;
+    }
+    return null;
   }
 
   /// Downloads the installer to a temp folder and verifies it.

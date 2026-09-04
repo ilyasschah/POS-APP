@@ -9,7 +9,8 @@ import '../../core/settings.dart';
 /// Which named backend a base URL corresponds to.
 enum ApiEnvironment {
   dev('Dev', AppConfig.devBaseUrl),
-  test('Test', AppConfig.testBaseUrl);
+  test('Test', AppConfig.testBaseUrl),
+  prod('Production', AppConfig.prodBaseUrl);
 
   const ApiEnvironment(this.label, this.baseUrl);
 
@@ -17,13 +18,15 @@ enum ApiEnvironment {
   final String baseUrl;
 
   /// Resolves the segmented control's selection from the current URL,
-  /// falling back to Test for any custom URL.
+  /// falling back to Production for any custom URL. (It used to fall back to
+  /// Test — that backend no longer exists, so the fallback pointed the control
+  /// at a dead server.)
   static ApiEnvironment forUrl(String url) {
     final normalized = OctopusApi.normalizeBaseUrl(url);
     for (final env in values) {
       if (OctopusApi.normalizeBaseUrl(env.baseUrl) == normalized) return env;
     }
-    return ApiEnvironment.test;
+    return ApiEnvironment.prod;
   }
 }
 

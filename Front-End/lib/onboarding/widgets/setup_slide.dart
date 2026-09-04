@@ -16,7 +16,14 @@ import 'package:pos_app/settings/local_ui_prefs.dart';
 class SetupSlide extends ConsumerWidget {
   const SetupSlide({super.key});
 
+  /// First entry is the BRAND accent, and it is first on purpose: it matches
+  /// kBrandAccent, the octopus in assets/icon.svg and the marketing site, and it
+  /// is what both the client defaults and the server seed a new company with. It
+  /// was missing from this list entirely, so anyone who touched the picker
+  /// during onboarding necessarily moved the app AWAY from its own branding —
+  /// there was no way back to it short of editing the setting by hand.
   static const _accents = <String>[
+    '#FF416C', // brand
     '#3B82F6', // blue
     '#8B5CF6', // violet
     '#EF4444', // red

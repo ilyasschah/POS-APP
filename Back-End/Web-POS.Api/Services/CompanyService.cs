@@ -194,10 +194,19 @@ public class CompanyService
     /// Deletes a company and ALL of its data. The schema has ~40 child tables
     /// referencing Company with no cascade, so a plain delete fails on the first
     /// FK. This purges every CompanyId-scoped row for the company in one
-    /// transaction. Constraint enforcement is toggled ONLY on the CompanyId-scoped
-    /// tables — global reference tables (Country, Currency, DocumentType,
-    /// DocumentCategory — none of which have a CompanyId column) are never
-    /// touched, so deleting a company can never affect global data.
+    /// transaction, in foreign-key dependency order — children before parents —
+    /// so constraint enforcement stays ON throughout.
+    ///
+    /// Only CompanyId-scoped tables are touched. Global reference tables
+    /// (Country, Currency, DocumentType, DocumentCategory — none of which have a
+    /// CompanyId column) are never in the set, so deleting a company can never
+    /// reach global data.
+    ///
+    /// 🚨 This used to disable every constraint, delete in arbitrary order, then
+    /// re-arm WITH CHECK. Do not reintroduce that: it needs ALTER on ~50 tables,
+    /// and the production API login is only db_datareader + db_datawriter, so
+    /// the toggle fails with "Cannot find the object … or you do not have
+    /// permissions." See <see cref="ForeignKeyDeleteOrder"/>.
     /// </summary>
     public async Task<bool> DeleteAsync(int id)
     {
@@ -210,52 +219,53 @@ public class CompanyService
         {
             await using var tx = await _db.Database.BeginTransactionAsync();
 
-            // ZReportPaymentSummary has no CompanyId but references this company's
-            // ZReports/PaymentTypes — purge it first (the only such referencer).
+            // ZReportPaymentSummary has no CompanyId of its own, so it is not in
+            // the ordered set below — it has to be purged up front, by following
+            // its foreign keys back to the company.
+            //
+            // BOTH keys, not just ZReportId: the table also references
+            // PaymentType, which is company-scoped and therefore deleted below.
+            // Filtering on ZReportId alone leaves any row whose ZReport belongs
+            // elsewhere but whose PaymentType is this company's, and that row
+            // then blocks the PaymentType delete with
+            // FK_ZReportPaymentSummary_PaymentType_PaymentTypeId. The old
+            // constraints-off purge could not hit this — it simply orphaned the
+            // row instead, and the WITH CHECK re-enable failed later, further
+            // from the cause.
             await _db.Database.ExecuteSqlRawAsync(
-                "DELETE FROM dbo.ZReportPaymentSummary WHERE ZReportId IN " +
-                "(SELECT Id FROM dbo.ZReport WHERE CompanyId = @cid);",
+                "DELETE FROM dbo.ZReportPaymentSummary " +
+                "WHERE ZReportId IN (SELECT Id FROM dbo.ZReport WHERE CompanyId = @cid) " +
+                "   OR PaymentTypeId IN (SELECT Id FROM dbo.PaymentType WHERE CompanyId = @cid);",
                 new SqlParameter("@cid", id));
 
-            // Disable FK enforcement ONLY on CompanyId-scoped tables (so the delete
-            // order between them doesn't matter). Tables without a CompanyId column
-            // — i.e. the global reference tables — are deliberately excluded.
-            await _db.Database.ExecuteSqlRawAsync(@"
-                DECLARE @sql NVARCHAR(MAX) = N'';
-                SELECT @sql += 'ALTER TABLE ' + QUOTENAME(SCHEMA_NAME(t.schema_id)) + '.' + QUOTENAME(t.name)
-                             + ' NOCHECK CONSTRAINT ALL;' + CHAR(10)
-                FROM sys.tables t
-                WHERE EXISTS (SELECT 1 FROM sys.columns c WHERE c.object_id = t.object_id AND c.name = 'CompanyId');
-                EXEC sp_executesql @sql;");
+            // Every CompanyId-scoped table except Company itself, which is
+            // deleted last and separately (it is the parent of all of them).
+            var scoped = await _db.Database
+                .SqlQueryRaw<string>(@"
+                    SELECT t.name AS Value
+                    FROM sys.tables t
+                    WHERE EXISTS (SELECT 1 FROM sys.columns c
+                                  WHERE c.object_id = t.object_id AND c.name = 'CompanyId')
+                      AND t.name <> 'Company';")
+                .ToListAsync();
 
-            // Delete every CompanyId-scoped row for this company.
-            await _db.Database.ExecuteSqlRawAsync(@"
-                DECLARE @sql NVARCHAR(MAX) = N'';
-                SELECT @sql += 'DELETE FROM ' + QUOTENAME(SCHEMA_NAME(t.schema_id)) + '.' + QUOTENAME(t.name)
-                             + ' WHERE CompanyId = @cid;' + CHAR(10)
-                FROM sys.tables t
-                WHERE EXISTS (SELECT 1 FROM sys.columns c WHERE c.object_id = t.object_id AND c.name = 'CompanyId')
-                  AND t.name <> 'Company';
-                EXEC sp_executesql @sql, N'@cid INT', @cid = @cid;",
-                new SqlParameter("@cid", id));
+            // Children before parents, so each DELETE only ever removes rows
+            // nothing still points at and FK enforcement never has to be lifted.
+            var ordered = await ForeignKeyDeleteOrder.ResolveAsync(_db.Database, scoped);
+
+            foreach (var table in ordered)
+            {
+                ForeignKeyDeleteOrder.AssertSafeIdentifier(table);
+#pragma warning disable EF1002 // identifier validated by AssertSafeIdentifier; the id stays a parameter
+                await _db.Database.ExecuteSqlRawAsync(
+                    $"DELETE FROM dbo.[{table}] WHERE CompanyId = @cid;",
+                    new SqlParameter("@cid", id));
+#pragma warning restore EF1002
+            }
 
             await _db.Database.ExecuteSqlRawAsync(
                 "DELETE FROM dbo.Company WHERE Id = @cid;",
                 new SqlParameter("@cid", id));
-
-            // Re-enable FK enforcement on the same CompanyId-scoped tables.
-            // WITH CHECK, not a bare CHECK CONSTRAINT: the bare form re-arms the
-            // constraint but leaves it is_not_trusted = 1, because SQL Server
-            // never re-validates the existing rows. Untrusted FKs are excluded
-            // from the optimiser's join-elimination and can mask a genuine
-            // orphan introduced while enforcement was off.
-            await _db.Database.ExecuteSqlRawAsync(@"
-                DECLARE @sql NVARCHAR(MAX) = N'';
-                SELECT @sql += 'ALTER TABLE ' + QUOTENAME(SCHEMA_NAME(t.schema_id)) + '.' + QUOTENAME(t.name)
-                             + ' WITH CHECK CHECK CONSTRAINT ALL;' + CHAR(10)
-                FROM sys.tables t
-                WHERE EXISTS (SELECT 1 FROM sys.columns c WHERE c.object_id = t.object_id AND c.name = 'CompanyId');
-                EXEC sp_executesql @sql;");
 
             await tx.CommitAsync();
         });

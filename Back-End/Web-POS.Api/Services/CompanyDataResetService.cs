@@ -38,8 +38,9 @@ namespace Api.Services
     ///
     /// Modelled on <c>CompanyService.DeleteAsync</c>, which had already solved
     /// the hard part: ~40 child tables reference Company with no cascade, so a
-    /// plain ordered delete trips the first FK. Constraints are disabled for the
-    /// duration and re-armed WITH CHECK afterwards.
+    /// delete in the wrong order trips the first FK. Both now delete in
+    /// foreign-key dependency order (see <see cref="ForeignKeyDeleteOrder"/>)
+    /// with constraint enforcement left ON.
     /// </summary>
     public class CompanyDataResetService(AppDbContext db)
     {
@@ -62,11 +63,12 @@ namespace Api.Services
 
         // ── Dependency-closed table groups ────────────────────────────────────
         //
-        // Order within a group is irrelevant (constraints are off), but MEMBERSHIP
-        // is not: the re-enable at the end is `WITH CHECK`, which re-validates
-        // every row. Leave one orphan behind and that statement throws, taking
-        // the whole transaction with it. So each group must contain everything
-        // that references it.
+        // Order within a group is irrelevant HERE — ForeignKeyDeleteOrder sorts
+        // whatever is selected before anything is deleted. MEMBERSHIP is what
+        // matters: each group must contain everything that references it, or the
+        // DELETE of a parent throws on rows outside the group that still point
+        // at it. That now fails on the offending statement, inside the
+        // transaction, instead of at the end on a constraint re-enable.
 
         /// Sales history and live orders — plus everything that hangs off a POS
         /// SESSION, because the session itself goes with them (see the filtered
@@ -158,13 +160,18 @@ namespace Api.Services
             {
                 await using var tx = await _db.Database.BeginTransactionAsync();
 
-                // ZReportPaymentSummary has no CompanyId; it hangs off ZReport.
-                // Must go before ZReport, and only when ZReport is in scope.
-                if (tables.Contains("ZReport"))
+                // ZReportPaymentSummary has no CompanyId, so it is never in
+                // [tables] and never in the ordered sweep. It hangs off BOTH
+                // ZReport and PaymentType, so it has to go before either of them
+                // — PaymentType is company-scoped and so is in scope on the
+                // Everything branch. Filtering on ZReportId alone would leave a
+                // row that then blocks the PaymentType delete.
+                if (tables.Contains("ZReport") || tables.Contains("PaymentType"))
                 {
                     rows += await _db.Database.ExecuteSqlRawAsync(
-                        "DELETE FROM dbo.ZReportPaymentSummary WHERE ZReportId IN " +
-                        "(SELECT Id FROM dbo.ZReport WHERE CompanyId = @cid);",
+                        "DELETE FROM dbo.ZReportPaymentSummary " +
+                        "WHERE ZReportId IN (SELECT Id FROM dbo.ZReport WHERE CompanyId = @cid) " +
+                        "   OR PaymentTypeId IN (SELECT Id FROM dbo.PaymentType WHERE CompanyId = @cid);",
                         new SqlParameter("@cid", companyId));
                 }
 
@@ -178,58 +185,57 @@ namespace Api.Services
                         new SqlParameter("@cid", companyId));
                 }
 
-                await SetConstraintsAsync(enabled: false);
-                try
-                {
-                    foreach (var table in tables)
-                    {
-                        // A table name cannot be a query parameter, so it is
-                        // interpolated — and therefore validated first. Every
-                        // name here already comes from a hardcoded array or from
-                        // sys.tables, never from the request, but this is a
-                        // DELETE loop running with FK enforcement OFF: the cost
-                        // of being wrong is the whole database, so it is checked
-                        // rather than reasoned about. The company id stays a
-                        // real parameter.
-                        AssertSafeIdentifier(table);
-#pragma warning disable EF1002 // identifier validated by AssertSafeIdentifier
-                        rows += await _db.Database.ExecuteSqlRawAsync(
-                            $"DELETE FROM dbo.[{table}] WHERE CompanyId = @cid;",
-                            new SqlParameter("@cid", companyId));
-#pragma warning restore EF1002
-                    }
+                // Children before parents, so every DELETE below runs with FK
+                // enforcement still ON. Ordering the SUBSET being reset is
+                // enough — edges to tables outside it are ignored, because a
+                // group is already closed under its dependencies (see the group
+                // comments and CompanyDataResetServiceTests).
+                var ordered = await ForeignKeyDeleteOrder.ResolveAsync(_db.Database, tables);
 
-                    // ── POS SESSIONS ──────────────────────────────────────────
-                    // A session is Documents' money — same register, same day —
-                    // so clearing sales has to take it too. Left behind, a till
-                    // whose history has just been wiped reopens still believing
-                    // it has one, and the next session numbers itself after
-                    // sales that no longer exist.
-                    //
-                    // 🚨 Filtered, NOT a member of DocumentTables: ATTENDANCE
-                    // shifts share this table (PosDeviceId NULL) and are payroll
-                    // records, not sales. Wiping the day's takings must never
-                    // erase who worked it. `PosDeviceId IS NOT NULL` is the same
-                    // discriminator the domain model uses.
-                    //
-                    // Skipped when "Shift" is already in [tables] — that is the
-                    // Everything branch, which deletes both shapes outright, and
-                    // deleting twice would double-count the reported row total.
-                    if (!tables.Contains("Shift")
-                        && (options.Documents || options.Products || options.Customers))
-                    {
-                        rows += await _db.Database.ExecuteSqlRawAsync(
-                            "DELETE FROM dbo.Shift " +
-                            "WHERE CompanyId = @cid AND PosDeviceId IS NOT NULL;",
-                            new SqlParameter("@cid", companyId));
-                        tables.Add("Shift");
-                    }
-                }
-                finally
+                foreach (var table in ordered)
                 {
-                    // MUST run even if a delete throws: leaving the database with
-                    // FK enforcement off is far worse than a failed reset.
-                    await SetConstraintsAsync(enabled: true);
+                    // A table name cannot be a query parameter, so it is
+                    // interpolated — and therefore validated first. Every name
+                    // here already comes from a hardcoded array or from
+                    // sys.tables, never from the request. The company id stays a
+                    // real parameter.
+                    ForeignKeyDeleteOrder.AssertSafeIdentifier(table);
+#pragma warning disable EF1002 // identifier validated by AssertSafeIdentifier
+                    rows += await _db.Database.ExecuteSqlRawAsync(
+                        $"DELETE FROM dbo.[{table}] WHERE CompanyId = @cid;",
+                        new SqlParameter("@cid", companyId));
+#pragma warning restore EF1002
+                }
+
+                // ── POS SESSIONS ──────────────────────────────────────────────
+                // A session is Documents' money — same register, same day — so
+                // clearing sales has to take it too. Left behind, a till whose
+                // history has just been wiped reopens still believing it has
+                // one, and the next session numbers itself after sales that no
+                // longer exist.
+                //
+                // 🚨 Filtered, NOT a member of DocumentTables: ATTENDANCE shifts
+                // share this table (PosDeviceId NULL) and are payroll records,
+                // not sales. Wiping the day's takings must never erase who
+                // worked it. `PosDeviceId IS NOT NULL` is the same discriminator
+                // the domain model uses.
+                //
+                // Safe to run after the loop with constraints on: everything
+                // that references Shift (Document, Payment, PosOrder,
+                // PosSessionPaymentCount, StartingCash, ZReport,
+                // ZReportCorrection) is in DocumentTables and has just gone.
+                //
+                // Skipped when "Shift" is already in [tables] — that is the
+                // Everything branch, which deletes both shapes outright, and
+                // deleting twice would double-count the reported row total.
+                if (!tables.Contains("Shift")
+                    && (options.Documents || options.Products || options.Customers))
+                {
+                    rows += await _db.Database.ExecuteSqlRawAsync(
+                        "DELETE FROM dbo.Shift " +
+                        "WHERE CompanyId = @cid AND PosDeviceId IS NOT NULL;",
+                        new SqlParameter("@cid", companyId));
+                    tables.Add("Shift");
                 }
 
                 await tx.CommitAsync();
@@ -238,51 +244,5 @@ namespace Api.Services
             return new ResetCompanyDataResult(tables, rows);
         }
 
-        /// <summary>
-        /// Toggles FK enforcement on the company-scoped tables only. Global
-        /// reference tables (Country, Currency, DocumentType, DocumentCategory)
-        /// have no CompanyId and are never touched, so a reset cannot affect
-        /// data shared with other tenants.
-        ///
-        /// Re-enabling uses <c>WITH CHECK CHECK</c>, not a bare
-        /// <c>CHECK CONSTRAINT</c>: the bare form re-arms the constraint but
-        /// leaves it <c>is_not_trusted</c>, because SQL Server never re-validates
-        /// the existing rows. That would both hide an orphan this reset created
-        /// and drop the FK out of the optimiser's join elimination.
-        /// </summary>
-        /// <summary>
-        /// Rejects anything that is not a plain SQL identifier. Table names have
-        /// to be interpolated (they cannot be parameters), so they are proven
-        /// safe rather than assumed safe — see the call site.
-        /// </summary>
-        private static void AssertSafeIdentifier(string name)
-        {
-            if (!System.Text.RegularExpressions.Regex.IsMatch(
-                    name, @"^[A-Za-z][A-Za-z0-9_]*$"))
-            {
-                throw new InvalidOperationException(
-                    $"Refusing to build SQL for unsafe table name '{name}'.");
-            }
-        }
-
-        private Task SetConstraintsAsync(bool enabled)
-        {
-            // Two fixed literals chosen by a bool — no external input reaches
-            // this string.
-            var clause = enabled
-                ? "WITH CHECK CHECK CONSTRAINT ALL"
-                : "NOCHECK CONSTRAINT ALL";
-
-#pragma warning disable EF1002 // clause is one of two compile-time constants
-            return _db.Database.ExecuteSqlRawAsync($@"
-                DECLARE @sql NVARCHAR(MAX) = N'';
-                SELECT @sql += 'ALTER TABLE ' + QUOTENAME(SCHEMA_NAME(t.schema_id)) + '.' + QUOTENAME(t.name)
-                             + ' {clause};' + CHAR(10)
-                FROM sys.tables t
-                WHERE EXISTS (SELECT 1 FROM sys.columns c
-                              WHERE c.object_id = t.object_id AND c.name = 'CompanyId');
-                EXEC sp_executesql @sql;");
-#pragma warning restore EF1002
-        }
     }
 }
