@@ -250,56 +250,27 @@ namespace Api.Services
             // of the cash drawer. Empty = infer from IsChangeAllowed, because
             // there is no IsCash flag and OpenCashDrawer is true for Credit too.
             ("PosSession.CashPaymentTypeIds", ""),
-            // Master switch for the no-sale-without-a-session rule. Also the
-            // recovery path: if session state is ever wrong on a real till,
-            // turning this off restores trading immediately.
             ("PosSession.RequireOpenSession", "true"),
-            // 🚨 This is what a terminal shows in Settings → Preferences as its
-            // API address, so a wrong value here is visible to every operator of
-            // every new company. It said api.futur3.com — a domain this product
-            // does not use — until 2026-09-04.
             ("Application.Api.BaseUrl", "https://api.octopus-pos.com/api"),
             ("Database.Backup.Version", "v2"),
-            ("Theme_Mode", "dark"),
-            // The brand accent, and the ONLY correct value: #FF416C is the
-            // lighter stop of the octopus gradient in Front-End/assets/icon.svg
-            // (#FF416C → #FF4B2B) and the accent the marketing site uses.
-            // Material generates the whole scheme from it, so this single hex is
-            // what makes the app agree with its own icon.
-            //
-            // It used to seed #10B981 — emerald green, from nothing — while the
-            // client defaulted to #FF5733, which Material desaturates in dark
-            // mode into the brown the app actually looked. Three sources, three
-            // colours, none of them the logo. Keep this in step with
-            // kBrandAccent in Front-End/lib/core/app_theme.dart and with
-            // kSettingDefaults in app_settings_model.dart.
+            ("Theme_Mode", "light"),
             ("Theme_AccentColor", "#FF416C"),
             ("Menu_Grid_Cols", "4"),
             ("Menu_Grid_Rows", "4"),
-            ("Application.Language", "en"),
+            ("Application.Language", "fr"),
             ("Feature_FloorPlan_Enabled", "false"),
             ("Feature_Booking_Enabled", "false"),
-            ("Feature_ServiceType_Enabled", "true"),
-            ("Feature_ServiceStatus_Enabled", "true"),
+            ("Feature_ServiceType_Enabled", "false"),
+            ("Feature_ServiceStatus_Enabled", "false"),
             ("Application.TimezoneMode", "Auto"),
             ("Application.Timezone", "Africa/Casablanca"),
             ("Application.DateFormat", "dd/MM/yyyy"),
-            // "true" to match kSettingDefaults on the client. Every product
-            // ever created in this app has been tax-inclusive (the editor
-            // hardcoded it), so seeding "false" would silently flip pricing to
-            // tax-exclusive for existing installs the first time they synced.
-            ("General.TaxIncludedByDefault", "true"),
-            // Companion of the switch above — the tax-inclusive setting cannot
-            // be turned on without at least one rate. Seeded empty because tax
-            // rate IDs are per-company; the client's picker fills it in.
+            ("General.TaxIncludedByDefault", "false"),
             ("General.DefaultTaxRateIds", ""),
             ("Pos.CustomServiceTypes", @"[{""id"":0,""name"":""Dine-In"",""prefix"":""TALABIA""},{""id"":1,""name"":""Takeaway"",""prefix"":""TAKEAWAY""},{""id"":2,""name"":""Delivery"",""prefix"":""DELIVERY""}]"),
             ("Pos.CustomServiceStatuses", @"[{""id"":1,""name"":""standby"",""colorValue"":4280391411},{""id"":2,""name"":""IN-Kitchen"",""colorValue"":4294940672},{""id"":3,""name"":""COOKED"",""colorValue"":4283215696}]"),
-            ("Feature.TablesButtonLabel", "TABLES"),
-            // Match kSettingDefaults in the client's app_settings_model.dart:
-            // a dine-in order still needs a table, and a free table can still be
-            // rung up without a booking.
-            ("Order.AllowTablelessOrders", "false"),
+            ("Feature.TablesButtonLabel", "Tables"),
+            ("Order.AllowTablelessOrders", "true"),
             ("Order.AllowWalkInTableOrders", "true"),
             ("Pos.BookingSettings", @"{""resourceMode"":""table"",""defaultDurationMinutes"":90,""timeSnappingMinutes"":15,""allowPastBookings"":false}"),
             ("Print.CashDrawer.Enabled", "false"),
@@ -315,21 +286,21 @@ namespace Api.Services
             ("Void.RequireReason", "true"),
             ("App.WritingDirection", "LTR"),
             ("ButtonBar.ShowSearch", "true"),
-            ("ButtonBar.ShowTransfer", "true"),
-            ("ButtonBar.ShowCustomer", "true"),
-            ("ButtonBar.ShowDiscount", "true"),
-            ("ButtonBar.ShowRefund", "true"),
-            ("ButtonBar.ShowCashDrawer", "true"),
+            ("ButtonBar.ShowTransfer", "false"),
+            ("ButtonBar.ShowCustomer", "false"),
+            ("ButtonBar.ShowDiscount", "false"),
+            ("ButtonBar.ShowRefund", "false"),
+            ("ButtonBar.ShowCashDrawer", "false"),
             ("App.ShowCashInOnStart", "false"),
-            ("App.SelectBusinessDayOnStart", "true"),
+            ("App.SelectBusinessDayOnStart", "false"),
             ("App.MessagePosition", "Top"),
             ("App.MessageDuration", "5"),
-            ("App.EnableVirtualKeyboard", "true"),
-            ("ButtonBar.ShowWarehouse", "true"),
-            ("ButtonBar.ShowBooking", "true"),
-            ("ButtonBar.ShowTables", "true"),
-            ("ButtonBar.ShowTax", "true"),
-            ("ButtonBar.ShowKitchen", "true"),
+            ("App.EnableVirtualKeyboard", "false"),
+            ("ButtonBar.ShowWarehouse", "false"),
+            ("ButtonBar.ShowBooking", "false"),
+            ("ButtonBar.ShowTables", "false"),
+            ("ButtonBar.ShowTax", "false"),
+            ("ButtonBar.ShowKitchen", "false"),
             ("App.EnableSounds", "true"),
             ("Menu.DefaultSearch", "All fields"),
             ("Menu.ShowSearchOptions", "true"),
@@ -338,7 +309,7 @@ namespace Api.Services
             ("Order.PreventSaleBelowCostPrice", "true"),
             ("Order.PreventNegativeInventory", "true"),
             ("App.SingleUser", "true"),
-            ("Order.DisplayReceiptPrintDialog", "true"),
+            ("Order.DisplayReceiptPrintDialog", "false"),
             ("Order.DefaultDueDateDays", "2"),
             ("Receipt.MergeItems", "false"),
             ("Order.SingleItemDiscountAllowed", "true"),
@@ -361,9 +332,6 @@ namespace Api.Services
             ("Products.CostPriceBasedMarkup", "true"),
             ("Products.AutoUpdateCostPrice", "false"),
             ("Products.EnableMovingAveragePrice", "true"),
-            // DEPRECATED — superseded by the BarcodeRule table. Kept so
-            // BarcodeRuleSeeder.BackfillAsync can still translate an existing
-            // company's scale format into a rule. Nothing reads them at runtime.
             ("Scale.Barcode.Enabled", "true"),
             ("Scale.Barcode.Prefix", "21"),
             ("Scale.Barcode.CodeLength", "5"),
@@ -371,9 +339,9 @@ namespace Api.Services
             ("Scale.Barcode.TrimZeros", "true"),
             ("Scale.Barcode.PrintsPrice", "false"),
             ("Database.BackupPath", ""),
-            ("Database.AutoBackup", "true"),
-            ("Database.Backup.OnStart", "true"),
-            ("Database.Backup.OnClose", "true"),
+            ("Database.AutoBackup", "false"),
+            ("Database.Backup.OnStart", "false"),
+            ("Database.Backup.OnClose", "false"),
         };
 
         /// <summary>
