@@ -608,7 +608,7 @@ const Map<String, String> kSettingDefaults = {
   // seeds a dark scheme, so the result matched neither the logo nor the
   // marketing site. Change all three together or the app disagrees with itself
   // depending on whether settings have synced yet.
-  SettingKeys.themeAccentColor: '#FF416C',
+  SettingKeys.themeAccentColor: '#A4161A',
   SettingKeys.menuLayoutMode: 'List',
   SettingKeys.menuGridCols: '4',
   SettingKeys.menuGridRows: '4',

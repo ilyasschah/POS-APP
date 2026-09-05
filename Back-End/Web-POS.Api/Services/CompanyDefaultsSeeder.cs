@@ -1,4 +1,4 @@
-using Api.DataBase;
+﻿using Api.DataBase;
 using Api.Domain;
 using Microsoft.EntityFrameworkCore;
 
@@ -234,6 +234,78 @@ namespace Api.Services
         }
 
         /// <summary>
+        /// Every accent this product has ever SHIPPED AS A DEFAULT.
+        ///
+        /// A row still holding one of these has never been changed by anyone, so
+        /// replacing it overwrites nobody's choice. The list grows each time the
+        /// brand moves — #2196F3 was the original blue, #FF416C the coral that
+        /// briefly replaced it — and a company can be stranded on any of them
+        /// depending on when it was created.
+        ///
+        /// ⚠️ Only ever ADD to this list. Removing an entry strands whichever
+        /// companies are still sitting on it, permanently.
+        /// </summary>
+        private static readonly string[] SupersededAccents = { "#2196F3", "#FF416C" };
+
+        /// <summary>
+        /// The ApplicationProperty that carries the theme accent.
+        /// </summary>
+        private const string AccentPropertyName = "Theme_AccentColor";
+
+        /// <summary>
+        /// Moves companies still sitting on the OLD default accent onto the brand
+        /// coral. <see cref="SeedAsync"/> only ever ADDS a missing key, so every
+        /// company created before the rollout kept the blue it was seeded with
+        /// and would have kept it forever.
+        ///
+        /// Deliberately narrow: it matches only rows whose value is still exactly
+        /// one of <see cref="SupersededAccents"/>. A company whose operator picked green
+        /// is left alone — the goal is to finish an unfinished default, not to
+        /// impose a brand on people who chose otherwise.
+        ///
+        /// The brand value is read from <see cref="DefaultProperties"/> rather than
+        /// written out again here, so a future change to the seeded accent cannot
+        /// leave this backfill writing a stale colour.
+        ///
+        /// Idempotent and non-fatal — safe on every startup (mirrors
+        /// <see cref="BackfillSecurityKeysAsync"/>), and a no-op once a database
+        /// has been swept once, because the rows no longer match.
+        /// </summary>
+        public static async Task BackfillBrandAccentAsync(AppDbContext db)
+        {
+            var brandAccent = DefaultProperties
+                .First(p => p.Name == AccentPropertyName).Value;
+
+            // A superseded value that equals the CURRENT brand would make this
+            // rewrite rows to themselves on every startup, re-stamping
+            // LastModified and pushing a pointless resync to every till. Filter
+            // it out rather than trusting the list to stay tidy.
+            var targets = SupersededAccents
+                .Where(a => !string.Equals(a, brandAccent, StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+            if (targets.Length == 0) return;
+
+            var stale = await db.ApplicationProperties
+                .Where(p => p.Name == AccentPropertyName
+                            && p.Value != null
+                            && targets.Contains(p.Value))
+                .ToListAsync();
+
+            if (stale.Count == 0) return;
+
+            foreach (var row in stale)
+                row.UpdateValue(brandAccent);
+
+            // ApplicationProperty is an ISyncableEntity and terminals pull deltas
+            // with ?modifiedAfter=, so a rewritten row that keeps its old
+            // LastModified is a change no till will ever ask for. AppDbContext
+            // stamps it for every Modified syncable entity inside SaveChanges, so
+            // this does not repeat that here — BrandAccentBackfillTests pins the
+            // behaviour rather than duplicating the mechanism.
+            await db.SaveChangesAsync();
+        }
+
+        /// <summary>
         /// Baseline settings every company starts with. NOTE: a few values are
         /// environment/user-specific (Database.BackupPath, Kitchen.DisplayIps,
         /// Application.Api.BaseUrl) — adjust as needed.
@@ -254,7 +326,7 @@ namespace Api.Services
             ("Application.Api.BaseUrl", "https://api.octopus-pos.com/api"),
             ("Database.Backup.Version", "v2"),
             ("Theme_Mode", "light"),
-            ("Theme_AccentColor", "#FF416C"),
+            ("Theme_AccentColor", "#A4161A"),
             ("Menu_Grid_Cols", "4"),
             ("Menu_Grid_Rows", "4"),
             ("Application.Language", "fr"),

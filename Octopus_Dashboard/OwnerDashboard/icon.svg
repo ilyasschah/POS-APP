@@ -6,10 +6,15 @@
       <stop offset="100%" stop-color="#16213E" />
     </linearGradient>
     
-    <!-- Sunset Node Gradient -->
+    <!-- Blood Node Gradient.
+         LIGHTER than the UI accent (#A4161A) on purpose: the mark sits on the
+         navy plate, where #A4161A measures 2.20:1 and all but disappears. These
+         two clear 4.29:1 and 3.41:1 on that ground while staying the same blood
+         red the interface uses on white. Same hue family, different ground,
+         different lightness — the rule the whole palette runs on. -->
     <linearGradient id="octoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FF416C" />
-      <stop offset="100%" stop-color="#FF4B2B" />
+      <stop offset="0%" stop-color="#F0353B" />
+      <stop offset="100%" stop-color="#D62828" />
     </linearGradient>
   </defs>
 

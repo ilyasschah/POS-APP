@@ -10,25 +10,28 @@
      The icon's navy is used as INK, not as ground: that is what ties a light
      page to a dark app mark without either looking arbitrary. */
   --ground: #ffffff;
-  --surface: #fdf3f5;
+  /* The neutrals are the accent's own hue at very low saturation — warm
+     off-whites, not greys. Hue 358 puts green and blue level, so they read as
+     warm neutral rather than the magenta cast the previous coral gave them. */
+  --surface: #fdf3f3;
   --surface-raised: #ffffff;
-  --surface-high: #f7edf0;
-  --border: #f1e6e9;
+  --surface-high: #f7eded;
+  --border: #f1e6e6;
 
-  /* Brand. Two tokens, deliberately:
-     --accent is the icon's coral (#FF416C) and is only ever used as a SHAPE —
-     fills, buttons, borders, large type — where 3:1 is the bar and it passes.
-     --accent-ink is darkened to clear 4.5:1 on white, for links and small text.
-     #FF416C on white is only ~3.3:1, which fails WCAG AA for body copy, so
-     using it for a sentence would be a real accessibility bug, not a nuance. */
-  --accent: #ff416c;
-  /* Filled surfaces that carry WHITE text. White on --accent is only 3.37:1,
-     which fails AA for a 15px button label, so the fill darkens while the
-     brand coral stays the shape/border colour. */
-  --accent-strong: #d92150;   /* white on this = 4.90:1 */
-  --accent-hover: #c2103f;    /* white on this = 6.11:1 */
-  --accent-ink: #c9184a;
-  --accent-dim: #ffd3de;
+  /* Brand: blood red.
+     Unlike the coral it replaced, this seed is DARK — 7.75:1 on white — so it
+     clears every bar on its own and serves as shape, fill and text alike. That
+     collapses three of the four tokens onto one value, which is correct rather
+     than a mistake: the split existed because #FF416C measured 3.37:1 and could
+     not carry small text. Only the hover partner has to be forced apart, or a
+     filled button would have no hover state at all. */
+  --accent: #a4161a;          /* 7.75:1 — shape AND text, both cleared */
+  --accent-strong: #a4161a;   /* white on this = 7.75:1 */
+  --accent-hover: #801114;    /* 10.46:1 — a guaranteed step down from the fill */
+  --accent-ink: #a4161a;      /* 7.75:1 */
+  /* Saturation held down so a pale wash of a saturated red does not come back
+     as PINK, which is the one thing this brand is not. */
+  --accent-dim: #f2dede;
 
   --text: #1a1a2e;
   --text-muted: #4a4a5e;
@@ -38,6 +41,15 @@
 
   --success: #1b7a52;
   --warning: #9a6700;
+
+  /* The icon's background gradient, quoted exactly (Front-End/assets/icon.svg).
+     Used for the ONE dark band on the page — the footer — so the site closes on
+     the same navy the app icon opens with. Ratios measured on --navy: */
+  --navy: #1a1a2e;
+  --navy-deep: #16213e;
+  --on-navy: #f4f5fb;         /* 15.62:1 */
+  --on-navy-muted: #a9aec9;   /* 7.76:1  */
+  --on-navy-line: #33344f;
 
   /* Motion. Built-in CSS easings are too weak for UI; these are the curves from
      the animation skill. Never ease-in — it delays the moment the user watches. */
@@ -223,6 +235,99 @@ a {
   }
 }
 
+/* A full-width card whose body would otherwise stop at the measure and strand
+   the right half of the card empty. Two columns instead: the heading holds one,
+   the prose holds the other, and the measure is enforced by the column rather
+   than by dead space. */
+.card-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.7fr);
+  gap: 0.75rem 3rem;
+  align-items: start;
+}
+
+@media (max-width: 720px) {
+  .card-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ============================================================================
+   Icon chip
+
+   Every feature and every platform carries a glyph. The chip is the accent's
+   quietest form — a tint, not a fill — so nine of them in a grid read as a
+   rhythm rather than nine competing buttons. It only fills on hover, which is
+   also the only moment one card is meant to stand out from its neighbours.
+   ========================================================================== */
+.glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  /* Mixed against --ground rather than left transparent: these chips sit on
+     both --ground and --surface sections, and a translucent tint would shift
+     shade between the two. */
+  background: color-mix(in srgb, var(--accent) 11%, var(--ground));
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  color: var(--accent-ink);
+  transition:
+    background-color 180ms var(--ease-out),
+    border-color 180ms var(--ease-out),
+    color 180ms var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .card-interactive:hover .glyph {
+    background: var(--accent-strong);
+    border-color: var(--accent-strong);
+    color: #fff;
+  }
+}
+
+/* Only glyphs that encode a direction mirror in Arabic. Flipping the whole set
+   would hand RTL readers a backwards bar chart and a mirrored calendar. */
+[dir="rtl"] .glyph-directional {
+  transform: scaleX(-1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glyph {
+    transition: none;
+  }
+}
+
+/* ============================================================================
+   Sticky header — the hairline is earned by scrolling, not painted at rest.
+   ========================================================================== */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  backdrop-filter: blur(12px);
+  background: color-mix(in srgb, var(--ground) 80%, transparent);
+  border-bottom: 1px solid transparent;
+  transition: border-color 260ms var(--ease-out);
+}
+
+.site-header[data-scrolled="true"] {
+  border-bottom-color: var(--border);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-header {
+    transition: none;
+  }
+}
+
+.brand-mark {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
 .grid {
   display: grid;
   gap: 1.25rem;
@@ -362,11 +467,35 @@ details > summary > span[aria-hidden] {
   height: 100%;
 }
 
-/* Three stops, not two. Navy straight to coral crosses a wide hue distance and
-   blends through a muddy brown at the midpoint; the plum stop designs that
-   transition deliberately instead of letting it happen by accident. */
+/* The one loud element on the page, and it must follow the accent.
+   
+   It used to be `linear-gradient(-20deg, #1a1a2e, #6b2447, #ff416c)` — three
+   literals, and every one of them a liability: `#ff416c` was the OLD brand, so
+   these cards stayed pink after the move to blood red, and because nothing here
+   read a token they were the one section the colour picker could not repaint.
+   On a page whose headline claim is "your colours, not ours", the pricing block
+   quietly answering "not these ones" is the worst place to leak a constant.
+
+   The middle stop was solving a real problem, though: navy straight to a
+   saturated accent crosses a wide hue distance and blends through a muddy brown
+   in sRGB. The fix is to interpolate in OKLAB, where that midpoint does not
+   occur, rather than to hand-place a plum to hide it — so the designed third
+   stop becomes unnecessary and the gradient works for any hue a visitor picks.
+
+   The far stop is --accent-hover, not --accent-strong. It is the darkest token
+   (≥6:1 on white), which keeps the white heading and the 85%-opacity note above
+   AA even when someone chooses a light accent like amber, where --accent-strong
+   would drop the note to 3.95:1. */
 .plan-head {
-  background: linear-gradient(-20deg, #1a1a2e 0%, #6b2447 55%, #ff416c 100%);
+  /* Fallback for engines without gradient colour spaces: an explicit midpoint,
+     computed rather than guessed. */
+  background: linear-gradient(
+    -20deg,
+    var(--navy) 0%,
+    color-mix(in oklab, var(--navy), var(--accent-hover)) 55%,
+    var(--accent-hover) 100%
+  );
+  background: linear-gradient(-20deg in oklab, var(--navy) 0%, var(--accent-hover) 100%);
   color: #fff;
   padding: 1.75rem 1.5rem;
 }
@@ -436,21 +565,514 @@ details > summary > span[aria-hidden] {
 /* ============================================================================
    Hero — art beside the copy
    ========================================================================== */
-.hero-grid {
-  display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
-  gap: clamp(2rem, 5vw, 4rem);
-  align-items: center;
+/* The hero is now a copy block above a full-width carousel, not two columns:
+   a dense 3300px-wide screenshot squeezed into a half-width column is
+   unreadable, and the screenshots are the whole argument. */
+.hero-copy {
+  max-width: 46rem;
 }
 
-@media (max-width: 900px) {
-  .hero-grid {
-    grid-template-columns: minmax(0, 1fr);
+/* ============================================================================
+   Hero carousel
+   ========================================================================== */
+.slides {
+  /* Horizontal swipes belong to the carousel, vertical ones to the page. This
+     hands the browser that split up front so a swipe does not fight the scroll. */
+  touch-action: pan-y;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface-raised);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+
+/* Every slide is stacked in the same grid cell, so the frame takes the height
+   of the TALLEST one and holds it. Sliding between images of different aspect
+   ratios would otherwise resize the hero on every advance and shove the page
+   around under the reader. */
+.slides-frame {
+  display: grid;
+}
+
+.slide {
+  grid-area: 1 / 1;
+  margin: 0;
+  min-width: 0;
+  opacity: 0;
+  transition: opacity 320ms var(--ease-out);
+}
+
+.slide[data-active="true"] {
+  opacity: 1;
+}
+
+/* The whole slide is a button. It carries no chrome of its own — the visitor
+   should see a screenshot, not a screenshot in a frame in a button. */
+.slide-open {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+  position: relative;
+}
+
+.slide img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* The affordance. Always visible on touch, where there is no hover to reveal
+   it and no cursor change to hint at one — that is precisely the device where
+   a 358px-wide screenshot most needs enlarging. */
+.slide-zoom {
+  position: absolute;
+  inset-block-end: 0.75rem;
+  inset-inline-end: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--navy) 82%, transparent);
+  color: #fff;
+  backdrop-filter: blur(4px);
+  transition: background-color 150ms var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .slide-open:hover .slide-zoom {
+    background: var(--navy);
   }
-  /* Below the fold on a phone the mark is decoration, and it pushes the stats
-     off the first screen. Drop it rather than shrink it. */
-  .hero-art {
-    display: none;
+}
+
+/* ============================================================================
+   Lightbox
+
+   A native <dialog>, so focus trapping, Escape and the top layer come from the
+   browser rather than from three hand-rolled effects that get it subtly wrong.
+   ========================================================================== */
+.lightbox {
+  width: 100vw;
+  max-width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  overflow: hidden;
+}
+
+/* Near-opaque. A translucent backdrop left the headline and buttons legible
+   behind the image, which is the opposite of what a viewer opened it for. */
+.lightbox::backdrop {
+  background: rgb(12 12 22 / 0.96);
+}
+
+.lightbox-inner {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  height: 100%;
+}
+
+.lightbox-bar,
+.lightbox-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--navy);
+}
+
+.lightbox-nav {
+  justify-content: center;
+}
+
+.lightbox-caption {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  color: var(--on-navy);
+}
+
+.lightbox-count {
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--on-navy-muted);
+  min-width: 4ch;
+  text-align: center;
+}
+
+.lightbox-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  border: 1px solid var(--on-navy-line);
+  background: color-mix(in srgb, #fff 8%, transparent);
+  color: var(--on-navy);
+  cursor: pointer;
+  transition: background-color 120ms var(--ease-out), transform 120ms var(--ease-out);
+}
+
+.lightbox-btn:active {
+  transform: scale(0.94);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .lightbox-btn:hover {
+    background: color-mix(in srgb, #fff 18%, transparent);
+  }
+}
+
+[dir="rtl"] .lightbox-nav svg {
+  transform: scaleX(-1);
+}
+
+/* Two states, and the difference is the point of the feature.
+   Fitted: the whole screen at a glance. Zoomed: actual pixels, panned. */
+.lightbox-stage {
+  overflow: auto;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  /* The browser's own pinch-zoom stays available on top of this. */
+  touch-action: pan-x pan-y pinch-zoom;
+}
+
+.lightbox-stage img {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  cursor: zoom-in;
+  border-radius: 8px;
+}
+
+.lightbox-stage[data-zoomed="true"] {
+  place-items: start;
+}
+
+.lightbox-stage[data-zoomed="true"] img {
+  max-width: none;
+  max-height: none;
+  /* Its natural width, which is why a 2600px source was generated: on a phone
+     this is a genuine 6× magnification of the hero thumbnail. */
+  width: auto;
+  cursor: zoom-out;
+}
+
+@media (max-width: 640px) {
+  .lightbox-bar,
+  .lightbox-nav {
+    padding: 0.625rem 0.75rem;
+  }
+  .lightbox-caption {
+    font-size: 0.875rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lightbox-btn,
+  .slide-zoom {
+    transition: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slide {
+    transition: none;
+  }
+}
+
+.slides-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.25rem;
+  flex-wrap: wrap;
+  padding: 0.875rem 1rem;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+
+/* The caption is the only thing telling a visitor WHAT they are looking at, so
+   it is sized as body copy rather than as a footnote: 0.9375rem on --text-muted
+   is 8.63:1, where the old 0.8125rem read as a disclaimer people skip. */
+.slides-caption {
+  flex: 1 1 16rem;
+  min-width: 0;
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.slides-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* 40px, a real border and --text rather than --text-muted. At 32px in hairline
+   grey these read as decoration and visitors did not find them. */
+.slides-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+  color: var(--text);
+  cursor: pointer;
+  transition:
+    border-color 120ms var(--ease-out),
+    background-color 120ms var(--ease-out),
+    color 120ms var(--ease-out),
+    transform 120ms var(--ease-out);
+}
+
+.slides-arrow:active {
+  transform: scale(0.94);
+}
+
+/* The arrows point along the reading direction, so they swap in Arabic. */
+[dir="rtl"] .slides-arrow svg {
+  transform: scaleX(-1);
+}
+
+.slides-dots {
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+  flex-shrink: 0;
+}
+
+/* The visible dot is the CONTENT box; the padding around it is invisible but
+   tappable. That buys a 24px target — the accessible minimum — out of an 8px
+   dot, without drawing an 8px button nobody can hit on a phone. */
+.slides-dot {
+  width: 24px;
+  height: 24px;
+  padding: 8px;
+  border: 0;
+  border-radius: 50%;
+  background-color: var(--text-faint);
+  background-clip: content-box;
+  cursor: pointer;
+  transition: background-color 180ms var(--ease-out), padding 180ms var(--ease-out);
+}
+
+.slides-dot[data-active="true"] {
+  /* Less padding grows the dot from 8px to 12px without a transform, which
+     would blur it against the content box. */
+  padding: 6px;
+  background-color: var(--accent-strong);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .slides-arrow:hover {
+    border-color: var(--accent);
+    background: var(--surface-high);
+  }
+  .slides-dot:hover {
+    background-color: var(--accent);
+  }
+}
+
+@media (max-width: 720px) {
+  /* Stacked, and the caption STAYS. It used to be display:none here, which left
+     a phone visitor with four unlabelled screenshots and no idea what any of
+     them showed — the one audience most likely to be skimming. */
+  .slides-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.875rem;
+    padding: 1rem;
+  }
+
+  .slides-caption {
+    flex: none;
+    text-align: center;
+  }
+
+  .slides-controls {
+    justify-content: center;
+  }
+
+  /* Full 44px targets on touch, where there is no cursor to aim with. */
+  .slides-arrow {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slides-arrow,
+  .slides-dot {
+    transition: none;
+  }
+}
+
+/* ============================================================================
+   Role cards — an illustration over a caption
+   ========================================================================== */
+.role {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--surface-raised);
+  transition: border-color 180ms var(--ease-out), transform 180ms var(--ease-out);
+}
+
+.role img {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* The illustrations are decorative: the heading and body beneath carry the
+     meaning, so an alt text here would just be read out twice. */
+  border-bottom: 1px solid var(--border);
+}
+
+.role-body {
+  padding: 1.5rem;
+}
+
+.role-body p {
+  margin-top: 0.5rem;
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .role:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .role,
+  .slides-dot,
+  .slides-arrow {
+    transition: none;
+  }
+}
+
+/* ============================================================================
+   Accent picker — the page re-themes itself from one colour
+   ========================================================================== */
+.picker-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.swatch {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 12px;
+  border: 2px solid transparent;
+  background: var(--swatch, var(--accent));
+  cursor: pointer;
+  position: relative;
+  /* A 44px target because this is the one control on the page a visitor is
+     meant to poke at repeatedly, including on a phone. */
+  transition: transform 120ms var(--ease-out), box-shadow 120ms var(--ease-out);
+}
+
+/* The ring sits OUTSIDE the swatch so it never tints the colour being judged. */
+.swatch[aria-checked="true"],
+.swatch.is-active {
+  box-shadow: 0 0 0 2px var(--ground), 0 0 0 4px var(--text);
+}
+
+.swatch:active {
+  transform: scale(0.94);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .swatch:hover {
+    transform: scale(1.06);
+  }
+}
+
+/* The custom swatch is a real <input type="color">, stretched to fill its own
+   label: the OS picker is better than anything reimplemented here, and it is
+   the control people already know. */
+.swatch-custom {
+  display: inline-flex;
+  overflow: hidden;
+  /* A colour wheel, so these ARE literals on purpose — it advertises the whole
+     spectrum rather than the current theme. Only the first and last stop are
+     brand-tied, and they were still the retired coral. */
+  background: conic-gradient(
+    from 0deg,
+    #a4161a,
+    #f59e0b,
+    #10b981,
+    #3b82f6,
+    #8b5cf6,
+    #ec4899,
+    #a4161a
+  );
+}
+
+.swatch-custom input[type="color"] {
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.picker-note {
+  margin-top: 1.25rem;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.picker-chip {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent-strong);
+  flex-shrink: 0;
+}
+
+/* .linkbtn carries `margin-inline-start: auto` because in the till demo bar it
+   has to sit hard right. Here it follows the sentence it belongs to, so the
+   push is cancelled rather than the button being reinvented. */
+.picker-note .linkbtn {
+  margin-inline-start: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .swatch {
+    transition: none;
   }
 }
 
@@ -754,10 +1376,15 @@ details > summary > span[aria-hidden] {
   appearance: none;
   font: inherit;
   font-size: 0.875rem;
-  color: var(--text-muted);
-  background: var(--ground);
-  border: 1px solid var(--border);
+  /* The picker moved onto the navy band with the rest of the footer, so its
+     colours come from the on-navy scale. The <option> list is drawn by the OS,
+     not by this rule, which is why the options get their own colours below —
+     without them a dark-UI browser paints white text on a white popup. */
+  color: var(--on-navy-muted);
+  background: color-mix(in srgb, #fff 6%, transparent);
+  border: 1px solid var(--on-navy-line);
   border-radius: 8px;
+  max-width: 100%;
   /* Room for the chevron on whichever side the writing direction puts it. */
   padding-block: 0.4rem;
   padding-inline: 0.7rem 2rem;
@@ -778,10 +1405,15 @@ details > summary > span[aria-hidden] {
     left 1rem center;
 }
 
+.langpick select option {
+  color: var(--text);
+  background: var(--ground);
+}
+
 @media (hover: hover) and (pointer: fine) {
   .langpick select:hover {
     border-color: var(--accent);
-    color: var(--text);
+    color: var(--on-navy);
   }
 }
 
@@ -806,4 +1438,108 @@ details > summary > span[aria-hidden] {
   line-height: 1;
   margin-top: 0.9rem;
   font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================================
+   Footer — the page's single dark band.
+
+   DESIGN.md allows exactly one, and it is here rather than in the hero: a dark
+   hero would make the site look like the old dark build, while a dark footer
+   reads as a close. The gradient is the icon's own #1A1A2E → #16213E at the
+   icon's own 135° angle, so it is a quotation rather than a coincidence.
+   ========================================================================== */
+.site-footer {
+  margin-top: clamp(2rem, 6vw, 4rem);
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-deep) 100%);
+  color: var(--on-navy-muted);
+  padding-top: clamp(3rem, 7vw, 4.5rem);
+}
+
+.footer-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 2.5rem 3rem;
+  flex-wrap: wrap;
+  padding-bottom: 2.5rem;
+}
+
+.footer-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  color: var(--on-navy);
+  font-weight: 600;
+  font-size: 1.0625rem;
+  letter-spacing: -0.01em;
+}
+
+.footer-tagline {
+  margin-top: 0.75rem;
+  max-width: 34ch;
+  font-size: 0.9375rem;
+  /* Without this the line breaks one word early and leaves "stop." alone. */
+  text-wrap: balance;
+}
+
+.footer-nav {
+  display: flex;
+  gap: 1.75rem;
+  flex-wrap: wrap;
+  font-size: 0.9375rem;
+}
+
+.footer-nav a {
+  color: var(--on-navy-muted);
+  transition: color 120ms var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .footer-nav a:hover {
+    color: var(--on-navy);
+  }
+}
+
+/* Hairline in the on-navy scale — --border is a light-ground token and would
+   vanish here. */
+.footer-base {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--on-navy-line);
+  padding-block: 1.5rem;
+  font-size: 0.875rem;
+}
+
+/* A <select> is sized by its widest OPTION — here "العربية" in whatever Arabic
+   face the OS happens to fall back to — so its width is not something this
+   stylesheet can predict, and as a flex item its default `min-width: auto`
+   would refuse to shrink. `min-width: 0` is the guard against that; below 520px
+   the row stops asking the two to share a line at all, so the picker gets a
+   full-width tap target on a phone instead of a squeezed one. */
+.footer-base > * {
+  min-width: 0;
+}
+
+@media (max-width: 520px) {
+  .footer-base {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.25rem;
+  }
+}
+
+/* The focus ring is the coral on a light ground; on navy it needs the lighter
+   end of the scale to stay visible. */
+.site-footer :focus-visible {
+  outline-color: var(--on-navy);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .footer-nav a,
+  .langpick select {
+    transition: none;
+  }
 }

@@ -41,7 +41,19 @@ SECRETS.local.txt
 # locked), so builds are pointed at /build via BaseOutputPath. It is ~300MB of
 # artifacts and it carries COPIES of appsettings.Local.json - ignored by name
 # above, but there is no reason for any of it to be near the index.
-/build/
+#
+# NOT anchored to the repo root. The leading-slash version only matched /build/,
+# so output that landed at Back-End/Web-POS.Api/build/ sailed straight past it
+# and 736 DLLs were committed. Gradle writes Front-End/android/build/ too.
+**/build/
+
+# Directories named after a MANGLED COMMAND LINE. A mis-parsed
+# `dotnet build -o ... --nologo` created real folders called `build/logo` and
+# `POS-APPbuildtest --nologoDebug`, each holding a full copy of the build
+# output, and they were committed because nothing matched them. The `--nologo`
+# half is caught by the rule above; this catches the rest.
+**/*--nologo*/
+**/POS-APPbuild*/
 
 # Agent skills materialized by `npx skills add` (higgsfield-ai/skills et al).
 # Treated like node_modules: skills-lock.json is committed so the set is
@@ -58,3 +70,9 @@ SECRETS.local.txt
 *.key
 id_rsa
 id_ed25519
+
+# Source art for the site. The exported WebP in website/public/ is what ships;
+# these are the heavy originals from the generator (a 1.4MB PNG hero, etc.) and
+# there is no reason for them near the index — see audit H2.
+/website/assets-src/
+

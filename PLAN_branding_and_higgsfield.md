@@ -1,204 +1,275 @@
-# Plan — Octopus branding rollout + Higgsfield media
+# Plan — Octopus branding rollout + brand media
 
-**Written:** 2026-08-30 · **Status:** PLAN ONLY — nothing below has been applied.
-**Apply in:** a later session. Say *"apply the branding plan"* and start at Phase 0.
+**Written:** 2026-08-30 · **Last worked:** 2026-09-05
+**Status:** Phases 1 and 2 are **DONE and verified**. Phase 3 no longer uses
+Higgsfield — see `MEDIA_PROMPTS.md`.
 
 ---
 
-## 0. What is already done (no action needed)
+## 0. Where this stands
 
-| Item | State |
+| Phase | State |
 |---|---|
-| `@higgsfield/cli` | ✅ installed on this PC — v1.1.24, `C:\Users\ILYASS\AppData\Roaming\npm\higgsfield` |
-| Companion skills | ✅ installed — 8 skills in `.agents/skills/` (gitignored; `skills-lock.json` is committed) |
-| Brand colours | ✅ extracted from `Front-End/assets/icon.svg` (below) |
+| 1 — Recolour the Flutter POS app | ✅ **Done**, verified by test |
+| 2 — Website: light theme on brand colours | ✅ **Done**, plus an icon set and a polish pass |
+| 3 — Media | 🔄 **Re-routed** to Gemini + ElevenLabs — prompts written, see `MEDIA_PROMPTS.md` |
+| Audit M4 (hardcoded colours) | ✅ Closed — over-reported by ~66; the one real case is fixed |
 
-### ⚠️ Two things only YOU can do — these block Phase 3
+### Higgsfield is no longer needed
 
-1. **Create the Higgsfield account.** I can't sign you up: it needs your email and your
-   agreement to their terms. Free-trial credits are finite, which is why Phase 3 is
-   ordered cheapest-first.
-2. **`higgsfield auth login`.** It opens a browser for sign-in. Run it in your own
-   terminal. Verify with `higgsfield auth token` — it currently says *"Not authenticated."*
+You have Gemini Pro and an ElevenLabs account, which covers the same ground:
+Gemini for stills and Veo clips, ElevenLabs for voice and sound effects. **The
+full brief now lives in `MEDIA_PROMPTS.md`** — copy-paste prompts, a five-shot
+film, the narration script, and where each file is allowed to land.
+
+The `@higgsfield/cli` install and the 8 skills in `.agents/skills/` are still on
+this PC and cost nothing to leave there.
 
 ---
 
 ## 1. The brand palette (source of truth)
 
-Lifted from the icon's own gradients in `Front-End/assets/icon.svg` — not invented:
+Lifted from the icon's own gradients in `Front-End/assets/icon.svg`:
 
 ```
 Background:  #1A1A2E  →  #16213E     (deep navy)
-Octopus:     #FF416C  →  #FF4B2B     (pink-red → orange-red)
+Octopus:     #F0353B  →  #D62828     (blood red, on the navy plate)
+UI accent:   #A4161A                 (blood red, on white)
 ```
 
-### 🚨 The contrast problem — decide this before any UI work
+The mark and the interface run the SAME red at two lightnesses, because they sit
+on opposite grounds: `#A4161A` measures 7.75:1 on white and 2.20:1 on the navy,
+so the icon uses a lifted pair that clears 4.29:1 and 3.41:1 there.
 
-`#FF416C` on white is roughly **3.3:1**. That is:
+### The contrast problem, and how it was resolved
 
-- ❌ **Fails** WCAG AA for body text (needs 4.5:1)
-- ✅ Passes for large headings and for UI components / borders (needs 3:1)
+The brand moved **twice**: blue `#2196F3` → coral `#FF416C` → blood red
+`#A4161A`. The coral is the interesting one, because at **3.37:1 on white** it
+could carry a border but not a sentence, and the whole token system was built to
+work around that: a darkened partner generated beside it for anything textual.
 
-You asked for a **light** website using these colours, so this bites immediately. The fix
-is a two-token split — *not* abandoning the brand colour:
+The blood red measures **7.75:1** and clears every bar on its own, so
+`--accent`, `--accent-strong` and `--accent-ink` now converge on one value. The
+machinery stays because the site re-themes from any colour a visitor picks — the
+moment one of them chooses something light, the three diverge again.
 
-| Token | Value | Use |
-|---|---|---|
-| `--brand` | `#FF416C` | Fills, buttons, large headings, graphics — where it is a shape, not a word |
-| `--brand-ink` | darker, ~`#C9184A` | Body links, small text on light backgrounds |
-
-**When applying:** compute the real ratio for the chosen `--brand-ink` and confirm ≥ 4.5:1.
-Do not eyeball it.
-
----
-
-## 2. Phase 1 — Recolour the Flutter POS app
-
-**Good news: this is a one-value change, not a repaint.** The app is already built for it.
-
-- `Front-End/lib/core/app_theme.dart:13` — `parseAccentColor(String? hex)` returns
-  `Colors.blue` when the hex is null. That default is the only thing making the app blue.
-- `Front-End/lib/main.dart:173` — the seed resolves as
-  `deviceAccentColorProvider ?? SettingKeys.themeAccentColor`, then feeds
-  `buildAppTheme(mode, seed)`. Every theme mode is generated from that seed.
-
-### Steps
-
-1. Change the fallback in `parseAccentColor` from `Colors.blue` to `#FF416C`.
-2. Check the seeded default for `SettingKeys.themeAccentColor` (company defaults seeder,
-   backend). An existing install may still carry blue in the DB and would keep overriding
-   the new default. Decide: leave existing installs alone, or migrate.
-3. The dark themes already sit on navy (`#15202B`, `#1C2333`), close to the icon's
-   `#1A1A2E` — they should harmonise with no change. **Verify, don't assume.**
-4. Check all six theme modes (light / dark / dimmed / night / gray / high_contrast).
-   `high_contrast` is the one most likely to break against a mid-tone red.
-
-### Constraints from `CLAUDE.md` — do not violate
-
-- Rule 3: **no hardcoded colours.** This change is legal precisely because it moves a
-  *seed*, not because it paints widgets.
-- Rule 4: everything else keeps sourcing from `Theme.of(context)`.
-- ⚠️ There are already **67 opaque hardcoded colours** across 23 files (audit finding M4).
-  Those will **not** follow the new accent and may clash visibly once the app turns red.
-  **Fixing M4 should probably come first** — otherwise the recolour looks half-done.
-
-### Verify
-
-`cd Front-End && flutter analyze lib && flutter test` — 1,131 tests pass today; keep it there.
-
----
-
-## 3. Phase 2 — Website: light theme on brand colours
-
-Currently the opposite of what you asked: dark navy ground (`#0f1720`) with a blue accent
-(`#2196f3`).
-
-### Steps
-
-1. **Rewrite `website/DESIGN.md` first**, then the CSS from it. That file is the contract;
-   if the CSS moves first, the two drift apart.
-2. Invert the tokens in `website/app/globals.css`. It is already fully tokenised — `:root`
-   holds the whole palette and no component hardcodes a colour — so this is a token swap,
-   not a rewrite.
-3. Proposed light palette (**verify contrast when applying**):
-
-```
---paper       #FFFFFF        page ground
---surface     #F7F7FA        cards, alternating sections
---border      #E6E6EF        hairlines
---ink         #1A1A2E        headings  ← the icon's own navy
---ink-muted   #4A4E69        body
---brand       #FF416C        fills, buttons, large type
---brand-warm  #FF4B2B        gradient partner, used sparingly
---brand-ink   ~#C9184A       links + small text  (see §1)
-```
-
-4. Keep navy `#1A1A2E` as **text**, not background. That is what ties a light site to the
-   dark app icon without either looking arbitrary.
-5. One dark navy band (hero or footer) using the real `#1A1A2E → #16213E` gradient — a
-   direct quote of the icon.
-
-### Must not regress
-
-- The `@media (scripting: enabled)` reveal mechanism. **Do not** reintroduce an inline
-  `<html>` class script — it crashed the dev server with a hydration mismatch.
-- `prefers-reduced-motion` and `@media (hover: hover)` gating.
-- The site currently commits to a single look. Going light-first, decide **explicitly**
-  whether a dark variant is supported, and if so do it token-level.
-
-### Verify
-
-```
-cd website && npx eslint app --max-warnings=0 && npm run build && npm run dev
-```
-
-Load `http://localhost:3000` and confirm **zero hydration errors** in the terminal.
-
----
-
-## 4. Phase 3 — Higgsfield media for the POS
-
-**Blocked until §0 is done.** Trial credits are finite, so this is ordered cheapest →
-most expensive. Stop whenever you have enough.
-
-Feed the brand into every prompt: navy `#1A1A2E`, red-coral `#FF416C → #FF4B2B`,
-"operator-grade, dense, precise — a tool that runs a Friday dinner rush."
-
-| # | Asset | Skill | Why in this order |
+| Token | Value | Contrast | Use |
 |---|---|---|---|
-| 1 | Brand kit — palette + style refs locked | `higgsfield-brandkit` | Cheapest, and makes every later generation consistent instead of a lottery |
-| 2 | Hero still for the website | `higgsfield-generate` | One image; validates the look before spending on video |
-| 3 | Terminal / tablet product shots | `higgsfield-product-photoshoot` | Replaces the currently text-only feature grid |
-| 4 | **Short "offline-first" explainer video** | `higgsfield-video-explainer` | ⭐ The one worth paying for — the pitch is *"pull the cable mid-sale and it keeps selling"*, which is far better shown than written |
+| `--accent` | `#A4161A` | 7.75:1 | Shapes, fills and text alike |
+| `--accent-hover` | `#801114` | 10.46:1 | Forced a step darker — a contrast target alone would leave the button with no hover |
+| `--accent-dim` | `#F2DEDE` | — | Pale tint, saturation held down so it does not come back pink |
+| App | `ColorScheme.fromSeed` | — | Material generates a contrast-safe pair per mode |
 
-**Command shape** (confirm against `higgsfield --help` when applying, and read each
-`SKILL.md` first — they run with full agent permissions):
+All ratios are measured, not estimated, and are **enforced by tests** — see §2.
 
-```
-higgsfield model list --video
-higgsfield generate cost <model> --prompt "..."      # price it BEFORE generating
-higgsfield generate create <model> --prompt "..."
-```
+---
 
-Always run `generate cost` first on a trial.
+## 2. Phase 1 — Flutter POS app ✅ DONE
+
+The accent is declared in four places and all four carry `#A4161A`:
+
+| File | What |
+|---|---|
+| `Front-End/lib/core/app_theme.dart` | `kBrandAccent`, and the `parseAccentColor` fallback |
+| `Front-End/lib/app_settings/app_settings_model.dart:611` | the settings default |
+| `Front-End/lib/onboarding/widgets/setup_slide.dart:26` | the onboarding picker |
+| `Back-End/.../CompanyDefaultsSeeder.cs:257` | `Theme_AccentColor` for new companies |
+
+### Two real bugs the recolour exposed
+
+Both were found by measuring rather than by reading, and both are now pinned by
+`Front-End/test/brand_accent_theme_test.dart`:
+
+1. **`gray` mode failed WCAG AA.** It sets `primary: seed` via `copyWith`, but
+   `copyWith(primary:)` does **not** update `onPrimary` — so a coral-filled
+   button kept the grey scheme's partner, a dark teal, at **3.90:1**. Fixed by
+   deriving the partner from the accent actually in force.
+   *This plan predicted `high_contrast` would be the mode to break. It wasn't —
+   it measures 12.33:1, the best of the six.*
+
+2. **An empty accent produced a fully transparent colour.** `parseAccentColor`
+   only guarded against `int.parse` throwing, and the dangerous inputs don't
+   throw: an empty string — what a cleared settings field sends — left `FF`,
+   which parses as `0x000000FF`, transparent. That paints *invisible* buttons,
+   so it would never be reported as a colour bug. Now length-validated.
+
+### Measured contrast, all six modes
+
+| Mode | label on button | body on surface | accent on surface |
+|---|---|---|---|
+| light | 6.47 | 16.38 | 6.17 |
+| dark | 7.70 | 14.32 | 10.88 |
+| dimmed | 7.70 | 12.13 | 9.22 |
+| night | 7.70 | 20.03 | 11.76 |
+| gray | **6.22** (was 3.90) | 14.36 | 5.51 |
+| high_contrast | 7.70 | 21.00 | 12.33 |
+
+### Verified
+
+`flutter analyze lib test` — clean. `flutter test` — **1,192 passing.**
+
+### Existing installs — ✅ done, narrowly
+
+`SeedAsync` only ever *adds* a missing key, so every company created before the
+rollout kept its blue and would have kept it forever.
+`CompanyDefaultsSeeder.BackfillBrandAccentAsync` now moves them, wired into
+`DatabaseBootstrapper` beside the other startup backfills.
+
+**It matches the old default exactly.** A company still holding `#2196F3` moves
+to coral; a company whose operator picked green keeps green. The narrowness is
+the point — a backfill that "makes everything consistent" would silently erase a
+deliberate choice.
+
+Two things that would have made it a no-op, both now pinned by
+`Back-End/Web-POS.Api.Tests/BrandAccentBackfillTests.cs` (7 tests):
+
+- **Delta sync.** `ApplicationProperty` is an `ISyncableEntity` and terminals
+  pull with `?modifiedAfter=`. A row rewritten without a fresh `LastModified` is
+  a change no till ever asks for — the accent would be correct in the database
+  and invisible on every screen. `AppDbContext.SaveChanges` stamps it; the test
+  proves it rather than the code repeating it.
+- **Idempotency.** It runs on every startup, so the second pass must not
+  re-timestamp rows and trigger a pointless resync on every reboot.
+
+---
+
+## 3. Phase 2 — Website ✅ DONE
+
+Light ground, brand coral, navy as ink. `website/DESIGN.md` is the contract; it
+was rewritten first, then reconciled again after a polish pass.
+
+**Delivered:** the light token swap · a hand-drawn 13-glyph icon set
+(`website/app/components/Glyph.tsx`) covering every feature and platform · the
+real octopus mark in the nav and footer · the dark navy footer band quoting the
+icon's own gradient · a scroll-earned header hairline · `.card-split` for
+full-width cards that would otherwise strand half their width.
+
+**Decided:** the site is **light-only**, deliberately — reasoning recorded in
+`DESIGN.md` §2. It is not an oversight to be fixed later.
+
+### Held to, and verified
+
+- The `@media (scripting: enabled)` reveal mechanism is intact. **No inline
+  `<html>` class script** — that is what crashed the dev server with a hydration
+  mismatch once already.
+- `prefers-reduced-motion` and `@media (hover: hover)` gating throughout.
+- Only *directional* glyphs mirror in RTL. Verified in Arabic: the refund arrow
+  gets `matrix(-1,0,0,1,0,0)`, every other glyph gets `none`.
+- `scrollWidth == innerWidth` at 320 / 390 / 520 / 560 / 1440 — no overflow.
+- **Zero console errors or warnings** at every width, driven over CDP.
+- `npx eslint app --max-warnings=0` and `npm run build` both clean.
+
+### One caveat for whoever measures this next
+
+**Chrome headless on Windows clamps its window width.** `--window-size=390`
+actually lays out at roughly 600px, which makes narrow-viewport findings
+unreliable — it produced one convincing false positive (a "clipped" language
+picker that is fine at a true 390px). Use CDP
+`Emulation.setDeviceMetricsOverride`, or an iframe of fixed width, not
+`--window-size`.
+
+### A hydration warning that is not ours
+
+Mobile Chrome's autofill stamps `__gcrremoteframetoken` on `<html>` and
+`__gcruniqueid` on form controls before React hydrates, which React reports as a
+mismatch. `suppressHydrationWarning` on those two elements silences it. It does
+**not** cascade to children, so a genuine mismatch anywhere inside the tree is
+still reported.
+
+---
+
+## 4. Phase 3 — Media 🔄 RE-ROUTED
+
+**Now Gemini + ElevenLabs. Full brief: `MEDIA_PROMPTS.md`.**
+
+The brand still drives every prompt: navy `#1A1A2E`, blood red `#A4161A`,
+"operator-grade, dense, precise — a tool that runs a Friday dinner rush", and a
+Moroccan setting, since the product defaults to dirhams, Africa/Casablanca and
+French.
+
+| # | Asset | Tool | Note |
+|---|---|---|---|
+| 1 | Hero still, 1:1 | Gemini image | Do this one alone and look at it on the real page before spending anything else |
+| 2 | Four platform stills, 4:3 | Gemini image | The Platforms cards are glyph-and-text today |
+| 3 | Real app screenshots | **The app itself** | Nothing on the site shows the product yet |
+| 4 | "Offline-first" film, ~40s | Veo ×5 shots + ElevenLabs VO/SFX | ⭐ *"pull the cable mid-sale and it keeps selling"* |
+
+### 🚨 The rule that governs all of it
+
+**Never let a generator draw the UI.** Veo and Gemini will invent a convincing
+point-of-sale interface that is not this product. `DESIGN.md` §8 already bans
+invented customers, logos and metrics; an invented *product* is the same promise
+broken. Every prompt in `MEDIA_PROMPTS.md` therefore specifies a screen that is
+off or not legible to camera — AI supplies the room, you supply the screen.
+
+That makes item 3 a blocker for anything showing a screen: `website/public/`
+currently holds `brand-mark.webp` and nothing else.
 
 ### Where the assets land
 
-- Website hero + features → `website/public/`, referenced from `page.tsx`.
-- ⚠️ Video is heavy. Do **not** commit large `.mp4` files here — this repo's `.git` is
-  already 293 MB from committed build artifacts (audit H2). Host externally, or settle
-  H2 first.
+- Stills and the poster frame → `website/public/`, referenced from `page.tsx`.
+- ⚠️ **The `.mp4` does not go in this repo.** `.git` is 293 MB and only stopped
+  growing this session (§6). The site is IIS-hosted, so put the file beside the
+  built site on the server and reference it by URL.
+- `DESIGN.md` §8 bans autoplaying video — ship a poster frame and a play control.
+- Verify commercial-use terms on both: Veo output carries SynthID and Google's
+  terms vary by tier; ElevenLabs' free tier generally requires attribution.
 
 ---
 
-## 5. Suggested order
+## 5. Open questions for you
 
-| Step | Work | Depends on |
-|---|---|---|
-| 1 | You: create account + `higgsfield auth login` | — |
-| 2 | Fix audit M4 (67 hardcoded colours) | — |
-| 3 | Phase 1 — app accent → `#FF416C` | step 2 |
-| 4 | Phase 2 — website light theme | §1 contrast decision |
-| 5 | Phase 3 — Higgsfield assets | steps 1 and 4 |
-
-Steps 2–4 need no Higgsfield account and can start immediately.
+1. ~~**Existing installs.**~~ Decided: backfill only rows still on the old
+   default. Implemented — see §2.
+2. ~~**Website dark mode.**~~ Decided: light-only. Recorded in `DESIGN.md` §2.
+3. ~~**Video hosting.**~~ Partly settled: the artifacts are untracked (§6), so
+   `.git` stops growing — but it is still 293 MB, because the blobs remain in
+   past commits. Large video should still be hosted externally.
+4. ~~**Trial budget.**~~ Moot — no Higgsfield trial to budget. Gemini and
+   ElevenLabs quotas are yours to pace; `MEDIA_PROMPTS.md` §7 orders the work
+   cheapest-first so one image tells you whether the look is right.
 
 ---
 
-## 6. Open questions for you
+## 6. Audit H2 — build artifacts untracked ✅
 
-1. **Existing installs:** should tills already running a blue accent flip to red, or keep
-   what their operator chose?
-2. **Website dark mode:** light-only, or light + dark? Light-only is less work and a valid
-   choice — just make it deliberate rather than accidental.
-3. **Video hosting:** given the `.git` bloat, where should generated video live?
-4. **Trial budget:** how many credits before you decide it works?
+**1,569 files removed from the index**, tracked count 3,457 → 1,888. Nothing was
+deleted from disk (`git rm --cached`), and no history was rewritten — so every
+commit hash is unchanged and nobody has to re-clone.
+
+### Why `.gitignore` had not been enough
+
+It already listed `/build/`, `**/bin/` and `**/obj/`, and the intent was
+understood. Two gaps let 736 DLLs through anyway:
+
+1. **`/build/` was anchored to the repo root**, so output that landed at
+   `Back-End/Web-POS.Api/build/` and `Front-End/android/build/` sailed past it.
+   Now `**/build/`.
+2. **Two directories are named after a mangled command line.** A mis-parsed
+   `dotnet build -o ... --nologo` created real folders called `build/logo` and
+   `POS-APPbuildtest --nologoDebug`, each holding a full copy of the build
+   output. Nothing matched them; now `**/*--nologo*/` and `**/POS-APPbuild*/`.
+
+`git ls-files -i -c --exclude-standard` now returns **0**, so the ignore rules
+and the index finally agree.
+
+**Checked before removing:** no `.cs`, `.dart`, `.ts`, `.sql`, `.csproj` or
+`.sln` file was in the set, and the committed `appsettings*.json` copies carry
+empty placeholders, not credentials — real secrets live in the git-ignored
+`appsettings.Local.json` or in environment variables.
+
+⚠️ **`.git` is still 293 MB.** Untracking stops the growth; it cannot shrink
+what past commits already hold. That needs a history rewrite, which was
+declined — reasonably, since it changes every commit hash.
 
 ---
 
 ## Related
 
-- `AUDIT_2026-08-30.md` — M4 (hardcoded colours) and H2 (repo bloat) both intersect here.
-- `website/DESIGN.md` — the current dark contract, to be rewritten in Phase 2.
+- `AUDIT_2026-08-30.md` — M4 and H2 both closed here (H2 partially: untracked,
+  history intact).
+- `MEDIA_PROMPTS.md` — the Gemini + ElevenLabs brief that replaces Higgsfield.
+- `website/DESIGN.md` — the light contract, including the icon rules.
+- `Front-End/test/brand_accent_theme_test.dart` — the contrast bar, enforced.
 - 🔴 Still open, unrelated to this plan: `kPillar3Encryption = false` in
   `Front-End/lib/database/app_database.dart:6489`.

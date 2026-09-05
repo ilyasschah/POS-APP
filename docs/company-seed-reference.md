@@ -26,10 +26,12 @@ existed.
 | setting | value | meaning |
 |---|---|---|
 | `Theme_Mode` | `dark` | dark by default |
-| `Theme_AccentColor` | `#FF416C` | the brand red |
+| `Theme_AccentColor` | `#A4161A` | the brand blood red |
 
-`#FF416C` is the lighter stop of the octopus gradient in
-`Front-End/assets/icon.svg` (`#FF416C` → `#FF4B2B`) and the accent the marketing
+`#A4161A` is the brand blood red at 7.75:1 on white. The octopus gradient in
+`Front-End/assets/icon.svg` is a LIGHTER pair of the same red (`#F0353B` →
+`#D62828`) because the mark sits on navy, where the UI value measures 2.20:1.
+It is the accent the marketing
 site uses. Material 3 generates the entire colour scheme from this one seed, so
 it is the only value that has to be right.
 
@@ -38,12 +40,12 @@ depending on whether settings have synced yet:
 
 | where | constant |
 |---|---|
-| `Back-End/.../CompanyDefaultsSeeder.cs` | `("Theme_AccentColor", "#FF416C")` |
+| `Back-End/.../CompanyDefaultsSeeder.cs` | `("Theme_AccentColor", "#A4161A")` |
 | `Front-End/lib/app_settings/app_settings_model.dart` | `kSettingDefaults[themeAccentColor]` |
 | `Front-End/lib/core/app_theme.dart` | `kBrandAccent` |
 
 > Before 2026-09-04 these were `#10B981` (emerald), `#FF5733` (coral) and
-> `#FF416C` — three sources, three colours, only one of them the logo. The coral
+> `#A4161A` — three sources, three colours, only one of them the logo. The red
 > is what made the app look **brown**: Material desaturates it heavily when
 > seeding a dark scheme.
 
@@ -189,7 +191,7 @@ table cell cannot show them legibly.
 | `Application.Api.BaseUrl` | `https://api.octopus-pos.com/api` |
 | `Database.Backup.Version` | `v2` |
 | `Theme_Mode` | `dark` |
-| `Theme_AccentColor` | `#FF416C` |
+| `Theme_AccentColor` | `#A4161A` |
 | `Menu_Grid_Cols` | `4` |
 | `Menu_Grid_Rows` | `4` |
 | `Application.Language` | `en` |

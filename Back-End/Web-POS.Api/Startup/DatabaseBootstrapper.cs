@@ -1,4 +1,4 @@
-using Api.DataBase;
+﻿using Api.DataBase;
 using Microsoft.EntityFrameworkCore;
 
 namespace Api.Startup;
@@ -74,6 +74,12 @@ public static class DatabaseBootstrapper
             // for any company seeded before the removal.
             await Api.Services.CompanyDefaultsSeeder.RemoveObsoletePropertiesAsync(db);
             logger.LogDebug("Obsolete application properties swept.");
+
+            // Moves companies still on the pre-rollout blue accent onto the brand
+            // coral. Touches ONLY rows still holding the old default, so an
+            // operator who picked their own colour keeps it.
+            await Api.Services.CompanyDefaultsSeeder.BackfillBrandAccentAsync(db);
+            logger.LogDebug("Brand accent verified/backfilled for existing companies.");
         }
         catch (Exception ex)
         {

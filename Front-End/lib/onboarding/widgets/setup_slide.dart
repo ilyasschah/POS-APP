@@ -23,7 +23,7 @@ class SetupSlide extends ConsumerWidget {
   /// during onboarding necessarily moved the app AWAY from its own branding —
   /// there was no way back to it short of editing the setting by hand.
   static const _accents = <String>[
-    '#FF416C', // brand
+    '#A4161A', // brand
     '#3B82F6', // blue
     '#8B5CF6', // violet
     '#EF4444', // red
