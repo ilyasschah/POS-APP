@@ -34,16 +34,41 @@ namespace Api.Middleware
             {
                 await _next(context);
             }
-            catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
+            // 🚨 ANY exception, not just OperationCanceledException, once the client
+            // has already gone.
+            //
+            // Cancelling an in-flight command does NOT reliably surface as an
+            // OperationCanceledException. Microsoft.Data.SqlClient raises a plain
+            // SqlException reading "Operation cancelled by user." instead, which
+            // sailed past a catch filtered on OperationCanceledException, fell into
+            // the generic handler, and was logged as
+            //   "Unhandled server error on GET /api/Dashboard/GetDashboardData"
+            // — an ERROR, with a 500 written for a caller that had already
+            // disconnected. Every dashboard page closed mid-load produced one, which
+            // is exactly the noise this catch existed to prevent.
+            //
+            // RequestAborted is the honest discriminator: if the client is gone, the
+            // exception is a CONSEQUENCE of that, not a server fault, and there is
+            // nobody left to answer anyway.
+            catch (Exception ex) when (context.RequestAborted.IsCancellationRequested)
             {
-                // The client went away mid-request — a POS terminal losing wifi does
-                // this constantly. It is not a server fault, and there is no longer
-                // anyone to send a response to. Log at Debug and let the connection
-                // die, instead of the generic handler recording a 500 "Unhandled
-                // server error" and burying real faults in the noise.
-                _logger.LogDebug(
-                    "Request aborted by client: {Method} {Path}",
-                    context.Request.Method, context.Request.Path);
+                if (IsCancellation(ex))
+                {
+                    // The ordinary case — a POS terminal losing wifi, or an operator
+                    // closing the dashboard while it loads.
+                    _logger.LogDebug(
+                        "Request aborted by client: {Method} {Path}",
+                        context.Request.Method, context.Request.Path);
+                }
+                else
+                {
+                    // Something else broke while the client happened to be leaving.
+                    // Not a 500 (there is no one to send it to) but not silence
+                    // either — a genuine fault must stay visible.
+                    _logger.LogWarning(ex,
+                        "Request aborted by client, but the failure was not a cancellation: {Method} {Path}",
+                        context.Request.Method, context.Request.Path);
+                }
             }
             catch (Exception ex)
             {
@@ -123,6 +148,28 @@ namespace Api.Middleware
             _ => ((int)HttpStatusCode.InternalServerError,
                   "An unexpected server error occurred."),
         };
+
+        /// <summary>
+        /// Whether <paramref name="ex"/> is the shape a cancelled request takes.
+        ///
+        /// Three of them, because the cancellation crosses three layers:
+        ///  * OperationCanceledException / TaskCanceledException — the token fired
+        ///    before or between database calls;
+        ///  * SqlException "Operation cancelled by user." (error number 0) — the
+        ///    command was already on the wire and SqlClient aborted it. This is the
+        ///    one that used to be reported as a 500;
+        ///  * either of those wrapped by EF Core in a DbUpdateException.
+        /// </summary>
+        private static bool IsCancellation(Exception ex)
+        {
+            for (var e = ex; e is not null; e = e.InnerException)
+            {
+                if (e is OperationCanceledException) return true;
+                // Number 0 is SqlClient's client-side abort, not a server error.
+                if (e is SqlException { Number: 0 }) return true;
+            }
+            return false;
+        }
 
         // SQL Server error 547 == foreign-key / constraint conflict.
         private static bool IsForeignKeyConflict(DbUpdateException ex)

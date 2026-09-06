@@ -50,8 +50,6 @@ namespace Api.Commands.Dashboard
 
             var dashboardData = new DashboardDataDto();
 
-            dashboardData.TotalSales = await baseQuery.SumAsync(x => x.ItemTotal, cancellationToken);
-
             // 1. Fetch Monthly Sales (Anonymous type first, then map to DTO)
             var monthlyData = await baseQuery
                 .GroupBy(x => new { x.SalesYear, x.SalesMonth })
@@ -62,6 +60,17 @@ namespace Api.Commands.Dashboard
                 .Select(x => new MonthlySaleDto(x.SalesMonth, x.SalesYear, x.Total))
                 .OrderBy(x => x.Year).ThenBy(x => x.Month)
                 .ToList();
+
+            // Summed from the monthly buckets rather than asked for separately.
+            //
+            // Every aggregate on this screen re-runs vw_DashboardSalesData, which is
+            // a six-table join (DocumentItem → Document → DocumentType → Product,
+            // plus ProductGroup and Customer). A standalone SumAsync made that seven
+            // executions where six will do, for a number the monthly rollup already
+            // contains: both are SUM(ItemTotal) over the same filtered set, and
+            // decimal addition is exact, so this is the same figure — including 0
+            // for an empty range, where SumAsync and an empty list agree.
+            dashboardData.TotalSales = monthlyData.Sum(x => x.Total);
 
             // 2. Fetch Hourly Sales.
             // The view buckets on the UTC hour, because StockDate is written as

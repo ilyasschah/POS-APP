@@ -318,9 +318,13 @@ replaced the files.
 8. **Never delete `lease_signing_key.pem` from the server.** It signs every offline
    licence lease. Lose it and every customer terminal's lease stops validating at once,
    with no way to recover the original. The deploy's mirror excludes it for this reason.
-9. **Swagger is disabled in Production.** `/swagger` answering on production means
-   `ASPNETCORE_ENVIRONMENT` is not set to `Production` — treat that as a misconfigured
-   deploy.
+9. **Swagger is disabled in Production.** `/swagger` returning **200** on production
+   means `ASPNETCORE_ENVIRONMENT` is not set to `Production` — treat that as a
+   misconfigured deploy, because the Swagger middleware runs *ahead* of
+   `UseAuthorization` and will hand the entire API surface to anyone who asks.
+   A **401 there is normal and proves nothing**: the API's global `FallbackPolicy`
+   answers 401 for every unmatched route, so a nonexistent path returns the same
+   401. Only 200 is the alarm.
 10. **The website is a static export.** There is no Node process on the server;
     `next.config.ts` sets `output: "export"` and IIS serves `out/` as plain files. If
     that setting is ever lost the build silently becomes a server bundle IIS cannot

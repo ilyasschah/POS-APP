@@ -28,6 +28,8 @@ import 'package:pos_app/cash/cash_movement_kind.dart';
 import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/session/pos_session_status.dart';
 import 'package:pos_app/sync/sync_manager.dart';
+
+import 'quiet_sync_logs.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const _companyId = 25;
@@ -105,6 +107,8 @@ void main() {
   late _ConflictingServer server;
 
   setUp(() {
+    // Every unstubbed request is answered 404 on purpose — see quiet_sync_logs.
+    silenceDebugPrint();
     // `pushPendingSessions` reads the REGISTER's name before it posts, and that
     // is a shared_preferences call — without this the push throws
     // MissingPluginException and never reaches the server at all, so every

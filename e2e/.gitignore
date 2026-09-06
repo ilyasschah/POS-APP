@@ -1,0 +1,14 @@
+# ── NEVER COMMIT: this repository is PUBLIC ────────────────────────────────
+# The fill-in config holds a real admin portal password.
+config/test-config.js
+
+# Generated POS logins (username, email, plaintext password) for the companies
+# these runs provisioned in the dev database.
+output/*
+!output/.gitkeep
+
+# ── Ordinary Cypress / npm noise ───────────────────────────────────────────
+node_modules/
+cypress/screenshots/
+cypress/videos/
+cypress/downloads/

@@ -7,8 +7,6 @@
       "command": "flutter",
       "args": [
         "run",
-        "-d",
-        "chrome",
         "--web-hostname",
         "100.114.12.38",
         "--web-port",
@@ -29,6 +27,14 @@
       "group": "build",
       "problemMatcher": [],
       "detail": "Builds production Web PWA for IIS Hosting"
+    },
+    {
+      "label": "🚀 Dashboard: Build & Serve Web (Python)",
+      "type": "shell",
+      "command": "flutter build web --release && cd build\\web && python -m http.server 8081 --bind 100.114.12.38",
+      "isBackground": true,
+      "problemMatcher": [],
+      "detail": "Builds Flutter web release and serves it via Python HTTP server"
     }
   ]
 }

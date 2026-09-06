@@ -73,14 +73,19 @@ function Get-HttpStatus([string]$Url) {
     }
 }
 
+# Returns $true when the endpoint answered as expected, so the caller can tell
+# whether to print the troubleshooting notes. Write-Host does not write to the
+# pipeline, so the boolean is the only thing that comes back.
 function Write-Check([string]$Label, [int]$Actual, [int]$Expected) {
     if ($Actual -eq $Expected) {
         Write-Host ("  OK    {0,-46} {1}" -f $Label, $Actual) -ForegroundColor Green
+        return $true
     } elseif ($Actual -eq 0) {
         Write-Host ("  DOWN  {0,-46} unreachable" -f $Label) -ForegroundColor Red
     } else {
         Write-Host ("  FAIL  {0,-46} {1} (expected {2})" -f $Label, $Actual, $Expected) -ForegroundColor Red
     }
+    return $false
 }
 
 function Get-PubspecVersion([string]$RelativePath) {
@@ -276,26 +281,42 @@ function Step-Health {
     Write-Host "`nProbing production..." -ForegroundColor Cyan
     Write-Host ""
 
-    Write-Check "api.octopus-pos.com/health/ready"      (Get-HttpStatus "https://api.octopus-pos.com/health/ready")      200
-    Write-Check "api.octopus-pos.com/admin/login"       (Get-HttpStatus "https://api.octopus-pos.com/admin/login")       200
-    Write-Check "admin/companies (must redirect: 302)"  (Get-HttpStatus "https://api.octopus-pos.com/admin/companies")   302
-    Write-Check "api.octopus-pos.com/dashboard/"        (Get-HttpStatus "https://api.octopus-pos.com/dashboard/")        200
-    Write-Check "octopus-pos.com"                       (Get-HttpStatus "https://octopus-pos.com/")                     200
+    $fail = 0
+    if (-not (Write-Check "api.octopus-pos.com/health/ready"     (Get-HttpStatus "https://api.octopus-pos.com/health/ready")    200)) { $fail++ }
+    if (-not (Write-Check "api.octopus-pos.com/admin/login"      (Get-HttpStatus "https://api.octopus-pos.com/admin/login")     200)) { $fail++ }
+    if (-not (Write-Check "admin/companies (must redirect: 302)" (Get-HttpStatus "https://api.octopus-pos.com/admin/companies") 302)) { $fail++ }
+    if (-not (Write-Check "api.octopus-pos.com/dashboard/"       (Get-HttpStatus "https://api.octopus-pos.com/dashboard/")      200)) { $fail++ }
+    if (-not (Write-Check "octopus-pos.com"                      (Get-HttpStatus "https://octopus-pos.com/")                   200)) { $fail++ }
 
-    # Swagger must NOT answer in Production. If it does, ASPNETCORE_ENVIRONMENT
-    # is not set to Production and this deploy is misconfigured.
+    # Swagger must not be REACHABLE in Production: Program.cs only registers it
+    # when !IsProduction(), and that middleware sits ahead of UseAuthorization,
+    # so if the environment is wrong it short-circuits and answers 200 to anyone.
+    #
+    # 200 is the ONLY meaningful signal here. A 401 does not prove Swagger is
+    # gone - the API's global FallbackPolicy answers 401 for every unmatched
+    # route, so a nonexistent path returns exactly the same 401. Do not read it
+    # as "closed", only as "not exposed".
     $swagger = Get-HttpStatus "https://api.octopus-pos.com/swagger"
     if ($swagger -eq 200) {
-        Write-Host ("  WARN  {0,-46} 200 - should be disabled!" -f "swagger is exposed") -ForegroundColor Red
-        Write-Host "        ASPNETCORE_ENVIRONMENT is not 'Production'." -ForegroundColor Red
+        $fail++
+        Write-Host ("  EXPOSED {0,-44} 200" -f "swagger is serving the whole API surface") -ForegroundColor Red
+        Write-Host "        ASPNETCORE_ENVIRONMENT is not 'Production'. Fix the deploy." -ForegroundColor Red
     } else {
-        Write-Host ("  OK    {0,-46} {1}" -f "swagger closed in production", $swagger) -ForegroundColor Green
+        Write-Host ("  OK    {0,-46} {1}" -f "swagger not exposed", $swagger) -ForegroundColor Green
     }
 
     Write-Host ""
-    Write-Host "503 on /health/ready = schema behind the code -> option 4." -ForegroundColor DarkGray
-    Write-Host "302 on /admin/login  = the login page fell behind its own login." -ForegroundColor DarkGray
-    Write-Host "200 on admin/companies while signed out = SECURITY problem, fix now." -ForegroundColor DarkGray
+    if ($fail -eq 0) {
+        Write-Host "All checks passed - production is healthy." -ForegroundColor Green
+    } else {
+        Write-Host "$fail check(s) failed. What they mean:" -ForegroundColor Yellow
+        Write-Host "  503 on /health/ready = schema behind the code -> option 4." -ForegroundColor DarkGray
+        Write-Host "  302 on /admin/login  = the login page fell behind its own login." -ForegroundColor DarkGray
+        Write-Host "  500 on /admin/login  = check the startup log for ADMIN PORTAL UNUSABLE." -ForegroundColor DarkGray
+        Write-Host "  200 on admin/companies while signed out = SECURITY problem, fix now." -ForegroundColor DarkGray
+        Write-Host "  404 on /dashboard/   = the folder is not an IIS application." -ForegroundColor DarkGray
+        Write-Host "  unreachable          = DNS, TLS or the site is stopped in IIS." -ForegroundColor DarkGray
+    }
     Pause
 }
 

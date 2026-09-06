@@ -22,6 +22,8 @@ import 'package:pos_app/settings/device_identity.dart';
 import 'package:pos_app/sync/sync_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'quiet_sync_logs.dart';
+
 /// Records the headers and URI of every request a sync makes; answers everything
 /// with a 404 so no step can accidentally succeed and do real work.
 class _HeaderSpyAdapter implements HttpClientAdapter {
@@ -45,7 +47,11 @@ void main() {
 
   late AppDatabase db;
 
-  setUp(() => db = AppDatabase.forTesting(NativeDatabase.memory()));
+  setUp(() {
+    // Every request below is answered 404 on purpose — see quiet_sync_logs.
+    silenceDebugPrint();
+    db = AppDatabase.forTesting(NativeDatabase.memory());
+  });
   tearDown(() => db.close());
 
   Future<_HeaderSpyAdapter> syncOnce() async {

@@ -1,3 +1,4 @@
+﻿using Api.DataBase;
 using Api.Master;
 using Api.Master.Domain;
 using Microsoft.AspNetCore.Hosting;
@@ -16,8 +17,16 @@ namespace Api.Tests;
 /// cookie scheme, the authorization policy that must name it, the security-header
 /// middleware and its position relative to UseAuthorization — is wiring, and
 /// wiring cannot be tested by re-declaring it. So the app is booted as it ships
-/// and only the Master DB is swapped for SQLite, which is not what is under test
-/// and is the one dependency a machine may not have.
+/// and only the DATABASES are swapped for SQLite: they are not what is under test,
+/// and they are the one dependency a machine may not have. On a developer box the
+/// MSSQLSERVER service starts Manual, so it is simply not running after a reboot —
+/// against SQL Server these tests then spend 33s inside EnableRetryOnFailure and
+/// report a portal bug that does not exist.
+///
+/// 🚨 BOTH contexts, not just the Master one. The portal's own pages read the TENANT
+/// database — /admin/companies lists companies through CompanyRepository, which is
+/// AppDbContext — so a factory that swaps only MasterDbContext signs in happily and
+/// then 500s on the first page behind the login.
 /// </summary>
 public class AdminPortalFactory : WebApplicationFactory<Program>
 {
@@ -25,6 +34,7 @@ public class AdminPortalFactory : WebApplicationFactory<Program>
     public const string AdminPassword = "portal-test-password";
 
     private readonly SqliteConnection _master = new("DataSource=:memory:");
+    private readonly SqliteConnection _tenant = new("DataSource=:memory:");
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -46,7 +56,23 @@ public class AdminPortalFactory : WebApplicationFactory<Program>
                 "Jwt__Secret", "test-only-signing-secret-that-is-long-enough-0123456789");
         }
 
+        // Held open for the lifetime of the factory: an in-memory SQLite database
+        // exists exactly as long as a connection to it does.
         _master.Open();
+        _tenant.Open();
+
+        // The tenant schema has to exist BEFORE the host boots. DatabaseBootstrapper
+        // runs inside Program.cs's top-level statements and seeds global reference
+        // data on the way up; against an empty database every one of those seeders
+        // fails — harmlessly, since the bootstrapper is non-fatal, but noisily.
+        //
+        // Master is deliberately NOT created here. Tests seed it themselves through
+        // SeedAdminAsync, and one of them asserts on the unseeded case.
+        using (var tenant = new AppDbContext(
+                   new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_tenant).Options))
+        {
+            tenant.Database.EnsureCreated();
+        }
 
         builder.ConfigureTestServices(services =>
         {
@@ -57,28 +83,32 @@ public class AdminPortalFactory : WebApplicationFactory<Program>
             // with "Only a single database provider can be registered".
             // Both descriptors have to go first.
             //
-            // Scoped to MasterDbContext by its generic argument: AppDbContext must
-            // keep its SQL Server registration untouched.
-            foreach (var descriptor in services.Where(IsMasterDbOptions).ToList())
+            // Each context is matched by its own generic argument, so swapping one
+            // never disturbs the other.
+            foreach (var descriptor in services.Where(IsOptionsFor<MasterDbContext>).ToList())
+                services.Remove(descriptor);
+            foreach (var descriptor in services.Where(IsOptionsFor<AppDbContext>).ToList())
                 services.Remove(descriptor);
 
             services.AddDbContext<MasterDbContext>(opt => opt.UseSqlite(_master));
+            services.AddDbContext<AppDbContext>(opt => opt.UseSqlite(_tenant));
         });
     }
 
     /// <summary>
-    /// Every options registration EF holds for <see cref="MasterDbContext"/> —
-    /// both the built <c>DbContextOptions&lt;MasterDbContext&gt;</c> and the
-    /// <c>IDbContextOptionsConfiguration&lt;MasterDbContext&gt;</c> callback that
+    /// Every options registration EF holds for <typeparamref name="TContext"/> —
+    /// both the built <c>DbContextOptions&lt;TContext&gt;</c> and the
+    /// <c>IDbContextOptionsConfiguration&lt;TContext&gt;</c> callback that
     /// carries UseSqlServer. Matched by shape rather than by naming the interface,
     /// which is not in a namespace this project imports and has moved between EF
-    /// versions. Anything belonging to AppDbContext is left alone.
+    /// versions. Anything belonging to the other context is left alone.
     /// </summary>
-    private static bool IsMasterDbOptions(ServiceDescriptor descriptor)
+    private static bool IsOptionsFor<TContext>(ServiceDescriptor descriptor)
+        where TContext : DbContext
     {
         var type = descriptor.ServiceType;
         if (!type.IsGenericType) return false;
-        if (!type.GetGenericArguments().Contains(typeof(MasterDbContext))) return false;
+        if (!type.GetGenericArguments().Contains(typeof(TContext))) return false;
         return type.Name.StartsWith("DbContextOptions") ||
                type.Name.StartsWith("IDbContextOptionsConfiguration");
     }
@@ -133,6 +163,8 @@ public class AdminPortalFactory : WebApplicationFactory<Program>
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);
-        if (disposing) _master.Dispose();
+        if (!disposing) return;
+        _master.Dispose();
+        _tenant.Dispose();
     }
 }

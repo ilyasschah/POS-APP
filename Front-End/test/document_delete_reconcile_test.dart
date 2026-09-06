@@ -26,6 +26,8 @@ import 'package:pos_app/auth/auth_storage.dart';
 import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/sync/sync_manager.dart';
 
+import 'quiet_sync_logs.dart';
+
 /// Serves a canned `/Document/GetSalesHistory` payload; every other endpoint
 /// 404s so nothing else in the pull can accidentally succeed.
 class _CannedAdapter implements HttpClientAdapter {
@@ -70,7 +72,11 @@ Map<String, dynamic> _serverDoc(int id, String number) => {
 void main() {
   late AppDatabase db;
 
-  setUp(() => db = AppDatabase.forTesting(NativeDatabase.memory()));
+  setUp(() {
+    // Every unstubbed request is answered 404 on purpose — see quiet_sync_logs.
+    silenceDebugPrint();
+    db = AppDatabase.forTesting(NativeDatabase.memory());
+  });
   tearDown(() => db.close());
 
   SyncManager managerFor(_CannedAdapter adapter) {

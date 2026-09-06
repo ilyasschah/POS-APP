@@ -6487,6 +6487,10 @@ LazyDatabase _openConnection() {
           rawDb.execute("PRAGMA key = '$key';");
           // Touch the schema so a wrong key fails here (deterministic), not later.
           rawDb.execute('SELECT count(*) FROM sqlite_master;');
+          // Same contention guard as the background branch — see
+          // [_applyBusyTimeout]. Set here too so turning encryption on for
+          // production does not quietly reintroduce the instant-fail default.
+          _applyBusyTimeout(rawDb);
         },
       );
     }
@@ -6512,8 +6516,40 @@ LazyDatabase _openConnection() {
     // The one-time migration/decrypt above already ran to completion on this
     // isolate and closed their own sqlite3 handles, so nothing here races the
     // background isolate opening the (now settled) file.
-    return NativeDatabase.createInBackground(file, logStatements: false);
+    return NativeDatabase.createInBackground(
+      file,
+      logStatements: false,
+      setup: _applyBusyTimeout,
+    );
   });
+}
+
+/// Makes a contended statement WAIT instead of failing on the spot.
+///
+/// 🚨 SQLite's `busy_timeout` defaults to **0**, which means a statement that
+/// finds the database locked gives up immediately with
+/// `SqliteException(5): database is locked` rather than retrying. The sync path
+/// catches each step individually and reports "local cache preserved", so that
+/// instant failure is SWALLOWED: the step silently does not run, and once a
+/// transaction dies that way its remaining statements report the confusing
+/// `Invalid argument (transactionId): Does not reference a transaction`.
+///
+/// Five seconds is a ceiling, not a cost — an uncontended statement never waits
+/// at all. It only buys time for whatever holds the write lock (a long pull's
+/// transaction, the periodic backup's file copy, or a developer's DBeaver
+/// session, which this build invites by leaving the database unencrypted) to
+/// finish, instead of throwing away work that would have succeeded a moment
+/// later.
+///
+/// 🚨 Must stay a TOP-LEVEL function. `createInBackground` sends this to the
+/// database isolate, and a closure capturing local state cannot cross that
+/// boundary — which is exactly why the encrypted branch above cannot use
+/// `createInBackground` at all (its `setup` has to carry the key).
+// `Database`, not `CommonDatabase`: drift's `DatabaseSetup` is
+// `void Function(Database)`, and `package:sqlite3/sqlite3.dart` deliberately
+// hides `CommonDatabase` from its exports.
+void _applyBusyTimeout(Database rawDb) {
+  rawDb.execute('PRAGMA busy_timeout = 5000;');
 }
 
 /// If [file] is an existing *unencrypted* SQLite database, rewrite it as a

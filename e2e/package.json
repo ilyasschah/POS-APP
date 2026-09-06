@@ -1,0 +1,18 @@
+{
+  "name": "pos-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "description": "End-to-end tests that drive the real POS admin portal against the dev database. Nothing is mocked: every run provisions a real company, subscription and user.",
+  "scripts": {
+    "open": "node scripts/cypress.js open --e2e",
+    "test": "node scripts/cypress.js run",
+    "test:login": "node scripts/cypress.js run --spec cypress/e2e/admin-portal/01-admin-login.cy.js",
+    "test:company": "node scripts/cypress.js run --spec cypress/e2e/admin-portal/02-provision-company.cy.js",
+    "test:portal": "node scripts/cypress.js run --spec \"cypress/e2e/admin-portal/*.cy.js\"",
+    "test:dashboard": "node scripts/cypress.js run --spec \"cypress/e2e/dashboard/*.cy.js\""
+  },
+  "devDependencies": {
+    "@faker-js/faker": "^10.6.0",
+    "cypress": "^16.0.0"
+  }
+}

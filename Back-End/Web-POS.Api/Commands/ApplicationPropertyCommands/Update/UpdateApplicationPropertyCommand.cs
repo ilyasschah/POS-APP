@@ -36,7 +36,11 @@ namespace Api.Commands.ApplicationPropertyCommands.Update
             public UpdateApplicationPropertyCommandValidator()
             {
                 RuleFor(cmd => cmd.Request.Id).GreaterThan(0).WithMessage("Property ID must be valid.");
-                RuleFor(cmd => cmd.Request.NewValue).NotNull().NotEmpty().WithMessage("New value must not be empty.");
+                // NotNull only — see AddApplicationPropertyCommandValidator. Clearing
+                // a setting to "" is a normal edit (it is how four of the seeded
+                // defaults ship), so NotEmpty() here would block the Settings screen
+                // from ever emptying a field once validation is enforced.
+                RuleFor(cmd => cmd.Request.NewValue).NotNull().WithMessage("New value must not be null.");
                 RuleFor(cmd => cmd.CompanyId).GreaterThan(0).WithMessage("Company ID must be valid.");
             }
         }

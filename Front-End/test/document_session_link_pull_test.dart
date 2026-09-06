@@ -30,6 +30,8 @@ import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/session/pos_session_status.dart';
 import 'package:pos_app/sync/sync_manager.dart';
 
+import 'quiet_sync_logs.dart';
+
 const _companyId = 25;
 const _sessionServerId = 22;
 const _sessionLocalId = 'sess-opened-on-device-a';
@@ -90,7 +92,11 @@ void main() {
 
   late AppDatabase db;
 
-  setUp(() => db = AppDatabase.forTesting(NativeDatabase.memory()));
+  setUp(() {
+    // Every unstubbed request is answered 404 on purpose — see quiet_sync_logs.
+    silenceDebugPrint();
+    db = AppDatabase.forTesting(NativeDatabase.memory());
+  });
   tearDown(() => db.close());
 
   SyncManager managerFor(List<Map<String, dynamic>> docs) {
