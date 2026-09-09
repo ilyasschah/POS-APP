@@ -80,6 +80,14 @@ public static class DatabaseBootstrapper
             // operator who picked their own colour keeps it.
             await Api.Services.CompanyDefaultsSeeder.BackfillBrandAccentAsync(db);
             logger.LogDebug("Brand accent verified/backfilled for existing companies.");
+
+            // Reads sys.triggers and holds it against the model's HasTrigger
+            // declarations. Nothing here is a seed — it is the one check that cannot
+            // be made from the repo, because EF never resolves a trigger name against
+            // the database, so a name in AppDbContext is only ever a claim. Quiet
+            // unless the two disagree; see TriggerReconciliation for what each
+            // direction of drift costs.
+            await TriggerReconciliation.VerifyAsync(db, logger);
         }
         catch (Exception ex)
         {

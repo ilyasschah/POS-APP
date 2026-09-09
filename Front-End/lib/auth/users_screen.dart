@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:dio/dio.dart';
 import 'package:pos_app/auth/auth_provider.dart';
+import 'package:pos_app/auth/role_visuals.dart';
 import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/auth/user_model.dart';
 import 'package:pos_app/core/ilyass_list_scaffold.dart';
@@ -112,13 +113,12 @@ class _UsersList extends ConsumerWidget {
                 ? user.displayName[0].toUpperCase()
                 : '?';
             return ListTile(
+              // Initials stay the identity here (a list of many people), but
+              // the role colours come from `role_visuals.dart` so admin/cashier
+              // read the same as on the login grid and the profile header.
               leading: CircleAvatar(
-                backgroundColor: user.accessLevel == 0
-                    ? cs.primary
-                    : cs.secondary,
-                foregroundColor: user.accessLevel == 0
-                    ? cs.onPrimary
-                    : cs.onSecondary,
+                backgroundColor: roleAvatarColors(cs, user.isAdmin).background,
+                foregroundColor: roleAvatarColors(cs, user.isAdmin).foreground,
                 child: Text(initial),
               ),
               title: Text(
@@ -131,7 +131,7 @@ class _UsersList extends ConsumerWidget {
                       ),
               ),
               subtitle: Text(
-                '${user.accessLevel == 0 ? AppLocalizations.of(context).roleAdmin : AppLocalizations.of(context).roleCashier}'
+                '${roleLabel(context, user.isAdmin)}'
                 "${!user.isEnabled ? ' · ${AppLocalizations.of(context).statusDisabled}' : ''}"
                 "${user.email != null && user.email!.isNotEmpty ? ' · ${user.email}' : ''}",
               ),

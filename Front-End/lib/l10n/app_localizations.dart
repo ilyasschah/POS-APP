@@ -6646,6 +6646,24 @@ abstract class AppLocalizations {
   /// **'Stock is counted in {unit}.'**
   String uomStockHeldIn(String unit);
 
+  /// No description provided for @uomPackSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Pieces per {unit}'**
+  String uomPackSize(String unit);
+
+  /// No description provided for @uomPackSizeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave empty for the standard {nominal}.'**
+  String uomPackSizeHint(String nominal);
+
+  /// No description provided for @uomPackSizeInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a number greater than 0, or leave it empty.'**
+  String get uomPackSizeInvalid;
+
   /// No description provided for @uomStockConversionNote.
   ///
   /// In en, this message translates to:

@@ -158,12 +158,12 @@ namespace Api.Services
         /// </remarks>
         private async Task AdjustStockAsync(int warehouseId, int productId, int companyId, decimal delta)
         {
-            var uomId = await _db.Products
+            var unit = await _db.Products
                 .Where(p => p.Id == productId && p.CompanyId == companyId)
-                .Select(p => (int?)p.UomId)
+                .Select(p => new { p.UomId, p.PackSize })
                 .FirstOrDefaultAsync();
 
-            var deltaInStockUnit = UnitOfMeasure.ToReference(delta, uomId);
+            var deltaInStockUnit = UnitOfMeasure.ToReference(delta, unit?.UomId, unit?.PackSize);
 
             var stock = await _db.Stocks.FirstOrDefaultAsync(
                 s => s.ProductId == productId && s.WarehouseId == warehouseId && s.CompanyId == companyId);

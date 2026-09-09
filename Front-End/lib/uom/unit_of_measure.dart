@@ -54,6 +54,9 @@ class UnitOfMeasure {
 // ── Well-known ids ───────────────────────────────────────────────────────────
 
 const int kUomPieces = 1;
+const int kUomDozen = 2;
+const int kUomBox = 3;
+const int kUomPack = 4;
 const int kUomKilogram = 10;
 const int kUomGram = 11;
 const int kUomLitre = 20;
@@ -64,9 +67,11 @@ const int kUomMetre = 30;
 const List<UnitOfMeasure> kUnitsOfMeasure = [
   // Unit — reference: pcs
   UnitOfMeasure(id: kUomPieces, code: 'pcs', category: UomCategory.unit, factor: 1, rounding: 1, digits: 0),
-  UnitOfMeasure(id: 2, code: 'dozen', category: UomCategory.unit, factor: 1 / 12, rounding: 1, digits: 0),
-  UnitOfMeasure(id: 3, code: 'box', category: UomCategory.unit, factor: 1 / 12, rounding: 1, digits: 0),
-  UnitOfMeasure(id: 4, code: 'pack', category: UomCategory.unit, factor: 1 / 6, rounding: 1, digits: 0),
+  UnitOfMeasure(id: kUomDozen, code: 'dozen', category: UomCategory.unit, factor: 1 / 12, rounding: 1, digits: 0),
+  // 🚨 box and pack carry a NOMINAL factor only — the fallback for a product
+  // that has not stated its own `packSize`. See [isPackSizedUom].
+  UnitOfMeasure(id: kUomBox, code: 'box', category: UomCategory.unit, factor: 1 / 12, rounding: 1, digits: 0),
+  UnitOfMeasure(id: kUomPack, code: 'pack', category: UomCategory.unit, factor: 1 / 6, rounding: 1, digits: 0),
 
   // Weight — reference: kg
   UnitOfMeasure(id: kUomKilogram, code: 'kg', category: UomCategory.weight, factor: 1, rounding: 0.001, digits: 3),
@@ -105,22 +110,61 @@ Map<UomCategory, List<UnitOfMeasure>> uomsByCategory() {
   return grouped;
 }
 
+/// Whether this unit's factor is only a NOMINAL default that a product may
+/// override with its own pack size — a box of tuna and a box of water are not
+/// both 12.
+///
+/// Deliberately just box and pack. A `dozen` is 12 by definition, and every
+/// other unit is a fixed physical conversion (1000 g in a kg, whatever the
+/// product is).
+bool isPackSizedUom(int? uomId) => uomId == kUomBox || uomId == kUomPack;
+
+/// The pack size worth STORING on a product: only a positive one, and only on a
+/// pack-sized unit. Everything else is null — "use the nominal factor".
+///
+/// Clearing rather than rejecting is deliberate: a size left over from a unit
+/// the admin has since changed away from would otherwise sit on the row waiting
+/// to be believed the next time somebody picks box again.
+double? normalisePackSize(int? uomId, double? packSize) =>
+    isPackSizedUom(uomId) && packSize != null && packSize > 0 ? packSize : null;
+
+/// How many of the unit with [uomId] make one reference unit, once the
+/// product's own [packSize] is applied.
+///
+/// [packSize] is stated the way a human says it — "24 to a box" — so the factor
+/// is its RECIPROCAL, matching the catalog's 1/12. A null or non-positive pack
+/// size falls back to the nominal factor, which is exactly how every product
+/// behaved before pack sizes existed.
+double effectiveUomFactor(int? uomId, double? packSize) {
+  final unit = uomById(uomId);
+  if (!isPackSizedUom(unit.id) || packSize == null || packSize <= 0) {
+    return unit.factor;
+  }
+  return 1 / packSize;
+}
+
 /// Converts [quantity], expressed in the unit with [uomId], into that category's
 /// reference unit — the only unit stock is ever held in.
 ///
-/// 100 g (uomId 11) becomes 0.100 kg.
-double uomToReference(double quantity, int? uomId) {
-  final unit = uomById(uomId);
-  final converted = unit.isReference ? quantity : quantity / unit.factor;
+/// 100 g (uomId 11) becomes 0.100 kg; 2 boxes of 24 become 48 pcs.
+///
+/// [packSize] is required rather than optional on purpose: it is only ever the
+/// PRODUCT's own, and a default here would let a call site quietly restock a
+/// 24-box as 12 pieces. Pass null for anything that is not a box or a pack.
+double uomToReference(double quantity, int? uomId,
+    {required double? packSize}) {
+  final factor = effectiveUomFactor(uomId, packSize);
+  final converted = factor == 1.0 ? quantity : quantity / factor;
   return snapToStorage(converted);
 }
 
 /// The inverse of [uomToReference]: expresses a reference-unit quantity in the
 /// unit with [uomId]. Used to show stock in the unit a product is sold in.
-double uomFromReference(double referenceQuantity, int? uomId) {
-  final unit = uomById(uomId);
+double uomFromReference(double referenceQuantity, int? uomId,
+    {required double? packSize}) {
+  final factor = effectiveUomFactor(uomId, packSize);
   final converted =
-      unit.isReference ? referenceQuantity : referenceQuantity * unit.factor;
+      factor == 1.0 ? referenceQuantity : referenceQuantity * factor;
   return snapToStorage(converted);
 }
 
@@ -191,8 +235,9 @@ double quantityStepFor(int? uomId) {
 /// holding 0.400 kg is worth 12 000 MAD, and the stock screen said 12.00
 /// because it multiplied the kilogram figure by the gram price. Every
 /// valuation of a stock quantity goes through here.
-double pricePerReferenceUnit(double unitPrice, int? uomId) =>
-    unitPrice * uomById(uomId).factor;
+double pricePerReferenceUnit(double unitPrice, int? uomId,
+        {required double? packSize}) =>
+    unitPrice * effectiveUomFactor(uomId, packSize);
 
 /// The quantity, in the unit with [uomId], that [amount] of money buys at
 /// [unitPrice] per unit — the reverse of a line total.

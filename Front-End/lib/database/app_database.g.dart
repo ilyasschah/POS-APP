@@ -6502,6 +6502,17 @@ class $ProductsTableTable extends ProductsTable
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _packSizeMeta = const VerificationMeta(
+    'packSize',
+  );
+  @override
+  late final GeneratedColumn<double> packSize = GeneratedColumn<double>(
+    'pack_size',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _imageMeta = const VerificationMeta('image');
   @override
   late final GeneratedColumn<Uint8List> image = GeneratedColumn<Uint8List>(
@@ -6552,6 +6563,7 @@ class $ProductsTableTable extends ProductsTable
     syncError,
     uomId,
     isToWeigh,
+    packSize,
     image,
     color,
   ];
@@ -6786,6 +6798,12 @@ class $ProductsTableTable extends ProductsTable
         isToWeigh.isAcceptableOrUnknown(data['is_to_weigh']!, _isToWeighMeta),
       );
     }
+    if (data.containsKey('pack_size')) {
+      context.handle(
+        _packSizeMeta,
+        packSize.isAcceptableOrUnknown(data['pack_size']!, _packSizeMeta),
+      );
+    }
     if (data.containsKey('image')) {
       context.handle(
         _imageMeta,
@@ -6927,6 +6945,10 @@ class $ProductsTableTable extends ProductsTable
         DriftSqlType.bool,
         data['${effectivePrefix}is_to_weigh'],
       )!,
+      packSize: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}pack_size'],
+      ),
       image: attachedDatabase.typeMapping.read(
         DriftSqlType.blob,
         data['${effectivePrefix}image'],
@@ -6976,6 +6998,7 @@ class ProductsTableData extends DataClass
   final String? syncError;
   final int uomId;
   final bool isToWeigh;
+  final double? packSize;
   final Uint8List? image;
   final String? color;
   const ProductsTableData({
@@ -7009,6 +7032,7 @@ class ProductsTableData extends DataClass
     this.syncError,
     required this.uomId,
     required this.isToWeigh,
+    this.packSize,
     this.image,
     this.color,
   });
@@ -7075,6 +7099,9 @@ class ProductsTableData extends DataClass
     }
     map['uom_id'] = Variable<int>(uomId);
     map['is_to_weigh'] = Variable<bool>(isToWeigh);
+    if (!nullToAbsent || packSize != null) {
+      map['pack_size'] = Variable<double>(packSize);
+    }
     if (!nullToAbsent || image != null) {
       map['image'] = Variable<Uint8List>(image);
     }
@@ -7142,6 +7169,9 @@ class ProductsTableData extends DataClass
           : Value(syncError),
       uomId: Value(uomId),
       isToWeigh: Value(isToWeigh),
+      packSize: packSize == null && nullToAbsent
+          ? const Value.absent()
+          : Value(packSize),
       image: image == null && nullToAbsent
           ? const Value.absent()
           : Value(image),
@@ -7195,6 +7225,7 @@ class ProductsTableData extends DataClass
       syncError: serializer.fromJson<String?>(json['syncError']),
       uomId: serializer.fromJson<int>(json['uomId']),
       isToWeigh: serializer.fromJson<bool>(json['isToWeigh']),
+      packSize: serializer.fromJson<double?>(json['packSize']),
       image: serializer.fromJson<Uint8List?>(json['image']),
       color: serializer.fromJson<String?>(json['color']),
     );
@@ -7233,6 +7264,7 @@ class ProductsTableData extends DataClass
       'syncError': serializer.toJson<String?>(syncError),
       'uomId': serializer.toJson<int>(uomId),
       'isToWeigh': serializer.toJson<bool>(isToWeigh),
+      'packSize': serializer.toJson<double?>(packSize),
       'image': serializer.toJson<Uint8List?>(image),
       'color': serializer.toJson<String?>(color),
     };
@@ -7269,6 +7301,7 @@ class ProductsTableData extends DataClass
     Value<String?> syncError = const Value.absent(),
     int? uomId,
     bool? isToWeigh,
+    Value<double?> packSize = const Value.absent(),
     Value<Uint8List?> image = const Value.absent(),
     Value<String?> color = const Value.absent(),
   }) => ProductsTableData(
@@ -7313,6 +7346,7 @@ class ProductsTableData extends DataClass
     syncError: syncError.present ? syncError.value : this.syncError,
     uomId: uomId ?? this.uomId,
     isToWeigh: isToWeigh ?? this.isToWeigh,
+    packSize: packSize.present ? packSize.value : this.packSize,
     image: image.present ? image.value : this.image,
     color: color.present ? color.value : this.color,
   );
@@ -7376,6 +7410,7 @@ class ProductsTableData extends DataClass
       syncError: data.syncError.present ? data.syncError.value : this.syncError,
       uomId: data.uomId.present ? data.uomId.value : this.uomId,
       isToWeigh: data.isToWeigh.present ? data.isToWeigh.value : this.isToWeigh,
+      packSize: data.packSize.present ? data.packSize.value : this.packSize,
       image: data.image.present ? data.image.value : this.image,
       color: data.color.present ? data.color.value : this.color,
     );
@@ -7414,6 +7449,7 @@ class ProductsTableData extends DataClass
           ..write('syncError: $syncError, ')
           ..write('uomId: $uomId, ')
           ..write('isToWeigh: $isToWeigh, ')
+          ..write('packSize: $packSize, ')
           ..write('image: $image, ')
           ..write('color: $color')
           ..write(')'))
@@ -7452,6 +7488,7 @@ class ProductsTableData extends DataClass
     syncError,
     uomId,
     isToWeigh,
+    packSize,
     $driftBlobEquality.hash(image),
     color,
   ]);
@@ -7489,6 +7526,7 @@ class ProductsTableData extends DataClass
           other.syncError == this.syncError &&
           other.uomId == this.uomId &&
           other.isToWeigh == this.isToWeigh &&
+          other.packSize == this.packSize &&
           $driftBlobEquality.equals(other.image, this.image) &&
           other.color == this.color);
 }
@@ -7524,6 +7562,7 @@ class ProductsTableCompanion extends UpdateCompanion<ProductsTableData> {
   final Value<String?> syncError;
   final Value<int> uomId;
   final Value<bool> isToWeigh;
+  final Value<double?> packSize;
   final Value<Uint8List?> image;
   final Value<String?> color;
   const ProductsTableCompanion({
@@ -7557,6 +7596,7 @@ class ProductsTableCompanion extends UpdateCompanion<ProductsTableData> {
     this.syncError = const Value.absent(),
     this.uomId = const Value.absent(),
     this.isToWeigh = const Value.absent(),
+    this.packSize = const Value.absent(),
     this.image = const Value.absent(),
     this.color = const Value.absent(),
   });
@@ -7591,6 +7631,7 @@ class ProductsTableCompanion extends UpdateCompanion<ProductsTableData> {
     this.syncError = const Value.absent(),
     this.uomId = const Value.absent(),
     this.isToWeigh = const Value.absent(),
+    this.packSize = const Value.absent(),
     this.image = const Value.absent(),
     this.color = const Value.absent(),
   }) : companyId = Value(companyId),
@@ -7627,6 +7668,7 @@ class ProductsTableCompanion extends UpdateCompanion<ProductsTableData> {
     Expression<String>? syncError,
     Expression<int>? uomId,
     Expression<bool>? isToWeigh,
+    Expression<double>? packSize,
     Expression<Uint8List>? image,
     Expression<String>? color,
   }) {
@@ -7664,6 +7706,7 @@ class ProductsTableCompanion extends UpdateCompanion<ProductsTableData> {
       if (syncError != null) 'sync_error': syncError,
       if (uomId != null) 'uom_id': uomId,
       if (isToWeigh != null) 'is_to_weigh': isToWeigh,
+      if (packSize != null) 'pack_size': packSize,
       if (image != null) 'image': image,
       if (color != null) 'color': color,
     });
@@ -7700,6 +7743,7 @@ class ProductsTableCompanion extends UpdateCompanion<ProductsTableData> {
     Value<String?>? syncError,
     Value<int>? uomId,
     Value<bool>? isToWeigh,
+    Value<double?>? packSize,
     Value<Uint8List?>? image,
     Value<String?>? color,
   }) {
@@ -7735,6 +7779,7 @@ class ProductsTableCompanion extends UpdateCompanion<ProductsTableData> {
       syncError: syncError ?? this.syncError,
       uomId: uomId ?? this.uomId,
       isToWeigh: isToWeigh ?? this.isToWeigh,
+      packSize: packSize ?? this.packSize,
       image: image ?? this.image,
       color: color ?? this.color,
     );
@@ -7837,6 +7882,9 @@ class ProductsTableCompanion extends UpdateCompanion<ProductsTableData> {
     if (isToWeigh.present) {
       map['is_to_weigh'] = Variable<bool>(isToWeigh.value);
     }
+    if (packSize.present) {
+      map['pack_size'] = Variable<double>(packSize.value);
+    }
     if (image.present) {
       map['image'] = Variable<Uint8List>(image.value);
     }
@@ -7879,6 +7927,7 @@ class ProductsTableCompanion extends UpdateCompanion<ProductsTableData> {
           ..write('syncError: $syncError, ')
           ..write('uomId: $uomId, ')
           ..write('isToWeigh: $isToWeigh, ')
+          ..write('packSize: $packSize, ')
           ..write('image: $image, ')
           ..write('color: $color')
           ..write(')'))
@@ -43241,6 +43290,7 @@ typedef $$ProductsTableTableCreateCompanionBuilder =
       Value<String?> syncError,
       Value<int> uomId,
       Value<bool> isToWeigh,
+      Value<double?> packSize,
       Value<Uint8List?> image,
       Value<String?> color,
     });
@@ -43276,6 +43326,7 @@ typedef $$ProductsTableTableUpdateCompanionBuilder =
       Value<String?> syncError,
       Value<int> uomId,
       Value<bool> isToWeigh,
+      Value<double?> packSize,
       Value<Uint8List?> image,
       Value<String?> color,
     });
@@ -43436,6 +43487,11 @@ class $$ProductsTableTableFilterComposer
 
   ColumnFilters<bool> get isToWeigh => $composableBuilder(
     column: $table.isToWeigh,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get packSize => $composableBuilder(
+    column: $table.packSize,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -43609,6 +43665,11 @@ class $$ProductsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get packSize => $composableBuilder(
+    column: $table.packSize,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<Uint8List> get image => $composableBuilder(
     column: $table.image,
     builder: (column) => ColumnOrderings(column),
@@ -43747,6 +43808,9 @@ class $$ProductsTableTableAnnotationComposer
   GeneratedColumn<bool> get isToWeigh =>
       $composableBuilder(column: $table.isToWeigh, builder: (column) => column);
 
+  GeneratedColumn<double> get packSize =>
+      $composableBuilder(column: $table.packSize, builder: (column) => column);
+
   GeneratedColumn<Uint8List> get image =>
       $composableBuilder(column: $table.image, builder: (column) => column);
 
@@ -43819,6 +43883,7 @@ class $$ProductsTableTableTableManager
                 Value<String?> syncError = const Value.absent(),
                 Value<int> uomId = const Value.absent(),
                 Value<bool> isToWeigh = const Value.absent(),
+                Value<double?> packSize = const Value.absent(),
                 Value<Uint8List?> image = const Value.absent(),
                 Value<String?> color = const Value.absent(),
               }) => ProductsTableCompanion(
@@ -43852,6 +43917,7 @@ class $$ProductsTableTableTableManager
                 syncError: syncError,
                 uomId: uomId,
                 isToWeigh: isToWeigh,
+                packSize: packSize,
                 image: image,
                 color: color,
               ),
@@ -43887,6 +43953,7 @@ class $$ProductsTableTableTableManager
                 Value<String?> syncError = const Value.absent(),
                 Value<int> uomId = const Value.absent(),
                 Value<bool> isToWeigh = const Value.absent(),
+                Value<double?> packSize = const Value.absent(),
                 Value<Uint8List?> image = const Value.absent(),
                 Value<String?> color = const Value.absent(),
               }) => ProductsTableCompanion.insert(
@@ -43920,6 +43987,7 @@ class $$ProductsTableTableTableManager
                 syncError: syncError,
                 uomId: uomId,
                 isToWeigh: isToWeigh,
+                packSize: packSize,
                 image: image,
                 color: color,
               ),

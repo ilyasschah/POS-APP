@@ -116,6 +116,14 @@ namespace Api.Commands.ProductCommands.Import
                             continue;
                         }
 
+                        // A spreadsheet has no UoM id column, so the unit is derived
+                        // from the text the row carries. A row that names no unit must
+                        // leave the product's unit alone — re-deriving it would file
+                        // every re-import under pieces.
+                        var importedUomId = row.MeasurementUnit != null
+                            ? UnitOfMeasure.FromLegacyText(row.MeasurementUnit)
+                            : existing.UomId;
+
                         existing.Update(
                             productGroupId:        groupId ?? existing.ProductGroupId,
                             name:                  existing.Name,
@@ -138,14 +146,15 @@ namespace Api.Commands.ProductCommands.Import
                             ageRestriction:        existing.AgeRestriction,
                             lastPurchasePrice:     existing.LastPurchasePrice,
                             rank:                  existing.Rank,
-                            // A spreadsheet has no UoM id column, so the unit is
-                            // derived from the text the row carries. A row that
-                            // names no unit must leave the product's unit alone —
-                            // re-deriving it would file every re-import under pieces.
-                            uomId:                 row.MeasurementUnit != null
-                                                       ? UnitOfMeasure.FromLegacyText(row.MeasurementUnit)
-                                                       : existing.UomId,
-                            isToWeigh:             row.IsToWeigh || existing.IsToWeigh);
+                            uomId:                 importedUomId,
+                            isToWeigh:             row.IsToWeigh || existing.IsToWeigh,
+                            // Same rule as the unit: a row that says nothing keeps
+                            // what the product had. Normalised against the unit the
+                            // row just chose, so a re-import that moves a product off
+                            // box does not leave a pack size behind to be believed.
+                            packSize:              UnitOfMeasure.NormalisePackSize(
+                                                       importedUomId,
+                                                       row.PackSize ?? existing.PackSize));
                         product = existing;
                         result.Updated++;
                     }
@@ -175,7 +184,10 @@ namespace Api.Commands.ProductCommands.Import
                             lastPurchasePrice:     null,
                             rank:                  0,
                             uomId:                 UnitOfMeasure.FromLegacyText(row.MeasurementUnit),
-                            isToWeigh:             row.IsToWeigh);
+                            isToWeigh:             row.IsToWeigh,
+                            packSize:              UnitOfMeasure.NormalisePackSize(
+                                                       UnitOfMeasure.FromLegacyText(row.MeasurementUnit),
+                                                       row.PackSize));
                         product.CompanyId = companyId;
                         _db.Products.Add(product);
                         await _db.SaveChangesAsync(ct);

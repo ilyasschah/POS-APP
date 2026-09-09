@@ -2505,6 +2505,7 @@ class SyncManager {
               'measurementUnit': p.measurementUnit,
               'uomId': p.uomId,
               'isToWeigh': p.isToWeigh,
+              'packSize': p.packSize,
               'price': p.price,
               'cost': p.cost,
               'markup': p.markup,
@@ -2551,6 +2552,7 @@ class SyncManager {
                     measurementUnit: Value(p.measurementUnit),
                     uomId: Value(p.uomId),
                     isToWeigh: Value(p.isToWeigh),
+                    packSize: Value(p.packSize),
                     description: Value(p.description),
                     markup: Value(p.markup),
                     rank: Value(p.rank),
@@ -2579,6 +2581,7 @@ class SyncManager {
               'measurementUnit': p.measurementUnit,
               'uomId': p.uomId,
               'isToWeigh': p.isToWeigh,
+              'packSize': p.packSize,
               'price': p.price,
               'cost': p.cost,
               'markup': p.markup,
@@ -2899,6 +2902,9 @@ class SyncManager {
               uomId: Value((json['uomId'] as num?)?.toInt() ??
                   uomFromLegacyText(json['measurementUnit'] as String?)),
               isToWeigh: Value(json['isToWeigh'] as bool? ?? false),
+              // Absent on a server that predates the column, and absent is a
+              // real answer: null means the catalogue's nominal 12 / 6.
+              packSize: Value((json['packSize'] as num?)?.toDouble()),
               description: Value(json['description'] as String?),
               markup: Value((json['markup'] as num?)?.toDouble()),
               rank: Value(json['rank'] as int? ?? 0),

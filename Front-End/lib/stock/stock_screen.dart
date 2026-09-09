@@ -308,8 +308,8 @@ class _StockScreenState extends ConsumerState<StockScreen> {
       // it charged the gram price for a whole kilogram. Both money figures are
       // restated per reference unit first; for a product sold in its own
       // reference unit this is the identity and nothing changes.
-      final unitCost  = pricePerReferenceUnit(p.cost, p.uomId);
-      final unitPrice = pricePerReferenceUnit(p.price, p.uomId);
+      final unitCost  = pricePerReferenceUnit(p.cost, p.uomId, packSize: p.packSize);
+      final unitPrice = pricePerReferenceUnit(p.price, p.uomId, packSize: p.packSize);
       final costBT  = qty * unitCost;
       // A product with no assignment of its own inherits the configured
       // default, exactly like the cart's fallback.
@@ -766,7 +766,14 @@ class _StockScreenState extends ConsumerState<StockScreen> {
   /// product was selected, which is the whole reason the table had nowhere to
   /// put its columns.
   void _showDetails(StockMasterItem item) {
-    setState(() => _selectedProductId = item.product.id);
+    // 🚨 Hold the ID, never the row. `item` is a snapshot taken when the row was
+    // tapped, and a dialog builder runs ONCE — so assigning a warehouse from
+    // inside this dialog refreshed the table underneath it while the dialog went
+    // on showing "Unassigned", until it was closed and reopened. Everything the
+    // panel draws is therefore re-resolved from the provider on every build.
+    final productId = item.product.id;
+
+    setState(() => _selectedProductId = productId);
     showDialog<void>(
       context: context,
       builder: (dialogContext) => Dialog(
@@ -776,15 +783,34 @@ class _StockScreenState extends ConsumerState<StockScreen> {
             maxWidth: 420,
             maxHeight: MediaQuery.sizeOf(dialogContext).height * 0.85,
           ),
-          child: _ProductDetailPanel(
-            item: item,
-            warehouseId: _selectedWarehouseId,
-            onClose: () => Navigator.of(dialogContext).maybePop(),
-            onRefresh: () => ref.invalidate(stockMasterProvider),
-            onShowAssignDialog: () =>
-                _showAssignDialog(context, item.product),
-            onShowControlDialog: () =>
-                _showStockControlDialog(context, item.product),
+          child: Consumer(
+            builder: (consumerContext, dialogRef, _) {
+              // Falls back to the tapped snapshot rather than closing or drawing
+              // an empty panel: a product can leave the list mid-dialog (a
+              // filter change, a delete elsewhere), and the last known good row
+              // is a better answer than a blank one.
+              final live = dialogRef
+                      .watch(stockMasterProvider)
+                      .asData
+                      ?.value
+                      .where((m) => m.product.id == productId)
+                      .firstOrNull ??
+                  item;
+
+              return _ProductDetailPanel(
+                // Rebuilds the panel's own state (the inline quantity editor)
+                // only when the product actually changes, never on a refresh.
+                key: ValueKey(productId),
+                item: live,
+                warehouseId: _selectedWarehouseId,
+                onClose: () => Navigator.of(dialogContext).maybePop(),
+                onRefresh: () => ref.invalidate(stockMasterProvider),
+                onShowAssignDialog: () =>
+                    _showAssignDialog(context, live.product),
+                onShowControlDialog: () =>
+                    _showStockControlDialog(context, live.product),
+              );
+            },
           ),
         ),
       ),
@@ -895,7 +921,8 @@ class _StockScreenState extends ConsumerState<StockScreen> {
   /// report builder. 0.400 kg of a 30 MAD/g product is 12 000 MAD.
   double _totalValue(StockMasterItem item) =>
       _totalQty(item) *
-      pricePerReferenceUnit(item.product.price, item.product.uomId);
+      pricePerReferenceUnit(item.product.price, item.product.uomId,
+          packSize: item.product.packSize);
 
   Widget _productCell(BuildContext context, Product product) => Row(
         mainAxisSize: MainAxisSize.min,
@@ -1981,7 +2008,9 @@ class _StockEntry extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  "${(stock.quantity * pricePerReferenceUnit(product.price, product.uomId)).toStringAsFixed(2)} $sym",
+                  "${(stock.quantity *
+                          pricePerReferenceUnit(product.price, product.uomId,
+                              packSize: product.packSize)).toStringAsFixed(2)} $sym",
                   style: theme.textTheme.bodySmall?.copyWith(
                       color:
                           theme.colorScheme.onSurfaceVariant),

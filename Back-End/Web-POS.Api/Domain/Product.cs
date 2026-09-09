@@ -40,6 +40,29 @@ namespace Api.Domain
         public int UomId { get; set; } = UnitOfMeasure.PiecesId;
 
         /// <summary>
+        /// How many reference units (pieces) are in one box or one pack of THIS
+        /// product — 24 for a 24-can box.
+        /// </summary>
+        /// <remarks>
+        /// Only read for the pack-sized units (see
+        /// <see cref="UnitOfMeasure.IsPackSized"/>); a kilogram is 1000 g whatever
+        /// the product, so the column is ignored everywhere else.
+        ///
+        /// NULL means "use the nominal 12 / 6 from the catalog", which is exactly how
+        /// every product behaved before this column existed — so adding it moved no
+        /// existing stock figure. Stock is held in pieces either way, so changing a
+        /// product's pack size never rewrites its stock: it changes how many boxes
+        /// the pieces already on hand add up to.
+        /// </remarks>
+        /// <remarks>
+        /// Precision is set in <c>AppDbContext.OnModelCreating</c>, not here: a
+        /// <c>[Precision]</c> attribute LOSES to the model-wide decimal(18,2)
+        /// convention in <c>ConfigureConventions</c>, and a pack size is a count of
+        /// pieces — decimal(18,4), like every other quantity column.
+        /// </remarks>
+        public decimal? PackSize { get; set; }
+
+        /// <summary>
         /// Sold by weight. At the POS this makes the product ask for a quantity
         /// (from the scale, or from the keypad when no scale is attached) instead
         /// of adding a single unit, and turns the Price button into a quantity
@@ -113,7 +136,8 @@ namespace Api.Domain
             decimal? lastPurchasePrice,
             int? rank,
             int uomId,
-            bool isToWeigh)
+            bool isToWeigh,
+            decimal? packSize)
         {
             ProductGroupId = productGroupId;
             Name = name;
@@ -139,6 +163,7 @@ namespace Api.Domain
             Rank = rank;
             UomId = uomId;
             IsToWeigh = isToWeigh;
+            PackSize = packSize;
         }
 
         public static Product Create(
@@ -165,12 +190,13 @@ namespace Api.Domain
             decimal? lastPurchasePrice,
             int? rank,
             int uomId,
-            bool isToWeigh)
+            bool isToWeigh,
+            decimal? packSize)
             => new(
                 productGroupId, name, code, plu, measurementUnit, price, isTaxInclusivePrice, currencyId,
                 isPriceChangeAllowed, isService, isUsingDefaultQuantity, isEnabled, description, dateCreated,
                 dateUpdated, cost, markup, image, color, ageRestriction, lastPurchasePrice, rank,
-                uomId, isToWeigh
+                uomId, isToWeigh, packSize
             );
 
         public void Update(
@@ -196,7 +222,8 @@ namespace Api.Domain
             decimal? lastPurchasePrice,
             int? rank,
             int uomId,
-            bool isToWeigh)
+            bool isToWeigh,
+            decimal? packSize)
         {
             ProductGroupId = productGroupId;
             Name = name;
@@ -221,6 +248,7 @@ namespace Api.Domain
             Rank = rank;
             UomId = uomId;
             IsToWeigh = isToWeigh;
+            PackSize = packSize;
         }
     }
 }

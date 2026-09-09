@@ -26,7 +26,7 @@ namespace Api.Queries.ProductsQuery
                 {
                     p.Id, p.Name,
                     ProductGroupName = p.ProductGroup == null ? null : p.ProductGroup.Name,
-                    p.Code, p.PLU, p.MeasurementUnit, p.UomId, p.IsToWeigh,
+                    p.Code, p.PLU, p.MeasurementUnit, p.UomId, p.IsToWeigh, p.PackSize,
                     p.Cost, p.Markup, p.Price,
                     p.IsTaxInclusivePrice, p.IsPriceChangeAllowed,
                     p.IsUsingDefaultQuantity, p.IsService, p.IsEnabled,
@@ -103,6 +103,7 @@ namespace Api.Queries.ProductsQuery
                         MeasurementUnit          = p.MeasurementUnit,
                         UomId                    = p.UomId,
                         IsToWeigh                = p.IsToWeigh,
+                        PackSize                 = p.PackSize,
                         Cost                     = p.Cost,
                         Markup                   = p.Markup,
                         Price                    = p.Price,

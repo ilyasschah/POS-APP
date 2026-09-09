@@ -117,7 +117,7 @@ namespace Api.Commands.PosOrderItemCommands.Add
                                 // Stock is always in its category's reference unit
                                 // (0.100 kg). Comparing the two unconverted would let a
                                 // 100 g sale claim 100 kg of stock.
-                                decimal deltaInStockUnit = UnitOfMeasure.ToReference(delta, product.UomId);
+                                decimal deltaInStockUnit = UnitOfMeasure.ToReference(delta, product.UomId, product.PackSize);
 
                                 if (!stocks.TryGetValue(group.Key, out var stock) || stock.Quantity < deltaInStockUnit)
                                 {
@@ -189,7 +189,7 @@ namespace Api.Commands.PosOrderItemCommands.Add
                                 {
                                     // Converted for the same reason as the check above:
                                     // the line is in the product's unit, stock is not.
-                                    var restored = UnitOfMeasure.ToReference(item.Quantity, item.Product.UomId);
+                                    var restored = UnitOfMeasure.ToReference(item.Quantity, item.Product.UomId, item.Product.PackSize);
                                     stock.UpdateDetails(stock.Quantity + restored, stock.WarehouseId, stock.ProductId);
                                     _db.Stocks.Update(stock);
                                 }
@@ -258,7 +258,7 @@ namespace Api.Commands.PosOrderItemCommands.Add
                             {
                                 if (stocks.TryGetValue(req.ProductId, out var stock))
                                 {
-                                    decimal newStockQty = stock.Quantity - UnitOfMeasure.ToReference(delta, product.UomId);
+                                    decimal newStockQty = stock.Quantity - UnitOfMeasure.ToReference(delta, product.UomId, product.PackSize);
                                     stock.UpdateDetails(newStockQty, stock.WarehouseId, req.ProductId);
                                     _db.Stocks.Update(stock);
 

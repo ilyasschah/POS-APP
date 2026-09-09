@@ -63,6 +63,9 @@ namespace Api.Domain
         // renumber one, and add new units with fresh ids at the end of a block.
 
         public const int PiecesId = 1;
+        public const int DozenId = 2;
+        public const int BoxId = 3;
+        public const int PackId = 4;
         public const int KilogramId = 10;
         public const int LitreId = 20;
         public const int MetreId = 30;
@@ -71,9 +74,13 @@ namespace Api.Domain
         {
             // Unit — reference: pcs
             new(PiecesId, "pcs",   UomCategory.Unit,   1m,        1m,     0),
-            new(2,        "dozen", UomCategory.Unit,   1m / 12m,  1m,     0),
-            new(3,        "box",   UomCategory.Unit,   1m / 12m,  1m,     0),
-            new(4,        "pack",  UomCategory.Unit,   1m / 6m,   1m,     0),
+            new(DozenId,  "dozen", UomCategory.Unit,   1m / 12m,  1m,     0),
+            // 🚨 box and pack carry a NOMINAL factor only. It is the fallback for a
+            // product that has not stated its own Product.PackSize — see
+            // IsPackSized / EffectiveFactor. A dozen is 12 by definition and is
+            // deliberately NOT overridable.
+            new(BoxId,    "box",   UomCategory.Unit,   1m / 12m,  1m,     0),
+            new(PackId,   "pack",  UomCategory.Unit,   1m / 6m,   1m,     0),
 
             // Weight — reference: kg
             new(KilogramId, "kg",  UomCategory.Weight, 1m,        0.001m, 3),
@@ -107,15 +114,65 @@ namespace Api.Domain
             => ReferenceByCategory[unit.Category];
 
         /// <summary>
+        /// The units whose catalog <see cref="Factor"/> is only a NOMINAL default,
+        /// overridable per product by <c>Product.PackSize</c>: a box of tuna and a
+        /// box of water are not both 12.
+        /// </summary>
+        /// <remarks>
+        /// Deliberately just box and pack. <c>dozen</c> is 12 by definition — making
+        /// it overridable would let a product claim a dozen is 10 — and every other
+        /// unit is a fixed physical conversion (1000 g in a kg, whatever the product).
+        /// </remarks>
+        public static bool IsPackSized(int? uomId) => uomId is BoxId or PackId;
+
+        /// <summary>
+        /// The pack size worth storing for a product on the unit
+        /// <paramref name="uomId"/>: only a positive one, and only on a
+        /// pack-sized unit. Everything else is NULL — "use the nominal factor".
+        /// </summary>
+        /// <remarks>
+        /// Clearing rather than rejecting is deliberate. A size left over from a
+        /// unit the admin has since changed (24 to a box, then switched to kg)
+        /// would otherwise sit on the row waiting to be believed the next time
+        /// somebody picks box again. A zero is the same mistake made faster: it
+        /// would divide every conversion by nothing.
+        /// </remarks>
+        public static decimal? NormalisePackSize(int? uomId, decimal? packSize)
+            => IsPackSized(uomId) && packSize is > 0m ? packSize : null;
+
+        /// <summary>
+        /// How many of the unit with <paramref name="uomId"/> make one reference
+        /// unit, once the product's own <paramref name="packSize"/> is applied.
+        /// </summary>
+        /// <remarks>
+        /// <paramref name="packSize"/> is stated the way a human says it — "24 to a
+        /// box" — so the factor is its RECIPROCAL, matching the catalog's 1/12.
+        /// A null, zero or negative pack size falls back to the nominal factor, which
+        /// is what every product carried before the column existed; that fallback is
+        /// what makes the column safe to add to a live catalogue.
+        /// </remarks>
+        public static decimal EffectiveFactor(int? uomId, decimal? packSize)
+        {
+            var unit = Get(uomId);
+            if (!IsPackSized(unit.Id) || packSize is not > 0m) return unit.Factor;
+            return 1m / packSize.Value;
+        }
+
+        /// <summary>
         /// Converts <paramref name="quantity"/>, expressed in the unit with
         /// <paramref name="uomId"/>, into that category's reference unit — the
         /// only unit the Stock table ever holds.
         /// </summary>
-        /// <example>100 g with uomId 11 → 0.100 (kg).</example>
-        public static decimal ToReference(decimal quantity, int? uomId)
+        /// <param name="packSize">
+        /// The product's own <c>PackSize</c>. Required rather than optional on
+        /// purpose: it is only ever read from the product being moved, and a default
+        /// here would let a call site silently restock a 24-box as 12 pieces.
+        /// </param>
+        /// <example>100 g with uomId 11 → 0.100 (kg); 2 boxes of 24 → 48 (pcs).</example>
+        public static decimal ToReference(decimal quantity, int? uomId, decimal? packSize)
         {
-            var unit = Get(uomId);
-            var converted = unit.IsReference ? quantity : quantity / unit.Factor;
+            var factor = EffectiveFactor(uomId, packSize);
+            var converted = factor == 1m ? quantity : quantity / factor;
             return SnapToStorage(converted);
         }
 
@@ -124,10 +181,10 @@ namespace Api.Domain
         /// quantity and expresses it in the unit with <paramref name="uomId"/>.
         /// Used to show stock in the unit a product is actually sold in.
         /// </summary>
-        public static decimal FromReference(decimal referenceQuantity, int? uomId)
+        public static decimal FromReference(decimal referenceQuantity, int? uomId, decimal? packSize)
         {
-            var unit = Get(uomId);
-            var converted = unit.IsReference ? referenceQuantity : referenceQuantity * unit.Factor;
+            var factor = EffectiveFactor(uomId, packSize);
+            var converted = factor == 1m ? referenceQuantity : referenceQuantity * factor;
             return SnapToStorage(converted);
         }
 

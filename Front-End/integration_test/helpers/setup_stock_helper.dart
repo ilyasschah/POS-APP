@@ -15,6 +15,8 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:pos_app/api/api_client.dart';
+
 import '../support/e2e_support.dart';
 import 'e2e_context.dart';
 
@@ -240,4 +242,28 @@ Future<void> _closeDetailModal(WidgetTester tester, E2EContext ctx) async {
   }
   await waitForGone(tester, panel, timeout: const Duration(seconds: 30));
   await pumpFor(tester, const Duration(seconds: 1));
+}
+
+/// The quantity the SERVER holds for [productId], summed across warehouses.
+///
+/// 🚨 Read from `/Stocks/GetAllStocks`, not from the local `stocks` table, and
+/// the difference is the whole point when a refund is involved.
+///
+/// `ProcessRefundCommand` moves stock back on the SERVER. The terminal only
+/// learns about it on the next `pullStocks`, so a local read straight after a
+/// refund reports the pre-refund figure and an assertion against it fails for a
+/// reason that has nothing to do with the reversal.
+///
+/// Summed across warehouses because the reversal targets the warehouse the sale
+/// sourced from, which a caller that did not choose it cannot name.
+Future<double> serverStockOf(E2EContext ctx, int productId) async {
+  final res = await createDio().get<List<dynamic>>(
+    '/Stocks/GetAllStocks',
+    queryParameters: {'companyId': ctx.company.companyId},
+  );
+
+  final rows = (res.data ?? const []).cast<Map<String, dynamic>>();
+  return rows
+      .where((r) => r['productId'] == productId)
+      .fold<double>(0, (sum, r) => sum + ((r['quantity'] as num?)?.toDouble() ?? 0));
 }

@@ -1471,6 +1471,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
         measurementUnit: match.measurementUnit,
         uomId: match.uomId,
         isToWeigh: match.isToWeigh,
+        packSize: match.packSize,
         isService: match.isService,
       );
       ref
@@ -1559,9 +1560,15 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
         .read(cartProvider)
         .items
         .where((i) => i.productId == product.id)
-        .fold(0.0, (sum, i) => sum + uomToReference(i.quantity, i.uomId));
+        .fold(
+          0.0,
+          (sum, i) =>
+              sum + uomToReference(i.quantity, i.uomId, packSize: product.packSize),
+        );
     final projectedQuantity = snapToStorage(
-      currentStock - cartQty - uomToReference(quantity, product.uomId),
+      currentStock -
+          cartQty -
+          uomToReference(quantity, product.uomId, packSize: product.packSize),
     );
 
     // Hard block — negative inventory is not permitted.
@@ -2312,6 +2319,7 @@ class _BrowserSectionState extends ConsumerState<BrowserSection> {
             measurementUnit: product.measurementUnit,
             uomId: product.uomId,
             isToWeigh: product.isToWeigh,
+            packSize: product.packSize,
             isService: product.isService,
           );
           ref

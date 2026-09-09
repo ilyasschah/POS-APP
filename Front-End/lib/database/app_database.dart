@@ -81,6 +81,13 @@ class ProductsTable extends Table {
   // Sold by weight — drives the POS scale/keypad flow and the Price button.
   BoolColumn get isToWeigh => boolean().withDefault(const Constant(false))();
 
+  // ---- Schema v66 additions: per-product pack size ----
+  // How many pieces are in one box / one pack of THIS product. NULL means the
+  // catalogue's nominal 12 (box) / 6 (pack), which is how every product behaved
+  // before the column existed — so an upgrade cannot move a stock figure.
+  // Ignored for every unit that is not box or pack.
+  RealColumn get packSize => real().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
   BlobColumn get image => blob().nullable()();
@@ -1798,7 +1805,7 @@ class AppDatabase extends _$AppDatabase {
   /// Restore validation needs it before Drift is touched: a backup whose
   /// `user_version` is higher came from a newer build, and Drift migrates
   /// forward only, so opening it here would corrupt it.
-  static const int expectedSchemaVersion = 65;
+  static const int expectedSchemaVersion = 66;
 
   @override
   int get schemaVersion => expectedSchemaVersion;
@@ -1837,6 +1844,12 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(productModifierGroupsTable);
             await m.createTable(posOrderItemModifiersTable);
             await m.createTable(documentItemModifiersTable);
+          }
+          if (from < 66) {
+            // Per-product pack size. Nullable with no default, so every existing
+            // row keeps meaning "the nominal 12 / 6" and no stock figure moves.
+            // The next master-data pull brings the server's real values.
+            await m.addColumn(productsTable, productsTable.packSize);
           }
           if (from < 65) {
             // The free-text product-comment catalogue is retired — modifier
@@ -2745,6 +2758,24 @@ class AppDatabase extends _$AppDatabase {
   // PHASE 5 — PUSH SYNC HELPERS
   // ==========================================================================
 
+  /// The pack sizes for [productIds], read straight from the catalogue.
+  ///
+  /// 🚨 Deliberately NOT carried on the cart line, the way `uomId` is. A pack
+  /// size belongs to the PRODUCT and cannot differ between two lines of it,
+  /// and the server converts the very same sale with `product.PackSize` read at
+  /// the moment it posts — so a line holding a stale copy would take a different
+  /// number of pieces off the shelf here than the server takes there, and the
+  /// two stock figures would silently diverge.
+  Future<Map<int, double?>> _packSizesByProduct(Iterable<int> productIds) async {
+    final ids = productIds.toSet().toList();
+    if (ids.isEmpty) return const {};
+
+    final rows =
+        await (select(productsTable)..where((t) => t.id.isIn(ids))).get();
+
+    return {for (final row in rows) row.id: row.packSize};
+  }
+
   /// Checks local stock and deducts quantities for a completed checkout.
   ///
   /// Returns `(success: true)` when every item was deducted.
@@ -2759,7 +2790,9 @@ class AppDatabase extends _$AppDatabase {
   /// unit (weight ⇒ kg), so 100 g off the shelf is 0.100 kg off the row. The
   /// conversion happens HERE rather than at the four call sites, so a fifth
   /// caller cannot forget it — passing `uomId` is what the compiler asks for,
-  /// and passing the right one is all it has to get right. Mirrors
+  /// and passing the right one is all it has to get right. The product's pack
+  /// size (what one box of it holds) is not asked for at all: it is read from
+  /// the catalogue here, so no caller can pass a stale one. Mirrors
   /// `UnitOfMeasure.ToReference` in `BulkAddPosOrderItemsCommand` /
   /// `DocumentItemService`, which the server already applies to the same sale.
   Future<({bool success, String? message})> deductStockForCheckout({
@@ -2773,11 +2806,14 @@ class AppDatabase extends _$AppDatabase {
     })> items,
     required bool allowNegative,
   }) async {
+    final packSizes = await _packSizesByProduct(items.map((i) => i.productId));
+
     // Pre-flight: check all items before touching any stock row.
     if (!allowNegative) {
       for (final item in items) {
         if (item.isService) continue;
-        final needed = uomToReference(item.quantity, item.uomId);
+        final needed = uomToReference(item.quantity, item.uomId,
+            packSize: packSizes[item.productId]);
         final stock = await (select(stocksTable)
               ..where((t) => t.productId.equals(item.productId))
               ..where((t) => t.warehouseId.equals(item.warehouseId))
@@ -2809,8 +2845,9 @@ class AppDatabase extends _$AppDatabase {
         if (stock == null) continue;
         await (update(stocksTable)..where((t) => t.id.equals(stock.id))).write(
           StocksTableCompanion(
-            quantity: Value(snapToStorage(
-                stock.quantity - uomToReference(item.quantity, item.uomId))),
+            quantity: Value(snapToStorage(stock.quantity -
+                uomToReference(item.quantity, item.uomId,
+                    packSize: packSizes[item.productId]))),
             lastModified: Value(DateTime.now().toUtc()),
           ),
         );

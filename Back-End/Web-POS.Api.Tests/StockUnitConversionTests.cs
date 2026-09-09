@@ -41,7 +41,7 @@ public class StockUnitConversionTests
         // took it to 0.400; the void must land back on exactly 0.500.
         var stock = 0.400m;
 
-        stock += UnitOfMeasure.ToReference(100m, G);
+        stock += UnitOfMeasure.ToReference(100m, G, null);
 
         Assert.Equal(0.500m, stock);
     }
@@ -51,7 +51,7 @@ public class StockUnitConversionTests
     {
         var stock = 0.400m;
 
-        stock += UnitOfMeasure.ToReference(100m, G);
+        stock += UnitOfMeasure.ToReference(100m, G, null);
 
         Assert.Equal(0.500m, stock);
         Assert.True(stock < 1m, "a hundred kilograms of saffron is the bug");
@@ -64,8 +64,8 @@ public class StockUnitConversionTests
         // than an obvious error because nobody notices for months.
         var stock = 0.500m;
 
-        stock -= UnitOfMeasure.ToReference(137m, G);
-        stock += UnitOfMeasure.ToReference(137m, G);
+        stock -= UnitOfMeasure.ToReference(137m, G, null);
+        stock += UnitOfMeasure.ToReference(137m, G, null);
 
         Assert.Equal(0.500m, stock);
     }
@@ -77,7 +77,7 @@ public class StockUnitConversionTests
         // reference unit — which is why adding it cannot disturb existing data.
         var stock = 257.500m;
 
-        stock += UnitOfMeasure.ToReference(0.500m, Kg);
+        stock += UnitOfMeasure.ToReference(0.500m, Kg, null);
 
         Assert.Equal(258.000m, stock);
     }
@@ -87,7 +87,7 @@ public class StockUnitConversionTests
     {
         var stock = 88.0m;
 
-        stock += UnitOfMeasure.ToReference(0.5m, Pieces);
+        stock += UnitOfMeasure.ToReference(0.5m, Pieces, null);
 
         Assert.Equal(88.5m, stock);
     }
@@ -171,7 +171,7 @@ public class StockUnitConversionTests
         Assert.True(
             offenders.Count == 0,
             "A stock row was moved by a raw line quantity. Wrap it in "
-            + "UnitOfMeasure.ToReference(qty, product.UomId) — see "
+            + "UnitOfMeasure.ToReference(qty, product.UomId, null) — see "
             + "PosOrderVoidService for the shape:\n  "
             + string.Join("\n  ", offenders));
     }

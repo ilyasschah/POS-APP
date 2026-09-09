@@ -3482,6 +3482,20 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String uomPackSize(String unit) {
+    return 'Pieces per $unit';
+  }
+
+  @override
+  String uomPackSizeHint(String nominal) {
+    return 'Leave empty for the standard $nominal.';
+  }
+
+  @override
+  String get uomPackSizeInvalid =>
+      'Enter a number greater than 0, or leave it empty.';
+
+  @override
   String uomStockConversionNote(String unit, String factor, String stockUnit) {
     return 'Priced per $unit. Stock still moves in $stockUnit — 1 $unit = $factor $stockUnit.';
   }

@@ -1101,6 +1101,23 @@
       }
     }
   },
+  "uomPackSize": "قطع في كل {unit}",
+  "uomPackSizeHint": "اتركه فارغًا لاستخدام القيمة الافتراضية ({nominal}).",
+  "uomPackSizeInvalid": "أدخل رقمًا أكبر من 0، أو اتركه فارغًا.",
+  "@uomPackSize": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "@uomPackSizeHint": {
+    "placeholders": {
+      "nominal": {
+        "type": "String"
+      }
+    }
+  },
   "uomStockConversionNote": "السعر لكل {unit}. المخزون يتحرك بـ {stockUnit} — 1 {unit} = {factor} {stockUnit}.",
   "@uomStockConversionNote": {
     "placeholders": {

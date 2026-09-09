@@ -229,7 +229,7 @@ namespace Api.Services
                                 // with /PosVoids/Add + DELETE /PosOrder/Delete), so
                                 // missing it here made every weighed void wrong on the
                                 // server even while the till got it right locally.
-                                var restored = UnitOfMeasure.ToReference(item.Quantity, item.Product.UomId);
+                                var restored = UnitOfMeasure.ToReference(item.Quantity, item.Product.UomId, item.Product.PackSize);
                                 stock.UpdateDetails(stock.Quantity + restored, stock.WarehouseId, stock.ProductId);
                                 _repository._db.Stocks.Update(stock);
                             }

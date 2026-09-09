@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_app/api/api_client.dart';
 import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/auth/auth_storage.dart';
+import 'package:pos_app/auth/role_visuals.dart';
 import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/utils/api_error_parser.dart';
 import 'package:pos_app/utils/snackbar_helper.dart';
@@ -296,6 +297,12 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
       );
     }
 
+    // Role glyph + colours come from one place (`role_visuals.dart`) so the
+    // profile header, the login grid and the PIN pad always agree. The old
+    // hardcoded orange/white broke the dark theme.
+    final isAdmin = currentUser.isAdmin;
+    final roleAvatar = roleAvatarColors(theme.colorScheme, isAdmin);
+
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
@@ -327,13 +334,11 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
                       children: [
                         CircleAvatar(
                           radius: 40,
-                          backgroundColor: currentUser.accessLevel == 0
-                              ? Colors.orange
-                              : theme.colorScheme.primary,
-                          child: const Icon(
-                            Icons.person,
+                          backgroundColor: roleAvatar.background,
+                          child: Icon(
+                            roleIcon(isAdmin),
                             size: 40,
-                            color: Colors.white,
+                            color: roleAvatar.foreground,
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -351,21 +356,15 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: currentUser.accessLevel == 0
-                                ? Colors.orange.withValues(alpha: 0.1)
-                                : theme.colorScheme.primary.withValues(
-                                    alpha: 0.1,
-                                  ),
+                            color: roleAvatar.background,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            currentUser.accessLevel == 0
+                            isAdmin
                                 ? AppLocalizations.of(context).administrator
                                 : AppLocalizations.of(context).roleCashier,
                             style: TextStyle(
-                              color: currentUser.accessLevel == 0
-                                  ? Colors.orange
-                                  : theme.colorScheme.primary,
+                              color: roleAvatar.foreground,
                               fontWeight: FontWeight.bold,
                             ),
                           ),

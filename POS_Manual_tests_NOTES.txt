@@ -35,15 +35,6 @@ Tell me "do 9" / "do 41" and I take the item.
 A.  DO NOW   (you, today - no code from me needed)
 =======================================================
 
-[A2] COMMIT AND TAG. 105 files are sitting uncommitted -
-     the reports translation, modifiers, shared registers,
-     the session and refund fixes, and the admin portal.
-       Front-End/pubspec.yaml -> 1.0.9+12
-       commit, push
-       git tag v1.0.9 && git push origin v1.0.9
-     Until this is done a crash report cannot be traced to
-     a build.
-
 =======================================================
 B.  CHECK NOW   (built and tested by me, needs YOUR eyes)
 =======================================================
@@ -119,6 +110,7 @@ B.  CHECK NOW   (built and tested by me, needs YOUR eyes)
      tell me and that becomes the next piece.
 
 
+     
 [B6] ITEM 42 - TWO TILLS, ONE DRAWER, NO INTERNET. BUILT.
      This is the one that lost money data, so read the
      "why" before the steps.
@@ -200,183 +192,6 @@ B.  CHECK NOW   (built and tested by me, needs YOUR eyes)
      merge a closed session).
 
 
-[B7] KITCHEN DISPLAY IS TRANSLATED. EN / FR / AR.
-     It was the one app with no strings file at all - the
-     kitchen staff being, as you said, the likeliest
-     Arabic-only readers in the building.
-
-     The language is picked ON THE DISPLAY (your call), with
-     a 🌐 button in the top-right of BOTH screens - including
-     the pairing screen, because the person setting it up is
-     the one who may not read English. Each language is
-     written in its own name (English / Francais / العربية),
-     so somebody who cannot read the current language can
-     still find their way out.
-
-     HOW TO TEST:
-     (a) Launch the KDS unpaired. Top-right 🌐 -> العربية.
-         The whole pairing screen flips to Arabic AND to
-         right-to-left.
-     (b) 🚨 CHECK THE IP ADDRESS ON THAT SCREEN. It must
-         still read left-to-right, e.g. 192.168.1.50:9100,
-         NOT with its parts rearranged. Arabic reorders
-         neutral characters like . and : - if the address is
-         scrambled an operator types the wrong one into the
-         POS and pairing silently never happens. This is
-         pinned in code, but eyes on it once.
-     (c) Pair it from the POS. Send an order.
-     (d) The ticket must show: the header count in Arabic,
-         "Paired with ...", the service type (Dine in /
-         Takeaway / Delivery) translated, and the DONE button
-         in Arabic.
-     (e) With several tickets on screen, check the LEFT and
-         RIGHT scroll arrows. In Arabic they must sit on the
-         opposite sides and point the opposite way - the list
-         itself runs right-to-left. If they are on the wrong
-         end, say so.
-     (f) Unpair. The language must SURVIVE it - you should
-         come back to an Arabic pairing screen, not English.
-         The language belongs to the cook, not to the till.
-     (g) Restart the app. Language still Arabic.
-     (h) Switch to Francais and back to English; nothing
-         should be left in the wrong language.
-
-     Covered by kitchen_display/test/kds_models_test.dart
-     (24 tests), including the guard that stops an unknown
-     stored value rendering the whole display in Arabic -
-     Flutter falls back to the FIRST supported locale, and
-     that is alphabetically 'ar'.
-
-
-[B8] DATE FORMAT NOW ACTUALLY DOES SOMETHING.
-     Settings -> General -> Regional -> Date Format had four
-     options and changed NOTHING. Every screen and every PDF
-     built its own 'dd/MM/yyyy' - about 85 places in the
-     reports screen alone, plus thirteen other files.
-
-     Now one setting drives all of them.
-
-     🚨 FIXED AGAIN ON 2026-09-03 AFTER YOU CAUGHT THE FIRST
-     PASS MISSING THE TABLES. You set yyyy-MM-dd, it saved,
-     and Sales History still showed 01/09/2026 23:42. You
-     were right, and you also spotted why: those columns
-     carry a TIME as well as a date.
-
-     WHAT I HAD MISSED: I swept for DateFormat('...') and
-     fixed every one. But seven screens never called
-     DateFormat AT ALL - they built the date by hand out of
-     padLeft and string joins, WHILE ALSO converting the
-     timezone:
-
-         '${_pad(d.day)}/${_pad(d.month)}/${d.year} '
-         '${_pad(d.hour)}:${_pad(d.minute)}'
-
-     A search for DateFormat cannot see that. Those seven
-     were: Sales History, Documents, POS Session, the Session
-     list, the Document editor, Promotions, and the
-     Subscription/About rows in Settings - plus the printed
-     RECEIPT and the printed Z-REPORT slip, which had the
-     same hand-rolled code. Every one of them is exactly the
-     kind of screen that shows a date, which is why the miss
-     was so visible.
-
-     THE REAL LESSON, and why this is now one object: those
-     screens had to do TWO things - apply the timezone AND
-     format the date. Keeping the two apart is what let them
-     drift. AppDateFormat now answers both, and a stored
-     timestamp goes through one call. A bare calendar date is
-     deliberately NOT timezone-shifted - shifting 2026-09-01
-     by an offset is how a document dated the 1st starts
-     displaying as the 31st.
-
-     So when you re-test, the columns to stare at are the
-     ones with a TIME in them: Date, Créé/Created, Opened,
-     Closed. Those are the ones that were wrong.
-
-     🚨 ONE DELIBERATE EXCEPTION, and I want you to agree
-     with it: CSV EXPORTS AND FILE NAMES DO NOT FOLLOW THE
-     SETTING. They are fixed at yyyy-MM-dd. A spreadsheet
-     that reads your exports would otherwise change meaning
-     the day somebody picks a different display format -
-     silently, because 03/09 and 09/03 are both valid dates
-     and neither one errors. File names also cannot contain
-     "/" at all, and only sort chronologically as ISO.
-     NOTE: today's CSV exports say dd/MM/yyyy, so this is a
-     one-time change to their shape. Nothing is shipped yet
-     (the API still points at your dev box, item 13), so now
-     is the moment to make it. Say the word if you would
-     rather they kept dd/MM/yyyy.
-
-     HOW TO TEST:
-     (a) Settings -> General -> Regional -> Date Format ->
-         yyyy-MM-dd. Save.
-     (b) 🚨 THE COLUMNS THAT WERE WRONG - do these FIRST,
-         they are the ones you caught:
-         - Sales History: the Date and Créé/Created columns.
-           Must read 2026-09-01 23:42, not 01/09/2026 23:42.
-         - Documents: the Date column. It used to read
-           01-Sep-26 23:42 with an English/localized month
-           abbreviation; that shape is gone, it follows the
-           setting now.
-         - POS Session: Opened at / Closed at, the payment
-           rows, the document rows, the cash-movement rows.
-         - Session list: the Opening and Closing columns.
-           These used to read "Aug 20, 10:16 AM" - hardcoded
-           English months and a 12-hour clock.
-     (c) Then the rest: End of Day (Z-report history), Cash
-         In/Out, Credit Payments, Dashboard, Shift
-         Management, Bookings, Stock, Promotions (start/end
-         dates), Document editor (document date + an item's
-         expiry date), and Settings -> Subscription and
-         Settings -> About (last sync).
-     (d) Open the date-range picker anywhere. The selected
-         date at the top follows the setting too. (The
-         "September 2026" month heading inside the calendar
-         is a month NAME, not a date - it does not change.)
-     (e) PRINTED DOCUMENTS - the half with the blast radius,
-         so do all of them: an INVOICE PDF from Sales
-         History, the STOCK sheet from Stock, a Z-REPORT,
-         three or four different REPORTS, AND - new in this
-         round - a printed RECEIPT and a KITCHEN TICKET, both
-         of which had the same hand-rolled date. Every date
-         follows the setting; nothing is blank, "---" or a
-         raw timestamp.
-     (f) Now export a CSV from Reports and from Shift
-         Management. Those must STAY yyyy-MM-dd whatever the
-         setting says. Try it with the setting on MM/dd/yyyy
-         to be sure.
-     (g) Check the saved PDF/CSV FILE NAMES are still
-         Report_2026-09-01_2026-09-03 style.
-     (h) TIMEZONE, since it now shares the same code path:
-         with the setting on yyyy-MM-dd, change Settings ->
-         General -> Regional -> Timezone and confirm the
-         TIMES in Sales History shift, and that a document's
-         plain DATE column does NOT jump a day. A bare date
-         is a calendar day, not an instant - it must not be
-         shifted by an offset.
-     (i) Set it back to dd/MM/yyyy and confirm everything
-         returns to what you are used to.
-
-     Two smaller things fixed on the way: the client default
-     was 'dd-MM-yyyy' while the server seeded 'dd/MM/yyyy'
-     and every screen drew 'dd/MM/yyyy'. All three now agree
-     on dd/MM/yyyy, so a fresh install looks like today. And
-     the timezone database used to be initialised separately
-     by three screens - a screen that forgot silently fell
-     back to UTC. It is loaded once now, by the shared code.
-
-     Covered by test/app_date_format_test.dart (22 tests,
-     11 of them added specifically for the path you caught -
-     the timestamp/date split and the timezone half) and
-     test/pos_session_list_test.dart. 🚨 One old test had to
-     be INVERTED: it asserted the session list rendered
-     "Aug 20, 10:16 AM", which was the hardcoded behaviour.
-     A test that pins the bug is worse than no test, so it
-     now pins that the setting reaches the list instead.
-
-
-[B9] EMAIL / SMTP SETTINGS ARE GONE. No need for now status : DONE
-
 
 =======================================================
 C.  DECIDE   (blocked on you - I will not guess)
@@ -390,7 +205,10 @@ C.  DECIDE   (blocked on you - I will not guess)
      Bluetooth or USB-only, say which and I build that
      transport next - the dispatcher already routes per
      printer, so it is a new arm rather than a rewrite.
-
+[--] Never met real hardware: the serial scale (Windows only
+     in any case - Android always takes the keypad path).
+ 
+    
 =======================================================
 D.  LATER   (known, parked, nothing breaks meanwhile)
 =======================================================
@@ -399,14 +217,6 @@ This list is nearly empty now - three of its six entries
 were BUILT on 2026-09-03 and moved up to B6, B7 and B8.
 What is left is what genuinely cannot be closed from here.
 
-[--] Settings, after the 2026-09-03 pass. Date format is now
-     WIRED everywhere, screens and printed documents alike -
-     see B8; CSV exports and file names deliberately stay
-     ISO. Timezone was already wired (the old note calling it
-     dead was stale). Email/SMTP is RETIRED rather than built
-     - see B9. That empties this entry except for the thing
-     it was always really about: when email is wanted, decide
-     what SENDS before anyone writes a setting for it.
 
 [--] Dead or inconsistent settings keys, fixed 2026-09-01:
      Order.ShortcutKeysPaymentConfirmation now has a frontend
@@ -429,27 +239,8 @@ What is left is what genuinely cannot be closed from here.
      matches the server seed and what the screens actually drew
      ('dd/MM/yyyy').
 
-[--] Never met real hardware: the serial scale (Windows only
-     in any case - Android always takes the keypad path).
 
-[--] box / pack carry a NOMINAL factor (1/12 and 1/6, hard-
-     coded in uom/unit_of_measure.dart), not a real per-
-     product pack size. NOT TOUCHED on 2026-09-03, and
-     deliberately: a real pack size is a new column on the
-     product, which is a schema change, and CLAUDE.md rule 3
-     says I do not write migrations without you saying so.
-     Say the word and it is a migration plus a field on the
-     product editor. Until then a "box" of anything is 12.
 
-[--] RESOLVED 2026-09-01: ProcessRefundCommand's comment asked
-     whether DocumentItem_Insert_Trigger already moves stock for
-     DocumentType 220. Checked the live DB directly - no such
-     trigger exists. The only 3 triggers in the whole database
-     are trg_Document_CompanyConsistency, trg_Barcode_CompanyMatch
-     and trg_FloorPlanTable_CompanyConsistency, none of which
-     touch DocumentItem or Stock. The explicit stock-reversal
-     block in ProcessRefundCommand is the only thing moving stock
-     on a refund - no double-counting. Comment updated in code.
 
 
 =======================================================
@@ -458,20 +249,6 @@ E.  PRODUCTION PHASE   (the ship checklist - NONE done)
 
 Do these in order. 11, 13 and 14 are what make the shipped
 build different from the one you run today.
-
-[11] TURN LOCAL DATABASE ENCRYPTION BACK ON.
-     kPillar3Encryption = false in app_database.dart is a
-     dev toggle. Set it true, relaunch (it re-encrypts
-     itself, data preserved), then this must pass:
-       flutter test integration_test/cipher_test.dart -d windows
-     Shipping with it false puts every customer's sales on
-     disk in the clear.
-
-[13] POINT THE API AT PRODUCTION.
-     AppConfig.devBaseUrl is still
-     http://100.114.12.38:5002/api - your dev box. Switch it
-     to the hosted URL BEFORE building the release, or every
-     installed till phones home to this machine.
 
 [14] FIX THE ANDROID BUILD.
      flutter build apk dies because Kotlin cannot parse

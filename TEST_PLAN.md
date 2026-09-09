@@ -18,8 +18,9 @@ can run. Three suites feed one another:
 | 🟩 | **Built and green** — has run end to end and passed |
 | 🟨 | **Built, not yet run on a device** — code exists, `flutter analyze` clean, awaiting a real run |
 | ⬜ | **Not built** |
+| ⛔ | **Deferred** — blocked on something outside the code (hardware we do not have yet). Not counted as work remaining |
 
-Counts as of this revision: **28 🟩** · **2 🟨** · **119 ⬜** — 149 tests total, 30 built (20%).
+Counts as of this revision: **30 🟩** · **8 🟨** · **116 ⬜** · **4 ⛔** — 158 listed, 38 built, 116 still to write.
 
 ---
 
@@ -44,6 +45,8 @@ Cypress 02  →  provisions a company        →  e2e/output/pos-credentials.jso
    11       →  locks 2 rules, signs in as each  →  admin passes, cashier refused, rules restored
    12       →  void reasons                →  the void dialog has something to offer
    13       →  barcode nomenclature        →  21 = weight, 23 = price, alongside the seeded set
+   14       →  date format, twice          →  the screens follow the setting, not a hardcoded shape
+   15       →  sell then refund            →  stock returns exactly once, never twice
 ```
 
 **🚨 Only `01` spends a licence seat.** It has to wipe and re-register to prove
@@ -86,7 +89,7 @@ These build the shop. Both retail and restaurant scenarios start from them.
 | 03 | `03_setup_catalog` | Groups (parent + child), a tax, three product kinds, **kg on the weighed one**, EAN-13 barcodes, all verified after sync | 01 | 🟩 |
 | 04 | `04_setup_stock` | Warehouse assignment and reorder rules for every stockable product, from the recorded catalogue | 03 | 🟩 |
 | 05 | `05_setup_modifiers` | Modifier groups in both shapes — optional-many and required-one, incl. a negative surcharge | 01 | 🟩 |
-| 06 | `06_make_sale_retail` | The money path for a counter shop, **sold by scanning** | 03, 04 | 🟩 |
+| 06 | `06_make_sale_retail` | The money path for a counter shop, **sold by scanning**. Gained the server-side child-row check (R52) after the trigger audit — that assertion is not yet re-run | 03, 04 | 🟩 |
 | 07 | `07_create_customer` | A real (non-walk-in) customer, online-first, recorded to the credentials file | 01 | 🟩 |
 | 08 | `08_create_warehouse` | A second stock location, so item-level sourcing has somewhere to split to | 01 | 🟩 |
 | 09 | `09_create_payment_types` | Card + Voucher (both `markAsPaid`) and Account (`markAsPaid: false`, `customerRequired`) | 07 | 🟩 |
@@ -94,6 +97,8 @@ These build the shop. Both retail and restaurant scenarios start from them.
 | 11 | `11_security_rules` | The real shift change: lock Settings + Management, then sign in as each user in turn — the admin gets in, the cashier is **refused at the till** — then restore | 10 | 🟩 |
 | 12 | `12_void_reasons` | Three reasons the void dialog can offer, with their ranks — `RequireReasonOnVoid` is unusable without them | 01 | 🟨 |
 | 13 | `13_barcode_rules` | A weight format and a price format added alongside the seeded four, verified through the editor's own matcher | 01 | 🟨 |
+| 15 | `15_refund_stock` | Stock down on a sale, back up on a refund — **exactly once**. Reads `/Stocks/GetAllStocks`, so it sees the server's figure, not the terminal's cache | 04, 09 | 🟨 |
+| 14 | `14_date_format` | One setting drives every date: Sales History and Documents re-read under **two different shapes**, so a hardcoded screen cannot pass both | 06 | 🟨 |
 
 ---
 
@@ -140,6 +145,7 @@ These build the shop. Both retail and restaurant scenarios start from them.
 |---|---|---|---|
 | R17 | Cash with change | `min(tendered, total)` is banked — change is not money the shop took | ⬜ |
 | R18 | Exact cash | No change line | ⬜ |
+| R52 | **A sale's LINES and MONEY reach the server** | `/Document/GetAll` returns the HEADER only — `DocumentDto` carries no items and no payments — so a sale can bank its total and lose everything on it. Reads `/DocumentItem/GetByDocumentId` and `/Payment/GetByDocumentId`. 🚨 Guards the OUTPUT-clause hazard: `DocumentItem` and `Payment` are declared against PHANTOM triggers, and SQL Server refuses `OUTPUT` on a table with a real one (error 334) | 🟨 (06) |
 | R19 | Card payment | A non-cash type banks correctly | ⬜ |
 | R20 | **Split payment** | Part cash, part card, adding to the grand total | ⬜ |
 | R21 | **Credit / tab** sale | `markAsPaid: false` banks the sale UNPAID with an outstanding balance | ⬜ |
@@ -160,7 +166,7 @@ These build the shop. Both retail and restaurant scenarios start from them.
 
 | # | Test | Proves | Status |
 |---|---|---|---|
-| R34 | **Refund** a sale | A refund document, the stock returned, the money out | ⬜ |
+| R34 | **Refund** a sale | A refund document, the stock returned, the money out | 🟨 (15) |
 | R35 | Partial refund | One line of a multi-line sale | ⬜ |
 | R36 | **Void** an item before payment | The void is recorded with its reason. Unblocked by `12` | ⬜ |
 | R37 | Void requires a reason | `requireReasonOnVoid` blocks a bare void. Unblocked by `12` | ⬜ |
@@ -171,9 +177,9 @@ These build the shop. Both retail and restaurant scenarios start from them.
 
 | # | Test | Proves | Status |
 |---|---|---|---|
-| R40 | Stock **deducts** on a sale | On-hand drops by exactly what was sold | ⬜ |
+| R40 | Stock **deducts** on a sale | On-hand drops by exactly what was sold | 🟨 (15) |
 | R41 | **Delta logic** on an updated order | Only the DIFFERENCE is deducted — no double-deduction | ⬜ |
-| R42 | Removing an item **returns** stock | The quantity goes back on the shelf | ⬜ |
+| R42 | Refund **returns** stock — exactly once | 🚨 Asserted as `after == before`, never `after > afterSale`. The loose form passes on a DOUBLE reversal, which is the failure a stock trigger on `DocumentItem` would cause — and it looks like a working refund from every screen | 🟨 (15) |
 | R43 | Low-stock warning fires | A product under its threshold is flagged (set up by `04`) | ⬜ |
 | R44 | Reorder point flag | A product under its reorder point is listed as needing reorder | ⬜ |
 | R45 | **Out of stock** is a graceful 400 | `{ success: false, message, fallbackWarehouses, failedProductId }` — not a 500 | ⬜ |
@@ -278,13 +284,42 @@ These build the shop. Both retail and restaurant scenarios start from them.
 
 | # | Test | Proves | Status |
 |---|---|---|---|
-| X19 | Receipt printing | The layout, the totals, the footer | ⬜ |
+| X19 | Receipt printing — **content** | What the receipt and the kitchen ticket SAY: the layout, the totals, the footer. `rasteriseForEscPos` and `escPosTestPage` return a `Uint8List`, and `invoice_pdf_service` returns a document — both assertable with no printer attached. 🚨 This is where the hand-rolled date on the printed receipt and Z-report lived, so it is the half that caught a real bug | ⬜ |
+| X19-HW | Receipt printing — **the device** | Bytes actually reaching paper: `raw_printer_windows.dart` (`OpenPrinter` → `WritePrinter`) and `network_printer.dart` (`Socket`). Needs a thermal printer | ⛔ |
 | X20 | Receipt custom labels | `receiptUseCustomLabels` and the label overrides | ⬜ |
 | X21 | Invoice A5 / RTL | `invoicePrintA5`, `invoiceRightToLeft` | ⬜ |
-| X22 | Cash drawer opens | `cashDrawerCommand` fires on a cash sale | ⬜ |
-| X23 | Customer display | The serial and web customer displays show the line and the total | ⬜ |
-| X24 | Scale integration | A configured scale delivers a weight | ⬜ |
+| X22 | Cash drawer opens | `cashDrawerCommand` fires on a cash sale | ⛔ |
+| X23 | Customer display — **web** | `CustomerDisplayWebServer` is an HTTP server INSIDE the app: enable `CustomerDisplay.WebEnabled`, ring a line up, and assert what it broadcasts. No hardware, so this stays active | ⬜ |
+| X23-HW | Customer display — **serial pole** | The COM-port half (`CustomerDisplay.Port`, baud, data bits, parity). Needs a physical pole display | ⛔ |
+| X24 | Scale integration | A configured serial scale delivers a weight | ⛔ |
 | X25 | Sounds | Scan OK, scan fail, checkout, error | ⬜ |
+
+> ⛔ **Hardware we do not have yet is deferred, not pending** (decided
+> 2026-09-09): the serial scale (X24), the cash drawer (X22), the serial pole
+> display (X23-HW) and thermal printing itself (X19-HW). Each waits for a
+> physical device.
+>
+> 🚨 The SOFTWARE around them is not deferred, and the line matters:
+>
+> * **X23 — the WEB customer display stays active.** It is an HTTP server the
+>   app runs itself (`customer_display_web_server.dart`), not a peripheral.
+>   Only the COM-port half needs a pole.
+> * **X19 — receipt CONTENT stays active**, and it is the more valuable half.
+>   The ESC/POS builder returns bytes and the invoice service returns a PDF;
+>   what they SAY can be asserted with nothing plugged in. The printed
+>   receipt and Z-report were two of the seven places that hand-rolled a
+>   date, so this is the half that actually caught something. X20 (custom
+>   labels) and X21 (A5 / RTL) are content too, and stay active for the same
+>   reason.
+>
+> * **R4 — a weighed product** is unaffected. With no scale configured,
+>   `showWeighItemDialog` skips its own dialog and goes straight to the
+>   keypad, which is the path every Android tablet and most Windows tills
+>   take anyway. `make_sale_helper` already handles both shapes.
+> * **R5 and 13 — scale-printed labels** are unaffected. A weight-embedded
+>   barcode is just a barcode; nothing weighs anything to read one. `13`
+>   reaches the nomenclature through the Weighing Scale settings TAB, which
+>   is only where that card happens to live.
 
 ### 4.4 Platform, UI and access
 
@@ -300,6 +335,9 @@ These build the shop. Both retail and restaurant scenarios start from them.
 | X33 | Licence expiry mid-session | The till degrades gracefully | ⬜ |
 | X34 | App update check | `autoCheckUpdates` | ⬜ |
 | X35 | DB backup and restore | `dbAutoBackup`, `dbBackupOnClose`, restore path | ⬜ |
+| X36 | **Timezone** shifts times, not bare dates | Shares `AppDateFormat`'s code path. Changing the zone must move the TIMES in Sales History while a document's plain DATE column stays put — shifting a calendar day by an offset is how the 1st displays as the 31st. Behind an Auto/Manual switch and a long zone list, so it needs its own test rather than a tail on `14` | ⬜ |
+| X38 | **Trigger reconciliation at boot** | `Startup/TriggerReconciliation.cs` compares `AppDbContext`'s `HasTrigger` declarations against `sys.triggers` on every boot: an undeclared REAL trigger is an error (it breaks every insert on that table), an invented name is a warning (it only costs the slow write path). Backend-side; covered by `TriggerReconciliationTests.cs` (11 tests). The POS-observable half is **R52** | 🟩 (backend) |
+| X37 | CSV exports and file names stay ISO | Deliberately exempt from the setting, so a spreadsheet does not change meaning when somebody picks a new display format. Export opens the OS save dialog — outside the Flutter tree, like the image picker — so this is unit-tested, not driven | ⬜ |
 
 ---
 
@@ -312,6 +350,7 @@ These protect the test suite itself, and run in plain `flutter test`.
 | G1 | `dropdown_smart_default_test` | The Index-0 rule skips null placeholders AND disabled category headers, filtering by value not localised text | 🟩 |
 | G2 | `locale_settle_test` | `waitForStableLocale` survives a locale that changes mid-run | 🟩 |
 | G12 | `clear_search_test` | `clearSearch` tolerates a screen with no search box; `searchList` still fails loudly on one — the Users screen has none | 🟩 |
+| G14 | `date_shape_test` | The date-SHAPE detection behind `14`: the three shapes tell each other apart, a half-migrated screen is caught, and no real POS string (document number, barcode, phone, price, run tag) reads as a date | 🟩 |
 | G13 | `sibling_finder_test` | Two ambiguous-finder traps: `find.ancestor` cannot reach a control laid out BESIDE its label (`enclosingRow` can); and `find.byIcon` alone hits the till's *disabled* Modifiers button instead of sidebar Quick Settings (`sidebarIconButton` does not) | 🟩 |
 | G3 | `cipher_test` | Local database encryption | 🟩 |
 | G4 | `clear_local_data_test` | Wipes this terminal's saved identity | 🟩 |
@@ -353,7 +392,7 @@ Each flow lives in its own file (`Front-End/integration_test/helpers/`), per the
 | `create_group_helper.dart` | `createProductGroup` |
 | `create_product_helper.dart` | `createProduct`, `ProductKind` |
 | `add_barcode_helper.dart` | `addBarcode` |
-| `setup_stock_helper.dart` | `assignStock`, `setStockRules`, `openStockFor` |
+| `setup_stock_helper.dart` | `assignStock`, `setStockRules`, `openStockFor`, `serverStockOf` |
 | `create_modifier_group_helper.dart` | `createModifierGroup`, `E2EModifierOption`, `awaitModifierGroup` |
 | `record_catalog_helper.dart` | `recordE2ECatalog`, `loadE2ECatalog`, `E2EProduct`, `E2ECatalog` |
 | `create_customer_helper.dart` | `createCustomer` |
@@ -367,11 +406,13 @@ Each flow lives in its own file (`Front-End/integration_test/helpers/`), per the
 | `guarded_access_helper.dart` | `expectGuardedScreen`, `GuardedScreen` |
 | `create_void_reason_helper.dart` | `createVoidReason` |
 | `barcode_rule_helper.dart` | `addBarcodeRule`, `testBarcodeMatch`, `openBarcodeRules` |
+| `date_format_helper.dart` | `setDateFormat`, `expectDatesFollow`, `DateShape`, `openQuickSettings` |
 | `retail_mode_helper.dart` | `configureRetailMode` |
 | `open_register_helper.dart` | `ensureRegisterOpen`, `ensureTablelessAllowed` |
 | `make_sale_helper.dart` | `makeSale`, `E2ESale` |
 | `verify_product_helper.dart` | `verifyProduct` |
-| `verify_sale_helper.dart` | `verifySaleBanked`, `verifySaleOnServer` |
+| `verify_sale_helper.dart` | `verifySaleBanked`, `verifySaleOnServer`, `verifySaleChildRowsOnServer` |
+| `refund_helper.dart` | `refundSale` |
 | `verify_persisted_helper.dart` | `verifyPersisted`, `writeRunManifest` |
 
 ### Helpers still needed
@@ -382,7 +423,6 @@ Each flow lives in its own file (`Front-End/integration_test/helpers/`), per the
 | `create_floor_plan_helper.dart` | T2, T3 |
 | `save_order_helper.dart` | T8, T9 — park and reopen |
 | `order_status_helper.dart` | T19–T21 |
-| `refund_helper.dart` | R34, R35 |
 | `discount_helper.dart` | R24–R27 |
 | `session_helper.dart` | X1–X6 — cash in/out, close, Z report |
 | `offline_helper.dart` | X11–X14 — cutting and restoring the network |

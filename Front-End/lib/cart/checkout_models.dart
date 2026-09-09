@@ -48,6 +48,11 @@ class MenuProduct {
   /// Sold by weight — the POS asks for a quantity instead of adding one unit.
   final bool isToWeigh;
 
+  /// Pieces in one box / one pack of this product; null means the catalogue's
+  /// nominal 12 / 6. Travels with [uomId] because the two are only meaningful
+  /// together — a box is not a quantity until you know what is in it.
+  final double? packSize;
+
   final bool isService;
 
   MenuProduct({
@@ -66,6 +71,7 @@ class MenuProduct {
     this.measurementUnit,
     this.uomId = kUomPieces,
     this.isToWeigh = false,
+    this.packSize,
     this.isService = false,
   });
 
@@ -91,6 +97,7 @@ class MenuProduct {
       uomId: (json['uomId'] as num?)?.toInt() ??
           uomFromLegacyText(json['measurementUnit'] as String?),
       isToWeigh: json['isToWeigh'] ?? false,
+      packSize: (json['packSize'] as num?)?.toDouble(),
       isService: json['isService'] ?? false,
     );
   }

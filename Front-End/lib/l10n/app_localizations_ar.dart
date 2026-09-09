@@ -3467,6 +3467,19 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String uomPackSize(String unit) {
+    return 'قطع في كل $unit';
+  }
+
+  @override
+  String uomPackSizeHint(String nominal) {
+    return 'اتركه فارغًا لاستخدام القيمة الافتراضية ($nominal).';
+  }
+
+  @override
+  String get uomPackSizeInvalid => 'أدخل رقمًا أكبر من 0، أو اتركه فارغًا.';
+
+  @override
   String uomStockConversionNote(String unit, String factor, String stockUnit) {
     return 'السعر لكل $unit. المخزون يتحرك بـ $stockUnit — 1 $unit = $factor $stockUnit.';
   }

@@ -12,6 +12,7 @@ import 'package:pos_app/time_clock/time_clock_screen.dart';
 import 'package:pos_app/auth/auth_provider.dart';
 import 'package:pos_app/auth/auth_storage.dart';
 import 'package:pos_app/auth/master_login_screen.dart';
+import 'package:pos_app/auth/role_visuals.dart';
 import 'package:pos_app/auth/user_model.dart';
 import 'package:pos_app/company/company_provider.dart';
 import 'package:pos_app/l10n/app_localizations.dart';
@@ -22,6 +23,48 @@ import 'package:pos_app/utils/snackbar_helper.dart';
 
 // Import the PowerModal (Adjust this path if you placed it in a different folder)
 import 'package:pos_app/navigation/power_modal.dart';
+
+// ── User tile geometry ───────────────────────────────────────────────────────
+// The user cards sit in a `Wrap`, so each one is a FIXED box and nothing in the
+// layout can absorb an overflow. Everything inside it except the avatar is
+// text, and the global font scale (up to 130%, see `fontScaleProvider`)
+// multiplies every one of those — so the box has to be COMPUTED from the
+// scaler, not hardcoded: at 130% the old fixed 170px tile overflowed by 2px.
+//
+// The line heights are pinned on the text styles below, which is what makes
+// this arithmetic exact instead of a guess at the font's natural leading.
+const double _kTileMinExtent = 170;
+const double _kTileAvatarRadius = 32;
+const double _kTileAvatarGap = 14;
+const double _kTileTextGap = 4;
+const double _kTileNameSize = 16;
+const double _kTileRoleSize = 12;
+const double _kTileLineHeight = 1.25;
+const int _kTileNameLines = 2;
+const double _kTileVPad = 10;
+// Card's own default margin, counted once for the top and once for the bottom:
+// it eats into the SizedBox before the Column ever sees the height.
+const double _kTileCardMargin = 4;
+// A hair of slack: the arithmetic above lands exactly on the content height, so
+// any sub-pixel rounding in the text layout would tip it straight back into an
+// overflow assertion.
+const double _kTileSlack = 4;
+
+/// The side of a square user tile at the current font scale. Square keeps the
+/// grid tidy, and the width a long name gets grows with the height.
+double _userTileExtent(BuildContext context) {
+  final scaler = MediaQuery.textScalerOf(context);
+  final needed =
+      _kTileAvatarRadius * 2 +
+      _kTileAvatarGap +
+      scaler.scale(_kTileNameSize) * _kTileLineHeight * _kTileNameLines +
+      _kTileTextGap +
+      scaler.scale(_kTileRoleSize) * _kTileLineHeight +
+      _kTileVPad * 2 +
+      _kTileCardMargin * 2 +
+      _kTileSlack;
+  return math.max(_kTileMinExtent, needed);
+}
 
 class LoginScreen extends ConsumerStatefulWidget {
   /// Set when we landed here because the server rejected our token (see
@@ -105,9 +148,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Widget _buildUserCard(BuildContext context, User user, int index) {
     final cs = Theme.of(context).colorScheme;
-    final isAdmin = user.accessLevel == 0;
-    final avatarBg = isAdmin ? cs.primaryContainer : cs.secondaryContainer;
-    final avatarFg = isAdmin ? cs.onPrimaryContainer : cs.onSecondaryContainer;
+    final isAdmin = user.isAdmin;
+    final avatar = roleAvatarColors(cs, isAdmin);
 
     return Card(
       elevation: 2,
@@ -115,41 +157,51 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       child: InkWell(
         onTap: () => _showPinPad(user),
         borderRadius: BorderRadius.circular(16),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircleAvatar(
-              radius: 32,
-              backgroundColor: avatarBg,
-              child: Icon(
-                PhosphorIcons.user(PhosphorIconsStyle.fill),
-                size: 32,
-                color: avatarFg,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 8,
+            vertical: _kTileVPad,
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                radius: _kTileAvatarRadius,
+                backgroundColor: avatar.background,
+                child: Icon(
+                  roleIcon(isAdmin),
+                  size: _kTileAvatarRadius,
+                  color: avatar.foreground,
+                ),
               ),
-            ),
-            const Gap(14),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Text(
+              const Gap(_kTileAvatarGap),
+              Text(
                 user.displayName,
                 textAlign: TextAlign.center,
-                maxLines: 2,
+                maxLines: _kTileNameLines,
                 overflow: TextOverflow.ellipsis,
                 style: GoogleFonts.inter(
-                  fontSize: 16,
+                  fontSize: _kTileNameSize,
+                  // Pinned so _userTileExtent's arithmetic is exact rather than
+                  // a guess at the font's natural leading.
+                  height: _kTileLineHeight,
                   fontWeight: FontWeight.w600,
                   color: cs.onSurface,
                 ),
               ),
-            ),
-            const Gap(4),
-            Text(
-              isAdmin
-                  ? AppLocalizations.of(context).roleAdmin
-                  : AppLocalizations.of(context).roleCashier,
-              style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
-            ),
-          ],
+              const Gap(_kTileTextGap),
+              Text(
+                roleLabel(context, isAdmin),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: cs.onSurfaceVariant,
+                  fontSize: _kTileRoleSize,
+                  height: _kTileLineHeight,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -250,6 +302,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           return _NoUsersRecovery(companyId: selectedCo.id);
                         }
                         // Replaced GridView with Wrap to automatically center orphan cards
+                        // Square tiles sized from the CURRENT font scale —
+                        // see _userTileExtent.
+                        final tile = _userTileExtent(context);
                         return SingleChildScrollView(
                           child: Wrap(
                             alignment: WrapAlignment.center,
@@ -258,8 +313,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             children: users.map((user) {
                               final index = users.indexOf(user);
                               return SizedBox(
-                                width: 170,
-                                height: 170,
+                                width: tile,
+                                height: tile,
                                 child: _buildUserCard(context, user, index),
                               );
                             }).toList(),
@@ -515,9 +570,8 @@ class _PinPadModalState extends ConsumerState<_PinPadModal> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final isAdmin = widget.user.accessLevel == 0;
-    final avatarBg = isAdmin ? cs.primaryContainer : cs.secondaryContainer;
-    final avatarFg = isAdmin ? cs.onPrimaryContainer : cs.onSecondaryContainer;
+    final isAdmin = widget.user.isAdmin;
+    final avatar = roleAvatarColors(cs, isAdmin);
     final title = _isSyncing
         ? AppLocalizations.of(context).syncingMasterData
         : !widget.user.hasPinForThisDevice
@@ -565,11 +619,11 @@ class _PinPadModalState extends ConsumerState<_PinPadModal> {
                   ),
                   CircleAvatar(
                     radius: s(32),
-                    backgroundColor: avatarBg,
+                    backgroundColor: avatar.background,
                     child: Icon(
-                      PhosphorIcons.user(PhosphorIconsStyle.fill),
+                      roleIcon(isAdmin),
                       size: s(32),
-                      color: avatarFg,
+                      color: avatar.foreground,
                     ),
                   ),
                   Gap(s(12)),

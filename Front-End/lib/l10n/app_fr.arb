@@ -1101,6 +1101,23 @@
       }
     }
   },
+  "uomPackSize": "Pièces par {unit}",
+  "uomPackSizeHint": "Laisser vide pour la valeur standard ({nominal}).",
+  "uomPackSizeInvalid": "Entrez un nombre supérieur à 0, ou laissez vide.",
+  "@uomPackSize": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "@uomPackSizeHint": {
+    "placeholders": {
+      "nominal": {
+        "type": "String"
+      }
+    }
+  },
   "uomStockConversionNote": "Prix par {unit}. Le stock bouge en {stockUnit} — 1 {unit} = {factor} {stockUnit}.",
   "@uomStockConversionNote": {
     "placeholders": {

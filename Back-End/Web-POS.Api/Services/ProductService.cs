@@ -53,7 +53,9 @@ namespace Api.Services
                 lastPurchasePrice: req.LastPurchasePrice ?? 0m,
                 rank: req.Rank ?? 0,
                 uomId: NormaliseUom(req.UomId, req.MeasurementUnit),
-                isToWeigh: req.IsToWeigh
+                isToWeigh: req.IsToWeigh,
+                packSize: UnitOfMeasure.NormalisePackSize(
+                    NormaliseUom(req.UomId, req.MeasurementUnit), req.PackSize)
             );
             entity.CompanyId = companyId;
 
@@ -99,7 +101,9 @@ namespace Api.Services
                 lastPurchasePrice: req.LastPurchasePrice,
                 rank: req.Rank,
                 uomId: NormaliseUom(req.UomId, req.MeasurementUnit),
-                isToWeigh: req.IsToWeigh
+                isToWeigh: req.IsToWeigh,
+                packSize: UnitOfMeasure.NormalisePackSize(
+                    NormaliseUom(req.UomId, req.MeasurementUnit), req.PackSize)
             );
 
             await _repository.UpdateAsync(entity);

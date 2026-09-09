@@ -1040,7 +1040,8 @@ class CartNotifier extends Notifier<CartState> {
     // after a conversion. Both POS call sites pass a sentinel 9999 because the
     // real guard is `_passesStockGuards` against live local stock; this stays
     // correct for anything that ever passes a genuine figure.
-    final stockCap = uomFromReference(product.stockQuantity, product.uomId);
+    final stockCap = uomFromReference(product.stockQuantity, product.uomId,
+        packSize: product.packSize);
 
     if (existingIndex >= 0) {
       if (items[existingIndex].quantity + quantity > stockCap) {

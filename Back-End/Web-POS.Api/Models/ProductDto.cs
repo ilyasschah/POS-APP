@@ -27,6 +27,12 @@ namespace Api.Models
 
         /// <summary>Sold by weight — the POS asks for a quantity instead of adding one unit.</summary>
         public bool IsToWeigh { get; set; }
+
+        /// <summary>
+        /// Pieces in one box / one pack of this product. NULL = the catalog's nominal
+        /// 12 (box) or 6 (pack). Ignored for every other unit.
+        /// </summary>
+        public decimal? PackSize { get; set; }
         public decimal Cost { get; set; }
         public decimal? Markup { get; set; }
         public decimal Price { get; set; }
@@ -69,6 +75,12 @@ namespace Api.Models
 
         /// <summary>Sold by weight — the POS asks for a quantity instead of adding one unit.</summary>
         public bool IsToWeigh { get; set; }
+
+        /// <summary>
+        /// Pieces in one box / one pack of this product. NULL = the catalog's nominal
+        /// 12 (box) or 6 (pack). Ignored for every other unit.
+        /// </summary>
+        public decimal? PackSize { get; set; }
         public decimal Price { get; set; }
         public bool IsTaxInclusivePrice { get; set; }
         public int? CurrencyId { get; set; }
@@ -103,6 +115,12 @@ namespace Api.Models
 
         /// <summary>Sold by weight — the POS asks for a quantity instead of adding one unit.</summary>
         public bool IsToWeigh { get; set; }
+
+        /// <summary>
+        /// Pieces in one box / one pack of this product. NULL = the catalog's nominal
+        /// 12 (box) or 6 (pack). Ignored for every other unit.
+        /// </summary>
+        public decimal? PackSize { get; set; }
         public decimal? Cost { get; set; }
         public decimal? Markup { get; set; }
         public decimal? Price { get; set; }
@@ -154,6 +172,12 @@ namespace Api.Models
 
         /// <summary>Sold by weight — the POS asks for a quantity instead of adding one unit.</summary>
         public bool IsToWeigh { get; set; }
+
+        /// <summary>
+        /// Pieces in one box / one pack of this product. NULL = the catalog's nominal
+        /// 12 (box) or 6 (pack). Ignored for every other unit.
+        /// </summary>
+        public decimal? PackSize { get; set; }
         public required decimal Price { get; set; }
         public bool? IsTaxInclusivePrice { get; set; }    
         public int? CurrencyId { get; set; }
@@ -187,6 +211,12 @@ namespace Api.Models
 
         /// <summary>Sold by weight — the POS asks for a quantity instead of adding one unit.</summary>
         public bool IsToWeigh { get; set; }
+
+        /// <summary>
+        /// Pieces in one box / one pack of this product. NULL = the catalog's nominal
+        /// 12 (box) or 6 (pack). Ignored for every other unit.
+        /// </summary>
+        public decimal? PackSize { get; set; }
         public required decimal Price { get; set; }
         public required bool IsTaxInclusivePrice { get; set; }
         public int? CurrencyId { get; set; }

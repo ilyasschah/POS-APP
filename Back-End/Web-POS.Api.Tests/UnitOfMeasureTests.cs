@@ -24,7 +24,7 @@ public class UnitOfMeasureTests
     {
         var stock = 258.000m;
 
-        stock -= UnitOfMeasure.ToReference(0.500m, Kg);
+        stock -= UnitOfMeasure.ToReference(0.500m, Kg, null);
 
         Assert.Equal(257.500m, stock);
     }
@@ -34,7 +34,7 @@ public class UnitOfMeasureTests
     {
         var stock = 258.000m;
 
-        stock -= UnitOfMeasure.ToReference(0.250m, Kg);
+        stock -= UnitOfMeasure.ToReference(0.250m, Kg, null);
 
         Assert.Equal(257.750m, stock);
     }
@@ -45,7 +45,7 @@ public class UnitOfMeasureTests
         // The single most expensive mistake this layer can make.
         var stock = 258.000m;
 
-        stock -= UnitOfMeasure.ToReference(100m, G);
+        stock -= UnitOfMeasure.ToReference(100m, G, null);
 
         Assert.Equal(257.900m, stock);
     }
@@ -58,26 +58,26 @@ public class UnitOfMeasureTests
     [InlineData(1000, 1.000)]
     [InlineData(1, 0.001)]
     public void Grams_convert_to_kilograms(decimal grams, decimal expectedKg)
-        => Assert.Equal(expectedKg, UnitOfMeasure.ToReference(grams, G));
+        => Assert.Equal(expectedKg, UnitOfMeasure.ToReference(grams, G, null));
 
     [Theory]
     [InlineData(500, 0.500)]
     [InlineData(1500, 1.500)]
     public void Millilitres_convert_to_litres(decimal ml, decimal expectedL)
-        => Assert.Equal(expectedL, UnitOfMeasure.ToReference(ml, Ml));
+        => Assert.Equal(expectedL, UnitOfMeasure.ToReference(ml, Ml, null));
 
     [Fact]
     public void A_reference_unit_converts_to_itself_untouched()
-        => Assert.Equal(0.125m, UnitOfMeasure.ToReference(0.125m, Kg));
+        => Assert.Equal(0.125m, UnitOfMeasure.ToReference(0.125m, Kg, null));
 
     [Fact]
     public void Pieces_convert_one_to_one()
-        => Assert.Equal(3m, UnitOfMeasure.ToReference(3m, Pieces));
+        => Assert.Equal(3m, UnitOfMeasure.ToReference(3m, Pieces, null));
 
     [Fact]
     public void Conversion_round_trips()
     {
-        var backAndForth = UnitOfMeasure.FromReference(UnitOfMeasure.ToReference(250m, G), G);
+        var backAndForth = UnitOfMeasure.FromReference(UnitOfMeasure.ToReference(250m, G, null), G, null);
 
         Assert.Equal(250m, backAndForth);
     }
@@ -87,7 +87,7 @@ public class UnitOfMeasureTests
     {
         // Voids and removed order lines hand back negative deltas; an asymmetric
         // rounding rule here would leak stock a fraction at a time.
-        Assert.Equal(-0.100m, UnitOfMeasure.ToReference(-100m, G));
+        Assert.Equal(-0.100m, UnitOfMeasure.ToReference(-100m, G, null));
     }
 
     // ── Rounding ─────────────────────────────────────────────────────────────
@@ -98,7 +98,7 @@ public class UnitOfMeasureTests
         // A serial scale reporting 0.4999999996 kg must not shave a fraction
         // off stock on every single sale. Snapped at the storage precision, so
         // the noise dies without the real quantity being touched.
-        Assert.Equal(0.500m, UnitOfMeasure.ToReference(0.4999999996m, Kg));
+        Assert.Equal(0.500m, UnitOfMeasure.ToReference(0.4999999996m, Kg, null));
     }
 
     [Fact]
@@ -108,9 +108,9 @@ public class UnitOfMeasureTests
         // deliberate 0.5 on a pcs product into 1, on the line AND in the stock
         // deduction. Conversion snaps at the storage precision instead, so a
         // genuine fraction survives whatever unit it is expressed in.
-        Assert.Equal(0.5m, UnitOfMeasure.ToReference(0.5m, Pieces));
-        Assert.Equal(88.5m, UnitOfMeasure.ToReference(88.5m, Pieces));
-        Assert.Equal(0.1234m, UnitOfMeasure.ToReference(0.1234m, Kg));
+        Assert.Equal(0.5m, UnitOfMeasure.ToReference(0.5m, Pieces, null));
+        Assert.Equal(88.5m, UnitOfMeasure.ToReference(88.5m, Pieces, null));
+        Assert.Equal(0.1234m, UnitOfMeasure.ToReference(0.1234m, Kg, null));
     }
 
     [Fact]
@@ -118,7 +118,7 @@ public class UnitOfMeasureTests
     {
         var stock = 88.5m;
 
-        stock -= UnitOfMeasure.ToReference(0.5m, Pieces);
+        stock -= UnitOfMeasure.ToReference(0.5m, Pieces, null);
 
         Assert.Equal(88.0m, stock);
     }
@@ -131,7 +131,7 @@ public class UnitOfMeasureTests
         // A product carrying a stale id must still sell.
         Assert.Equal("pcs", UnitOfMeasure.Get(9999).Code);
         Assert.Equal("pcs", UnitOfMeasure.Get(null).Code);
-        Assert.Equal(5m, UnitOfMeasure.ToReference(5m, 9999));
+        Assert.Equal(5m, UnitOfMeasure.ToReference(5m, 9999, null));
     }
 
     [Fact]

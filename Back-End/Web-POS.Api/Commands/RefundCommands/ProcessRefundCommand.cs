@@ -312,7 +312,7 @@ namespace Api.Commands.RefundCommands
                                 // the category reference. Refunding 100 g of a gram-priced
                                 // product returns 0.100 kg. Mirrors
                                 // DocumentItemService.ApplyStockDelta.
-                                var restored = UnitOfMeasure.ToReference(ri.Quantity, product.UomId);
+                                var restored = UnitOfMeasure.ToReference(ri.Quantity, product.UomId, product.PackSize);
                                 stock.UpdateDetails(
                                     stock.Quantity + restored,
                                     stock.WarehouseId,
@@ -455,7 +455,7 @@ namespace Api.Commands.RefundCommands
                     {
                         // Same conversion as the verified arm above: a blind return of a
                         // weighed product is counted in the unit it is sold in.
-                        var restored = UnitOfMeasure.ToReference(ri.Quantity, product.UomId);
+                        var restored = UnitOfMeasure.ToReference(ri.Quantity, product.UomId, product.PackSize);
                         stock.UpdateDetails(
                             stock.Quantity + restored,
                             stock.WarehouseId,

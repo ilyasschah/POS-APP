@@ -398,10 +398,23 @@ namespace Api.DataBase
                 entity.Property(x => x.Debit).HasPrecision(18, 2);
             });
 
-            // Trigger names below are verified against sys.triggers. EF only needs to
-            // know that *a* trigger exists on the table (so it omits the OUTPUT clause
-            // on write); it never resolves the name. Do not infer a trigger's existence
-            // or behaviour from these labels — query sys.triggers instead.
+            // 🚨 FOUR OF THE SEVEN TRIGGER DECLARATIONS BELOW NAME A TRIGGER THAT DOES
+            // NOT EXIST. Only Document, FloorPlanTable and Barcode carry a real one
+            // (trg_*, scripted in DataBase/SQL/). DocumentItem, Booking ("SomeTrigger"),
+            // Payment and StartingCash are PHANTOMS — verified empty in sys.triggers,
+            // last on 2026-09-09.
+            //
+            // They are kept deliberately: EF only needs to know that *a* trigger exists
+            // on the table (it then omits the OUTPUT clause on write) and never resolves
+            // the name, so a declaration too many costs only the slower insert path,
+            // while a declaration too few breaks every insert into that table with SQL
+            // error 334 the day a trigger is added to it.
+            //
+            // Never infer a trigger's existence or behaviour from these labels — that
+            // is exactly how "does DocumentItem_Insert_Trigger also move stock?" sat
+            // unanswered in ProcessRefundCommand for a year. DatabaseBootstrapper now
+            // reconciles this list against sys.triggers on every boot
+            // (Startup/TriggerReconciliation.cs); it is the source of truth, not this.
             b.Entity<Document>(e =>
             {
                 e.ToTable(table => table.HasTrigger("trg_Document_CompanyConsistency"));
@@ -411,7 +424,7 @@ namespace Api.DataBase
 
             b.Entity<DocumentItem>(e =>
             {
-                e.ToTable(tb => tb.HasTrigger("DocumentItem_Insert_Trigger"));
+                e.ToTable(tb => tb.HasTrigger("DocumentItem_Insert_Trigger")); // PHANTOM — no such trigger
                 e.Property(x => x.Discount).HasPrecision(18, 2);
                 e.Property(x => x.ExpectedQuantity).HasPrecision(18, 4);
                 e.Property(x => x.Price).HasPrecision(18, 2);
@@ -424,6 +437,16 @@ namespace Api.DataBase
                 e.Property(x => x.TotalAfterDocumentDiscount).HasPrecision(18, 2);
             });
 
+            b.Entity<Product>(e =>
+            {
+                // A pack size is a count of pieces, so it takes the QUANTITY
+                // precision (18,4), not the money one. It has to be said here:
+                // ConfigureConventions' model-wide decimal(18,2) beats a
+                // [Precision] attribute on the property, so the attribute would
+                // silently have had no effect.
+                e.Property(x => x.PackSize).HasPrecision(18, 4);
+            });
+
             b.Entity<DocumentItemTax>(e => 
             {
                 e.Property(x => x.Amount).HasPrecision(18, 2);
@@ -434,7 +457,7 @@ namespace Api.DataBase
 
             b.Entity<Booking>(e =>
             {
-                e.ToTable("Booking", tb => tb.HasTrigger("SomeTrigger"));
+                e.ToTable("Booking", tb => tb.HasTrigger("SomeTrigger")); // PHANTOM — the name is a placeholder
 
                 var intListComparer = new ValueComparer<List<int>>(
                     (c1, c2) => c1 == null ? c2 == null : c2 != null && c1.SequenceEqual(c2),
@@ -453,12 +476,12 @@ namespace Api.DataBase
             });
             b.Entity<Payment>(e =>
             {
-                e.ToTable(tb => tb.HasTrigger("Payment_Insert_Trigger"));
+                e.ToTable(tb => tb.HasTrigger("Payment_Insert_Trigger")); // PHANTOM — no such trigger
                 e.Property(x => x.Amount).HasPrecision(18, 2);
             });
             b.Entity<StartingCash>(e =>
             {
-                e.ToTable(tb => tb.HasTrigger("StartingCash_Trigger"));
+                e.ToTable(tb => tb.HasTrigger("StartingCash_Trigger")); // PHANTOM — no such trigger
             });
             b.Entity<Barcode>(e =>
             {

@@ -24,6 +24,13 @@ class Product {
   /// and the Price button edits quantity when no scale is attached.
   final bool isToWeigh;
 
+  /// How many pieces are in one box / one pack of THIS product.
+  ///
+  /// Null means the catalogue's nominal 12 / 6 — which is what every product
+  /// meant before the field existed. Only read for box and pack; see
+  /// [isPackSizedUom].
+  final double? packSize;
+
   final double price;
   final bool isTaxInclusivePrice;
   final int? currencyId;
@@ -69,6 +76,7 @@ class Product {
     this.measurementUnit,
     this.uomId = kUomPieces,
     this.isToWeigh = false,
+    this.packSize,
     required this.price,
     required this.isTaxInclusivePrice,
     this.currencyId,
@@ -106,6 +114,9 @@ class Product {
       uomId: (json['uomId'] as num?)?.toInt() ??
           uomFromLegacyText(json['measurementUnit'] as String?),
       isToWeigh: json['isToWeigh'] ?? false,
+      // A server that predates the column sends nothing, which is the nominal
+      // factor — the same thing it has always done.
+      packSize: (json['packSize'] as num?)?.toDouble(),
       price: (json['price'] ?? 0).toDouble(),
       isTaxInclusivePrice: json['isTaxInclusivePrice'] ?? true,
       currencyId: json['currencyId'],
@@ -154,6 +165,7 @@ class Product {
           ? uomFromLegacyText(row.measurementUnit)
           : row.uomId,
       isToWeigh: row.isToWeigh,
+      packSize: row.packSize,
       price: row.price,
       isTaxInclusivePrice: row.isTaxInclusivePrice,
       currencyId: row.currencyId,

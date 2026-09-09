@@ -1267,6 +1267,9 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
   final _ageRestrictionCtrl = TextEditingController();
   final _descriptionCtrl = TextEditingController();
   final _newBarcodeCtrl = TextEditingController();
+  /// Pieces in one box / one pack. Empty means "the catalogue's nominal
+  /// 12 / 6", which is what every product meant before the field existed.
+  final _packSizeCtrl = TextEditingController();
   // Toggles
   // Seeded from General.TaxIncludedByDefault in initState for NEW products —
   // it was hardcoded `true`, which is why the setting had no observable effect.
@@ -1278,6 +1281,16 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
   /// dropdown; `measurementUnit` is written from it so the legacy free-text
   /// column (receipts, document lines, exports) stays in step.
   int _uomId = kUomPieces;
+
+  /// What the pack-size field actually stores.
+  ///
+  /// Null on anything that is not a box or a pack, and null for an empty or
+  /// non-positive entry — both mean "the catalogue's nominal 12 / 6". Mirrors
+  /// `UnitOfMeasure.NormalisePackSize` on the server, which normalises again on
+  /// arrival: a value left over from a unit the admin has since changed must
+  /// never sit on the row waiting to be believed.
+  double? get _packSize =>
+      normalisePackSize(_uomId, double.tryParse(_packSizeCtrl.text.trim()));
 
   /// Sold by weight. Drives the POS scale/keypad flow.
   bool _isToWeigh = false;
@@ -1351,6 +1364,8 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
       _pluCtrl.text = p.plu?.toString() ?? '';
       _uomId = p.uomId;
       _isToWeigh = p.isToWeigh;
+      _packSizeCtrl.text =
+          p.packSize == null ? '' : formatQuantityValue(p.packSize!, kUomPieces);
       _priceCtrl.text = p.price.toString();
       _costCtrl.text = p.cost.toString();
       _markupCtrl.text = p.markup?.toString() ?? '';
@@ -1459,6 +1474,7 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
     _ageRestrictionCtrl.dispose();
     _descriptionCtrl.dispose();
     _newBarcodeCtrl.dispose();
+    _packSizeCtrl.dispose();
 
     super.dispose();
   }
@@ -1549,6 +1565,7 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                 measurementUnit: Value(uomById(_uomId).code),
                 uomId: Value(_uomId),
                 isToWeigh: Value(_isToWeigh),
+                packSize: Value(_packSize),
                 description: Value(
                   _descriptionCtrl.text.trim().isEmpty
                       ? null
@@ -1610,6 +1627,7 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
           measurementUnit: uomById(_uomId).code,
           uomId: _uomId,
           isToWeigh: _isToWeigh,
+          packSize: _packSize,
           description: _descriptionCtrl.text.trim().isEmpty
               ? null
               : _descriptionCtrl.text.trim(),
@@ -1657,6 +1675,7 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
           'measurementUnit': uomById(_uomId).code,
           'uomId': _uomId,
           'isToWeigh': _isToWeigh,
+          'packSize': _packSize,
           'price': double.tryParse(_priceCtrl.text) ?? 0,
           'cost': double.tryParse(_costCtrl.text) ?? 0,
           'markup': double.tryParse(_markupCtrl.text.trim()),
@@ -1721,6 +1740,7 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
                 measurementUnit: Value(uomById(_uomId).code),
                 uomId: Value(_uomId),
                 isToWeigh: Value(_isToWeigh),
+                packSize: Value(_packSize),
                 description: Value(
                   _descriptionCtrl.text.trim().isEmpty
                       ? null
@@ -2232,6 +2252,54 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
     );
   }
 
+  /// How many pieces are in one box / one pack of THIS product.
+  ///
+  /// Shown only for the two units whose catalogue factor is a nominal default
+  /// rather than a physical fact — a box of tuna and a box of water are not both
+  /// 12, which is what this field exists to say.
+  ///
+  /// EMPTY IS A REAL ANSWER and means the nominal: a catalogue where nobody has
+  /// ever stated a box size must keep converting exactly as it did before the
+  /// field existed, so the hint spells out what that number is.
+  Widget _buildPackSizeField(
+    InputDecoration Function(
+      String, {
+      String? hint,
+      String? prefix,
+      String? suffix,
+    })
+    deco,
+  ) {
+    final l10n = AppLocalizations.of(context);
+    final unit = uomById(_uomId);
+    final stockUnit = referenceUomOf(unit);
+    final nominal = formatQuantity(
+      uomToReference(1, unit.id, packSize: null),
+      stockUnit.id,
+    );
+
+    return TextFormField(
+      controller: _packSizeCtrl,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      // Redraws the conversion note beside it as the number is typed.
+      onChanged: (_) => setState(() {}),
+      decoration: deco(
+        l10n.uomPackSize(unit.code),
+        hint: l10n.uomPackSizeHint(nominal),
+        suffix: stockUnit.code,
+      ),
+      validator: (value) {
+        final text = value?.trim() ?? '';
+        if (text.isEmpty) return null;
+
+        final parsed = double.tryParse(text);
+        // A zero would divide the whole conversion by nothing, and a negative
+        // one would ADD stock on a sale.
+        return parsed == null || parsed <= 0 ? l10n.uomPackSizeInvalid : null;
+      },
+    );
+  }
+
   /// Spells out the unit stock actually moves in, which is the part of the Odoo
   /// model that surprises people: a product priced per gram still has its stock
   /// counted in kilograms.
@@ -2271,7 +2339,10 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
             child: Text(
               l10n.uomStockConversionNote(
                 unit.code,
-                formatQuantityValue(uomToReference(1, unit.id), stockUnit.id),
+                formatQuantityValue(
+                  uomToReference(1, unit.id, packSize: _packSize),
+                  stockUnit.id,
+                ),
                 stockUnit.code,
               ),
               style: theme.textTheme.bodySmall?.copyWith(
@@ -2322,8 +2393,22 @@ class _ProductEditorDialogState extends ConsumerState<_ProductEditorDialog> {
           // so the POS can convert a sale into a stock movement — see
           // lib/uom/unit_of_measure.dart.
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(child: _buildUomDropdown(deco)),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildUomDropdown(deco),
+                    // Only box and pack can carry one; every other unit is a
+                    // physical fact, not a packaging choice.
+                    if (isPackSizedUom(_uomId)) ...[
+                      const SizedBox(height: 12),
+                      _buildPackSizeField(deco),
+                    ],
+                  ],
+                ),
+              ),
               const SizedBox(width: 16),
               Expanded(child: _buildStockUnitNote()),
             ],

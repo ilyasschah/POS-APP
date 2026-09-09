@@ -18,6 +18,7 @@ needs, which is why the files sort into their run order.
 | 11 | `11_security_rules_test.dart` | **real** — never re-registers | Locks Settings + Management, then signs in as each user: admin passes, cashier is refused |
 | 12 | `12_void_reasons_test.dart` | **real** — never re-registers | The reason list the void dialog offers, with ranks |
 | 13 | `13_barcode_rules_test.dart` | **real** — never re-registers | A weight (21) and a price (23) format beside the seeded four, checked with the editor's own matcher |
+| 14 | `14_date_format_test.dart` | **real** — never re-registers | One setting drives every date: the same screens re-read under two different shapes |
 
 Not part of the chain:
 
@@ -87,6 +88,7 @@ helpers/
   guarded_access_helper.dart    expectGuardedScreen
   create_void_reason_helper.dart createVoidReason
   barcode_rule_helper.dart      addBarcodeRule, testBarcodeMatch
+  date_format_helper.dart       setDateFormat, expectDatesFollow
   open_register_helper.dart     ensureRegisterOpen, ensureTablelessAllowed
   make_sale_helper.dart         makeSale
   verify_product_helper.dart    verifyProduct        (the UI's answer)

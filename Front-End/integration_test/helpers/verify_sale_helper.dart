@@ -182,3 +182,132 @@ Future<void> verifySaleOnServer(
   step('Sale verified — local ${synced.number} = server ${synced.serverId} '
       'for ${sale.total}');
 }
+
+/// Asserts the sale's CHILD ROWS — its lines and its payments — are on the
+/// server, not merely its header.
+///
+/// ```dart
+/// await verifySaleOnServer(tester, ctx, sale, doc);
+/// await verifySaleChildRowsOnServer(tester, ctx, sale, doc);
+/// ```
+///
+/// ## 🚨 Why the header is not enough
+///
+/// `verifySaleOnServer` asks `/Document/GetAll`, and `DocumentDto` carries NO
+/// items and NO payments — just the header. So a document can come back with the
+/// right id, total and number while its lines and its money never arrived, and
+/// every assertion still passes. What the shop would have is a sale for 140.00
+/// with nothing on it.
+///
+/// ## The failure this exists to catch
+///
+/// `DocumentItem` and `Payment` are the two hottest write tables in the app, and
+/// both are declared in `AppDbContext` with a trigger that **does not exist**
+/// (`DocumentItem_Insert_Trigger`, `Payment_Insert_Trigger` — both marked
+/// `// PHANTOM`). EF never resolves the name; a declaration only makes it drop
+/// the `OUTPUT` clause on writes.
+///
+/// That hedge is load-bearing in one direction: SQL Server REFUSES `OUTPUT` on a
+/// table carrying an enabled trigger (error 334). So if a real trigger is ever
+/// added to either table — one hand-run `trg_*.sql` away on any live database —
+/// then whichever side is undeclared starts failing EVERY insert.
+///
+/// `Startup/TriggerReconciliation.cs` now logs that mismatch at boot, and
+/// `TriggerReconciliationTests.cs` covers the logic. Neither can tell you that a
+/// REAL sale's lines reached a REAL server. This can.
+Future<void> verifySaleChildRowsOnServer(
+  WidgetTester tester,
+  E2EContext ctx,
+  E2ESale sale,
+  DocumentsTableData doc,
+) async {
+  final db = ctx.container.read(appDatabaseProvider);
+  final synced = (await db.getDocumentByLocalId(doc.localId))!;
+  final serverId = synced.serverId;
+
+  expect(
+    serverId,
+    isNotNull,
+    reason: 'The document has no server id yet — call verifySaleOnServer first, '
+        'which waits for the sync to stamp one.',
+  );
+
+  final dio = createDio();
+
+  // ── The LINES ──────────────────────────────────────────────────────────────
+  final itemsRes = await dio.get<List<dynamic>>(
+    '/DocumentItem/GetByDocumentId',
+    queryParameters: {
+      'documentId': serverId,
+      'companyId': ctx.company.companyId,
+    },
+  );
+  final items = (itemsRes.data ?? const []).cast<Map<String, dynamic>>();
+
+  expect(
+    items,
+    isNotEmpty,
+    reason: 'Document $serverId reached the server with NO line items. The '
+        'header banked and the lines did not — which is what an OUTPUT-clause '
+        'refusal on DocumentItem looks like from here (SQL Server error 334, '
+        'raised the moment an undeclared trigger exists on that table).',
+  );
+
+  final line = items.firstWhere(
+    (i) => i['productId'] == sale.productId,
+    orElse: () => throw TestFailure(
+      'Document $serverId has ${items.length} line(s) but none for product '
+      '${sale.productId} (${sale.productName}). Present: '
+      '${items.map((i) => i['productId']).join(', ')}',
+    ),
+  );
+
+  expect(
+    (line['quantity'] as num).toDouble(),
+    closeTo(sale.quantity, kMoneyTolerance),
+    reason: 'The server line carries a different quantity than the cashier saw.',
+  );
+  expect(
+    (line['price'] as num).toDouble(),
+    closeTo(sale.unitPrice, kMoneyTolerance),
+    reason: 'The server line carries a different unit price than the cart did.',
+  );
+
+  // ── The MONEY ──────────────────────────────────────────────────────────────
+  final paymentsRes = await dio.get<List<dynamic>>(
+    '/Payment/GetByDocumentId',
+    queryParameters: {
+      'documentId': serverId,
+      'companyId': ctx.company.companyId,
+    },
+  );
+  final payments = (paymentsRes.data ?? const []).cast<Map<String, dynamic>>();
+
+  expect(
+    payments,
+    isNotEmpty,
+    reason: 'Document $serverId reached the server with NO payment row. The '
+        'shop would show a sale that took no money — the same OUTPUT-clause '
+        'hazard, on the Payment table.',
+  );
+
+  final paid = payments.fold<double>(
+    0,
+    (sum, p) => sum + (p['amount'] as num).toDouble(),
+  );
+  expect(
+    paid,
+    closeTo(sale.total, kMoneyTolerance),
+    reason: 'The server holds $paid against a sale of ${sale.total}. Change is '
+        'not money the shop took, so the payment must equal the total exactly.',
+  );
+  expect(
+    payments.map((p) => p['paymentTypeId']),
+    contains(sale.paymentTypeId),
+    reason: 'The sale was taken on "${sale.paymentTypeName}" '
+        '(${sale.paymentTypeId}) but the server recorded a different type.',
+  );
+
+  step('Server holds ${items.length} line(s) and ${payments.length} payment(s) '
+      'for document $serverId — $paid banked');
+}

@@ -9,54 +9,55 @@ void main() {
   group('the worked example', () {
     test('selling half a kilo leaves 257.500', () {
       var stock = 258.000;
-      stock -= uomToReference(0.500, kUomKilogram);
+      stock -= uomToReference(0.500, kUomKilogram, packSize: null);
       expect(stock, closeTo(257.500, 1e-9));
     });
 
     test('selling a quarter kilo leaves 257.750', () {
       var stock = 258.000;
-      stock -= uomToReference(0.250, kUomKilogram);
+      stock -= uomToReference(0.250, kUomKilogram, packSize: null);
       expect(stock, closeTo(257.750, 1e-9));
     });
 
     test('selling 100 g deducts a tenth of a kilo, not a hundred', () {
       // The single most expensive mistake this layer can make.
       var stock = 258.000;
-      stock -= uomToReference(100, kUomGram);
+      stock -= uomToReference(100, kUomGram, packSize: null);
       expect(stock, closeTo(257.900, 1e-9));
     });
   });
 
   group('conversion', () {
     test('grams convert to kilograms', () {
-      expect(uomToReference(100, kUomGram), closeTo(0.100, 1e-9));
-      expect(uomToReference(250, kUomGram), closeTo(0.250, 1e-9));
-      expect(uomToReference(1000, kUomGram), closeTo(1.000, 1e-9));
-      expect(uomToReference(1, kUomGram), closeTo(0.001, 1e-9));
+      expect(uomToReference(100, kUomGram, packSize: null), closeTo(0.100, 1e-9));
+      expect(uomToReference(250, kUomGram, packSize: null), closeTo(0.250, 1e-9));
+      expect(uomToReference(1000, kUomGram, packSize: null), closeTo(1.000, 1e-9));
+      expect(uomToReference(1, kUomGram, packSize: null), closeTo(0.001, 1e-9));
     });
 
     test('millilitres convert to litres', () {
-      expect(uomToReference(500, kUomMillilitre), closeTo(0.500, 1e-9));
-      expect(uomToReference(1500, kUomMillilitre), closeTo(1.500, 1e-9));
+      expect(uomToReference(500, kUomMillilitre, packSize: null), closeTo(0.500, 1e-9));
+      expect(uomToReference(1500, kUomMillilitre, packSize: null), closeTo(1.500, 1e-9));
     });
 
     test('a reference unit converts to itself', () {
-      expect(uomToReference(0.125, kUomKilogram), closeTo(0.125, 1e-9));
+      expect(uomToReference(0.125, kUomKilogram, packSize: null), closeTo(0.125, 1e-9));
     });
 
     test('pieces convert one to one', () {
-      expect(uomToReference(3, kUomPieces), closeTo(3, 1e-9));
+      expect(uomToReference(3, kUomPieces, packSize: null), closeTo(3, 1e-9));
     });
 
     test('conversion round-trips', () {
-      expect(uomFromReference(uomToReference(250, kUomGram), kUomGram),
+      expect(uomFromReference(uomToReference(250, kUomGram, packSize: null), kUomGram,
+          packSize: null),
           closeTo(250, 1e-9));
     });
 
     test('a negative delta converts symmetrically', () {
       // Voids and removed order lines hand back negative deltas; an asymmetric
       // rounding rule here would leak stock a fraction at a time.
-      expect(uomToReference(-100, kUomGram), closeTo(-0.100, 1e-9));
+      expect(uomToReference(-100, kUomGram, packSize: null), closeTo(-0.100, 1e-9));
     });
   });
 
@@ -65,7 +66,7 @@ void main() {
       // A serial scale reporting 0.4999999996 kg must not shave a fraction
       // off stock on every single sale. Snapped at the storage precision, so
       // the noise dies without the real quantity being touched.
-      expect(uomToReference(0.4999999996, kUomKilogram), closeTo(0.500, 1e-9));
+      expect(uomToReference(0.4999999996, kUomKilogram, packSize: null), closeTo(0.500, 1e-9));
     });
 
     test('a real quantity is NOT quantised to the unit step', () {
@@ -73,14 +74,14 @@ void main() {
       // deliberate 0.5 on a pcs product into 1, on the line AND in the stock
       // deduction. Conversion snaps at the storage precision instead, so a
       // genuine fraction survives whatever unit it is expressed in.
-      expect(uomToReference(0.5, kUomPieces), closeTo(0.5, 1e-9));
-      expect(uomToReference(88.5, kUomPieces), closeTo(88.5, 1e-9));
-      expect(uomToReference(0.1234, kUomKilogram), closeTo(0.1234, 1e-9));
+      expect(uomToReference(0.5, kUomPieces, packSize: null), closeTo(0.5, 1e-9));
+      expect(uomToReference(88.5, kUomPieces, packSize: null), closeTo(88.5, 1e-9));
+      expect(uomToReference(0.1234, kUomKilogram, packSize: null), closeTo(0.1234, 1e-9));
     });
 
     test('selling half a unit deducts half a unit', () {
       var stock = 88.5;
-      stock -= uomToReference(0.5, kUomPieces);
+      stock -= uomToReference(0.5, kUomPieces, packSize: null);
       expect(stock, closeTo(88.0, 1e-9));
     });
   });
@@ -94,22 +95,24 @@ void main() {
     // `0.350000 kg` in the cart — while 2.750 kg looked perfect, because 2.75
     // is exactly representable and 0.35 is not. Hence `equals`, not `closeTo`.
     test('350 g converts to a kilogram figure with no binary residue', () {
-      expect(uomToReference(350, kUomGram), 0.35);
-      expect(formatQuantity(uomToReference(350, kUomGram), kUomKilogram),
+      expect(uomToReference(350, kUomGram, packSize: null), 0.35);
+      expect(formatQuantity(uomToReference(350, kUomGram, packSize: null), kUomKilogram),
           '0.350 kg');
     });
 
     test('the weights that used to disagree now format alike', () {
       for (final grams in <double>[350, 2750, 1, 125, 999]) {
-        final kg = uomToReference(grams, kUomGram);
+        final kg = uomToReference(grams, kUomGram, packSize: null);
         expect(formatQuantityValue(kg, kUomKilogram).length, 5,
             reason: '$grams g rendered as ${formatQuantityValue(kg, kUomKilogram)}');
       }
     });
 
     test('a scale reading survives the round trip unchanged', () {
-      expect(uomFromReference(uomToReference(350, kUomGram), kUomGram), 350);
-      expect(uomToReference(0.4999999996, kUomKilogram), 0.5);
+      expect(uomFromReference(
+          uomToReference(350, kUomGram, packSize: null), kUomGram,
+          packSize: null), 350);
+      expect(uomToReference(0.4999999996, kUomKilogram, packSize: null), 0.5);
       expect(snapToStorage(4.166666666), 4.1667);
     });
   });
@@ -120,18 +123,18 @@ void main() {
     // 0.400 kg of a 30 MAD/g product at 12.00 MAD — the gram price charged for
     // a whole kilogram, off by the unit's own factor.
     test('a gram price restates as a kilogram price', () {
-      expect(pricePerReferenceUnit(30, kUomGram), 30000);
-      expect(0.400 * pricePerReferenceUnit(30, kUomGram), closeTo(12000, 1e-6));
+      expect(pricePerReferenceUnit(30, kUomGram, packSize: null), 30000);
+      expect(0.400 * pricePerReferenceUnit(30, kUomGram, packSize: null), closeTo(12000, 1e-6));
     });
 
     test('a product sold in its own reference unit is untouched', () {
-      expect(pricePerReferenceUnit(30, kUomKilogram), 30);
-      expect(pricePerReferenceUnit(12.5, kUomPieces), 12.5);
-      expect(pricePerReferenceUnit(4, kUomLitre), 4);
+      expect(pricePerReferenceUnit(30, kUomKilogram, packSize: null), 30);
+      expect(pricePerReferenceUnit(12.5, kUomPieces, packSize: null), 12.5);
+      expect(pricePerReferenceUnit(4, kUomLitre, packSize: null), 4);
     });
 
     test('millilitres scale the same way grams do', () {
-      expect(pricePerReferenceUnit(0.5, kUomMillilitre), 500);
+      expect(pricePerReferenceUnit(0.5, kUomMillilitre, packSize: null), 500);
     });
   });
 
@@ -164,7 +167,7 @@ void main() {
     test('an unknown unit id falls back to pieces rather than throwing', () {
       expect(uomById(9999).code, 'pcs');
       expect(uomById(null).code, 'pcs');
-      expect(uomToReference(5, 9999), closeTo(5, 1e-9));
+      expect(uomToReference(5, 9999, packSize: null), closeTo(5, 1e-9));
     });
 
     test('every category has exactly one reference unit', () {

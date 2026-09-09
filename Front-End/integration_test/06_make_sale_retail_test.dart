@@ -8,7 +8,8 @@
 // 06_make_sale_retail — the money path for a COUNTER-SERVICE shop.
 //
 //   PIN → retail mode → open the register → SCAN → PAY
-//     → verify in local SQLite → sync → verify on the SERVER
+//     → verify in local SQLite → sync → verify the header, the LINES and the
+//       MONEY on the SERVER
 //
 //   cd Front-End
 //   flutter test integration_test/06_make_sale_retail_test.dart -d windows
@@ -112,6 +113,25 @@ void main() {
     // idempotent and makes the wait bounded and visible.
     await syncNow(tester, ctx.l);
     await verifySaleOnServer(tester, ctx, sale, doc);
+
+    // ── 7 · The LINES and the MONEY are on the server too ─────────────────────
+    //
+    // 🚨 `/Document/GetAll` returns the HEADER only — `DocumentDto` carries no
+    // items and no payments. So everything above is equally true of a sale that
+    // banked its total and lost everything on it.
+    //
+    // This matters more than it looks. `DocumentItem` and `Payment` are the two
+    // hottest write tables in the app, and both are declared in `AppDbContext`
+    // against a trigger that does not exist (`// PHANTOM`). EF uses such a
+    // declaration only to drop the OUTPUT clause — and SQL Server REFUSES OUTPUT
+    // on a table carrying an enabled trigger (error 334). So the day a real
+    // trigger lands on either table, whichever side is undeclared starts failing
+    // every insert, and a sale's lines simply stop arriving.
+    //
+    // `Startup/TriggerReconciliation.cs` catches that mismatch at boot and
+    // `TriggerReconciliationTests.cs` covers its logic. Neither can say a REAL
+    // sale's lines reached a REAL server. This line does.
+    await verifySaleChildRowsOnServer(tester, ctx, sale, doc);
 
     step('make_sale_retail PASSED — scanned ${target.barcode}, '
         'sold ${sale.productName} for ${sale.total}');
