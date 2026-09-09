@@ -18,6 +18,7 @@ import 'package:pos_app/floor_plan/floor_plan_table_provider.dart';
 import 'package:pos_app/bookings/bookings_provider.dart';
 import 'package:pos_app/api/promotion_models.dart';
 import 'package:pos_app/promotions/promotion_provider.dart';
+import 'package:pos_app/stock/warehouse_model.dart';
 import 'package:pos_app/stock/warehouse_provider.dart';
 import 'package:pos_app/kitchen/kitchen_push_service.dart';
 import 'package:pos_app/product/product_model.dart'; // Added to use Product.fromDrift
@@ -759,11 +760,10 @@ class CartNotifier extends Notifier<CartState> {
       orderNumber: orderNumber,
       activeWarehouseId: warehouseId,
     );
-    final warehouses = ref.read(allWarehousesProvider).value ?? [];
-    final wh = warehouses.where((w) => w.id == warehouseId).firstOrNull;
-    if (wh != null) {
-      ref.read(selectedWarehouseProvider.notifier).state = wh;
-    }
+    // Same resolution as a manual switch: resuming an order sourced from
+    // another warehouse has to move the visible selection too, and it hit the
+    // same cold-provider miss.
+    _selectWarehouse(warehouseId);
   }
 
   Future<void> setCustomer(int companyId, Customer customer) async {
@@ -933,13 +933,62 @@ class CartNotifier extends Notifier<CartState> {
     return 0;
   }
 
+  /// Points the app's ACTIVE warehouse at [warehouseId], for every screen that
+  /// reads [selectedWarehouseProvider] — the menu grid's stock figures, the
+  /// availability guard, the header chip.
+  ///
+  /// 🚨 It cannot just read the warehouse list. [allWarehousesProvider] is
+  /// `autoDispose`, so a plain `read` of it returns `AsyncLoading` — and so a
+  /// null value — whenever nothing on screen happens to be WATCHING it. That is
+  /// the whole bug this method exists to close: switching warehouse from the
+  /// out-of-stock dialog silently did nothing, because the `if (wh != null)`
+  /// that used to live here swallowed the miss and left the selection on the old
+  /// warehouse. Turn the POS header's warehouse button ON and the same tap
+  /// worked — its `Consumer` kept the list warm. A switch must not depend on
+  /// which buttons a company happens to have enabled, so an unresolved list
+  /// falls back to the database that list is streamed from.
+  void _selectWarehouse(int warehouseId) {
+    final known = ref
+        .read(allWarehousesProvider)
+        .value
+        ?.where((w) => w.id == warehouseId)
+        .firstOrNull;
+
+    if (known != null) {
+      ref.read(selectedWarehouseProvider.notifier).state = known;
+      return;
+    }
+
+    // Fire-and-forget: one Drift row, and the caller is a synchronous UI action.
+    // A frame later is still instant to a person, and it beats not switching.
+    _selectWarehouseFromDb(warehouseId);
+  }
+
+  /// The same lookup [allWarehousesProvider] would have done, straight from
+  /// Drift — same company scope, same exclusion of rows queued for deletion, so
+  /// this can never select a warehouse the picker would refuse to show.
+  Future<void> _selectWarehouseFromDb(int warehouseId) async {
+    final companyId = ref.read(selectedCompanyProvider)?.id;
+    if (companyId == null) return;
+
+    final db = ref.read(appDatabaseProvider);
+    final row =
+        await (db.select(db.warehousesTable)
+              ..where((t) => t.id.equals(warehouseId))
+              ..where((t) => t.companyId.equals(companyId))
+              ..where((t) => t.syncStatus.isNotIn(['pending_delete']))
+              ..limit(1))
+            .getSingleOrNull();
+
+    if (row != null) {
+      ref.read(selectedWarehouseProvider.notifier).state =
+          Warehouse.fromDrift(row);
+    }
+  }
+
   void setWarehouseId(int warehouseId) {
     state = state.copyWith(activeWarehouseId: warehouseId);
-    final warehouses = ref.read(allWarehousesProvider).value ?? [];
-    final wh = warehouses.where((w) => w.id == warehouseId).firstOrNull;
-    if (wh != null) {
-      ref.read(selectedWarehouseProvider.notifier).state = wh;
-    }
+    _selectWarehouse(warehouseId);
   }
 
   void setCartDiscount(double discount, int type) {

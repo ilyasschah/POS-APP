@@ -798,9 +798,6 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                   item;
 
               return _ProductDetailPanel(
-                // Rebuilds the panel's own state (the inline quantity editor)
-                // only when the product actually changes, never on a refresh.
-                key: ValueKey(productId),
                 item: live,
                 warehouseId: _selectedWarehouseId,
                 onClose: () => Navigator.of(dialogContext).maybePop(),
@@ -1429,7 +1426,10 @@ class _ProductDetailPanel extends ConsumerStatefulWidget {
 
   // No `key`: the panel used to be a persistent pane that had to be rebuilt
   // when the selected product changed. Each one is its own dialog now, so it
-  // is fresh by construction.
+  // is fresh by construction. It DOES rebuild in place when the stock data
+  // changes underneath it (see _showDetails), and that is exactly why there is
+  // no key — same type, same position, so the inline quantity editor keeps its
+  // text and its cursor while the figures around it refresh.
   const _ProductDetailPanel({
     required this.item,
     required this.warehouseId,
