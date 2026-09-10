@@ -1,4 +1,5 @@
 import '../core/json_utils.dart';
+import 'unit_of_measure.dart';
 
 /// A row from `GET /Products/GetAll`.
 ///
@@ -28,6 +29,9 @@ class Product {
     this.ageRestriction,
     this.lastPurchasePrice,
     this.rank,
+    this.uomId = kUomPieces,
+    this.isToWeigh = false,
+    this.packSize,
   });
 
   final int id;
@@ -56,7 +60,29 @@ class Product {
   final double? lastPurchasePrice;
   final int? rank;
 
+  /// The unit it is sold in — an id into [kUnitsOfMeasure].
+  final int uomId;
+
+  /// Weighed at the till rather than counted.
+  final bool isToWeigh;
+
+  /// Pieces in one box / pack of THIS product. Null = the nominal 12 / 6.
+  final double? packSize;
+
   String get displayName => name.isEmpty ? 'Unnamed product' : name;
+
+  /// [uomId], healed the way the POS heals it: a row still carrying the bare
+  /// pieces default while its legacy text names a real unit was set up in that
+  /// unit — the text is the choice somebody actually made.
+  int get effectiveUomId {
+    if (uomId != kUomPieces) return uomId;
+    return uomByCode(measurementUnit)?.id ?? kUomPieces;
+  }
+
+  UnitOfMeasure get saleUnit => uomById(effectiveUomId);
+
+  /// The unit its stock is counted in (kg for a product sold in grams).
+  UnitOfMeasure get stockUnit => stockUomOf(effectiveUomId);
 
   /// Case-insensitive match on name or code, for the client-side search box.
   bool matches(String query) {
@@ -90,6 +116,9 @@ class Product {
     ageRestriction: asIntOrNull(json['ageRestriction']),
     lastPurchasePrice: asDoubleOrNull(json['lastPurchasePrice']),
     rank: asIntOrNull(json['rank']),
+    uomId: asInt(json['uomId'], kUomPieces),
+    isToWeigh: asBool(json['isToWeigh']),
+    packSize: asDoubleOrNull(json['packSize']),
   );
 
   /// Builds the `PATCH /Products/Update` body.
@@ -123,5 +152,8 @@ class Product {
     'ageRestriction': ageRestriction,
     'lastPurchasePrice': lastPurchasePrice,
     'rank': rank,
+    'uomId': uomId,
+    'isToWeigh': isToWeigh,
+    'packSize': packSize,
   };
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:octopus_dashboard_web/widgets/list_panel.dart';
 import 'package:octopus_dashboard_web/core/settings.dart';
 import 'package:octopus_dashboard_web/core/theme.dart';
 import 'package:octopus_dashboard_web/features/auth/auth_controller.dart';
@@ -209,8 +210,17 @@ void main() {
 
       // Product 7 is stocked across two warehouses (400 + 77); product 8 has
       // no stock row at all and must still appear.
-      expect(find.text('477'), findsOneWidget);
-      expect(find.text('Unassigned'), findsOneWidget);
+      // Quantities carry their stock unit, and the filter bar has an
+      // "Unassigned" chip of its own — so the row's label is looked for
+      // inside the list.
+      expect(find.text('477 pcs'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(ListPanel),
+          matching: find.text('Unassigned'),
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('users show derived role and status', (tester) async {

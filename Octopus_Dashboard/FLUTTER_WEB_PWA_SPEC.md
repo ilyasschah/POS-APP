@@ -80,7 +80,8 @@ force-resetting a cashier's password).
   colors — with content layered on top in translucent "glass" cards.
 - Accent color: **teal** throughout — primary buttons, positive numbers,
   active nav-item tint, active-state icons. Approximate hex: light mode
-  `#30B0C7`, dark mode `#40C8E0`.
+  `#2A7CA1`, dark mode `#389DCB` — octopus blue, not the iOS system teal
+  this originally specified. See `octopus_dashboard_web/lib/core/theme.dart`.
 - "Glass" effect: translucent frosted panels. On web, `BackdropFilter` +
   `ImageFilter.blur` works in both CanvasKit and HTML renderers, but **prefer
   the CanvasKit renderer** (`flutter build web --web-renderer canvaskit`) for

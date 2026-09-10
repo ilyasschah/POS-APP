@@ -1,59 +1,70 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!--
+    Octopus — the master brand mark.
+
+    This is the SINGLE SOURCE the whole ecosystem copies: the POS
+    (Front-End/assets/icon.svg), the admin portal
+    (Back-End/Web-POS.Api/wwwroot/img/icon.svg), the owner dashboard
+    (Octopus_Dashboard/OwnerDashboard/icon.svg) and the marketing site
+    (website/assets-src/icon.png) all carry a copy. Change it here, then run
+    `tools/generate_brand_assets.py` to push it out.
+
+    Traced from img/logo-NO_Background.png: same head, same two raised
+    antennae, same five hanging tentacles, same ball terminals, same face.
+
+    THE PLATE IS LIGHT, and that is the whole change from the previous mark.
+    The brand runs white-first now, so the plate is white breathing into a
+    pale blue rather than the deep navy it used to be, and the mark is the
+    flat #389DCB the delivered artwork is drawn in — one colour, no gradient,
+    because the artwork has none. #389DCB measures 3.06:1 on white: under the
+    bar for TEXT, over it for a large graphic shape, which is all this is.
+  -->
   <defs>
-    <!-- Deep Space Background Gradient -->
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1A1A2E" />
-      <stop offset="100%" stop-color="#16213E" />
-    </linearGradient>
-    
-    <!-- Blood Node Gradient.
-         LIGHTER than the UI accent (#A4161A) on purpose: the mark sits on the
-         navy plate, where #A4161A measures 2.20:1 and all but disappears. These
-         two clear 4.29:1 and 3.41:1 on that ground while staying the same blood
-         red the interface uses on white. Same hue family, different ground,
-         different lightness — the rule the whole palette runs on. -->
-    <linearGradient id="octoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#F0353B" />
-      <stop offset="100%" stop-color="#D62828" />
+    <!-- Plate: white, with just enough blue in the far corner that the icon
+         still has an edge when it sits on a white home screen. -->
+    <linearGradient id="plateGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="#E8F3F9" />
     </linearGradient>
   </defs>
 
-  <!-- App Icon Rounded Background -->
-  <rect width="512" height="512" rx="112" fill="url(#bgGrad)" />
+  <!-- App icon rounded plate. The hairline is inset by half its own width so
+       it lands inside the 512 box instead of being clipped in half. -->
+  <rect width="512" height="512" rx="112" fill="url(#plateGrad)" />
+  <rect x="1" y="1" width="510" height="510" rx="111"
+        fill="none" stroke="#D6E7F0" stroke-width="2" />
 
-  <g fill="url(#octoGrad)">
-    <!-- Central Hub / Head -->
-    <circle cx="256" cy="210" r="70" />
+  <g fill="#389DCB" stroke="#389DCB" stroke-linecap="round">
+    <!-- Head -->
+    <circle cx="256" cy="203" r="67.5" stroke="none" />
 
-    <!-- Nodes / Tentacles representing POS terminals -->
-    <!-- Left side -->
-    <path d="M 190 230 Q 120 280 130 360" fill="none" stroke="url(#octoGrad)" stroke-width="20" stroke-linecap="round"/>
-    <circle cx="130" cy="360" r="28" />
+    <!-- Raised antennae -->
+    <path d="M 201 166 Q 130 150 143 94" fill="none" stroke-width="22" />
+    <circle cx="143" cy="94" r="27" stroke="none" />
+    <path d="M 311 166 Q 382 150 369 94" fill="none" stroke-width="22" />
+    <circle cx="369" cy="94" r="27" stroke="none" />
 
-    <path d="M 210 260 Q 160 350 190 420" fill="none" stroke="url(#octoGrad)" stroke-width="20" stroke-linecap="round"/>
-    <circle cx="190" cy="420" r="28" />
+    <!-- Hanging tentacles, outermost pair first -->
+    <path d="M 192 225 Q 147 258 132 348" fill="none" stroke-width="20" />
+    <circle cx="132" cy="348" r="27" stroke="none" />
+    <path d="M 320 225 Q 365 258 380 348" fill="none" stroke-width="20" />
+    <circle cx="380" cy="348" r="27" stroke="none" />
 
-    <!-- Center downward -->
-    <path d="M 256 280 Q 256 380 256 440" fill="none" stroke="url(#octoGrad)" stroke-width="20" stroke-linecap="round"/>
-    <circle cx="256" cy="440" r="28" />
+    <path d="M 221 251 Q 163 318 190 409" fill="none" stroke-width="20" />
+    <circle cx="190" cy="409" r="27" stroke="none" />
+    <path d="M 291 251 Q 349 318 322 409" fill="none" stroke-width="20" />
+    <circle cx="322" cy="409" r="27" stroke="none" />
 
-    <!-- Right side -->
-    <path d="M 322 230 Q 392 280 382 360" fill="none" stroke="url(#octoGrad)" stroke-width="20" stroke-linecap="round"/>
-    <circle cx="382" cy="360" r="28" />
-
-    <path d="M 302 260 Q 352 350 322 420" fill="none" stroke="url(#octoGrad)" stroke-width="20" stroke-linecap="round"/>
-    <circle cx="322" cy="420" r="28" />
-
-    <!-- Upper network nodes for balance -->
-    <path d="M 195 175 Q 120 150 140 100" fill="none" stroke="url(#octoGrad)" stroke-width="20" stroke-linecap="round"/>
-    <circle cx="140" cy="100" r="28" />
-
-    <path d="M 317 175 Q 392 150 372 100" fill="none" stroke="url(#octoGrad)" stroke-width="20" stroke-linecap="round"/>
-    <circle cx="372" cy="100" r="28" />
+    <path d="M 256 270 L 256 421" fill="none" stroke-width="20" />
+    <circle cx="256" cy="421" r="26" stroke="none" />
   </g>
 
-  <!-- Abstract connections inside the hub -->
-  <circle cx="226" cy="200" r="14" fill="#1A1A2E" />
-  <circle cx="286" cy="200" r="14" fill="#1A1A2E" />
-  <path d="M 236 235 H 276" fill="none" stroke="#1A1A2E" stroke-width="10" stroke-linecap="round"/>
+  <!-- Face. Knocked out of the head in the plate's own white so the mark
+       stays legible when it is dropped on a coloured ground. -->
+  <g fill="#FFFFFF">
+    <circle cx="226" cy="189" r="12" />
+    <circle cx="285" cy="189" r="12" />
+  </g>
+  <path d="M 232 218 Q 256 250 280 218"
+        fill="none" stroke="#FFFFFF" stroke-width="9" stroke-linecap="round" />
 </svg>

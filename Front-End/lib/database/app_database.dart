@@ -1805,7 +1805,7 @@ class AppDatabase extends _$AppDatabase {
   /// Restore validation needs it before Drift is touched: a backup whose
   /// `user_version` is higher came from a newer build, and Drift migrates
   /// forward only, so opening it here would corrupt it.
-  static const int expectedSchemaVersion = 66;
+  static const int expectedSchemaVersion = 67;
 
   @override
   int get schemaVersion => expectedSchemaVersion;
@@ -1844,6 +1844,24 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(productModifierGroupsTable);
             await m.createTable(posOrderItemModifiersTable);
             await m.createTable(documentItemModifiersTable);
+          }
+          if (from < 67) {
+            // One-time recovery for cash movements stranded by the old push,
+            // which marked ANY failure 'failed' — including "the till was
+            // offline". `getPendingCashMovements` only ever selects 'pending',
+            // so those rows were dead: a 200 DH opening float recorded offline
+            // never reached the server, the Z-report, or the second till.
+            //
+            // 🚨 Scoped to rows with NO server id, which is the proof the server
+            // never accepted them: the old code marked a movement 'synced'
+            // (server id 0) when the POST succeeded but the id could not be
+            // parsed, so it never lands here. Re-queueing an accepted movement
+            // would post a SECOND opening float and inflate expected cash — the
+            // one outcome worse than a missing one.
+            await customStatement(
+              "UPDATE starting_cash SET sync_status = 'pending' "
+              "WHERE sync_status = 'failed' AND server_id IS NULL",
+            );
           }
           if (from < 66) {
             // Per-product pack size. Nullable with no default, so every existing
@@ -5903,6 +5921,20 @@ extension OfflineQueueHelpers on AppDatabase {
       serverId: Value(serverId),
       syncStatus: const Value('synced'),
       syncError: const Value(null),
+    ));
+  }
+
+  /// Keeps the movement QUEUED after a transient failure, recording why.
+  ///
+  /// The counterpart to [markCashMovementFailed], which is terminal: a row left
+  /// at 'failed' is never selected by [getPendingCashMovements] again, so it can
+  /// only ever be used for something retrying cannot fix.
+  Future<void> markCashMovementRetryable(String localId, String errorMessage) {
+    return (update(startingCashTable)
+          ..where((t) => t.localId.equals(localId)))
+        .write(StartingCashTableCompanion(
+      syncStatus: const Value('pending'),
+      syncError: Value(errorMessage),
     ));
   }
 

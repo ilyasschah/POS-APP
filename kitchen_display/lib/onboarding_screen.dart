@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'kds_brand.dart';
 import 'l10n/kds_localizations.dart';
 import 'language_picker.dart';
 
@@ -25,8 +26,6 @@ class OnboardingScreen extends StatelessWidget {
     required this.port,
     required this.onLanguageChanged,
   });
-
-  static const _brand = Color(0xFF546E7A);
 
   @override
   Widget build(BuildContext context) {
@@ -76,7 +75,7 @@ class OnboardingScreen extends StatelessWidget {
       width: double.infinity,
       // Grows on tall screens, but never collapses on short ones.
       constraints: BoxConstraints(minHeight: (maxHeight * 0.42).clamp(220, 460)),
-      color: _brand,
+      color: kKdsBrandInk,
       padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,

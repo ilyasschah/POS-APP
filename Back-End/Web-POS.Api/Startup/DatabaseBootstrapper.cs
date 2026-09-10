@@ -75,6 +75,19 @@ public static class DatabaseBootstrapper
             await Api.Services.CompanyDefaultsSeeder.RemoveObsoletePropertiesAsync(db);
             logger.LogDebug("Obsolete application properties swept.");
 
+            // Gives companies created before a setting existed the row every newer
+            // company was seeded with. Without it the till fell back to its own
+            // default, which is not always the same value. Add-only: a row that
+            // exists is never overwritten. Said out loud when it adds anything,
+            // because that is a behaviour change for the companies it touched.
+            var backfilled = await Api.Services.CompanyDefaultsSeeder.BackfillMissingPropertiesAsync(db);
+            if (backfilled > 0)
+                logger.LogInformation(
+                    "Backfilled {Count} missing application setting(s) onto existing companies.",
+                    backfilled);
+            else
+                logger.LogDebug("Application settings complete for every company.");
+
             // Moves companies still on the pre-rollout blue accent onto the brand
             // coral. Touches ONLY rows still holding the old default, so an
             // operator who picked their own colour keeps it.

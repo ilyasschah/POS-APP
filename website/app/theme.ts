@@ -132,9 +132,9 @@ function darkenUntil(hex: string, target: number): string {
   const [h, s0, l0] = rgbToHsl(rgb[0], rgb[1], rgb[2]);
   // A fully saturated colour that has been darkened reads as garish — a deep
   // 100%-saturation red looks like an error state, not a brand. Capping the
-  // saturation on the way down is what the hand-tuned brand scale did by eye,
-  // and it lands this within a shade of it: derived #C2183E against the
-  // hand-picked #C2103F for the hover fill.
+  // saturation on the way down is what the hand-tuned brand scale did by eye.
+  // The brand blue sits at 59% saturation, well under the cap, so it passes
+  // through untouched and the derived tokens ARE the ones in globals.css.
   const s = Math.min(s0, MAX_DARK_SATURATION);
   for (let l = l0; l >= 0; l -= 0.01) {
     const [r, g, b] = hslToRgb(h, s, l);
@@ -146,14 +146,16 @@ function darkenUntil(hex: string, target: number): string {
 
 /**
  * The neutrals are not neutral — they are the accent at very low saturation and
- * very high lightness, which is why the shipped palette reads as warm pink
- * rather than grey. Leaving them fixed while the accent moved was the tell that
- * gave the demo away: a blue accent on a pink section looks like a bug, not a
- * theme.
+ * very high lightness, which is why the shipped palette reads as a cool blue-
+ * white rather than grey. Leaving them fixed while the accent moved was the
+ * tell that gave the demo away: an amber accent on a blue section looks like a
+ * bug, not a theme.
  *
- * These three (S, L) pairs are read off the hand-tuned values — #FDF3F5,
- * #F7EDF0, #F1E6E9 — so feeding the brand hue back through reproduces them, and
- * any other hue gets the same relationship to its own accent.
+ * The three (S, L) pairs were read off the hand-tuned warm neutrals the coral
+ * brand shipped with; they are RELATIONSHIPS, not colours, so feeding the
+ * current brand hue through them produces the cool #F3FAFD / #EDF4F7 / #E6EEF1
+ * in globals.css, and any other hue gets the same relationship to its own
+ * accent.
  */
 function neutral(hex: string, sat: number, light: number): string {
   const rgb = parseHex(hex);
@@ -167,10 +169,11 @@ function neutral(hex: string, sat: number, light: number): string {
  * Drops a colour's lightness by a fixed amount, floored at black.
  *
  * `darkenUntil` is a no-op on a seed that ALREADY clears its target, which is
- * exactly what a dark brand like the blood red does — it passes 3:1, 4.6:1 and
- * 6:1 on its own, so every token would collapse onto the same value and the
- * buttons would have no hover state at all. This guarantees a step regardless
- * of where the seed starts.
+ * exactly what a dark brand like the blood red did — it passed 3:1, 4.6:1 and
+ * 6:1 on its own, so every token collapsed onto the same value and the buttons
+ * had no hover state at all. The octopus blue is light enough that it does not
+ * hit that case, but an operator can still pick a colour that does, so this
+ * guarantees a step regardless of where the seed starts.
  */
 function darkenBy(hex: string, delta: number): string {
   const rgb = parseHex(hex);
@@ -185,10 +188,10 @@ function tint(hex: string): string {
   const rgb = parseHex(hex);
   if (!rgb) return hex;
   const [h, s] = rgbToHsl(rgb[0], rgb[1], rgb[2]);
-  // Saturation is held well down. A pale wash of a saturated red at 91%
-  // lightness comes out PINK, which is the one thing the brand is not — the
-  // tint has to read as a warm neutral carrying the hue, not as a second
-  // brand colour.
+  // Saturation is held well down. A pale wash of a saturated hue at 91%
+  // lightness comes back as a second brand colour — the red went PINK, a
+  // saturated blue goes baby-blue. The tint has to read as a neutral that
+  // happens to carry the hue.
   const [r, g, b] = hslToRgb(h, Math.min(s, 0.45), 0.91);
   return rgbToHex(r, g, b);
 }
@@ -206,7 +209,7 @@ function tint(hex: string): string {
  * If that list changes in the app, change it here too.
  */
 export const POS_ACCENTS = [
-  "#A4161A",
+  "#389DCB",
   "#3B82F6",
   "#8B5CF6",
   "#EF4444",
@@ -263,11 +266,10 @@ export const TOKEN_VARS: Record<keyof AccentTokens, string> = {
  * Writes the derived scale onto :root.
  *
  * The brand accent CLEARS the inline properties instead of setting them, so it
- * falls back to the hand-tuned scale in `globals.css`. Those values were
- * measured and tuned by eye and sit a shade off what this function derives; if
- * the default overwrote them, picking "brand" would land on a slightly
- * different red than the page loaded with, and the reset would look like a bug.
- * Every other seed is derived.
+ * falls back to the scale in `globals.css`. Those values are now this
+ * function's own output for #389DCB, written out so the page has them before
+ * any JS runs — but the clear is still the right move, because it also drops
+ * any token this function might not know about. Every other seed is derived.
  */
 export function applyAccent(seed: string): void {
   const root = document.documentElement;

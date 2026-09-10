@@ -52,7 +52,9 @@ accounts (including force-resetting a cashier's password).
   translucent "glass" cards.
 - Accent color: **teal**, used for primary buttons, positive numbers (sale
   price, positive totals), the sidebar's selection tint, and active-state icons.
-  Approximate hex: light mode `#30B0C7`, dark mode `#40C8E0` (iOS system teal).
+  Hex: light mode `#2A7CA1`, dark mode `#389DCB`. The port shipped on the iOS
+  system teal (`#30B0C7` / `#40C8E0`); it now carries the brand blue instead,
+  darkened on the light ground so the currency figures clear WCAG AA.
   A single `Colors.teal`-family value is fine if exact parity isn't critical.
 - "Glass" effect: translucent frosted panels (iOS `.ultraThinMaterial`) — in
   Flutter, approximate with `BackdropFilter(filter: ImageFilter.blur(...))`

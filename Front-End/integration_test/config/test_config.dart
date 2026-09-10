@@ -29,7 +29,7 @@ const String kThemeMode = 'light';
 
 /// Which accent swatch to tap, by position in onboarding's Accent row.
 ///
-/// 0 is the brand red (#A4161A) — the octopus in assets/icon.svg and the
+/// 0 is the brand blue (#389DCB) — the octopus in assets/icon.svg and the
 /// marketing site. Any index is valid; the test only asserts that a colour was
 /// chosen, not which one.
 const int kAccentIndex = 0;

@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!--
+    Octopus — the mark ALONE, no plate, transparent ground.
+
+    Same geometry as icon.svg (keep the two in step); this one exists for the
+    cases where something else supplies the background: maskable PWA icons,
+    which need a full-bleed ground the launcher can crop, and any surface that
+    wants to tint the mark itself.
+
+    The face is knocked out with an explicit white here rather than left as
+    holes, because on a maskable icon the ground behind is the launcher's, not
+    ours, and an eye you can see through reads as damage.
+  -->
+  <g fill="#389DCB" stroke="#389DCB" stroke-linecap="round">
+    <circle cx="256" cy="203" r="67.5" stroke="none" />
+
+    <path d="M 201 166 Q 130 150 143 94" fill="none" stroke-width="22" />
+    <circle cx="143" cy="94" r="27" stroke="none" />
+    <path d="M 311 166 Q 382 150 369 94" fill="none" stroke-width="22" />
+    <circle cx="369" cy="94" r="27" stroke="none" />
+
+    <path d="M 192 225 Q 147 258 132 348" fill="none" stroke-width="20" />
+    <circle cx="132" cy="348" r="27" stroke="none" />
+    <path d="M 320 225 Q 365 258 380 348" fill="none" stroke-width="20" />
+    <circle cx="380" cy="348" r="27" stroke="none" />
+
+    <path d="M 221 251 Q 163 318 190 409" fill="none" stroke-width="20" />
+    <circle cx="190" cy="409" r="27" stroke="none" />
+    <path d="M 291 251 Q 349 318 322 409" fill="none" stroke-width="20" />
+    <circle cx="322" cy="409" r="27" stroke="none" />
+
+    <path d="M 256 270 L 256 421" fill="none" stroke-width="20" />
+    <circle cx="256" cy="421" r="26" stroke="none" />
+  </g>
+
+  <g fill="#FFFFFF">
+    <circle cx="226" cy="189" r="12" />
+    <circle cx="285" cy="189" r="12" />
+  </g>
+  <path d="M 232 218 Q 256 250 280 218"
+        fill="none" stroke="#FFFFFF" stroke-width="9" stroke-linecap="round" />
+</svg>

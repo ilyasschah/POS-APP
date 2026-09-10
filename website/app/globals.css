@@ -7,49 +7,52 @@
    ========================================================================== */
 :root {
   /* Light palette built from the app icon (Front-End/assets/icon.svg).
-     The icon's navy is used as INK, not as ground: that is what ties a light
-     page to a dark app mark without either looking arbitrary. */
+     The mark itself now runs on a WHITE plate, so the page and the app icon
+     share a ground rather than the page borrowing the icon's navy as ink. */
   --ground: #ffffff;
-  /* The neutrals are the accent's own hue at very low saturation — warm
-     off-whites, not greys. Hue 358 puts green and blue level, so they read as
-     warm neutral rather than the magenta cast the previous coral gave them. */
-  --surface: #fdf3f3;
+  /* The neutrals are the accent's own hue at very low saturation — cool
+     off-whites, not greys, and not the warm ones the blood red gave them.
+     Hue 199 is the mark's own. */
+  --surface: #f3fafd;
   --surface-raised: #ffffff;
-  --surface-high: #f7eded;
-  --border: #f1e6e6;
+  --surface-high: #edf4f7;
+  --border: #e6eef1;
 
-  /* Brand: blood red.
-     Unlike the coral it replaced, this seed is DARK — 7.75:1 on white — so it
-     clears every bar on its own and serves as shape, fill and text alike. That
-     collapses three of the four tokens onto one value, which is correct rather
-     than a mistake: the split existed because #FF416C measured 3.37:1 and could
-     not carry small text. Only the hover partner has to be forced apart, or a
-     filled button would have no hover state at all. */
-  --accent: #a4161a;          /* 7.75:1 — shape AND text, both cleared */
-  --accent-strong: #a4161a;   /* white on this = 7.75:1 */
-  --accent-hover: #801114;    /* 10.46:1 — a guaranteed step down from the fill */
-  --accent-ink: #a4161a;      /* 7.75:1 */
-  /* Saturation held down so a pale wash of a saturated red does not come back
-     as PINK, which is the one thing this brand is not. */
-  --accent-dim: #f2dede;
+  /* Brand: octopus blue, the flat colour the logo is drawn in.
+     This seed is LIGHT — 3.06:1 on white — so the four tokens genuinely differ,
+     the way they did under the old coral and did NOT under the blood red that
+     followed it (that one cleared every bar on its own and collapsed three
+     tokens onto one value). --accent is a SHAPE colour and is the only one that
+     may carry the seed unchanged; anything with text on it steps darker. Each
+     value below is what `deriveAccentTokens` in theme.ts produces from
+     #389DCB, so picking "brand" in the ThemePicker lands exactly here. */
+  --accent: #389dcb;          /* 3.06:1 — shapes, borders, large type only */
+  --accent-strong: #2a7ca1;   /* white on this = 4.67:1 */
+  --accent-hover: #226381;    /* 6.63:1 — the darker partner of the fill */
+  --accent-ink: #266f91;      /* 5.58:1 — small text and links */
+  /* Saturation held down so the pale wash reads as a cool neutral carrying the
+     hue rather than as a second brand colour. */
+  --accent-dim: #deecf2;
 
-  --text: #1a1a2e;
-  --text-muted: #4a4a5e;
-  /* 5.10:1 on white. The lighter #7c819c this replaced measured 3.83:1,
-     which fails AA for the captions and footer text that use it. */
-  --text-faint: #686d85;
+  --text: #152932;
+  --text-muted: #415862;
+  /* 5.12:1 on white. Whatever the hue, this one has to clear AA — it is what
+     the captions and footer text are set in. */
+  --text-faint: #5c717a;
 
   --success: #1b7a52;
   --warning: #9a6700;
 
-  /* The icon's background gradient, quoted exactly (Front-End/assets/icon.svg).
-     Used for the ONE dark band on the page — the footer — so the site closes on
-     the same navy the app icon opens with. Ratios measured on --navy: */
-  --navy: #1a1a2e;
-  --navy-deep: #16213e;
-  --on-navy: #f4f5fb;         /* 15.62:1 */
-  --on-navy-muted: #a9aec9;   /* 7.76:1  */
-  --on-navy-line: #33344f;
+  /* The ONE dark band on the page — the footer. The app icon no longer supplies
+     a navy to quote (its plate is white now), so this is the brand hue taken
+     all the way down instead: same 199, deep enough to close the page on.
+     Kept under the name --navy because every rule below refers to it by that.
+     Ratios measured on --navy: */
+  --navy: #0f2833;
+  --navy-deep: #091c25;
+  --on-navy: #f4f9fb;         /* 14.43:1 */
+  --on-navy-muted: #a8c3d0;   /* 8.30:1  */
+  --on-navy-line: #2b4450;
 
   /* Motion. Built-in CSS easings are too weak for UI; these are the curves from
      the animation skill. Never ease-in — it delays the moment the user watches. */
@@ -57,9 +60,9 @@
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 
   /* Softer than the dark build: a heavy shadow on a light ground reads as dirt. */
-  --shadow-sm: 0 2px 8px rgb(26 26 46 / 0.08);
-  --shadow-md: 0 8px 30px rgb(26 26 46 / 0.12);
-  --shadow-lg: 0 20px 60px rgb(26 26 46 / 0.18);
+  --shadow-sm: 0 2px 8px rgb(15 40 51 / 0.08);
+  --shadow-md: 0 8px 30px rgb(15 40 51 / 0.12);
+  --shadow-lg: 0 20px 60px rgb(15 40 51 / 0.18);
 
   --max-w: 1200px;
   --measure: 65ch;
@@ -1022,17 +1025,19 @@ details > summary > span[aria-hidden] {
   display: inline-flex;
   overflow: hidden;
   /* A colour wheel, so these ARE literals on purpose — it advertises the whole
-     spectrum rather than the current theme. Only the first and last stop are
-     brand-tied, and they were still the retired coral. */
+     spectrum rather than the current theme. The stops are the POS's own
+     swatches ordered BY HUE and starting on the brand, so the wheel opens and
+     closes on octopus blue without a discontinuity where it wraps. Re-order
+     these if the brand hue moves; do not just swap the end stops. */
   background: conic-gradient(
     from 0deg,
-    #a4161a,
-    #f59e0b,
-    #10b981,
-    #3b82f6,
+    #389dcb,
     #8b5cf6,
     #ec4899,
-    #a4161a
+    #ef4444,
+    #f59e0b,
+    #10b981,
+    #389dcb
   );
 }
 
@@ -1445,8 +1450,9 @@ details > summary > span[aria-hidden] {
 
    DESIGN.md allows exactly one, and it is here rather than in the hero: a dark
    hero would make the site look like the old dark build, while a dark footer
-   reads as a close. The gradient is the icon's own #1A1A2E → #16213E at the
-   icon's own 135° angle, so it is a quotation rather than a coincidence.
+   reads as a close. The gradient runs --navy → --navy-deep at 135°: the brand
+   hue taken all the way down, since the icon's plate is white now and no
+   longer supplies a dark colour to quote.
    ========================================================================== */
 .site-footer {
   margin-top: clamp(2rem, 6vw, 4rem);

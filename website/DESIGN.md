@@ -12,12 +12,12 @@ Palette and surfaces are **derived from the product itself** — the dimmed them
 ## 1. Visual theme & atmosphere
 
 Serious software for people running a business, not a consumer app. **Light,
-precise, and quiet**, so the brand coral does all the talking. The tone is
+precise, and quiet**, so the brand blue does all the talking. The tone is
 **operator-grade**: this is a tool that runs the till during a Friday dinner
 rush, and the site should feel as dependable as that.
 
-- Light ground by default. The product's own dark navy appears as **ink and as
-  one deliberate dark band**, never as the page background.
+- Light ground by default. A deep blue drawn from the brand hue appears as
+  **ink and as one deliberate dark band**, never as the page background.
 - Restraint over decoration. Every element earns its place.
 - Density over airiness: real numbers, real screens, short sentences.
 - Never "playful startup". No gradients-as-personality, no floating 3D blobs.
@@ -25,55 +25,64 @@ rush, and the site should feel as dependable as that.
 ## 2. Color palette & roles
 
 Derived from the app icon (`Front-End/assets/icon.svg`), so the site and the POS
-read as one product. The icon's navy is used as **ink**, not as ground.
+read as one product. The icon's plate is white, so the site and the mark now
+share a ground rather than the page borrowing the mark's background as ink.
 
 | Token | Hex | Contrast on white | Role |
 |---|---|---|---|
 | `--ground` | `#FFFFFF` | — | Page background |
-| `--surface` | `#FDF3F3` | — | Alternating sections |
+| `--surface` | `#F3FAFD` | — | Alternating sections |
 | `--surface-raised` | `#FFFFFF` | — | Cards, panels |
-| `--surface-high` | `#F7EDED` | — | Hover states |
-| `--border` | `#F1E6E6` | — | Hairlines, card edges |
-| `--accent` | `#A4161A` | **7.75:1** | Shape *and* text — see below |
-| `--accent-strong` | `#A4161A` | white on it: **7.75:1** | Filled buttons |
-| `--accent-hover` | `#801114` | **10.46:1** | Hover state of those fills |
-| `--accent-ink` | `#A4161A` | **7.75:1** | Links, eyebrows, small text |
-| `--accent-dim` | `#F2DEDE` | — | Pale tint fills |
-| `--text` | `#1A1A2E` | 17.00:1 | Headings — the icon's navy |
-| `--text-muted` | `#4A4A5E` | 8.63:1 | Body |
-| `--text-faint` | `#686D85` | 5.10:1 | Captions, metadata |
+| `--surface-high` | `#EDF4F7` | — | Hover states |
+| `--border` | `#E6EEF1` | — | Hairlines, card edges |
+| `--accent` | `#389DCB` | **3.06:1** | Shape ONLY — see below |
+| `--accent-strong` | `#2A7CA1` | white on it: **4.67:1** | Filled buttons |
+| `--accent-hover` | `#226381` | **6.63:1** | Hover state of those fills |
+| `--accent-ink` | `#266F91` | **5.58:1** | Links, eyebrows, small text |
+| `--accent-dim` | `#DEECF2` | — | Pale tint fills |
+| `--text` | `#152932` | 15.05:1 | Headings |
+| `--text-muted` | `#415862` | 7.51:1 | Body |
+| `--text-faint` | `#5C717A` | 5.12:1 | Captions, metadata |
 
-### Why three of the accent tokens are the same colour
+### Why the four accent tokens are four different colours
 
-The brand is a **blood red**, and it is DARK — 7.75:1 on white. It clears every
-bar on its own, so `--accent`, `--accent-strong` and `--accent-ink` converge.
+The brand is **octopus blue**, and it is LIGHT — 3.06:1 on white. That is over
+the bar for a shape and under it for text, so every token below `--accent` is a
+darkened partner generated beside it, and all four differ.
 
-That is the system working, not a shortcut. The split exists because the coral
-this replaced measured **3.37:1**: it could carry a border but not a sentence,
-so small text needed a darkened partner generated beside it. A seed that starts
-above the bar needs no partner. **Keep using the semantic token anyway** — the
-picker re-themes from any colour, and the moment someone chooses a light one the
-three diverge again.
+🚨 This is the reverse of the blood red that shipped before it. That seed
+measured 7.75:1 and cleared every bar on its own, so `--accent`,
+`--accent-strong` and `--accent-ink` all collapsed onto the same value and it
+did not matter which one you reached for. **It matters again.** `--accent` on a
+sentence is a 3.06:1 failure; use `--accent-ink` for small text and
+`--accent-strong` for anything carrying a white label.
 
-`--accent-hover` is the exception and must always differ, or a filled button has
-no hover state. It is forced apart by a fixed lightness step rather than by a
-contrast target, precisely because a contrast target is already satisfied.
+**Keep using the semantic token regardless** — the picker re-themes from any
+colour, and a dark seed collapses them back together.
+
+`--accent-hover` must always differ from `--accent-strong`, or a filled button
+has no hover state. On a light seed the 6:1 contrast target does that on its
+own; on a dark one it is forced apart by a fixed lightness step instead, and
+`deriveAccentTokens` takes whichever of the two is darker.
 
 The neutrals carry a trace of the accent's hue rather than being grey. On a page
-this light, a true grey beside a red reads as a *different* palette; a surface
-warmed toward the brand reads as the same one, dimmed. At hue 358 green and blue
-land level, so they read as warm off-whites — the previous coral tinted them
-faintly magenta.
+this light, a true grey beside a blue reads as a *different* palette; a surface
+tinted toward the brand reads as the same one, dimmed. At hue 199 they come out
+as cool off-whites — the blood red before them tinted the same surfaces warm.
 
 ### The dark band
 
 | Token | Hex | Contrast on `--navy` | Role |
 |---|---|---|---|
-| `--navy` | `#1A1A2E` | — | The band's ground — the icon's own background |
-| `--navy-deep` | `#16213E` | — | Its gradient partner, at the icon's 135° |
-| `--on-navy` | `#F4F5FB` | **15.62:1** | Headings and hover states on the band |
-| `--on-navy-muted` | `#A9AEC9` | **7.76:1** | Body and links on the band |
-| `--on-navy-line` | `#33344F` | — | Hairlines (`--border` is a light-ground token and vanishes here) |
+| `--navy` | `#0F2833` | — | The band's ground — the brand hue taken all the way down |
+| `--navy-deep` | `#091C25` | — | Its gradient partner, at 135° |
+| `--on-navy` | `#F4F9FB` | **14.43:1** | Headings and hover states on the band |
+| `--on-navy-muted` | `#A8C3D0` | **8.30:1** | Body and links on the band |
+| `--on-navy-line` | `#2B4450` | — | Hairlines (`--border` is a light-ground token and vanishes here) |
+
+> The name is a leftover. It was literally the app icon's navy plate; the icon
+> is white-plated now, so this is the brand's own 199 pushed to 13% lightness.
+> Every rule in `globals.css` refers to it as `--navy`, so it kept the name.
 
 ### Runtime theming — the palette is derived, not fixed
 
@@ -128,22 +137,25 @@ If a dark variant is ever added it goes in at token level — redefine the `:roo
 block under `prefers-color-scheme`, never per component.
 
 **Exactly one dark band ships, and it is the footer.** A dark hero would make
-this look like the old dark build; a dark footer reads as a close, and quoting
-the icon's gradient at the bottom of a light page is what ties the two together.
-⚠️ `--accent` is **dark**, so it does NOT work on the navy band — a blood red on
-`#1A1A2E` measures about 1.6:1 and disappears. Anything on that band uses the
-on-navy scale; the accent stays on the light ground where it belongs.
+this look like the old dark build; a dark footer reads as a close, and closing a
+light page on the brand hue at its deepest is what ties the two together.
+⚠️ `--accent-strong`, `--accent-hover` and `--accent-ink` are all **dark**, so
+none of them works on that band — `--accent-hover` on `#0F2833` measures 2.31:1
+and all but disappears. `--accent` itself would survive there (5.00:1), but do
+not reach for it: anything on that band uses the on-navy scale, and the accent
+stays on the light ground where it belongs.
 
 ### 🚨 The one rule that is not negotiable
 
 **Read the semantic token, never a hex.** `--accent-ink` for small text and
 links, `--accent-strong` for a fill under white text, `--accent` for shapes.
 
-Today all three resolve to the same blood red, which makes the rule easy to
-forget and expensive to break: the picker re-themes from **any** colour a
-visitor chooses, and the moment one of them picks something light the three
-diverge again and hardcoded copies go silently under the AA bar. The colour that
-sat here before — the coral `#FF416C` at 3.37:1 — is exactly that case.
+Under the brand blue all three resolve DIFFERENTLY, so breaking the rule now
+fails immediately and visibly: `--accent` measures 3.06:1 and cannot carry a
+sentence. That is the healthy case. It is the blood red that made this rule easy
+to forget — it cleared every bar on its own, so the three tokens collapsed onto
+one value and a hardcoded copy looked fine right up until a visitor picked a
+light colour in the picker and every copy went under the AA bar at once.
 
 Ratios above are measured, not estimated. Re-measure before changing any of them,
 and note that `parseHex`/`contrastOnWhite` in `app/theme.ts` will do it for you.
@@ -313,11 +325,12 @@ Per the animation decision framework: **most things should not animate.**
 ## 9. Agent prompt guide
 
 > Build a section for the Octopus POS marketing site. Light operator-grade
-> aesthetic on `#FFFFFF` with `#FDF3F3` alternating sections, cards `#FFFFFF`
-> with `#F1E6E6` hairline borders, headings in the brand navy `#1A1A2E` at
-> weight 300. The accent is a blood red `#A4161A` at 7.75:1 — dark enough to
-> serve as shape, fill AND text, with `#801114` as the hover fill. Never
-> hardcode it: read the tokens, because the page re-themes from any colour. Icons are hand-drawn 24×24 outline glyphs,
+> aesthetic on `#FFFFFF` with `#F3FAFD` alternating sections, cards `#FFFFFF`
+> with `#E6EEF1` hairline borders, headings in `#152932` at weight 300. The
+> accent is octopus blue `#389DCB` at 3.06:1 — a SHAPE colour only; text takes
+> `#266F91`, a filled button takes `#2A7CA1` with `#226381` on hover. Never
+> hardcode any of them: read the tokens, because the page re-themes from any
+> colour. Icons are hand-drawn 24×24 outline glyphs,
 > stroke 1.5, `currentColor`, from `app/components/Glyph.tsx` — never an icon
 > library or icon font. System font stack, tight tracking on large headings,
 > prose capped at 65ch. Motion: `transform`/`opacity` only,
@@ -327,7 +340,8 @@ Per the animation decision framework: **most things should not animate.**
 > script, it breaks hydration. The footer is the page's only dark band. No
 > invented customers, logos, or metrics.
 
-**Quick reference:** ground `#FFFFFF` · surface `#FDF3F3` · border `#F1E6E6` ·
-accent `#A4161A` (shape, fill AND text — 7.75:1) · accent-hover `#801114` ·
-accent-dim `#F2DEDE` · ink `#1A1A2E` · muted `#4A4A5E` · faint `#686D85` ·
-navy band `#1A1A2E → #16213E` on `#F4F5FB` / `#A9AEC9`
+**Quick reference:** ground `#FFFFFF` · surface `#F3FAFD` · border `#E6EEF1` ·
+accent `#389DCB` (shape only — 3.06:1) · accent-strong `#2A7CA1` ·
+accent-hover `#226381` · accent-ink `#266F91` · accent-dim `#DEECF2` ·
+ink `#152932` · muted `#415862` · faint `#5C717A` ·
+dark band `#0F2833 → #091C25` on `#F4F9FB` / `#A8C3D0`

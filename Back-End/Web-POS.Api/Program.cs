@@ -245,6 +245,16 @@ builder.Services.AddControllers(options =>
     // company's data by editing the URL. Opt out with [AllowCrossCompany], and
     // only for the control plane. See Filters/CompanyScopeFilter.cs.
     options.Filters.Add<Api.Filters.CompanyScopeFilter>();
+})
+.AddJsonOptions(json =>
+{
+    // Every timestamp leaves here as UTC with a Z, and a zone-less one arriving
+    // is read as UTC. Both halves matter: EF hands back datetime2 columns as
+    // DateTimeKind.Unspecified, which System.Text.Json writes with NO marker,
+    // and every consumer then guessed — the tills read it as local time and
+    // showed each other's sales an hour early. See UtcDateTimeConverter.
+    json.JsonSerializerOptions.Converters.Add(new Api.Serialization.UtcDateTimeConverter());
+    json.JsonSerializerOptions.Converters.Add(new Api.Serialization.UtcNullableDateTimeConverter());
 });
 // Admin SaaS portal (server-rendered Razor Pages under /admin). It authenticates
 // with its own COOKIE scheme and per-user accounts (Api.Admin.AdminPortalAuth) —

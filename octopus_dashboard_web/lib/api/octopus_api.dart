@@ -7,6 +7,7 @@ import '../models/document.dart';
 import '../models/pos_session.dart';
 import '../models/product.dart';
 import '../models/stock.dart';
+import '../models/stock_rule.dart';
 import '../models/user.dart';
 import 'api_exception.dart';
 
@@ -221,6 +222,20 @@ class OctopusApi {
         cancelToken: cancelToken,
       );
       return asList(response.data, StockEntry.fromJson);
+    });
+  }
+
+  /// `GET /StockControls/GetAll` — each product's stock rules: low-stock
+  /// warning, reorder point, preferred quantity and supplier. A product nobody
+  /// set rules for has no row.
+  Future<List<StockRule>> fetchStockRules({CancelToken? cancelToken}) {
+    return _guard(() async {
+      final response = await _dio.get<dynamic>(
+        '/StockControls/GetAll',
+        queryParameters: _companyQuery,
+        cancelToken: cancelToken,
+      );
+      return asList(response.data, StockRule.fromJson);
     });
   }
 

@@ -2,6 +2,7 @@
 using Api.Commands.ProductGroupCommands.Add;
 using Api.Commands.ProductGroupCommands.AssignProducts;
 using Api.Commands.ProductGroupCommands.Delete;
+using Api.Commands.ProductGroupCommands.Import;
 using Api.Commands.ProductGroupCommands.Update;
 using Api.Models;
 using Api.Queries.ProductGroupsQuery;
@@ -65,6 +66,29 @@ namespace Api.Controllers
             if (companyId <= 0) return BadRequest("Company ID is required");
             var result = await _mediator.Send(new DeleteProductGroupCommand(id, companyId), ct);
             return Ok(new { Message = result ? "Product Group deleted successfully" : "Failed to delete group" });
+        }
+
+        /// <summary>Every group, parents first, without images — for export.</summary>
+        [HttpGet("[action]")]
+        public async Task<ActionResult<List<ProductGroupExportDto>>> GetForExport(
+            [FromQuery] int companyId, CancellationToken ct = default)
+        {
+            if (companyId <= 0) return BadRequest(new { message = "Company ID is required" });
+            return Ok(await _mediator.Send(new GetProductGroupsForExportQuery { CompanyId = companyId }, ct));
+        }
+
+        /// <summary>
+        /// Creates or merges groups from a CSV/XML import, parents resolved by name
+        /// in any row order. Per-row problems come back in the result, not as a 500.
+        /// </summary>
+        [HttpPost("[action]")]
+        public async Task<ActionResult<ImportProductGroupsResult>> ImportBulk(
+            [FromBody] ImportProductGroupsRequest request, CancellationToken ct = default)
+        {
+            if (request.CompanyId <= 0) return BadRequest(new { message = "Company ID is required" });
+            if (request.Rows == null || request.Rows.Count == 0)
+                return BadRequest(new { message = "No rows to import" });
+            return Ok(await _mediator.Send(new ImportProductGroupsCommand(request), ct));
         }
 
         [HttpPost("[action]")]

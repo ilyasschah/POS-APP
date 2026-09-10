@@ -105,7 +105,26 @@ namespace Api.Models
     public class ImportProductRow
     {
         public string Name { get; set; } = default!;
+
+        /// <summary>
+        /// The row's group by NAME — unique per company, so a name identifies a
+        /// group. Created at the root when it does not exist yet.
+        /// </summary>
         public string? ProductGroupName { get; set; }
+
+        /// <summary>
+        /// The group's full chain, root first (["Drinks", "Hot"]). When present it
+        /// wins over <see cref="ProductGroupName"/>: every missing link is created
+        /// under the one before it, which is how an XML export's hierarchy
+        /// survives being imported into a company that has none of it yet.
+        /// </summary>
+        public List<string>? ProductGroupPath { get; set; }
+
+        /// <summary>
+        /// Every barcode for the row. <see cref="Barcode"/> is the single-value
+        /// form older callers send; both are honoured.
+        /// </summary>
+        public List<string>? Barcodes { get; set; }
         public string? Code { get; set; }
         public string? Barcode { get; set; }
         public string? MeasurementUnit { get; set; }
@@ -131,6 +150,12 @@ namespace Api.Models
         public bool? IsService { get; set; }
         public bool? IsEnabled { get; set; }
         public string? Description { get; set; }
+
+        /// <summary>
+        /// The tile colour, as the product stores it ("Transparent", "#FFE57373").
+        /// Blank keeps what an existing product has.
+        /// </summary>
+        public string? Color { get; set; }
         public decimal? Quantity { get; set; }
         public string? SupplierName { get; set; }
         public decimal? ReorderPoint { get; set; }
@@ -155,7 +180,16 @@ namespace Api.Models
         public int Updated { get; set; }
         public int Skipped { get; set; }
         public string? DocumentNumber { get; set; }
+
+        /// <summary>Rows that were NOT imported, and why.</summary>
         public List<string> Errors { get; set; } = [];
+
+        /// <summary>
+        /// Rows that WERE imported but lost part of what they asked for — a
+        /// barcode already on another product, a tax rate or supplier the company
+        /// does not have. These used to vanish without a word.
+        /// </summary>
+        public List<string> Warnings { get; set; } = [];
     }
 
     public class CreateProductRequest

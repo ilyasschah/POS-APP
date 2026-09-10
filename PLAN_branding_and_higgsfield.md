@@ -4,6 +4,18 @@
 **Status:** Phases 1 and 2 are **DONE and verified**. Phase 3 no longer uses
 Higgsfield — see `MEDIA_PROMPTS.md`.
 
+> ⚠️ **Historical.** Every colour quoted below is the BLOOD RED brand this plan
+> rolled out (navy plate `#1A1A2E`, mark `#F0353B → #D62828`, UI accent
+> `#A4161A`). All of it was superseded on **2026-09-10** by a redrawn logo: a
+> flat octopus blue `#389DCB` on a white plate. The reasoning here still reads
+> true — it is the same argument run on a different seed — but do not copy a
+> hex out of this file. The live values are:
+>
+> * `img/icon.svg` and `img/icon-mark.svg` — the master marks, from which
+>   `tools/generate_brand_assets.py` writes every icon in the repo
+> * `Front-End/lib/core/app_theme.dart` — `kBrandAccent`
+> * `website/DESIGN.md` §2 — the full token table with measured ratios
+
 ---
 
 ## 0. Where this stands

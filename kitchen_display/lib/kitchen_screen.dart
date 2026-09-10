@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'kds_brand.dart';
 import 'kds_models.dart';
 import 'l10n/kds_localizations.dart';
 import 'language_picker.dart';
@@ -116,7 +117,7 @@ class _KitchenScreenState extends State<KitchenScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFE5E7EB),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF546E7A),
+        backgroundColor: kKdsBrandInk,
         foregroundColor: Colors.white,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

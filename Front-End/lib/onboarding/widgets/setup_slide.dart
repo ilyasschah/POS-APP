@@ -23,7 +23,7 @@ class SetupSlide extends ConsumerWidget {
   /// during onboarding necessarily moved the app AWAY from its own branding —
   /// there was no way back to it short of editing the setting by hand.
   static const _accents = <String>[
-    '#A4161A', // brand
+    '#389DCB', // brand — octopus blue
     '#3B82F6', // blue
     '#8B5CF6', // violet
     '#EF4444', // red
@@ -40,7 +40,7 @@ class SetupSlide extends ConsumerWidget {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
-    final isLight = (ref.watch(deviceThemeModeProvider) ?? 'dark') == 'light';
+    final isLight = (ref.watch(deviceThemeModeProvider) ?? 'light') == 'light';
     final accent = (ref.watch(deviceAccentColorProvider) ?? '').toUpperCase();
     final fontScale = ref.watch(fontScaleProvider);
     final seed = ref.watch(onboardingFeatureSeedProvider);

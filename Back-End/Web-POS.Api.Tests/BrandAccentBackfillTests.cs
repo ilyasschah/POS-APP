@@ -8,12 +8,13 @@ using Xunit;
 namespace Api.Tests;
 
 /// <summary>
-/// The one-time move from the pre-rollout blue accent to the brand coral.
+/// The move of a company still on a SUPERSEDED default accent onto the current
+/// brand one — today octopus blue, and before it coral, then blood red.
 ///
 /// Why a backfill exists at all: <see cref="CompanyDefaultsSeeder.SeedAsync"/>
-/// only ever ADDS a missing key, so every company created before the rollout
-/// kept the blue it was seeded with and would have kept it forever. New
-/// companies got coral; the tills actually in service did not.
+/// only ever ADDS a missing key, so every company created before a rollout
+/// kept the colour it was seeded with and would have kept it forever. New
+/// companies got the new brand; the tills actually in service did not.
 ///
 /// 🚨 The risk this pins is the opposite one. A backfill that "makes everything
 /// consistent" would also erase the accent an operator deliberately picked, and
@@ -25,13 +26,14 @@ namespace Api.Tests;
 /// an <see cref="ISyncableEntity"/> and terminals pull deltas with
 /// <c>?modifiedAfter=</c>. Changing Value without bumping LastModified would
 /// leave the new accent sitting in the database, correct and unreachable, while
-/// every till kept rendering the cached blue.
+/// every till kept rendering the cached old one.
 /// </summary>
 public class BrandAccentBackfillTests : IDisposable
 {
     private const string LegacyBlue = "#2196F3";
     private const string LegacyCoral = "#FF416C";
-    private const string BrandRed = "#A4161A";
+    private const string LegacyRed = "#A4161A";
+    private const string BrandBlue = "#389DCB";
     private const string AccentKey = "Theme_AccentColor";
 
     private readonly SqliteConnection _connection;
@@ -98,21 +100,26 @@ public class BrandAccentBackfillTests : IDisposable
         using (var db = new AppDbContext(_options))
             await CompanyDefaultsSeeder.BackfillBrandAccentAsync(db);
 
-        Assert.Equal(BrandRed, AccentOf(1).Value);
+        Assert.Equal(BrandBlue, AccentOf(1).Value);
     }
 
     [Fact]
     public async Task A_company_on_the_PREVIOUS_brand_moves_too()
     {
-        // The brand has moved twice: blue, then coral, then blood red. A company
-        // created during the coral window is just as stranded as one from the
-        // blue era, and both are still on a value nobody chose for themselves.
+        // The brand has moved three times: blue, coral, blood red, octopus
+        // blue. A company created during any of those windows is just as
+        // stranded as one from the era before it, and all of them are still on
+        // a value nobody chose for themselves. Every superseded default has to
+        // land on the current brand — a backfill that only knew about the most
+        // recent hop would leave the oldest tills behind for good.
         GiveAccent(1, LegacyCoral);
+        GiveAccent(2, LegacyRed);
 
         using (var db = new AppDbContext(_options))
             await CompanyDefaultsSeeder.BackfillBrandAccentAsync(db);
 
-        Assert.Equal(BrandRed, AccentOf(1).Value);
+        Assert.Equal(BrandBlue, AccentOf(1).Value);
+        Assert.Equal(BrandBlue, AccentOf(2).Value);
     }
 
     [Fact]
@@ -129,7 +136,7 @@ public class BrandAccentBackfillTests : IDisposable
 
         Assert.Equal("#4CAF50", AccentOf(1).Value);
         Assert.Equal("#9C27B0", AccentOf(2).Value);
-        Assert.Equal(BrandRed, AccentOf(3).Value);
+        Assert.Equal(BrandBlue, AccentOf(3).Value);
     }
 
     [Fact]
@@ -176,7 +183,7 @@ public class BrandAccentBackfillTests : IDisposable
         using (var db = new AppDbContext(_options))
             await CompanyDefaultsSeeder.BackfillBrandAccentAsync(db);
 
-        Assert.Equal(BrandRed, AccentOf(1).Value);
+        Assert.Equal(BrandBlue, AccentOf(1).Value);
         Assert.Equal(afterFirst, AccentOf(1).LastModified);
     }
 
@@ -199,7 +206,7 @@ public class BrandAccentBackfillTests : IDisposable
         var seeded = CompanyDefaultsSeeder.DefaultProperties
             .Single(p => p.Name == AccentKey).Value;
 
-        Assert.Equal(BrandRed, seeded);
+        Assert.Equal(BrandBlue, seeded);
         Assert.NotEqual(LegacyBlue, seeded);
         Assert.NotEqual(LegacyCoral, seeded);
     }

@@ -35,6 +35,16 @@ class ProductExportRow {
   final String? code;
   final int? plu;
   final String? measurementUnit;
+
+  /// Id into the unit catalogue — the reliable form of [measurementUnit].
+  final int uomId;
+
+  /// Sold by weight. Dropped by the old export, so a round trip quietly turned
+  /// every weighed product back into a per-piece one.
+  final bool isToWeigh;
+
+  /// Pieces in one box / pack; null = the catalogue's nominal 12 / 6.
+  final double? packSize;
   final double cost;
   final double? markup;
   final double price;
@@ -66,6 +76,9 @@ class ProductExportRow {
     this.code,
     this.plu,
     this.measurementUnit,
+    this.uomId = 1,
+    this.isToWeigh = false,
+    this.packSize,
     required this.cost,
     this.markup,
     required this.price,
@@ -98,6 +111,9 @@ class ProductExportRow {
         code: j['code'] as String?,
         plu: j['plu'] as int?,
         measurementUnit: j['measurementUnit'] as String?,
+        uomId: (j['uomId'] as num?)?.toInt() ?? 1,
+        isToWeigh: j['isToWeigh'] as bool? ?? false,
+        packSize: (j['packSize'] as num?)?.toDouble(),
         cost: (j['cost'] as num).toDouble(),
         markup: (j['markup'] as num?)?.toDouble(),
         price: (j['price'] as num).toDouble(),

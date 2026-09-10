@@ -7553,4 +7553,139 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get saveStockReportTitle => 'Enregistrer le rapport de stock';
+
+  @override
+  String get importProductsTitle => 'Importer des produits';
+
+  @override
+  String get importGroupsTitle => 'Importer des groupes de produits';
+
+  @override
+  String get importCsvHint =>
+      'Chargez des produits depuis un tableur enregistré en CSV — le vôtre, celui d\'un autre logiciel ou un export d\'ici. Virgules ou points-virgules, décimales à point ou à virgule : tout fonctionne.';
+
+  @override
+  String get importXmlHint =>
+      'Chargez des produits exportés en XML depuis cette application. L\'arborescence des groupes, les couleurs et tous les codes-barres sont conservés.';
+
+  @override
+  String get importGroupsCsvHint =>
+      'Chargez des groupes depuis un tableur avec une colonne Nom. Une colonne Parent place chaque groupe sous un autre — un parent qui n\'existe pas encore est créé.';
+
+  @override
+  String get importGroupsXmlHint =>
+      'Chargez l\'arborescence des groupes depuis un export XML de cette application — un export de groupes ou de produits.';
+
+  @override
+  String get importNoFileYet => 'Aucun fichier sélectionné';
+
+  @override
+  String get importColumnsTab => 'Colonnes';
+
+  @override
+  String importPreviewTab(int count) {
+    return 'Aperçu ($count)';
+  }
+
+  @override
+  String importSampleValue(String value) {
+    return 'ex. $value';
+  }
+
+  @override
+  String get duplicatesSkip => 'Ignorer';
+
+  @override
+  String get duplicatesMerge => 'Mettre à jour';
+
+  @override
+  String get duplicatesSkipHint =>
+      'Une ligne dont le nom existe déjà est ignorée — rien d\'existant ne change.';
+
+  @override
+  String get duplicatesMergeHint =>
+      'Une ligne dont le nom existe déjà le met à jour. Les cellules vides conservent les valeurs actuelles.';
+
+  @override
+  String get importDocInventoryCount => 'Inventaire';
+
+  @override
+  String get importDocPurchase => 'Achat';
+
+  @override
+  String get importDocNone => 'Aucun (pas de document)';
+
+  @override
+  String get importDocNeedsQuantity =>
+      'Associez la colonne Quantité pour créer un document.';
+
+  @override
+  String get importRowNoName => 'Pas de nom — cette ligne sera ignorée';
+
+  @override
+  String importRowUnreadable(String fields) {
+    return 'Illisible : $fields — envoyé vide';
+  }
+
+  @override
+  String get importRowOk => 'Prêt';
+
+  @override
+  String importRowsWithoutName(int count) {
+    return '$count ligne(s) sans nom seront ignorées';
+  }
+
+  @override
+  String importRowsAction(int count) {
+    return 'Importer $count';
+  }
+
+  @override
+  String numberOfGroupsToImport(int count) {
+    return 'Nombre de groupes à importer : $count';
+  }
+
+  @override
+  String get skippedLabel => 'Ignorés';
+
+  @override
+  String importWarningCount(int count) {
+    return '$count avertissement(s) :';
+  }
+
+  @override
+  String importMoreLines(int count) {
+    return '…et $count de plus';
+  }
+
+  @override
+  String importGroupsSummary(int created, int updated) {
+    return 'Groupes : $created créés, $updated mis à jour';
+  }
+
+  @override
+  String importFileUnreadable(String message) {
+    return 'Impossible de lire ce fichier : $message';
+  }
+
+  @override
+  String get importFieldPackSize => 'Pièces par boîte / paquet';
+
+  @override
+  String get importNothingFound => 'Rien à importer dans ce fichier.';
+
+  @override
+  String get exportCsvHint => 'S\'ouvre dans Excel ou tout autre tableur';
+
+  @override
+  String get exportXmlHint =>
+      'Conserve toute l\'arborescence des groupes — pour réimporter dans cette application';
+
+  @override
+  String exportedGroupsTo(int count, String path) {
+    return '$count groupes exportés vers $path';
+  }
+
+  @override
+  String get saveExportFileTitle => 'Enregistrer le fichier d\'export';
 }

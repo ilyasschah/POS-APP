@@ -517,8 +517,7 @@ class SyncManager {
 
   int? _i(dynamic v) => (v as num?)?.toInt();
   double? _d(dynamic v) => (v as num?)?.toDouble();
-  DateTime? _dt(dynamic v) =>
-      v is String ? DateTime.tryParse(v)?.toUtc() : null;
+  DateTime? _dt(dynamic v) => parseServerDate(v);
 
   Future<void> pullCountries(int companyId) async {
     try {
@@ -1118,8 +1117,8 @@ class SyncManager {
               tableIdsJson: Value(jsonEncode(tableIds)),
               documentId: Value(json['documentId'] as int?),
               posOrderId: Value(json['posOrderId'] as int?),
-              startTime: Value(DateTime.parse(json['startTime'] as String)),
-              endTime: Value(DateTime.parse(json['endTime'] as String)),
+              startTime: Value(parseServerDate(json['startTime'])!),
+              endTime: Value(parseServerDate(json['endTime'])!),
               guestCount: Value(json['guestCount'] as int? ?? 1),
               status: Value(json['status'] as int? ?? 1),
               note: Value(json['note'] as String?),
@@ -1323,8 +1322,8 @@ class SyncManager {
         final payload = <String, dynamic>{
           'reservationName': b.reservationName,
           'guestCount': b.guestCount,
-          'startTime': b.startTime.toIso8601String(),
-          'endTime': b.endTime.toIso8601String(),
+          'startTime': isoUtc(b.startTime),
+          'endTime': isoUtc(b.endTime),
           'userId': b.userId,
           'tableIds': tableIds,
           'customerId': b.customerId,
@@ -1486,7 +1485,7 @@ class SyncManager {
           .getSingleOrNull();
       if (existing != null && existing.syncStatus != 'synced') continue;
 
-      DateTime? date(String? v) => v == null ? null : DateTime.tryParse(v);
+      DateTime? date(String? v) => parseServerDate(v);
 
       final rawRegisterUid = (raw['posDeviceUid'] as String?)?.trim();
       final pulledRegisterUid =
@@ -1570,7 +1569,7 @@ class SyncManager {
             'deviceName': await getRegisterName(),
             'userId': session.userId,
             'openingCash': session.startingCash,
-            'openedAt': session.openedAt.toIso8601String(),
+            'openedAt': isoUtc(session.openedAt),
             'status': session.status,
             if (session.closedByUserId != null)
               'closedByUserId': session.closedByUserId,
@@ -2330,7 +2329,29 @@ class SyncManager {
           await db.markCashMovementSynced(m.localId, 0);
         }
       } catch (e) {
-        await db.markCashMovementFailed(m.localId, e.toString());
+        // 🚨 ONLY a server rejection is terminal. This used to mark every
+        // failure 'failed', including "the till was offline" — and because
+        // getPendingCashMovements selects `pending` alone, that row was never
+        // retried again. A real one is in the field: a 200 DH opening float
+        // recorded offline hit `connection refused` on the first sync attempt,
+        // went to 'failed', and stayed there while every sale around it synced
+        // fine. The drawer's own opening movement was simply missing from the
+        // server, from the Z-report, and from the second till.
+        //
+        // A rejection (the request reached the server and it said no) will not
+        // succeed by retrying, so that one is still resolved locally.
+        if (_isServerRejection(e)) {
+          await db.markCashMovementFailed(m.localId, _serverErrMsg(e));
+          debugPrint(
+            'pushPendingCashMovements: ${m.localId} rejected — '
+            '${_serverErrMsg(e)} (resolved, will not retry)',
+          );
+        } else {
+          // Offline / transient: keep it PENDING so the next sync picks it up,
+          // but persist the reason so the Sync Status panel can say why.
+          await db.markCashMovementRetryable(m.localId, _serverErrMsg(e));
+          debugPrint('pushPendingCashMovements: ${m.localId} failed — $e (will retry)');
+        }
         // Continue the loop — one bad movement shouldn't block the rest.
       }
     }
@@ -2822,29 +2843,71 @@ class SyncManager {
     if (watermark != null) 'modifiedAfter': watermark.toUtc().toIso8601String(),
   };
 
+  /// Parses a timestamp that came FROM the server, as UTC.
+  ///
+  /// 🚨 The whole reason this exists rather than a bare `DateTime.parse`: the API
+  /// serialises `DateTime` values that EF materialises from SQL Server
+  /// `datetime2`, and those carry `DateTimeKind.Unspecified`, which
+  /// System.Text.Json writes with NO trailing `Z` and no offset —
+  /// `"2026-09-09T21:15:22.797"`. Dart reads a string like that as LOCAL time,
+  /// so `DateTime.parse(x).toUtc()` silently subtracts the device's UTC offset:
+  /// a sale rung up at 22:15 in Casablanca was stored on every OTHER terminal as
+  /// 21:15, an hour before it happened. It is invisible on the device that made
+  /// the sale (that row never round-trips) and obvious on every other one, which
+  /// is exactly how it survived: two tills showing the same receipt an hour
+  /// apart.
+  ///
+  /// The server means UTC — it writes `DateTime.UtcNow` — so a string with no
+  /// zone marker is stamped as UTC rather than guessed at. A string that DOES
+  /// carry `Z` or an offset is honoured as written.
+  static DateTime? parseServerDate(dynamic raw) {
+    if (raw is! String || raw.isEmpty) return null;
+
+    final parsed = DateTime.tryParse(_stampUtc(raw));
+    return parsed?.toUtc();
+  }
+
+  /// Appends the missing `Z` to a zone-less ISO-8601 string.
+  ///
+  /// Anything already ending in `Z`, or carrying a `+hh:mm` / `-hh:mm` offset in
+  /// the TIME half, is returned untouched. The date half's own dashes are why
+  /// the offset search starts after the `T`.
+  static String _stampUtc(String iso) {
+    final t = iso.indexOf('T');
+    // A bare calendar date. Parsed as-is it becomes LOCAL midnight, and
+    // converting that to UTC moves it to the day BEFORE anywhere east of
+    // Greenwich — the date the server named is the one that must survive.
+    if (t < 0) return '${iso}T00:00:00Z';
+
+    final time = iso.substring(t);
+    final hasZone = time.endsWith('Z') ||
+        time.endsWith('z') ||
+        time.contains('+') ||
+        time.lastIndexOf('-') > 0;
+
+    return hasZone ? iso : '${iso}Z';
+  }
+
+  /// A timestamp on its way TO the server, always in UTC and always marked.
+  ///
+  /// The mirror of [parseServerDate], and needed for the same reason from the
+  /// other side: Drift hands back `DateTime`s in LOCAL time (it stores unix
+  /// seconds and reconstructs without `isUtc`), so `row.openedAt.toIso8601String()`
+  /// produced `"2026-09-09T22:26:37.000"` — the wall clock, no zone — and the API
+  /// stored that as UTC. Every session this device opened was recorded on the
+  /// server an hour in the future, which is what the owner dashboard reads.
+  static String isoUtc(DateTime value) => value.toUtc().toIso8601String();
+
   /// Parses a server timestamp into UTC. Falls back to `now` so a missing
   /// `lastModified` (server not yet backfilled) doesn't write `default(DateTime)`
   /// into the DB.
-  DateTime _parseLastModified(dynamic raw) {
-    if (raw is String && raw.isNotEmpty) {
-      return DateTime.parse(raw).toUtc();
-    }
-    return DateTime.now().toUtc();
-  }
+  DateTime _parseLastModified(dynamic raw) =>
+      parseServerDate(raw) ?? DateTime.now().toUtc();
 
   /// Like [_parseLastModified] but returns null when the field is missing —
   /// used for optional timestamps (dateCreated / dateUpdated) where "missing"
   /// is meaningful and shouldn't be silently replaced with `now`.
-  DateTime? _parseNullableDate(dynamic raw) {
-    if (raw is String && raw.isNotEmpty) {
-      try {
-        return DateTime.parse(raw).toUtc();
-      } catch (_) {
-        return null;
-      }
-    }
-    return null;
-  }
+  DateTime? _parseNullableDate(dynamic raw) => parseServerDate(raw);
 
   // ==========================================================================
   // DELTA PULLS
@@ -4489,6 +4552,9 @@ class SyncManager {
         '/StartingCash/GetByDateRange',
         queryParameters: {
           'companyId': companyId,
+          // NOT isoUtc: a CALENDAR DAY filter, not an instant. The operator
+          // means "the 9th" as their shop lives it, and converting midnight
+          // local to UTC would ask the server for the 8th at 23:00.
           'startDate': start.toIso8601String(),
           'endDate': start.toIso8601String(),
         },
@@ -4533,7 +4599,7 @@ class SyncManager {
         amount: (m['amount'] as num).toDouble(),
         type: type,
         note: Value(m['description'] as String?),
-        createdAt: DateTime.parse(m['dateCreated'] as String),
+        createdAt: parseServerDate(m['dateCreated'])!,
         zReportNumber: Value(zReportNumber),
         serverId: Value(serverId),
         syncStatus: const Value('synced'),
@@ -4734,9 +4800,9 @@ class SyncManager {
         'userId': d.userId,
         'customerId': d.customerId,
         'orderNumber': d.orderNumber,
-        'date': d.date.toIso8601String(),
-        'stockDate': (d.stockDate ?? d.date).toIso8601String(),
-        'dueDate': (d.dueDate ?? d.date).toIso8601String(),
+        'date': isoUtc(d.date),
+        'stockDate': isoUtc(d.stockDate ?? d.date),
+        'dueDate': isoUtc(d.dueDate ?? d.date),
         'total': d.total,
         'isClockedOut': true,
         'documentTypeId': d.documentTypeId,
@@ -4756,9 +4822,9 @@ class SyncManager {
         'number': d.number,
         'customerId': d.customerId,
         'userId': d.userId,
-        'date': d.date.toIso8601String(),
-        'stockDate': (d.stockDate ?? d.date).toIso8601String(),
-        'dueDate': (d.dueDate ?? d.date).toIso8601String(),
+        'date': isoUtc(d.date),
+        'stockDate': isoUtc(d.stockDate ?? d.date),
+        'dueDate': isoUtc(d.dueDate ?? d.date),
         'documentTypeId': d.documentTypeId,
         'warehouseId': d.warehouseId,
         'internalNote': d.internalNote ?? '',
@@ -4850,6 +4916,8 @@ class SyncManager {
             queryParameters: {'companyId': companyId},
             data: {
               'documentItemId': itemServerId,
+              // NOT isoUtc: a printed expiry DATE on a box, not a moment — UTC
+              // would move a midnight-local date to the previous day.
               'expirationDate': it.expirationDate!.toIso8601String(),
             },
           );
@@ -4893,6 +4961,8 @@ class SyncManager {
               queryParameters: {'companyId': companyId},
               data: {
                 'documentItemId': it.serverId,
+                // NOT isoUtc: a printed expiry DATE on a box, not a moment — UTC
+                // would move a midnight-local date to the previous day.
                 'expirationDate': it.expirationDate!.toIso8601String(),
               },
             );
@@ -4987,7 +5057,7 @@ class SyncManager {
           data: {
             'id': p.serverId,
             'amount': p.amount,
-            'date': p.date.toIso8601String(),
+            'date': isoUtc(p.date),
           },
         );
         await db.markPaymentSynced(p.localId, p.serverId);
@@ -5141,8 +5211,9 @@ class SyncManager {
         final serverId = (d['id'] as num?)?.toInt() ?? 0;
         if (serverId == 0) continue;
 
-        final dateStr = (d['stockDate'] ?? d['date'] ?? '') as String;
-        final date = DateTime.tryParse(dateStr) ?? now;
+        // The document's own timestamp, as the SERVER means it. This is the
+        // line that showed another till's sale an hour early on this one.
+        final date = parseServerDate(d['stockDate'] ?? d['date']) ?? now;
         final total = ((d['total'] as num?)?.toDouble()) ?? 0.0;
         final disc = ((d['discount'] as num?)?.toDouble()) ?? 0.0;
         final number = (d['number'] as String?) ?? '';
@@ -5187,7 +5258,7 @@ class SyncManager {
                 paymentTypeId: (m['paymentTypeId'] as num?)?.toInt() ?? 0,
                 amount: ((m['amount'] as num?) ?? 0).toDouble(),
                 userId: (m['userId'] as num?)?.toInt() ?? 0,
-                date: DateTime.tryParse((m['date'] ?? '') as String) ?? date,
+                date: parseServerDate(m['date']) ?? date,
                 serverId: Value(pid),
                 zReportId: Value((m['zReportId'] as num?)?.toInt()),
                 companyId: Value(companyId),
@@ -6426,14 +6497,14 @@ class SyncManager {
                 if (s.serverId != null) 'serverId': s.serverId,
                 'localId': s.localId,
                 'userId': s.userId,
-                'openedAt': s.openedAt.toIso8601String(),
+                'openedAt': isoUtc(s.openedAt),
                 if (s.closedAt != null)
-                  'closedAt': s.closedAt!.toIso8601String(),
+                  'closedAt': isoUtc(s.closedAt!),
                 'startingCash': s.startingCash,
                 if (s.actualEndingCash != null)
                   'actualEndingCash': s.actualEndingCash,
                 'status': s.status,
-                'lastModified': s.lastModified.toIso8601String(),
+                'lastModified': isoUtc(s.lastModified),
               })
           .toList();
 
@@ -6475,9 +6546,9 @@ class SyncManager {
                 if (e.serverId != null) 'serverId': e.serverId,
                 'localId': e.localId,
                 'userId': e.userId,
-                'clockInTime': e.clockInTime.toIso8601String(),
+                'clockInTime': isoUtc(e.clockInTime),
                 if (e.clockOutTime != null)
-                  'clockOutTime': e.clockOutTime!.toIso8601String(),
+                  'clockOutTime': isoUtc(e.clockOutTime!),
                 'lastModified': DateTime.now().toUtc().toIso8601String(),
               })
           .toList();

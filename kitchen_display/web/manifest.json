@@ -1,11 +1,11 @@
 {
-    "name": "kitchen_display",
-    "short_name": "kitchen_display",
+    "name": "Octopus Kitchen Display",
+    "short_name": "Octopus KDS",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#FFFFFF",
+    "theme_color": "#2A7CA1",
+    "description": "Octopus Kitchen Display — live tickets for the kitchen line.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

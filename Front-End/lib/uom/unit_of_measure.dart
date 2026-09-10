@@ -285,6 +285,37 @@ String formatQuantityValue(double quantity, int? uomId) {
   return quantity.toStringAsFixed(digits);
 }
 
+/// A quantity as it goes on PAPER — the receipt, the guest check and the
+/// kitchen ticket: `1.500 kg`, `250 g`, `2 box`, and a bare `2` for pieces.
+///
+/// Every unit except pieces ALWAYS carries its code. "1 x Saffron" does not say
+/// one what, and kg / g / L are not interchangeable — not on the bill and not at
+/// the grill. These lines used to print the unit only for weighed items or when
+/// the off-by-default Receipt.PrintMeasurementUnit toggle was on, and the
+/// kitchen ticket never printed it at all. Pieces print theirs only when
+/// [showPieces] asks: "2 pcs x Burger" is noise.
+///
+/// [legacyUnit] is the free-text unit an older line may still carry with no id
+/// behind it. When the id is the bare pieces default and that text names a
+/// real unit, the text wins — the same self-heal `Product.fromDrift` applies.
+/// With [showPieces], a custom label ("portion") prints in place of `pcs`.
+String formatPrintedQuantity(
+  double quantity,
+  int? uomId, {
+  String? legacyUnit,
+  bool showPieces = false,
+}) {
+  var id = uomId ?? kUomPieces;
+  if (id == kUomPieces) id = uomFromLegacyText(legacyUnit);
+
+  final text = formatQuantityValue(quantity, id);
+  if (id != kUomPieces) return '$text ${uomById(id).code}';
+  if (!showPieces) return text;
+
+  final label = legacyUnit?.trim() ?? '';
+  return '$text ${label.isEmpty ? uomById(kUomPieces).code : label}';
+}
+
 /// A quantity for a report row, which carries no unit of its own.
 ///
 /// Reports formatted quantities with the MONEY pattern (`#,##0.00`), so a real

@@ -15,7 +15,8 @@
 //    grey scheme's partners behind, so a coral-filled button was labelled in a
 //    dark teal at 3.90:1 — under the 4.5:1 AA bar, and invisible to any test
 //    that only asks "does the theme build?". Recolouring the app from blue to
-//    coral is exactly the kind of change that walks into this.
+//    coral is exactly the kind of change that walks into this, and so is the
+//    move from that coral to the octopus blue shipping now.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pos_app/app_settings/app_settings_model.dart';
@@ -37,8 +38,8 @@ const _modes = ['light', 'dark', 'dimmed', 'night', 'gray', 'high_contrast'];
 
 void main() {
   group('the brand accent is declared once', () {
-    test('kBrandAccent is the brand blood red', () {
-      expect(_hex(kBrandAccent), '#A4161A');
+    test('kBrandAccent is octopus blue', () {
+      expect(_hex(kBrandAccent), '#389DCB');
     });
 
     test('the settings default matches the compiled-in constant', () {
@@ -62,7 +63,7 @@ void main() {
       // None of these throw, which is why guarding only against an exception
       // was not enough. '' and '#' both left 'FF', parsing as 0x000000FF — a
       // fully TRANSPARENT colour, so the app painted invisible buttons.
-      for (final bad in ['', '#', 'F00', '#F00', 'FF41', '#A4161AFF']) {
+      for (final bad in ['', '#', 'F00', '#F00', 'FF41', '#389DCBFF']) {
         expect(parseAccentColor(bad), kBrandAccent,
             reason: '"$bad" must fall back, not parse');
         expect(parseAccentColor(bad).a, 1.0,
@@ -113,7 +114,7 @@ void main() {
       });
     }
 
-    test('the dark modes keep their own surfaces rather than tinting to red',
+    test('the dark modes keep their own surfaces rather than tinting to the accent',
         () {
       // The dimmed and night grounds are deliberate values, not generated from
       // the seed. Changing the accent must not move them.

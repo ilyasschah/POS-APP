@@ -7503,4 +7503,138 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get saveStockReportTitle => 'حفظ تقرير المخزون';
+
+  @override
+  String get importProductsTitle => 'استيراد المنتجات';
+
+  @override
+  String get importGroupsTitle => 'استيراد مجموعات المنتجات';
+
+  @override
+  String get importCsvHint =>
+      'حمّل المنتجات من جدول بيانات محفوظ بصيغة CSV — ملفك، أو ملف من برنامج آخر، أو ملف مُصدَّر من هنا. الفواصل أو الفواصل المنقوطة، والكسور العشرية بنقطة أو بفاصلة: كلها تعمل.';
+
+  @override
+  String get importXmlHint =>
+      'حمّل المنتجات المُصدَّرة من هذا التطبيق بصيغة XML. تُنقل معها شجرة المجموعات والألوان وجميع الباركودات.';
+
+  @override
+  String get importGroupsCsvHint =>
+      'حمّل مجموعات المنتجات من جدول بيانات يحتوي على عمود الاسم. عمود «الأصل» يضع كل مجموعة تحت أخرى — وتُنشأ المجموعة الأصل إن لم تكن موجودة.';
+
+  @override
+  String get importGroupsXmlHint =>
+      'حمّل شجرة المجموعات من ملف XML مُصدَّر من هذا التطبيق — تصدير للمجموعات أو للمنتجات.';
+
+  @override
+  String get importNoFileYet => 'لم يتم اختيار أي ملف بعد';
+
+  @override
+  String get importColumnsTab => 'الأعمدة';
+
+  @override
+  String importPreviewTab(int count) {
+    return 'معاينة ($count)';
+  }
+
+  @override
+  String importSampleValue(String value) {
+    return 'مثال: $value';
+  }
+
+  @override
+  String get duplicatesSkip => 'تخطي';
+
+  @override
+  String get duplicatesMerge => 'تحديث';
+
+  @override
+  String get duplicatesSkipHint =>
+      'يُتجاهل السطر الذي يوجد اسمه مسبقًا — لا يتغير شيء موجود.';
+
+  @override
+  String get duplicatesMergeHint =>
+      'السطر الذي يوجد اسمه مسبقًا يُحدّثه. الخلايا الفارغة تحتفظ بالقيم الحالية.';
+
+  @override
+  String get importDocInventoryCount => 'جرد المخزون';
+
+  @override
+  String get importDocPurchase => 'شراء';
+
+  @override
+  String get importDocNone => 'لا شيء (بدون مستند)';
+
+  @override
+  String get importDocNeedsQuantity => 'اربط عمود الكمية لإنشاء مستند.';
+
+  @override
+  String get importRowNoName => 'بدون اسم — سيتم تجاهل هذا السطر';
+
+  @override
+  String importRowUnreadable(String fields) {
+    return 'تعذّرت قراءة $fields — سيُرسل فارغًا';
+  }
+
+  @override
+  String get importRowOk => 'جاهز';
+
+  @override
+  String importRowsWithoutName(int count) {
+    return 'سيتم تجاهل $count سطر بدون اسم';
+  }
+
+  @override
+  String importRowsAction(int count) {
+    return 'استيراد $count';
+  }
+
+  @override
+  String numberOfGroupsToImport(int count) {
+    return 'عدد المجموعات المراد استيرادها: $count';
+  }
+
+  @override
+  String get skippedLabel => 'تم تخطيها';
+
+  @override
+  String importWarningCount(int count) {
+    return '$count تحذير:';
+  }
+
+  @override
+  String importMoreLines(int count) {
+    return '…و$count أخرى';
+  }
+
+  @override
+  String importGroupsSummary(int created, int updated) {
+    return 'المجموعات: $created أُنشئت، $updated حُدّثت';
+  }
+
+  @override
+  String importFileUnreadable(String message) {
+    return 'تعذّرت قراءة هذا الملف: $message';
+  }
+
+  @override
+  String get importFieldPackSize => 'عدد القطع في العلبة / الحزمة';
+
+  @override
+  String get importNothingFound => 'لم يُعثر على شيء للاستيراد في هذا الملف.';
+
+  @override
+  String get exportCsvHint => 'يُفتح في Excel أو أي برنامج جداول بيانات';
+
+  @override
+  String get exportXmlHint =>
+      'يحتفظ بشجرة المجموعات كاملة — لإعادة الاستيراد في هذا التطبيق';
+
+  @override
+  String exportedGroupsTo(int count, String path) {
+    return 'تم تصدير $count مجموعة إلى $path';
+  }
+
+  @override
+  String get saveExportFileTitle => 'حفظ ملف التصدير';
 }

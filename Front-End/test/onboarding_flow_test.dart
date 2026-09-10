@@ -83,7 +83,19 @@ void main() {
     }
     expect(find.text('Set up your terminal'), findsOneWidget);
 
-    // Theme choice applies live via the device override.
+    // The picker OPENS on Light. That is the app's default now — it is what
+    // these slides and the master login render in, before any company settings
+    // have synced — so there is nothing to change by tapping Light first.
+    expect(c.read(deviceThemeModeProvider), isNull);
+
+    // Theme choice applies live via the device override. The round trip goes
+    // through Dark on purpose: a single-selection SegmentedButton reports a
+    // CHANGE, so tapping the already-selected segment fires nothing and an
+    // assertion on it would pass without the picker being wired up at all.
+    await tester.tap(find.text('Dark'));
+    await tester.pumpAndSettle();
+    expect(c.read(deviceThemeModeProvider), 'dark');
+
     await tester.tap(find.text('Light'));
     await tester.pumpAndSettle();
     expect(c.read(deviceThemeModeProvider), 'light');

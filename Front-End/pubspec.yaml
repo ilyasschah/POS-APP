@@ -1,4 +1,4 @@
-﻿name: pos_app
+name: pos_app
 description: "A new Flutter project."
 publish_to: 'none'
 # 1.0.1 is the release being cut (matches tag v1.0.1); +3 keeps the build number
@@ -91,6 +91,7 @@ dependencies:
   # path_provider_windows; declared for the same reason as ffi/win32 above.
   win32_registry: ^2.1.0
   audioplayers: ^6.8.1
+  convenient_test: ^1.6.2
 
 dependency_overrides:
   phosphor_flutter:
@@ -128,6 +129,7 @@ dev_dependencies:
 
   # Lints (OPT-4: re-enable the recommended Flutter lint set)
   flutter_lints: ^4.0.0
+  convenient_test_dev: ^1.6.2
 
 # App-icon generation (flutter_launcher_icons). Top-level on purpose.
 flutter_launcher_icons:

@@ -1,13 +1,21 @@
 # Generates the PWA icon set from the Octopus source artwork.
 #
+# ⚠️ SUPERSEDED. `tools/generate_brand_assets.py` at the repo root now writes
+# every icon in the ecosystem — this app's included — from the two master SVGs
+# in `img/`. Use that; it is the one that stays in step with the brand. This
+# script is kept because it is the only generator that runs with nothing but
+# PowerShell, and it has been updated to the current plate so running it cannot
+# quietly reintroduce the retired navy artwork.
+#
 # The source PNG has transparent corners (its background is a rounded rect),
 # which is fine for standard Chrome icons but wrong for two cases:
 #   * maskable icons  - the launcher crops to a circle/squircle, so the art
 #                       must sit inside the inner 80% "safe zone" over a
 #                       full-bleed background.
 #   * apple-touch-icon - iOS composites transparency onto black and applies
-#                       its own corner mask.
-# Both therefore get an opaque backdrop matching the artwork's own gradient.
+#                       its own corner mask, so a transparent corner would come
+#                       back BLACK against a white plate.
+# Both therefore get an opaque backdrop matching the artwork's own plate.
 #
 # Usage:  powershell -ExecutionPolicy Bypass -File tool\generate_icons.ps1
 
@@ -21,9 +29,10 @@ $webDir = Join-Path $root 'web'
 
 if (-not (Test-Path $source)) { throw "Source icon not found: $source" }
 
-# Background gradient taken from icon.svg's bgGrad stops.
-$bgStart = [System.Drawing.ColorTranslator]::FromHtml('#1A1A2E')
-$bgEnd = [System.Drawing.ColorTranslator]::FromHtml('#16213E')
+# Plate gradient, quoted from img/icon.svg's plateGrad stops. Light now, not
+# navy: the brand runs white-first and the mark is a flat blue on top of it.
+$bgStart = [System.Drawing.ColorTranslator]::FromHtml('#FFFFFF')
+$bgEnd = [System.Drawing.ColorTranslator]::FromHtml('#E8F3F9')
 
 $src = [System.Drawing.Image]::FromFile($source)
 

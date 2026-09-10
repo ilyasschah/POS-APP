@@ -236,7 +236,7 @@ Future<void> verifySaleChildRowsOnServer(
 
   // ── The LINES ──────────────────────────────────────────────────────────────
   final itemsRes = await dio.get<List<dynamic>>(
-    '/DocumentItem/GetByDocumentId',
+    '/DocumentItems/GetByDocumentId',
     queryParameters: {
       'documentId': serverId,
       'companyId': ctx.company.companyId,
@@ -275,7 +275,7 @@ Future<void> verifySaleChildRowsOnServer(
 
   // ── The MONEY ──────────────────────────────────────────────────────────────
   final paymentsRes = await dio.get<List<dynamic>>(
-    '/Payment/GetByDocumentId',
+    '/Payments/GetByDocumentId',
     queryParameters: {
       'documentId': serverId,
       'companyId': ctx.company.companyId,

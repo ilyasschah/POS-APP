@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
+import 'kds_brand.dart';
 import 'kds_locale.dart';
 import 'kds_models.dart';
 import 'kds_storage.dart';
@@ -55,7 +56,7 @@ class _KitchenDisplayAppState extends State<KitchenDisplayApp> {
       // going to repeat it.
       onGenerateTitle: (context) => KdsLocalizations.of(context).appTitle,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueGrey),
+        colorScheme: ColorScheme.fromSeed(seedColor: kKdsBrand),
         useMaterial3: true,
       ),
       locale: _locale,
@@ -210,7 +211,7 @@ class _RootScreenState extends State<RootScreen> {
   Widget build(BuildContext context) {
     if (!_ready) {
       return const Scaffold(
-        backgroundColor: Color(0xFF546E7A),
+        backgroundColor: kKdsBrandInk,
         body: Center(child: CircularProgressIndicator(color: Colors.white)),
       );
     }

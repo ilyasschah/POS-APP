@@ -2,7 +2,7 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "📱 Frontend: Windows",
+      "label": "Frontend: Windows Run (Debug)",
       "type": "shell",
       "command": "flutter",
       "args": [
@@ -17,6 +17,21 @@
       "problemMatcher": [],
       "inAgents": true,
       "detail": "Runs POS app on Windows desktop"
+    },
+    {
+      "label": "Frontend: Windows Build (Debug)",
+      "type": "shell",
+      "command": "flutter",
+      "args": [
+        "build",
+        "windows",
+        "--debug"
+      ],
+        "options": {
+          "cwd": "${workspaceFolder}/Front-End"
+      },
+        "problemMatcher": [],
+        "detail": "Builds POS app for Windows desktop in debug mode"
     },
     {
       "label": "🌐 Dashboard: Run Web (Tailscale)",
@@ -40,7 +55,7 @@
       "detail": "Runs POS app on Web via Tailscale IP"
     },
     {
-      "label": "📱 Frontend:Android",
+      "label": "📱 Frontend: Android",
       "type": "shell",
       "command": "flutter",
       "args": [

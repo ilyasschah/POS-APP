@@ -15,7 +15,7 @@ class ThemeModeNotifier extends Notifier<ThemeMode> {
   @override
   ThemeMode build() {
     final settings = ref.watch(appSettingsProvider);
-    final mode = settings[SettingKeys.themeMode] ?? 'dark';
+    final mode = settings[SettingKeys.themeMode] ?? 'light';
     return mode == 'light' ? ThemeMode.light : ThemeMode.dark;
   }
 

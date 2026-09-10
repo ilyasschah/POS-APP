@@ -9,18 +9,20 @@ import 'package:pos_app/core/device_theme_mode_provider.dart';
 /// customer display (which mirrors the same colours). Keeping it in one place
 /// means the customer-facing screen can never drift from the operator's theme.
 
-/// The product's own accent: blood red.
+/// The product's own accent: octopus blue.
 ///
-/// It replaces the coral `#FF416C` the icon was drawn in. That colour measured
-/// 3.37:1 on white, which is under the WCAG AA bar for text, so every surface
-/// carrying it needed a darkened partner generated alongside. This one measures
-/// **7.75:1** and clears the bar on its own.
+/// The exact flat blue `assets/icon.svg` is drawn in — one value, shared by the
+/// mark and the interface, so nothing has to be kept in step by eye. It
+/// replaces the blood red `#A4161A`, which came with the navy-plated mark the
+/// brand no longer uses.
 ///
-/// `assets/icon.svg` carries a LIGHTER pair of the same red (`#F0353B` →
-/// `#D62828`), because the mark sits on the navy plate where this value
-/// measures 2.20:1 and vanishes. Same hue, different ground, different
-/// lightness — the rule the rest of the palette runs on too.
-const Color kBrandAccent = Color(0xFFA4161A);
+/// It measures **3.06:1** on white. That is over the WCAG bar for a large
+/// graphic shape and UNDER it for text, which is the opposite of the red it
+/// replaced, and it is why [buildAppTheme] never paints with this value raw:
+/// every mode here hands it to `ColorScheme.fromSeed`, which generates the
+/// darker `primary` that small text and filled buttons actually use. The one
+/// mode that does paint raw — `gray` — runs it through [_liftOnto] first.
+const Color kBrandAccent = Color(0xFF389DCB);
 
 /// Matches exactly six hex digits — a full `RRGGBB`, nothing shorter.
 final RegExp _sixHexDigits = RegExp(r'^[0-9a-fA-F]{6}$');
@@ -43,7 +45,8 @@ Color parseAccentColor(String? hex) {
 /// the way WCAG measures it.
 ///
 /// Flutter ships [ThemeData.estimateBrightnessForColor], but its threshold is
-/// more lenient than WCAG: for the brand coral it answers "dark", which puts
+/// more lenient than WCAG: for the coral this brand shipped at the time it
+/// answers "dark", which puts
 /// WHITE on `#FF416C` at 3.37:1 and fails AA for a button label. Comparing both
 /// candidates outright cannot make that mistake, and it adapts if an operator
 /// picks some other accent entirely.
@@ -59,10 +62,11 @@ double _contrastBetween(Color a, Color b) {
 /// Lightens [colour] until it is actually VISIBLE on [background].
 ///
 /// The gray theme paints with the accent raw, which is its whole character —
-/// grey everything, one colour showing through undiluted. That only ever worked
-/// because the brand accent happened to be light: the coral measured 5.16:1 on
-/// the gray ground, so nobody had to think about it. The blood red that
-/// replaced it measures **2.25:1** and all but vanishes.
+/// grey everything, one colour showing through undiluted. That works for a
+/// light accent and fails silently for a dark one: the brand blue measures
+/// 5.69:1 on the gray ground and needs no help, while the blood red it
+/// replaced measured **2.25:1** and all but vanished. An operator can still
+/// pick a dark accent of their own, so the lift stays.
 ///
 /// Lifting the lightness keeps the operator's hue and saturation — it is still
 /// recognisably their colour — while making it something you can see. Hue is
@@ -145,8 +149,8 @@ ThemeData buildAppTheme(String mode, Color seed) {
       //
       // But `copyWith(primary:)` does not update `onPrimary`, so the label on
       // an accent-filled button kept the GREY scheme's partner: a dark teal
-      // that measured 3.90:1 against the brand coral, under the 4.5:1 AA bar.
-      // The partner has to be derived from the accent actually in force.
+      // that measured 3.90:1 against the coral shipped at the time, under the
+      // 4.5:1 AA bar. The partner has to be derived from the accent in force.
       const grayGround = Color(0xFF1A1A1A);
       // Lifted against the SCAFFOLD, not the surface: the scaffold is the
       // lighter of the two grounds and therefore the harder test for a dark
@@ -216,7 +220,7 @@ ThemeData currentAppTheme(Ref ref) {
       settings[SettingKeys.themeAccentColor];
   final mode = ref.read(deviceThemeModeProvider) ??
       settings[SettingKeys.themeMode] ??
-      'dark';
+      'light';
   return buildAppTheme(mode, parseAccentColor(hex));
 }
 

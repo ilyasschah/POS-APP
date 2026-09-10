@@ -5,6 +5,7 @@ import '../../core/async_controller.dart';
 import '../../core/screen_state.dart';
 import '../../models/product.dart';
 import '../../models/stock.dart';
+import '../../models/stock_rule.dart';
 
 class StockController extends AsyncController<List<ProductStock>> {
   @override
@@ -20,11 +21,13 @@ class StockController extends AsyncController<List<ProductStock>> {
     final results = await Future.wait<Object>([
       api.fetchProducts(cancelToken: cancelToken),
       api.fetchStocks(cancelToken: cancelToken),
+      api.fetchStockRules(cancelToken: cancelToken),
     ]);
 
     return ProductStock.join(
       results[0] as List<Product>,
       results[1] as List<StockEntry>,
+      rules: results[2] as List<StockRule>,
     );
   }
 }

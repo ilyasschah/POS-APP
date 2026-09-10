@@ -17,12 +17,11 @@ import 'package:pos_app/app_settings/service_type_model.dart';
 import 'package:pos_app/floor_plan/floor_plan_table.dart';
 import 'package:pos_app/printer/kitchen_ticket_data.dart';
 
-/// The shipped defaults from `kSettingDefaults[customServiceTypes]`.
-const _defaults = [
-  CustomServiceType(id: 0, name: 'Dine-In', prefix: 'ORDER'),
-  CustomServiceType(id: 1, name: 'Takeaway', prefix: 'TAKEAWAY'),
-  CustomServiceType(id: 2, name: 'Delivery', prefix: 'DELIVERY'),
-];
+/// The shipped defaults — the till's own fallback list, which
+/// settings_defaults_match_server_test.dart pins to kSettingDefaults and the
+/// server seed. Referenced, not copied: a hand copy is how this fixture still
+/// said 'ORDER' after the product had moved to 'TALABIA'.
+const _defaults = CustomServiceType.defaults;
 
 FloorPlanTable _table(int id, String name) => FloorPlanTable(
       id: id,

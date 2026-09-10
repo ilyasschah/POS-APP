@@ -137,6 +137,7 @@ class ReceiptPrinterService {
         it.price,
         it.discount,
         it.promotionalDiscount,
+        it.uomId,
         it.measurementUnit ?? '',
         it.comment ?? '',
         it.appliedTaxes.map((t) => t.id).join(','),
@@ -734,7 +735,16 @@ class ReceiptPrinterService {
 
             // ── Items ──────────────────────────────────────────────────────
             ...renderItems.map((item) {
-              final qty = formatQuantityValue(item.quantity, item.uomId);
+              // The unit comes from the line's uomId and is never optional
+              // off pieces: "1 x 50.00" on a kilo of saffron does not say one
+              // WHAT. Pieces stay behind Receipt.PrintMeasurementUnit (a
+              // weighed pieces line always shows its label, as before).
+              final qty = formatPrintedQuantity(
+                item.quantity,
+                item.uomId,
+                legacyUnit: item.measurementUnit,
+                showPieces: printUnit || item.isToWeigh,
+              );
               // Shared ex-tax basis: for a tax-inclusive product the printed
               // unit price and line total must come back to the shelf price,
               // not the shelf price plus tax again.
@@ -764,16 +774,6 @@ class ReceiptPrinterService {
                 layout: dir,
               );
 
-              // The unit, when there is one to print. On a WEIGHED line it is
-              // not decoration and not optional: "0.125 x 50.00" does not say
-              // 0.125 of what, and kg / g / L are not interchangeable. So a
-              // weighed item always carries its unit; everything else stays
-              // behind the Receipt.PrintMeasurementUnit toggle.
-              final unitLabel = item.measurementUnit?.trim() ?? '';
-              final unit = (unitLabel.isNotEmpty && (printUnit || item.isToWeigh))
-                  ? ' $unitLabel'
-                  : '';
-
               // A modifier's surcharge lives INSIDE `price` (see CartItem's
               // basePrice invariant), so a 20.00 product with a 5.00 option
               // printed as "1 x 25.00" — neither the shelf price nor the
@@ -785,7 +785,7 @@ class ReceiptPrinterService {
                   surcharge > 0 ? unitPrice - surcharge : unitPrice;
 
               final qtyPriceW = printedText(
-                '${rtl ? '' : '  '}$qty$unit x ${money(shownUnitPrice)} $currencySymbol',
+                '${rtl ? '' : '  '}$qty x ${money(shownUnitPrice)} $currencySymbol',
                 style: ts(10),
                 layout: dir,
               );
@@ -1128,7 +1128,13 @@ class ReceiptPrinterService {
             // ── Items ─────────────────────────────────────────────────
             ...List.generate(items.length, (i) {
               final item = items[i];
-              final qty = formatQuantityValue(item.quantity, item.uomId);
+              // The cook needs the unit more than anyone: "1 x Saffron" is a
+              // kilo or a gram depending on who reads it. Pieces stay bare.
+              final qty = formatPrintedQuantity(
+                item.quantity,
+                item.uomId,
+                legacyUnit: item.measurementUnit,
+              );
 
               // Gather every instruction line for this item:
               // 1. the chosen MODIFIERS — what the kitchen actually has to do

@@ -13465,6 +13465,216 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save Stock Report'**
   String get saveStockReportTitle;
+
+  /// No description provided for @importProductsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Import products'**
+  String get importProductsTitle;
+
+  /// No description provided for @importGroupsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Import product groups'**
+  String get importGroupsTitle;
+
+  /// No description provided for @importCsvHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Load products from a spreadsheet saved as CSV — your own, one from another program, or one exported from here. Commas or semicolons, decimal points or commas: both work.'**
+  String get importCsvHint;
+
+  /// No description provided for @importXmlHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Load products exported from this application as XML. The group tree, colours and every barcode come with them.'**
+  String get importXmlHint;
+
+  /// No description provided for @importGroupsCsvHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Load product groups from a spreadsheet with a Name column. A Parent column places each group under another — a parent that does not exist yet is created.'**
+  String get importGroupsCsvHint;
+
+  /// No description provided for @importGroupsXmlHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Load the group tree from an XML export of this application — a groups export or a products export.'**
+  String get importGroupsXmlHint;
+
+  /// No description provided for @importNoFileYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No file selected yet'**
+  String get importNoFileYet;
+
+  /// No description provided for @importColumnsTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Columns'**
+  String get importColumnsTab;
+
+  /// No description provided for @importPreviewTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview ({count})'**
+  String importPreviewTab(int count);
+
+  /// No description provided for @importSampleValue.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. {value}'**
+  String importSampleValue(String value);
+
+  /// No description provided for @duplicatesSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get duplicatesSkip;
+
+  /// No description provided for @duplicatesMerge.
+  ///
+  /// In en, this message translates to:
+  /// **'Update'**
+  String get duplicatesMerge;
+
+  /// No description provided for @duplicatesSkipHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A row whose name already exists is left out — nothing already there changes.'**
+  String get duplicatesSkipHint;
+
+  /// No description provided for @duplicatesMergeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A row whose name already exists updates it. Blank cells keep the current values.'**
+  String get duplicatesMergeHint;
+
+  /// No description provided for @importDocInventoryCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Inventory count'**
+  String get importDocInventoryCount;
+
+  /// No description provided for @importDocPurchase.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase'**
+  String get importDocPurchase;
+
+  /// No description provided for @importDocNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None (no document)'**
+  String get importDocNone;
+
+  /// No description provided for @importDocNeedsQuantity.
+  ///
+  /// In en, this message translates to:
+  /// **'Match the Quantity column to create a document.'**
+  String get importDocNeedsQuantity;
+
+  /// No description provided for @importRowNoName.
+  ///
+  /// In en, this message translates to:
+  /// **'No name — this row will be left out'**
+  String get importRowNoName;
+
+  /// No description provided for @importRowUnreadable.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not read {fields} — sent empty'**
+  String importRowUnreadable(String fields);
+
+  /// No description provided for @importRowOk.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready'**
+  String get importRowOk;
+
+  /// No description provided for @importRowsWithoutName.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} row(s) without a name will be left out'**
+  String importRowsWithoutName(int count);
+
+  /// No description provided for @importRowsAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Import {count}'**
+  String importRowsAction(int count);
+
+  /// No description provided for @numberOfGroupsToImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Number of groups to import: {count}'**
+  String numberOfGroupsToImport(int count);
+
+  /// No description provided for @skippedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Skipped'**
+  String get skippedLabel;
+
+  /// No description provided for @importWarningCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} warning(s):'**
+  String importWarningCount(int count);
+
+  /// No description provided for @importMoreLines.
+  ///
+  /// In en, this message translates to:
+  /// **'…and {count} more'**
+  String importMoreLines(int count);
+
+  /// No description provided for @importGroupsSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Groups: {created} created, {updated} updated'**
+  String importGroupsSummary(int created, int updated);
+
+  /// No description provided for @importFileUnreadable.
+  ///
+  /// In en, this message translates to:
+  /// **'This file could not be read: {message}'**
+  String importFileUnreadable(String message);
+
+  /// No description provided for @importFieldPackSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Pieces per box / pack'**
+  String get importFieldPackSize;
+
+  /// No description provided for @importNothingFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to import was found in this file.'**
+  String get importNothingFound;
+
+  /// No description provided for @exportCsvHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Opens in Excel or any spreadsheet program'**
+  String get exportCsvHint;
+
+  /// No description provided for @exportXmlHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Keeps the whole group tree — for importing back into this app'**
+  String get exportXmlHint;
+
+  /// No description provided for @exportedGroupsTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Exported {count} groups to {path}'**
+  String exportedGroupsTo(int count, String path);
+
+  /// No description provided for @saveExportFileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Save export file'**
+  String get saveExportFileTitle;
 }
 
 class _AppLocalizationsDelegate

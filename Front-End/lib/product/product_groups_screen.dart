@@ -18,10 +18,12 @@ import 'package:pos_app/core/status_colors.dart';
 import 'package:pos_app/core/unified_search_bar.dart';
 import 'package:pos_app/database/app_database.dart';
 import 'package:pos_app/database/database_provider.dart';
+import 'package:pos_app/product/catalog_export.dart';
 import 'package:pos_app/product/product_group_assignment.dart';
 import 'package:pos_app/product/product_group_model.dart';
 import 'package:pos_app/product/product_group_provider.dart';
 import 'package:pos_app/product/product_group_service.dart';
+import 'package:pos_app/product/product_import_screen.dart';
 import 'package:pos_app/product/product_model.dart';
 import 'package:pos_app/product/product_provider.dart';
 import 'package:pos_app/utils/api_error_parser.dart';
@@ -439,6 +441,25 @@ class _ProductGroupsScreenState extends ConsumerState<ProductGroupsScreen> {
           label: l10n.columnsTooltip,
           dividerBefore: true,
           onSelected: _showColumnPicker,
+        ),
+        // The list reads the local database; the import screen syncs before it
+        // reports, so the new groups are already here when it closes.
+        IlyassMenuAction(
+          icon: Icons.download_rounded,
+          label: l10n.importLabel,
+          onSelected: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) =>
+                  const ProductImportScreen(kind: CatalogImportKind.groups),
+            ),
+          ),
+        ),
+        IlyassMenuAction(
+          icon: Icons.upload_rounded,
+          label: l10n.exportLabel,
+          onSelected: () =>
+              showCatalogExportDialog(context, ref, CatalogExportKind.groups),
         ),
       ],
       fabLabel: l10n.newGroup,

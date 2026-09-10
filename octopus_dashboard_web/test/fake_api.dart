@@ -5,6 +5,7 @@ import 'package:octopus_dashboard_web/models/document.dart';
 import 'package:octopus_dashboard_web/models/pos_session.dart';
 import 'package:octopus_dashboard_web/models/product.dart';
 import 'package:octopus_dashboard_web/models/stock.dart';
+import 'package:octopus_dashboard_web/models/stock_rule.dart';
 import 'package:octopus_dashboard_web/models/user.dart';
 
 /// In-memory stand-in for the backend, used by widget tests.
@@ -141,6 +142,21 @@ class FakeApi implements OctopusApi {
       'productName': 'Pepsi',
     }),
   ]);
+
+  /// Product 7 (477 in stock) sits under both thresholds, so the row carries
+  /// every tag and the LOW flag — with a supplier name long enough to wrap.
+  @override
+  Future<List<StockRule>> fetchStockRules({CancelToken? cancelToken}) =>
+      _respond(const [
+        StockRule(
+          productId: 7,
+          supplierName: 'A Very Long Beverage Distribution Company SARL',
+          reorderPoint: 600,
+          preferredQuantity: 1000,
+          isLowStockWarningEnabled: true,
+          lowStockWarningQuantity: 500,
+        ),
+      ]);
 
   @override
   Future<List<SalesDocument>> fetchDocuments({CancelToken? cancelToken}) =>

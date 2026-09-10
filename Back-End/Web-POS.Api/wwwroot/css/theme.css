@@ -32,10 +32,83 @@ img,svg,video,canvas{ max-width:100%; height:auto; }
 
 /* ---------------------------------------------------------------------------
    Brand
+
+   Tabler compiles Bootstrap with its own $primary (#066FD1) baked into the
+   distributed CSS as literal values, so overriding --tblr-primary alone does
+   NOT restyle a .btn-primary — Bootstrap 5.3 emits each button variant with
+   its own --tblr-btn-* properties already resolved. Both layers are set below:
+   the theme variable, for everything that reads it at runtime (utilities,
+   form controls, active nav states), and the button's own properties.
+
+   Two blues, not one. #389DCB is the logo's flat colour and measures 3.06:1 on
+   white — fine as a shape, not as a label or a link. Anything carrying text
+   uses a darkened partner, and dark mode inverts which one is which because
+   the ground does.
 --------------------------------------------------------------------------- */
 
-/* The app icon carries its own dark rounded plate, so it reads on both themes
-   and must not be inverted by .navbar-brand-autodark. */
+:root{
+  --tblr-primary:#2a7ca1;          /* 4.67:1 on white */
+  --tblr-primary-rgb:42,124,161;
+  --tblr-primary-fg:#ffffff;       /* white on it: 4.67:1 */
+  --tblr-link-color:#266f91;       /* 5.58:1 — small text needs the darker one */
+  --tblr-link-color-rgb:38,111,145;
+  --tblr-link-hover-color:#1d5670;
+  --tblr-link-hover-color-rgb:29,86,112;
+}
+
+/* On the dark theme the SHAPE colour and the text colour swap roles: the logo
+   blue reads at 5.18:1 against Tabler's dark surface, while the darkened
+   partner drops to 3.40:1 and is too quiet for a link. */
+[data-bs-theme="dark"]{
+  --tblr-primary:#389dcb;          /* 5.18:1 on the dark surface */
+  --tblr-primary-rgb:56,157,203;
+  --tblr-link-color:#5db4de;       /* 6.84:1 */
+  --tblr-link-color-rgb:93,180,222;
+  --tblr-link-hover-color:#8ccce9;
+  --tblr-link-hover-color-rgb:140,204,233;
+}
+
+/* Filled buttons keep the DARK blue in both themes. A button's contrast that
+   matters is the one against its own label, and white on #2A7CA1 clears AA at
+   4.67:1 either way; the light logo blue would put white text at 3.06:1. */
+.btn-primary,
+[data-bs-theme="dark"] .btn-primary{
+  --tblr-btn-color:#ffffff;
+  --tblr-btn-bg:#2a7ca1;
+  --tblr-btn-border-color:#2a7ca1;
+  --tblr-btn-hover-color:#ffffff;
+  --tblr-btn-hover-bg:#226381;
+  --tblr-btn-hover-border-color:#226381;
+  --tblr-btn-active-color:#ffffff;
+  --tblr-btn-active-bg:#1d5670;
+  --tblr-btn-active-border-color:#1d5670;
+  --tblr-btn-disabled-color:#ffffff;
+  --tblr-btn-disabled-bg:#2a7ca1;
+  --tblr-btn-disabled-border-color:#2a7ca1;
+}
+
+/* The outline variant is the mirror: the border is a SHAPE, so it may carry the
+   logo blue, but the label is text and takes the darker partner. */
+.btn-outline-primary{
+  --tblr-btn-color:#266f91;
+  --tblr-btn-border-color:#389dcb;
+  --tblr-btn-hover-color:#ffffff;
+  --tblr-btn-hover-bg:#2a7ca1;
+  --tblr-btn-hover-border-color:#2a7ca1;
+  --tblr-btn-active-color:#ffffff;
+  --tblr-btn-active-bg:#2a7ca1;
+  --tblr-btn-active-border-color:#2a7ca1;
+}
+[data-bs-theme="dark"] .btn-outline-primary{
+  --tblr-btn-color:#5db4de;
+  --tblr-btn-border-color:#389dcb;
+}
+
+/* The app icon carries its own LIGHT rounded plate now, white breathing into a
+   pale blue. It still reads on both themes — a light chip on the dark navbar is
+   the same move as a dark one was on the light navbar — and it still must not
+   be inverted. It escapes .navbar-brand-autodark by not carrying the
+   .navbar-brand-image class that rule targets; keep it that way. */
 .brand-logo{ width:32px; height:32px; border-radius:8px; display:block; flex:none; }
 
 /* ---------------------------------------------------------------------------

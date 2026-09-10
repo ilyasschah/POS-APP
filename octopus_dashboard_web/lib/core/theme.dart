@@ -19,7 +19,13 @@ class AppPalette extends ThemeExtension<AppPalette> {
     required this.base,
   });
 
-  /// Teal. Primary buttons, currency figures, active nav tint.
+  /// Octopus blue. Primary buttons, currency figures, active nav tint.
+  ///
+  /// The two brightnesses are NOT the same colour, on purpose. This is a text
+  /// colour as often as it is a fill — the money on this dashboard is set in
+  /// it — so each has to clear WCAG AA against its own ground, and the seed
+  /// (#389DCB, the logo's flat blue) only manages that on the dark one. See
+  /// [dark] and [light].
   final Color accent;
 
   /// Secondary chart/accent hue: hourly chart line and Top Customers totals.
@@ -47,7 +53,9 @@ class AppPalette extends ThemeExtension<AppPalette> {
   Color dim([double opacity = 0.65]) => primaryText.withValues(alpha: opacity);
 
   static const AppPalette dark = AppPalette(
-    accent: Color(0xFF40C8E0),
+    // The brand blue itself: 6.85:1 on black, so it carries the currency
+    // figures unaided.
+    accent: Color(0xFF389DCB),
     indigo: Color(0xFF7986CB),
     positive: Color(0xFF4ADE80),
     negative: Color(0xFFFF6B6B),
@@ -58,7 +66,12 @@ class AppPalette extends ThemeExtension<AppPalette> {
   );
 
   static const AppPalette light = AppPalette(
-    accent: Color(0xFF30B0C7),
+    // The brand blue darkened until it clears AA on WHITE — 4.67:1, the same
+    // value the marketing site derives as `--accent-strong` from the same
+    // seed. The raw seed measures 3.06:1 here and the teal it replaces
+    // measured 2.57:1, so the light dashboard has been under the bar for its
+    // own totals all along.
+    accent: Color(0xFF2A7CA1),
     indigo: Color(0xFF3F51B5),
     positive: Color(0xFF1E8E3E),
     negative: Color(0xFFD93025),
@@ -227,9 +240,21 @@ abstract final class AppTheme {
   );
 
   /// Picks black or white for text sitting on the accent color, whichever
-  /// gives better contrast.
-  static Color _onAccent(Color accent) =>
-      accent.computeLuminance() > 0.5 ? Colors.black : Colors.white;
+  /// gives better contrast — measured the way WCAG measures it, by comparing
+  /// both candidates.
+  ///
+  /// 🚨 It used to test `luminance > 0.5` and take white below the line. That
+  /// threshold is not the contrast maths: the brand blue sits at 0.293, so the
+  /// old test chose WHITE, which measures 3.06:1 on it and fails AA for a
+  /// button label. Black on the same blue is 6.85:1. A single threshold cannot
+  /// get this right across the range, and the dark palette's accent lands
+  /// exactly in the stretch where it is wrong.
+  static Color _onAccent(Color accent) {
+    final l = accent.computeLuminance();
+    final onWhite = 1.05 / (l + 0.05);
+    final onBlack = (l + 0.05) / 0.05;
+    return onBlack >= onWhite ? Colors.black : Colors.white;
+  }
 
   static Color onAccent(Color accent) => _onAccent(accent);
 }

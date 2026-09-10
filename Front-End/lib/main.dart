@@ -185,10 +185,13 @@ class _MyAppState extends ConsumerState<MyApp> {
         settings[SettingKeys.themeAccentColor];
     // Device-local override wins (boot cache — prevents theme flash), now read
     // reactively so the onboarding theme picker restyles the app live.
+    // Falls back to LIGHT, not dark. This value is only ever reached before a
+    // company's settings have synced — the onboarding slides and the master
+    // login — and those screens are the brand's white-and-blue face.
     final themeString =
         ref.watch(deviceThemeModeProvider) ??
         settings[SettingKeys.themeMode] ??
-        'dark';
+        'light';
 
     final seed = parseAccentColor(savedHex);
     final themeData = buildAppTheme(themeString, seed);

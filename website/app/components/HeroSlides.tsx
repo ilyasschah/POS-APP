@@ -8,19 +8,23 @@ import Image from "next/image";
  *
  * Real, not rendered: these are captures of the actual Flutter build, which is
  * the only reason the page is allowed to show a UI at all (`MEDIA_PROMPTS.md`
- * §0). Every one of them is in the brand accent and in French, because that is
- * what the product ships as by default.
+ * §0). Every one of them is in the brand accent — the light theme in octopus
+ * blue the product now ships as its default.
  *
  * Slide ids are stable and the captions are looked up by id, so a translation
  * can never end up describing the wrong screenshot.
  */
 export type SlideId = "sale" | "dashboard" | "history" | "display";
 
+// ⚠️ `w`/`h` are the intrinsic ratio Next reserves hero space from, so they have
+// to be the files' REAL dimensions or the hero reflows once the image lands.
+// `tools/generate_site_media.py` writes the files and prints these numbers —
+// take them from its output rather than from a guess about the crop.
 const SLIDES: { id: SlideId; src: string; full: string; w: number; h: number }[] = [
-  { id: "sale", src: "/mid_sale.webp", full: "/mid_sale-full.webp", w: 1600, h: 938 },
-  { id: "dashboard", src: "/dashboard.webp", full: "/dashboard-full.webp", w: 1600, h: 928 },
-  { id: "history", src: "/sales_history.webp", full: "/sales_history-full.webp", w: 1600, h: 937 },
-  { id: "display", src: "/customer_display_web.webp", full: "/customer_display_web-full.webp", w: 1600, h: 839 },
+  { id: "sale", src: "/mid_sale.webp", full: "/mid_sale-full.webp", w: 1600, h: 900 },
+  { id: "dashboard", src: "/dashboard.webp", full: "/dashboard-full.webp", w: 1600, h: 900 },
+  { id: "history", src: "/sales_history.webp", full: "/sales_history-full.webp", w: 1600, h: 900 },
+  { id: "display", src: "/customer_display_web.webp", full: "/customer_display_web-full.webp", w: 917, h: 643 },
 ];
 
 const ADVANCE_MS = 6000;

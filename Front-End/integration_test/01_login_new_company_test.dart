@@ -187,8 +187,15 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
     step('POS name: $kPosName');
 
-    // Theme.
+    // Theme. Routed through the OTHER segment first, on purpose: Light is the
+    // app's default now, so the picker opens already on it, and a
+    // single-selection SegmentedButton fires nothing when its selected segment
+    // is tapped. Tapping Light alone would write no device override, and the
+    // brightness check at the end would still pass — on the server's own
+    // `Theme_Mode` seed, proving nothing about onboarding.
     final themeLabel = kThemeMode == 'light' ? l.themeLight : l.themeDark;
+    final otherLabel = kThemeMode == 'light' ? l.themeDark : l.themeLight;
+    await tapVisible(tester, find.text(otherLabel));
     await tapVisible(tester, find.text(themeLabel));
     step('Theme: $themeLabel');
 

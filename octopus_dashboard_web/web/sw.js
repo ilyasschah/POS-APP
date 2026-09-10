@@ -20,7 +20,9 @@
  *     every screen will show its error state, which is the honest outcome.
  */
 
-const CACHE_VERSION = 'v1';
+// Bumped to v2 for the 2026-09-10 logo redraw: activate() deletes every older
+// cache, which is the only thing that evicts the old icons it was holding.
+const CACHE_VERSION = 'v2';
 const CACHE_NAME = `octopus-shell-${CACHE_VERSION}`;
 
 /** Static file extensions that are safe to cache. */

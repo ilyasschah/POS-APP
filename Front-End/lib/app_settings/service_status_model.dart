@@ -47,9 +47,12 @@ class CustomServiceStatus {
   static String listToJson(List<CustomServiceStatus> statuses) =>
       jsonEncode(statuses.map((s) => s.toJson()).toList());
 
+  // What a venue gets if its own list cannot be parsed — the same default as
+  // kSettingDefaults and the server seed, pinned by
+  // settings_defaults_match_server_test.dart. Change all three together.
   static const List<CustomServiceStatus> defaults = [
-    CustomServiceStatus(id: 1, name: 'Seated',       colorValue: 0xFF2196F3),
-    CustomServiceStatus(id: 2, name: 'In Kitchen',   colorValue: 0xFFFF9800),
-    CustomServiceStatus(id: 3, name: 'Ready to Pay', colorValue: 0xFF4CAF50),
+    CustomServiceStatus(id: 1, name: 'Standby',    colorValue: 0xFF2196F3),
+    CustomServiceStatus(id: 2, name: 'In Kitchen', colorValue: 0xFFFF9800),
+    CustomServiceStatus(id: 3, name: 'Cooked',     colorValue: 0xFF4CAF50),
   ];
 }

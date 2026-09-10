@@ -25,29 +25,38 @@ existed.
 
 | setting | value | meaning |
 |---|---|---|
-| `Theme_Mode` | `dark` | dark by default |
-| `Theme_AccentColor` | `#A4161A` | the brand blood red |
+| `Theme_Mode` | `light` | white by default |
+| `Theme_AccentColor` | `#389DCB` | octopus blue |
 
-`#A4161A` is the brand blood red at 7.75:1 on white. The octopus gradient in
-`Front-End/assets/icon.svg` is a LIGHTER pair of the same red (`#F0353B` →
-`#D62828`) because the mark sits on navy, where the UI value measures 2.20:1.
-It is the accent the marketing
-site uses. Material 3 generates the entire colour scheme from this one seed, so
-it is the only value that has to be right.
+`#389DCB` is the flat blue the octopus in `Front-End/assets/icon.svg` is drawn
+in — the mark and the interface share one value now, rather than the mark
+carrying a lighter pair of the UI colour so it could survive a navy plate. The
+plate is white today, so no second value is needed. It is the accent the
+marketing site uses. Material 3 generates the entire colour scheme from this
+one seed, so it is the only value that has to be right.
+
+It measures 3.06:1 on white: over the bar for a large graphic shape, under it
+for text. Nothing paints with it raw — `ColorScheme.fromSeed` derives the
+darker tone that buttons and small text actually use.
 
 It must stay in step in **three** places, or the app disagrees with itself
 depending on whether settings have synced yet:
 
 | where | constant |
 |---|---|
-| `Back-End/.../CompanyDefaultsSeeder.cs` | `("Theme_AccentColor", "#A4161A")` |
+| `Back-End/.../CompanyDefaultsSeeder.cs` | `("Theme_AccentColor", "#389DCB")` |
 | `Front-End/lib/app_settings/app_settings_model.dart` | `kSettingDefaults[themeAccentColor]` |
 | `Front-End/lib/core/app_theme.dart` | `kBrandAccent` |
 
 > Before 2026-09-04 these were `#10B981` (emerald), `#FF5733` (coral) and
-> `#A4161A` — three sources, three colours, only one of them the logo. The red
-> is what made the app look **brown**: Material desaturates it heavily when
-> seeding a dark scheme.
+> `#A4161A` — three sources, three colours, only one of them the logo. The
+> coral is what made the app look **brown**: Material desaturates it heavily
+> when seeding a dark scheme. `#A4161A` then held all three until the logo was
+> redrawn in blue on 2026-09-10.
+>
+> Every one of these superseded defaults is listed in `SupersededAccents`, so a
+> company still sitting on one is swept onto the current brand at startup. Only
+> ever add to that list — dropping an entry strands whoever is still on it.
 
 ```sql
 -- What a given company is actually using right now
@@ -190,8 +199,8 @@ table cell cannot show them legibly.
 | `PosSession.RequireOpenSession` | `true` |
 | `Application.Api.BaseUrl` | `https://api.octopus-pos.com/api` |
 | `Database.Backup.Version` | `v2` |
-| `Theme_Mode` | `dark` |
-| `Theme_AccentColor` | `#A4161A` |
+| `Theme_Mode` | `light` |
+| `Theme_AccentColor` | `#389DCB` |
 | `Menu_Grid_Cols` | `4` |
 | `Menu_Grid_Rows` | `4` |
 | `Application.Language` | `en` |

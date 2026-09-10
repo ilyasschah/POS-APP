@@ -66,6 +66,7 @@ public class PosSessionRepository(AppDbContext db)
     public Task<List<Shift>> GetLiveSessionsAsync(
         int companyId, CancellationToken ct = default) =>
         db.Shifts
+            .Include(s => s.PosDevice)
             .Where(s => s.CompanyId == companyId
                      && s.PosDeviceId != null
                      && PosSessionStatus.Live.Contains(s.Status))
@@ -73,10 +74,19 @@ public class PosSessionRepository(AppDbContext db)
 
     // ── Sessions ──────────────────────────────────────────────────────────────
 
+    // 🚨 Every query below feeds PosSessionController.Map, which reads
+    // `s.PosDevice?.DeviceUid` — the REGISTER's uid, and the field a second
+    // terminal matches on to recognise the till it is sharing. Without the
+    // Include that nav is simply null and the DTO ships `posDeviceUid: null`,
+    // i.e. a session that belongs to no register as far as any client can tell.
+    // History already loads it; these did not.
+
     /// <summary>The session a register is currently running, if any.</summary>
     public Task<Shift?> GetLiveForDeviceAsync(int posDeviceId, CancellationToken ct = default) =>
-        db.Shifts.FirstOrDefaultAsync(
-            s => s.PosDeviceId == posDeviceId && PosSessionStatus.Live.Contains(s.Status), ct);
+        db.Shifts
+            .Include(s => s.PosDevice)
+            .FirstOrDefaultAsync(
+                s => s.PosDeviceId == posDeviceId && PosSessionStatus.Live.Contains(s.Status), ct);
 
     /// <summary>
     /// Looks a session up by the client's UUID. This is the idempotency key for
@@ -85,8 +95,10 @@ public class PosSessionRepository(AppDbContext db)
     /// instead of a second session.
     /// </summary>
     public Task<Shift?> GetByLocalIdAsync(int companyId, string localId, CancellationToken ct = default) =>
-        db.Shifts.FirstOrDefaultAsync(
-            s => s.CompanyId == companyId && s.LocalId == localId, ct);
+        db.Shifts
+            .Include(s => s.PosDevice)
+            .FirstOrDefaultAsync(
+                s => s.CompanyId == companyId && s.LocalId == localId, ct);
 
     /// <summary>
     /// Resolves a client localId to a session whatever its state.
@@ -100,8 +112,10 @@ public class PosSessionRepository(AppDbContext db)
         GetByLocalIdAsync(companyId, localId.Trim(), ct);
 
     public Task<Shift?> GetSessionAsync(int companyId, int sessionId, CancellationToken ct = default) =>
-        db.Shifts.FirstOrDefaultAsync(
-            s => s.Id == sessionId && s.CompanyId == companyId && s.PosDeviceId != null, ct);
+        db.Shifts
+            .Include(s => s.PosDevice)
+            .FirstOrDefaultAsync(
+                s => s.Id == sessionId && s.CompanyId == companyId && s.PosDeviceId != null, ct);
 
     public Task<List<Shift>> GetHistoryAsync(
         int companyId, int? posDeviceId, int take, CancellationToken ct = default) =>

@@ -39,6 +39,7 @@
 5. [Offline-First Audit & Conversion Tracker](#5--offline-first-audit--conversion-tracker) — per-screen offline-first status
 6. [Project Audit (2026-07-04)](#6--project-audit-2026-07-04) — repository-wide bug/perf/architecture audit
 7. [Ilyass Style — UI/UX pattern](#7--ilyass-style--uiux-pattern) — the house layout rules for the Flutter desktop UI
+8. [Brand — the octopus, the blue, and where they are declared](#8--brand) — the one place every logo and accent in the ecosystem comes from
 
 ---
 
@@ -193,7 +194,7 @@ Defined in `lib/app_settings/app_settings_model.dart`. Key groups:
 | Features | `featureFloorPlanEnabled`, `featureBookingEnabled`, `featureServiceTypeEnabled`, `featureServiceStatusEnabled` |
 | Printer (Role-based) | `Receipt.PrinterName`, `Receipt.PaperSize`, `Receipt.Copies`, `Receipt.MarginTop/Bottom/Left/Right`, `Receipt.FontFamily`, `Receipt.FontSize`, `Receipt.RightToLeft`, `Kitchen.*` (same keys) |
 | Receipt Toggles | `receiptPrintTaxTotals`, `receiptPrintOrderNumber`, `receiptDecimalPlaces`, etc. |
-| Theme | `themeMode` (light/dark/dimmed/night/gray/high_contrast), `themeAccentColor` (hex string) |
+| Theme | `themeMode` (light/dark/dimmed/night/gray/high_contrast — defaults to `light`), `themeAccentColor` (hex string — defaults to `#389DCB`, see §8) |
 | Kitchen Display | `kitchenDisplayIps` (comma-separated IP list) |
 | Weighing Scale — serial | `Scale.Enabled`, `Scale.Port` (e.g. `COM2`), `Scale.BaudRate` (e.g. `9600`) — see §4.6 |
 | Weighing Scale — barcode | `Scale.Barcode.Enabled`, `Scale.Barcode.Prefix`, `Scale.Barcode.CodeLength`, `Scale.Barcode.DecimalPlaces`, `Scale.Barcode.TrimZeros`, `Scale.Barcode.PrintsPrice` — see §4.6 |
@@ -2773,3 +2774,149 @@ cap — tables scroll instead), and is what the twelve management list screens u
 
 Still on the old pattern, and the obvious next candidates: the products list,
 the stock screen, the session list table, and the remaining reports tables.
+
+
+---
+
+
+<a id="8--brand"></a>
+
+# 8 · Brand — the octopus, the blue, and where they are declared
+
+_Redrawn 2026-09-10. The mark before this one was a red octopus on a deep navy
+plate; every trace of it is gone from the shipping products, and the reasoning
+that produced it survives only as a marked-historical note at the top of
+`PLAN_branding_and_higgsfield.md`._
+
+## 8.1 The mark
+
+Two SVGs in `img/` are the ONLY hand-authored artwork in the repository:
+
+| File | What |
+|---|---|
+| `img/icon.svg` | the octopus **on its plate** — white breathing into a pale blue, rounded corners, hairline edge |
+| `img/icon-mark.svg` | the octopus **alone**, transparent, for grounds we do not own |
+
+Both are traced from `img/logo-NO_Background.png`, the delivered artwork. Keep
+their geometry identical to each other.
+
+The **Kitchen Display wears its own mark**: the same octopus with a Wi-Fi
+signal radiating from its raised right antenna — the antenna's ball is the
+signal's dot — because pairing with a till is the first thing a KDS does, and
+two identical icons side by side on a kitchen tablet are a guessing game. It is
+NOT hand-drawn: `tools/generate_kds_mark.py` reads the octopus out of
+`img/icon-mark.svg` and the plate out of `img/icon.svg`, adds the arcs, and
+writes `img/icon-kds.svg` / `img/icon-kds-mark.svg`. Redraw the octopus and the
+KDS mark follows on the next run.
+
+🚨 **Everything else is generated.** Eleven directories carry a copy of the POS
+icon — the POS, the admin portal, the owner dashboard (Flutter and iOS), the
+marketing site, and the Windows installers that reference `app_icon.ico` — and
+the KDS carries its own. Do not hand-edit any of them:
+
+```
+python tools/generate_brand_assets.py     # every icon, from the two SVGs
+```
+
+It writes three SHAPES, because one does not fit every platform — plated
+(rounded, transparent corners), opaque (square, no alpha; iOS applies its own
+corner mask and rejects transparency), and maskable (square, mark inside
+Android's inner-80% safe zone). The script's own docstring carries the detail.
+
+### Browsers will not show a new icon on their own
+
+Chrome (and every other browser) keys its favicon cache by URL and does not
+re-fetch an icon it already holds — not on reload, not on a hard refresh. A
+regenerated icon at the SAME URL stays invisible in every tab that has seen the
+old one. Both web apps therefore version their icon URLs:
+
+| App | How | When the icons change |
+|---|---|---|
+| Admin portal | `asp-append-version="true"` on every icon `<link>`/`<img>` | nothing — the query is a content hash and moves by itself |
+| Owner dashboard | `?v=N` on the icon links in `web/index.html` and `web/manifest.json`, plus `CACHE_VERSION` in `web/sw.js` | bump all three by hand, then `flutter build web --release` |
+
+The dashboard's service worker matters as much as the query: it serves icons
+stale-while-revalidate, so without a new `CACHE_VERSION` it keeps handing out
+the cached old one. `activate()` deletes every older cache.
+
+## 8.2 The colour
+
+**Octopus blue `#389DCB`** — the flat colour the artwork is drawn in. One value,
+shared by the mark and the interface.
+
+It measures **3.06:1 on white**: over the WCAG bar for a large graphic shape,
+under it for text. That is the single most important fact about this brand, and
+it is the reverse of the blood red before it, which cleared every bar on its own.
+
+⚠️ **Nothing paints with `#389DCB` raw where text is involved.** Each surface
+takes the darkened partner that clears its own bar:
+
+| Role | Value | Ratio |
+|---|---|---|
+| Shapes — borders, icons, large type | `#389DCB` | 3.06:1 on white |
+| A fill carrying white text | `#2A7CA1` | white on it: 4.67:1 |
+| That fill's hover partner | `#226381` | 6.63:1 |
+| Small text and links | `#266F91` | 5.58:1 |
+| Pale tint, never carries text | `#DEECF2` | — |
+
+On a DARK ground the roles invert: `#389DCB` becomes the text colour (6.85:1 on
+black) and the darkened partners become too quiet. Both the owner dashboard and
+the admin portal carry that inversion explicitly.
+
+The POS never writes these partners down. It hands the seed to
+`ColorScheme.fromSeed`, which derives them per theme mode — which is also why an
+operator can pick any accent at all and the app stays legible.
+
+## 8.3 Where the accent is declared
+
+Four places, and they must agree. A terminal reads its accent from the server,
+falls back to the settings default, and falls back again to the compiled-in
+constant — so a drift shows up only on whichever path a given operator takes.
+
+| Where | Constant |
+|---|---|
+| `Front-End/lib/core/app_theme.dart` | `kBrandAccent` |
+| `Front-End/lib/app_settings/app_settings_model.dart` | `kSettingDefaults[themeAccentColor]` |
+| `Front-End/lib/onboarding/widgets/setup_slide.dart` | `_accents[0]` — the picker's brand swatch |
+| `Back-End/.../CompanyDefaultsSeeder.cs` | `("Theme_AccentColor", ...)` |
+
+`Front-End/test/brand_accent_theme_test.dart` pins all four to one value AND
+holds every theme mode to the AA bar built from it. It is the test that catches
+a rebrand halfway done.
+
+**Moving the brand again?** Add the outgoing value to `SupersededAccents` in
+`CompanyDefaultsSeeder.cs`. It sweeps companies still sitting on a default
+nobody chose onto the new one, and leaves an operator's own pick alone. Only
+ever ADD to that list — removing an entry strands whoever is still on it.
+
+## 8.4 The default theme is LIGHT
+
+`themeMode` falls back to `light`, not `dark`, in `main.dart`,
+`currentAppTheme`, the settings defaults and the server seed. That fallback is
+only ever reached before a company's settings have synced — the onboarding
+slides and the master login — and those screens are the brand's white-and-blue
+face. The onboarding picker overrides it live, per device, from the first tap.
+
+## 8.5 The other four surfaces
+
+| Surface | Where the brand lives |
+|---|---|
+| Admin portal | `Back-End/Web-POS.Api/wwwroot/css/theme.css` — overrides Tabler's `--tblr-primary` **and** the `.btn-*` custom properties, because Bootstrap 5.3 bakes button variants in at build time |
+| Kitchen Display | `kitchen_display/lib/kds_brand.dart` — `kKdsBrand` (the Material seed) and `kKdsBrandInk` (every solid surface, all of which carry white text) |
+| Owner dashboard | `octopus_dashboard_web/lib/core/theme.dart` — `AppPalette.dark.accent` / `.light.accent`, plus `AccentColor.colorset` for the iOS build |
+| Marketing site | `website/app/globals.css` tokens, derived by `website/app/theme.ts`; the contract and every measured ratio are in `website/DESIGN.md` §2 |
+
+## 8.6 Site media is generated too
+
+`website/public` is BUILT from `website/assets-src`, never hand-placed. The two
+drifted apart once — new blue-themed captures were dropped into `assets-src`
+while `public` kept serving the old red ones — which is what these exist for:
+
+```
+python tools/generate_site_media.py      # public/*.webp from assets-src
+python tools/recolour_brand_red.py       # re-hues the role illustrations
+```
+
+`generate_site_media.py` prints the `w`/`h` that
+`app/components/HeroSlides.tsx` must carry; they are the intrinsic ratio Next
+reserves hero space from, so a mismatch reflows the page on load.

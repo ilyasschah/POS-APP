@@ -213,6 +213,20 @@ namespace Api.Services
             "Email.FromAddress",
             "Email.FromName",
             "Application.User.Email",
+            // Retired 2026-09-10 — seeded here, read by nothing on either side.
+            // Sounds were built on six per-event `App.Sounds.*` keys instead, and
+            // sound_service.dart's own header records that this one never did
+            // anything.
+            "App.EnableSounds",
+            // Both superseded by per-printer keys: the drawer is now
+            // `<Role>.CashDrawer.Enabled` (a receipt and a kitchen printer can each
+            // own one) and the transport is `<Role>.Connection`. The flat versions
+            // survived only as a client constant in the defaults map.
+            "Print.CashDrawer.Enabled",
+            "Print.PrinterType",
+            // Never read. A value in the database that nothing consults is a
+            // setting that tells an operator it controls something when it does not.
+            "Database.Backup.Version",
         };
 
         /// <summary>
@@ -234,18 +248,79 @@ namespace Api.Services
         }
 
         /// <summary>
+        /// Gives every existing company each <see cref="DefaultProperties"/> key it
+        /// is missing, at the seed value. Returns how many rows it added.
+        /// </summary>
+        /// <remarks>
+        /// 🚨 <see cref="SeedAsync"/> runs once, when a company is CREATED. A key
+        /// added to <see cref="DefaultProperties"/> later never reached a company
+        /// that already existed — and a missing row does not mean "the seed value":
+        /// the till falls back to its own <c>kSettingDefaults</c>, which disagreed
+        /// with this list on 43 keys. So two companies could behave differently
+        /// for the same setting purely by when they were created — an old one
+        /// allowing negative stock and voids without a reason, a new one refusing
+        /// both.
+        ///
+        /// ADD-ONLY, exactly like <see cref="BackfillSecurityKeysAsync"/>: a row
+        /// that exists is never touched, whatever it holds, because a value
+        /// somebody chose is not this method's to overwrite. New rows are stamped
+        /// with <c>LastModified</c> by <c>AppDbContext.SaveChanges</c>, which is
+        /// what lets the terminals' delta pull (<c>?modifiedAfter=</c>) see them.
+        ///
+        /// Never re-adds a retired key: <see cref="ObsoleteProperties"/> and this
+        /// list are disjoint (pinned by a test), otherwise this and
+        /// <see cref="RemoveObsoletePropertiesAsync"/> would undo each other on
+        /// every boot.
+        /// </remarks>
+        public static async Task<int> BackfillMissingPropertiesAsync(AppDbContext db)
+        {
+            var companyIds = await db.Companies.Select(c => c.Id).ToListAsync();
+            if (companyIds.Count == 0) return 0;
+
+            // One query for every company's key names, not one per company — this
+            // runs on every startup.
+            var existingByCompany = (await db.ApplicationProperties
+                    .AsNoTracking()
+                    .Where(p => p.Name != null)
+                    .Select(p => new { p.CompanyId, p.Name })
+                    .ToListAsync())
+                .GroupBy(p => p.CompanyId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => new HashSet<string>(g.Select(x => x.Name!), StringComparer.OrdinalIgnoreCase));
+
+            var added = 0;
+            foreach (var companyId in companyIds)
+            {
+                if (!existingByCompany.TryGetValue(companyId, out var have))
+                    have = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                foreach (var (name, value) in DefaultProperties)
+                {
+                    if (have.Contains(name)) continue;
+                    db.ApplicationProperties.Add(ApplicationProperty.Create(companyId, name, value));
+                    added++;
+                }
+            }
+
+            if (added > 0) await db.SaveChangesAsync();
+            return added;
+        }
+
+        /// <summary>
         /// Every accent this product has ever SHIPPED AS A DEFAULT.
         ///
         /// A row still holding one of these has never been changed by anyone, so
         /// replacing it overwrites nobody's choice. The list grows each time the
         /// brand moves — #2196F3 was the original blue, #FF416C the coral that
-        /// briefly replaced it — and a company can be stranded on any of them
+        /// briefly replaced it, #A4161A the blood red that shipped with the
+        /// navy-plated logo — and a company can be stranded on any of them
         /// depending on when it was created.
         ///
         /// ⚠️ Only ever ADD to this list. Removing an entry strands whichever
         /// companies are still sitting on it, permanently.
         /// </summary>
-        private static readonly string[] SupersededAccents = { "#2196F3", "#FF416C" };
+        private static readonly string[] SupersededAccents = { "#2196F3", "#FF416C", "#A4161A" };
 
         /// <summary>
         /// The ApplicationProperty that carries the theme accent.
@@ -253,9 +328,9 @@ namespace Api.Services
         private const string AccentPropertyName = "Theme_AccentColor";
 
         /// <summary>
-        /// Moves companies still sitting on the OLD default accent onto the brand
-        /// coral. <see cref="SeedAsync"/> only ever ADDS a missing key, so every
-        /// company created before the rollout kept the blue it was seeded with
+        /// Moves companies still sitting on an OLD default accent onto the current
+        /// brand one. <see cref="SeedAsync"/> only ever ADDS a missing key, so every
+        /// company created before a rollout kept the colour it was seeded with
         /// and would have kept it forever.
         ///
         /// Deliberately narrow: it matches only rows whose value is still exactly
@@ -324,9 +399,13 @@ namespace Api.Services
             ("PosSession.CashPaymentTypeIds", ""),
             ("PosSession.RequireOpenSession", "true"),
             ("Application.Api.BaseUrl", "https://api.octopus-pos.com/api"),
-            ("Database.Backup.Version", "v2"),
             ("Theme_Mode", "light"),
-            ("Theme_AccentColor", "#A4161A"),
+            // Octopus blue — the flat colour the logo is drawn in. Kept in step
+            // with kBrandAccent (Front-End/lib/core/app_theme.dart) and the
+            // client-side default in app_settings_model.dart; all three are the
+            // same decision, and a company looks different depending on whether
+            // its settings have synced yet if they disagree.
+            ("Theme_AccentColor", "#389DCB"),
             ("Menu_Grid_Cols", "4"),
             ("Menu_Grid_Rows", "4"),
             ("Application.Language", "fr"),
@@ -340,13 +419,11 @@ namespace Api.Services
             ("General.TaxIncludedByDefault", "false"),
             ("General.DefaultTaxRateIds", ""),
             ("Pos.CustomServiceTypes", @"[{""id"":0,""name"":""Dine-In"",""prefix"":""TALABIA""},{""id"":1,""name"":""Takeaway"",""prefix"":""TAKEAWAY""},{""id"":2,""name"":""Delivery"",""prefix"":""DELIVERY""}]"),
-            ("Pos.CustomServiceStatuses", @"[{""id"":1,""name"":""standby"",""colorValue"":4280391411},{""id"":2,""name"":""IN-Kitchen"",""colorValue"":4294940672},{""id"":3,""name"":""COOKED"",""colorValue"":4283215696}]"),
+            ("Pos.CustomServiceStatuses", @"[{""id"":1,""name"":""Standby"",""colorValue"":4280391411},{""id"":2,""name"":""In Kitchen"",""colorValue"":4294940672},{""id"":3,""name"":""Cooked"",""colorValue"":4283215696}]"),
             ("Feature.TablesButtonLabel", "Tables"),
             ("Order.AllowTablelessOrders", "true"),
             ("Order.AllowWalkInTableOrders", "true"),
             ("Pos.BookingSettings", @"{""resourceMode"":""table"",""defaultDurationMinutes"":90,""timeSnappingMinutes"":15,""allowPastBookings"":false}"),
-            ("Print.CashDrawer.Enabled", "false"),
-            ("Print.PrinterType", "Windows Printer"),
             ("Invoice.Columns.Discount", "true"),
             ("Receipt.LogoFullWidth", "false"),
             ("Receipt.PrinterName", "Microsoft Print to PDF"),
@@ -373,7 +450,6 @@ namespace Api.Services
             ("ButtonBar.ShowTables", "false"),
             ("ButtonBar.ShowTax", "false"),
             ("ButtonBar.ShowKitchen", "false"),
-            ("App.EnableSounds", "true"),
             ("Menu.DefaultSearch", "All fields"),
             ("Menu.ShowSearchOptions", "true"),
             ("Order.DefaultDiscountType", "Fixed"),

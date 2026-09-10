@@ -156,7 +156,6 @@ class SettingKeys {
   static const dualCurrencyRate = 'DualCurrency.ExchangeRate';
 
   // Database
-  static const dbBackupVersion = 'Database.Backup.Version';
   static const dbBackupPath = 'Database.BackupPath';
   static const dbAutoBackup = 'Database.AutoBackup';
 
@@ -243,12 +242,10 @@ class SettingKeys {
   static const bookingSettings = 'Pos.BookingSettings';
 
   // ── Printer Hardware ─────────────────────────────────────────────────────
-  static const printerType = 'Print.PrinterType';
   static const printMarginTop = 'Print.Margin.Top';
   static const printMarginBottom = 'Print.Margin.Bottom';
   static const printMarginLeft = 'Print.Margin.Left';
   static const printMarginRight = 'Print.Margin.Right';
-  static const cashDrawerEnabled = 'Print.CashDrawer.Enabled';
   static const cashDrawerCommand = 'Print.CashDrawer.Command';
   static const printBarcode = 'Print.Branding.PrintBarcode';
   static const printLogoFullWidth = 'Print.Branding.LogoFullWidth';
@@ -511,15 +508,31 @@ Set<int> parseDefaultTaxRateIds(String? raw) => (raw ?? '')
     .whereType<int>()
     .toSet();
 
+/// What the till assumes for a setting the server has not sent it.
+///
+/// 🚨 For every key the server seeds (`CompanyDefaultsSeeder.DefaultProperties`)
+/// this value MUST equal the seed. The two had drifted apart on 43 keys, and a
+/// company created before a key existed had no row for it — so it silently
+/// ran on THESE values while a newer company ran on the server's: one
+/// allowing negative stock and voids without a reason, the other refusing
+/// both. The server now backfills missing rows at startup, and
+/// `settings_defaults_match_server_test.dart` fails the build if the two
+/// disagree again. Device-scoped keys are exempt (they are per terminal), and
+/// so is `Application.Language` — see the note on it below.
 const Map<String, String> kSettingDefaults = {
-  SettingKeys.currencySymbol: '\$',
+  SettingKeys.currencySymbol: 'DH',
+  // DELIBERATELY not the server's 'fr'. Every company has its own row (the
+  // server seeds and backfills it), so this value only ever speaks for a
+  // terminal that is not linked to ANY company yet — the language a fresh
+  // install greets its operator in. That is a terminal question, not a
+  // company setting. Pinned in settings_defaults_match_server_test.dart.
   SettingKeys.language: 'en',
   // 'Etc/UTC', not 'UTC': the IANA database has no plain 'UTC' location key, and
   // the timezone picker asserts on a value it can't find among its items.
-  SettingKeys.timezone: 'Etc/UTC',
+  SettingKeys.timezone: 'Africa/Casablanca',
   SettingKeys.timezoneMode: 'Auto',
   SettingKeys.dateFormat: 'dd/MM/yyyy',
-  SettingKeys.taxIncludedByDefault: 'true',
+  SettingKeys.taxIncludedByDefault: 'false',
   SettingKeys.defaultTaxRateIds: '',
   SettingKeys.defaultPaymentType: 'Cash',
   SettingKeys.allowNegativeStock: 'false',
@@ -532,12 +545,12 @@ const Map<String, String> kSettingDefaults = {
   SettingKeys.barcodeFormat: 'EAN-13',
   SettingKeys.displayAndPrintTaxIncluded: 'true',
   SettingKeys.discountApplyRule: 'After tax',
-  SettingKeys.productSorting: 'Name',
-  SettingKeys.allowNegativePrice: 'true',
-  SettingKeys.costPriceBasedMarkup: 'false',
-  SettingKeys.autoUpdateCostPrice: 'true',
+  SettingKeys.productSorting: 'Code',
+  SettingKeys.allowNegativePrice: 'false',
+  SettingKeys.costPriceBasedMarkup: 'true',
+  SettingKeys.autoUpdateCostPrice: 'false',
   SettingKeys.updateSalePriceOnMarkup: 'false',
-  SettingKeys.enableMovingAveragePrice: 'false',
+  SettingKeys.enableMovingAveragePrice: 'true',
   SettingKeys.defaultDocumentType: 'Sales',
   SettingKeys.invoicePrefix: 'INV',
   SettingKeys.autoGenerateNumber: 'true',
@@ -574,7 +587,6 @@ const Map<String, String> kSettingDefaults = {
   SettingKeys.dualCurrencyEnabled: 'false',
   SettingKeys.dualCurrencySymbol: '€',
   SettingKeys.dualCurrencyRate: '1.0',
-  SettingKeys.dbBackupVersion: 'v2',
   SettingKeys.dbBackupPath: '',
   SettingKeys.dbAutoBackup: 'false',
   SettingKeys.requireOpenSession: 'true',
@@ -595,52 +607,55 @@ const Map<String, String> kSettingDefaults = {
   SettingKeys.scaleEnabled: 'false',
   SettingKeys.scalePort: 'COM2',
   SettingKeys.scaleBaudRate: '9600',
-  SettingKeys.scaleBarcodeEnabled: 'false',
-  SettingKeys.scaleBarcodePrefix: '',
+  SettingKeys.scaleBarcodeEnabled: 'true',
+  SettingKeys.scaleBarcodePrefix: '21',
   SettingKeys.scaleBarcodeCodeLength: '5',
   SettingKeys.scaleBarcodeDecimalPlaces: '3',
   SettingKeys.scaleBarcodeTrimZeros: 'true',
   SettingKeys.scaleBarcodePrintsPrice: 'false',
-  SettingKeys.themeMode: 'dark',
+  // Light, matching the server's own `Theme_Mode` seed. This is what a terminal
+  // shows BEFORE it has anything else to go on — the onboarding slides and the
+  // master login — because neither has a company whose theme it could use yet.
+  // The onboarding theme picker overrides it live, per device, from the first
+  // tap; nothing here overrides a company that has already chosen.
+  SettingKeys.themeMode: 'light',
   // The brand accent — the same hex as kBrandAccent in core/app_theme.dart and
   // the server's CompanyDefaultsSeeder. #FF5733 lived here before and is what
   // made the app look BROWN: Material desaturates that coral heavily when it
   // seeds a dark scheme, so the result matched neither the logo nor the
   // marketing site. Change all three together or the app disagrees with itself
   // depending on whether settings have synced yet.
-  SettingKeys.themeAccentColor: '#A4161A',
+  SettingKeys.themeAccentColor: '#389DCB',
   SettingKeys.menuLayoutMode: 'List',
   SettingKeys.menuGridCols: '4',
   SettingKeys.menuGridRows: '4',
-  SettingKeys.featureFloorPlanEnabled: 'true',
-  SettingKeys.featureBookingEnabled: 'true',
+  SettingKeys.featureFloorPlanEnabled: 'false',
+  SettingKeys.featureBookingEnabled: 'false',
   SettingKeys.tablesButtonLabel: 'Tables',
   // Defaults preserve the pre-existing behaviour exactly: a Dine-in order still
   // requires a table, and an empty table can still be rung up without a booking.
-  SettingKeys.allowTablelessOrders: 'false',
+  SettingKeys.allowTablelessOrders: 'true',
   SettingKeys.allowWalkInTableOrders: 'true',
-  SettingKeys.requireReasonOnVoid: 'false',
-  SettingKeys.trackUnconfirmedVoidedItems: 'true',
-  SettingKeys.featureServiceTypeEnabled: 'true',
-  SettingKeys.featureServiceStatusEnabled: 'true',
+  SettingKeys.requireReasonOnVoid: 'true',
+  SettingKeys.trackUnconfirmedVoidedItems: 'false',
+  SettingKeys.featureServiceTypeEnabled: 'false',
+  SettingKeys.featureServiceStatusEnabled: 'false',
   SettingKeys.customServiceTypes:
-      '[{"id":0,"name":"Dine-In","prefix":"ORDER"},'
+      '[{"id":0,"name":"Dine-In","prefix":"TALABIA"},'
       '{"id":1,"name":"Takeaway","prefix":"TAKEAWAY"},'
       '{"id":2,"name":"Delivery","prefix":"DELIVERY"}]',
   SettingKeys.customServiceStatuses:
-      '[{"id":1,"name":"Seated","colorValue":${0xFF2196F3}},'
+      '[{"id":1,"name":"Standby","colorValue":${0xFF2196F3}},'
       '{"id":2,"name":"In Kitchen","colorValue":${0xFFFF9800}},'
-      '{"id":3,"name":"Ready to Pay","colorValue":${0xFF4CAF50}}]',
+      '{"id":3,"name":"Cooked","colorValue":${0xFF4CAF50}}]',
   SettingKeys.bookingSettings:
-      '{"resourceMode":"table","defaultDurationMinutes":90,"timeSnappingMinutes":15}',
+      '{"resourceMode":"table","defaultDurationMinutes":90,"timeSnappingMinutes":15,"allowPastBookings":false}',
 
   // Printer Hardware
-  SettingKeys.printerType: 'Windows Printer',
   SettingKeys.printMarginTop: '5',
   SettingKeys.printMarginBottom: '5',
   SettingKeys.printMarginLeft: '5',
   SettingKeys.printMarginRight: '5',
-  SettingKeys.cashDrawerEnabled: 'false',
   SettingKeys.cashDrawerCommand: r'\x1B\x70\x00\x19\xFA',
   SettingKeys.printBarcode: 'false',
   SettingKeys.printLogoFullWidth: 'false',
@@ -699,7 +714,7 @@ const Map<String, String> kSettingDefaults = {
   SettingKeys.invoicePrintA5: 'false',
   SettingKeys.invoiceRightToLeft: 'false',
   SettingKeys.invoiceColumnTax: 'true',
-  SettingKeys.invoiceColumnDiscount: 'false',
+  SettingKeys.invoiceColumnDiscount: 'true',
   SettingKeys.invoiceGlobalHeader: '',
   SettingKeys.invoiceGlobalFooter: '',
   SettingKeys.invoiceFontFamily: '(None)',
@@ -717,8 +732,14 @@ const Map<String, String> kSettingDefaults = {
   'Receipt.MarginBottom': '0',
   'Receipt.MarginLeft': '0',
   'Receipt.MarginRight': '0',
-  'Receipt.Header': '',
-  'Receipt.Footer': '',
+  // A single space, matching the server seed — kept DELIBERATELY (decided
+  // 2026-09-10). It is not inert: the receipt prints a header/footer whenever
+  // the text isNotEmpty, so an unconfigured receipt carries a blank line top
+  // and bottom, and that is the intended look. Do not tidy it to '' without
+  // changing CompanyDefaultsSeeder too — settings_defaults_match_server_test
+  // pins the two together.
+  'Receipt.Header': ' ',
+  'Receipt.Footer': ' ',
   'Receipt.PrintBarcode': 'false',
   'Receipt.LogoFullWidth': 'false',
   'Receipt.RightToLeft': 'false',
@@ -743,33 +764,33 @@ const Map<String, String> kSettingDefaults = {
   SettingKeys.useFloorPlans: 'true',
 
   // Items
-  SettingKeys.defaultSearch: 'Name',
+  SettingKeys.defaultSearch: 'All fields',
   SettingKeys.showSearchOptions: 'true',
-  SettingKeys.defaultDiscountType: 'Percentage',
-  SettingKeys.separateRowForEachItem: 'false',
+  SettingKeys.defaultDiscountType: 'Fixed',
+  SettingKeys.separateRowForEachItem: 'true',
   SettingKeys.preventSaleBelowCostPrice: 'true',
-  SettingKeys.preventNegativeInventory: 'false',
+  SettingKeys.preventNegativeInventory: 'true',
 
   // Users
   SettingKeys.singleUser: 'true',
 
   // Payment (extended)
   SettingKeys.displayReceiptPrintDialog: 'false',
-  SettingKeys.defaultDueDateDays: '0',
-  SettingKeys.mergeItemsOnReceipt: 'true',
+  SettingKeys.defaultDueDateDays: '2',
+  SettingKeys.mergeItemsOnReceipt: 'false',
   SettingKeys.singleItemDiscountAllowed: 'true',
   SettingKeys.shortcutKeysPaymentConfirmation: 'false',
 
   // Order Name
 
   // Service Type (extended)
-  SettingKeys.enableServiceTypeSelection: 'true',
-  SettingKeys.requestServiceTypeAutomatically: 'true',
+  SettingKeys.enableServiceTypeSelection: 'false',
+  SettingKeys.requestServiceTypeAutomatically: 'false',
   SettingKeys.defaultServiceType: 'Dine-in',
-  SettingKeys.printLargeOrderNumberInReceipt: 'false',
+  SettingKeys.printLargeOrderNumberInReceipt: 'true',
 
   // Advanced Settings
-  SettingKeys.resetOrderNumberOnDayClose: 'false',
+  SettingKeys.resetOrderNumberOnDayClose: 'true',
   SettingKeys.showItemsOnPaymentForm: 'true',
   // Matches the backend seeder (Order.NumberOfPaymentTypeRows = "1"); the two
   // used to disagree (client fallback was "0"), which was harmless only
@@ -788,11 +809,11 @@ const Map<String, String> kSettingDefaults = {
   SettingKeys.enableVirtualKeyboard: 'false',
 
   // Messages
-  SettingKeys.messageDuration: '3',
-  SettingKeys.messagePosition: 'Bottom',
+  SettingKeys.messageDuration: '5',
+  SettingKeys.messagePosition: 'Top',
 
   // Business Day
-  SettingKeys.showCashInOnStart: 'true',
+  SettingKeys.showCashInOnStart: 'false',
   SettingKeys.selectBusinessDayOnStart: 'false',
   SettingKeys.defaultScreen: 'POS',
   SettingKeys.autoSyncEnabled: 'true',
@@ -801,20 +822,20 @@ const Map<String, String> kSettingDefaults = {
 
   // Button Bar
   SettingKeys.showSearchBtn: 'true',
-  SettingKeys.showTransferBtn: 'true',
-  SettingKeys.showCustomerBtn: 'true',
-  SettingKeys.showDiscountBtn: 'true',
+  SettingKeys.showTransferBtn: 'false',
+  SettingKeys.showCustomerBtn: 'false',
+  SettingKeys.showDiscountBtn: 'false',
   SettingKeys.showModifiersBtn: 'true',
-  SettingKeys.showRefundBtn: 'true',
+  SettingKeys.showRefundBtn: 'false',
   SettingKeys.showContinueSellingBtn: 'true',
   SettingKeys.showCloseRegisterBtn: 'true',
-  SettingKeys.showCashDrawerBtn: 'true',
-  SettingKeys.showWarehouseBtn: 'true',
-  SettingKeys.showBookingBtn: 'true',
-  SettingKeys.showTablesBtn: 'true',
-  SettingKeys.showKitchenBtn: 'true',
+  SettingKeys.showCashDrawerBtn: 'false',
+  SettingKeys.showWarehouseBtn: 'false',
+  SettingKeys.showBookingBtn: 'false',
+  SettingKeys.showTablesBtn: 'false',
+  SettingKeys.showKitchenBtn: 'false',
   SettingKeys.showAdditionBtn: 'true',
-  SettingKeys.showTaxBtn: 'true',
+  SettingKeys.showTaxBtn: 'false',
   SettingKeys.showQuantityBtn: 'true',
 
   // Printer Role — Kitchen

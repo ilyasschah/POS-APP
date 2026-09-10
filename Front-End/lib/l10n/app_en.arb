@@ -3871,5 +3871,123 @@
   "rptColHourEnd": "Hour end",
   "rptFavorites": "Favorites",
   "rptColTotalBefTax": "Total bef. tax",
-  "saveStockReportTitle": "Save Stock Report"
+  "saveStockReportTitle": "Save Stock Report",
+  "importProductsTitle": "Import products",
+  "importGroupsTitle": "Import product groups",
+  "importCsvHint": "Load products from a spreadsheet saved as CSV — your own, one from another program, or one exported from here. Commas or semicolons, decimal points or commas: both work.",
+  "importXmlHint": "Load products exported from this application as XML. The group tree, colours and every barcode come with them.",
+  "importGroupsCsvHint": "Load product groups from a spreadsheet with a Name column. A Parent column places each group under another — a parent that does not exist yet is created.",
+  "importGroupsXmlHint": "Load the group tree from an XML export of this application — a groups export or a products export.",
+  "importNoFileYet": "No file selected yet",
+  "importColumnsTab": "Columns",
+  "importPreviewTab": "Preview ({count})",
+  "@importPreviewTab": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importSampleValue": "e.g. {value}",
+  "@importSampleValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "duplicatesSkip": "Skip",
+  "duplicatesMerge": "Update",
+  "duplicatesSkipHint": "A row whose name already exists is left out — nothing already there changes.",
+  "duplicatesMergeHint": "A row whose name already exists updates it. Blank cells keep the current values.",
+  "importDocInventoryCount": "Inventory count",
+  "importDocPurchase": "Purchase",
+  "importDocNone": "None (no document)",
+  "importDocNeedsQuantity": "Match the Quantity column to create a document.",
+  "importRowNoName": "No name — this row will be left out",
+  "importRowUnreadable": "Could not read {fields} — sent empty",
+  "@importRowUnreadable": {
+    "placeholders": {
+      "fields": {
+        "type": "String"
+      }
+    }
+  },
+  "importRowOk": "Ready",
+  "importRowsWithoutName": "{count} row(s) without a name will be left out",
+  "@importRowsWithoutName": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importRowsAction": "Import {count}",
+  "@importRowsAction": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "numberOfGroupsToImport": "Number of groups to import: {count}",
+  "@numberOfGroupsToImport": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "skippedLabel": "Skipped",
+  "importWarningCount": "{count} warning(s):",
+  "@importWarningCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importMoreLines": "…and {count} more",
+  "@importMoreLines": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importGroupsSummary": "Groups: {created} created, {updated} updated",
+  "@importGroupsSummary": {
+    "placeholders": {
+      "created": {
+        "type": "int"
+      },
+      "updated": {
+        "type": "int"
+      }
+    }
+  },
+  "importFileUnreadable": "This file could not be read: {message}",
+  "@importFileUnreadable": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "importFieldPackSize": "Pieces per box / pack",
+  "importNothingFound": "Nothing to import was found in this file.",
+  "exportCsvHint": "Opens in Excel or any spreadsheet program",
+  "exportXmlHint": "Keeps the whole group tree — for importing back into this app",
+  "exportedGroupsTo": "Exported {count} groups to {path}",
+  "@exportedGroupsTo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "saveExportFileTitle": "Save export file"
 }

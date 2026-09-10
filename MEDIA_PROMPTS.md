@@ -61,8 +61,8 @@ What the hero actually is, read off the file:
 | **Medium** | Flat vector illustration, cel-shaded. No gradients, no texture, no photographic depth |
 | **Line** | Bold black outline of varying weight around every object |
 | **Figure** | A **featureless white figure** — round blank head, no face, no eyes, no mouth, simple tube limbs, mitten hands |
-| **Wardrobe** | Deep red apron — and now a closer match than before: the brand moved to a blood red `#A4161A`, which is nearer the apron in these illustrations than the coral ever was |
-| **Palette** | Cream and warm beige walls · charcoal counter · black background objects · one red · grey empty screens |
+| **Wardrobe** | Octopus-blue apron `#389DCB`. The illustrations were drawn in deep red for the previous brand and were re-hued in place by `tools/recolour_brand_red.py` — regenerate rather than redraw, and any NEW prompt asks for the blue directly |
+| **Palette** | Cream and warm beige walls · charcoal counter · black background objects · one octopus blue · grey empty screens |
 | **Light** | Soft directional sun from the left, flat plant shadows cast on the wall |
 | **Screens** | Dark, flat, **empty** |
 | **Ratio** | 16:9 |
@@ -90,7 +90,7 @@ Characters are FEATURELESS WHITE FIGURES — round blank heads, no face, no eyes
 no mouth, simple tube limbs, mitten hands — exactly as in the reference.
 
 Palette: cream and warm beige walls, charcoal work surfaces, black background
-equipment, one deep red accent, grey screens. Soft directional sunlight from the
+equipment, one octopus-blue accent (#389DCB), grey screens. Soft directional sunlight from the
 left casting flat plant shadows.
 
 All screens are DARK, FLAT AND EMPTY. 16:9 landscape.
@@ -112,7 +112,7 @@ a blank white figure for a real person's testimonial.
 ```
 [shared block]
 
-A stockroom behind a small restaurant. A featureless white figure in a deep red
+A stockroom behind a small restaurant. A featureless white figure in an octopus-blue
 apron stands centre-left, holding a tablet in one hand at chest height and
 reaching toward a shelf with the other. The tablet screen is dark and empty.
 
@@ -121,7 +121,7 @@ crates in warm beige, a few sacks, a stepladder folded against the right wall. A
 handheld barcode scanner rests on a low crate in the foreground.
 
 Warm sunlight enters from a high window on the left, casting a flat angular
-shadow across the shelving. Cream walls, charcoal shelves, one red accent on the
+shadow across the shelving. Cream walls, charcoal shelves, one blue accent on the
 apron and the scanner's grip.
 
 16:9. Figure occupies the left third, shelving fills the right two-thirds.
@@ -137,12 +137,12 @@ featureless white figure stands at the counter in casual clothes — no apron �
 having just been served. Their posture is relaxed and open: weight on one leg,
 shoulders down, one hand lifting a paper cup, the other holding a small receipt.
 
-Across the counter, a second featureless figure in a deep red apron leans
+Across the counter, a second featureless figure in an octopus-blue apron leans
 slightly forward, one hand still resting near the terminal. The terminal screen
 is dark and empty, seen from behind at an angle.
 
 Warm sunlight from the left, flat plant shadows on the cream wall behind.
-Charcoal counter, red apron, a red folded cloth, glasses stacked at the right.
+Charcoal counter, blue apron, a blue folded cloth, glasses stacked at the right.
 
 16:9. The two figures face each other across the counter with clear space
 between them.
@@ -164,14 +164,14 @@ desk in a shirt with sleeves rolled — no apron — leaning slightly toward an 
 laptop, one hand on the trackpad, chin tilted down in concentration.
 
 On the laptop screen: only three simple flat vertical bars and one rising line,
-drawn as ABSTRACT SHAPES in deep red on dark grey. No text, no numbers, no
+drawn as ABSTRACT SHAPES in octopus blue on dark grey. No text, no numbers, no
 interface panels, no menus, no icons.
 
 On the desk: a closed ledger, a glass of mint tea on a small saucer, a phone
 face-down, a single desk lamp casting warm light from the right. A window at the
 left shows a dark evening street.
 
-Cream walls, charcoal desk, one red accent. 16:9, figure left of centre, desk
+Cream walls, charcoal desk, one blue accent. 16:9, figure left of centre, desk
 running to the right edge.
 ```
 
@@ -383,9 +383,10 @@ prompt can fix that honestly. Six captures, in priority order.
 2. **Theme: `dimmed` or `dark`.** The site is light with a dark footer band, and
    the hero illustration has a dark screen. Dark captures sitting in white cards
    will look deliberate; light captures will muddle into the page.
-3. **Accent: the brand coral.** It is the default now, but check Settings — an
-   install predating the rollout may still carry blue, and a blue screenshot on
-   a coral site is the one mistake nobody will forgive.
+3. **Accent: octopus blue `#389DCB`, theme LIGHT.** Both are the defaults now,
+   but check Settings — an install predating a rollout can still carry the old
+   blood red or a dark theme, and an off-brand screenshot on the site is the one
+   mistake nobody will forgive.
 4. **Language: English**, since the crawled copy is English. If it is cheap, do
    #1 in Arabic too — a genuine RTL screenshot is a stronger proof of the
    trilingual claim than the sentence making it.

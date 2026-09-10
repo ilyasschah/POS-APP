@@ -7469,4 +7469,139 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get saveStockReportTitle => 'Save Stock Report';
+
+  @override
+  String get importProductsTitle => 'Import products';
+
+  @override
+  String get importGroupsTitle => 'Import product groups';
+
+  @override
+  String get importCsvHint =>
+      'Load products from a spreadsheet saved as CSV — your own, one from another program, or one exported from here. Commas or semicolons, decimal points or commas: both work.';
+
+  @override
+  String get importXmlHint =>
+      'Load products exported from this application as XML. The group tree, colours and every barcode come with them.';
+
+  @override
+  String get importGroupsCsvHint =>
+      'Load product groups from a spreadsheet with a Name column. A Parent column places each group under another — a parent that does not exist yet is created.';
+
+  @override
+  String get importGroupsXmlHint =>
+      'Load the group tree from an XML export of this application — a groups export or a products export.';
+
+  @override
+  String get importNoFileYet => 'No file selected yet';
+
+  @override
+  String get importColumnsTab => 'Columns';
+
+  @override
+  String importPreviewTab(int count) {
+    return 'Preview ($count)';
+  }
+
+  @override
+  String importSampleValue(String value) {
+    return 'e.g. $value';
+  }
+
+  @override
+  String get duplicatesSkip => 'Skip';
+
+  @override
+  String get duplicatesMerge => 'Update';
+
+  @override
+  String get duplicatesSkipHint =>
+      'A row whose name already exists is left out — nothing already there changes.';
+
+  @override
+  String get duplicatesMergeHint =>
+      'A row whose name already exists updates it. Blank cells keep the current values.';
+
+  @override
+  String get importDocInventoryCount => 'Inventory count';
+
+  @override
+  String get importDocPurchase => 'Purchase';
+
+  @override
+  String get importDocNone => 'None (no document)';
+
+  @override
+  String get importDocNeedsQuantity =>
+      'Match the Quantity column to create a document.';
+
+  @override
+  String get importRowNoName => 'No name — this row will be left out';
+
+  @override
+  String importRowUnreadable(String fields) {
+    return 'Could not read $fields — sent empty';
+  }
+
+  @override
+  String get importRowOk => 'Ready';
+
+  @override
+  String importRowsWithoutName(int count) {
+    return '$count row(s) without a name will be left out';
+  }
+
+  @override
+  String importRowsAction(int count) {
+    return 'Import $count';
+  }
+
+  @override
+  String numberOfGroupsToImport(int count) {
+    return 'Number of groups to import: $count';
+  }
+
+  @override
+  String get skippedLabel => 'Skipped';
+
+  @override
+  String importWarningCount(int count) {
+    return '$count warning(s):';
+  }
+
+  @override
+  String importMoreLines(int count) {
+    return '…and $count more';
+  }
+
+  @override
+  String importGroupsSummary(int created, int updated) {
+    return 'Groups: $created created, $updated updated';
+  }
+
+  @override
+  String importFileUnreadable(String message) {
+    return 'This file could not be read: $message';
+  }
+
+  @override
+  String get importFieldPackSize => 'Pieces per box / pack';
+
+  @override
+  String get importNothingFound => 'Nothing to import was found in this file.';
+
+  @override
+  String get exportCsvHint => 'Opens in Excel or any spreadsheet program';
+
+  @override
+  String get exportXmlHint =>
+      'Keeps the whole group tree — for importing back into this app';
+
+  @override
+  String exportedGroupsTo(int count, String path) {
+    return 'Exported $count groups to $path';
+  }
+
+  @override
+  String get saveExportFileTitle => 'Save export file';
 }

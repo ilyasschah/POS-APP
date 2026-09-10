@@ -36,9 +36,13 @@
 
     @*  Shared with the Flutter client (Front-End/assets) so the portal, the app
         and the installer all carry the same mark. *@
-    <link rel="icon" type="image/svg+xml" href="~/img/icon.svg" />
-    <link rel="icon" href="~/favicon.ico" sizes="any" />
-    <link rel="apple-touch-icon" href="~/img/icon.png" />
+    @* asp-append-version stamps each icon URL with a hash of the file's
+       CONTENT. Browsers key their favicon cache by URL and will not re-fetch
+       one they already hold, so without this a changed logo keeps showing the
+       old one in every tab until someone clears their cache by hand. *@
+    <link rel="icon" type="image/svg+xml" href="~/img/icon.svg" asp-append-version="true" />
+    <link rel="icon" href="~/favicon.ico" sizes="any" asp-append-version="true" />
+    <link rel="apple-touch-icon" href="~/img/icon.png" asp-append-version="true" />
 </head>
 <body>
     <div class="page">
@@ -71,14 +75,14 @@
                     @if (isSignedIn)
                     {
                         <a class="d-flex align-items-center gap-2 text-reset text-decoration-none" asp-page="/Admin/Companies/Index">
-                            <img class="brand-logo" src="~/img/icon.svg" alt="" width="32" height="32" />
+                            <img class="brand-logo" src="~/img/icon.svg" asp-append-version="true" alt="" width="32" height="32" />
                             <span>POS Admin</span>
                         </a>
                     }
                     else
                     {
                         <span class="d-flex align-items-center gap-2">
-                            <img class="brand-logo" src="~/img/icon.svg" alt="" width="32" height="32" />
+                            <img class="brand-logo" src="~/img/icon.svg" asp-append-version="true" alt="" width="32" height="32" />
                             <span>POS Admin</span>
                         </span>
                     }

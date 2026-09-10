@@ -2099,8 +2099,8 @@ class _ThemeModeControl extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final current =
-        ref.watch(appSettingsProvider)[SettingKeys.themeMode] ?? 'dark';
-    final safe = _labels.containsKey(current) ? current : 'dark';
+        ref.watch(appSettingsProvider)[SettingKeys.themeMode] ?? 'light';
+    final safe = _labels.containsKey(current) ? current : 'light';
     return DropdownButton<String>(
       value: safe,
       isDense: true,
@@ -3379,10 +3379,10 @@ class _ThemeModePicker extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(appSettingsProvider);
-    final current = settings[SettingKeys.themeMode] ?? 'dark';
+    final current = settings[SettingKeys.themeMode] ?? 'light';
     final opt = _options.firstWhere(
       (o) => o.key == current,
-      orElse: () => _options[1],
+      orElse: () => _options[0],
     );
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
